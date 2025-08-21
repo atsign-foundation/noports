@@ -171,9 +171,11 @@ abstract class Srv<T> {
 
   static Future<String?> _getBinaryPathByName(String name) async {
     String postfix = Platform.isWindows ? '.exe' : '';
-    List<String> pathList =
-        Platform.resolvedExecutable.split(Platform.pathSeparator);
-    bool isExe = (pathList.last == 'sshnp$postfix' ||
+    List<String> pathList = Platform.resolvedExecutable.split(
+      Platform.pathSeparator,
+    );
+    bool isExe =
+        (pathList.last == 'sshnp$postfix' ||
         pathList.last == 'sshnpd$postfix' ||
         pathList.last == 'npt$postfix');
 

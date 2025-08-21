@@ -78,7 +78,8 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
 
   Future<void> unhandledRequest(IIRequest req) async {
     logger.shout(
-        'Received unhandled request $req from main isolate - terminating');
+      'Received unhandled request $req from main isolate - terminating',
+    );
     await stop();
   }
 
@@ -106,19 +107,22 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     };
 
     if (params.authenticateSocketA) {
-      String? pkAtSignA = params.publicKeyA ??
-          (await rpcToMain(IIRequest.create(
-            'lookup',
-            'public:publickey${params.atSignA}',
-          )))
-              .payload;
+      String? pkAtSignA =
+          params.publicKeyA ??
+          (await rpcToMain(
+            IIRequest.create('lookup', 'public:publickey${params.atSignA}'),
+          )).payload;
       if (pkAtSignA == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${params.atSignA}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer.');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${params.atSignA} due to failure to get public key for ${params.atSignA}');
+        logger.shout(
+          'Cannot spawn socket connector.'
+          ' Authenticator for ${params.atSignA}'
+          ' could not be created as PublicKey could not be'
+          ' fetched from the atServer.',
+        );
+        throw Exception(
+          'Failed to create SocketAuthenticator'
+          ' for ${params.atSignA} due to failure to get public key for ${params.atSignA}',
+        );
       }
       authVerifierA = RelayAuthVerifierLegacy(
         pkAtSignA,
@@ -131,19 +135,22 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     }
 
     if (params.authenticateSocketB) {
-      String? pkAtSignB = params.publicKeyB ??
-          (await rpcToMain(IIRequest.create(
-            'lookup',
-            'public:publickey${params.atSignB}',
-          )))
-              .payload;
+      String? pkAtSignB =
+          params.publicKeyB ??
+          (await rpcToMain(
+            IIRequest.create('lookup', 'public:publickey${params.atSignB}'),
+          )).payload;
       if (pkAtSignB == null) {
-        logger.shout('Cannot spawn socket connector.'
-            ' Authenticator for ${params.atSignB}'
-            ' could not be created as PublicKey could not be'
-            ' fetched from the atServer');
-        throw Exception('Failed to create SocketAuthenticator'
-            ' for ${params.atSignB} due to failure to get public key for ${params.atSignB}');
+        logger.shout(
+          'Cannot spawn socket connector.'
+          ' Authenticator for ${params.atSignB}'
+          ' could not be created as PublicKey could not be'
+          ' fetched from the atServer',
+        );
+        throw Exception(
+          'Failed to create SocketAuthenticator'
+          ' for ${params.atSignB} due to failure to get public key for ${params.atSignB}',
+        );
       }
       authVerifierB = RelayAuthVerifierLegacy(
         pkAtSignB,
@@ -165,17 +172,11 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     RelayAuthVerifierESCR? authVerifierB;
 
     if (params.authenticateSocketA) {
-      authVerifierA = RelayAuthVerifierESCR(
-        '${params.sessionId} sideA',
-        this,
-      );
+      authVerifierA = RelayAuthVerifierESCR('${params.sessionId} sideA', this);
     }
 
     if (params.authenticateSocketB) {
-      authVerifierB = RelayAuthVerifierESCR(
-        '${params.sessionId} sideB',
-        this,
-      );
+      authVerifierB = RelayAuthVerifierESCR('${params.sessionId} sideB', this);
     }
 
     return (authVerifierA, authVerifierB);

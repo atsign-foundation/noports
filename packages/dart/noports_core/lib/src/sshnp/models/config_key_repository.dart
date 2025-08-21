@@ -17,8 +17,11 @@ class ConfigKeyRepository {
     return profileName;
   }
 
-  static AtKey fromProfileName(String profileName,
-      {String sharedBy = '', bool replaceSpaces = true}) {
+  static AtKey fromProfileName(
+    String profileName, {
+    String sharedBy = '',
+    bool replaceSpaces = true,
+  }) {
     if (replaceSpaces) profileName = profileName.replaceAll(' ', '_');
     return AtKey.self(
       '$keyPrefix$profileName',
@@ -32,8 +35,11 @@ class ConfigKeyRepository {
     return keys.map((e) => toProfileName(e));
   }
 
-  static Future<SshnpParams> getParams(String profileName,
-      {required AtClient atClient, GetRequestOptions? options}) async {
+  static Future<SshnpParams> getParams(
+    String profileName, {
+    required AtClient atClient,
+    GetRequestOptions? options,
+  }) async {
     AtKey key = fromProfileName(profileName);
     key.sharedBy = atClient.getCurrentAtSign()!;
     AtValue value = await atClient.get(key, getRequestOptions: options);
@@ -41,15 +47,21 @@ class ConfigKeyRepository {
     return SshnpParams.fromJson(value.value!);
   }
 
-  static Future<void> putParams(SshnpParams params,
-      {required AtClient atClient, PutRequestOptions? options}) async {
+  static Future<void> putParams(
+    SshnpParams params, {
+    required AtClient atClient,
+    PutRequestOptions? options,
+  }) async {
     AtKey key = fromProfileName(params.profileName!);
     key.sharedBy = atClient.getCurrentAtSign()!;
     await atClient.put(key, params.toJson(), putRequestOptions: options);
   }
 
-  static Future<void> deleteParams(String profileName,
-      {required AtClient atClient, DeleteRequestOptions? options}) async {
+  static Future<void> deleteParams(
+    String profileName, {
+    required AtClient atClient,
+    DeleteRequestOptions? options,
+  }) async {
     AtKey key = fromProfileName(profileName);
     key.sharedBy = atClient.getCurrentAtSign()!;
     await atClient.delete(key, deleteRequestOptions: options);

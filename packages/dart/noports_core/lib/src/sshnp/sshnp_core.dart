@@ -97,13 +97,10 @@ abstract class SshnpCore
   @override
   String get privateSigningKey;
 
-  SshnpCore({
-    required this.atClient,
-    required this.params,
-    this.logStream,
-  })  : sessionId = Uuid().v4(),
-        namespace = '${params.device}.${DefaultArgs.namespace}',
-        localPort = params.localPort {
+  SshnpCore({required this.atClient, required this.params, this.logStream})
+    : sessionId = Uuid().v4(),
+      namespace = '${params.device}.${DefaultArgs.namespace}',
+      localPort = params.localPort {
     logger.level = params.verbose ? 'info' : 'shout';
 
     /// Set the namespace to the device's namespace
@@ -143,8 +140,10 @@ abstract class SshnpCore
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+    featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
@@ -153,7 +152,8 @@ abstract class SshnpCore
     /// Set the username to use for the initial ssh tunnel
     sendProgress('Resolving remote username for tunnel session');
     tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
-        remoteUsername: remoteUsername);
+      remoteUsername: remoteUsername,
+    );
 
     /// Shares the public key if required
     if (params.sendSshPublicKey) {
@@ -190,6 +190,5 @@ abstract class SshnpCore
   @override
   Future<SshnpDeviceList> listDevices({
     Duration waitDuration = Sshnp.defaultListDevicesWaitTime,
-  }) =>
-      sshnpdChannel.listDevices(waitDuration: waitDuration);
+  }) => sshnpdChannel.listDevices(waitDuration: waitDuration);
 }

@@ -49,8 +49,8 @@ class StubbedSshnp extends SshnpCore
     required super.params,
     required SshnpdChannel sshnpdChannel,
     required SrvdChannel srvdChannel,
-  })  : _sshnpdChannel = sshnpdChannel,
-        _srvdChannel = srvdChannel;
+  }) : _sshnpdChannel = sshnpdChannel,
+       _srvdChannel = srvdChannel;
 
   @override
   AtSshKeyPair? get identityKeyPair => throw UnimplementedError();

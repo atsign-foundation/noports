@@ -17,6 +17,7 @@ class SshnpSessionRequest {
   final int? remoteForwardPort;
   final String? privateKey;
   final bool twinKeys;
+  final String relayAtsign;
 
   SshnpSessionRequest({
     required this.direct,
@@ -37,6 +38,7 @@ class SshnpSessionRequest {
     this.remoteForwardPort,
     this.privateKey,
     required this.twinKeys,
+    required this.relayAtsign,
   }) {
     // Assertions originally from Sshnpd
     // sessionId, host (of the rvd) and port (of the rvd) are required.
@@ -51,7 +53,10 @@ class SshnpSessionRequest {
     assertNullOrValidValue('encryptRvdTraffic', encryptRvdTraffic, bool);
     assertNullOrValidValue('clientEphemeralPK', clientEphemeralPK, String);
     assertNullOrValidValue(
-        'clientEphemeralPKType', clientEphemeralPKType, String);
+      'clientEphemeralPKType',
+      clientEphemeralPKType,
+      String,
+    );
 
     // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
     // also require a username (to ssh back to the client), a privateKey (for
@@ -81,25 +86,27 @@ class SshnpSessionRequest {
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
       twinKeys: json['twinKeys'] ?? false,
+      relayAtsign: json['relayAtsign'],
     );
   }
 
   /// NB: Do not change any existing names as this will break all previous daemons
   Map<String, dynamic> toJson() => {
-        'direct': direct,
-        'sessionId': sessionId,
-        'host': host,
-        'port': port,
-        'authenticateToRvd': authenticateToRvd,
-        'relayAuthMode': relayAuthMode.name,
-        'relayAuthAesKey': relayAuthAesKey,
-        'clientNonce': clientNonce,
-        'rvdNonce': rvdNonce,
-        'encryptRvdTraffic': encryptRvdTraffic,
-        'clientEphemeralPK': clientEphemeralPK,
-        'clientEphemeralPKType': clientEphemeralPKType,
-        'twinKeys': twinKeys,
-      };
+    'direct': direct,
+    'sessionId': sessionId,
+    'host': host,
+    'port': port,
+    'authenticateToRvd': authenticateToRvd,
+    'relayAuthMode': relayAuthMode.name,
+    'relayAuthAesKey': relayAuthAesKey,
+    'clientNonce': clientNonce,
+    'rvdNonce': rvdNonce,
+    'encryptRvdTraffic': encryptRvdTraffic,
+    'clientEphemeralPK': clientEphemeralPK,
+    'clientEphemeralPKType': clientEphemeralPKType,
+    'twinKeys': twinKeys,
+    'relayAtsign': relayAtsign,
+  };
 }
 
 class NptSessionRequest {
@@ -119,6 +126,7 @@ class NptSessionRequest {
   final String clientEphemeralPKType;
   final Duration timeout;
   final bool twinKeys;
+  final String? relayAtsign;
 
   NptSessionRequest({
     required this.sessionId,
@@ -136,6 +144,7 @@ class NptSessionRequest {
     required this.clientEphemeralPKType,
     required this.timeout,
     required this.twinKeys,
+    required this.relayAtsign,
   });
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
@@ -157,25 +166,27 @@ class NptSessionRequest {
       clientEphemeralPKType: json['clientEphemeralPKType'],
       timeout: Duration(milliseconds: json['timeout'] ?? defaultTimeout),
       twinKeys: json['twinKeys'] ?? false,
+      relayAtsign: json['relayAtsign'],
     );
   }
 
   /// NB: Do not change any existing names as this will break all previous daemons
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'rvdHost': rvdHost,
-        'rvdPort': rvdPort,
-        'requestedPort': requestedPort,
-        'requestedHost': requestedHost,
-        'authenticateToRvd': authenticateToRvd,
-        'relayAuthMode': relayAuthMode.name,
-        'relayAuthAesKey': relayAuthAesKey,
-        'clientNonce': clientNonce,
-        'rvdNonce': rvdNonce,
-        'encryptRvdTraffic': encryptRvdTraffic,
-        'clientEphemeralPK': clientEphemeralPK,
-        'clientEphemeralPKType': clientEphemeralPKType,
-        'timeout': timeout.inMilliseconds,
-        'twinKeys': twinKeys,
-      };
+    'sessionId': sessionId,
+    'rvdHost': rvdHost,
+    'rvdPort': rvdPort,
+    'requestedPort': requestedPort,
+    'requestedHost': requestedHost,
+    'authenticateToRvd': authenticateToRvd,
+    'relayAuthMode': relayAuthMode.name,
+    'relayAuthAesKey': relayAuthAesKey,
+    'clientNonce': clientNonce,
+    'rvdNonce': rvdNonce,
+    'encryptRvdTraffic': encryptRvdTraffic,
+    'clientEphemeralPK': clientEphemeralPK,
+    'clientEphemeralPKType': clientEphemeralPKType,
+    'timeout': timeout.inMilliseconds,
+    'twinKeys': twinKeys,
+    'relayAtsign': relayAtsign,
+  };
 }

@@ -56,14 +56,14 @@ void main(List<String> args) async {
   final AtClient atClient;
   try {
     atClient = await createAtClientCli(
-      atsign: p.authorizerAtsign,
+      atsign: p.policyAtsign,
       atKeysFilePath: p.atKeysFilePath,
       rootDomain: p.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: DefaultArgs.namespace,
       storagePath: standardAtClientStoragePath(
           baseDir: p.homeDirectory,
-          atSign: p.authorizerAtsign,
+          atSign: p.policyAtsign,
           progName: '.${DefaultArgs.namespace}',
           uniqueID: 'single'),
     );
@@ -86,6 +86,7 @@ void main(List<String> args) async {
     homeDirectory: p.homeDirectory,
     daemonAtsigns: handler.daemonAtSigns,
     handler: handler,
+    sessionLoggingAtsign: p.sessionLoggingAtsign,
   );
 
   if (p.verbose) {

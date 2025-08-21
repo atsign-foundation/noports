@@ -31,9 +31,9 @@ class DartSshKeyUtil implements AtSshKeyUtil {
   }
 
   AtSshKeyPair _generateRSAKeyPair(String identifier) => AtSshKeyPair.fromPem(
-        AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
-        identifier: identifier,
-      );
+    AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
+    identifier: identifier,
+  );
 
   Future<AtSshKeyPair> _generateEd25519KeyPair(String identifier) async {
     var keyPair2 = await Ed25519().newKeyPair();
@@ -41,17 +41,11 @@ class DartSshKeyUtil implements AtSshKeyUtil {
       privateBytes: await keyPair2.extractPrivateKeyBytes(),
       publicBytes: (await keyPair2.extractPublicKey()).bytes,
     );
-    return AtSshKeyPair.fromPem(
-      pemText,
-      identifier: identifier,
-    );
+    return AtSshKeyPair.fromPem(pemText, identifier: identifier);
   }
 
   @override
-  FutureOr addKeyPair({
-    required AtSshKeyPair keyPair,
-    String? identifier,
-  }) {
+  FutureOr addKeyPair({required AtSshKeyPair keyPair, String? identifier}) {
     _keyPairCache[identifier ?? keyPair.identifier] = keyPair;
   }
 

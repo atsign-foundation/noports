@@ -38,9 +38,7 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   /// in a separate process
   /// - RV_AUTH: [authString] - sent to relay for legacy (v0) auth
   @override
-  Map<String, String> get envMap => {
-        'RV_AUTH': authString,
-      };
+  Map<String, String> get envMap => {'RV_AUTH': authString};
 
   @override
   List<String> get rvArgs => ['--rv-auth'];
@@ -103,9 +101,13 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     required this.privateSigningKey,
     required this.isSideA,
   }) {
-    _atChops = AtChopsImpl(AtChopsKeys()
-      ..atEncryptionKeyPair =
-          AtEncryptionKeyPair.create(publicSigningKey, privateSigningKey));
+    _atChops = AtChopsImpl(
+      AtChopsKeys()
+        ..atEncryptionKeyPair = AtEncryptionKeyPair.create(
+          publicSigningKey,
+          privateSigningKey,
+        ),
+    );
   }
 
   /// Map of things to place in the environment when executing the srv
@@ -118,13 +120,13 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   ///   actual payload within the auth envelope
   @override
   Map<String, String> get envMap => {
-        'REMOTE_AUTH_ESCR_SESSION_ID': sessionId,
-        'REMOTE_AUTH_ESCR_AES_KEY': relayAuthAesKey,
-        'REMOTE_AUTH_ESCR_PUB_KEY_URI': publicSigningKeyUri,
-        'REMOTE_AUTH_ESCR_SIGNING_PUBKEY': publicSigningKey,
-        'REMOTE_AUTH_ESCR_SIGNING_PRIVKEY': privateSigningKey,
-        'REMOTE_AUTH_ESCR_IS_SIDE_A': isSideA.toString(),
-      };
+    'REMOTE_AUTH_ESCR_SESSION_ID': sessionId,
+    'REMOTE_AUTH_ESCR_AES_KEY': relayAuthAesKey,
+    'REMOTE_AUTH_ESCR_PUB_KEY_URI': publicSigningKeyUri,
+    'REMOTE_AUTH_ESCR_SIGNING_PUBKEY': publicSigningKey,
+    'REMOTE_AUTH_ESCR_SIGNING_PRIVKEY': privateSigningKey,
+    'REMOTE_AUTH_ESCR_IS_SIDE_A': isSideA.toString(),
+  };
 
   @override
   List<String> get rvArgs => ['-a', 'escr'];
@@ -139,72 +141,79 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
     Mutex listenMutex = Mutex();
 
-    socket.listen((Uint8List data) async {
-      await listenMutex.acquire();
-      try {
-        if (authenticated) {
-          sc.add(data);
-        } else {
-          // TODO maximum buffer size check to prevent dos attacks
-          // TODO unit test for same
-          buffer.addAll(data);
-          if (buffer.contains(10)) {
-            if (receivedChallenge) {
-              List<int> received = buffer.sublist(0, buffer.indexOf(10));
-              buffer.removeRange(0, buffer.indexOf(10) + 1);
+    socket.listen(
+      (Uint8List data) async {
+        await listenMutex.acquire();
+        try {
+          if (authenticated) {
+            sc.add(data);
+          } else {
+            // TODO maximum buffer size check to prevent dos attacks
+            // TODO unit test for same
+            buffer.addAll(data);
+            if (buffer.contains(10)) {
+              if (receivedChallenge) {
+                List<int> received = buffer.sublist(0, buffer.indexOf(10));
+                buffer.removeRange(0, buffer.indexOf(10) + 1);
 
-              // "ok" - great. Anything else - error.
-              try {
-                /// We've got the verification result from the relay
-                final verifyResult = String.fromCharCodes(received);
+                // "ok" - great. Anything else - error.
+                try {
+                  /// We've got the verification result from the relay
+                  final verifyResult = String.fromCharCodes(received);
 
-                if (verifyResult == 'ok') {
-                  if (buffer.isNotEmpty) {
-                    sc.add(Uint8List.fromList(buffer));
+                  if (verifyResult == 'ok') {
+                    if (buffer.isNotEmpty) {
+                      sc.add(Uint8List.fromList(buffer));
+                    }
+
+                    authenticated = true;
+
+                    completer.complete((true, sc.stream));
+                  } else {
+                    if (!completer.isCompleted) {
+                      completer.completeError(
+                        UnAuthenticatedException(verifyResult),
+                      );
+                    }
                   }
-
-                  authenticated = true;
-
-                  completer.complete((true, sc.stream));
-                } else {
+                } catch (e) {
                   if (!completer.isCompleted) {
-                    completer
-                        .completeError(UnAuthenticatedException(verifyResult));
+                    completer.completeError(
+                      'Error during relay authentication: $e',
+                    );
                   }
                 }
-              } catch (e) {
-                if (!completer.isCompleted) {
-                  completer
-                      .completeError('Error during relay authentication: $e');
+              } else {
+                List<int> received = buffer.sublist(0, buffer.indexOf(10));
+                buffer.removeRange(0, buffer.indexOf(10) + 1);
+
+                try {
+                  /// We've got the `$challenge\n` from relay
+                  final challenge = String.fromCharCodes(received);
+
+                  receivedChallenge = true;
+
+                  socket.writeln(responseToChallenge(challenge));
+                  await socket.flush();
+                } catch (e) {
+                  completer.completeError(
+                    'Error during relay authentication: $e',
+                  );
                 }
-              }
-            } else {
-              List<int> received = buffer.sublist(0, buffer.indexOf(10));
-              buffer.removeRange(0, buffer.indexOf(10) + 1);
-
-              try {
-                /// We've got the `$challenge\n` from relay
-                final challenge = String.fromCharCodes(received);
-
-                receivedChallenge = true;
-
-                socket.writeln(responseToChallenge(challenge));
-                await socket.flush();
-              } catch (e) {
-                completer
-                    .completeError('Error during relay authentication: $e');
               }
             }
           }
+        } finally {
+          listenMutex.release();
         }
-      } finally {
-        listenMutex.release();
-      }
-    }, onError: (Object error, StackTrace stackTrace) {
-      sc.addError(error);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        sc.addError(error);
 
-      sc.close();
-    }, onDone: () => sc.close());
+        sc.close();
+      },
+      onDone: () => sc.close(),
+    );
 
     return completer.future;
   }
@@ -212,11 +221,11 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   String responseToChallenge(String challenge) {
     /// Construct response payload
     Map envelope = {
-      'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')}
+      'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')},
     };
-    final AtSigningInput signingInput =
-        AtSigningInput(jsonEncode(envelope['p']))
-          ..signingMode = AtSigningMode.data;
+    final AtSigningInput signingInput = AtSigningInput(
+      jsonEncode(envelope['p']),
+    )..signingMode = AtSigningMode.data;
     final AtSigningResult sr = _atChops.sign(signingInput);
     final String signature = sr.result.toString();
     envelope['s'] = signature;
@@ -230,14 +239,20 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     final InitialisationVector iv = AtChopsUtil.generateRandomIV(16);
     final ea = AESEncryptionAlgo(AESKey(relayAuthAesKey));
     final String envelopeEncrypted64 = _atChops
-        .encryptString(envelope64, EncryptionKeyType.aes256,
-            encryptionAlgorithm: ea, iv: iv)
+        .encryptString(
+          envelope64,
+          EncryptionKeyType.aes256,
+          encryptionAlgorithm: ea,
+          iv: iv,
+        )
         .result;
 
-    String authPayload64 = base64Encode(jsonEncode({
-      'iv': base64Encode(iv.ivBytes),
-      'e': envelopeEncrypted64,
-    }).codeUnits);
+    String authPayload64 = base64Encode(
+      jsonEncode({
+        'iv': base64Encode(iv.ivBytes),
+        'e': envelopeEncrypted64,
+      }).codeUnits,
+    );
 
     return '$sessionId:$authPayload64';
   }

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
-
 class NPAAuthCheckRequest {
+  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
   final String daemonAtsign;
   final String daemonDeviceName;
   final String daemonDeviceGroupName;
@@ -25,17 +25,19 @@ class NPAAuthCheckRequest {
   }
 
   Map<String, dynamic> toJson() => {
-        'daemonAtsign': daemonAtsign,
-        'daemonDeviceName': daemonDeviceName,
-        'daemonDeviceGroupName': daemonDeviceGroupName,
-        'clientAtsign': clientAtsign,
-      };
+    'daemonAtsign': daemonAtsign,
+    'daemonDeviceName': daemonDeviceName,
+    'daemonDeviceGroupName': daemonDeviceGroupName,
+    'clientAtsign': clientAtsign,
+  };
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());
 }
 
 class NPAAuthCheckResponse {
+  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
   final bool authorized;
   final String? message;
   final List<String> permitOpen;
@@ -48,16 +50,17 @@ class NPAAuthCheckResponse {
 
   static NPAAuthCheckResponse fromJson(Map<String, dynamic> json) {
     return NPAAuthCheckResponse(
-        authorized: json['authorized'],
-        message: json['message'],
-        permitOpen: List<String>.from(json['permitOpen']));
+      authorized: json['authorized'],
+      message: json['message'],
+      permitOpen: List<String>.from(json['permitOpen']),
+    );
   }
 
   Map<String, dynamic> toJson() => {
-        'authorized': authorized,
-        'message': message,
-        'permitOpen': permitOpen,
-      };
+    'authorized': authorized,
+    'message': message,
+    'permitOpen': permitOpen,
+  };
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());

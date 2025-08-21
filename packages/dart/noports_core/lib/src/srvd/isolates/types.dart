@@ -26,21 +26,13 @@ class IIRequest {
   final String type;
   final dynamic payload;
 
-  IIRequest({
-    required this.id,
-    required this.type,
-    required this.payload,
-  });
+  IIRequest({required this.id, required this.type, required this.payload});
 
-  factory IIRequest.create(
-    String type,
-    dynamic payload,
-  ) =>
-      IIRequest(
-        id: DateTime.now().microsecondsSinceEpoch,
-        type: type,
-        payload: payload,
-      );
+  factory IIRequest.create(String type, dynamic payload) => IIRequest(
+    id: DateTime.now().microsecondsSinceEpoch,
+    type: type,
+    payload: payload,
+  );
 
   @override
   String toString() {
@@ -54,11 +46,7 @@ class IIResponse {
   final bool isError;
   final dynamic payload;
 
-  IIResponse({
-    required this.id,
-    required this.isError,
-    required this.payload,
-  });
+  IIResponse({required this.id, required this.isError, required this.payload});
 
   @override
   String toString() {

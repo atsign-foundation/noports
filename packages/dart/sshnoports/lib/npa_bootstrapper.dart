@@ -22,14 +22,14 @@ Future<void> run(
       handler: handler,
       daemonAtsigns: daemonAtsigns,
       atClientGenerator: (NPAParams p) => createAtClientCli(
-        atsign: p.authorizerAtsign,
+        atsign: p.policyAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
         storagePath: standardAtClientStoragePath(
             baseDir: p.homeDirectory,
-            atSign: p.authorizerAtsign,
+            atSign: p.policyAtsign,
             progName: '.${DefaultArgs.namespace}',
             uniqueID: 'single'),
       ),

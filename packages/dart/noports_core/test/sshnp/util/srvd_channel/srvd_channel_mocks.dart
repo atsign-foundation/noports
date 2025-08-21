@@ -36,12 +36,11 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
     int maxTries,
-  }) _notify;
+  })
+  _notify;
 
-  final Stream<AtNotification> Function({
-    String? regex,
-    bool shouldDecrypt,
-  }) _subscribe;
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})
+  _subscribe;
 
   StubbedSrvdChannel({
     required super.atClient,
@@ -55,13 +54,15 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
       required bool waitForFinalDeliveryStatus,
       required Duration ttln,
       int maxTries,
-    }) notify,
+    })
+    notify,
     required Stream<AtNotification> Function({
       String? regex,
       bool shouldDecrypt,
-    }) subscribe,
-  })  : _notify = notify,
-        _subscribe = subscribe;
+    })
+    subscribe,
+  }) : _notify = notify,
+       _subscribe = subscribe;
 
   @override
   Future<NotificationResult> notify(

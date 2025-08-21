@@ -1,21 +1,22 @@
 import 'package:noports_core/srv.dart';
 
-typedef SrvGenerator<T> = Srv<T> Function(
-  String,
-  int, {
-  int? localPort,
-  bool? bindLocalPort,
-  String? localHost,
-  required RelayAuthenticator? relayAuthenticator,
-  String? aesC2D,
-  String? ivC2D,
-  String? aesD2C,
-  String? ivD2C,
-  bool multi,
-  bool detached,
-  Duration timeout,
-  Duration? controlChannelHeartbeat,
-});
+typedef SrvGenerator<T> =
+    Srv<T> Function(
+      String,
+      int, {
+      int? localPort,
+      bool? bindLocalPort,
+      String? localHost,
+      required RelayAuthenticator? relayAuthenticator,
+      String? aesC2D,
+      String? ivC2D,
+      String? aesD2C,
+      String? ivD2C,
+      bool multi,
+      bool detached,
+      Duration timeout,
+      Duration? controlChannelHeartbeat,
+    });
 
 enum SupportedSshClient {
   openssh(cliArg: 'openssh'),
@@ -60,5 +61,5 @@ enum RelayAuthMode {
   payload,
 
   /// encrypted signed response to explicit challenge
-  escr;
+  escr,
 }

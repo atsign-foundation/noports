@@ -11,16 +11,18 @@ export 'package:file/file.dart';
 export 'package:file/local.dart' show LocalFileSystem;
 
 @internal
-typedef ProcessRunner = Future<ProcessResult> Function(
-  String executable,
-  List<String> arguments, {
-  String? workingDirectory,
-});
+typedef ProcessRunner =
+    Future<ProcessResult> Function(
+      String executable,
+      List<String> arguments, {
+      String? workingDirectory,
+    });
 
 @internal
-typedef ProcessStarter = Future<Process> Function(
-  String executable,
-  List<String> arguments, {
-  bool runInShell,
-  ProcessStartMode mode,
-});
+typedef ProcessStarter =
+    Future<Process> Function(
+      String executable,
+      List<String> arguments, {
+      bool runInShell,
+      ProcessStartMode mode,
+    });

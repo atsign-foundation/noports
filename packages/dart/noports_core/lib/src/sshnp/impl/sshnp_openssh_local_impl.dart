@@ -63,22 +63,24 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
-          atClient,
-          SshnpSessionRequest(
-            direct: true,
-            sessionId: sessionId,
-            host: srvdChannel.rvdHost,
-            port: srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            relayAuthMode: params.relayAuthMode,
-            relayAuthAesKey: srvdChannel.relayAuthAesKey,
-            clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-            twinKeys: sshnpdChannel.twinKeys,
-          ).toJson()),
+        atClient,
+        SshnpSessionRequest(
+          direct: true,
+          sessionId: sessionId,
+          host: srvdChannel.rvdHost,
+          port: srvdChannel.daemonPort,
+          authenticateToRvd: params.authenticateDeviceToRvd,
+          relayAuthMode: params.relayAuthMode,
+          relayAuthAesKey: srvdChannel.relayAuthAesKey,
+          clientNonce: srvdChannel.clientNonce,
+          rvdNonce: srvdChannel.rvdNonce,
+          encryptRvdTraffic: params.encryptRvdTraffic,
+          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+          clientEphemeralPKType: params.sessionKPType.name,
+          twinKeys: sshnpdChannel.twinKeys,
+          relayAtsign: params.srvdAtSign,
+        ).toJson(),
+      ),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
@@ -168,8 +170,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
       localPort: localPort,
       host: 'localhost',
       remoteUsername: remoteUsername,
-      localSshOptions:
-          (params.addForwardsToTunnel) ? null : params.localSshOptions,
+      localSshOptions: (params.addForwardsToTunnel)
+          ? null
+          : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );

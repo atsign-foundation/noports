@@ -18,7 +18,7 @@ enum RAVEReason {
   dataMismatch,
   decryptionFailed,
   signatureVerificationFailed,
-  randomlyInjectedFailure
+  randomlyInjectedFailure,
 }
 
 class RAVE implements Exception {
@@ -98,8 +98,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   final RelayAuthVerifyHelper helper;
 
-  final String challenge =
-      AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+  final String challenge = AtChopsUtil.generateSymmetricKey(
+    EncryptionKeyType.aes256,
+  ).key;
 
   /// If [randomlyFail] > 0 && random.nextInt([randomlyFail]) == 0
   /// then fail the verification
@@ -133,7 +134,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     String abbreviated = response;
     if (response.length > 40) {
-      abbreviated = '${response.substring(0, 40)}'
+      abbreviated =
+          '${response.substring(0, 40)}'
           '...[${response.length - 40} chars]';
     }
 
@@ -221,9 +223,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.decryptionFailed,
       );
     }
-    String envelopeJson = String.fromCharCodes(
-      base64Decode(envelope64),
-    );
+    String envelopeJson = String.fromCharCodes(base64Decode(envelope64));
 
     /// Expect decrypted auth envelope to look like this:
     ///   ```
@@ -274,8 +274,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    atSign =
-        publicSigningKeyUri.substring(publicSigningKeyUri.lastIndexOf('@'));
+    atSign = publicSigningKeyUri.substring(
+      publicSigningKeyUri.lastIndexOf('@'),
+    );
 
     if (!publicSigningKeyUri
         .substring(0, publicSigningKeyUri.lastIndexOf('@'))
@@ -287,21 +288,25 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
-    String publicSigningKey =
-        await helper.lookup(sessionId!, publicSigningKeyUri);
+    String publicSigningKey = await helper.lookup(
+      sessionId!,
+      publicSigningKeyUri,
+    );
 
     /// Verify the signature of the payload
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
 
-    AtSigningVerificationInput input = AtSigningVerificationInput(
-        jsonEncode(signedPayload),
-        base64Decode(envelope['s']),
-        publicSigningKey)
-      ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-      ..signingMode = AtSigningMode.data
-      ..signingAlgoType = signingAlgo
-      ..hashingAlgoType = hashingAlgo;
+    AtSigningVerificationInput input =
+        AtSigningVerificationInput(
+            jsonEncode(signedPayload),
+            base64Decode(envelope['s']),
+            publicSigningKey,
+          )
+          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+          ..signingMode = AtSigningMode.data
+          ..signingAlgoType = signingAlgo
+          ..hashingAlgoType = hashingAlgo;
 
     AtSigningResult atSigningResult = atChops.verify(input);
     bool verified = atSigningResult.result == true;
@@ -329,127 +334,140 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     Mutex listenMutex = Mutex();
 
-    socket.listen((Uint8List data) async {
-      await listenMutex.acquire();
-      try {
-        if (authenticated) {
-          if (!sc.isClosed) {
-            try {
-              sc.add(data);
-            } catch (err) {
-              logger.shout('post-verify sc.add failed with $err');
+    socket.listen(
+      (Uint8List data) async {
+        await listenMutex.acquire();
+        try {
+          if (authenticated) {
+            if (!sc.isClosed) {
+              try {
+                sc.add(data);
+              } catch (err) {
+                logger.shout('post-verify sc.add failed with $err');
+              }
             }
-          }
-        } else {
-          if (buffer.length + data.length >
-              RelayAuthVerifier.maxAuthBufferLength) {
-            throw RAVE(
-              'Too much data from client'
-              ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
-              RAVEReason.malformedChallengeResponse,
-            );
-          }
-          buffer.addAll(data);
-          if (buffer.contains(10)) {
-            logger.finer('original buffer length ${buffer.length}');
+          } else {
+            if (buffer.length + data.length >
+                RelayAuthVerifier.maxAuthBufferLength) {
+              throw RAVE(
+                'Too much data from client'
+                ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
+                RAVEReason.malformedChallengeResponse,
+              );
+            }
+            buffer.addAll(data);
+            if (buffer.contains(10)) {
+              logger.finer('original buffer length ${buffer.length}');
 
-            List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-            logger.finer('authBuffer length ${authBuffer.length}');
+              List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
+              logger.finer('authBuffer length ${authBuffer.length}');
 
-            buffer.removeRange(0, buffer.indexOf(10) + 1);
-            logger.finer('remaining buffer length ${buffer.length}');
+              buffer.removeRange(0, buffer.indexOf(10) + 1);
+              logger.finer('remaining buffer length ${buffer.length}');
 
-            try {
-              /// 2. Receives `${sessionId}:${auth-payload-as-base64}\n` from client
-              final response = String.fromCharCodes(authBuffer).trim();
-              for (final cu in response.codeUnits) {
-                if (isUnprintable(cu)) {
-                  throw RAVE('received unprintable code units',
-                      RAVEReason.malformedChallengeResponse);
+              try {
+                /// 2. Receives `${sessionId}:${auth-payload-as-base64}\n` from client
+                final response = String.fromCharCodes(authBuffer).trim();
+                for (final cu in response.codeUnits) {
+                  if (isUnprintable(cu)) {
+                    throw RAVE(
+                      'received unprintable code units',
+                      RAVEReason.malformedChallengeResponse,
+                    );
+                  }
                 }
-              }
-              logger.finer('received data: $response');
+                logger.finer('received data: $response');
 
-              bool verified = await verifyChallengeResponse(response);
+                bool verified = await verifyChallengeResponse(response);
 
-              if (!verified) {
-                throw RAVE(
-                  '(but verifyChallengeResponse did not throw an exception)',
-                  RAVEReason.signatureVerificationFailed,
+                if (!verified) {
+                  throw RAVE(
+                    '(but verifyChallengeResponse did not throw an exception)',
+                    RAVEReason.signatureVerificationFailed,
+                  );
+                }
+
+                if (randomlyFail > 0 && random.nextInt(randomlyFail) == 0) {
+                  throw RAVE(
+                    'Randomly injected failure',
+                    RAVEReason.randomlyInjectedFailure,
+                  );
+                }
+
+                if (randomlyAddLatency > 0 &&
+                    random.nextInt(randomlyAddLatency) == 0) {
+                  final int l = 100 + random.nextInt(3900);
+                  logger.shout('Injecting random latency of $l ms');
+                  await Future.delayed(Duration(milliseconds: l));
+                }
+
+                logger.info('Verification success');
+
+                /// If all successful
+                /// - send 'ok' to client
+                /// - return (true, dataStream)
+                socket.writeln('ok');
+                await socket.flush();
+
+                authenticated = true;
+                if (!completer.isCompleted) {
+                  completer.complete((true, sc.stream));
+                } else {
+                  if (!sc.isClosed) {
+                    sc.addError(
+                      'Verify succeeded but'
+                      ' completer already completed!!!',
+                    );
+                  }
+                }
+
+                if (buffer.isNotEmpty) {
+                  if (!sc.isClosed) {
+                    try {
+                      sc.add(Uint8List.fromList(buffer));
+                    } catch (err) {
+                      logger.shout('finishing verify: sc.add failed with $err');
+                    }
+                  }
+                }
+              } catch (e) {
+                logger.shout(
+                  'verification FAILED with exception :'
+                  ' $e',
                 );
-              }
 
-              if (randomlyFail > 0 && random.nextInt(randomlyFail) == 0) {
-                throw RAVE('Randomly injected failure',
-                    RAVEReason.randomlyInjectedFailure);
-              }
-
-              if (randomlyAddLatency > 0 &&
-                  random.nextInt(randomlyAddLatency) == 0) {
-                final int l = 100 + random.nextInt(3900);
-                logger.shout('Injecting random latency of $l ms');
-                await Future.delayed(Duration(milliseconds: l));
-              }
-
-              logger.info('Verification success');
-
-              /// If all successful
-              /// - send 'ok' to client
-              /// - return (true, dataStream)
-              socket.writeln('ok');
-              await socket.flush();
-
-              authenticated = true;
-              if (!completer.isCompleted) {
-                completer.complete((true, sc.stream));
-              } else {
-                if (!sc.isClosed) {
-                  sc.addError('Verify succeeded but'
-                      ' completer already completed!!!');
-                }
-              }
-
-              if (buffer.isNotEmpty) {
-                if (!sc.isClosed) {
+                if (!completer.isCompleted) {
+                  // TODO Make this a feature flag to see the exception or not
+                  socket.writeln('Socket auth failed');
                   try {
-                    sc.add(Uint8List.fromList(buffer));
-                  } catch (err) {
-                    logger.shout('finishing verify: sc.add failed with $err');
+                    await socket.flush();
+                    socket.destroy();
+                  } catch (_) {
+                  } finally {
+                    completer.completeError(
+                      'Error during socket authentication: $e',
+                    );
                   }
                 }
               }
-            } catch (e) {
-              logger.shout('verification FAILED with exception :'
-                  ' $e');
-
-              if (!completer.isCompleted) {
-                // TODO Make this a feature flag to see the exception or not
-                socket.writeln('Socket auth failed');
-                try {
-                  await socket.flush();
-                  socket.destroy();
-                } catch (_) {
-                } finally {
-                  completer
-                      .completeError('Error during socket authentication: $e');
-                }
-              }
             }
           }
+        } finally {
+          listenMutex.release();
         }
-      } finally {
-        listenMutex.release();
-      }
-    }, onError: (Object error, StackTrace stackTrace) {
-      if (!sc.isClosed) {
-        sc.addError(error);
-        sc.close();
-      }
-    }, onDone: () {
-      if (!sc.isClosed) {
-        sc.close();
-      }
-    });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!sc.isClosed) {
+          sc.addError(error);
+          sc.close();
+        }
+      },
+      onDone: () {
+        if (!sc.isClosed) {
+          sc.close();
+        }
+      },
+    );
     return completer.future;
   }
 }
@@ -521,136 +539,160 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     StreamController<Uint8List> sc = StreamController();
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
-    socket.listen((Uint8List data) {
-      if (authenticated) {
-        if (!sc.isClosed) {
-          try {
-            sc.add(data);
-          } catch (err) {
-            logger.shout('post-verify sc.add failed with $err');
-          }
-        }
-      } else {
-        if (buffer.length + data.length >
-            RelayAuthVerifier.maxAuthBufferLength) {
-          throw RAVE(
-            'Too much data from client'
-            ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
-            RAVEReason.malformedChallengeResponse,
-          );
-        }
-        buffer.addAll(data);
-        if (buffer.contains(10)) {
-          logger.finer('original buffer length ${buffer.length}');
-
-          List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-          logger.finer('authBuffer length ${authBuffer.length}');
-
-          buffer.removeRange(0, buffer.indexOf(10) + 1);
-          logger.finer('remaining buffer length ${buffer.length}');
-
-          try {
-            final String message;
+    socket.listen(
+      (Uint8List data) {
+        if (authenticated) {
+          if (!sc.isClosed) {
             try {
-              message = String.fromCharCodes(authBuffer);
-            } catch (e) {
-              throw RAVE(
-                'Caught ${e.runtimeType}'
-                ' while creating String from received authBuffer',
-                RAVEReason.malformedChallengeResponse,
+              sc.add(data);
+            } catch (err) {
+              logger.shout('post-verify sc.add failed with $err');
+            }
+          }
+        } else {
+          if (buffer.length + data.length >
+              RelayAuthVerifier.maxAuthBufferLength) {
+            throw RAVE(
+              'Too much data from client'
+              ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
+              RAVEReason.malformedChallengeResponse,
+            );
+          }
+          buffer.addAll(data);
+          if (buffer.contains(10)) {
+            logger.finer('original buffer length ${buffer.length}');
+
+            List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
+            logger.finer('authBuffer length ${authBuffer.length}');
+
+            buffer.removeRange(0, buffer.indexOf(10) + 1);
+            logger.finer('remaining buffer length ${buffer.length}');
+
+            try {
+              final String message;
+              try {
+                message = String.fromCharCodes(authBuffer);
+              } catch (e) {
+                throw RAVE(
+                  'Caught ${e.runtimeType}'
+                  ' while creating String from received authBuffer',
+                  RAVEReason.malformedChallengeResponse,
+                );
+              }
+              logger.finer('$tag received data: $message');
+              var envelope = jsonDecode(message);
+              logger.finer('$tag decoded JSON message OK');
+
+              final hashingAlgo = HashingAlgoType.values.byName(
+                envelope['hashingAlgo'],
               );
-            }
-            logger.finer('$tag received data: $message');
-            var envelope = jsonDecode(message);
-            logger.finer('$tag decoded JSON message OK');
+              final signingAlgo = SigningAlgoType.values.byName(
+                envelope['signingAlgo'],
+              );
 
-            final hashingAlgo =
-                HashingAlgoType.values.byName(envelope['hashingAlgo']);
-            final signingAlgo =
-                SigningAlgoType.values.byName(envelope['signingAlgo']);
-
-            var payload = envelope['payload'];
-            if (payload == null || payload is! Map) {
-              if (!completer.isCompleted) {
-                completer.completeError('Received an auth signature'
-                    ' which does not include the payload');
+              var payload = envelope['payload'];
+              if (payload == null || payload is! Map) {
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    'Received an auth signature'
+                    ' which does not include the payload',
+                  );
+                }
+                return;
               }
-              return;
-            }
-            if (payload['rvdNonce'] != rvdNonce) {
-              if (!completer.isCompleted) {
-                completer.completeError(
-                    'Received rvdNonce which does not match what is expected');
+              if (payload['rvdNonce'] != rvdNonce) {
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    'Received rvdNonce which does not match what is expected',
+                  );
+                }
+                return;
               }
-              return;
-            }
 
-            AtSigningVerificationInput input = AtSigningVerificationInput(
-                dataToVerify, base64Decode(envelope['signature']), publicKey)
-              ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-              ..signingMode = AtSigningMode.data
-              ..signingAlgoType = signingAlgo
-              ..hashingAlgoType = hashingAlgo;
+              AtSigningVerificationInput input =
+                  AtSigningVerificationInput(
+                      dataToVerify,
+                      base64Decode(envelope['signature']),
+                      publicKey,
+                    )
+                    ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+                    ..signingMode = AtSigningMode.data
+                    ..signingAlgoType = signingAlgo
+                    ..hashingAlgoType = hashingAlgo;
 
-            AtChopsKeys atChopsKeys = AtChopsKeys();
-            AtChops atChops = AtChopsImpl(atChopsKeys);
-            AtSigningResult atSigningResult = atChops.verify(input);
-            bool result = atSigningResult.result;
+              AtChopsKeys atChopsKeys = AtChopsKeys();
+              AtChops atChops = AtChopsImpl(atChopsKeys);
+              AtSigningResult atSigningResult = atChops.verify(input);
+              bool result = atSigningResult.result;
 
-            if (result == false) {
-              logger.shout('$tag :'
+              if (result == false) {
+                logger.shout(
+                  '$tag :'
                   ' verification FAILURE :'
-                  ' ${atSigningResult.result}');
-              if (!completer.isCompleted) {
-                completer.completeError(
-                    'Signature verification failed. Signatures did not match.');
+                  ' ${atSigningResult.result}',
+                );
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    'Signature verification failed. Signatures did not match.',
+                  );
+                }
+                return;
               }
-              return;
-            }
 
-            logger.info('$tag :'
+              logger.info(
+                '$tag :'
                 ' verification SUCCESS :'
-                ' ${atSigningResult.result}');
-            authenticated = true;
-            if (!completer.isCompleted) {
-              completer.complete((true, sc.stream));
-            } else {
-              if (!sc.isClosed) {
-                sc.addError('Verify succeeded but'
-                    ' completer already completed!!!');
-              }
-            }
-
-            if (buffer.isNotEmpty) {
-              if (!sc.isClosed) {
-                try {
-                  sc.add(Uint8List.fromList(buffer));
-                } catch (err) {
-                  logger.shout('finishing verify: sc.add failed with $err');
+                ' ${atSigningResult.result}',
+              );
+              authenticated = true;
+              if (!completer.isCompleted) {
+                completer.complete((true, sc.stream));
+              } else {
+                if (!sc.isClosed) {
+                  sc.addError(
+                    'Verify succeeded but'
+                    ' completer already completed!!!',
+                  );
                 }
               }
-            }
-          } catch (e) {
-            logger.shout('$tag :'
-                ' verification FAILED with exception :'
-                ' $e');
 
-            if (!completer.isCompleted) {
-              completer.completeError('Error during socket authentication: $e');
+              if (buffer.isNotEmpty) {
+                if (!sc.isClosed) {
+                  try {
+                    sc.add(Uint8List.fromList(buffer));
+                  } catch (err) {
+                    logger.shout('finishing verify: sc.add failed with $err');
+                  }
+                }
+              }
+            } catch (e) {
+              logger.shout(
+                '$tag :'
+                ' verification FAILED with exception :'
+                ' $e',
+              );
+
+              if (!completer.isCompleted) {
+                completer.completeError(
+                  'Error during socket authentication: $e',
+                );
+              }
             }
           }
         }
-      }
-    }, onError: (Object error, StackTrace stackTrace) {
-      if (!sc.isClosed) {
-        sc.addError(error);
-        sc.close();
-      }
-    }, onDone: () {
-      if (!sc.isClosed) {
-        sc.close();
-      }
-    });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!sc.isClosed) {
+          sc.addError(error);
+          sc.close();
+        }
+      },
+      onDone: () {
+        if (!sc.isClosed) {
+          sc.close();
+        }
+      },
+    );
     return completer.future;
   }
 }

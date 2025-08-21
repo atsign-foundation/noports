@@ -126,5 +126,9 @@ void main(List<String> args) async {
     }
   });
 
+  cli.atClient.notificationService.subscribe(regex: '__logging__\\.sshnp@', shouldDecrypt: false).listen((n) {
+    stderr.writeln('LOG: ${n.from} ${n.value}');
+  });
+
   await app.listen(bindPort, bindIp);
 }

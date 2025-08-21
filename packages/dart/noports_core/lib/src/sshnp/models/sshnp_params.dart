@@ -123,15 +123,19 @@ abstract class ClientParamsBase implements ClientParams {
       throw ArgumentError(invalidDeviceNameMsg);
     }
     if (only443 && relayAuthMode != RelayAuthMode.escr) {
-      throw ArgumentError('You must use'
-          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
-          ' when using the "${SshnpArg.only443Arg.name}" flag');
+      throw ArgumentError(
+        'You must use'
+        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
+      );
     }
     if (relayAuthMode == RelayAuthMode.escr &&
         (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
-      throw ArgumentError('Both client and device need to authenticate to the'
-          ' relay when using'
-          ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"');
+      throw ArgumentError(
+        'Both client and device need to authenticate to the'
+        ' relay when using'
+        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"',
+      );
     }
   }
 }
@@ -275,8 +279,10 @@ class SshnpParams extends ClientParamsBase
 
   /// Merge an SshnpPartialParams objects into an SshnpParams
   /// Params in params2 take precedence over params1
-  factory SshnpParams.merge(SshnpParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpParams.merge(
+    SshnpParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -327,10 +333,12 @@ class SshnpParams extends ClientParamsBase
       // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
       partial.sshnpdAtSign ??
           (throw ArgumentError(
-              'Option to is mandatory, unless list-devices is passed.'));
+            'Option to is mandatory, unless list-devices is passed.',
+          ));
       partial.srvdAtSign ??
           (throw ArgumentError(
-              'srvdAtSign is mandatory, unless list-devices is passed.'));
+            'srvdAtSign is mandatory, unless list-devices is passed.',
+          ));
     }
 
     String device = partial.device ?? DefaultSshnpArgs.device;
@@ -358,9 +366,11 @@ class SshnpParams extends ClientParamsBase
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      authenticateClientToRvd: partial.authenticateClientToRvd ??
+      authenticateClientToRvd:
+          partial.authenticateClientToRvd ??
           DefaultArgs.authenticateClientToRvd,
-      authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
+      authenticateDeviceToRvd:
+          partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
       relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
       encryptRvdTraffic:
@@ -373,7 +383,8 @@ class SshnpParams extends ClientParamsBase
 
   factory SshnpParams.fromConfigLines(String profileName, List<String> lines) {
     return SshnpParams.fromPartial(
-        SshnpPartialParams.fromConfigLines(profileName, lines));
+      SshnpPartialParams.fromConfigLines(profileName, lines),
+    );
   }
 
   List<String> toConfigLines({ParserType parserType = ParserType.configFile}) {
@@ -497,8 +508,10 @@ class SshnpPartialParams {
 
   /// Merge two SshnpPartialParams objects together
   /// Params in params2 take precedence over params1
-  factory SshnpPartialParams.merge(SshnpPartialParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpPartialParams.merge(
+    SshnpPartialParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -536,13 +549,16 @@ class SshnpPartialParams {
 
   factory SshnpPartialParams.fromFile(String fileName) {
     var args = ConfigFileRepository.parseConfigFile(fileName);
-    args[SshnpArg.profileNameArg.name] =
-        ConfigFileRepository.toProfileName(fileName);
+    args[SshnpArg.profileNameArg.name] = ConfigFileRepository.toProfileName(
+      fileName,
+    );
     return SshnpPartialParams.fromArgMap(args);
   }
 
   factory SshnpPartialParams.fromConfigLines(
-      String profileName, List<String> lines) {
+    String profileName,
+    List<String> lines,
+  ) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
     args[SshnpArg.profileNameArg.name] = profileName;
     return SshnpPartialParams.fromArgMap(args);
@@ -582,7 +598,8 @@ class SshnpPartialParams {
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(
-              args[SshnpArg.sshAlgorithmArg.name]),
+              args[SshnpArg.sshAlgorithmArg.name],
+            ),
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
@@ -590,16 +607,20 @@ class SshnpPartialParams {
           ? null
           : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
-          seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
-              DefaultArgs.daemonPingTimeoutSeconds),
+        seconds:
+            args[SshnpArg.daemonPingTimeoutArg.name] ??
+            DefaultArgs.daemonPingTimeoutSeconds,
+      ),
       only443: args[SshnpArg.only443Arg.name],
     );
   }
 
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
-  factory SshnpPartialParams.fromArgList(List<String> args,
-      {ParserType parserType = ParserType.all}) {
+  factory SshnpPartialParams.fromArgList(
+    List<String> args, {
+    ParserType parserType = ParserType.all,
+  }) {
     var params = SshnpPartialParams.empty();
     var parser = SshnpArg.createArgParser(
       withDefaults: false,

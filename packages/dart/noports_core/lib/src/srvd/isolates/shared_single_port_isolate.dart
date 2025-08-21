@@ -8,24 +8,10 @@ import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
+import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
-
-class SessionInfo {
-  final SrvdSessionParams params;
-  final SocketConnector connector;
-  final Map<String, String> lookups = {};
-
-  String get atSignA => params.atSignA!;
-
-  String get atSignB => params.atSignB!;
-
-  SessionInfo(
-    this.params,
-    this.connector,
-  );
-}
 
 /// - Binds to the required port (in [run])
 /// - [startSession] handles requests from the main isolate to start sessions
@@ -72,7 +58,8 @@ class SinglePortWorker extends RelayWorker {
       return si.lookups[atKey]!;
     } else {
       final resp = await rpcToMain(
-          IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}));
+        IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}),
+      );
       si.lookups[atKey] = resp.payload;
       return resp.payload;
     }
@@ -87,8 +74,10 @@ class SinglePortWorker extends RelayWorker {
   Future<String> getRelayAuthAesKey(String sessionId) async {
     SessionInfo? si = sessions[sessionId];
     if (si == null) {
-      throw StateError('Cannot getRelayAuthAesKey'
-          ' - session $sessionId has ended');
+      throw StateError(
+        'Cannot getRelayAuthAesKey'
+        ' - session $sessionId has ended',
+      );
     }
     return si.params.relayAuthAesKey!;
   }
@@ -140,20 +129,26 @@ class SinglePortWorker extends RelayWorker {
 
       bool authenticated;
       Stream<Uint8List>? verifiedSocketStream;
-      (authenticated, verifiedSocketStream) =
-          await rav.verifySocketAuth(socket).timeout(Duration(seconds: 10));
+      (authenticated, verifiedSocketStream) = await rav
+          .verifySocketAuth(socket)
+          .timeout(Duration(seconds: 10));
       if (authenticated) {
-        logger.info('Authenticated socket connection verified'
-            ' for ${rav.atSign}'
-            ' in session ${rav.sessionId!}');
+        logger.info(
+          'Authenticated socket connection verified'
+          ' for ${rav.atSign}'
+          ' in session ${rav.sessionId!}',
+        );
       } else {
-        throw Exception('verifySocketAuth did not throw an exception,'
-            ' but authenticated is false');
+        throw Exception(
+          'verifySocketAuth did not throw an exception,'
+          ' but authenticated is false',
+        );
       }
 
       if (rav.sessionId == null || rav.atSign == null || rav.isSideA == null) {
         throw Exception(
-            'Verified? But sessionId == ${rav.sessionId} and atSign == ${rav.atSign} and isSideA == ${rav.isSideA}');
+          'Verified? But sessionId == ${rav.sessionId} and atSign == ${rav.atSign} and isSideA == ${rav.isSideA}',
+        );
       }
       String sessionId = rav.sessionId!;
       String atSign = rav.atSign!;
@@ -162,17 +157,21 @@ class SinglePortWorker extends RelayWorker {
       }
       SessionInfo si = sessions[sessionId]!;
       if (atSign != si.atSignA && atSign != si.atSignB) {
-        throw Exception('Connection from $atSign'
-            ' which is not one of the atSigns (${si.atSignA}, ${si.atSignB})'
-            ' for this session $sessionId');
+        throw Exception(
+          'Connection from $atSign'
+          ' which is not one of the atSigns (${si.atSignA}, ${si.atSignB})'
+          ' for this session $sessionId',
+        );
       }
       Side side = Side(socket, rav.isSideA!);
 
       side.stream = verifiedSocketStream!;
 
-      unawaited(si.connector.handleSingleConnection(side).catchError((err) {
-        side.socket.destroy();
-      }));
+      unawaited(
+        si.connector!.handleSingleConnection(side).catchError((err) {
+          side.socket.destroy();
+        }),
+      );
     } catch (e) {
       logger.info('Error "$e" while authenticating socket from $sockStr');
       try {
@@ -206,14 +205,18 @@ class SinglePortWorker extends RelayWorker {
     logger.info('Starting socket connector session for $params');
 
     if (params.relayAuthMode == RelayAuthMode.payload) {
-      logger.shout('relayAuthMode may not be "payload".'
-          ' Invalid params $params');
+      logger.shout(
+        'relayAuthMode may not be "payload".'
+        ' Invalid params $params',
+      );
       return;
     }
 
     if (!(params.authenticateSocketA && params.authenticateSocketB)) {
-      logger.shout('Both sides are required to authenticate;'
-          ' Invalid params $params');
+      logger.shout(
+        'Both sides are required to authenticate;'
+        ' Invalid params $params',
+      );
       return;
     }
 
@@ -232,14 +235,19 @@ class SinglePortWorker extends RelayWorker {
     );
 
     sessions[params.sessionId] = SessionInfo(
-      params,
-      connector,
+      params: params,
+      connector: connector,
     );
 
     // When the session ends, we want to clean it up
-    unawaited(connector.done.whenComplete(() {
-      logger.shout('sc.done for ${params.sessionId}');
-      sessions.remove(params.sessionId);
-    }));
+    unawaited(
+      connector.done.whenComplete(() {
+        logger.shout('sc.done for ${params.sessionId}');
+        sessions.remove(params.sessionId);
+        toMain.send(
+          IIRequest.create('sessionComplete', {'sessionId': params.sessionId}),
+        );
+      }),
+    );
   }
 }

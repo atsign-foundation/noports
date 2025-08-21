@@ -31,25 +31,25 @@ void main() {
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
     notifyInvocation() => notifyStub(
-          any(),
-          any(),
-          checkForFinalDeliveryStatus:
-              any(named: 'checkForFinalDeliveryStatus'),
-          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
-          ttln: any(named: 'ttln'),
-        );
+      any(),
+      any(),
+      checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+      waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+      ttln: any(named: 'ttln'),
+    );
     subscribeInvocation() => subscribeStub(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
+      regex: any(named: 'regex'),
+      shouldDecrypt: any(named: 'shouldDecrypt'),
+    );
     payloadInvocation() => payloadStub(any());
     String device = 'myDevice';
 
     setUp(() {
       mockAtClient = MockAtClient();
       mockNotificationService = MockNotificationService();
-      when(() => mockAtClient.notificationService)
-          .thenReturn(mockNotificationService);
+      when(
+        () => mockAtClient.notificationService,
+      ).thenReturn(mockNotificationService);
       mockParams = MockSshnpParams();
       when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
@@ -87,8 +87,9 @@ void main() {
     whenInitialization() {
       when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
-      when(subscribeInvocation)
-          .thenAnswer((_) => notificationStreamController.stream);
+      when(
+        subscribeInvocation,
+      ).thenAnswer((_) => notificationStreamController.stream);
     }
 
     test('Initialization', () async {
@@ -121,10 +122,12 @@ void main() {
         when(() => mockParams.sshnpdAtSign).thenReturn('@device');
         when(() => mockParams.clientAtSign).thenReturn('@client');
 
-        when(() => mockNotificationService.subscribe(
-              regex: any(named: 'regex'),
-              shouldDecrypt: any(named: 'shouldDecrypt'),
-            )).thenAnswer((invocation) => notificationStreamController.stream);
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((invocation) => notificationStreamController.stream);
 
         Map<String, dynamic> pingResponse = {
           'devicename': device,
@@ -158,18 +161,23 @@ void main() {
             break;
         }
         registerFallbackValue(NotificationParams());
-        when(() => mockNotificationService.notify(
-              any(),
-              waitForFinalDeliveryStatus:
-                  any(named: 'waitForFinalDeliveryStatus'),
-              checkForFinalDeliveryStatus:
-                  any(named: 'checkForFinalDeliveryStatus'),
-              encryptValue: any(named: 'encryptValue'),
-              onSuccess: any(named: 'onSuccess'),
-              onError: any(named: 'onError'),
-              onSentToSecondary: any(named: 'onSentToSecondary'),
-            )).thenAnswer((i) async {
-          notificationStreamController.add(AtNotification(
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            encryptValue: any(named: 'encryptValue'),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer((i) async {
+          notificationStreamController.add(
+            AtNotification(
               '1',
               'heartbeat.device_id',
               '@device',
@@ -178,7 +186,9 @@ void main() {
               'update',
               false,
               value: jsonEncode(pingResponse),
-              operation: 'update'));
+              operation: 'update',
+            ),
+          );
           return NotificationResult();
         });
       }
@@ -236,8 +246,9 @@ void main() {
       test('handleSshnpdResponses - acknowledged with errors', () async {
         whenInitialization();
         await expectLater(stubbedSshnpdChannel.initialize(), completes);
-        when(payloadInvocation)
-            .thenAnswer((_) async => SshnpdAck.acknowledgedWithErrors);
+        when(
+          payloadInvocation,
+        ).thenAnswer((_) async => SshnpdAck.acknowledgedWithErrors);
 
         Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse();
 
@@ -265,17 +276,21 @@ void main() {
         ).called(1);
 
         expect(
-            stubbedSshnpdChannel.sshnpdAck, SshnpdAck.acknowledgedWithErrors);
+          stubbedSshnpdChannel.sshnpdAck,
+          SshnpdAck.acknowledgedWithErrors,
+        );
       }); // test handleSshnpdResponses - acknowledged with errors
 
       test('handleSshnpdResponses - not acknowledged', () async {
         whenInitialization();
         await expectLater(stubbedSshnpdChannel.initialize(), completes);
-        when(payloadInvocation)
-            .thenAnswer((_) async => SshnpdAck.notAcknowledged);
+        when(
+          payloadInvocation,
+        ).thenAnswer((_) async => SshnpdAck.notAcknowledged);
 
-        Future<SshnpdAck> ack =
-            stubbedSshnpdChannel.waitForDaemonResponse(maxWaitMillis: 300);
+        Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse(
+          maxWaitMillis: 300,
+        );
 
         // manually add a notification to the stream
         final String notificationId = Uuid().v4();
@@ -309,8 +324,9 @@ void main() {
         when(() => mockParams.sendSshPublicKey).thenReturn(true);
         MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn(TestingKeyPair.public);
+        when(
+          () => identityKeyPair.publicKeyContents,
+        ).thenReturn(TestingKeyPair.public);
 
         when(() => mockParams.clientAtSign).thenReturn('@client');
         when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -318,12 +334,15 @@ void main() {
         when(
           () => notifyStub(
             any<AtKey>(
-                that: predicate((AtKey key) => key.key == 'sshpublickey')),
+              that: predicate((AtKey key) => key.key == 'sshpublickey'),
+            ),
             any(),
-            checkForFinalDeliveryStatus:
-                any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus:
-                any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             ttln: any(named: 'ttln'),
             maxTries: any(named: 'maxTries'),
           ),
@@ -341,12 +360,15 @@ void main() {
         verify(
           () => notifyStub(
             any<AtKey>(
-                that: predicate((AtKey key) => key.key == 'sshpublickey')),
+              that: predicate((AtKey key) => key.key == 'sshpublickey'),
+            ),
             TestingKeyPair.public,
-            checkForFinalDeliveryStatus:
-                any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus:
-                any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             ttln: any(named: 'ttln'),
             maxTries: any(named: 'maxTries'),
           ),
@@ -357,8 +379,9 @@ void main() {
         when(() => mockParams.sendSshPublicKey).thenReturn(false);
         MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn(TestingKeyPair.public);
+        when(
+          () => identityKeyPair.publicKeyContents,
+        ).thenReturn(TestingKeyPair.public);
 
         verifyNever(notifyInvocation);
 
@@ -383,30 +406,33 @@ void main() {
         verifyNever(notifyInvocation);
       }); // test sharePublicKeyIfRequired - sendSshPublicKey = false
 
-      test('sharePublicKeyIfRequired - malformed public key contents',
-          () async {
-        when(() => mockParams.sendSshPublicKey).thenReturn(true);
-        MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
+      test(
+        'sharePublicKeyIfRequired - malformed public key contents',
+        () async {
+          when(() => mockParams.sendSshPublicKey).thenReturn(true);
+          MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn("I'm not an ssh public key!");
+          when(
+            () => identityKeyPair.publicKeyContents,
+          ).thenReturn("I'm not an ssh public key!");
 
-        verifyNever(notifyInvocation);
+          verifyNever(notifyInvocation);
 
-        await expectLater(
-          stubbedSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair),
-          throwsA(isA<SshnpError>()),
-        );
+          await expectLater(
+            stubbedSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair),
+            throwsA(isA<SshnpError>()),
+          );
 
-        verifyNever(notifyInvocation);
-      }); // test sharePublicKeyIfRequired - malformed public key contents
+          verifyNever(notifyInvocation);
+        },
+      ); // test sharePublicKeyIfRequired - malformed public key contents
     }); // group sharePublicKeyIfRequired
 
     group('Username resolution', () {
       test('resolveRemoteUsername - params.remoteUsername override', () async {
         when(() => mockParams.remoteUsername).thenReturn('myRemoteUsername');
-        Future<String?> remoteUsername =
-            stubbedSshnpdChannel.resolveRemoteUsername();
+        Future<String?> remoteUsername = stubbedSshnpdChannel
+            .resolveRemoteUsername();
         await expectLater(remoteUsername, completes);
         expect(await remoteUsername, 'myRemoteUsername');
       }); // test resolveRemoteUsername
@@ -424,31 +450,32 @@ void main() {
           ),
         ).thenAnswer((i) async => AtValue()..value = 'mySharedUsername');
 
-        Future<String?> remoteUsername =
-            stubbedSshnpdChannel.resolveRemoteUsername();
+        Future<String?> remoteUsername = stubbedSshnpdChannel
+            .resolveRemoteUsername();
         await expectLater(remoteUsername, completes);
         expect(await remoteUsername, 'mySharedUsername');
       }); // test resolveRemoteUsername
 
       test('resolveTunnelUsername - params.tunnelUsername override', () async {
         when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername');
-        Future<String?> tunnelUsername =
-            stubbedSshnpdChannel.resolveTunnelUsername(remoteUsername: null);
+        Future<String?> tunnelUsername = stubbedSshnpdChannel
+            .resolveTunnelUsername(remoteUsername: null);
 
         await expectLater(tunnelUsername, completes);
         expect(await tunnelUsername, 'myTunnelUsername');
       }); // test resolveTunnelUsername - params.tunnelUsername override
 
       test(
-          'resolveTunnelUsername - params.tunnelUsername override, remoteUsername string',
-          () async {
-        when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername2');
-        Future<String?> tunnelUsername = stubbedSshnpdChannel
-            .resolveTunnelUsername(remoteUsername: 'remoteUsername');
+        'resolveTunnelUsername - params.tunnelUsername override, remoteUsername string',
+        () async {
+          when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername2');
+          Future<String?> tunnelUsername = stubbedSshnpdChannel
+              .resolveTunnelUsername(remoteUsername: 'remoteUsername');
 
-        await expectLater(tunnelUsername, completes);
-        expect(await tunnelUsername, 'myTunnelUsername2');
-      }); // test resolveTunnelUsername - params.tunnelUsername override, remoteUsername string
+          await expectLater(tunnelUsername, completes);
+          expect(await tunnelUsername, 'myTunnelUsername2');
+        },
+      ); // test resolveTunnelUsername - params.tunnelUsername override, remoteUsername string
 
       test('resolveTunnelUsername - params.tunnelUsername null', () async {
         when(() => mockParams.tunnelUsername).thenReturn(null);
@@ -461,8 +488,8 @@ void main() {
 
       test('resolveTunnelUsername - both usernames null', () async {
         when(() => mockParams.tunnelUsername).thenReturn(null);
-        Future<String?> tunnelUsername =
-            stubbedSshnpdChannel.resolveTunnelUsername(remoteUsername: null);
+        Future<String?> tunnelUsername = stubbedSshnpdChannel
+            .resolveTunnelUsername(remoteUsername: null);
 
         await expectLater(tunnelUsername, completes);
         expect(await tunnelUsername, null);
@@ -512,19 +539,19 @@ void main() {
       verifyInOrder([
         () => mockAtClient.getRemoteSecondary(),
         () => remoteSecondary.executeVerb(
-              any<VerbBuilder>(
-                that: allOf(
-                  isA<ScanVerbBuilder>(),
-                  predicate(
-                    (ScanVerbBuilder builder) =>
-                        builder.sharedWith == sharedWith &&
-                        builder.sharedBy == sharedBy &&
-                        builder.regex == regex &&
-                        builder.showHiddenKeys == showHiddenKeys,
-                  ),
-                ),
+          any<VerbBuilder>(
+            that: allOf(
+              isA<ScanVerbBuilder>(),
+              predicate(
+                (ScanVerbBuilder builder) =>
+                    builder.sharedWith == sharedWith &&
+                    builder.sharedBy == sharedBy &&
+                    builder.regex == regex &&
+                    builder.showHiddenKeys == showHiddenKeys,
               ),
             ),
+          ),
+        ),
       ]);
 
       await expectLater(result, completes);

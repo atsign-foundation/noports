@@ -55,7 +55,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         assertValidMapValue(daemonResponse, 'sessionId', String);
       } catch (e) {
         logger.shout(
-            'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+        );
         return SshnpdAck.acknowledgedWithErrors;
       }
 
@@ -69,7 +70,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         );
       } catch (e) {
         logger.shout(
-            'Failed to verify signature of msg from ${params.sshnpdAtSign}');
+          'Failed to verify signature of msg from ${params.sshnpdAtSign}',
+        );
         logger.shout('Exception: $e');
         logger.shout('Notification value: ${notification.value}');
         return SshnpdAck.acknowledgedWithErrors;
@@ -95,8 +97,9 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         aesC2D = atChops
             .decryptString(aesKeyC2DEncrypted, params.sessionKPType)
             .result;
-        ivC2D =
-            atChops.decryptString(ivC2DEncrypted, params.sessionKPType).result;
+        ivC2D = atChops
+            .decryptString(ivC2DEncrypted, params.sessionKPType)
+            .result;
       }
 
       String? aesKeyD2CEncrypted = daemonResponse['aesKeyD2C'];
@@ -110,9 +113,12 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         aesD2C = atChops
             .decryptString(aesKeyD2CEncrypted, params.sessionKPType)
             .result;
-        ivD2C =
-            atChops.decryptString(ivD2CEncrypted, params.sessionKPType).result;
+        ivD2C = atChops
+            .decryptString(ivD2CEncrypted, params.sessionKPType)
+            .result;
       }
+
+      sessionLoggingAtsign = daemonResponse['sessionLoggingAtsign'];
 
       return SshnpdAck.acknowledged;
     }

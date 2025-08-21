@@ -65,8 +65,9 @@ class SrvdParams {
       rootDomain: r['root-domain'],
       perSessionStorage: r['per-session-storage'],
       bind443: r['443'],
-      localBindPort443:
-          r['443-bind-port'] == null ? 443 : int.parse(r['443-bind-port']),
+      localBindPort443: r['443-bind-port'] == null
+          ? 443
+          : int.parse(r['443-bind-port']),
       debug: r['debug'],
     );
   }
@@ -134,7 +135,8 @@ class SrvdParams {
       aliases: ['pss'],
       defaultsTo: true,
       negatable: true,
-      help: 'Use ephemeral local storage for each session.'
+      help:
+          'Use ephemeral local storage for each session.'
           ' When true, allows you to run multiple srvds concurrently on the'
           ' same host, as the same user. When false, only a single local srvd'
           ' may run concurrently on the same host as the same user.',
@@ -142,13 +144,15 @@ class SrvdParams {
     parser.addFlag(
       '443',
       defaultsTo: false,
-      help: 'Also bind to port 443, to support clients which want to connect'
+      help:
+          'Also bind to port 443, to support clients which want to connect'
           ' only to port 443 (for ... \$reasons)',
     );
     parser.addOption(
       '443-bind-port',
       mandatory: false,
-      help: 'The actual port to bind to - for example in a docker env you may'
+      help:
+          'The actual port to bind to - for example in a docker env you may'
           ' wish to forward port 443 on the host to a different port in the'
           ' container',
     );

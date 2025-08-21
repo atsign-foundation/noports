@@ -61,11 +61,7 @@ abstract interface class Npt {
     required AtClient atClient,
     Stream<String>? logStream,
   }) {
-    return _NptImpl(
-      params: params,
-      atClient: atClient,
-      logStream: logStream,
-    );
+    return _NptImpl(params: params, atClient: atClient, logStream: logStream);
   }
 
   static ArgParser createArgParser() {
@@ -91,8 +87,9 @@ abstract class NptBase implements Npt {
   @override
   final String namespace;
 
-  static final StreamingLoggingHandler _slh =
-      StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
+  static final StreamingLoggingHandler _slh = StreamingLoggingHandler(
+    AtSignLogger.defaultLoggingHandler,
+  );
 
   final StreamController<String> _progressStreamController =
       StreamController<String>.broadcast();
@@ -115,12 +112,9 @@ abstract class NptBase implements Npt {
 
   bool sendControlHeartbeats = false;
 
-  NptBase({
-    required this.params,
-    required this.atClient,
-    this.logStream,
-  })  : sessionId = Uuid().v4(),
-        namespace = '${params.device}.${DefaultArgs.namespace}' {
+  NptBase({required this.params, required this.atClient, this.logStream})
+    : sessionId = Uuid().v4(),
+      namespace = '${params.device}.${DefaultArgs.namespace}' {
     AtSignLogger.defaultLoggingHandler = _slh;
     logger.level = params.verbose ? 'info' : 'shout';
 
@@ -144,11 +138,7 @@ class _NptImpl extends NptBase
   @override
   Future get done => _completer.future;
 
-  _NptImpl({
-    required super.params,
-    required super.atClient,
-    super.logStream,
-  }) {
+  _NptImpl({required super.params, required super.atClient, super.logStream}) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
       params: params,
@@ -213,8 +203,10 @@ class _NptImpl extends NptBase
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+    featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -274,24 +266,26 @@ class _NptImpl extends NptBase
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
-          atClient,
-          NptSessionRequest(
-            sessionId: sessionId,
-            rvdHost: _srvdChannel.rvdHost,
-            rvdPort: _srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            relayAuthMode: params.relayAuthMode,
-            relayAuthAesKey: _srvdChannel.relayAuthAesKey,
-            clientNonce: _srvdChannel.clientNonce,
-            rvdNonce: _srvdChannel.rvdNonce!,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-            requestedPort: params.remotePort,
-            requestedHost: params.remoteHost,
-            timeout: params.timeout,
-            twinKeys: sshnpdChannel.twinKeys,
-          ).toJson()),
+        atClient,
+        NptSessionRequest(
+          sessionId: sessionId,
+          rvdHost: _srvdChannel.rvdHost,
+          rvdPort: _srvdChannel.daemonPort,
+          authenticateToRvd: params.authenticateDeviceToRvd,
+          relayAuthMode: params.relayAuthMode,
+          relayAuthAesKey: _srvdChannel.relayAuthAesKey,
+          clientNonce: _srvdChannel.clientNonce,
+          rvdNonce: _srvdChannel.rvdNonce!,
+          encryptRvdTraffic: params.encryptRvdTraffic,
+          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+          clientEphemeralPKType: params.sessionKPType.name,
+          requestedPort: params.remotePort,
+          requestedHost: params.remoteHost,
+          timeout: params.timeout,
+          twinKeys: sshnpdChannel.twinKeys,
+          relayAtsign: params.srvdAtSign,
+        ).toJson(),
+      ),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
@@ -304,8 +298,10 @@ class _NptImpl extends NptBase
       case SshnpdAck.acknowledged:
         sendProgress('Received response from the device daemon');
       case SshnpdAck.acknowledgedWithErrors:
-        throw SshnpError('Error response from device daemon:'
-            ' ${sshnpdChannel.errorReceived ?? ''}');
+        throw SshnpError(
+          'Error response from device daemon:'
+          ' ${sshnpdChannel.errorReceived ?? ''}',
+        );
       case SshnpdAck.notAcknowledged:
         throw SshnpError('No response from the device daemon');
     }
@@ -347,8 +343,9 @@ class _NptImpl extends NptBase
         multi: true,
         detached: true,
         timeout: params.timeout,
-        controlChannelHeartbeat:
-            sendControlHeartbeats ? params.controlChannelHeartbeat : null,
+        controlChannelHeartbeat: sendControlHeartbeats
+            ? params.controlChannelHeartbeat
+            : null,
       );
       _completer.complete();
     }
@@ -362,7 +359,8 @@ class _NptImpl extends NptBase
     sendProgress('Creating connection to socket rendezvous');
     if (!params.inline) {
       logger.warning(
-          "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.");
+        "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+      );
     }
 
     SocketConnector sc = await _srvdChannel.runSrv(
@@ -374,14 +372,17 @@ class _NptImpl extends NptBase
       multi: true,
       detached: false,
       timeout: params.timeout,
-      controlChannelHeartbeat:
-          sendControlHeartbeats ? params.controlChannelHeartbeat : null,
+      controlChannelHeartbeat: sendControlHeartbeats
+          ? params.controlChannelHeartbeat
+          : null,
     );
 
-    unawaited(sc.done.then((_) {
-      logger.info('SocketConnector done');
-      _completer.complete();
-    }));
+    unawaited(
+      sc.done.then((_) {
+        logger.info('SocketConnector done');
+        _completer.complete();
+      }),
+    );
 
     return sc;
   }

@@ -38,9 +38,13 @@ void main() {
       List<int> list = utf8.encode('$signedEnvelope\n');
       Uint8List data = Uint8List.fromList(list);
 
-      when(() => mockSocket.listen(any(),
+      when(
+        () => mockSocket.listen(
+          any(),
           onError: any(named: "onError"),
-          onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
         socketOnDataFn(data);
@@ -60,7 +64,7 @@ void main() {
       String rvdSessionNonce = DateTime.now().toIso8601String();
       Map payload = {
         'sessionId': Uuid().v4().toString(),
-        'rvdNonce': rvdSessionNonce
+        'rvdNonce': rvdSessionNonce,
       };
 
       String signedEnvelope = signPayload(atChops, payload);
@@ -80,9 +84,13 @@ void main() {
       late Function(Uint8List data) socketOnDataFn;
       MockSocket mockSocket = MockSocket();
 
-      when(() => mockSocket.listen(any(),
+      when(
+        () => mockSocket.listen(
+          any(),
           onError: any(named: "onError"),
-          onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
         socketOnDataFn(data);
@@ -122,9 +130,13 @@ void main() {
       late Function(Uint8List data) socketOnDataFn;
       MockSocket mockSocket = MockSocket();
 
-      when(() => mockSocket.listen(any(),
+      when(
+        () => mockSocket.listen(
+          any(),
           onError: any(named: "onError"),
-          onDone: any(named: "onDone"))).thenAnswer((Invocation invocation) {
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
         socketOnDataFn(data);
@@ -157,21 +169,21 @@ String signPayload(AtChops atChops, Map payload) {
   return jsonEncode(envelope);
 }
 
-bool verifySignature(
-  AtChops atChops,
-  String requestingAtsign,
-  Map envelope,
-) {
+bool verifySignature(AtChops atChops, String requestingAtsign, Map envelope) {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey;
-  AtSigningVerificationInput input = AtSigningVerificationInput(
-      jsonEncode(payload), base64Decode(signature), pk)
-    ..signingMode = AtSigningMode.data
-    ..signingAlgoType = signingAlgo
-    ..hashingAlgoType = hashingAlgo;
+  AtSigningVerificationInput input =
+      AtSigningVerificationInput(
+          jsonEncode(payload),
+          base64Decode(signature),
+          pk,
+        )
+        ..signingMode = AtSigningMode.data
+        ..signingAlgoType = signingAlgo
+        ..hashingAlgoType = hashingAlgo;
 
   AtSigningResult svr = atChops.verify(input);
   return svr.result;

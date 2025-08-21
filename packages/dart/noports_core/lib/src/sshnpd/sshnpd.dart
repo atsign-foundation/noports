@@ -85,6 +85,9 @@ abstract class Sshnpd {
   /// The version of whatever program is using this library.
   abstract final String version;
 
+  /// Sent by the policy atSign when using policy service
+  abstract String? sessionLoggingAtsign;
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,

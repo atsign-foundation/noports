@@ -2,23 +2,11 @@ import 'package:args/args.dart';
 
 import 'package:noports_core/utils.dart';
 
-enum ArgFormat {
-  option,
-  multiOption,
-  flag,
-}
+enum ArgFormat { option, multiOption, flag }
 
-enum ArgType {
-  string,
-  integer,
-}
+enum ArgType { string, integer }
 
-enum ParseWhen {
-  always,
-  commandLine,
-  configFile,
-  never,
-}
+enum ParseWhen { always, commandLine, configFile, never }
 
 const Map<ParserType, Set<ParseWhen>> _allowListMap = {
   ParserType.all: {
@@ -77,8 +65,11 @@ class SshnpArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
-  List<String> get aliasList =>
-      ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+  List<String> get aliasList => [
+    '--$name',
+    ...aliases?.map((e) => '--$e') ?? [],
+    '-$abbr',
+  ];
 
   factory SshnpArg.noArg() {
     return SshnpArg(name: '');
@@ -244,7 +235,8 @@ class SshnpArg {
   static const localPortArg = SshnpArg(
     name: 'local-port',
     abbr: 'l',
-    help: 'client-side local port for the ssh tunnel.'
+    help:
+        'client-side local port for the ssh tunnel.'
         ' If not supplied, we will ask the o/s for a spare port',
     defaultsTo: DefaultSshnpArgs.localPort,
     type: ArgType.integer,
@@ -329,7 +321,8 @@ class SshnpArg {
   );
   static const addForwardsToTunnelArg = SshnpArg(
     name: 'add-forwards-to-tunnel',
-    help: 'When true, any local forwarding directives provided in'
+    help:
+        'When true, any local forwarding directives provided in'
         '--local-ssh-options will be added to the initial tunnel ssh request',
     defaultsTo: DefaultArgs.addForwardsToTunnel,
     format: ArgFormat.flag,
@@ -370,7 +363,8 @@ class SshnpArg {
   static const encryptRvdTrafficArg = SshnpArg(
     name: 'encrypt-rvd-traffic',
     aliases: ['et'],
-    help: 'When true, traffic via the socket rendezvous is encrypted,'
+    help:
+        'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
         ' (e.g. an ssh session)',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
@@ -380,7 +374,8 @@ class SshnpArg {
   static const relayAuthModeArg = SshnpArg(
     name: 'relay-auth-mode',
     aliases: ['ram'],
-    help: 'The authentication mode to use. "escr" (encrypted signed challenge'
+    help:
+        'The authentication mode to use. "escr" (encrypted signed challenge'
         ' response) is strongest',
     defaultsTo: 'payload',
     allowed: ['payload', 'escr'],

@@ -8,14 +8,15 @@ import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 abstract class NPARequestHandler {
   Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest);
+    NPAAuthCheckRequest authCheckRequest,
+  );
 }
 
 /// - Listens for authorization check requests from sshnp daemons
 /// - Checks if the clientAtSign is currently authorized to access
 ///   the sshnpd atSign and device
 /// - Responds accordingly
-abstract class NPA implements AtRpcCallbacks {
+abstract class NPA {
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with SSHNPDs
@@ -27,9 +28,11 @@ abstract class NPA implements AtRpcCallbacks {
   /// The home directory on this host
   abstract final String homeDirectory;
 
-  String get authorizerAtsign;
+  /// Policy service's atSign
+  String get policyAtsign;
 
-  String get loggingAtsign;
+  /// atSign to which to send various log events
+  String get sessionLoggingAtsign;
 
   Set<String> get daemonAtsigns;
 

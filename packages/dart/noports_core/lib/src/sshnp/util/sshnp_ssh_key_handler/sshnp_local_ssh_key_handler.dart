@@ -19,7 +19,8 @@ mixin SshnpLocalSshKeyHandler on SshnpCore implements SshnpKeyHandler {
 
     if (!keyUtil.isValidPlatform) {
       throw SshnpError(
-          'The current platform is not supported with the local SSH key handler: ${Platform.operatingSystem}');
+        'The current platform is not supported with the local SSH key handler: ${Platform.operatingSystem}',
+      );
     }
 
     if (params.identityFile != null) {
