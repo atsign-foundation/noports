@@ -94,18 +94,18 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "568fd8f58ad4bc7bf0486e38fa0509ed3612d0bd91e5378aaf6e4f3dbd2455b6"
+      sha256: ab0caa6f54a3d0a325dab30dfab8b12e358d1f7ee1ca952137d3913ef6cf8c16
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.0"
+    version: "3.7.0"
   at_commons:
     dependency: "direct main"
     description:
       name: at_commons
-      sha256: "9e7568b90efd8643ad34a3536211757d66596cb65477cfc9f2accf4ac7b0b399"
+      sha256: e10d351bd2b1f4dd3671f265888cc0948803a6bd215b1d89409fc50044a52ba0
       url: "https://pub.dev"
     source: hosted
-    version: "5.4.1"
+    version: "5.5.0"
   at_demo_data:
     dependency: transitive
     description:
@@ -134,10 +134,10 @@ packages:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: "00a964a0e7f4ca984276975f043d55d17c969feea5e6bc5ee554a72579b4b160"
+      sha256: "392efb813d9f44dbcadfc36e74699db07cf0b0b96bc4820970be708953c1daac"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.0"
+    version: "4.2.0"
   at_persistence_spec:
     dependency: transitive
     description:
@@ -150,10 +150,10 @@ packages:
     dependency: transitive
     description:
       name: at_server_status
-      sha256: "2773fa7c4377802b671f6854863214aabe8ee8cd49be87226352dd14562a5d6b"
+      sha256: caffbc483f3c8d7606fa8a6767ade941e6fccf017765c3c1d436b2f2eaf2d156
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.5"
+    version: "1.1.0"
   at_utf7:
     dependency: transitive
     description:
@@ -786,6 +786,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.1"
+  sprintf:
+    dependency: transitive
+    description:
+      name: sprintf
+      sha256: "1fc9ffe69d4df602376b52949af107d8f5703b77cda567c4d7d86a0693120f23"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.0"
   stack_trace:
     dependency: transitive
     description:
@@ -870,10 +878,10 @@ packages:
     dependency: transitive
     description:
       name: uuid
-      sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"
+      sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.7"
+    version: "4.5.1"
   version:
     dependency: transitive
     description:
