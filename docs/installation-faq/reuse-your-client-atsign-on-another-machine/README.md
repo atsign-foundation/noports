@@ -1,18 +1,6 @@
 ---
 description: A review of two available methods
 icon: file-import
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Reuse your client atSign on another machine

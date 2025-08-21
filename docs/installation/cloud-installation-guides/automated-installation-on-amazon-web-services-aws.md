@@ -1,18 +1,6 @@
 ---
 description: How to deploy NoPorts on Amazon Web Services using a cloud-init script
 icon: aws
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Automated Installation on Amazon Web Services (AWS)

@@ -4,18 +4,6 @@ description: >-
   atSign for use. One of these steps is cutting a unique set of cryptographic
   keys.
 icon: computer
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Why activate the device atSign on the client?

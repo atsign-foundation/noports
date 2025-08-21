@@ -2,18 +2,6 @@
 description: >-
   Follow these two steps to install the NoPorts daemon so you can install your
   own background service.
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Standalone Binaries
