@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts when connecting from Linux to Linux
 icon: linux
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Linux to Linux

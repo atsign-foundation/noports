@@ -2,18 +2,6 @@
 description: >-
   Follow these five steps to set up the NoPorts daemon as a systemd unit
   background service.
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Systemd Unit

@@ -3,18 +3,6 @@ description: >-
   Learn how to use NoPorts. This guide covers some of the things you can run via
   NoPorts, as well as how to set up the NoPorts Tunnel (npt).
 icon: pen-field
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Usage
