@@ -5,7 +5,6 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
-import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/default_args.dart';
