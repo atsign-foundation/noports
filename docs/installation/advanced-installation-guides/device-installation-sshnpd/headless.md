@@ -2,18 +2,6 @@
 description: >-
   Follow these four steps to install the NoPorts daemon in a headless
   environment
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Headless

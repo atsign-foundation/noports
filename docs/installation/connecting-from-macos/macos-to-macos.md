@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts when connecting from macOS to macOS
 icon: apple
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # macOS to macOS

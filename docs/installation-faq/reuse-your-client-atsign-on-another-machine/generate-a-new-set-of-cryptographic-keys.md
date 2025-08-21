@@ -1,18 +1,3 @@
----
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
----
-
 # Generate a new set of cryptographic keys
 
 "<mark style="color:red;">**Old machine**</mark>" is the machine that has the **original** set of cryptographic keys that were generated. "<mark style="color:orange;">**New machine**</mark>" is the device you want the new set of cryptographic keys on.

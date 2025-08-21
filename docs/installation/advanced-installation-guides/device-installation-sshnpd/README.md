@@ -1,18 +1,6 @@
 ---
 description: Begin with the three steps below
 icon: server
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Device Installation

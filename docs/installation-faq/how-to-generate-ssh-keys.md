@@ -1,18 +1,6 @@
 ---
 description: Using ssh-keygen
 icon: key
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # How to generate SSH keys

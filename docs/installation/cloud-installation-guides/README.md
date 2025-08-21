@@ -1,18 +1,6 @@
 ---
 description: How to install NoPorts as part of creating a new VM
 icon: cloud
-layout:
-  width: default
-  title:
-    visible: true
-  description:
-    visible: true
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: false
 ---
 
 # Cloud Installation Guides
