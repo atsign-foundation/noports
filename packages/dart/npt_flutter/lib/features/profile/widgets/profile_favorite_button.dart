@@ -13,39 +13,42 @@ class ProfileFavoriteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: Sizes.p40,
-      child:
-          BlocSelector<ProfileBloc, ProfileState, Profile?>(selector: (state) {
-        if (state is! ProfileLoadedState) return null;
-        return state.profile;
-      }, builder: (context, profile) {
-        if (profile == null) return gap0;
-        return BlocSelector<FavoriteBloc, FavoritesState, bool>(
-          selector: (FavoritesState state) {
-            if (state is! FavoritesLoaded) return false;
-            return profile.isInFavorites(state.favorites);
-          },
-          builder: (BuildContext context, bool isFavorited) => IconButton(
-            onPressed: () {
-              if (isFavorited) {
-                context.read<FavoriteBloc>().add(
-                      FavoriteRemoveEvent(
-                          [FavoriteProfile(uuid: profile.uuid)]),
-                    );
-              } else {
-                context.read<FavoriteBloc>().add(
-                      FavoriteAddEvent(FavoriteProfile(uuid: profile.uuid)),
-                    );
-              }
+      child: BlocSelector<ProfileBloc, ProfileState, Profile?>(
+        selector: (state) {
+          if (state is! ProfileLoadedState) return null;
+          return state.profile;
+        },
+        builder: (context, profile) {
+          if (profile == null) return gap0;
+          return BlocSelector<FavoriteBloc, FavoritesState, bool>(
+            selector: (FavoritesState state) {
+              if (state is! FavoritesLoaded) return false;
+              return profile.isInFavorites(state.favorites);
             },
-            icon: PhosphorIcon(
-              isFavorited
-                  ? PhosphorIcons.star(PhosphorIconsStyle.fill)
-                  : PhosphorIcons.star(),
-              color: isFavorited ? Theme.of(context).colorScheme.primary : null,
+            builder: (BuildContext context, bool isFavorited) => IconButton(
+              onPressed: () {
+                if (isFavorited) {
+                  context.read<FavoriteBloc>().add(
+                    FavoriteRemoveEvent([FavoriteProfile(uuid: profile.uuid)]),
+                  );
+                } else {
+                  context.read<FavoriteBloc>().add(
+                    FavoriteAddEvent(FavoriteProfile(uuid: profile.uuid)),
+                  );
+                }
+              },
+              icon: PhosphorIcon(
+                isFavorited
+                    ? PhosphorIcons.star(PhosphorIconsStyle.fill)
+                    : PhosphorIcons.star(),
+                color: isFavorited
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }

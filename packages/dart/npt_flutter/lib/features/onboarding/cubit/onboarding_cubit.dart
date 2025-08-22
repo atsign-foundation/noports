@@ -3,21 +3,39 @@ import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 
 class OnboardingCubit extends LoggingCubit<OnboardingState> {
   OnboardingCubit()
-      : super(const OnboardingState(
-            atSign: '',
-            status: OnboardingStatus.offboarded,
-            rootDomain: 'root.atsign.org'));
+    : super(
+        const OnboardingState(
+          atSign: '',
+          status: OnboardingStatus.offboarded,
+          rootDomain: 'root.atsign.org',
+        ),
+      );
 
-  void setRootDomain(String rootDomain) => emit(OnboardingState(
-      atSign: state.atSign, status: state.status, rootDomain: rootDomain));
+  void setRootDomain(String rootDomain) => emit(
+    OnboardingState(
+      atSign: state.atSign,
+      status: state.status,
+      rootDomain: rootDomain,
+    ),
+  );
   String getRootDomain() => (state.rootDomain);
 
-  void setAtSign(String atSign) => emit(OnboardingState(
-      atSign: atSign, status: state.status, rootDomain: state.rootDomain));
+  void setAtSign(String atSign) => emit(
+    OnboardingState(
+      atSign: atSign,
+      status: state.status,
+      rootDomain: state.rootDomain,
+    ),
+  );
   String getAtSign() => (state.atSign);
 
-  void setStatus(OnboardingStatus status) => emit(OnboardingState(
-      atSign: state.atSign, status: status, rootDomain: state.rootDomain));
+  void setStatus(OnboardingStatus status) => emit(
+    OnboardingState(
+      atSign: state.atSign,
+      status: status,
+      rootDomain: state.rootDomain,
+    ),
+  );
   OnboardingStatus getStatus() => (state.status);
 
   /// If state is passed, all other arguments are ignored
@@ -28,20 +46,24 @@ class OnboardingCubit extends LoggingCubit<OnboardingState> {
     String? atSign,
     OnboardingStatus? status,
     String? rootDomain,
-  }) =>
-      emit(OnboardingState(
-        atSign: atSign ?? state.atSign,
-        status: status ?? state.status,
-        rootDomain: rootDomain ?? state.rootDomain,
-      ));
+  }) => emit(
+    OnboardingState(
+      atSign: atSign ?? state.atSign,
+      status: status ?? state.status,
+      rootDomain: rootDomain ?? state.rootDomain,
+    ),
+  );
 }
 
 enum OnboardingStatus { onboarded, offboarded }
 
 class OnboardingState extends AtsignInformation {
   final OnboardingStatus status;
-  const OnboardingState(
-      {required this.status, required super.atSign, required super.rootDomain});
+  const OnboardingState({
+    required this.status,
+    required super.atSign,
+    required super.rootDomain,
+  });
 
   @override
   List<Object?> get props => [atSign, status, rootDomain];

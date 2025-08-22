@@ -56,21 +56,22 @@ class SettingsView extends StatelessWidget {
                             const CustomTextButton.signOut(),
                             gapH13,
                             FutureBuilder(
-                                future: PackageInfo.fromPlatform(),
-                                builder: (_, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.done) {
-                                    return Center(
-                                      child: Text(
-                                        'v${snapshot.data?.version}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                }),
+                              future: PackageInfo.fromPlatform(),
+                              builder: (_, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.done) {
+                                  return Center(
+                                    child: Text(
+                                      'v${snapshot.data?.version}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
                             gapH10,
                           ],
                         ),
@@ -86,15 +87,17 @@ class SettingsView extends StatelessWidget {
                           right: Sizes.p33,
                           top: Sizes.p28,
                         ),
-                        child: ListView(children: const [
-                          DefaultRelaySection(),
-                          gapH25,
-                          DashboardSection(),
-                          gapH25,
-                          AdvanceSection(),
-                          gapH25,
-                          LanguageSection(),
-                        ]),
+                        child: ListView(
+                          children: const [
+                            DefaultRelaySection(),
+                            gapH25,
+                            DashboardSection(),
+                            gapH25,
+                            AdvanceSection(),
+                            gapH25,
+                            LanguageSection(),
+                          ],
+                        ),
                       ),
                     ),
                   ],

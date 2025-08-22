@@ -65,8 +65,10 @@ class SshnpdParams {
     String deviceAtsign = r['atsign'];
 
     if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
-      throw ArgumentError('At least one of --managers and --policy-manager'
-          ' options must be supplied.');
+      throw ArgumentError(
+        'At least one of --managers and --policy-manager'
+        ' options must be supplied.',
+      );
     }
     final List<String> managerAtsigns;
     if (r.wasParsed('managers')) {
@@ -81,8 +83,9 @@ class SshnpdParams {
     String homeDirectory = getHomeDirectory()!;
 
     SupportedSshClient sshClient = SupportedSshClient.values.firstWhere(
-        (c) => c.toString() == r['ssh-client'],
-        orElse: () => DefaultSshnpdArgs.sshClient);
+      (c) => c.toString() == r['ssh-client'],
+      orElse: () => DefaultSshnpdArgs.sshClient,
+    );
 
     // Do we have a valid device name?
     String device = r['device'];
@@ -133,10 +136,11 @@ class SshnpdParams {
       deviceGroup: r['device-group'],
       storagePath: r['storage-path'] ??
           standardAtClientStoragePath(
-              baseDir: homeDirectory,
-              atSign: deviceAtsign,
-              progName: 'sshnpd',
-              uniqueID: device),
+            baseDir: homeDirectory,
+            atSign: deviceAtsign,
+            progName: 'sshnpd',
+            uniqueID: device,
+          ),
       permitOpen: permitOpen,
       clearCachedPKs: r['clear-cached-pks'],
     );
@@ -225,21 +229,13 @@ class SshnpdParams {
       hide: true,
     );
 
-    parser.addFlag(
-      'verbose',
-      abbr: 'v',
-      help: 'More logging',
-    );
+    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
     parser.addOption(
       'ssh-client',
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.sshClient.toString(),
-      allowed: SupportedSshClient.values
-          .map(
-            (c) => c.toString(),
-          )
-          .toList(),
+      allowed: SupportedSshClient.values.map((c) => c.toString()).toList(),
       help: 'What to use for outbound ssh connections.',
     );
 
@@ -317,10 +313,7 @@ class SshnpdParams {
       hide: true,
     );
 
-    parser.addFlag(
-      'help',
-      help: 'Show usage',
-    );
+    parser.addFlag('help', help: 'Show usage');
 
     return parser;
   }

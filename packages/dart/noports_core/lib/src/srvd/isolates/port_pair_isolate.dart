@@ -43,9 +43,11 @@ class PortPairWorker extends RelayWorker {
     logger.info('Waiting for connector to close');
     await connector!.done;
 
-    logger.shout('Finished session ${srvdSessionParams.sessionId}'
-        ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}'
-        ' using ports [$portA, $portB]');
+    logger.shout(
+      'Finished session ${srvdSessionParams.sessionId}'
+      ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}'
+      ' using ports [$portA, $portB]',
+    );
 
     Isolate.current.kill();
   }
@@ -67,8 +69,9 @@ class PortPairWorker extends RelayWorker {
     RelayAuthVerifier? authVerifierA;
     RelayAuthVerifier? authVerifierB;
 
-    (authVerifierA, authVerifierB) =
-        await createAuthVerifiers(srvdSessionParams);
+    (authVerifierA, authVerifierB) = await createAuthVerifiers(
+      srvdSessionParams,
+    );
 
     /// Create the socket connector
     connector = await SocketConnector.serverToServer(
@@ -93,8 +96,10 @@ class PortPairWorker extends RelayWorker {
     PortPair ports = (portA!, portB!);
     toMain.send(ports);
 
-    logger.info('Assigned ports [$portA, $portB]'
-        ' for session ${srvdSessionParams.sessionId}');
+    logger.info(
+      'Assigned ports [$portA, $portB]'
+      ' for session ${srvdSessionParams.sessionId}',
+    );
   }
 
   Map<String, dynamic> lookups = {};
@@ -105,7 +110,8 @@ class PortPairWorker extends RelayWorker {
       return lookups[atKey];
     } else {
       final resp = await rpcToMain(
-          IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}));
+        IIRequest.create('lookup', {'key': atKey, 'sessionId': sessionId}),
+      );
       lookups[atKey] = resp.payload;
       return resp.payload;
     }

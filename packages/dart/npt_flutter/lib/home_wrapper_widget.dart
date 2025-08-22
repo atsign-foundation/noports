@@ -31,9 +31,7 @@ class HomeWrapperWidgetState extends State<HomeWrapperWidget> {
                   child: Navigator(
                     key: wrapperNav,
                     initialRoute: HomeRoutes.dashboard,
-                    observers: [
-                      SubNavObserver(context.read<SubNavCubit>()),
-                    ],
+                    observers: [SubNavObserver(context.read<SubNavCubit>())],
                     onGenerateRoute: (settings) {
                       final routeName = settings.name!;
                       final builder = HomeRoutes.routes[routeName];

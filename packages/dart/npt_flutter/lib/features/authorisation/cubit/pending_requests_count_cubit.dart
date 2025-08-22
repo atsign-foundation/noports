@@ -20,11 +20,11 @@ class Count extends Loggable {
 
 class PendingRequestsCountCubit extends LoggingCubit<Count> {
   PendingRequestsCountCubit(this._authorisationService)
-      : super(const Count(0)) {
+    : super(const Count(0)) {
     // Update the count whenever a new request is made
-    _subscription = _authorisationService
-        .enrollmentRequests()
-        .listen((_) => getPendingRequests());
+    _subscription = _authorisationService.enrollmentRequests().listen(
+      (_) => getPendingRequests(),
+    );
     getPendingRequests();
   }
 

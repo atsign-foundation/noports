@@ -15,8 +15,6 @@ class ProfileFormPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as ProfileFormPageArguments;
-    return Scaffold(
-      body: ProfileFormView(args.uuid, copyFrom: args.copyFrom),
-    );
+    return Scaffold(body: ProfileFormView(args.uuid, copyFrom: args.copyFrom));
   }
 }

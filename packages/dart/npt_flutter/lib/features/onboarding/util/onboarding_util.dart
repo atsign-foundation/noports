@@ -19,8 +19,9 @@ class NoPortsOnboardingUtil {
   /// A method to check whether an atSign has been activated or not
   Future<AtStatus> atServerStatus(String atSign) async {
     _atServerStatus ??= AtStatusImpl(
-        rootUrl: config.atClientPreference.rootDomain,
-        rootPort: config.atClientPreference.rootPort);
+      rootUrl: config.atClientPreference.rootDomain,
+      rootPort: config.atClientPreference.rootPort,
+    );
     return _atServerStatus!.get(atSign);
   }
 

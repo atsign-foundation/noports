@@ -46,11 +46,7 @@ class NPAParams {
     var parser = ArgParser(usageLineLength: usageLineLength);
 
     // Basic arguments
-    parser.addFlag(
-      'help',
-      negatable: false,
-      help: 'Usage instructions',
-    );
+    parser.addFlag('help', negatable: false, help: 'Usage instructions');
 
     parser.addOption(
       'atsign',
@@ -78,11 +74,7 @@ class NPAParams {
       help: 'The atSign\'s atKeys file if not in ~/.atsign/keys/',
     );
 
-    parser.addFlag(
-      'verbose',
-      abbr: 'v',
-      help: 'More logging',
-    );
+    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
     parser.addOption(
       'root-domain',

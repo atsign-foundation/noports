@@ -9,17 +9,16 @@ handlePublicKeyChangedEvent(AtClient atClient, Atsign atSign) {
   String topic = '.*\\.events\\.__atserver$atSign';
 
   atClient.notificationService
-      .subscribe(
-    regex: topic,
-    shouldDecrypt: true,
-  )
+      .subscribe(regex: topic, shouldDecrypt: true)
       .listen((AtNotification n) async {
     final dynamic ej;
     try {
       ej = jsonDecode(n.value!);
     } catch (e) {
-      logger.shout('Caught exception $e'
-          ' while handling server event notification $n');
+      logger.shout(
+        'Caught exception $e'
+        ' while handling server event notification $n',
+      );
       return;
     }
 
@@ -50,27 +49,33 @@ handlePublicKeyChangedEvent(AtClient atClient, Atsign atSign) {
 
               for (final k in keysToRemove) {
                 logger.shout('Removing $k from local storage');
-                await atClient
-                    .getLocalSecondary()!
-                    .keyStore!
-                    .remove(k, skipCommit: true);
+                await atClient.getLocalSecondary()!.keyStore!.remove(
+                      k,
+                      skipCommit: true,
+                    );
               }
               logger.shout('HANDLED OK');
               break;
             default:
-              logger.shout('Not handling server event'
-                  ' of category $category'
-                  ' with name $name');
+              logger.shout(
+                'Not handling server event'
+                ' of category $category'
+                ' with name $name',
+              );
               break;
           }
           break;
         default:
-          logger.shout('Not handling server event'
-              ' of category $category');
+          logger.shout(
+            'Not handling server event'
+            ' of category $category',
+          );
           break;
       }
     } catch (e) {
-      logger.shout('Exception $e while handling server event notification $n');
+      logger.shout(
+        'Exception $e while handling server event notification $n',
+      );
     }
   });
 }

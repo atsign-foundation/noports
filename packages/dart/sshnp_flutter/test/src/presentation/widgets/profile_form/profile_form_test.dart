@@ -12,7 +12,8 @@ void main() {
       final mockConfigFamilyController = MockConfigFamilyController();
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
-          mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
+          mockConfigListController: mockConfigListController,
+          mockConfigFamilyController: mockConfigFamilyController);
       r.findCircularProgressIndicator();
 
       // r.findHomeErrorText();
@@ -28,7 +29,8 @@ void main() {
       final mockConfigFamilyController = MockConfigFamilyController();
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
-          mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
+          mockConfigListController: mockConfigListController,
+          mockConfigFamilyController: mockConfigFamilyController);
       r.findCircularProgressIndicator();
       await tester.pump();
       final configFile = SshnpParams.empty();
@@ -42,7 +44,8 @@ void main() {
       final mockConfigFamilyController = MockConfigFamilyController();
       final r = ProfileFormRobot(tester);
       await r.pumpProfileForm(
-          mockConfigListController: mockConfigListController, mockConfigFamilyController: mockConfigFamilyController);
+          mockConfigListController: mockConfigListController,
+          mockConfigFamilyController: mockConfigFamilyController);
       r.findCircularProgressIndicator();
       await tester.pump();
 

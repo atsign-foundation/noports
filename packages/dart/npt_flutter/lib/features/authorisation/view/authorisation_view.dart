@@ -17,8 +17,8 @@ class AuthorisationView extends StatelessWidget {
           service: context.watch<AuthorisationService>(),
           themeData: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Theme.of(context).colorScheme.primary,
-                ),
+              primary: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
       ),

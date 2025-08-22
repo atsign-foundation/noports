@@ -66,7 +66,7 @@ sealed class Favorite<T extends Loggable> extends Loggable {
 @JsonSerializable()
 class FavoriteProfile extends Favorite<ProfileState> {
   const FavoriteProfile({required super.uuid})
-      : super(type: FavoriteType.profile);
+    : super(type: FavoriteType.profile);
 
   @override
   List<Object?> get props => [uuid];
@@ -114,7 +114,7 @@ class FavoriteProfile extends Favorite<ProfileState> {
       ProfileStopping _ => ProfileStatus.stopping.message,
       ProfileInitial _ || ProfileLoading _ => ProfileStatus.loading.message,
       ProfileFailedStart _ => ProfileStatus.failedToStart.message,
-      ProfileFailedLoad _ => ProfileStatus.failedToLoad.message
+      ProfileFailedLoad _ => ProfileStatus.failedToLoad.message,
     };
   }
 
