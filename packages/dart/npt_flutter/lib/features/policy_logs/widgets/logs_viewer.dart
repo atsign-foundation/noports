@@ -1,131 +1,81 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy_manager_form/widgets/policy_log_item.dart';
-import '../../policy_manager_form/services/policy_log_monitor_service.dart';
+import '../cubit/policy_logs_cubit.dart';
 
-class LogsViewer extends StatefulWidget {
+class LogsViewer extends StatelessWidget {
   const LogsViewer({super.key});
 
   @override
-  State<LogsViewer> createState() => _LogsViewerState();
-}
-
-class _LogsViewerState extends State<LogsViewer> {
-  late StreamSubscription<PolicyLogEntry> _logSubscription;
-  final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
-  List<PolicyLogEntry> _logs = [];
-  bool _isMonitoring = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _logs = _monitorService.logs;
-    _isMonitoring = _monitorService.isMonitoring;
-    // Listen to new log entries
-    _logSubscription = _monitorService.logStream.listen((logEntry) {
-      if (mounted) {
-        setState(() {
-          _logs = _monitorService.logs;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _logSubscription.cancel();
-    super.dispose();
-  }
-
-  void _startGlobalMonitoring() async {
-    // Start monitoring all policy logs globally
-    _monitorService.clearLogs();
-    await _monitorService.startGlobalMonitoring();
-    setState(() {
-      _isMonitoring = _monitorService.isMonitoring;
-    });
-  }
-
-  void _stopMonitoring() async {
-    await _monitorService.stopMonitoring();
-    setState(() {
-      _isMonitoring = _monitorService.isMonitoring;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Status and controls row
-        Row(
+    return BlocBuilder<PolicyLogsCubit, PolicyLogsState>(
+      builder: (context, state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _isMonitoring ? Colors.green.shade100 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isMonitoring ? Colors.green.shade300 : Colors.grey.shade300,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _isMonitoring ? Colors.green : Colors.grey,
-                      shape: BoxShape.circle,
+            // Status and controls row
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: state.isMonitoring ? Colors.green.shade100 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: state.isMonitoring ? Colors.green.shade300 : Colors.grey.shade300,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: _isMonitoring ? Colors.green.shade700 : Colors.grey.shade700,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: state.isMonitoring ? Colors.green : Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        state.isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: state.isMonitoring ? Colors.green.shade700 : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                if (!state.isMonitoring)
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<PolicyLogsCubit>().startGlobalMonitoring(),
+                    icon: const Icon(Icons.play_arrow, size: 16),
+                    label: const Text('Start Monitoring'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            if (!_isMonitoring)
-              ElevatedButton.icon(
-                onPressed: _startGlobalMonitoring,
-                icon: const Icon(Icons.play_arrow, size: 16),
-                label: const Text('Start Monitoring'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+                if (state.isMonitoring)
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<PolicyLogsCubit>().stopMonitoring(),
+                    icon: const Icon(Icons.stop, size: 16),
+                    label: const Text('Stop Monitoring'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => context.read<PolicyLogsCubit>().clearLogs(),
+                  icon: const Icon(Icons.clear_all, size: 16),
+                  label: const Text('Clear Logs'),
                 ),
-              ),
-            if (_isMonitoring)
-              ElevatedButton.icon(
-                onPressed: _stopMonitoring,
-                icon: const Icon(Icons.stop, size: 16),
-                label: const Text('Stop Monitoring'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: () {
-                _monitorService.clearLogs();
-                setState(() {
-                  _logs = [];
-                });
-              },
-              icon: const Icon(Icons.clear_all, size: 16),
-              label: const Text('Clear Logs'),
+              ],
             ),
-          ],
-        ),
         const SizedBox(height: 16),
         // Main logs container
         Expanded(
@@ -227,7 +177,7 @@ class _LogsViewerState extends State<LogsViewer> {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: _buildLogsList(),
+                    child: _buildLogsList(state),
                   ),
                 ),
               ],
@@ -236,10 +186,12 @@ class _LogsViewerState extends State<LogsViewer> {
         ),
       ],
     );
+    },
+  );
   }
 
-  Widget _buildLogsList() {
-    if (_logs.isEmpty) {
+  Widget _buildLogsList(PolicyLogsState state) {
+    if (state.logs.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -251,7 +203,7 @@ class _LogsViewerState extends State<LogsViewer> {
             ),
             const SizedBox(height: 16),
             Text(
-              _isMonitoring 
+              state.isMonitoring 
                 ? 'No logs available yet.\nActivity will appear here when policy requests are made.'
                 : 'No logs available.\nStart monitoring from the Policy Manager to see activity.',
               textAlign: TextAlign.center,
@@ -266,9 +218,9 @@ class _LogsViewerState extends State<LogsViewer> {
     }
 
     return ListView.builder(
-      itemCount: _logs.length,
+      itemCount: state.logs.length,
       itemBuilder: (context, index) {
-        final log = _logs[index];
+        final log = state.logs[index];
         return PolicyLogItem(
           timestamp: log.timestamp,
           fromAtSign: log.fromAtSign,

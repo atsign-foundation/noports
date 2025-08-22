@@ -7,6 +7,7 @@ import '../models/policy.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_manager_form/view/policy_manager_form_view.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
+import '../../policy_logs/cubit/policy_logs_cubit.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
@@ -276,10 +277,13 @@ class PolicyManagerContent extends StatelessWidget {
             ),
           ),
           // Logs viewer
-          const Expanded(
+          Expanded(
             child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: LogsViewer(),
+              padding: const EdgeInsets.all(8.0),
+              child: BlocProvider(
+                create: (context) => PolicyLogsCubit(),
+                child: const LogsViewer(),
+              ),
             ),
           ),
         ],
