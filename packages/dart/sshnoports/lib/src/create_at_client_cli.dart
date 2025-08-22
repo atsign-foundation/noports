@@ -17,7 +17,7 @@ Future<AtClient> createAtClientCli({
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
   String domain = parsedRootDomain.rootDomain;
   int port = parsedRootDomain.rootPort;
-  
+
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
