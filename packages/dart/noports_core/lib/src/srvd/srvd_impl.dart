@@ -70,10 +70,12 @@ class SrvdImpl implements Srvd {
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<Srvd> fromCommandLineArgs(List<String> args,
-      {AtClient? atClient,
-      FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<Srvd> fromCommandLineArgs(
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+  }) async {
     try {
       SrvdParams p;
       try {
@@ -161,10 +163,14 @@ class SrvdImpl implements Srvd {
       ..metadata = metaData;
 
     await atClient.notificationService.notify(
-        NotificationParams.forUpdate(atKey,
-            value: message, notificationExpiry: Duration(minutes: 1)),
-        waitForFinalDeliveryStatus: false,
-        checkForFinalDeliveryStatus: false);
+      NotificationParams.forUpdate(
+        atKey,
+        value: message,
+        notificationExpiry: Duration(minutes: 1),
+      ),
+      waitForFinalDeliveryStatus: false,
+      checkForFinalDeliveryStatus: false,
+    );
   }
 
   @override
@@ -191,9 +197,11 @@ class SrvdImpl implements Srvd {
       sessionParams = await srvdUtil.getParams(notification);
 
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
-        logger.shout('Session ${sessionParams.sessionId}'
-            ' for ${sessionParams.atSignA}'
-            ' is denied');
+        logger.shout(
+          'Session ${sessionParams.sessionId}'
+          ' for ${sessionParams.atSignA}'
+          ' is denied',
+        );
         return;
       }
     } catch (e) {
@@ -212,8 +220,9 @@ class SrvdImpl implements Srvd {
       if (sessionParams.only443) {
         ports = (443, 443);
       } else {
-        (ports, ppiSpawned, ppiSendToSpawned) =
-            await spawnNewPortPairIsolate(sessionParams);
+        (ports, ppiSpawned, ppiSendToSpawned) = await spawnNewPortPairIsolate(
+          sessionParams,
+        );
       }
     } catch (e) {
       logger.shout('_spawnSocketConnector exception: $e');
@@ -222,36 +231,40 @@ class SrvdImpl implements Srvd {
 
     if (sessionParams.multipleAcksOk) {
       // client can handle multiple acks, no need to lock a mutex
-      logger.shout('😎 Will handle request from ${notification.from}'
-          ' which can handle multiple acks (no mutex required)');
+      logger.shout(
+        '😎 Will handle request from ${notification.from}'
+        ' which can handle multiple acks (no mutex required)',
+      );
     } else {
       // client cannot handle multiple acks, so we need to lock a mutex
-      var mutexKey = AtKey.fromString('${sessionParams.sessionId}'
-          '.session_mutexes.${Srvd.namespace}'
-          '${atClient.getCurrentAtSign()!}')
-        ..metadata = (Metadata()
-          ..immutable = true // only one srvd will succeed in doing this
-          ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+      var mutexKey = AtKey.fromString(
+        '${sessionParams.sessionId}'
+        '.session_mutexes.${Srvd.namespace}'
+        '${atClient.getCurrentAtSign()!}',
+      )..metadata = (Metadata()
+        ..immutable = true // only one srvd will succeed in doing this
+        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
       PutRequestOptions pro = PutRequestOptions()
         ..shouldEncrypt = false
         ..useRemoteAtServer = true;
 
       try {
-        await atClient.put(
-          mutexKey,
-          'lock',
-          putRequestOptions: pro,
+        await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
+        logger.shout(
+          '😎 Will handle request from ${notification.from}'
+          '; acquired mutex $mutexKey',
         );
-        logger.shout('😎 Will handle request from ${notification.from}'
-            '; acquired mutex $mutexKey');
       } catch (err) {
         if (err.toString().toLowerCase().contains('immutable')) {
-          logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
-              '; did not acquire mutex $mutexKey');
+          logger.shout(
+            '🤷‍♂️ Will not handle request from ${notification.from}'
+            '; did not acquire mutex $mutexKey',
+          );
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
         } else {
-          logger
-              .shout('Will not handle; did not acquire mutex $mutexKey : $err');
+          logger.shout(
+            'Will not handle; did not acquire mutex $mutexKey : $err',
+          );
         }
         return;
       }
@@ -280,9 +293,11 @@ class SrvdImpl implements Srvd {
     }
 
     var (portA, portB) = ports;
-    logger.shout('Started session ${sessionParams.sessionId}'
-        ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}'
-        ' using ports $ports');
+    logger.shout(
+      'Started session ${sessionParams.sessionId}'
+      ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}'
+      ' using ports $ports',
+    );
 
     var metaData = Metadata()
       ..isPublic = false
@@ -299,16 +314,22 @@ class SrvdImpl implements Srvd {
 
     String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
 
-    logger.shout('Sending response data'
-        ' for requested session ${sessionParams.sessionId} :'
-        ' [$data]');
+    logger.shout(
+      'Sending response data'
+      ' for requested session ${sessionParams.sessionId} :'
+      ' [$data]',
+    );
 
     try {
       await atClient.notificationService.notify(
-          NotificationParams.forUpdate(atKey,
-              value: data, notificationExpiry: Duration(minutes: 1)),
-          waitForFinalDeliveryStatus: false,
-          checkForFinalDeliveryStatus: false);
+        NotificationParams.forUpdate(
+          atKey,
+          value: data,
+          notificationExpiry: Duration(minutes: 1),
+        ),
+        waitForFinalDeliveryStatus: false,
+        checkForFinalDeliveryStatus: false,
+      );
     } catch (e) {
       logger.shout("Error sending response to client");
     }
@@ -322,8 +343,11 @@ class SrvdImpl implements Srvd {
         logger.shout('$e while preFetching $s');
       }
     }
-    unawaited(Future.delayed(Duration(seconds: 30))
-        .whenComplete(() => preFetched.remove(sessionParams.sessionId)));
+    unawaited(
+      Future.delayed(
+        Duration(seconds: 30),
+      ).whenComplete(() => preFetched.remove(sessionParams.sessionId)),
+    );
   }
 
   Map<String, Map<String, dynamic>> preFetched = {};
@@ -351,18 +375,14 @@ class SrvdImpl implements Srvd {
         value = await _lookup(AtKey.fromString(key));
       }
       logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
-      toSpawned.send(IIResponse(
-        id: msg.id,
-        isError: false,
-        payload: value.value,
-      ));
+      toSpawned.send(
+        IIResponse(id: msg.id, isError: false, payload: value.value),
+      );
     } catch (err) {
       logger.info('request: "lookup" : error $err');
-      toSpawned.send(IIResponse(
-        id: msg.id,
-        isError: true,
-        payload: err.toString(),
-      ));
+      toSpawned.send(
+        IIResponse(id: msg.id, isError: true, payload: err.toString()),
+      );
     }
   }
 
@@ -384,14 +404,17 @@ class SrvdImpl implements Srvd {
       sessionParams.sessionId,
     );
 
-    logger.info("Spawning socket connector isolate"
-        " with parameters $parameters");
+    logger.info(
+      "Spawning socket connector isolate"
+      " with parameters $parameters",
+    );
 
     /// This function is meant to be run in a separate isolate
     /// It starts the socket connector, and sends back the assigned ports to the main isolate
     /// It then waits for socket connector to die before shutting itself down
     void portPairIsolateEntryPoint(
-        PortPairIsolateParams connectorParams) async {
+      PortPairIsolateParams connectorParams,
+    ) async {
       PortPairWorker worker = PortPairWorker(
         toMain: connectorParams.$1,
         logTraffic: connectorParams.$2,
@@ -430,10 +453,13 @@ class SrvdImpl implements Srvd {
             await lookup(msg, toSpawned);
             break;
           default:
-            toSpawned.send(IIResponse(
+            toSpawned.send(
+              IIResponse(
                 id: msg.id,
                 isError: true,
-                payload: 'Unknown request type ${msg.type}'));
+                payload: 'Unknown request type ${msg.type}',
+              ),
+            );
             break;
         }
         return;
@@ -443,8 +469,10 @@ class SrvdImpl implements Srvd {
         // find the corresponding request
       }
 
-      logger.shout('Unknown message from isolate -'
-          ' type: ${msg.runtimeType} message: $msg');
+      logger.shout(
+        'Unknown message from isolate -'
+        ' type: ${msg.runtimeType} message: $msg',
+      );
     });
 
     // Wait to receive the SendPort from the spawned isolate
@@ -454,14 +482,12 @@ class SrvdImpl implements Srvd {
       );
     } on TimeoutException catch (_) {
       throw TimeoutException(
-          'No sendPort received after ${isolateStartTimeoutMs}ms');
+        'No sendPort received after ${isolateStartTimeoutMs}ms',
+      );
     }
 
     // Ask the spawned isolate to start the session
-    toSpawned.send(IIRequest.create(
-      'start',
-      sessionParams,
-    ));
+    toSpawned.send(IIRequest.create('start', sessionParams));
 
     // Wait to receive the PortPair from the spawned isolate
     try {
@@ -470,11 +496,14 @@ class SrvdImpl implements Srvd {
       );
     } on TimeoutException catch (_) {
       throw TimeoutException(
-          'No sendPort received after ${isolateBindPortsTimeoutMs}ms');
+        'No sendPort received after ${isolateBindPortsTimeoutMs}ms',
+      );
     }
 
-    logger.shout('Received ports $ports in main isolate'
-        ' for session ${sessionParams.sessionId}');
+    logger.shout(
+      'Received ports $ports in main isolate'
+      ' for session ${sessionParams.sessionId}',
+    );
 
     return (ports, spawned, toSpawned);
   }
@@ -510,13 +539,14 @@ class SrvdImpl implements Srvd {
     /// It then waits for socket connector to die before shutting itself down
     void singlePortIsolateEntryPoint(SinglePortIsolateParams params) async {
       SinglePortWorker worker = SinglePortWorker(
-          toMain: params.$1,
-          logTraffic: params.$2,
-          verbose: params.$3,
-          loggingTag: params.$4,
-          address: params.$5,
-          useTLS: params.$6,
-          bindPort: params.$7);
+        toMain: params.$1,
+        logTraffic: params.$2,
+        verbose: params.$3,
+        loggingTag: params.$4,
+        address: params.$5,
+        useTLS: params.$6,
+        bindPort: params.$7,
+      );
 
       await worker.run();
     }
@@ -554,17 +584,22 @@ class SrvdImpl implements Srvd {
             logger.shout('Exiting');
             exit(1);
           default:
-            toSpawned.send(IIResponse(
+            toSpawned.send(
+              IIResponse(
                 id: msg.id,
                 isError: true,
-                payload: 'Unknown request type ${msg.type}'));
+                payload: 'Unknown request type ${msg.type}',
+              ),
+            );
             break;
         }
         return;
       }
 
-      logger.shout('Unknown message from isolate -'
-          ' type: ${msg.runtimeType} message: $msg');
+      logger.shout(
+        'Unknown message from isolate -'
+        ' type: ${msg.runtimeType} message: $msg',
+      );
     });
 
     // Wait to receive the SendPort from the spawned isolate
@@ -575,7 +610,8 @@ class SrvdImpl implements Srvd {
       );
     } on TimeoutException catch (_) {
       throw TimeoutException(
-          'No sendPort received after ${isolateStartTimeoutMs}ms');
+        'No sendPort received after ${isolateStartTimeoutMs}ms',
+      );
     }
 
     return (portPair443, spawned, toSpawned);

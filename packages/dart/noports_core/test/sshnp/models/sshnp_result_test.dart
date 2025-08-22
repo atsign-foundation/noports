@@ -36,8 +36,11 @@ void main() {
       late SshnpError error;
       setUp(() {
         stackTrace = StackTrace.current;
-        error =
-            SshnpError('myMessage', error: 'myError', stackTrace: stackTrace);
+        error = SshnpError(
+          'myMessage',
+          error: 'myError',
+          stackTrace: stackTrace,
+        );
       });
       test('SshnpError.toString() test', () {
         expect(error.toString(), equals('myMessage'));
@@ -109,8 +112,9 @@ void main() {
         expect(SshnpNoOpSuccess().toString(), equals('Connection Established'));
       });
       test('SshnpNoOpSuccess.connectionBean test', () {
-        SshnpNoOpSuccess<String> success =
-            SshnpNoOpSuccess(connectionBean: 'myBean');
+        SshnpNoOpSuccess<String> success = SshnpNoOpSuccess(
+          connectionBean: 'myBean',
+        );
         expect(success.connectionBean, equals('myBean'));
       });
     }); // group('SshnpNoOpSuccess')
@@ -127,18 +131,20 @@ void main() {
       verify(() => process.kill()).called(1);
     });
 
-    test('SshnpConnectionBean<Future<Process>>.killConnectionBean() test',
-        () async {
-      final bean = SshnpConnectionBean<Future<Process>>();
-      final process = MockProcess();
-      when(() => process.kill()).thenReturn(true);
-      final fProcess = Future.value(process);
-      bean.connectionBean = fProcess;
+    test(
+      'SshnpConnectionBean<Future<Process>>.killConnectionBean() test',
+      () async {
+        final bean = SshnpConnectionBean<Future<Process>>();
+        final process = MockProcess();
+        when(() => process.kill()).thenReturn(true);
+        final fProcess = Future.value(process);
+        bean.connectionBean = fProcess;
 
-      verifyNever(() => process.kill());
-      await expectLater(bean.killConnectionBean(), completes);
-      verify(() => process.kill()).called(1);
-    });
+        verifyNever(() => process.kill());
+        await expectLater(bean.killConnectionBean(), completes);
+        verify(() => process.kill()).called(1);
+      },
+    );
     test('SshnpConnectionBean<SocketConnector>.killConnectionBean() test', () {
       final bean = SshnpConnectionBean<SocketConnector>();
       final socketConnector = MockSocketConnector();
@@ -150,18 +156,19 @@ void main() {
       verify(() => socketConnector.close()).called(1);
     });
     test(
-        'SshnpConnectionBean<Future<SocketConnector>>.killConnectionBean() test',
-        () async {
-      final bean = SshnpConnectionBean<Future<SocketConnector>>();
-      final socketConnector = MockSocketConnector();
-      final fSocketConnector = Future.value(socketConnector);
-      when(() => socketConnector.close()).thenReturn(null);
-      bean.connectionBean = fSocketConnector;
+      'SshnpConnectionBean<Future<SocketConnector>>.killConnectionBean() test',
+      () async {
+        final bean = SshnpConnectionBean<Future<SocketConnector>>();
+        final socketConnector = MockSocketConnector();
+        final fSocketConnector = Future.value(socketConnector);
+        when(() => socketConnector.close()).thenReturn(null);
+        bean.connectionBean = fSocketConnector;
 
-      verifyNever(() => socketConnector.close());
-      expect(bean.connectionBean, completes);
-      await expectLater(bean.killConnectionBean(), completes);
-      verify(() => socketConnector.close()).called(1);
-    });
+        verifyNever(() => socketConnector.close());
+        expect(bean.connectionBean, completes);
+        await expectLater(bean.killConnectionBean(), completes);
+        verify(() => socketConnector.close()).called(1);
+      },
+    );
   }); // group('SshnpConnectionBean')
 }

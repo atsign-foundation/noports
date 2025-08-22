@@ -7,8 +7,8 @@ class SyncCubit extends Cubit<bool> {
   SyncCubit() : super(true);
 
   Future<void> checkSync() async {
-    final value =
-        await AtClientManager.getInstance().atClient.syncService.isInSync();
+    final value = await AtClientManager.getInstance().atClient.syncService
+        .isInSync();
     log("SyncCubit: checkSync: $value");
     emit(value);
   }

@@ -8,10 +8,7 @@ import 'package:flutter/material.dart';
 /// {@endtemplate}
 class EnrollmentDialog extends StatelessWidget {
   /// {@macro enrollment_dialog}
-  const EnrollmentDialog({
-    required this.child,
-    super.key,
-  });
+  const EnrollmentDialog({required this.child, super.key});
 
   final Widget child;
 

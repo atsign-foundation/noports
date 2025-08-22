@@ -42,12 +42,8 @@ abstract interface class PolicyService {
 
   Set<String> get daemonAtSigns;
 
-  factory PolicyService.withAtClient({
-    required AtClient atClient,
-  }) {
-    return PolicyServiceWithAtClient(
-      atClient: atClient,
-    );
+  factory PolicyService.withAtClient({required AtClient atClient}) {
+    return PolicyServiceWithAtClient(atClient: atClient);
   }
   factory PolicyService.inMemory() {
     return PolicyServiceInMem();

@@ -15,19 +15,19 @@ class CustomContainer extends StatelessWidget {
   });
 
   const CustomContainer.background({required this.child, this.width, super.key})
-      : color = AppColor.surfaceColor,
-        padding = Sizes.p16,
-        height = null,
-        decorationImage = null;
+    : color = AppColor.surfaceColor,
+      padding = Sizes.p16,
+      height = null,
+      decorationImage = null;
 
-  const CustomContainer.foreground(
-      {required this.child,
-      this.width,
-      super.key,
-      this.padding = 0,
-      this.decorationImage,
-      this.height})
-      : color = Colors.white;
+  const CustomContainer.foreground({
+    required this.child,
+    this.width,
+    super.key,
+    this.padding = 0,
+    this.decorationImage,
+    this.height,
+  }) : color = Colors.white;
 
   final Widget child;
   final Color color;

@@ -134,7 +134,8 @@ class SizeConfig {
   static final SizeConfig _instance = SizeConfig._();
 
   static double setDashboardWidth() {
-    final calculation = MediaQuery.of(App.navState.currentContext!).size.width *
+    final calculation =
+        MediaQuery.of(App.navState.currentContext!).size.width *
         Sizes.dashboardCardWidthFactor;
 
     if (calculation > 1351) {
@@ -144,12 +145,15 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidth(
-      {bool statusField = false, BuildContext? context}) {
+  static double setProfileFieldWidth({
+    bool statusField = false,
+    BuildContext? context,
+  }) {
     final mediaQuery = context != null
         ? MediaQuery.of(context)
         : MediaQuery.of(App.navState.currentContext!);
-    final calculation = mediaQuery.size.width *
+    final calculation =
+        mediaQuery.size.width *
         (statusField
             ? Sizes.statusFieldsWidthFactor
             : Sizes.profileFieldsWidthFactor);
@@ -161,12 +165,15 @@ class SizeConfig {
     }
   }
 
-  static double setProfileFieldWidthMinimalView(
-      {bool statusField = false, BuildContext? context}) {
+  static double setProfileFieldWidthMinimalView({
+    bool statusField = false,
+    BuildContext? context,
+  }) {
     final mediaQuery = context != null
         ? MediaQuery.of(context)
         : MediaQuery.of(App.navState.currentContext!);
-    final calculation = mediaQuery.size.width *
+    final calculation =
+        mediaQuery.size.width *
         (statusField
             ? Sizes.statusFieldsWidthFactorMinimalView
             : Sizes.profileFieldsWidthFactorMinimalView);

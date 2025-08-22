@@ -16,16 +16,16 @@ class EquatableDateTime extends DateTime
   ]);
 
   EquatableDateTime.fromDateTime(DateTime dateTime)
-      : super(
-          dateTime.year,
-          dateTime.month,
-          dateTime.day,
-          dateTime.hour,
-          dateTime.minute,
-          dateTime.second,
-          dateTime.millisecond,
-          dateTime.microsecond,
-        );
+    : super(
+        dateTime.year,
+        dateTime.month,
+        dateTime.day,
+        dateTime.hour,
+        dateTime.minute,
+        dateTime.second,
+        dateTime.millisecond,
+        dateTime.microsecond,
+      );
 
   @override
   List<Object> get props {

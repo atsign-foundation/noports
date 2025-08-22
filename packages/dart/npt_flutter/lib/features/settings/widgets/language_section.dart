@@ -21,9 +21,7 @@ class LanguageSection extends StatelessWidget {
           ],
         ),
         gapH16,
-        const CustomContainer.background(
-          child: SettingsLanguageSelector(),
-        ),
+        const CustomContainer.background(child: SettingsLanguageSelector()),
       ],
     );
   }

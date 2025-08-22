@@ -8,7 +8,8 @@ import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 abstract class NPARequestHandler {
   Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest);
+    NPAAuthCheckRequest authCheckRequest,
+  );
 }
 
 /// - Listens for authorization check requests from sshnp daemons

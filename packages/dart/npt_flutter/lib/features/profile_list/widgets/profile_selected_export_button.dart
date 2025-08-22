@@ -14,8 +14,11 @@ class ProfileSelectedExportButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
-        Set<String>>(
+    return BlocSelector<
+      ProfilesSelectedCubit,
+      ProfilesSelectedState,
+      Set<String>
+    >(
       selector: (ProfilesSelectedState state) {
         return state.selected;
       },
@@ -25,9 +28,12 @@ class ProfileSelectedExportButton extends StatelessWidget {
         return ElevatedButton.icon(
           onPressed: () {
             var repo = context.read<ProfileRepository>();
-            var futureExportableProfileList = repo.getProfiles(selected).then(
-                (profiles) =>
-                    profiles.map((profile) => profile.toExportableJson()));
+            var futureExportableProfileList = repo
+                .getProfiles(selected)
+                .then(
+                  (profiles) =>
+                      profiles.map((profile) => profile.toExportableJson()),
+                );
             showDialog(
               context: context,
               builder: (BuildContext context) => MultiSelectDialog(

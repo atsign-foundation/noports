@@ -20,10 +20,7 @@ void main() {
 
   group('Favorite.fromJson', () {
     test('should create FavoriteProfile for valid profile JSON', () {
-      final json = {
-        'type': 'profile',
-        'uuid': 'test-uuid-123',
-      };
+      final json = {'type': 'profile', 'uuid': 'test-uuid-123'};
 
       final result = Favorite.fromJson(json);
 
@@ -33,10 +30,7 @@ void main() {
     });
 
     test('should return null for invalid type', () {
-      final json = {
-        'type': 'invalid',
-        'uuid': 'test-uuid-123',
-      };
+      final json = {'type': 'invalid', 'uuid': 'test-uuid-123'};
 
       final result = Favorite.fromJson(json);
 
@@ -44,10 +38,7 @@ void main() {
     });
 
     test('should handle valid JSON with all required fields', () {
-      final json = {
-        'type': 'profile',
-        'uuid': 'test-uuid-456',
-      };
+      final json = {'type': 'profile', 'uuid': 'test-uuid-456'};
 
       final result = Favorite.fromJson(json);
 
@@ -70,22 +61,24 @@ void main() {
       expect(favoriteProfile.type, equals(FavoriteType.profile));
     });
 
-    test('should handle string representation and JSON serialization correctly',
-        () {
-      // Test toString
-      final stringResult = favoriteProfile.toString();
-      expect(stringResult, equals('FavoriteProfile(uuid: $testUuid)'));
+    test(
+      'should handle string representation and JSON serialization correctly',
+      () {
+        // Test toString
+        final stringResult = favoriteProfile.toString();
+        expect(stringResult, equals('FavoriteProfile(uuid: $testUuid)'));
 
-      // Test JSON serialization
-      final json = favoriteProfile.toJson();
-      expect(json['uuid'], equals(testUuid));
-      expect(json['type'], equals('profile'));
+        // Test JSON serialization
+        final json = favoriteProfile.toJson();
+        expect(json['uuid'], equals(testUuid));
+        expect(json['type'], equals('profile'));
 
-      // Test JSON deserialization
-      final deserializedResult = FavoriteProfile.fromJson(json);
-      expect(deserializedResult.uuid, equals(testUuid));
-      expect(deserializedResult.type, equals(FavoriteType.profile));
-    });
+        // Test JSON deserialization
+        final deserializedResult = FavoriteProfile.fromJson(json);
+        expect(deserializedResult.uuid, equals(testUuid));
+        expect(deserializedResult.type, equals(FavoriteType.profile));
+      },
+    );
 
     test('should handle profile management operations correctly', () {
       // Test profileIds

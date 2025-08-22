@@ -30,7 +30,9 @@ void main() {
       test('has correct initial state, toString, and props', () {
         expect(cubit.state.socketConnectors, isEmpty);
         expect(
-            cubit.state.socketConnectors, isA<Map<String, SocketConnector?>>());
+          cubit.state.socketConnectors,
+          isA<Map<String, SocketConnector?>>(),
+        );
         expect(cubit.state.toString(), equals('ProfilesRunningState({})'));
         expect(cubit.state.props, equals([<String, SocketConnector?>{}]));
       });
@@ -42,9 +44,11 @@ void main() {
         build: () => cubit,
         act: (cubit) => cubit.prepare('uuid1'),
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null,
+          ),
         ],
       );
 
@@ -56,14 +60,18 @@ void main() {
           cubit.prepare('uuid2');
         },
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null &&
-              state.socketConnectors.containsKey('uuid2') &&
-              state.socketConnectors['uuid2'] == null),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null &&
+                state.socketConnectors.containsKey('uuid2') &&
+                state.socketConnectors['uuid2'] == null,
+          ),
         ],
       );
 
@@ -73,12 +81,15 @@ void main() {
         act: (cubit) {
           cubit.prepare('uuid1');
           cubit.prepare(
-              'uuid1'); // Prepare again - won't emit since state is the same
+            'uuid1',
+          ); // Prepare again - won't emit since state is the same
         },
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null,
+          ),
           // Second prepare won't emit since the state is identical
         ],
       );
@@ -90,9 +101,11 @@ void main() {
         build: () => cubit,
         act: (cubit) => cubit.cache('uuid1', mockConnector1),
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1,
+          ),
         ],
       );
 
@@ -104,14 +117,18 @@ void main() {
           cubit.cache('uuid2', mockConnector2);
         },
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1 &&
-              state.socketConnectors.containsKey('uuid2') &&
-              state.socketConnectors['uuid2'] == mockConnector2),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1 &&
+                state.socketConnectors.containsKey('uuid2') &&
+                state.socketConnectors['uuid2'] == mockConnector2,
+          ),
         ],
       );
 
@@ -121,16 +138,22 @@ void main() {
         act: (cubit) {
           cubit.cache('uuid1', mockConnector1);
           cubit.cache(
-              'uuid1', mockConnector2); // Replace with different connector
+            'uuid1',
+            mockConnector2,
+          ); // Replace with different connector
         },
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector2 &&
-              state.socketConnectors.length == 1),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector2 &&
+                state.socketConnectors.length == 1,
+          ),
         ],
       );
 
@@ -139,9 +162,11 @@ void main() {
         build: () => cubit,
         act: (cubit) => cubit.prepare('uuid1'),
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null,
+          ),
         ],
       );
     });
@@ -154,11 +179,13 @@ void main() {
         act: (cubit) => cubit.invalidate('uuid1'),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => !state.socketConnectors.containsKey('uuid1')),
+            (state) => !state.socketConnectors.containsKey('uuid1'),
+          ),
         ],
         verify: (_) {
           verify(mockConnector1.close()).called(
-              2); // Called by both cubit.invalidate() and state.withoutConnector()
+            2,
+          ); // Called by both cubit.invalidate() and state.withoutConnector()
         },
       );
 
@@ -168,7 +195,8 @@ void main() {
         act: (cubit) => cubit.invalidate('non-existent'),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors.isEmpty),
+            (state) => state.socketConnectors.isEmpty,
+          ),
         ],
       );
 
@@ -181,14 +209,17 @@ void main() {
         }),
         act: (cubit) => cubit.invalidate('uuid1'),
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              !state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors.containsKey('uuid2') &&
-              state.socketConnectors['uuid2'] == mockConnector2),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                !state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors.containsKey('uuid2') &&
+                state.socketConnectors['uuid2'] == mockConnector2,
+          ),
         ],
         verify: (_) {
           verify(mockConnector1.close()).called(
-              2); // Called by both cubit.invalidate() and state.withoutConnector()
+            2,
+          ); // Called by both cubit.invalidate() and state.withoutConnector()
           verifyNever(mockConnector2.close());
         },
       );
@@ -200,7 +231,8 @@ void main() {
         act: (cubit) => cubit.invalidate('uuid1'),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => !state.socketConnectors.containsKey('uuid1')),
+            (state) => !state.socketConnectors.containsKey('uuid1'),
+          ),
         ],
       );
     });
@@ -217,7 +249,8 @@ void main() {
         act: (cubit) => cubit.stopAllAndClear(),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors.isEmpty),
+            (state) => state.socketConnectors.isEmpty,
+          ),
         ],
         verify: (_) {
           verify(mockConnector1.close()).called(1);
@@ -231,7 +264,8 @@ void main() {
         act: (cubit) => cubit.stopAllAndClear(),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors.isEmpty),
+            (state) => state.socketConnectors.isEmpty,
+          ),
         ],
       );
     });
@@ -285,25 +319,29 @@ void main() {
       });
 
       test(
-          'creates new instances (immutability) for both withConnector and withoutConnector',
-          () {
-        // Test withConnector immutability
-        final initialState1 = ProfilesRunningState({'uuid1': mockConnector1});
-        final newState1 = initialState1.withConnector('uuid2', mockConnector2);
-        expect(newState1, isNot(same(initialState1)));
-        expect(initialState1.socketConnectors.length, equals(1));
-        expect(newState1.socketConnectors.length, equals(2));
+        'creates new instances (immutability) for both withConnector and withoutConnector',
+        () {
+          // Test withConnector immutability
+          final initialState1 = ProfilesRunningState({'uuid1': mockConnector1});
+          final newState1 = initialState1.withConnector(
+            'uuid2',
+            mockConnector2,
+          );
+          expect(newState1, isNot(same(initialState1)));
+          expect(initialState1.socketConnectors.length, equals(1));
+          expect(newState1.socketConnectors.length, equals(2));
 
-        // Test withoutConnector immutability
-        final initialState2 = ProfilesRunningState({
-          'uuid1': mockConnector1,
-          'uuid2': mockConnector2,
-        });
-        final newState2 = initialState2.withoutConnector('uuid1');
-        expect(newState2, isNot(same(initialState2)));
-        expect(initialState2.socketConnectors.length, equals(2));
-        expect(newState2.socketConnectors.length, equals(1));
-      });
+          // Test withoutConnector immutability
+          final initialState2 = ProfilesRunningState({
+            'uuid1': mockConnector1,
+            'uuid2': mockConnector2,
+          });
+          final newState2 = initialState2.withoutConnector('uuid1');
+          expect(newState2, isNot(same(initialState2)));
+          expect(initialState2.socketConnectors.length, equals(2));
+          expect(newState2.socketConnectors.length, equals(1));
+        },
+      );
     });
 
     group('withoutConnector', () {
@@ -331,41 +369,46 @@ void main() {
       });
 
       test(
-          'handles removing from empty state and can result in empty connectors',
-          () {
-        // Test removing from empty state
-        const initialEmptyState = ProfilesRunningState({});
-        final newEmptyState = initialEmptyState.withoutConnector('uuid1');
-        expect(newEmptyState, equals(initialEmptyState));
-        expect(newEmptyState.socketConnectors.isEmpty, isTrue);
+        'handles removing from empty state and can result in empty connectors',
+        () {
+          // Test removing from empty state
+          const initialEmptyState = ProfilesRunningState({});
+          final newEmptyState = initialEmptyState.withoutConnector('uuid1');
+          expect(newEmptyState, equals(initialEmptyState));
+          expect(newEmptyState.socketConnectors.isEmpty, isTrue);
 
-        // Test resulting in empty connectors
-        final initialState = ProfilesRunningState({'uuid1': mockConnector1});
-        final newState = initialState.withoutConnector('uuid1');
-        expect(newState.socketConnectors.isEmpty, isTrue);
-        verify(mockConnector1.close()).called(1);
-      });
+          // Test resulting in empty connectors
+          final initialState = ProfilesRunningState({'uuid1': mockConnector1});
+          final newState = initialState.withoutConnector('uuid1');
+          expect(newState.socketConnectors.isEmpty, isTrue);
+          verify(mockConnector1.close()).called(1);
+        },
+      );
 
       test(
-          'creates new instances (immutability) for both withConnector and withoutConnector',
-          () {
-        // Test withConnector immutability
-        final initialState1 = ProfilesRunningState({'uuid1': mockConnector1});
-        final newState1 = initialState1.withConnector('uuid2', mockConnector2);
-        expect(newState1, isNot(same(initialState1)));
-        expect(initialState1.socketConnectors.length, equals(1));
-        expect(newState1.socketConnectors.length, equals(2));
+        'creates new instances (immutability) for both withConnector and withoutConnector',
+        () {
+          // Test withConnector immutability
+          final initialState1 = ProfilesRunningState({'uuid1': mockConnector1});
+          final newState1 = initialState1.withConnector(
+            'uuid2',
+            mockConnector2,
+          );
+          expect(newState1, isNot(same(initialState1)));
+          expect(initialState1.socketConnectors.length, equals(1));
+          expect(newState1.socketConnectors.length, equals(2));
 
-        // Test withoutConnector immutability
-        final initialState2 = ProfilesRunningState({
-          'uuid1': mockConnector1,
-          'uuid2': mockConnector2,
-        });
-        final newState2 = initialState2.withoutConnector('uuid1');
-        expect(newState2, isNot(same(initialState2)));
-        expect(initialState2.socketConnectors.length, equals(2));
-        expect(newState2.socketConnectors.length, equals(1));
-      });
+          // Test withoutConnector immutability
+          final initialState2 = ProfilesRunningState({
+            'uuid1': mockConnector1,
+            'uuid2': mockConnector2,
+          });
+          final newState2 = initialState2.withoutConnector('uuid1');
+          expect(newState2, isNot(same(initialState2)));
+          expect(initialState2.socketConnectors.length, equals(2));
+          expect(newState2.socketConnectors.length, equals(1));
+        },
+      );
 
       test('handles removing UUID with null connector', () {
         const initialState = ProfilesRunningState({'uuid1': null});
@@ -386,18 +429,24 @@ void main() {
           cubit.invalidate('uuid1');
         },
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == null),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1),
           predicate<ProfilesRunningState>(
-              (state) => !state.socketConnectors.containsKey('uuid1')),
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == null,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) => !state.socketConnectors.containsKey('uuid1'),
+          ),
         ],
         verify: (_) {
           verify(mockConnector1.close()).called(
-              2); // Called by both cubit.invalidate() and state.withoutConnector()
+            2,
+          ); // Called by both cubit.invalidate() and state.withoutConnector()
         },
       );
 
@@ -411,14 +460,19 @@ void main() {
         },
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors['uuid1'] == mockConnector1),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors['uuid1'] == mockConnector1 &&
-              state.socketConnectors['uuid2'] == null),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors['uuid1'] == mockConnector1 &&
-              state.socketConnectors['uuid2'] == null &&
-              state.socketConnectors['uuid3'] == mockConnector2),
+            (state) => state.socketConnectors['uuid1'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors['uuid1'] == mockConnector1 &&
+                state.socketConnectors['uuid2'] == null,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors['uuid1'] == mockConnector1 &&
+                state.socketConnectors['uuid2'] == null &&
+                state.socketConnectors['uuid3'] == mockConnector2,
+          ),
         ],
       );
 
@@ -432,17 +486,20 @@ void main() {
         }),
         act: (cubit) => cubit.invalidate('uuid2'),
         expect: () => [
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid1'] == mockConnector1 &&
-              !state.socketConnectors.containsKey('uuid2') &&
-              state.socketConnectors.containsKey('uuid3') &&
-              state.socketConnectors['uuid3'] == null),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid1'] == mockConnector1 &&
+                !state.socketConnectors.containsKey('uuid2') &&
+                state.socketConnectors.containsKey('uuid3') &&
+                state.socketConnectors['uuid3'] == null,
+          ),
         ],
         verify: (_) {
           verifyNever(mockConnector1.close());
           verify(mockConnector2.close()).called(
-              2); // Called by both cubit.invalidate() and state.withoutConnector()
+            2,
+          ); // Called by both cubit.invalidate() and state.withoutConnector()
         },
       );
     });
@@ -465,7 +522,9 @@ void main() {
         cubit.cache(specialUuid, mockConnector2);
         expect(cubit.state.socketConnectors.containsKey(specialUuid), isTrue);
         expect(
-            cubit.state.socketConnectors[specialUuid], equals(mockConnector2));
+          cubit.state.socketConnectors[specialUuid],
+          equals(mockConnector2),
+        );
       });
 
       blocTest<ProfilesRunningCubit, ProfilesRunningState>(
@@ -479,7 +538,8 @@ void main() {
         act: (cubit) => cubit.stopAllAndClear(),
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors.isEmpty),
+            (state) => state.socketConnectors.isEmpty,
+          ),
         ],
       );
 
@@ -489,18 +549,25 @@ void main() {
         act: (cubit) {
           cubit.cache('uuid1', mockConnector1);
           cubit.cache(
-              'uuid2', mockConnector1); // Same connector for different UUID
+            'uuid2',
+            mockConnector1,
+          ); // Same connector for different UUID
           cubit.invalidate('uuid1');
         },
         expect: () => [
           predicate<ProfilesRunningState>(
-              (state) => state.socketConnectors['uuid1'] == mockConnector1),
-          predicate<ProfilesRunningState>((state) =>
-              state.socketConnectors['uuid1'] == mockConnector1 &&
-              state.socketConnectors['uuid2'] == mockConnector1),
-          predicate<ProfilesRunningState>((state) =>
-              !state.socketConnectors.containsKey('uuid1') &&
-              state.socketConnectors['uuid2'] == mockConnector1),
+            (state) => state.socketConnectors['uuid1'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                state.socketConnectors['uuid1'] == mockConnector1 &&
+                state.socketConnectors['uuid2'] == mockConnector1,
+          ),
+          predicate<ProfilesRunningState>(
+            (state) =>
+                !state.socketConnectors.containsKey('uuid1') &&
+                state.socketConnectors['uuid2'] == mockConnector1,
+          ),
         ],
         verify: (_) {
           // Called twice: once by cubit.invalidate() and once by state.withoutConnector()

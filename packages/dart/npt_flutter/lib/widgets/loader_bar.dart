@@ -5,9 +5,6 @@ class LoaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 400,
-      child: LinearProgressIndicator(),
-    );
+    return const SizedBox(width: 400, child: LinearProgressIndicator());
   }
 }

@@ -10,11 +10,13 @@ class PrivateKeyManagerRepository {
   /// Writes a [PrivateKeyManager] to the device's secure storage.
   static Future<void> writePrivateKeyManager(PrivateKeyManager manager) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('com.atsign.sshnoports.ssh-${manager.nickname}', jsonEncode(manager.toMap()));
+    await prefs.setString('com.atsign.sshnoports.ssh-${manager.nickname}',
+        jsonEncode(manager.toMap()));
   }
 
   /// Reads a [PrivateKeyManager] from the device's secure storage.
-  static Future<PrivateKeyManager> readPrivateKeyManager(String identifier) async {
+  static Future<PrivateKeyManager> readPrivateKeyManager(
+      String identifier) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('com.atsign.sshnoports.ssh-$identifier');
     if (data.isNull || data!.isEmpty) {

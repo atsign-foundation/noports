@@ -17,19 +17,19 @@ class SettingsRepository {
       AtKey.self('settings', namespace: Constants.namespace).build();
 
   Settings get defaultSettings => Settings(
-        relayAtsign: RelayOptions.am.relayAtsign,
-        viewLayout: PreferredViewLayout.minimal,
-        overrideRelay: false,
-        // set the default language to the device's language
-        language:
-            LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)),
-      );
+    relayAtsign: RelayOptions.am.relayAtsign,
+    viewLayout: PreferredViewLayout.minimal,
+    overrideRelay: false,
+    // set the default language to the device's language
+    language: LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)),
+  );
 
   Future<Settings?> getSettings() async {
     AtClient atClient = _client;
     try {
-      var value = await atClient
-          .get(settingsAtKey..sharedBy = atClient.getCurrentAtSign());
+      var value = await atClient.get(
+        settingsAtKey..sharedBy = atClient.getCurrentAtSign(),
+      );
       if (value.value == null) {
         // No settings saved, so use the defaults
         return defaultSettings;
@@ -53,8 +53,9 @@ class SettingsRepository {
   Future<bool> deleteSettings(Settings settings) async {
     AtClient atClient = _client;
     try {
-      return await atClient
-          .delete(settingsAtKey..sharedBy = atClient.getCurrentAtSign());
+      return await atClient.delete(
+        settingsAtKey..sharedBy = atClient.getCurrentAtSign(),
+      );
     } catch (_) {
       return false;
     }

@@ -33,8 +33,7 @@ enum DaemonFeature {
   supportsRamEscr('1.4.0'),
 
   /// Separate keys & IVs for client-to-server and server-to-client
-  twinKeys('1.5.0'),
-  ;
+  twinKeys('1.5.0');
 
   /// The version of the NoPorts control protocol which introduced this feature.
   Version get since => Version.parse(_since);

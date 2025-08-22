@@ -44,8 +44,9 @@ void main() {
     group('clearAll', () {
       test('should emit FavoritesInitial when clearAll is called', () {
         // Arrange: Set bloc to a loaded state first
-        favoriteBloc
-            .emit(const FavoritesLoaded([testFavorite1, testFavorite2]));
+        favoriteBloc.emit(
+          const FavoritesLoaded([testFavorite1, testFavorite2]),
+        );
 
         // Act
         favoriteBloc.clearAll();
@@ -59,8 +60,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'emits [FavoritesLoading, FavoritesLoaded] when favorites load successfully',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenAnswer((_) async => testFavorites);
+          when(
+            mockRepository.getFavorites(),
+          ).thenAnswer((_) async => testFavorites);
           return favoriteBloc;
         },
         act: (bloc) => bloc.add(const FavoriteLoadEvent()),
@@ -80,10 +82,7 @@ void main() {
           return favoriteBloc;
         },
         act: (bloc) => bloc.add(const FavoriteLoadEvent()),
-        expect: () => [
-          const FavoritesLoading(),
-          const FavoritesLoaded([]),
-        ],
+        expect: () => [const FavoritesLoading(), const FavoritesLoaded([])],
         verify: (_) {
           verify(mockRepository.getFavorites()).called(1);
         },
@@ -92,15 +91,13 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'emits [FavoritesLoading, FavoritesLoaded] with empty list when repository throws exception',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenThrow(Exception('Load failed'));
+          when(
+            mockRepository.getFavorites(),
+          ).thenThrow(Exception('Load failed'));
           return favoriteBloc;
         },
         act: (bloc) => bloc.add(const FavoriteLoadEvent()),
-        expect: () => [
-          const FavoritesLoading(),
-          const FavoritesLoaded([]),
-        ],
+        expect: () => [const FavoritesLoading(), const FavoritesLoaded([])],
         verify: (_) {
           verify(mockRepository.getFavorites()).called(1);
         },
@@ -109,15 +106,13 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'emits [FavoritesLoading, FavoritesLoaded] with empty list when repository returns empty map',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenAnswer((_) async => <String, Favorite>{});
+          when(
+            mockRepository.getFavorites(),
+          ).thenAnswer((_) async => <String, Favorite>{});
           return favoriteBloc;
         },
         act: (bloc) => bloc.add(const FavoriteLoadEvent()),
-        expect: () => [
-          const FavoritesLoading(),
-          const FavoritesLoaded([]),
-        ],
+        expect: () => [const FavoritesLoading(), const FavoritesLoaded([])],
         verify: (_) {
           verify(mockRepository.getFavorites()).called(1);
         },
@@ -128,8 +123,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'adds favorite to existing list when state is FavoritesLoaded',
         build: () {
-          when(mockRepository.addFavorite(testFavorite3))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.addFavorite(testFavorite3),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -145,8 +141,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'adds favorite to empty list when state is FavoritesLoaded with no favorites',
         build: () {
-          when(mockRepository.addFavorite(testFavorite1))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.addFavorite(testFavorite1),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([]),
@@ -185,8 +182,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'still emits state even when repository call fails',
         build: () {
-          when(mockRepository.addFavorite(testFavorite3))
-              .thenThrow(Exception('Add failed'));
+          when(
+            mockRepository.addFavorite(testFavorite3),
+          ).thenThrow(Exception('Add failed'));
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -204,8 +202,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'removes single favorite from list when state is FavoritesLoaded',
         build: () {
-          when(mockRepository.removeFavorites([testFavorite1.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([testFavorite1.uuid]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -214,51 +213,65 @@ void main() {
           const FavoritesLoaded([testFavorite2]),
         ],
         verify: (_) {
-          verify(mockRepository.removeFavorites([testFavorite1.uuid]))
-              .called(1);
+          verify(
+            mockRepository.removeFavorites([testFavorite1.uuid]),
+          ).called(1);
         },
       );
 
       blocTest<FavoriteBloc, FavoritesState>(
         'removes multiple favorites from list when state is FavoritesLoaded',
         build: () {
-          when(mockRepository
-                  .removeFavorites([testFavorite1.uuid, testFavorite2.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([
+              testFavorite1.uuid,
+              testFavorite2.uuid,
+            ]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
-        seed: () => const FavoritesLoaded(
-            [testFavorite1, testFavorite2, testFavorite3]),
+        seed: () => const FavoritesLoaded([
+          testFavorite1,
+          testFavorite2,
+          testFavorite3,
+        ]),
         act: (bloc) =>
             bloc.add(const FavoriteRemoveEvent([testFavorite1, testFavorite2])),
         expect: () => [
           const FavoritesLoaded([testFavorite3]),
         ],
         verify: (_) {
-          verify(mockRepository
-                  .removeFavorites([testFavorite1.uuid, testFavorite2.uuid]))
-              .called(1);
+          verify(
+            mockRepository.removeFavorites([
+              testFavorite1.uuid,
+              testFavorite2.uuid,
+            ]),
+          ).called(1);
         },
       );
 
       blocTest<FavoriteBloc, FavoritesState>(
         'removes all favorites from list when removing all',
         build: () {
-          when(mockRepository
-                  .removeFavorites([testFavorite1.uuid, testFavorite2.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([
+              testFavorite1.uuid,
+              testFavorite2.uuid,
+            ]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
         act: (bloc) =>
             bloc.add(const FavoriteRemoveEvent([testFavorite1, testFavorite2])),
-        expect: () => [
-          const FavoritesLoaded([]),
-        ],
+        expect: () => [const FavoritesLoaded([])],
         verify: (_) {
-          verify(mockRepository
-                  .removeFavorites([testFavorite1.uuid, testFavorite2.uuid]))
-              .called(1);
+          verify(
+            mockRepository.removeFavorites([
+              testFavorite1.uuid,
+              testFavorite2.uuid,
+            ]),
+          ).called(1);
         },
       );
 
@@ -277,8 +290,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'handles empty removal list gracefully',
         build: () {
-          when(mockRepository.removeFavorites([]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -292,8 +306,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'handles removing non-existent favorites gracefully',
         build: () {
-          when(mockRepository.removeFavorites([testFavorite3.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([testFavorite3.uuid]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -301,16 +316,18 @@ void main() {
         expect: () =>
             [], // No state change expected since favorite doesn't exist
         verify: (_) {
-          verify(mockRepository.removeFavorites([testFavorite3.uuid]))
-              .called(1);
+          verify(
+            mockRepository.removeFavorites([testFavorite3.uuid]),
+          ).called(1);
         },
       );
 
       blocTest<FavoriteBloc, FavoritesState>(
         'still emits state even when repository call fails',
         build: () {
-          when(mockRepository.removeFavorites([testFavorite1.uuid]))
-              .thenThrow(Exception('Remove failed'));
+          when(
+            mockRepository.removeFavorites([testFavorite1.uuid]),
+          ).thenThrow(Exception('Remove failed'));
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -319,8 +336,9 @@ void main() {
           const FavoritesLoaded([testFavorite2]),
         ],
         verify: (_) {
-          verify(mockRepository.removeFavorites([testFavorite1.uuid]))
-              .called(1);
+          verify(
+            mockRepository.removeFavorites([testFavorite1.uuid]),
+          ).called(1);
         },
       );
     });
@@ -329,10 +347,12 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'can transition from initial to loaded to adding favorites',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenAnswer((_) async => <String, Favorite>{});
-          when(mockRepository.addFavorite(testFavorite1))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.getFavorites(),
+          ).thenAnswer((_) async => <String, Favorite>{});
+          when(
+            mockRepository.addFavorite(testFavorite1),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         act: (bloc) async {
@@ -350,10 +370,12 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'can transition from loaded to adding then removing favorites',
         build: () {
-          when(mockRepository.addFavorite(testFavorite3))
-              .thenAnswer((_) async => true);
-          when(mockRepository.removeFavorites([testFavorite1.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.addFavorite(testFavorite3),
+          ).thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([testFavorite1.uuid]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -371,10 +393,12 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'can handle rapid successive add/remove operations',
         build: () {
-          when(mockRepository.addFavorite(testFavorite3))
-              .thenAnswer((_) async => true);
-          when(mockRepository.removeFavorites([testFavorite3.uuid]))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.addFavorite(testFavorite3),
+          ).thenAnswer((_) async => true);
+          when(
+            mockRepository.removeFavorites([testFavorite3.uuid]),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -397,8 +421,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'handles duplicate favorites in add operations',
         build: () {
-          when(mockRepository.addFavorite(testFavorite1))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.addFavorite(testFavorite1),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -414,8 +439,9 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'handles clearing all favorites and reloading',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenAnswer((_) async => testFavorites);
+          when(
+            mockRepository.getFavorites(),
+          ).thenAnswer((_) async => testFavorites);
           return favoriteBloc;
         },
         seed: () => const FavoritesLoaded([testFavorite1, testFavorite2]),
@@ -436,24 +462,24 @@ void main() {
       blocTest<FavoriteBloc, FavoritesState>(
         'handles repository getFavorites timeout gracefully',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenThrow(TimeoutException('Request timeout'));
+          when(
+            mockRepository.getFavorites(),
+          ).thenThrow(TimeoutException('Request timeout'));
           return favoriteBloc;
         },
         act: (bloc) => bloc.add(const FavoriteLoadEvent()),
-        expect: () => [
-          const FavoritesLoading(),
-          const FavoritesLoaded([]),
-        ],
+        expect: () => [const FavoritesLoading(), const FavoritesLoaded([])],
       );
 
       blocTest<FavoriteBloc, FavoritesState>(
         'continues to work after repository errors',
         build: () {
-          when(mockRepository.getFavorites())
-              .thenThrow(Exception('First call fails'));
-          when(mockRepository.addFavorite(testFavorite1))
-              .thenAnswer((_) async => true);
+          when(
+            mockRepository.getFavorites(),
+          ).thenThrow(Exception('First call fails'));
+          when(
+            mockRepository.addFavorite(testFavorite1),
+          ).thenAnswer((_) async => true);
           return favoriteBloc;
         },
         act: (bloc) async {
