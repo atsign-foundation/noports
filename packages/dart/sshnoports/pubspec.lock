@@ -99,7 +99,7 @@ packages:
     source: hosted
     version: "3.7.0"
   at_commons:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_commons
       sha256: e10d351bd2b1f4dd3671f265888cc0948803a6bd215b1d89409fc50044a52ba0
