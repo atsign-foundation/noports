@@ -94,7 +94,7 @@ class PolicyManagerContent extends StatelessWidget {
                 width: double.infinity,
                 child: BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
                   builder: (context, state) {
-                    final isLogsView = state is PolicyManagerViewLogsPageLoaded;
+                    final isLogsView = state is PolicyManagerLoaded && state.isLogsView;
                     return OutlinedButton.icon(
                       onPressed: () {
                         context.read<PolicyManagerCubit>().showLogs();
@@ -121,7 +121,7 @@ class PolicyManagerContent extends StatelessWidget {
                 height: 48,
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: (state is PolicyManagerRoleLoaded && state.isEditing) 
+                  onPressed: (state is PolicyManagerLoaded && state.isEditing) 
                     ? null 
                     : () {
                         context.read<PolicyManagerCubit>().startNewRole();
@@ -150,12 +150,7 @@ class PolicyManagerContent extends StatelessWidget {
 
   Widget _buildRolesList(PolicyManagerState state, BuildContext context) {
     if (state is PolicyManagerLoading) {
-      // If loading state has roles, show them; otherwise show loading spinner
-      if (state.roles != null) {
-        return _buildLoadedRolesList(state.roles!, context);
-      } else {
-        return const Center(child: CircularProgressIndicator());
-      }
+      return const Center(child: CircularProgressIndicator());
     } else if (state is PolicyManagerError) {
       return Center(
         child: Column(
@@ -171,9 +166,7 @@ class PolicyManagerContent extends StatelessWidget {
           ],
         ),
       );
-    } else if (state is PolicyManagerRoleLoaded) {
-      return _buildLoadedRolesList(state.roles, context);
-    } else if (state is PolicyManagerViewLogsPageLoaded) {
+    } else if (state is PolicyManagerLoaded) {
       return _buildLoadedRolesList(state.roles, context);
     } else {
       return const Center(child: CircularProgressIndicator());
@@ -209,8 +202,8 @@ class PolicyManagerContent extends StatelessWidget {
   Widget _buildRoleListItem(Role role, BuildContext context) {
     return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
       builder: (context, state) {
-        final isEditing = state is PolicyManagerRoleLoaded && state.isEditing;
-        final isLogsView = state is PolicyManagerViewLogsPageLoaded;
+        final isEditing = state is PolicyManagerLoaded && state.isEditing;
+        final isLogsView = state is PolicyManagerLoaded && state.isLogsView;
         final isDisabled = isEditing && !isLogsView;
         
         return Padding(
@@ -255,7 +248,7 @@ class PolicyManagerContent extends StatelessWidget {
   }
 
   Widget _buildMainContent(PolicyManagerState state, BuildContext context) {
-    if (state is PolicyManagerViewLogsPageLoaded) {
+    if (state is PolicyManagerLoaded && state.isLogsView) {
       // Show logs view
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,7 +281,7 @@ class PolicyManagerContent extends StatelessWidget {
       );
     }
     
-    if (state is PolicyManagerRoleLoaded) {
+    if (state is PolicyManagerLoaded && state.isRolesView) {
       // Show role form if a role is selected
       if (state.selectedRole != null) {
         return PolicyManagerFormView(role: state.selectedRole!);

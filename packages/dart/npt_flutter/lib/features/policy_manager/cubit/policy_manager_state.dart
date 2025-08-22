@@ -1,5 +1,10 @@
 part of 'policy_manager_cubit.dart';
 
+enum PolicyManagerView {
+  roles,
+  logs,
+}
+
 abstract class PolicyManagerState extends Equatable {
   const PolicyManagerState();
 
@@ -7,78 +12,61 @@ abstract class PolicyManagerState extends Equatable {
   List<Object?> get props => [];
 }
 
-class PolicyManagerInitial extends PolicyManagerState {}
-
+/// Single loading state for all operations
 class PolicyManagerLoading extends PolicyManagerState {
-  final Role? selectedRole;
-  final List<Role>? roles;
-
-  const PolicyManagerLoading({
-    this.selectedRole,
-    this.roles,
-  });
-
-  @override
-  List<Object?> get props => [selectedRole, roles];
+  const PolicyManagerLoading();
 }
 
-class PolicyManagerRoleLoaded extends PolicyManagerState {
+/// Main state that handles both roles and logs views
+class PolicyManagerLoaded extends PolicyManagerState {
   final List<Role> roles;
   final Role? selectedRole;
   final bool isEditing;
+  final PolicyManagerView currentView;
 
-  const PolicyManagerRoleLoaded({
+  const PolicyManagerLoaded({
     required this.roles,
     this.selectedRole,
     this.isEditing = false,
+    this.currentView = PolicyManagerView.roles,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole, isEditing];
+  List<Object?> get props => [roles, selectedRole, isEditing, currentView];
 
-  PolicyManagerRoleLoaded copyWith({
+  PolicyManagerLoaded copyWith({
     List<Role>? roles,
     Role? selectedRole,
     bool? isEditing,
+    PolicyManagerView? currentView,
     bool clearSelectedRole = false,
   }) {
-    return PolicyManagerRoleLoaded(
+    return PolicyManagerLoaded(
       roles: roles ?? this.roles,
       selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
       isEditing: isEditing ?? this.isEditing,
+      currentView: currentView ?? this.currentView,
     );
   }
+
+  /// Helper getters for cleaner code
+  bool get isRolesView => currentView == PolicyManagerView.roles;
+  bool get isLogsView => currentView == PolicyManagerView.logs;
+  bool get canEdit => isRolesView && !isEditing;
 }
 
-class PolicyManagerViewLogsPageLoaded extends PolicyManagerState {
-  final List<Role> roles;
-  final Role? selectedRole;
+/// Error state for when operations fail
+class PolicyManagerError extends PolicyManagerState {
+  final String message;
+  final List<Role>? previousRoles; // Keep previous data for recovery
+  final Role? previousSelectedRole;
 
-  const PolicyManagerViewLogsPageLoaded({
-    required this.roles,
-    this.selectedRole,
+  const PolicyManagerError(
+    this.message, {
+    this.previousRoles,
+    this.previousSelectedRole,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole];
-
-  PolicyManagerViewLogsPageLoaded copyWith({
-    List<Role>? roles,
-    Role? selectedRole,
-    bool clearSelectedRole = false,
-  }) {
-    return PolicyManagerViewLogsPageLoaded(
-      roles: roles ?? this.roles,
-      selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
-    );
-  }
-}
-
-class PolicyManagerError extends PolicyManagerState {
-  final String message;
-
-  const PolicyManagerError(this.message);
-
-  @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, previousRoles, previousSelectedRole];
 }

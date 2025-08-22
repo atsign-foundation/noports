@@ -13,7 +13,7 @@ import '../../../styles/sizes.dart';
 
 class FormContent extends StatefulWidget {
   final Role role;
-  final PolicyManagerRoleLoaded state;
+  final PolicyManagerLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
 
@@ -91,7 +91,7 @@ class _FormContentState extends State<FormContent> {
     return BlocListener<PolicyManagerCubit, PolicyManagerState>(
       listener: (context, state) {
         // Update local editing state from bloc and handle save completion
-        if (state is PolicyManagerRoleLoaded) {
+        if (state is PolicyManagerLoaded) {
           setState(() {
             // Backup original data when starting to edit
             if (!_isEditing && state.isEditing) {

@@ -30,7 +30,7 @@ class PolicyManagerFormView extends StatelessWidget {
               ],
             ),
           );
-        } else if (state is PolicyManagerRoleLoaded) {
+        } else if (state is PolicyManagerLoaded) {
           final selectedRole = state.selectedRole ?? role;
           return _buildForm(context, selectedRole, state);
         } else {
@@ -42,7 +42,7 @@ class PolicyManagerFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildForm(BuildContext context, Role role, PolicyManagerRoleLoaded state) {
+  Widget _buildForm(BuildContext context, Role role, PolicyManagerLoaded state) {
     return FormContent(role: role, state: state);
   }
 }

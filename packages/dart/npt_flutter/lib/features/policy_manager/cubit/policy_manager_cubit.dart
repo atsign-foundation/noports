@@ -8,96 +8,76 @@ part 'policy_manager_state.dart';
 class PolicyManagerCubit extends Cubit<PolicyManagerState> {
   final RoleRepository _roleRepository;
   
-  PolicyManagerCubit(this._roleRepository) : super(PolicyManagerInitial());
-
-  void initialize() {
-    emit(PolicyManagerInitial());
-  }
+  PolicyManagerCubit(this._roleRepository) : super(const PolicyManagerLoading());
 
   Future<void> loadRoles() async {
     emit(const PolicyManagerLoading());
-    final roles = await _roleRepository.fetchRoles();
-    emit(PolicyManagerRoleLoaded(roles: roles, isEditing: false));
+    try {
+      final roles = await _roleRepository.fetchRoles();
+      emit(PolicyManagerLoaded(roles: roles));
+    } catch (e) {
+      emit(PolicyManagerError('Failed to load roles: $e'));
+    }
   }
 
   void selectRole(String roleId) {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      if (currentState.isEditing) {
-        return;
-      }
-      final selectedRole = currentState.roles.isNotEmpty
-          ? currentState.roles.firstWhere(
-              (role) => role.id == roleId,
-              orElse: () => currentState.roles.first,
-            )
-          : null;
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: selectedRole, isEditing: false));
-    } else if (state is PolicyManagerViewLogsPageLoaded) {
-      final currentState = state as PolicyManagerViewLogsPageLoaded;
-      final selectedRole = currentState.roles.isNotEmpty
-          ? currentState.roles.firstWhere(
-              (role) => role.id == roleId,
-              orElse: () => currentState.roles.first,
-            )
-          : null;
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: selectedRole, isEditing: false));
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      if (currentState.isEditing) return;
+      
+      final selectedRole = currentState.roles.firstWhere(
+        (role) => role.id == roleId,
+        orElse: () => currentState.roles.first,
+      );
+      emit(currentState.copyWith(selectedRole: selectedRole));
     }
   }
 
   void deselectRole() {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, isEditing: false));
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(currentState.copyWith(clearSelectedRole: true));
     }
   }
 
   void startEditing(String roleId) {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      final selectedRole = currentState.roles.isNotEmpty
-          ? currentState.roles.firstWhere(
-              (role) => role.id == roleId,
-              orElse: () => currentState.roles.first,
-            )
-          : null;
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      final selectedRole = currentState.roles.firstWhere(
+        (role) => role.id == roleId,
+        orElse: () => currentState.roles.first,
+      );
       
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: selectedRole, isEditing: true));
+      emit(currentState.copyWith(
+        selectedRole: selectedRole,
+        isEditing: true,
+      ));
     }
   }
 
   void stopEditing() {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: currentState.selectedRole, isEditing: false));
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(currentState.copyWith(isEditing: false));
     }
   }
 
-  Future<void> saveRole(Role role) async {
-    emit(const PolicyManagerLoading());
-    
-    try {
-      bool success = await _roleRepository.updateExistingRole(role);
-      
-      if (success) {
-        final updatedRoles = await _roleRepository.fetchRoles();
-        emit(PolicyManagerRoleLoaded(
-          roles: updatedRoles,
-          selectedRole: role,
-          isEditing: false,
-        ));
-      } else {
-        emit(const PolicyManagerError('Failed to save role'));
-      }
-    } catch (error) {
-      emit(PolicyManagerError('Failed to save role: $error'));
+  void startNewRole() {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      final emptyRole = Role.empty(name: '');
+      emit(currentState.copyWith(
+        selectedRole: emptyRole,
+        isEditing: true,
+      ));
     }
   }
 
   Future<void> createRole(Role role) async {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
       
+      // Optimistic update
       final optimisticRole = Role(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: role.name,
@@ -107,150 +87,160 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
         deviceGroups: role.deviceGroups,
         userAtSigns: role.userAtSigns,
       );
-      final updatedRolesLocal = [...currentState.roles, optimisticRole];
       
-      emit(PolicyManagerRoleLoaded(roles: updatedRolesLocal, selectedRole: optimisticRole, isEditing: false));
+      final updatedRoles = [...currentState.roles, optimisticRole];
+      emit(PolicyManagerLoaded(
+        roles: updatedRoles,
+        selectedRole: optimisticRole,
+        isEditing: false,
+      ));
       
       try {
-        bool success = await _roleRepository.createNewRole(role);
-        
+        final success = await _roleRepository.createNewRole(role);
         if (success) {
-          final updatedRoles = await _roleRepository.fetchRoles();
-          final createdRole = updatedRoles.firstWhere(
+          // Refresh from server to get the actual created role
+          final serverRoles = await _roleRepository.fetchRoles();
+          final createdRole = serverRoles.firstWhere(
             (r) => r.name == role.name && r.description == role.description,
-            orElse: () => role,
+            orElse: () => optimisticRole,
           );
-          emit(PolicyManagerRoleLoaded(
-            roles: updatedRoles,
+          emit(PolicyManagerLoaded(
+            roles: serverRoles,
             selectedRole: createdRole,
-            isEditing: false,
           ));
         } else {
-          emit(const PolicyManagerError('Failed to create role'));
-          emit(PolicyManagerRoleLoaded(
-            roles: currentState.roles,
-            selectedRole: null,
-            isEditing: false,
+          // Rollback on failure
+          emit(PolicyManagerLoaded(roles: currentState.roles));
+          emit(PolicyManagerError(
+            'Failed to create role',
+            previousRoles: currentState.roles,
           ));
         }
       } catch (error) {
-        emit(PolicyManagerError('Failed to create role: $error'));
-        emit(PolicyManagerRoleLoaded(
-          roles: currentState.roles,
-          selectedRole: null,
-          isEditing: false,
-        ));
-      }
-    }
-  }
-
-  Future<void> deleteRole(String roleId) async {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      
-      final updatedRolesLocal = currentState.roles.where((role) => role.id != roleId).toList();
-      
-      emit(PolicyManagerRoleLoaded(roles: updatedRolesLocal, selectedRole: null, isEditing: false));
-      
-      try {
-        bool success = await _roleRepository.deleteRole(roleId);
-        
-        if (success) {
-          final updatedRoles = await _roleRepository.fetchRoles();
-          emit(PolicyManagerRoleLoaded(roles: updatedRoles, selectedRole: null, isEditing: false));
-        } else {
-          emit(const PolicyManagerError('Failed to delete role'));
-          emit(PolicyManagerRoleLoaded(
-            roles: currentState.roles,
-            selectedRole: currentState.selectedRole,
-            isEditing: false,
-          ));
-        }
-      } catch (error) {
-        emit(PolicyManagerError('Failed to delete role: $error'));
-        emit(PolicyManagerRoleLoaded(
-          roles: currentState.roles,
-          selectedRole: currentState.selectedRole,
-          isEditing: false,
+        // Rollback on error
+        emit(PolicyManagerLoaded(roles: currentState.roles));
+        emit(PolicyManagerError(
+          'Failed to create role: $error',
+          previousRoles: currentState.roles,
         ));
       }
     }
   }
 
   Future<void> updateRole(Role role) async {
-    emit(const PolicyManagerLoading());
-    
-    try {
-      bool success = await _roleRepository.updateExistingRole(role);
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(const PolicyManagerLoading());
       
-      if (success) {
-        final updatedRoles = await _roleRepository.fetchRoles();
-        emit(PolicyManagerRoleLoaded(
-          roles: updatedRoles,
-          selectedRole: role,
-          isEditing: false,
+      try {
+        final success = await _roleRepository.updateExistingRole(role);
+        if (success) {
+          final updatedRoles = await _roleRepository.fetchRoles();
+          emit(PolicyManagerLoaded(
+            roles: updatedRoles,
+            selectedRole: role,
+          ));
+        } else {
+          emit(PolicyManagerLoaded(
+            roles: currentState.roles,
+            selectedRole: currentState.selectedRole,
+          ));
+          emit(PolicyManagerError(
+            'Failed to update role',
+            previousRoles: currentState.roles,
+            previousSelectedRole: currentState.selectedRole,
+          ));
+        }
+      } catch (error) {
+        emit(PolicyManagerLoaded(
+          roles: currentState.roles,
+          selectedRole: currentState.selectedRole,
         ));
-      } else {
-        emit(const PolicyManagerError('Failed to update role'));
+        emit(PolicyManagerError(
+          'Failed to update role: $error',
+          previousRoles: currentState.roles,
+          previousSelectedRole: currentState.selectedRole,
+        ));
       }
-    } catch (error) {
-      emit(PolicyManagerError('Failed to update role: $error'));
     }
   }
 
-  void cancelEdit() {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      emit(PolicyManagerRoleLoaded(roles: currentState.roles, selectedRole: currentState.selectedRole, isEditing: false));
+  Future<void> deleteRole(String roleId) async {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      
+      // Optimistic update
+      final updatedRoles = currentState.roles.where((role) => role.id != roleId).toList();
+      emit(PolicyManagerLoaded(roles: updatedRoles));
+      
+      try {
+        final success = await _roleRepository.deleteRole(roleId);
+        if (success) {
+          final serverRoles = await _roleRepository.fetchRoles();
+          emit(PolicyManagerLoaded(roles: serverRoles));
+        } else {
+          // Rollback on failure
+          emit(PolicyManagerLoaded(
+            roles: currentState.roles,
+            selectedRole: currentState.selectedRole,
+          ));
+          emit(PolicyManagerError(
+            'Failed to delete role',
+            previousRoles: currentState.roles,
+            previousSelectedRole: currentState.selectedRole,
+          ));
+        }
+      } catch (error) {
+        // Rollback on error
+        emit(PolicyManagerLoaded(
+          roles: currentState.roles,
+          selectedRole: currentState.selectedRole,
+        ));
+        emit(PolicyManagerError(
+          'Failed to delete role: $error',
+          previousRoles: currentState.roles,
+          previousSelectedRole: currentState.selectedRole,
+        ));
+      }
     }
   }
 
-  void startNewRole() {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      final emptyRole = Role.empty(name: '');
-      emit(PolicyManagerRoleLoaded(
-        roles: currentState.roles,
-        selectedRole: emptyRole,
-        isEditing: true,
-      ));
-    }
-  }
-
-  Future<void> showLogs() async {
-    if (state is PolicyManagerRoleLoaded) {
-      final currentState = state as PolicyManagerRoleLoaded;
-      emit(PolicyManagerViewLogsPageLoaded(
-        roles: currentState.roles,
-        selectedRole: null,
-      ));
-    } else if (state is PolicyManagerViewLogsPageLoaded) {
-      return;
-    } else if (state is PolicyManagerLoading && (state as PolicyManagerLoading).roles != null) {
-      final currentState = state as PolicyManagerLoading;
-      emit(PolicyManagerViewLogsPageLoaded(
-        roles: currentState.roles!,
-        selectedRole: null,
-      ));
-    } else {
-      final roles = await _roleRepository.fetchRoles();
-      emit(PolicyManagerViewLogsPageLoaded(
-        roles: roles,
-        selectedRole: null,
+  void showLogs() {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(currentState.copyWith(
+        currentView: PolicyManagerView.logs,
+        clearSelectedRole: true,
       ));
     }
   }
 
   void showRoles() {
-    if (state is PolicyManagerViewLogsPageLoaded) {
-      final currentState = state as PolicyManagerViewLogsPageLoaded;
-      emit(PolicyManagerRoleLoaded(
-        roles: currentState.roles,
-        selectedRole: currentState.selectedRole,
-        isEditing: false,
-      ));
-    } else if (state is PolicyManagerRoleLoaded) {
-      return;
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(currentState.copyWith(currentView: PolicyManagerView.roles));
+    }
+  }
+
+  void cancelEdit() {
+    if (state is PolicyManagerLoaded) {
+      final currentState = state as PolicyManagerLoaded;
+      emit(currentState.copyWith(isEditing: false));
+    }
+  }
+
+  /// Helper method to recover from error state
+  void recoverFromError() {
+    if (state is PolicyManagerError) {
+      final errorState = state as PolicyManagerError;
+      if (errorState.previousRoles != null) {
+        emit(PolicyManagerLoaded(
+          roles: errorState.previousRoles!,
+          selectedRole: errorState.previousSelectedRole,
+        ));
+      } else {
+        loadRoles();
+      }
     }
   }
 }
