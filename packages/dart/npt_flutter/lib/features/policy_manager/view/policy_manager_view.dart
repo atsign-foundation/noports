@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/policy_manager_bloc.dart';
-import '../bloc/policy_manager_event.dart';
-import '../bloc/policy_manager_state.dart';
+import '../cubit/policy_manager_cubit.dart';
 import '../models/policy.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_manager_form/view/policy_manager_form_view.dart';
@@ -20,7 +18,7 @@ class PolicyManagerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyManagerBloc(context.read<RoleRepository>())..add(const PolicyManagerLoadingRoles()),
+      create: (context) => PolicyManagerCubit(context.read<RoleRepository>())..loadRoles(),
       child: PolicyManagerContent(atSign: atSign),
     );
   }
@@ -34,7 +32,7 @@ class PolicyManagerContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
-    return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
       builder: (context, state) {
         return Scaffold(
           body: Row(
@@ -82,7 +80,7 @@ class PolicyManagerContent extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.refresh),
                     onPressed: () {
-                      context.read<PolicyManagerBloc>().add(const PolicyManagerLoadingRoles());
+                      context.read<PolicyManagerCubit>().loadRoles();
                     },
                     tooltip: 'Refresh roles',
                   ),
@@ -94,12 +92,12 @@ class PolicyManagerContent extends StatelessWidget {
               child: SizedBox(
                 height: 48,
                 width: double.infinity,
-                child: BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+                child: BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
                   builder: (context, state) {
                     final isLogsView = state is PolicyManagerViewLogsPageLoaded;
                     return OutlinedButton.icon(
                       onPressed: () {
-                        context.read<PolicyManagerBloc>().add(const PolicyManagerShowLogs());
+                        context.read<PolicyManagerCubit>().showLogs();
                       },
                       icon: const Icon(Icons.list_alt),
                       label: const Text('View Logs'),
@@ -126,7 +124,7 @@ class PolicyManagerContent extends StatelessWidget {
                   onPressed: (state is PolicyManagerRoleLoaded && state.isEditing) 
                     ? null 
                     : () {
-                        context.read<PolicyManagerBloc>().add(const PolicyManagerStartNewRole());
+                        context.read<PolicyManagerCubit>().startNewRole();
                       },
                   icon: const Icon(Icons.add),
                   label: const Text('Add New Role'),
@@ -209,7 +207,7 @@ class PolicyManagerContent extends StatelessWidget {
   }
 
   Widget _buildRoleListItem(Role role, BuildContext context) {
-    return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
       builder: (context, state) {
         final isEditing = state is PolicyManagerRoleLoaded && state.isEditing;
         final isLogsView = state is PolicyManagerViewLogsPageLoaded;
@@ -245,7 +243,7 @@ class PolicyManagerContent extends StatelessWidget {
                   style: const TextStyle(color: AppColor.onSurfaceColor),
                 ),
                 onTap: isDisabled ? null : () {
-                  context.read<PolicyManagerBloc>().add(PolicyManagerRoleSelected(role.id ?? ''));
+                  context.read<PolicyManagerCubit>().selectRole(role.id ?? '');
                 },
                 enabled: !isDisabled,
               ),

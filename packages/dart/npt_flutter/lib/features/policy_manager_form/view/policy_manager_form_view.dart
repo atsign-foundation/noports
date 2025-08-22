@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy_manager/models/policy.dart';
-import '../../policy_manager/bloc/policy_manager_bloc.dart';
-import '../../policy_manager/bloc/policy_manager_state.dart';
+import '../../policy_manager/cubit/policy_manager_cubit.dart';
 import '../widgets/form_content.dart';
 
 class PolicyManagerFormView extends StatelessWidget {
@@ -12,7 +11,7 @@ class PolicyManagerFormView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PolicyManagerBloc, PolicyManagerState>(
+    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
       builder: (context, state) {
         if (state is PolicyManagerLoading) {
           return const Center(child: CircularProgressIndicator());

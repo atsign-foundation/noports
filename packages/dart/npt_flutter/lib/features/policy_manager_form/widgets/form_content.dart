@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy_manager/models/policy.dart';
-import '../../policy_manager/bloc/policy_manager_bloc.dart';
-import '../../policy_manager/bloc/policy_manager_event.dart';
-import '../../policy_manager/bloc/policy_manager_state.dart';
+import '../../policy_manager/cubit/policy_manager_cubit.dart';
 import 'role_name_field.dart';
 import 'role_description_field.dart';
 import 'daemon_at_signs_field.dart';
@@ -58,7 +56,7 @@ class _FormContentState extends State<FormContent> {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
-    final bloc = context.read<PolicyManagerBloc>();
+    final cubit = context.read<PolicyManagerCubit>();
     
     showDialog(
       context: context,
@@ -74,7 +72,7 @@ class _FormContentState extends State<FormContent> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                bloc.add(PolicyManagerDeleteRole(_currentRole.id ?? ''));
+                cubit.deleteRole(_currentRole.id ?? '');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
@@ -90,7 +88,7 @@ class _FormContentState extends State<FormContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PolicyManagerBloc, PolicyManagerState>(
+    return BlocListener<PolicyManagerCubit, PolicyManagerState>(
       listener: (context, state) {
         // Update local editing state from bloc and handle save completion
         if (state is PolicyManagerRoleLoaded) {
@@ -143,7 +141,7 @@ class _FormContentState extends State<FormContent> {
                       setState(() {
                         _currentRole = _originalRole;
                       });
-                      context.read<PolicyManagerBloc>().add(const PolicyManagerStopEditing());
+                      context.read<PolicyManagerCubit>().stopEditing();
                     },
                     child: const Text('Cancel'),
                   ),
@@ -154,10 +152,10 @@ class _FormContentState extends State<FormContent> {
                       // Distinguish between creating new role vs updating existing role
                       if (_currentRole.id == null || _currentRole.id!.isEmpty) {
                         // Creating a new role
-                        context.read<PolicyManagerBloc>().add(PolicyManagerCreateRole(_currentRole));
+                        context.read<PolicyManagerCubit>().createRole(_currentRole);
                       } else {
                         // Updating an existing role
-                        context.read<PolicyManagerBloc>().add(PolicyManagerUpdateRole(_currentRole));
+                        context.read<PolicyManagerCubit>().updateRole(_currentRole);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -169,7 +167,7 @@ class _FormContentState extends State<FormContent> {
                 ] else ...[
                   ElevatedButton(
                     onPressed: () {
-                      context.read<PolicyManagerBloc>().add(PolicyManagerStartEditing(widget.role.id ?? ''));
+                      context.read<PolicyManagerCubit>().startEditing(widget.role.id ?? '');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primaryColor,
