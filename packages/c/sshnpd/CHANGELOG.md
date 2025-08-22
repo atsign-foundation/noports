@@ -1,3 +1,7 @@
+## 1.0.14
+
+- build(deps): Bump at_c to use MbedTLS 3.6.4
+
 ## 1.0.13
 
 - feat: csshnpd root-domain implementation
