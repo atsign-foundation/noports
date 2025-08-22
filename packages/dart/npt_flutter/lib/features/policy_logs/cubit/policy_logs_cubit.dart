@@ -31,11 +31,10 @@ class PolicyLogsCubit extends Cubit<PolicyLogsState> {
   }
 
   Future<void> startGlobalMonitoring() async {
-    _monitorService.clearLogs();
     await _monitorService.startGlobalMonitoring();
     emit(state.copyWith(
       isMonitoring: _monitorService.isMonitoring,
-      logs: [],
+      logs: _monitorService.logs,
     ));
   }
 
@@ -49,7 +48,7 @@ class PolicyLogsCubit extends Cubit<PolicyLogsState> {
   void clearLogs() {
     _monitorService.clearLogs();
     emit(state.copyWith(
-      logs: [],
+      logs: _monitorService.logs,
     ));
   }
 
