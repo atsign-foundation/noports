@@ -36,7 +36,9 @@ class ActivateUtil {
   }
 
   Future<Response> registrarApiRequest(
-      NoPortsActivateApiEndpoints endpoint, Map<String, String?> data) async {
+    NoPortsActivateApiEndpoints endpoint,
+    Map<String, String?> data,
+  ) async {
     Uri url = Uri.https(registrarUrl, endpoint.path);
 
     return _http.post(
@@ -49,15 +51,14 @@ class ActivateUtil {
     );
   }
 
-  Future<({String? cramkey, String? errorMessage})> verifyActivation(
-      {required String atsign, required String otp}) async {
-    var res = await registrarApiRequest(
-      NoPortsActivateApiEndpoints.validate,
-      {
-        'atsign': atsign,
-        'otp': otp,
-      },
-    );
+  Future<({String? cramkey, String? errorMessage})> verifyActivation({
+    required String atsign,
+    required String otp,
+  }) async {
+    var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate, {
+      'atsign': atsign,
+      'otp': otp,
+    });
     if (res.statusCode != 200) {
       return (
         errorMessage:
@@ -104,16 +105,17 @@ class ActivateUtil {
 
       if (res) {
         int round = 1;
-        ServerStatus? atSignStatus =
-            await onboardingService.checkAtSignServerStatus(atsign);
+        ServerStatus? atSignStatus = await onboardingService
+            .checkAtSignServerStatus(atsign);
         while (atSignStatus != ServerStatus.activated) {
           if (round > 10) {
             break;
           }
           await Future.delayed(const Duration(seconds: 3));
           round++;
-          atSignStatus =
-              await onboardingService.checkAtSignServerStatus(atsign);
+          atSignStatus = await onboardingService.checkAtSignServerStatus(
+            atsign,
+          );
         }
 
         if (atSignStatus == ServerStatus.teapot) {
@@ -126,8 +128,8 @@ class ActivateUtil {
       }
 
       return AtOnboardingResult.error(
-          message:
-              AtOnboardingLocalizations.current.error_authenticated_failed);
+        message: AtOnboardingLocalizations.current.error_authenticated_failed,
+      );
     } catch (e) {
       if (e == AtOnboardingResponseStatus.authFailed) {
         return AtOnboardingResult.error(

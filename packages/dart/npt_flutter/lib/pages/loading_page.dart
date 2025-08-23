@@ -8,9 +8,7 @@ class LoadingPage extends StatelessWidget {
     return const Scaffold(
       extendBodyBehindAppBar: true,
       extendBody: true,
-      body: Center(
-        child: CircularProgressIndicator.adaptive(),
-      ),
+      body: Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 }

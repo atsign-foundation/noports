@@ -57,9 +57,7 @@ void main() {
       });
 
       test('should update relayAtsign when provided', () {
-        final copiedSettings = originalSettings.copyWith(
-          relayAtsign: '@rv_eu',
-        );
+        final copiedSettings = originalSettings.copyWith(relayAtsign: '@rv_eu');
 
         expect(copiedSettings.relayAtsign, '@rv_eu');
         expect(copiedSettings.overrideRelay, originalSettings.overrideRelay);
@@ -77,9 +75,7 @@ void main() {
       });
 
       test('should update overrideRelay when provided', () {
-        final copiedSettings = originalSettings.copyWith(
-          overrideRelay: true,
-        );
+        final copiedSettings = originalSettings.copyWith(overrideRelay: true);
 
         expect(copiedSettings.overrideRelay, true);
         expect(copiedSettings.relayAtsign, originalSettings.relayAtsign);
@@ -95,9 +91,7 @@ void main() {
       });
 
       test('should update darkMode when provided', () {
-        final copiedSettings = originalSettings.copyWith(
-          darkMode: true,
-        );
+        final copiedSettings = originalSettings.copyWith(darkMode: true);
 
         expect(copiedSettings.darkMode, true);
         expect(copiedSettings.relayAtsign, originalSettings.relayAtsign);
@@ -180,7 +174,9 @@ void main() {
 
         expect(deserializedSettings.relayAtsign, originalSettings.relayAtsign);
         expect(
-            deserializedSettings.overrideRelay, originalSettings.overrideRelay);
+          deserializedSettings.overrideRelay,
+          originalSettings.overrideRelay,
+        );
         expect(deserializedSettings.viewLayout, originalSettings.viewLayout);
         expect(deserializedSettings.darkMode, originalSettings.darkMode);
         expect(deserializedSettings.language, originalSettings.language);
@@ -263,8 +259,10 @@ void main() {
 
         expect(stringRepresentation, contains('Settings with relay:@rv_eu'));
         expect(stringRepresentation, contains('overrideRelay: true'));
-        expect(stringRepresentation,
-            contains('view: PreferredViewLayout.sshStyle'));
+        expect(
+          stringRepresentation,
+          contains('view: PreferredViewLayout.sshStyle'),
+        );
         expect(stringRepresentation, contains('darkMode: false'));
         expect(stringRepresentation, contains('lang: pt-br'));
       });
@@ -313,15 +311,17 @@ void main() {
       expect(RelayOptions.ap.relayAtsign, '@rv_ap');
     });
 
-    test('should have regions property (requires app context for localization)',
-        () {
-      // Note: Testing regions requires app context for AppLocalizations
-      // This would typically be tested in widget tests or integration tests
-      // where the app context is available
-      expect(RelayOptions.values, hasLength(3));
-      expect(RelayOptions.values, contains(RelayOptions.am));
-      expect(RelayOptions.values, contains(RelayOptions.eu));
-      expect(RelayOptions.values, contains(RelayOptions.ap));
-    });
+    test(
+      'should have regions property (requires app context for localization)',
+      () {
+        // Note: Testing regions requires app context for AppLocalizations
+        // This would typically be tested in widget tests or integration tests
+        // where the app context is available
+        expect(RelayOptions.values, hasLength(3));
+        expect(RelayOptions.values, contains(RelayOptions.am));
+        expect(RelayOptions.values, contains(RelayOptions.eu));
+        expect(RelayOptions.values, contains(RelayOptions.ap));
+      },
+    );
   });
 }

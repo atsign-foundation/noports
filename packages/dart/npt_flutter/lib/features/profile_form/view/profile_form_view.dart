@@ -18,7 +18,6 @@ class ProfileFormView extends StatelessWidget {
     final deviceSize = MediaQuery.of(context).size;
     return BlocProvider<ProfileBloc>(
       create: (BuildContext context) =>
-
           /// Local copy of the profile which is used by the form
           ProfileBloc(context.read<ProfileRepository>(), uuid)
             ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
@@ -43,8 +42,9 @@ class ProfileFormView extends StatelessWidget {
                             const ProfileDisplayNameTextField(),
                             gapH10,
                             const Padding(
-                              padding:
-                                  EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: Sizes.p50,
+                              ),
                               child: Row(
                                 children: [
                                   ProfileDeviceAtSignTextField(),
@@ -57,8 +57,9 @@ class ProfileFormView extends StatelessWidget {
                             const ProfileRelayQuickButtons(),
                             gapH10,
                             const Padding(
-                              padding:
-                                  EdgeInsets.symmetric(horizontal: Sizes.p50),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: Sizes.p50,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -73,7 +74,8 @@ class ProfileFormView extends StatelessWidget {
                             gapH20,
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: Sizes.p50),
+                                horizontal: Sizes.p50,
+                              ),
                               child: Builder(
                                 builder: (context) => SizedBox(
                                   width: Sizes.p743,
@@ -82,20 +84,24 @@ class ProfileFormView extends StatelessWidget {
                                       if (!formkey.currentState!.validate())
                                         return;
 
-                                      var localBloc =
-                                          context.read<ProfileBloc>();
+                                      var localBloc = context
+                                          .read<ProfileBloc>();
                                       if (localBloc.state
-                                          is! ProfileLoadedState) return;
+                                          is! ProfileLoadedState)
+                                        return;
 
                                       /// Now take the localBloc and upload it back to the global bloc
                                       context
                                           .read<ProfileCacheCubit>()
                                           .getProfileBloc(uuid)
-                                          .add(ProfileSaveEvent(
-                                            profile: (localBloc.state
-                                                    as ProfileLoadedState)
-                                                .profile,
-                                          ));
+                                          .add(
+                                            ProfileSaveEvent(
+                                              profile:
+                                                  (localBloc.state
+                                                          as ProfileLoadedState)
+                                                      .profile,
+                                            ),
+                                          );
                                     },
                                     child: Text(strings.submit),
                                   ),

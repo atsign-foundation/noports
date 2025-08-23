@@ -40,19 +40,21 @@ void main() {
         expect(testProfile.relayAtsign, equals(testRelayAtsign));
       });
 
-      test('should create profile with default remoteHost when not provided',
-          () {
-        const profileWithoutRemoteHost = Profile(
-          testUuid,
-          displayName: testDisplayName,
-          sshnpdAtsign: testSshnpdAtsign,
-          deviceName: testDeviceName,
-          remotePort: testRemotePort,
-          localPort: testLocalPort,
-        );
+      test(
+        'should create profile with default remoteHost when not provided',
+        () {
+          const profileWithoutRemoteHost = Profile(
+            testUuid,
+            displayName: testDisplayName,
+            sshnpdAtsign: testSshnpdAtsign,
+            deviceName: testDeviceName,
+            remotePort: testRemotePort,
+            localPort: testLocalPort,
+          );
 
-        expect(profileWithoutRemoteHost.remoteHost, equals('localhost'));
-      });
+          expect(profileWithoutRemoteHost.remoteHost, equals('localhost'));
+        },
+      );
 
       test('should create profile with null relayAtsign', () {
         const profileWithoutRelay = Profile(
@@ -71,8 +73,9 @@ void main() {
     group('Profile copyWith', () {
       test('should copy profile with updated displayName', () {
         const newDisplayName = 'Updated Profile Name';
-        final updatedProfile =
-            testProfile.copyWith(displayName: newDisplayName);
+        final updatedProfile = testProfile.copyWith(
+          displayName: newDisplayName,
+        );
 
         expect(updatedProfile.displayName, equals(newDisplayName));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
@@ -103,8 +106,9 @@ void main() {
 
       test('should copy profile with updated relayAtsign', () {
         const newRelayAtsign = '@new_relay';
-        final updatedProfile =
-            testProfile.copyWith(relayAtsign: newRelayAtsign);
+        final updatedProfile = testProfile.copyWith(
+          relayAtsign: newRelayAtsign,
+        );
 
         expect(updatedProfile.relayAtsign, equals(newRelayAtsign));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
@@ -120,42 +124,44 @@ void main() {
     });
 
     group('Profile JSON Serialization', () {
-      test('should handle JSON serialization and deserialization correctly',
-          () {
-        // Test standard JSON serialization
-        final json = testProfile.toJson();
-        expect(json['uuid'], equals(testUuid));
-        expect(json['displayName'], equals(testDisplayName));
-        expect(json['sshnpdAtsign'], equals(testSshnpdAtsign));
-        expect(json['deviceName'], equals(testDeviceName));
-        expect(json['remoteHost'], equals(testRemoteHost));
-        expect(json['remotePort'], equals(testRemotePort));
-        expect(json['localPort'], equals(testLocalPort));
-        expect(json['relayAtsign'], equals(testRelayAtsign));
+      test(
+        'should handle JSON serialization and deserialization correctly',
+        () {
+          // Test standard JSON serialization
+          final json = testProfile.toJson();
+          expect(json['uuid'], equals(testUuid));
+          expect(json['displayName'], equals(testDisplayName));
+          expect(json['sshnpdAtsign'], equals(testSshnpdAtsign));
+          expect(json['deviceName'], equals(testDeviceName));
+          expect(json['remoteHost'], equals(testRemoteHost));
+          expect(json['remotePort'], equals(testRemotePort));
+          expect(json['localPort'], equals(testLocalPort));
+          expect(json['relayAtsign'], equals(testRelayAtsign));
 
-        // Test exportable JSON (without UUID)
-        final exportableJson = testProfile.toExportableJson();
-        expect(exportableJson.containsKey('uuid'), isFalse);
-        expect(exportableJson['displayName'], equals(testDisplayName));
-        expect(exportableJson['sshnpdAtsign'], equals(testSshnpdAtsign));
-        expect(exportableJson['deviceName'], equals(testDeviceName));
+          // Test exportable JSON (without UUID)
+          final exportableJson = testProfile.toExportableJson();
+          expect(exportableJson.containsKey('uuid'), isFalse);
+          expect(exportableJson['displayName'], equals(testDisplayName));
+          expect(exportableJson['sshnpdAtsign'], equals(testSshnpdAtsign));
+          expect(exportableJson['deviceName'], equals(testDeviceName));
 
-        // Test deserialization from complete JSON
-        final deserializedProfile = Profile.fromJson(json);
-        expect(deserializedProfile, equals(testProfile));
+          // Test deserialization from complete JSON
+          final deserializedProfile = Profile.fromJson(json);
+          expect(deserializedProfile, equals(testProfile));
 
-        // Test deserialization with default remoteHost
-        final jsonWithoutHost = {
-          'displayName': testDisplayName,
-          'sshnpdAtsign': testSshnpdAtsign,
-          'deviceName': testDeviceName,
-          'remotePort': testRemotePort,
-          'localPort': testLocalPort,
-        };
-        final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
-        expect(profileWithDefaultHost.remoteHost, equals('localhost'));
-        expect(profileWithDefaultHost.displayName, equals(testDisplayName));
-      });
+          // Test deserialization with default remoteHost
+          final jsonWithoutHost = {
+            'displayName': testDisplayName,
+            'sshnpdAtsign': testSshnpdAtsign,
+            'deviceName': testDeviceName,
+            'remotePort': testRemotePort,
+            'localPort': testLocalPort,
+          };
+          final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
+          expect(profileWithDefaultHost.remoteHost, equals('localhost'));
+          expect(profileWithDefaultHost.displayName, equals(testDisplayName));
+        },
+      );
     });
 
     group('Profile Equality and String Representation', () {
@@ -194,13 +200,14 @@ void main() {
         final stringRepresentation = testProfile.toString();
 
         expect(
-            stringRepresentation,
-            allOf(
-              contains(testDisplayName),
-              contains(testSshnpdAtsign),
-              contains(testDeviceName),
-              contains(testUuid),
-            ));
+          stringRepresentation,
+          allOf(
+            contains(testDisplayName),
+            contains(testSshnpdAtsign),
+            contains(testDeviceName),
+            contains(testUuid),
+          ),
+        );
       });
     });
 
@@ -227,8 +234,10 @@ void main() {
 
         expect(nptParams.clientAtSign, equals(clientAtsign));
         expect(nptParams.sshnpdAtSign, equals(testSshnpdAtsign));
-        expect(nptParams.srvdAtSign,
-            equals(testRelayAtsign)); // Should use profile's relay
+        expect(
+          nptParams.srvdAtSign,
+          equals(testRelayAtsign),
+        ); // Should use profile's relay
         expect(nptParams.remoteHost, equals(testRemoteHost));
         expect(nptParams.remotePort, equals(testRemotePort));
         expect(nptParams.device, equals(testDeviceName));
@@ -236,22 +245,26 @@ void main() {
         expect(nptParams.rootDomain, equals(rootDomain));
       });
 
-      test('should use fallback relay when overrideRelayWithFallback is true',
-          () {
-        const clientAtsign = '@client';
-        const rootDomain = 'test.domain.com';
-        const fallbackRelayAtsign = '@fallback_relay';
+      test(
+        'should use fallback relay when overrideRelayWithFallback is true',
+        () {
+          const clientAtsign = '@client';
+          const rootDomain = 'test.domain.com';
+          const fallbackRelayAtsign = '@fallback_relay';
 
-        final nptParams = testProfile.toNptParams(
-          clientAtsign: clientAtsign,
-          rootDomain: rootDomain,
-          fallbackRelayAtsign: fallbackRelayAtsign,
-          overrideRelayWithFallback: true,
-        );
+          final nptParams = testProfile.toNptParams(
+            clientAtsign: clientAtsign,
+            rootDomain: rootDomain,
+            fallbackRelayAtsign: fallbackRelayAtsign,
+            overrideRelayWithFallback: true,
+          );
 
-        expect(nptParams.srvdAtSign,
-            equals(fallbackRelayAtsign)); // Should use fallback
-      });
+          expect(
+            nptParams.srvdAtSign,
+            equals(fallbackRelayAtsign),
+          ); // Should use fallback
+        },
+      );
 
       test('should use fallback relay when profile relay is null', () {
         const profileWithoutRelay = Profile(
@@ -310,41 +323,46 @@ void main() {
       });
 
       test(
-          'should generate uuid when profile uuid is empty and no uuid provided',
-          () {
-        final json = {
-          'displayName': testDisplayName,
-          'sshnpdAtsign': testSshnpdAtsign,
-          'deviceName': testDeviceName,
-          'remotePort': testRemotePort,
-          'localPort': testLocalPort,
-        };
+        'should generate uuid when profile uuid is empty and no uuid provided',
+        () {
+          final json = {
+            'displayName': testDisplayName,
+            'sshnpdAtsign': testSshnpdAtsign,
+            'deviceName': testDeviceName,
+            'remotePort': testRemotePort,
+            'localPort': testLocalPort,
+          };
 
-        final profile = Profile.fromJson(json);
+          final profile = Profile.fromJson(json);
 
-        expect(profile.uuid, isNotEmpty);
-        expect(profile.uuid, isNot(equals('')));
-      });
+          expect(profile.uuid, isNotEmpty);
+          expect(profile.uuid, isNot(equals('')));
+        },
+      );
 
       test(
-          'should keep existing uuid when profile already has one and no new uuid is passed in',
-          () {
-        final json = {
-          'uuid': testUuid,
-          'displayName': testDisplayName,
-          'sshnpdAtsign': testSshnpdAtsign,
-          'deviceName': testDeviceName,
-          'remotePort': testRemotePort,
-          'localPort': testLocalPort,
-        };
+        'should keep existing uuid when profile already has one and no new uuid is passed in',
+        () {
+          final json = {
+            'uuid': testUuid,
+            'displayName': testDisplayName,
+            'sshnpdAtsign': testSshnpdAtsign,
+            'deviceName': testDeviceName,
+            'remotePort': testRemotePort,
+            'localPort': testLocalPort,
+          };
 
-        const providedUuid = 'provided-uuid-123';
-        var profile = Profile.fromJson(json, uuid: null);
+          const providedUuid = 'provided-uuid-123';
+          var profile = Profile.fromJson(json, uuid: null);
 
-        expect(profile.uuid, equals(testUuid)); // Should keep original uuid
-        profile = Profile.fromJson(json, uuid: providedUuid);
-        expect(profile.uuid, equals(providedUuid)); // Should use provided uuid
-      });
+          expect(profile.uuid, equals(testUuid)); // Should keep original uuid
+          profile = Profile.fromJson(json, uuid: providedUuid);
+          expect(
+            profile.uuid,
+            equals(providedUuid),
+          ); // Should use provided uuid
+        },
+      );
     });
   });
 }

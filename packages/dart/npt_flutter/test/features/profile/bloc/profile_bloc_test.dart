@@ -6,9 +6,7 @@ import 'package:npt_flutter/features/profile/profile.dart';
 
 import 'profile_bloc_test.mocks.dart';
 
-@GenerateMocks([
-  ProfileRepository,
-])
+@GenerateMocks([ProfileRepository])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -50,8 +48,9 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoading then ProfileLoaded when profile is loaded successfully',
         build: () {
-          when(mockRepository.getProfile(testUuid, useCache: true))
-              .thenAnswer((_) async => testProfile);
+          when(
+            mockRepository.getProfile(testUuid, useCache: true),
+          ).thenAnswer((_) async => testProfile);
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadEvent()),
@@ -64,8 +63,9 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoading then ProfileFailedLoad when profile is null',
         build: () {
-          when(mockRepository.getProfile(testUuid, useCache: true))
-              .thenAnswer((_) async => null);
+          when(
+            mockRepository.getProfile(testUuid, useCache: true),
+          ).thenAnswer((_) async => null);
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadEvent()),
@@ -78,8 +78,9 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoading then ProfileFailedLoad when repository throws exception',
         build: () {
-          when(mockRepository.getProfile(testUuid, useCache: true))
-              .thenThrow(Exception('Repository error'));
+          when(
+            mockRepository.getProfile(testUuid, useCache: true),
+          ).thenThrow(Exception('Repository error'));
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadEvent()),
@@ -92,8 +93,9 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should use cache parameter correctly',
         build: () {
-          when(mockRepository.getProfile(testUuid, useCache: false))
-              .thenAnswer((_) async => testProfile);
+          when(
+            mockRepository.getProfile(testUuid, useCache: false),
+          ).thenAnswer((_) async => testProfile);
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadEvent(useCache: false)),
@@ -102,8 +104,9 @@ void main() {
           const ProfileLoaded(testUuid, profile: testProfile),
         ],
         verify: (_) {
-          verify(mockRepository.getProfile(testUuid, useCache: false))
-              .called(1);
+          verify(
+            mockRepository.getProfile(testUuid, useCache: false),
+          ).called(1);
         },
       );
     });
@@ -112,8 +115,9 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoading then ProfileLoaded when profile exists',
         build: () {
-          when(mockRepository.getProfile(testUuid))
-              .thenAnswer((_) async => testProfile);
+          when(
+            mockRepository.getProfile(testUuid),
+          ).thenAnswer((_) async => testProfile);
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadOrCreateEvent()),
@@ -126,39 +130,45 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should create default profile when profile is null and no copyFrom',
         build: () {
-          when(mockRepository.getProfile(testUuid))
-              .thenAnswer((_) async => null);
+          when(
+            mockRepository.getProfile(testUuid),
+          ).thenAnswer((_) async => null);
           return profileBloc;
         },
         act: (bloc) => bloc.add(const ProfileLoadOrCreateEvent()),
         expect: () => [
           const ProfileLoading(testUuid),
-          const ProfileLoaded(testUuid,
-              profile: Profile(
-                testUuid,
-                displayName: '',
-                sshnpdAtsign: '',
-                relayAtsign: '',
-                deviceName: '',
-                remotePort: 3389,
-                localPort: 0,
-              )),
+          const ProfileLoaded(
+            testUuid,
+            profile: Profile(
+              testUuid,
+              displayName: '',
+              sshnpdAtsign: '',
+              relayAtsign: '',
+              deviceName: '',
+              remotePort: 3389,
+              localPort: 0,
+            ),
+          ),
         ],
       );
 
       blocTest<ProfileBloc, ProfileState>(
         'should create profile from copyFrom when provided',
         build: () {
-          when(mockRepository.getProfile(testUuid))
-              .thenAnswer((_) async => null);
+          when(
+            mockRepository.getProfile(testUuid),
+          ).thenAnswer((_) async => null);
           return profileBloc;
         },
         act: (bloc) =>
             bloc.add(const ProfileLoadOrCreateEvent(copyFrom: testProfile)),
         expect: () => [
           const ProfileLoading(testUuid),
-          ProfileLoaded(testUuid,
-              profile: testProfile.copyWith(uuid: testUuid)),
+          ProfileLoaded(
+            testUuid,
+            profile: testProfile.copyWith(uuid: testUuid),
+          ),
         ],
       );
     });
@@ -169,13 +179,16 @@ void main() {
         build: () => profileBloc,
         seed: () => const ProfileLoaded(testUuid, profile: testProfile),
         act: (bloc) {
-          final editedProfile =
-              testProfile.copyWith(displayName: 'Edited Profile');
+          final editedProfile = testProfile.copyWith(
+            displayName: 'Edited Profile',
+          );
           bloc.add(ProfileEditEvent(profile: editedProfile));
         },
         expect: () => [
-          ProfileLoaded(testUuid,
-              profile: testProfile.copyWith(displayName: 'Edited Profile')),
+          ProfileLoaded(
+            testUuid,
+            profile: testProfile.copyWith(displayName: 'Edited Profile'),
+          ),
         ],
       );
 
@@ -184,13 +197,16 @@ void main() {
         build: () => profileBloc,
         seed: () => const ProfileFailedSave(testUuid, profile: testProfile),
         act: (bloc) {
-          final editedProfile =
-              testProfile.copyWith(displayName: 'Edited Profile');
+          final editedProfile = testProfile.copyWith(
+            displayName: 'Edited Profile',
+          );
           bloc.add(ProfileEditEvent(profile: editedProfile));
         },
         expect: () => [
-          ProfileLoaded(testUuid,
-              profile: testProfile.copyWith(displayName: 'Edited Profile')),
+          ProfileLoaded(
+            testUuid,
+            profile: testProfile.copyWith(displayName: 'Edited Profile'),
+          ),
         ],
       );
 
@@ -199,8 +215,9 @@ void main() {
         build: () => profileBloc,
         seed: () => const ProfileLoading(testUuid),
         act: (bloc) {
-          final editedProfile =
-              testProfile.copyWith(displayName: 'Edited Profile');
+          final editedProfile = testProfile.copyWith(
+            displayName: 'Edited Profile',
+          );
           bloc.add(ProfileEditEvent(profile: editedProfile));
         },
         expect: () => [],
@@ -209,20 +226,26 @@ void main() {
 
     group('State Types', () {
       test(
-          'ProfileLoadedState should include ProfileLoaded and ProfileFailedSave',
-          () {
-        const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-        const failedSaveState =
-            ProfileFailedSave(testUuid, profile: testProfile);
+        'ProfileLoadedState should include ProfileLoaded and ProfileFailedSave',
+        () {
+          const loadedState = ProfileLoaded(testUuid, profile: testProfile);
+          const failedSaveState = ProfileFailedSave(
+            testUuid,
+            profile: testProfile,
+          );
 
-        expect(loadedState, isA<ProfileLoadedState>());
-        expect(failedSaveState, isA<ProfileLoadedState>());
-      });
+          expect(loadedState, isA<ProfileLoadedState>());
+          expect(failedSaveState, isA<ProfileLoadedState>());
+        },
+      );
 
       test('ProfileStarting should include status', () {
         const status = 'Connecting...';
-        const startingState =
-            ProfileStarting(testUuid, profile: testProfile, status: status);
+        const startingState = ProfileStarting(
+          testUuid,
+          profile: testProfile,
+          status: status,
+        );
 
         expect(startingState.status, equals(status));
         expect(startingState.props, contains(status));
@@ -230,8 +253,11 @@ void main() {
 
       test('ProfileFailedStart should include reason', () {
         const reason = 'Connection failed';
-        const failedStartState =
-            ProfileFailedStart(testUuid, profile: testProfile, reason: reason);
+        const failedStartState = ProfileFailedStart(
+          testUuid,
+          profile: testProfile,
+          reason: reason,
+        );
 
         expect(failedStartState.reason, equals(reason));
       });
@@ -239,20 +265,21 @@ void main() {
 
     group('Event toString Methods', () {
       test(
-          'Event toString methods should provide proper string representations',
-          () {
-        const loadEvent = ProfileLoadEvent(useCache: false);
-        const createEvent = ProfileLoadOrCreateEvent();
-        const editEvent = ProfileEditEvent(profile: testProfile);
-        const startEvent = ProfileStartEvent();
-        const stopEvent = ProfileStopEvent();
+        'Event toString methods should provide proper string representations',
+        () {
+          const loadEvent = ProfileLoadEvent(useCache: false);
+          const createEvent = ProfileLoadOrCreateEvent();
+          const editEvent = ProfileEditEvent(profile: testProfile);
+          const startEvent = ProfileStartEvent();
+          const stopEvent = ProfileStopEvent();
 
-        expect(loadEvent.toString(), contains('useCache: false'));
-        expect(createEvent.toString(), equals('ProfileLoadOrCreateEvent'));
-        expect(editEvent.toString(), contains('profile: $testProfile'));
-        expect(startEvent.toString(), equals('ProfileStartEvent'));
-        expect(stopEvent.toString(), equals('ProfileStopEvent'));
-      });
+          expect(loadEvent.toString(), contains('useCache: false'));
+          expect(createEvent.toString(), equals('ProfileLoadOrCreateEvent'));
+          expect(editEvent.toString(), contains('profile: $testProfile'));
+          expect(startEvent.toString(), equals('ProfileStartEvent'));
+          expect(stopEvent.toString(), equals('ProfileStopEvent'));
+        },
+      );
     });
 
     group('State toString Methods', () {
@@ -261,16 +288,22 @@ void main() {
         const loadingState = ProfileLoading(testUuid);
         const failedLoadState = ProfileFailedLoad(testUuid);
         const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-        const failedSaveState =
-            ProfileFailedSave(testUuid, profile: testProfile);
+        const failedSaveState = ProfileFailedSave(
+          testUuid,
+          profile: testProfile,
+        );
 
         expect(initialState.toString(), contains(testUuid));
         expect(loadingState.toString(), contains(testUuid));
         expect(failedLoadState.toString(), contains(testUuid));
-        expect(loadedState.toString(),
-            allOf(contains(testUuid), contains('profile: $testProfile')));
-        expect(failedSaveState.toString(),
-            allOf(contains(testUuid), contains('profile: $testProfile')));
+        expect(
+          loadedState.toString(),
+          allOf(contains(testUuid), contains('profile: $testProfile')),
+        );
+        expect(
+          failedSaveState.toString(),
+          allOf(contains(testUuid), contains('profile: $testProfile')),
+        );
       });
     });
 
@@ -294,16 +327,22 @@ void main() {
         const loadingState = ProfileLoading(testUuid);
         const failedLoadState = ProfileFailedLoad(testUuid);
         const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-        const failedSaveState =
-            ProfileFailedSave(testUuid, profile: testProfile);
+        const failedSaveState = ProfileFailedSave(
+          testUuid,
+          profile: testProfile,
+        );
 
         expect(initialState.props, contains(testUuid));
         expect(loadingState.props, contains(testUuid));
         expect(failedLoadState.props, contains(testUuid));
-        expect(loadedState.props,
-            allOf(contains(testUuid), contains(testProfile)));
-        expect(failedSaveState.props,
-            allOf(contains(testUuid), contains(testProfile)));
+        expect(
+          loadedState.props,
+          allOf(contains(testUuid), contains(testProfile)),
+        );
+        expect(
+          failedSaveState.props,
+          allOf(contains(testUuid), contains(testProfile)),
+        );
       });
     });
 
@@ -311,37 +350,48 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should handle multiple rapid events correctly',
         build: () {
-          when(mockRepository.getProfile(testUuid, useCache: true))
-              .thenAnswer((_) async => testProfile);
+          when(
+            mockRepository.getProfile(testUuid, useCache: true),
+          ).thenAnswer((_) async => testProfile);
           return profileBloc;
         },
         act: (bloc) {
           bloc.add(const ProfileLoadEvent());
-          bloc.add(ProfileEditEvent(
-              profile: testProfile.copyWith(displayName: 'New Name')));
+          bloc.add(
+            ProfileEditEvent(
+              profile: testProfile.copyWith(displayName: 'New Name'),
+            ),
+          );
         },
         expect: () => [
           const ProfileLoading(testUuid),
           const ProfileLoaded(testUuid, profile: testProfile),
-          ProfileLoaded(testUuid,
-              profile: testProfile.copyWith(displayName: 'New Name')),
+          ProfileLoaded(
+            testUuid,
+            profile: testProfile.copyWith(displayName: 'New Name'),
+          ),
         ],
       );
 
       blocTest<ProfileBloc, ProfileState>(
         'should handle ProfileLoadOrCreateEvent with copyFrom after failed load',
         build: () {
-          when(mockRepository.getProfile(testUuid))
-              .thenAnswer((_) async => null);
+          when(
+            mockRepository.getProfile(testUuid),
+          ).thenAnswer((_) async => null);
           return profileBloc;
         },
-        act: (bloc) => bloc.add(ProfileLoadOrCreateEvent(
-          copyFrom: testProfile.copyWith(displayName: 'Original'),
-        )),
+        act: (bloc) => bloc.add(
+          ProfileLoadOrCreateEvent(
+            copyFrom: testProfile.copyWith(displayName: 'Original'),
+          ),
+        ),
         expect: () => [
           const ProfileLoading(testUuid),
-          ProfileLoaded(testUuid,
-              profile: testProfile.copyWith(displayName: 'Original')),
+          ProfileLoaded(
+            testUuid,
+            profile: testProfile.copyWith(displayName: 'Original'),
+          ),
         ],
       );
     });

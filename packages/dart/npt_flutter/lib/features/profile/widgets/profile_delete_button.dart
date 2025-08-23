@@ -24,13 +24,14 @@ class ProfileDeleteButton extends StatelessWidget {
             context: context,
             builder: (BuildContext context) {
               return ConfirmationDialog(
-                  message: strings.profileDeleteMessage,
-                  actionText: strings.delete,
-                  action: () {
-                    App.navState.currentContext
-                        ?.read<ProfileListBloc>()
-                        .add(ProfileListDeleteEvent(toDelete: [state.uuid]));
-                  });
+                message: strings.profileDeleteMessage,
+                actionText: strings.delete,
+                action: () {
+                  App.navState.currentContext?.read<ProfileListBloc>().add(
+                    ProfileListDeleteEvent(toDelete: [state.uuid]),
+                  );
+                },
+              );
             },
           );
         },

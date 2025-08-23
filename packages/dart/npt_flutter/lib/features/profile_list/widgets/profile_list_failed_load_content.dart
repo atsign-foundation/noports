@@ -5,9 +5,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
 
 class ProfileListFailedLoadContent extends StatelessWidget {
-  const ProfileListFailedLoadContent({
-    super.key,
-  });
+  const ProfileListFailedLoadContent({super.key});
 
   @override
   Widget build(BuildContext context) {

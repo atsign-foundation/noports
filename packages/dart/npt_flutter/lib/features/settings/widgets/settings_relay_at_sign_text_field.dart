@@ -28,33 +28,39 @@ class _SettingsRelayAtSignTextFieldState
       },
       builder: (BuildContext context, String? relayAtsign) {
         if (relayAtsign == null) return gap0;
-        Future.microtask(() => controller.value = TextEditingValue(
+        Future.microtask(
+          () => controller.value = TextEditingValue(
             text: relayAtsign,
-            selection: TextSelection.collapsed(offset: relayAtsign.length)));
+            selection: TextSelection.collapsed(offset: relayAtsign.length),
+          ),
+        );
         return SizedBox(
           width: Sizes.p200,
           height: Sizes.p70,
           child: TextFormField(
-              controller: controller,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: FormValidator.validateEmptyRelayField,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.custom,
-                errorMaxLines: 2,
-              ),
-              onChanged: (value) {
-                value = value.atsignify();
-                controller.value = TextEditingValue(
-                    text: value,
-                    selection: TextSelection.collapsed(offset: value.length));
-                var bloc = context.read<SettingsBloc>();
-                bloc.add(SettingsEditEvent(
-                  settings: (bloc.state as SettingsLoadedState)
-                      .settings
+            controller: controller,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: FormValidator.validateEmptyRelayField,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.custom,
+              errorMaxLines: 2,
+            ),
+            onChanged: (value) {
+              value = value.atsignify();
+              controller.value = TextEditingValue(
+                text: value,
+                selection: TextSelection.collapsed(offset: value.length),
+              );
+              var bloc = context.read<SettingsBloc>();
+              bloc.add(
+                SettingsEditEvent(
+                  settings: (bloc.state as SettingsLoadedState).settings
                       .copyWith(relayAtsign: value),
                   save: true,
-                ));
-              }),
+                ),
+              );
+            },
+          ),
         );
       },
     );

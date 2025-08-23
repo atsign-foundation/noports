@@ -86,9 +86,9 @@ void main(List<String> args) async {
       Platform.executable.endsWith('np_admin.exe')) {
     // Production usage - we're using the compiled binary
     final executableLocation =
-    (Platform.resolvedExecutable.split(Platform.pathSeparator)
-      ..removeLast())
-        .join(Platform.pathSeparator);
+        (Platform.resolvedExecutable.split(Platform.pathSeparator)
+              ..removeLast())
+            .join(Platform.pathSeparator);
     final dir = Directory(
         [executableLocation, 'web', 'admin'].join(Platform.pathSeparator));
     print('Will serve webapp from $dir');

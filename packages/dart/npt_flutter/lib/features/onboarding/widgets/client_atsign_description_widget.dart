@@ -23,8 +23,9 @@ class _ClientAtsignDescriptionWidgetState
   bool visibility = false;
 
   void visitRegistarSite() async {
-    final Uri url =
-        Uri.parse('https://my.noports.com/no-ports-invite/14dayfreetrial');
+    final Uri url = Uri.parse(
+      'https://my.noports.com/no-ports-invite/14dayfreetrial',
+    );
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
     }
@@ -50,13 +51,12 @@ class _ClientAtsignDescriptionWidgetState
         children: [
           Row(
             children: [
-              Icon(
-                PhosphorIcons.info(),
-                color: AppColor.primaryColor,
-              ),
+              Icon(PhosphorIcons.info(), color: AppColor.primaryColor),
               gapW14,
-              Text(strings.whatIsClientAtsign,
-                  style: const TextStyle(color: AppColor.primaryColor)),
+              Text(
+                strings.whatIsClientAtsign,
+                style: const TextStyle(color: AppColor.primaryColor),
+              ),
               const Spacer(),
               IconButton(
                 onPressed: () {
@@ -66,7 +66,7 @@ class _ClientAtsignDescriptionWidgetState
                 },
                 icon: Icon(PhosphorIcons.caretDown()),
                 color: AppColor.primaryColor,
-              )
+              ),
             ],
           ),
           visibility ? gapH14 : gap0,
@@ -90,9 +90,7 @@ class _ClientAtsignDescriptionWidgetState
                         Text(
                           strings.clientAtsignDescription,
                           textAlign: TextAlign.center,
-                          style: bodyMedium!.copyWith(
-                            color: Colors.black,
-                          ),
+                          style: bodyMedium!.copyWith(color: Colors.black),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -126,7 +124,8 @@ class _ClientAtsignDescriptionWidgetState
                                 shape: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(Sizes.p8),
                                   borderSide: const BorderSide(
-                                      color: Colors.transparent),
+                                    color: Colors.transparent,
+                                  ),
                                 ),
                                 elevation: Sizes.p15,
                                 child: SvgPicture.asset(
@@ -142,14 +141,16 @@ class _ClientAtsignDescriptionWidgetState
                                 text: const TextSpan(
                                   text: StringConst.ampersand,
                                   style: TextStyle(
-                                      color: AppColor.primaryColor,
-                                      fontSize: 10),
+                                    color: AppColor.primaryColor,
+                                    fontSize: 10,
+                                  ),
                                   children: [
                                     TextSpan(
                                       text: StringConst.atsignClient,
                                       style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: Sizes.p10),
+                                        color: Colors.black,
+                                        fontSize: Sizes.p10,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -163,10 +164,9 @@ class _ClientAtsignDescriptionWidgetState
                 ),
                 Text(
                   strings.or,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(color: AppColor.primaryColor),
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    color: AppColor.primaryColor,
+                  ),
                 ),
                 Expanded(
                   child: CustomContainer.foreground(
@@ -183,8 +183,9 @@ class _ClientAtsignDescriptionWidgetState
                       children: [
                         Text(
                           strings.atsignUncreated,
-                          style:
-                              bodyMedium.copyWith(color: AppColor.primaryColor),
+                          style: bodyMedium.copyWith(
+                            color: AppColor.primaryColor,
+                          ),
                         ),
                         gapH10,
                         SizedBox(
@@ -193,8 +194,9 @@ class _ClientAtsignDescriptionWidgetState
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 side: const BorderSide(
-                                    color: AppColor.primaryColor,
-                                    width: Sizes.p2),
+                                  color: AppColor.primaryColor,
+                                  width: Sizes.p2,
+                                ),
                                 borderRadius: BorderRadius.circular(Sizes.p10),
                               ),
                             ),
