@@ -13,7 +13,7 @@ class PolicyDialogs {
     bool autofocus = false,
   }) async {
     String itemValue = '';
-    
+
     return showDialog<String>(
       context: context,
       builder: (dialogContext) {

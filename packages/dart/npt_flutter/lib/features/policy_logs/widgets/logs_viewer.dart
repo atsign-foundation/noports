@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy_manager_form/widgets/policy_log_item.dart';
+import 'policy_log_item.dart';
 import '../cubit/policy_logs_cubit.dart';
 
 class LogsViewer extends StatelessWidget {

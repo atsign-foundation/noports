@@ -32,8 +32,8 @@ class _FormContentState extends State<FormContent> {
     super.initState();
     _currentRole = widget.role;
     _originalRole = widget.role; // Backup original role data
-    // Automatically start editing if this is a new role (empty name)
-    _isEditing = widget.role.name.isEmpty;
+    // Determine editing state from cubit state
+    _isEditing = widget.state.isInEditMode;
   }
 
   @override
@@ -45,13 +45,11 @@ class _FormContentState extends State<FormContent> {
   @override
   void didUpdateWidget(FormContent oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.role != widget.role) {
+    if (oldWidget.role != widget.role || oldWidget.state.viewMode != widget.state.viewMode) {
       _currentRole = widget.role;
       _originalRole = widget.role; // Update backup when role changes
-      // Automatically start editing if this is a new role (empty name)
-      if (widget.role.name.isEmpty) {
-        _isEditing = true;
-      }
+      // Update editing state from cubit state
+      _isEditing = widget.state.isInEditMode;
     }
   }
 
@@ -94,10 +92,10 @@ class _FormContentState extends State<FormContent> {
         if (state is PolicyManagerLoaded) {
           setState(() {
             // Backup original data when starting to edit
-            if (!_isEditing && state.isEditing) {
+            if (!_isEditing && state.isInEditMode) {
               _originalRole = _currentRole;
             }
-            _isEditing = state.isEditing;
+            _isEditing = state.isInEditMode;
             if (_isSaving) {
               _isSaving = false;
             }
@@ -141,7 +139,7 @@ class _FormContentState extends State<FormContent> {
                       setState(() {
                         _currentRole = _originalRole;
                       });
-                      context.read<PolicyManagerCubit>().stopEditing();
+                      context.read<PolicyManagerCubit>().cancelEditing();
                     },
                     child: const Text('Cancel'),
                   ),
@@ -167,7 +165,7 @@ class _FormContentState extends State<FormContent> {
                 ] else ...[
                   ElevatedButton(
                     onPressed: () {
-                      context.read<PolicyManagerCubit>().startEditing(widget.role.id ?? '');
+                      context.read<PolicyManagerCubit>().startEditingRole(widget.role.id ?? '');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primaryColor,
