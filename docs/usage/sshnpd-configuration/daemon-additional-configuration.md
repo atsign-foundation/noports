@@ -5,7 +5,7 @@ icon: gear
 
 # Daemon Additional Configuration
 
-### Additional Options
+## Additional Options
 
 ### -k, --key-file, --keyFile
 
@@ -29,13 +29,13 @@ What to use for outbound ssh connections.
 
 \[openssh (default), dart]
 
-#### --root-server
+### --root-server
 
 atDirectory domain
 
 (Defaults to "root.atsign.org")
 
-#### --device-group
+### --device-group
 
 The name of this device's group. When delegated authorization is being used then the group name is sent to the authorizer service as well as the device name, this daemon's atSign, and the client atSign which is requesting a connection
 
