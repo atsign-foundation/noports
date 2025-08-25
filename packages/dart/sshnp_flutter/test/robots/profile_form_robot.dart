@@ -15,7 +15,8 @@ class ProfileFormRobot {
   final WidgetTester tester;
 
   Future<void> pumpProfileForm(
-      {ConfigListController? mockConfigListController, MockConfigFamilyController? mockConfigFamilyController}) async {
+      {ConfigListController? mockConfigListController,
+      MockConfigFamilyController? mockConfigFamilyController}) async {
     await tester.pumpWidget(const ProviderScope(
         overrides: [
           // if (mockConfigListController != null)
@@ -36,12 +37,16 @@ class ProfileFormRobot {
     expect(finder, findsOneWidget);
   }
 
-  void findProfileFormWidgetsWithDefaultValues({required SshnpParams configFile}) async {
+  void findProfileFormWidgetsWithDefaultValues(
+      {required SshnpParams configFile}) async {
     // 6 widgets of type TextFormField have empty text
     expect(find.widgetWithText(TextFormField, ''), findsNWidgets(6));
 
     // 2 widget of type switch have false value
-    expect(find.byWidgetPredicate((widget) => widget is Switch && widget.value == false), findsNWidgets(2));
+    expect(
+        find.byWidgetPredicate(
+            (widget) => widget is Switch && widget.value == false),
+        findsNWidgets(2));
 
     // ProfileName
     final profileNameFinder = find.text('Profile Name');
@@ -103,7 +108,8 @@ class ProfileFormRobot {
 
   void findProfileFormWidgetsWithNewValues() async {
     // ProfileName
-    final profileNameFinder = find.widgetWithText(TextFormField, 'Profile Name');
+    final profileNameFinder =
+        find.widgetWithText(TextFormField, 'Profile Name');
     await tester.enterText(profileNameFinder, 'test profile');
     expect(find.text('test profile'), findsOneWidget);
 
@@ -113,7 +119,8 @@ class ProfileFormRobot {
     expect(find.text('test device'), findsOneWidget);
 
     // Device Address
-    final deviceAddressFinder = find.widgetWithText(TextFormField, 'Device Address');
+    final deviceAddressFinder =
+        find.widgetWithText(TextFormField, 'Device Address');
     await tester.enterText(deviceAddressFinder, 'test address');
     expect(find.text('test address'), findsOneWidget);
 
@@ -123,7 +130,8 @@ class ProfileFormRobot {
     expect(find.text('test host'), findsOneWidget);
 
     // SSH Public Key
-    final sshPublicKeyFinder = find.widgetWithText(TextFormField, 'SSH Public Key');
+    final sshPublicKeyFinder =
+        find.widgetWithText(TextFormField, 'SSH Public Key');
     await tester.enterText(sshPublicKeyFinder, 'test public key');
     expect(find.text('test public key'), findsOneWidget);
 
@@ -134,12 +142,15 @@ class ProfileFormRobot {
     await tester.tap(find.byType(Switch).first);
     await tester.pump();
     expect(
-        find.byWidgetPredicate(
-            (widget) => widget is CustomSwitchWidget && widget.value == true && widget.labelText == 'Legacy RSA Key'),
+        find.byWidgetPredicate((widget) =>
+            widget is CustomSwitchWidget &&
+            widget.value == true &&
+            widget.labelText == 'Legacy RSA Key'),
         findsOneWidget);
 
     // Remote Username
-    final remoteUsernameFinder = find.widgetWithText(TextFormField, 'Remote Username');
+    final remoteUsernameFinder =
+        find.widgetWithText(TextFormField, 'Remote Username');
     await tester.enterText(remoteUsernameFinder, 'test remote username');
     expect(find.text('test remote username'), findsOneWidget);
 
@@ -154,7 +165,8 @@ class ProfileFormRobot {
     expect(find.text('test local port'), findsOneWidget);
 
     // Local SSH options
-    final localSSHOptionsFinder = find.widgetWithText(TextFormField, 'Local SSH Options');
+    final localSSHOptionsFinder =
+        find.widgetWithText(TextFormField, 'Local SSH Options');
     await tester.enterText(localSSHOptionsFinder, 'test local ssh options');
     expect(find.text('test local ssh options'), findsOneWidget);
 
@@ -173,14 +185,17 @@ class ProfileFormRobot {
     await tester.tap(find.byType(Switch).last);
     await tester.pump();
     expect(
-        find.byWidgetPredicate(
-            (widget) => widget is CustomSwitchWidget && widget.value == true && widget.labelText == 'Verbose Logging'),
+        find.byWidgetPredicate((widget) =>
+            widget is CustomSwitchWidget &&
+            widget.value == true &&
+            widget.labelText == 'Verbose Logging'),
         findsOneWidget);
   }
 
   void submitFormWithValues() async {
     // ProfileName
-    final profileNameFinder = find.widgetWithText(TextFormField, 'Profile Name');
+    final profileNameFinder =
+        find.widgetWithText(TextFormField, 'Profile Name');
     await tester.enterText(profileNameFinder, 'test profile');
     expect(find.text('test profile'), findsOneWidget);
 
@@ -190,7 +205,8 @@ class ProfileFormRobot {
     expect(find.text('test device'), findsOneWidget);
 
     // Device Address
-    final deviceAddressFinder = find.widgetWithText(TextFormField, 'Device Address');
+    final deviceAddressFinder =
+        find.widgetWithText(TextFormField, 'Device Address');
     await tester.enterText(deviceAddressFinder, 'test address');
     expect(find.text('test address'), findsOneWidget);
 
@@ -200,7 +216,8 @@ class ProfileFormRobot {
     expect(find.text('test host'), findsOneWidget);
 
     // SSH Public Key
-    final sshPublicKeyFinder = find.widgetWithText(TextFormField, 'SSH Public Key');
+    final sshPublicKeyFinder =
+        find.widgetWithText(TextFormField, 'SSH Public Key');
     await tester.enterText(sshPublicKeyFinder, 'test public key');
     expect(find.text('test public key'), findsOneWidget);
 
@@ -211,12 +228,15 @@ class ProfileFormRobot {
     await tester.tap(find.byType(Switch).first);
     await tester.pump();
     expect(
-        find.byWidgetPredicate(
-            (widget) => widget is CustomSwitchWidget && widget.value == true && widget.labelText == 'Legacy RSA Key'),
+        find.byWidgetPredicate((widget) =>
+            widget is CustomSwitchWidget &&
+            widget.value == true &&
+            widget.labelText == 'Legacy RSA Key'),
         findsOneWidget);
 
     // Remote Username
-    final remoteUsernameFinder = find.widgetWithText(TextFormField, 'Remote Username');
+    final remoteUsernameFinder =
+        find.widgetWithText(TextFormField, 'Remote Username');
     await tester.enterText(remoteUsernameFinder, 'test remote username');
     expect(find.text('test remote username'), findsOneWidget);
 
@@ -231,7 +251,8 @@ class ProfileFormRobot {
     expect(find.text('test local port'), findsOneWidget);
 
     // Local SSH options
-    final localSSHOptionsFinder = find.widgetWithText(TextFormField, 'Local SSH Options');
+    final localSSHOptionsFinder =
+        find.widgetWithText(TextFormField, 'Local SSH Options');
     await tester.enterText(localSSHOptionsFinder, 'test local ssh options');
     expect(find.text('test local ssh options'), findsOneWidget);
 
@@ -250,8 +271,10 @@ class ProfileFormRobot {
     await tester.tap(find.byType(Switch).last);
     await tester.pump();
     expect(
-        find.byWidgetPredicate(
-            (widget) => widget is CustomSwitchWidget && widget.value == true && widget.labelText == 'Verbose Logging'),
+        find.byWidgetPredicate((widget) =>
+            widget is CustomSwitchWidget &&
+            widget.value == true &&
+            widget.labelText == 'Verbose Logging'),
         findsOneWidget);
 
     // Submit the form

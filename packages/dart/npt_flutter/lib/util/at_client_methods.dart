@@ -4,7 +4,8 @@ import 'package:path_provider/path_provider.dart';
 
 class AtClientMethods {
   static Future<AtClientPreference> loadAtClientPreference(
-      String rootDomain) async {
+    String rootDomain,
+  ) async {
     var dir = await getApplicationSupportDirectory();
 
     return AtClientPreference()

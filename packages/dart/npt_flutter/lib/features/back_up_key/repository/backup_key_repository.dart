@@ -17,8 +17,10 @@ class BackUpKeyRepository {
   Future<bool> getBackupKeyStatus() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? atSign = atClient.getCurrentAtSign();
-    var key =
-        AtKey.self('key_backup.app_metadata', namespace: Constants.namespace);
+    var key = AtKey.self(
+      'key_backup.app_metadata',
+      namespace: Constants.namespace,
+    );
     if (atSign != null) key.sharedBy(atSign);
 
     try {

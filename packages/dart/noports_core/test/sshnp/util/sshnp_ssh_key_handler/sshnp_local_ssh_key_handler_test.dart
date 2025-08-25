@@ -42,15 +42,20 @@ void main() {
     }
 
     whenInitialization({AtSshKeyPair? identityKeyPair}) {
-      when(() => mockSshnpdChannel.callInitialization())
-          .thenAnswer((_) async {});
-      when(() => mockSshnpdChannel.resolveRemoteUsername())
-          .thenAnswer((_) async => 'myRemoteUsername');
-      when(() => mockSshnpdChannel.resolveTunnelUsername(
-              remoteUsername: any(named: 'remoteUsername')))
-          .thenAnswer((_) async => 'myTunnelUsername');
-      when(() => mockSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair))
-          .thenAnswer((_) async {});
+      when(
+        () => mockSshnpdChannel.callInitialization(),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockSshnpdChannel.resolveRemoteUsername(),
+      ).thenAnswer((_) async => 'myRemoteUsername');
+      when(
+        () => mockSshnpdChannel.resolveTunnelUsername(
+          remoteUsername: any(named: 'remoteUsername'),
+        ),
+      ).thenAnswer((_) async => 'myTunnelUsername');
+      when(
+        () => mockSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair),
+      ).thenAnswer((_) async {});
       when(() => mockSshnpdChannel.featureCheck(any())).thenAnswer((_) async {
         return DaemonFeature.values.map((f) => (f, true, 'mocked')).toList();
       });
@@ -59,10 +64,7 @@ void main() {
 
     test('public API', () {
       whenConstructor();
-      final sshnp = StubbedSshnp(
-        atClient: mockAtClient,
-        params: mockParams,
-      );
+      final sshnp = StubbedSshnp(atClient: mockAtClient, params: mockParams);
       expect(sshnp, isA<SshnpKeyHandler>());
     }); // test public API
 
@@ -81,8 +83,9 @@ void main() {
       final identityFile = '.ssh/asdf';
       when(() => keyUtil.isValidPlatform).thenReturn(true);
       when(() => mockParams.identityFile).thenReturn(identityFile);
-      when(() => keyUtil.getKeyPair(identifier: identityFile))
-          .thenAnswer((_) async => keyPair);
+      when(
+        () => keyUtil.getKeyPair(identifier: identityFile),
+      ).thenAnswer((_) async => keyPair);
 
       /// normally we would call [callInitialization()] but it's fine to call
       /// initialize directly for testing purposes, since we avoid weird
@@ -108,10 +111,12 @@ void main() {
       whenInitialization(identityKeyPair: keyPair);
       when(() => keyUtil.isValidPlatform).thenReturn(true);
       when(() => mockParams.identityFile).thenReturn(null);
-      when(() => mockSshnpdChannel.sharePublicKeyIfRequired(null))
-          .thenAnswer((_) async {});
-      when(() => keyUtil.getKeyPair(identifier: '.ssh/asdf'))
-          .thenAnswer((_) async => keyPair);
+      when(
+        () => mockSshnpdChannel.sharePublicKeyIfRequired(null),
+      ).thenAnswer((_) async {});
+      when(
+        () => keyUtil.getKeyPair(identifier: '.ssh/asdf'),
+      ).thenAnswer((_) async => keyPair);
 
       /// normally we would call [callInitialization()] but it's fine to call
       /// initialize directly for testing purposes, since we avoid weird

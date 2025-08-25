@@ -57,27 +57,30 @@ void main() {
 
     group('getFavorites', () {
       test(
-          'should return cached favorites when useCache is true and cache exists',
-          () async {
-        // First call to populate cache
-        final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
-        final favoritesMap = {
-          testFavoriteProfile.uuid: testFavoriteProfile.toJson(),
-        };
-        final atValue = AtValue()..value = jsonEncode(favoritesMap);
+        'should return cached favorites when useCache is true and cache exists',
+        () async {
+          // First call to populate cache
+          final atKey = FavoriteRepository.getFavoriteAtKey(
+            sharedBy: testAtsign,
+          );
+          final favoritesMap = {
+            testFavoriteProfile.uuid: testFavoriteProfile.toJson(),
+          };
+          final atValue = AtValue()..value = jsonEncode(favoritesMap);
 
-        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
+          when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
-        final firstResult = await repository.getFavorites();
-        expect(firstResult, isNotNull);
-        expect(firstResult!.length, equals(1));
-        expect(firstResult[testFavoriteProfile.uuid], isA<FavoriteProfile>());
+          final firstResult = await repository.getFavorites();
+          expect(firstResult, isNotNull);
+          expect(firstResult!.length, equals(1));
+          expect(firstResult[testFavoriteProfile.uuid], isA<FavoriteProfile>());
 
-        // Second call should return cached result without calling AtClient again
-        final secondResult = await repository.getFavorites(useCache: true);
-        expect(secondResult, equals(firstResult));
-        verify(mockAtClient.get(any)).called(1); // Should only be called once
-      });
+          // Second call should return cached result without calling AtClient again
+          final secondResult = await repository.getFavorites(useCache: true);
+          expect(secondResult, equals(firstResult));
+          verify(mockAtClient.get(any)).called(1); // Should only be called once
+        },
+      );
 
       test('should fetch fresh data when useCache is false', () async {
         final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
@@ -97,19 +100,23 @@ void main() {
         verify(mockAtClient.get(any)).called(2);
       });
 
-      test('should return empty map when AtClient returns null value',
-          () async {
-        final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
-        final atValue = AtValue()..value = null;
+      test(
+        'should return empty map when AtClient returns null value',
+        () async {
+          final atKey = FavoriteRepository.getFavoriteAtKey(
+            sharedBy: testAtsign,
+          );
+          final atValue = AtValue()..value = null;
 
-        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
+          when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
-        final result = await repository.getFavorites();
+          final result = await repository.getFavorites();
 
-        expect(result, isNotNull);
-        expect(result!.isEmpty, isTrue);
-        verify(mockAtClient.get(any)).called(1);
-      });
+          expect(result, isNotNull);
+          expect(result!.isEmpty, isTrue);
+          verify(mockAtClient.get(any)).called(1);
+        },
+      );
 
       test('should parse multiple favorites correctly', () async {
         final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
@@ -127,10 +134,14 @@ void main() {
         expect(result!.length, equals(2));
         expect(result[testFavoriteProfile.uuid], isA<FavoriteProfile>());
         expect(result[testFavoriteProfile2.uuid], isA<FavoriteProfile>());
-        expect((result[testFavoriteProfile.uuid] as FavoriteProfile).uuid,
-            equals(testFavoriteProfile.uuid));
-        expect((result[testFavoriteProfile2.uuid] as FavoriteProfile).uuid,
-            equals(testFavoriteProfile2.uuid));
+        expect(
+          (result[testFavoriteProfile.uuid] as FavoriteProfile).uuid,
+          equals(testFavoriteProfile.uuid),
+        );
+        expect(
+          (result[testFavoriteProfile2.uuid] as FavoriteProfile).uuid,
+          equals(testFavoriteProfile2.uuid),
+        );
       });
 
       test('should handle AtClient exceptions gracefully', () async {
@@ -215,7 +226,9 @@ void main() {
         final cachedFavorites = await repository.getFavorites(useCache: true);
         expect(cachedFavorites, isNotNull);
         expect(
-            cachedFavorites![testFavoriteProfile.uuid], isA<FavoriteProfile>());
+          cachedFavorites![testFavoriteProfile.uuid],
+          isA<FavoriteProfile>(),
+        );
       });
 
       test('should add multiple favorites correctly', () async {
@@ -230,9 +243,13 @@ void main() {
         expect(cachedFavorites, isNotNull);
         expect(cachedFavorites!.length, equals(2));
         expect(
-            cachedFavorites[testFavoriteProfile.uuid], isA<FavoriteProfile>());
+          cachedFavorites[testFavoriteProfile.uuid],
+          isA<FavoriteProfile>(),
+        );
         expect(
-            cachedFavorites[testFavoriteProfile2.uuid], isA<FavoriteProfile>());
+          cachedFavorites[testFavoriteProfile2.uuid],
+          isA<FavoriteProfile>(),
+        );
       });
 
       test('should return false when AtClient put fails', () async {
@@ -264,12 +281,14 @@ void main() {
         await repository.addFavorite(testFavoriteProfile);
 
         // Then remove it
-        final result =
-            await repository.removeFavorites([testFavoriteProfile.uuid]);
+        final result = await repository.removeFavorites([
+          testFavoriteProfile.uuid,
+        ]);
 
         expect(result, isTrue);
-        verify(mockAtClient.put(atKey, any))
-            .called(2); // Once for add, once for remove
+        verify(
+          mockAtClient.put(atKey, any),
+        ).called(2); // Once for add, once for remove
 
         // Verify favorite is removed from cache
         final cachedFavorites = await repository.getFavorites(useCache: true);
@@ -299,25 +318,32 @@ void main() {
         expect(cachedFavorites!.isEmpty, isTrue);
       });
 
-      test('should handle removing non-existent favorites gracefully',
-          () async {
-        final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
+      test(
+        'should handle removing non-existent favorites gracefully',
+        () async {
+          final atKey = FavoriteRepository.getFavoriteAtKey(
+            sharedBy: testAtsign,
+          );
 
-        when(mockAtClient.put(atKey, any)).thenAnswer((_) async => true);
+          when(mockAtClient.put(atKey, any)).thenAnswer((_) async => true);
 
-        final result = await repository.removeFavorites(['non-existent-uuid']);
+          final result = await repository.removeFavorites([
+            'non-existent-uuid',
+          ]);
 
-        expect(result, isTrue);
-        verify(mockAtClient.put(atKey, any)).called(1);
-      });
+          expect(result, isTrue);
+          verify(mockAtClient.put(atKey, any)).called(1);
+        },
+      );
 
       test('should return false when AtClient put fails', () async {
         final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
 
         when(mockAtClient.put(atKey, any)).thenThrow(Exception('Put failed'));
 
-        final result =
-            await repository.removeFavorites([testFavoriteProfile.uuid]);
+        final result = await repository.removeFavorites([
+          testFavoriteProfile.uuid,
+        ]);
 
         expect(result, isFalse);
         verify(mockAtClient.put(atKey, any)).called(1);
@@ -337,8 +363,9 @@ void main() {
       test('should handle null atSign gracefully', () async {
         when(mockAtClient.getCurrentAtSign()).thenReturn(null);
 
-        final result =
-            await repository.removeFavorites([testFavoriteProfile.uuid]);
+        final result = await repository.removeFavorites([
+          testFavoriteProfile.uuid,
+        ]);
 
         expect(result, isFalse);
       });
@@ -361,43 +388,51 @@ void main() {
         expect(cachedFavorites, isNotNull);
         expect(cachedFavorites!.length, equals(1));
         expect(
-            cachedFavorites[testFavoriteProfile.uuid], isA<FavoriteProfile>());
+          cachedFavorites[testFavoriteProfile.uuid],
+          isA<FavoriteProfile>(),
+        );
       });
     });
 
     group('Error Handling and Edge Cases', () {
       test('should handle network and timeout errors gracefully', () async {
         // Test network errors
-        when(mockAtClient.get(any))
-            .thenThrow(const SocketException('Network error'));
+        when(
+          mockAtClient.get(any),
+        ).thenThrow(const SocketException('Network error'));
 
         final getResult = await repository.getFavorites();
         expect(getResult, isNotNull);
         expect(getResult!.isEmpty, isTrue);
 
-        when(mockAtClient.put(any, any))
-            .thenThrow(const SocketException('Network error'));
+        when(
+          mockAtClient.put(any, any),
+        ).thenThrow(const SocketException('Network error'));
 
         final addResult = await repository.addFavorite(testFavoriteProfile);
         expect(addResult, isFalse);
 
-        final removeResult =
-            await repository.removeFavorites([testFavoriteProfile.uuid]);
+        final removeResult = await repository.removeFavorites([
+          testFavoriteProfile.uuid,
+        ]);
         expect(removeResult, isFalse);
 
         // Test timeout errors
-        when(mockAtClient.get(any))
-            .thenThrow(TimeoutException('Request timeout'));
+        when(
+          mockAtClient.get(any),
+        ).thenThrow(TimeoutException('Request timeout'));
 
         final getTimeoutResult = await repository.getFavorites();
         expect(getTimeoutResult, isNotNull);
         expect(getTimeoutResult!.isEmpty, isTrue);
 
-        when(mockAtClient.put(any, any))
-            .thenThrow(TimeoutException('Request timeout'));
+        when(
+          mockAtClient.put(any, any),
+        ).thenThrow(TimeoutException('Request timeout'));
 
-        final addTimeoutResult =
-            await repository.addFavorite(testFavoriteProfile);
+        final addTimeoutResult = await repository.addFavorite(
+          testFavoriteProfile,
+        );
         expect(addTimeoutResult, isFalse);
       });
 
@@ -424,8 +459,9 @@ void main() {
         when(mockAtClient.put(atKey, any)).thenAnswer((_) async => true);
 
         // Initially empty
-        when(mockAtClient.get(atKey))
-            .thenAnswer((_) async => AtValue()..value = null);
+        when(
+          mockAtClient.get(atKey),
+        ).thenAnswer((_) async => AtValue()..value = null);
         var favorites = await repository.getFavorites();
         expect(favorites!.isEmpty, isTrue);
 

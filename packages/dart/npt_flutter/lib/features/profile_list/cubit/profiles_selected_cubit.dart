@@ -14,9 +14,11 @@ class ProfilesSelectedCubit extends LoggingCubit<ProfilesSelectedState> {
   void selectAll() {
     var bloc = App.navState.currentContext?.read<ProfileListBloc>();
     if (bloc != null && bloc.state is ProfileListLoaded) {
-      emit(ProfilesSelectedState(
-        (bloc.state as ProfileListLoaded).profiles.toSet(),
-      ));
+      emit(
+        ProfilesSelectedState(
+          (bloc.state as ProfileListLoaded).profiles.toSet(),
+        ),
+      );
     }
   }
 }

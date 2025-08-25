@@ -5,52 +5,51 @@ import 'package:npt_flutter/util/language.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 class SettingsLanguageSelector extends StatelessWidget {
-  const SettingsLanguageSelector({
-    super.key,
-  });
+  const SettingsLanguageSelector({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocSelector<SettingsBloc, SettingsState, Language?>(
-        selector: (state) {
-      if (state is SettingsLoadedState) {
-        return state.settings.language;
-      }
-      return null;
-    }, builder: (context, language) {
-      if (language == null) return const Center(child: Spinner());
-      return Column(
-        children: [
-          Row(
-            children: [
-              // Text(PreferredViewLayout.minimal.displayName),
-              // gapW20,
-              DropdownMenu<Language>(
-                initialSelection: language,
-                dropdownMenuEntries: Language.values
-                    .map<DropdownMenuEntry<Language>>(
-                      (Language l) => DropdownMenuEntry(
-                        value: l,
-                        label: l.displayName,
+      selector: (state) {
+        if (state is SettingsLoadedState) {
+          return state.settings.language;
+        }
+        return null;
+      },
+      builder: (context, language) {
+        if (language == null) return const Center(child: Spinner());
+        return Column(
+          children: [
+            Row(
+              children: [
+                // Text(PreferredViewLayout.minimal.displayName),
+                // gapW20,
+                DropdownMenu<Language>(
+                  initialSelection: language,
+                  dropdownMenuEntries: Language.values
+                      .map<DropdownMenuEntry<Language>>(
+                        (Language l) =>
+                            DropdownMenuEntry(value: l, label: l.displayName),
+                      )
+                      .toList(),
+                  onSelected: (value) {
+                    if (value == null) return;
+                    var bloc = context.read<SettingsBloc>();
+                    bloc.add(
+                      SettingsEditEvent(
+                        settings: (bloc.state as SettingsLoadedState).settings
+                            .copyWith(language: value),
+                        save: true,
                       ),
-                    )
-                    .toList(),
-                onSelected: (value) {
-                  if (value == null) return;
-                  var bloc = context.read<SettingsBloc>();
-                  bloc.add(SettingsEditEvent(
-                    settings: (bloc.state as SettingsLoadedState)
-                        .settings
-                        .copyWith(language: value),
-                    save: true,
-                  ));
-                },
-              ),
-            ],
-          ),
-        ],
-      );
-    });
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

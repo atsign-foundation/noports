@@ -6,8 +6,6 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: SettingsView(),
-    );
+    return const Scaffold(body: SettingsView());
   }
 }

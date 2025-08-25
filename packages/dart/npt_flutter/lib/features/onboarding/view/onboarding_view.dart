@@ -24,10 +24,7 @@ class OnboardingView extends StatelessWidget {
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: const EdgeInsets.only(
-              top: Sizes.p44,
-              left: Sizes.p44,
-            ),
+            padding: const EdgeInsets.only(top: Sizes.p44, left: Sizes.p44),
             child: SvgPicture.asset(
               'assets/noports_logo.svg',
               width: Sizes.p200,
@@ -40,9 +37,7 @@ class OnboardingView extends StatelessWidget {
               gapH108,
               Text(
                 strings.onboardingTitle,
-                style: textTheme.headlineLarge!.copyWith(
-                  color: Colors.black,
-                ),
+                style: textTheme.headlineLarge!.copyWith(color: Colors.black),
               ),
               Text(strings.onboardingSubTitle, style: textTheme.headlineMedium),
               gapH20,
@@ -53,33 +48,31 @@ class OnboardingView extends StatelessWidget {
         const Align(
           alignment: Alignment.bottomRight,
           child: Padding(
-            padding: EdgeInsets.only(
-              bottom: Sizes.p44,
-              right: Sizes.p44,
-            ),
+            padding: EdgeInsets.only(bottom: Sizes.p44, right: Sizes.p44),
             child: CustomTextButton.resetAtsign(),
           ),
         ),
         FutureBuilder(
-            future: PackageInfo.fromPlatform(),
-            builder: (_, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
-                return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: Sizes.p44,
-                      left: Sizes.p44,
-                    ),
-                    child: Text(
-                      'v${snapshot.data?.version}',
-                      style: textTheme.bodySmall,
-                    ),
+          future: PackageInfo.fromPlatform(),
+          builder: (_, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: Sizes.p44,
+                    left: Sizes.p44,
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
+                  child: Text(
+                    'v${snapshot.data?.version}',
+                    style: textTheme.bodySmall,
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ],
     );
   }

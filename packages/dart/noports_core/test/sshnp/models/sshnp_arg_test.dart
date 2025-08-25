@@ -37,25 +37,37 @@ void main() {
       test('ParserType.commandLine allowList test', () {
         expect(ParserType.commandLine.allowList, contains(ParseWhen.always));
         expect(
-            ParserType.commandLine.allowList, contains(ParseWhen.commandLine));
-        expect(ParserType.commandLine.allowList,
-            isNot(contains(ParseWhen.configFile)));
+          ParserType.commandLine.allowList,
+          contains(ParseWhen.commandLine),
+        );
+        expect(
+          ParserType.commandLine.allowList,
+          isNot(contains(ParseWhen.configFile)),
+        );
       });
 
       test('ParserType.commandLine denyList test', () {
         expect(
-            ParserType.commandLine.denyList, isNot(contains(ParseWhen.always)));
-        expect(ParserType.commandLine.denyList,
-            isNot(contains(ParseWhen.commandLine)));
+          ParserType.commandLine.denyList,
+          isNot(contains(ParseWhen.always)),
+        );
+        expect(
+          ParserType.commandLine.denyList,
+          isNot(contains(ParseWhen.commandLine)),
+        );
         expect(ParserType.commandLine.denyList, contains(ParseWhen.configFile));
       });
 
       test('ParserType.commandLine shouldParse test', () {
         expect(ParserType.commandLine.shouldParse(ParseWhen.always), isTrue);
         expect(
-            ParserType.commandLine.shouldParse(ParseWhen.commandLine), isTrue);
+          ParserType.commandLine.shouldParse(ParseWhen.commandLine),
+          isTrue,
+        );
         expect(
-            ParserType.commandLine.shouldParse(ParseWhen.configFile), isFalse);
+          ParserType.commandLine.shouldParse(ParseWhen.configFile),
+          isFalse,
+        );
         expect(ParserType.commandLine.shouldParse(ParseWhen.never), isFalse);
       });
     });
@@ -64,22 +76,30 @@ void main() {
       test('ParserType.configFile allowList test', () {
         expect(ParserType.configFile.allowList, contains(ParseWhen.always));
         expect(ParserType.configFile.allowList, contains(ParseWhen.configFile));
-        expect(ParserType.configFile.allowList,
-            isNot(contains(ParseWhen.commandLine)));
+        expect(
+          ParserType.configFile.allowList,
+          isNot(contains(ParseWhen.commandLine)),
+        );
       });
 
       test('ParserType.configFile denyList test', () {
         expect(
-            ParserType.configFile.denyList, isNot(contains(ParseWhen.always)));
-        expect(ParserType.configFile.denyList,
-            isNot(contains(ParseWhen.configFile)));
+          ParserType.configFile.denyList,
+          isNot(contains(ParseWhen.always)),
+        );
+        expect(
+          ParserType.configFile.denyList,
+          isNot(contains(ParseWhen.configFile)),
+        );
         expect(ParserType.configFile.denyList, contains(ParseWhen.commandLine));
       });
 
       test('ParserType.configFile shouldParse test', () {
         expect(ParserType.configFile.shouldParse(ParseWhen.always), isTrue);
         expect(
-            ParserType.configFile.shouldParse(ParseWhen.commandLine), isFalse);
+          ParserType.configFile.shouldParse(ParseWhen.commandLine),
+          isFalse,
+        );
         expect(ParserType.configFile.shouldParse(ParseWhen.configFile), isTrue);
         expect(ParserType.configFile.shouldParse(ParseWhen.never), isFalse);
       });
@@ -186,8 +206,11 @@ void main() {
       });
 
       test('SshnpArg.alistList test', () {
-        SshnpArg sshnpArg =
-            SshnpArg(name: 'name', aliases: ['alias'], abbr: 'a');
+        SshnpArg sshnpArg = SshnpArg(
+          name: 'name',
+          aliases: ['alias'],
+          abbr: 'a',
+        );
         expect(sshnpArg.aliasList, equals(['--name', '--alias', '-a']));
       });
     });

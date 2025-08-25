@@ -280,10 +280,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     Timer.periodic(Duration(seconds: 15), (timer) async {
       String? resp;
       try {
-        resp = await atClient
-            .getRemoteSecondary()
-            ?.atLookUp
-            .executeCommand('noop:0\n');
+        resp = await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
+              'noop:0\n',
+            );
       } catch (_) {}
       if (resp == null || !resp.startsWith('data:ok')) {
         if (lastHeartbeatOk) {
@@ -305,9 +304,11 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     if (!auth.authorized) {
       // TODO IF $someConditions apply then send a 'nice' error
       // TODO message notification back to the requester
-      logger.shout('Notification ignored from ${notification.from}'
-          ' which is not authorized: ${auth.message}'
-          ' Notification value was ${notification.value}');
+      logger.shout(
+        'Notification ignored from ${notification.from}'
+        ' which is not authorized: ${auth.message}'
+        ' Notification value was ${notification.value}',
+      );
       return;
     }
 
@@ -322,7 +323,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     switch (notificationKey) {
       case 'privatekey':
         logger.info(
-            'Private Key received from ${notification.from} notification id : ${notification.id}');
+          'Private Key received from ${notification.from} notification id : ${notification.id}',
+        );
         _privateKey = notification.value!;
         break;
 
@@ -332,26 +334,33 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
       case 'sshd':
         logger.info(
-            'LEGACY $notificationKey request received from ${notification.from}'
-            ' ( ${notification.value} )');
+          'LEGACY $notificationKey request received from ${notification.from}'
+          ' ( ${notification.value} )',
+        );
         _handleLegacySshRequestNotification(notification, auth);
         break;
 
       case 'ping':
-        logger.info('$notificationKey received from ${notification.from}'
-            ' ( ${notification.value} )');
+        logger.info(
+          '$notificationKey received from ${notification.from}'
+          ' ( ${notification.value} )',
+        );
         _handlePingNotification(notification);
         break;
 
       case 'ssh_request':
-        logger.info('$notificationKey received from ${notification.from}'
-            ' ( ${notification.value} )');
+        logger.info(
+          '$notificationKey received from ${notification.from}'
+          ' ( ${notification.value} )',
+        );
         _handleSshRequestNotification(notification, auth);
         break;
 
       case 'npt_request':
-        logger.info('$notificationKey received from ${notification.from}'
-            ' ( ${notification.value} )');
+        logger.info(
+          '$notificationKey received from ${notification.from}'
+          ' ( ${notification.value} )',
+        );
         _handleNptRequestNotification(notification, auth);
         break;
     }
@@ -379,8 +388,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     if (authChecker != null) {
       late NPAAuthCheckResponse resp;
       try {
-        logger.info('Asking $policyManagerAtsign'
-            ' whether $client may connect to this daemon');
+        logger.info(
+          'Asking $policyManagerAtsign'
+          ' whether $client may connect to this daemon',
+        );
         resp = await authChecker!
             .mayConnect(clientAtsign: client)
             .timeout(const Duration(seconds: authTimeoutSeconds));
@@ -404,7 +415,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
   void _handlePingNotification(AtNotification notification) {
     logger.info(
-        'ping received from ${notification.from} notification id : ${notification.id}');
+      'ping received from ${notification.from} notification id : ${notification.id}',
+    );
 
     var atKey = AtKey()
       ..key = 'heartbeat.$device'
@@ -418,37 +430,40 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         ..namespaceAware = true);
 
     /// send a heartbeat back
-    unawaited(
-      _notify(
-        atKey: atKey,
-        value: jsonEncode(pingResponse),
-      ),
-    );
+    unawaited(_notify(atKey: atKey, value: jsonEncode(pingResponse)));
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {
     if (!addSshPublicKeys) {
       logger.info(
-          'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}');
+        'Ignoring sshpublickey from ${notification.from} notification id : ${notification.id}',
+      );
       return;
     }
 
     try {
       final String sshPublicKey;
       logger.info(
-          'ssh Public Key received from ${notification.from} notification id : ${notification.id}');
+        'ssh Public Key received from ${notification.from} notification id : ${notification.id}',
+      );
       sshPublicKey = notification.value!;
 
       // Check to see if the ssh public key is
       // supported keys by the dartssh2 package
-      if (!sshPublicKey.startsWith(RegExp(
-          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+      if (!sshPublicKey.startsWith(
+        RegExp(
+          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)',
+        ),
+      )) {
         throw ('$sshPublicKey does not look like a public key');
       }
 
       // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-      var authKeysFilePath = [homeDirectory, '.ssh', 'authorized_keys']
-          .join(Platform.pathSeparator);
+      var authKeysFilePath = [
+        homeDirectory,
+        '.ssh',
+        'authorized_keys',
+      ].join(Platform.pathSeparator);
       var authKeys = File(authKeysFilePath);
 
       var authKeysContent = await authKeys.readAsString();
@@ -460,8 +475,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         );
       }
     } catch (e) {
-      logger.severe("Error writing to"
-          " $username's .ssh/authorized_keys file : $e");
+      logger.severe(
+        "Error writing to"
+        " $username's .ssh/authorized_keys file : $e",
+      );
     }
   }
 
@@ -485,13 +502,18 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       req = NptSessionRequest.fromJson(params);
     } catch (e) {
       logger.warning(
-          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+        'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+      );
       return;
     }
 
     try {
       await verifyEnvelopeSignature(
-          atClient, requestingAtsign, logger, envelope);
+        atClient,
+        requestingAtsign,
+        logger,
+        envelope,
+      );
     } catch (e) {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
@@ -500,7 +522,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Signature not verified: $e',
         sessionId: req.sessionId,
       );
@@ -514,7 +538,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Daemon does not permit connections to $requested',
         sessionId: req.sessionId,
       );
@@ -527,7 +553,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Client is not permitted connections to $requested',
         sessionId: req.sessionId,
       );
@@ -536,10 +564,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     }
 
     // Start our side of the tunnel
-    await startNpt(
-      requestingAtsign: requestingAtsign,
-      req: req,
-    );
+    await startNpt(requestingAtsign: requestingAtsign, req: req);
   }
 
   /// request can be a [NptSessionRequest] or [SshnpSessionRequest]
@@ -560,7 +585,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
           po.contains('*:*'));
     }
     logger.severe(
-        "Denying permission to open in _permittedToOpen, unknown request type: ${req.runtimeType}");
+      "Denying permission to open in _permittedToOpen, unknown request type: ${req.runtimeType}",
+    );
     return false;
   }
 
@@ -569,7 +595,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     required NptSessionRequest req,
   }) async {
     logger.info(
-        'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
+      'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}',
+    );
 
     try {
       RelayAuthenticator? relayAuthenticator;
@@ -577,12 +604,13 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       if (req.authenticateToRvd) {
         switch (req.relayAuthMode) {
           case RelayAuthMode.payload:
-            relayAuthenticator =
-                RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
-              'sessionId': req.sessionId,
-              'clientNonce': req.clientNonce,
-              'rvdNonce': req.rvdNonce,
-            }));
+            relayAuthenticator = RelayAuthenticatorLegacy(
+              signAndWrapAndJsonEncode(atClient, {
+                'sessionId': req.sessionId,
+                'clientNonce': req.clientNonce,
+                'rvdNonce': req.rvdNonce,
+              }),
+            );
             break;
           case RelayAuthMode.escr:
             relayAuthenticator = RelayAuthenticatorESCR(
@@ -601,11 +629,13 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       if (req.encryptRvdTraffic) {
         late EncryptionKeyType encKeyType;
         try {
-          encKeyType =
-              EncryptionKeyType.values.byName(req.clientEphemeralPKType);
+          encKeyType = EncryptionKeyType.values.byName(
+            req.clientEphemeralPKType,
+          );
         } catch (e) {
           throw Exception(
-              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
+            'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
+          );
         }
 
         c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK);
@@ -663,7 +693,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       }
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': req.sessionId,
@@ -679,7 +711,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify sshnp that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value:
             'Failed to start up the daemon side of the relay socket tunnel : $e',
         sessionId: req.sessionId,
@@ -696,7 +730,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   /// port forwarding of the provided `remoteForwardPort` to this device's
   /// [localSshdPort].
   void _handleSshRequestNotification(
-      AtNotification notification, NPAAuthCheckResponse auth) async {
+    AtNotification notification,
+    NPAAuthCheckResponse auth,
+  ) async {
     String requestingAtsign = notification.from;
 
     // Validate the request payload.
@@ -713,13 +749,18 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       req = SshnpSessionRequest.fromJson(params);
     } catch (e) {
       logger.warning(
-          'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+        'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+      );
       return;
     }
 
     try {
       await verifyEnvelopeSignature(
-          atClient, requestingAtsign, logger, envelope);
+        atClient,
+        requestingAtsign,
+        logger,
+        envelope,
+      );
     } catch (e) {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
@@ -733,7 +774,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Daemon does not permit connections to $requested',
         sessionId: req.sessionId,
       );
@@ -746,7 +789,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Client is not permitted connections to $requested',
         sessionId: req.sessionId,
       );
@@ -756,22 +801,18 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
     if (req.direct) {
       // direct ssh requested
-      await startDirectSsh(
-        requestingAtsign: requestingAtsign,
-        req: req,
-      );
+      await startDirectSsh(requestingAtsign: requestingAtsign, req: req);
     } else {
       // reverse ssh requested
-      await startReverseSsh(
-        requestingAtsign: requestingAtsign,
-        req: req,
-      );
+      await startReverseSsh(requestingAtsign: requestingAtsign, req: req);
     }
   }
 
   /// ssh through to the remote device with the information we've received
   void _handleLegacySshRequestNotification(
-      AtNotification notification, NPAAuthCheckResponse auth) async {
+    AtNotification notification,
+    NPAAuthCheckResponse auth,
+  ) async {
     String requestingAtsign = notification.from;
 
     /// notification value is `$remoteForwardPort $remotePort $username $remoteHost $sessionId`
@@ -806,7 +847,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Daemon does not permit connections to $requested',
         sessionId: req.sessionId,
       );
@@ -819,7 +862,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: 'Client is not permitted connections to $requested',
         sessionId: req.sessionId,
       );
@@ -847,7 +892,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     req.clientEphemeralPKType;
 
     logger.info(
-        'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}');
+      'Setting up ports for direct ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}',
+    );
 
     authenticateToRvd ??= false;
     encryptRvdTraffic ??= false;
@@ -856,12 +902,13 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       if (authenticateToRvd) {
         switch (req.relayAuthMode) {
           case RelayAuthMode.payload:
-            relayAuthenticator =
-                RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
-              'sessionId': req.sessionId,
-              'clientNonce': req.clientNonce,
-              'rvdNonce': req.rvdNonce,
-            }));
+            relayAuthenticator = RelayAuthenticatorLegacy(
+              signAndWrapAndJsonEncode(atClient, {
+                'sessionId': req.sessionId,
+                'clientNonce': req.clientNonce,
+                'rvdNonce': req.rvdNonce,
+              }),
+            );
             break;
           case RelayAuthMode.escr:
             relayAuthenticator = RelayAuthenticatorESCR(
@@ -881,15 +928,18 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         if (req.clientEphemeralPK == null ||
             req.clientEphemeralPKType == null) {
           throw Exception(
-              'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided');
+            'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided',
+          );
         }
         late EncryptionKeyType encKeyType;
         try {
-          encKeyType =
-              EncryptionKeyType.values.byName(req.clientEphemeralPKType!);
+          encKeyType = EncryptionKeyType.values.byName(
+            req.clientEphemeralPKType!,
+          );
         } catch (e) {
           throw Exception(
-              'Unknown ephemeralPKType: ${req.clientEphemeralPKType}');
+            'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
+          );
         }
 
         c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
@@ -920,7 +970,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       /// Generate the ephemeral key pair which the client will use for the
       /// initial tunnel ssh session
       AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
-          algorithm: sshAlgorithm, identifier: 'ephemeral_${req.sessionId}');
+        algorithm: sshAlgorithm,
+        identifier: 'ephemeral_${req.sessionId}',
+      );
 
       await keyUtil.authorizePublicKey(
         sshPublicKey: tunnelKeyPair.publicKeyContents,
@@ -948,7 +1000,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       }
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value: signAndWrapAndJsonEncode(atClient, {
           'status': 'connected',
           'sessionId': req.sessionId,
@@ -963,14 +1017,18 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
-      Timer(const Duration(seconds: 15),
-          () => keyUtil.deauthorizePublicKey(req.sessionId));
+      Timer(
+        const Duration(seconds: 15),
+        () => keyUtil.deauthorizePublicKey(req.sessionId),
+      );
     } catch (e) {
       logger.severe('startDirectSsh failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: req.sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
         value:
             'Failed to start up the daemon side of the relay socket tunnel : $e',
         sessionId: req.sessionId,
@@ -996,9 +1054,11 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     int remoteForwardPort = req.remoteForwardPort!;
 
     logger.info(
-        'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort');
+      'Starting reverse ssh session for $username to $host on port $port with forwardRemote of $remoteForwardPort',
+    );
     logger.shout(
-        'Starting reverse ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId');
+      'Starting reverse ssh session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: $sessionId',
+    );
 
     try {
       bool success = false;
@@ -1007,23 +1067,25 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       switch (sshClient) {
         case SupportedSshClient.openssh:
           (success, errorMessage) = await reverseSshViaExec(
-              host: host,
-              port: port,
-              sessionId: sessionId,
-              username: username,
-              remoteForwardPort: remoteForwardPort,
-              requestingAtsign: requestingAtsign,
-              privateKey: privateKey);
+            host: host,
+            port: port,
+            sessionId: sessionId,
+            username: username,
+            remoteForwardPort: remoteForwardPort,
+            requestingAtsign: requestingAtsign,
+            privateKey: privateKey,
+          );
           break;
         case SupportedSshClient.dart:
           (success, errorMessage) = await reverseSshViaSSHClient(
-              host: host,
-              port: port,
-              sessionId: sessionId,
-              username: username,
-              remoteForwardPort: remoteForwardPort,
-              requestingAtsign: requestingAtsign,
-              privateKey: privateKey);
+            host: host,
+            port: port,
+            sessionId: sessionId,
+            username: username,
+            remoteForwardPort: remoteForwardPort,
+            requestingAtsign: requestingAtsign,
+            privateKey: privateKey,
+          );
           break;
       }
 
@@ -1033,7 +1095,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         // Notify sshnp that this session is NOT connected
         await _notify(
           atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
+            requestingAtsign: requestingAtsign,
+            sessionId: sessionId,
+          ),
           value: '$errorMessage (use --local-port to specify unused port)',
           sessionId: sessionId,
         );
@@ -1041,7 +1105,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         /// Notify sshnp that the connection has been made
         await _notify(
           atKey: _createResponseAtKey(
-              requestingAtsign: requestingAtsign, sessionId: sessionId),
+            requestingAtsign: requestingAtsign,
+            sessionId: sessionId,
+          ),
           value: 'connected',
           sessionId: sessionId,
         );
@@ -1051,15 +1117,19 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       // Notify sshnp that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
-            requestingAtsign: requestingAtsign, sessionId: sessionId),
+          requestingAtsign: requestingAtsign,
+          sessionId: sessionId,
+        ),
         value: 'Remote SSH Client failure : $e',
         sessionId: sessionId,
       );
     }
   }
 
-  AtKey _createResponseAtKey(
-      {required String requestingAtsign, required String sessionId}) {
+  AtKey _createResponseAtKey({
+    required String requestingAtsign,
+    required String sessionId,
+  }) {
     var atKey = AtKey()
       ..key = '$sessionId.$device'
       ..sharedBy = deviceAtsign
@@ -1076,14 +1146,15 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   /// Reverse ssh using SSHClient.
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to [localSshdPort] here.
-  Future<(bool, String?)> reverseSshViaSSHClient(
-      {required String host,
-      required int port,
-      required String sessionId,
-      required String username,
-      required int remoteForwardPort,
-      required String requestingAtsign,
-      required String privateKey}) async {
+  Future<(bool, String?)> reverseSshViaSSHClient({
+    required String host,
+    required int port,
+    required String sessionId,
+    required String username,
+    required int remoteForwardPort,
+    required String requestingAtsign,
+    required String privateKey,
+  }) async {
     late final SSHSocket socket;
     try {
       socket = await SSHSocket.connect(host, port);
@@ -1098,13 +1169,13 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         username: username,
         identities: [
           // A single private key file may contain multiple keys.
-          ...SSHKeyPair.fromPem(privateKey)
+          ...SSHKeyPair.fromPem(privateKey),
         ],
       );
     } catch (e) {
       return (
         false,
-        'Failed to create SSHClient for $username@$host:$port : $e'
+        'Failed to create SSHClient for $username@$host:$port : $e',
       );
     }
 
@@ -1141,25 +1212,28 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     });
 
     /// Answer ssh requests until none are left open
-    unawaited(Future.delayed(Duration(milliseconds: 0), () async {
-      await for (final connection in forward!.connections) {
-        counter++;
-        final socket = await Socket.connect('localhost', localSshdPort);
+    unawaited(
+      Future.delayed(Duration(milliseconds: 0), () async {
+        await for (final connection in forward!.connections) {
+          counter++;
+          final socket = await Socket.connect('localhost', localSshdPort);
 
-        unawaited(
-          connection.stream.cast<List<int>>().pipe(socket).whenComplete(
-            () async {
-              counter--;
-            },
-          ),
+          unawaited(
+            connection.stream.cast<List<int>>().pipe(socket).whenComplete(
+              () async {
+                counter--;
+              },
+            ),
+          );
+          unawaited(socket.cast<List<int>>().pipe(connection.sink));
+          if (shouldStop) break;
+        }
+      }).catchError((e) {
+        logger.shout(
+          '$sessionId | reverseSshViaSSHClient | error from forward connections handler $e',
         );
-        unawaited(socket.cast<List<int>>().pipe(connection.sink));
-        if (shouldStop) break;
-      }
-    }).catchError((e) {
-      logger.shout(
-          '$sessionId | reverseSshViaSSHClient | error from forward connections handler $e');
-    }));
+      }),
+    );
 
     return (true, null);
   }
@@ -1167,14 +1241,15 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   /// Reverse ssh by executing ssh directly on the host.
   /// We will ssh outwards with a remote port forwarding to allow a client on
   /// the other side to ssh to [localSshdPort] here.
-  Future<(bool, String?)> reverseSshViaExec(
-      {required String host,
-      required int port,
-      required String sessionId,
-      required String username,
-      required int remoteForwardPort,
-      required String requestingAtsign,
-      required String privateKey}) async {
+  Future<(bool, String?)> reverseSshViaExec({
+    required String host,
+    required int port,
+    required String sessionId,
+    required String username,
+    required int remoteForwardPort,
+    required String requestingAtsign,
+    required String privateKey,
+  }) async {
     final pemFile = File('/tmp/.${Uuid().v4()}');
     if (!privateKey.endsWith('\n')) {
       privateKey += '\n';
@@ -1258,11 +1333,14 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     if (sshExitCode != 0) {
       if (sshExitCode == 6464) {
         logger.shout(
-            '$sessionId | Command timed out: $opensshBinaryPath ${args.join(' ')}');
+          '$sessionId | Command timed out: $opensshBinaryPath ${args.join(' ')}',
+        );
         errorMessage = 'Failed to establish connection - timed out';
       } else {
-        logger.shout('$sessionId | Exit code $sshExitCode from'
-            ' $opensshBinaryPath ${args.join(' ')}');
+        logger.shout(
+          '$sessionId | Exit code $sshExitCode from'
+          ' $opensshBinaryPath ${args.join(' ')}',
+        );
         errorMessage =
             'Failed to establish connection - exit code $sshExitCode';
       }
@@ -1292,8 +1370,11 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     String sessionId = '',
   }) async {
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(atKey,
-          value: value, notificationExpiry: ttln),
+      NotificationParams.forUpdate(
+        atKey,
+        value: value,
+        notificationExpiry: ttln,
+      ),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       onSuccess: (notification) {
@@ -1455,19 +1536,22 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   }
 
   @override
-  Future<NPAAuthCheckResponse> mayConnect(
-      {required String clientAtsign}) async {
+  Future<NPAAuthCheckResponse> mayConnect({
+    required String clientAtsign,
+  }) async {
     // We're caching auth checks for 30 seconds so we don't bombard the
     // auth server unnecessarily.
     if (authCheckCache.containsKey(clientAtsign)) {
       return completerMap[authCheckCache[clientAtsign]!]!.future;
     }
-    AtRpcReq request = AtRpcReq.create(NPAAuthCheckRequest(
-            daemonAtsign: sshnpd.deviceAtsign,
-            daemonDeviceName: sshnpd.device,
-            daemonDeviceGroupName: sshnpd.deviceGroup,
-            clientAtsign: clientAtsign)
-        .toJson());
+    AtRpcReq request = AtRpcReq.create(
+      NPAAuthCheckRequest(
+        daemonAtsign: sshnpd.deviceAtsign,
+        daemonDeviceName: sshnpd.device,
+        daemonDeviceGroupName: sshnpd.deviceGroup,
+        clientAtsign: clientAtsign,
+      ).toJson(),
+    );
 
     completerMap[request.reqId] = Completer<NPAAuthCheckResponse>();
     authCheckCache[clientAtsign] = request.reqId;
@@ -1480,9 +1564,12 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
     });
 
     sshnpd.logger.info(
-        'Sending auth check request to sshnpa at ${sshnpd.policyManagerAtsign} : $request');
+      'Sending auth check request to sshnpa at ${sshnpd.policyManagerAtsign} : $request',
+    );
     await rpc.sendRequest(
-        toAtSign: sshnpd.policyManagerAtsign!, request: request);
+      toAtSign: sshnpd.policyManagerAtsign!,
+      request: request,
+    );
     return completerMap[request.reqId]!.future;
   }
 
@@ -1498,9 +1585,10 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
 
     if (!completerMap.containsKey(response.reqId)) {
       sshnpd.logger.warning(
-          'Ignoring auth check response (completerMap has been cleared)'
-          ' from ${sshnpd.policyManagerAtsign}'
-          ' : $response');
+        'Ignoring auth check response (completerMap has been cleared)'
+        ' from ${sshnpd.policyManagerAtsign}'
+        ' : $response',
+      );
       return;
     }
 
@@ -1508,32 +1596,39 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
 
     if (completer.isCompleted) {
       sshnpd.logger.warning(
-          'Ignoring auth check response (received after future completion)'
-          ' from ${sshnpd.policyManagerAtsign}'
-          ' : $response');
+        'Ignoring auth check response (received after future completion)'
+        ' from ${sshnpd.policyManagerAtsign}'
+        ' : $response',
+      );
       return;
     }
     switch (response.respType) {
       case AtRpcRespType.ack:
         // We don't complete the future when we get an ack
-        sshnpd.logger.info('Got ack from ${sshnpd.policyManagerAtsign}'
-            ' : $response');
+        sshnpd.logger.info(
+          'Got ack from ${sshnpd.policyManagerAtsign}'
+          ' : $response',
+        );
         break;
       case AtRpcRespType.success:
-        sshnpd.logger
-            .info('Got auth check response from ${sshnpd.policyManagerAtsign}'
-                ' : $response');
+        sshnpd.logger.info(
+          'Got auth check response from ${sshnpd.policyManagerAtsign}'
+          ' : $response',
+        );
         completer.complete(NPAAuthCheckResponse.fromJson(response.payload));
         break;
       default:
         sshnpd.logger.warning(
-            'Got non-success auth check response from ${sshnpd.policyManagerAtsign}'
-            ' : $response');
-        completer.complete(NPAAuthCheckResponse(
-          authorized: false,
-          message: response.message ?? 'Got non-success response $response',
-          permitOpen: [],
-        ));
+          'Got non-success auth check response from ${sshnpd.policyManagerAtsign}'
+          ' : $response',
+        );
+        completer.complete(
+          NPAAuthCheckResponse(
+            authorized: false,
+            message: response.message ?? 'Got non-success response $response',
+            permitOpen: [],
+          ),
+        );
         break;
     }
   }
@@ -1562,7 +1657,9 @@ class AesKeyBundle {
 }
 
 Future<AesKeyBundle> genBundle(
-    EncryptionKeyType encKeyType, String encPubKey) async {
+  EncryptionKeyType encKeyType,
+  String encPubKey,
+) async {
   String aesKey, aesKeyEncrypted, iv, ivEncrypted;
 
   aesKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
@@ -1570,8 +1667,9 @@ Future<AesKeyBundle> genBundle(
 
   switch (encKeyType) {
     case EncryptionKeyType.rsa2048:
-      AtChops atChops = AtChopsImpl(AtChopsKeys.create(
-          AtEncryptionKeyPair.create(encPubKey, 'n/a'), null));
+      AtChops atChops = AtChopsImpl(
+        AtChopsKeys.create(AtEncryptionKeyPair.create(encPubKey, 'n/a'), null),
+      );
       aesKeyEncrypted = atChops.encryptString(aesKey, encKeyType).result;
       ivEncrypted = atChops.encryptString(iv, encKeyType).result;
       break;

@@ -55,14 +55,14 @@ mixin OpensshSshSessionHandler on SshnpCore
         // window. It's not necessary (and currently not possible) to capture
         // the process since there is a physical window the user can close to
         // end the session
-        unawaited(startProcess(
-          opensshBinaryPath,
-          [
-            ...args,
-          ],
-          runInShell: true,
-          mode: ProcessStartMode.normal,
-        ));
+        unawaited(
+          startProcess(
+            opensshBinaryPath,
+            [...args],
+            runInShell: true,
+            mode: ProcessStartMode.normal,
+          ),
+        );
         // Delay to allow the initial connection to get in place
         int waiter = 0;
         int counter = 0;
@@ -81,9 +81,7 @@ mixin OpensshSshSessionHandler on SshnpCore
             waiter = 1;
           }
           if (counter > 5) {
-            throw SshnpError(
-              'SSHNP failed to start the initial ssh tunnel',
-            );
+            throw SshnpError('SSHNP failed to start the initial ssh tunnel');
           }
         }
       } else {
@@ -99,10 +97,7 @@ mixin OpensshSshSessionHandler on SshnpCore
         await process.exitCode.timeout(Duration(seconds: 10));
       }
     } on TimeoutException catch (e) {
-      throw SshnpError(
-        'SSHNP failed to start the initial tunnel',
-        error: e,
-      );
+      throw SshnpError('SSHNP failed to start the initial tunnel', error: e);
     }
     return process;
   }

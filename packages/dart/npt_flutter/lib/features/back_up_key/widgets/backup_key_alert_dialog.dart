@@ -42,15 +42,19 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                   Text(
                     strings.backUpAtKeys,
                     style: const TextStyle(
-                        fontSize: Sizes.p18, color: Colors.black),
+                      fontSize: Sizes.p18,
+                      color: Colors.black,
+                    ),
                     softWrap: false,
                   ),
                   const Spacer(),
                   Text(
                     strings.required,
                     style: const TextStyle(
-                        color: AppColor.primaryColor, fontSize: Sizes.p16),
-                  )
+                      color: AppColor.primaryColor,
+                      fontSize: Sizes.p16,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -60,14 +64,15 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
               child: CustomContainer.background(
                 child: Text.rich(
                   TextSpan(
-                      text: strings.backUpAtKeysIntroMsgFirst,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      children: [
-                        TextSpan(
-                          text: strings.backUpAtKeysIntroMsgLast,
-                          style: const TextStyle(fontWeight: FontWeight.normal),
-                        ),
-                      ]),
+                    text: strings.backUpAtKeysIntroMsgFirst,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(
+                        text: strings.backUpAtKeysIntroMsgLast,
+                        style: const TextStyle(fontWeight: FontWeight.normal),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -75,55 +80,57 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
             SizedBox(
               width: double.infinity,
               child: CustomContainer.background(
-                  child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        PhosphorIcons.info(),
-                        color: AppColor.primaryColor,
-                      ),
-                      gapW14,
-                      Text(strings.whatAreAtKeys,
-                          style: const TextStyle(color: AppColor.primaryColor)),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            visibility = !visibility;
-                          });
-                        },
-                        icon: Icon(PhosphorIcons.caretDown()),
-                        color: AppColor.primaryColor,
-                      )
-                    ],
-                  ),
-                  gapH14,
-                  Visibility(
-                    maintainAnimation: true,
-                    maintainState: true,
-                    visible: visibility,
-                    child: Text(
-                      strings.backUpAtKeysMainMsg,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          PhosphorIcons.info(),
+                          color: AppColor.primaryColor,
+                        ),
+                        gapW14,
+                        Text(
+                          strings.whatAreAtKeys,
+                          style: const TextStyle(color: AppColor.primaryColor),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              visibility = !visibility;
+                            });
+                          },
+                          icon: Icon(PhosphorIcons.caretDown()),
+                          color: AppColor.primaryColor,
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              )),
+                    gapH14,
+                    Visibility(
+                      maintainAnimation: true,
+                      maintainState: true,
+                      visible: visibility,
+                      child: Text(strings.backUpAtKeysMainMsg),
+                    ),
+                  ],
+                ),
+              ),
             ),
             gapH10,
             CustomContainer.background(
-                child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    await context.read<BackupKeyCubit>().backUpKeys();
-                  },
-                  child: Text(strings.saveAtKeys),
-                ),
-              ],
-            ))
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      await context.read<BackupKeyCubit>().backUpKeys();
+                    },
+                    child: Text(strings.saveAtKeys),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

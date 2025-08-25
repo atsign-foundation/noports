@@ -35,7 +35,7 @@ class Constants {
 
     return {
       'root.atsign.org': strings.rootDomainDefault,
-      'vip.ve.atsign.zone': strings.rootDomainDemo
+      'vip.ve.atsign.zone': strings.rootDomainDemo,
     };
   }
 

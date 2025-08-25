@@ -44,8 +44,9 @@ class Settings extends Loggable {
     Language? language,
   }) {
     return Settings(
-      relayAtsign:
-          (relayAtsign == null || relayAtsign.isEmpty) ? '@rv_am' : relayAtsign,
+      relayAtsign: (relayAtsign == null || relayAtsign.isEmpty)
+          ? '@rv_am'
+          : relayAtsign,
       overrideRelay: overrideRelay ?? this.overrideRelay,
       viewLayout: viewLayout ?? this.viewLayout,
       darkMode: darkMode ?? this.darkMode,
@@ -61,12 +62,12 @@ class Settings extends Loggable {
 
   @override
   List<Object?> get props => [
-        relayAtsign,
-        overrideRelay,
-        viewLayout,
-        darkMode,
-        language,
-      ];
+    relayAtsign,
+    overrideRelay,
+    viewLayout,
+    darkMode,
+    language,
+  ];
 
   @override
   String toString() {
@@ -76,11 +77,7 @@ class Settings extends Loggable {
   }
 }
 
-enum RelayOptions {
-  am,
-  eu,
-  ap,
-}
+enum RelayOptions { am, eu, ap }
 
 extension RelayOptionsExtension on RelayOptions {
   String get relayAtsign {

@@ -15,7 +15,9 @@ class SettingsBloc extends LoggingBloc<SettingsEvent, SettingsState> {
   void clear() => emit(const SettingsInitial());
 
   Future<void> _onLoad(
-      SettingsLoadEvent event, Emitter<SettingsState> emit) async {
+    SettingsLoadEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(const SettingsLoading());
     Settings? settings;
     try {
@@ -40,7 +42,9 @@ class SettingsBloc extends LoggingBloc<SettingsEvent, SettingsState> {
   }
 
   Future<void> _onEdit(
-      SettingsEditEvent event, Emitter<SettingsState> emit) async {
+    SettingsEditEvent event,
+    Emitter<SettingsState> emit,
+  ) async {
     if (state is SettingsLoading) return;
 
     bool res = true; // true so we emit loaded state if not saving

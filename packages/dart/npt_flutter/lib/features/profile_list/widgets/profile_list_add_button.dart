@@ -11,32 +11,34 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../cubit/profiles_selected_cubit.dart';
 
 class ProfileListAddButton extends StatelessWidget {
-  const ProfileListAddButton({
-    super.key,
-  });
+  const ProfileListAddButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
-            Set<String>>(
-        selector: (ProfilesSelectedState state) => state.selected,
-        builder: (BuildContext context, Set<String> selected) {
-          // Hide this button if something is selected
-          if (selected.isNotEmpty) return gap0;
-          return ElevatedButton.icon(
-            onPressed: () {
-              final uuid = Uuid.generate();
-              if (context.mounted) {
-                wrapperNav.currentState!.pushNamed(HomeRoutes.profileForm,
-                    arguments: ProfileFormPageArguments(uuid));
-              }
-            },
-            label: Text(strings.addNew),
-            icon: PhosphorIcon(
-              PhosphorIcons.plusSquare(),
-            ),
-          );
-        });
+    return BlocSelector<
+      ProfilesSelectedCubit,
+      ProfilesSelectedState,
+      Set<String>
+    >(
+      selector: (ProfilesSelectedState state) => state.selected,
+      builder: (BuildContext context, Set<String> selected) {
+        // Hide this button if something is selected
+        if (selected.isNotEmpty) return gap0;
+        return ElevatedButton.icon(
+          onPressed: () {
+            final uuid = Uuid.generate();
+            if (context.mounted) {
+              wrapperNav.currentState!.pushNamed(
+                HomeRoutes.profileForm,
+                arguments: ProfileFormPageArguments(uuid),
+              );
+            }
+          },
+          label: Text(strings.addNew),
+          icon: PhosphorIcon(PhosphorIcons.plusSquare()),
+        );
+      },
+    );
   }
 }

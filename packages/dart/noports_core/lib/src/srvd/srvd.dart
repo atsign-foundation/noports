@@ -28,14 +28,18 @@ abstract interface class Srvd {
   @visibleForTesting
   abstract bool initialized;
 
-  static Future<Srvd> fromCommandLineArgs(List<String> args,
-      {AtClient? atClient,
-      FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
-    return SrvdImpl.fromCommandLineArgs(args,
-        atClient: atClient,
-        atClientGenerator: atClientGenerator,
-        usageCallback: usageCallback);
+  static Future<Srvd> fromCommandLineArgs(
+    List<String> args, {
+    AtClient? atClient,
+    FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+  }) async {
+    return SrvdImpl.fromCommandLineArgs(
+      args,
+      atClient: atClient,
+      atClientGenerator: atClientGenerator,
+      usageCallback: usageCallback,
+    );
   }
 
   Future<void> init();

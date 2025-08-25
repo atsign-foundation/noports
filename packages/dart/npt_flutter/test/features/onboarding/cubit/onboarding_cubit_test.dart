@@ -25,13 +25,17 @@ void main() {
       });
 
       test('initial state toString is correct', () {
-        expect(cubit.state.toString(),
-            equals('OnboardingState(, offboarded, root.atsign.org)'));
+        expect(
+          cubit.state.toString(),
+          equals('OnboardingState(, offboarded, root.atsign.org)'),
+        );
       });
 
       test('initial state props are correct', () {
-        expect(cubit.state.props,
-            equals(['', OnboardingStatus.offboarded, 'root.atsign.org']));
+        expect(
+          cubit.state.props,
+          equals(['', OnboardingStatus.offboarded, 'root.atsign.org']),
+        );
       });
     });
 
@@ -322,12 +326,14 @@ void main() {
           rootDomain: 'test.domain.com',
         );
 
-        expect(state.toString(),
-            equals('OnboardingState(@test_user, onboarded, test.domain.com)'));
         expect(
-            state.props,
-            equals(
-                ['@test_user', OnboardingStatus.onboarded, 'test.domain.com']));
+          state.toString(),
+          equals('OnboardingState(@test_user, onboarded, test.domain.com)'),
+        );
+        expect(
+          state.props,
+          equals(['@test_user', OnboardingStatus.onboarded, 'test.domain.com']),
+        );
       });
     });
 
@@ -335,11 +341,12 @@ void main() {
       test('enum properties work correctly', () {
         expect(OnboardingStatus.values, hasLength(2));
         expect(
-            OnboardingStatus.values,
-            allOf(
-              contains(OnboardingStatus.onboarded),
-              contains(OnboardingStatus.offboarded),
-            ));
+          OnboardingStatus.values,
+          allOf(
+            contains(OnboardingStatus.onboarded),
+            contains(OnboardingStatus.offboarded),
+          ),
+        );
         expect(OnboardingStatus.onboarded.name, equals('onboarded'));
         expect(OnboardingStatus.offboarded.name, equals('offboarded'));
       });

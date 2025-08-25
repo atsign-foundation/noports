@@ -71,15 +71,15 @@ final class Profile extends Loggable with Favoritable {
 
   @override
   List<Object?> get props => [
-        uuid,
-        displayName,
-        relayAtsign,
-        sshnpdAtsign,
-        deviceName,
-        remoteHost,
-        remotePort,
-        localPort,
-      ];
+    uuid,
+    displayName,
+    relayAtsign,
+    sshnpdAtsign,
+    deviceName,
+    remoteHost,
+    remotePort,
+    localPort,
+  ];
 
   @override
   bool get stringify => true;

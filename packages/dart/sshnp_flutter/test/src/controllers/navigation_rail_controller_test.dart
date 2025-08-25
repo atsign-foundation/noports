@@ -41,7 +41,7 @@ void main() {
       expect(controller.isCurrentIndex(AppRoute.home), true);
       expect(controller.isCurrentIndex(AppRoute.terminal), false);
     });
-    test(''' 
+    test('''
     Given Default index as 0 
     When getCurrentIndex is called
     Then return 0
