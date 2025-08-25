@@ -138,7 +138,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           ],
         ),
         const SizedBox(height: 12),
-        
+
         // List of atSigns
         if (_localAtSigns.isEmpty)
           Container(
@@ -186,7 +186,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
               },
             ),
           ),
-        
+
         if (widget.isEditing) ...[
           const SizedBox(height: 12),
           Row(

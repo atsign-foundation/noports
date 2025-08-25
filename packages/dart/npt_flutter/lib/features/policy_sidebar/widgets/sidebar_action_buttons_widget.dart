@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy_manager/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_manager_cubit.dart';
 import '../../../styles/app_color.dart';
 
 class SidebarActionButtonsWidget extends StatelessWidget {

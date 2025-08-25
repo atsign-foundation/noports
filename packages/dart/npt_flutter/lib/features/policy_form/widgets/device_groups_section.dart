@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../policy_manager/models/policy.dart';
-import 'device_card.dart';
+import '../../policy/models/policy.dart';
+import 'device_group_card.dart';
 
-class DevicesSection extends StatelessWidget {
-  final List<Device> devices;
+class DeviceGroupsSection extends StatelessWidget {
+  final List<DeviceGroup> deviceGroups;
   final bool isEditing;
 
-  const DevicesSection({super.key, required this.devices, required this.isEditing});
+  const DeviceGroupsSection({super.key, required this.deviceGroups, required this.isEditing});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class DevicesSection extends StatelessWidget {
         Row(
           children: [
             const Text(
-              'Devices',
+              'Device Groups',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -26,21 +26,21 @@ class DevicesSection extends StatelessWidget {
             if (isEditing)
               TextButton.icon(
                 onPressed: () {
-                  // TODO: Add device functionality
+                  // TODO: Add device group functionality
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Add Device'),
+                label: const Text('Add Group'),
               ),
           ],
         ),
         const SizedBox(height: 8),
-        if (devices.isEmpty)
+        if (deviceGroups.isEmpty)
           const Text(
-            'No devices configured',
+            'No device groups configured',
             style: TextStyle(color: Colors.grey),
           )
         else
-          ...devices.map((device) => DeviceCard(device: device, isEditing: isEditing)),
+          ...deviceGroups.map((group) => DeviceGroupCard(group: group, isEditing: isEditing)),
       ],
     );
   }

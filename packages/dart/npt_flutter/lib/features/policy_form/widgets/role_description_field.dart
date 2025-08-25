@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../policy_manager/models/policy.dart';
+import '../../policy/models/policy.dart';
 import 'form_field_widget.dart';
 
 class RoleDescriptionField extends StatefulWidget {

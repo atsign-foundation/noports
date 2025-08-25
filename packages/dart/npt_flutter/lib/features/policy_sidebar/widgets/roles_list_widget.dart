@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../policy_manager/cubit/policy_manager_cubit.dart';
-import '../../policy_manager/models/policy.dart';
+import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/models/policy.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 import 'role_list_item_widget.dart';

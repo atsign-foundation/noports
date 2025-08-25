@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../policy_manager/models/policy.dart';
+import '../../policy/models/policy.dart';
 import 'at_signs_list_widget.dart';
 
 class DaemonAtSignsField extends StatelessWidget {
