@@ -33,6 +33,11 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
       final currentState = state as PolicyManagerLoaded;
       if (!currentState.canSelectRole) return;
       
+      // Don't switch if already viewing the same role
+      if (currentState.isRoleViewing && currentState.selectedRole?.id == roleId) {
+        return;
+      }
+      
       final selectedRole = currentState.roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => currentState.roles.first,

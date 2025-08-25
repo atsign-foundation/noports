@@ -16,6 +16,9 @@ class RoleListItemWidget extends StatelessWidget {
       builder: (context, state) {
         final isInEditMode = state is PolicyManagerLoaded && state.isInEditMode;
         final isLogsView = state is PolicyManagerLoaded && state.isLogsViewing;
+        final isSelected = state is PolicyManagerLoaded && 
+            state.hasSelectedRole && 
+            state.selectedRole?.id == role.id;
         final isDisabled = isInEditMode && !isLogsView;
         
         return Padding(
@@ -25,10 +28,13 @@ class RoleListItemWidget extends StatelessWidget {
             width: double.infinity,
             child: Card(
               margin: EdgeInsets.zero,
-              color: Colors.white,
-              elevation: 1,
-              shape: const RoundedRectangleBorder(
+              color: isSelected ? AppColor.primaryColor.withValues(alpha: 0.1) : Colors.white,
+              elevation: isSelected ? 2 : 1,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.zero,
+                side: isSelected 
+                    ? const BorderSide(color: AppColor.primaryColor, width: 2)
+                    : BorderSide.none,
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: Sizes.p12, vertical: Sizes.p4),
