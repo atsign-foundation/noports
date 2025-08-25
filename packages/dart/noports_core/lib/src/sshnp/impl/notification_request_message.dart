@@ -17,7 +17,7 @@ class SshnpSessionRequest {
   final int? remoteForwardPort;
   final String? privateKey;
   final bool twinKeys;
-  final String relayAtsign;
+  final String? relayAtsign;
 
   SshnpSessionRequest({
     required this.direct,
