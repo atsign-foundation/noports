@@ -131,7 +131,7 @@ class _NptAppBarState extends State<NptAppBar> {
                           isActive: state == HomeRoutes.policyManager,
                           onTap: () {
                             if (state != HomeRoutes.policyManager) {
-                              final PolicyManagerPageArguments args = PolicyManagerPageArguments(atsign);
+                              final PolicyPageArguments args = PolicyPageArguments(atsign);
                               wrapperNav.currentState!.pushNamed(HomeRoutes.policyManager, arguments: args);
                             }
                           },

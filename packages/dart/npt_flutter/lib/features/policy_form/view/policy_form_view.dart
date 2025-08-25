@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy/models/policy.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 import '../widgets/form_content.dart';
 
-class PolicyManagerFormView extends StatelessWidget {
+class PolicyFormView extends StatelessWidget {
   final Role role;
 
-  const PolicyManagerFormView({super.key, required this.role});
+  const PolicyFormView({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
+    return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
-        if (state is PolicyManagerLoading) {
+        if (state is PolicyLoading) {
           return const Center(child: CircularProgressIndicator());
-        } else if (state is PolicyManagerError) {
+        } else if (state is PolicyError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -30,7 +30,7 @@ class PolicyManagerFormView extends StatelessWidget {
               ],
             ),
           );
-        } else if (state is PolicyManagerLoaded) {
+        } else if (state is PolicyLoaded) {
           final selectedRole = state.selectedRole ?? role;
           return _buildForm(context, selectedRole, state);
         } else {
@@ -42,7 +42,7 @@ class PolicyManagerFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildForm(BuildContext context, Role role, PolicyManagerLoaded state) {
+  Widget _buildForm(BuildContext context, Role role, PolicyLoaded state) {
     return FormContent(role: role, state: state);
   }
 }

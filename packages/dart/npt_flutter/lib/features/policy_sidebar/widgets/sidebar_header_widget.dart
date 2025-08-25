@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 
 class SidebarHeaderWidget extends StatelessWidget {
   const SidebarHeaderWidget({super.key});
@@ -21,7 +21,7 @@ class SidebarHeaderWidget extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<PolicyManagerCubit>().refresh();
+              context.read<PolicyCubit>().refresh();
             },
             tooltip: 'Refresh roles',
           ),

@@ -3,24 +3,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../repositories/role_repository.dart';
 import '../models/policy.dart';
 
-part 'policy_manager_state.dart';
+part 'policy_state.dart';
 
-class PolicyManagerCubit extends Cubit<PolicyManagerState> {
+class PolicyCubit extends Cubit<PolicyState> {
   final RoleRepository _roleRepository;
   
-  PolicyManagerCubit(this._roleRepository) : super(const PolicyManagerLoading());
+  PolicyCubit(this._roleRepository) : super(const PolicyLoading());
 
   /// Load all roles and enter browsing mode
   Future<void> loadRoles() async {
-    emit(const PolicyManagerLoading(operation: 'Loading roles'));
+    emit(const PolicyLoading(operation: 'Loading roles'));
     try {
       final roles = await _roleRepository.fetchRoles();
-      emit(PolicyManagerLoaded(
+      emit(PolicyLoaded(
         roles: roles,
-        viewMode: PolicyManagerViewMode.rolesBrowsing,
+        viewMode: PolicyViewMode.rolesBrowsing,
       ));
     } catch (e) {
-      emit(PolicyManagerError(
+      emit(PolicyError(
         'Failed to load roles: $e',
         operation: 'loadRoles',
       ));
@@ -29,8 +29,8 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Select a role for viewing (read-only)
   void selectRoleForViewing(String roleId) {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       if (!currentState.canSelectRole) return;
       
       // Don't switch if already viewing the same role
@@ -45,15 +45,15 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
       
       emit(currentState.copyWith(
         selectedRole: selectedRole,
-        viewMode: PolicyManagerViewMode.roleViewing,
+        viewMode: PolicyViewMode.roleViewing,
       ));
     }
   }
 
   /// Start editing an existing role
   void startEditingRole(String roleId) {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       final roleToEdit = currentState.roles.firstWhere(
         (role) => role.id == roleId,
@@ -62,39 +62,39 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
       
       emit(currentState.copyWith(
         selectedRole: roleToEdit,
-        viewMode: PolicyManagerViewMode.roleEditing,
+        viewMode: PolicyViewMode.roleEditing,
       ));
     }
   }
 
   /// Start creating a new role
   void startCreatingRole() {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       final emptyRole = Role.empty(name: '');
       emit(currentState.copyWith(
         selectedRole: emptyRole,
-        viewMode: PolicyManagerViewMode.roleCreating,
+        viewMode: PolicyViewMode.roleCreating,
       ));
     }
   }
 
   /// Cancel editing or creating and return to appropriate state
   void cancelEditing() {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       if (currentState.isRoleCreating) {
         // Return to browsing mode when canceling creation
         emit(currentState.copyWith(
           clearSelectedRole: true,
-          viewMode: PolicyManagerViewMode.rolesBrowsing,
+          viewMode: PolicyViewMode.rolesBrowsing,
         ));
       } else if (currentState.isRoleEditing && currentState.hasSelectedRole) {
         // Return to viewing mode when canceling edit
         emit(currentState.copyWith(
-          viewMode: PolicyManagerViewMode.roleViewing,
+          viewMode: PolicyViewMode.roleViewing,
         ));
       }
     }
@@ -102,13 +102,13 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Exit viewing mode and return to browsing
   void exitViewing() {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       if (currentState.isRoleViewing) {
         emit(currentState.copyWith(
           clearSelectedRole: true,
-          viewMode: PolicyManagerViewMode.rolesBrowsing,
+          viewMode: PolicyViewMode.rolesBrowsing,
         ));
       }
     }
@@ -116,11 +116,11 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Create a new role
   Future<void> createRole(Role role) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       if (!currentState.isRoleCreating) return;
       
-      emit(const PolicyManagerLoading(operation: 'Creating role'));
+      emit(const PolicyLoading(operation: 'Creating role'));
       
       try {
         final success = await _roleRepository.createNewRole(role);
@@ -132,13 +132,13 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
             orElse: () => updatedRoles.last,
           );
           
-          emit(PolicyManagerLoaded(
+          emit(PolicyLoaded(
             roles: updatedRoles,
             selectedRole: createdRole,
-            viewMode: PolicyManagerViewMode.roleViewing,
+            viewMode: PolicyViewMode.roleViewing,
           ));
         } else {
-          emit(PolicyManagerError(
+          emit(PolicyError(
             'Failed to create role',
             operation: 'createRole',
             previousViewMode: currentState.viewMode,
@@ -147,7 +147,7 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
           ));
         }
       } catch (error) {
-        emit(PolicyManagerError(
+        emit(PolicyError(
           'Failed to create role: $error',
           operation: 'createRole',
           previousViewMode: currentState.viewMode,
@@ -160,11 +160,11 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Update an existing role
   Future<void> updateRole(Role role) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       if (!currentState.isRoleEditing) return;
       
-      emit(const PolicyManagerLoading(operation: 'Updating role'));
+      emit(const PolicyLoading(operation: 'Updating role'));
       
       try {
         final success = await _roleRepository.updateExistingRole(role);
@@ -176,13 +176,13 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
             orElse: () => role,
           );
           
-          emit(PolicyManagerLoaded(
+          emit(PolicyLoaded(
             roles: updatedRoles,
             selectedRole: updatedRole,
-            viewMode: PolicyManagerViewMode.roleViewing,
+            viewMode: PolicyViewMode.roleViewing,
           ));
         } else {
-          emit(PolicyManagerError(
+          emit(PolicyError(
             'Failed to update role',
             operation: 'updateRole',
             previousViewMode: currentState.viewMode,
@@ -191,7 +191,7 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
           ));
         }
       } catch (error) {
-        emit(PolicyManagerError(
+        emit(PolicyError(
           'Failed to update role: $error',
           operation: 'updateRole',
           previousViewMode: currentState.viewMode,
@@ -204,22 +204,22 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Delete a role
   Future<void> deleteRole(String roleId) async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
-      emit(const PolicyManagerLoading(operation: 'Deleting role'));
+      emit(const PolicyLoading(operation: 'Deleting role'));
       
       try {
         final success = await _roleRepository.deleteRole(roleId);
         if (success) {
           // Refresh roles and return to browsing
           final updatedRoles = await _roleRepository.fetchRoles();
-          emit(PolicyManagerLoaded(
+          emit(PolicyLoaded(
             roles: updatedRoles,
-            viewMode: PolicyManagerViewMode.rolesBrowsing,
+            viewMode: PolicyViewMode.rolesBrowsing,
           ));
         } else {
-          emit(PolicyManagerError(
+          emit(PolicyError(
             'Failed to delete role',
             operation: 'deleteRole',
             previousViewMode: currentState.viewMode,
@@ -228,7 +228,7 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
           ));
         }
       } catch (error) {
-        emit(PolicyManagerError(
+        emit(PolicyError(
           'Failed to delete role: $error',
           operation: 'deleteRole',
           previousViewMode: currentState.viewMode,
@@ -241,24 +241,24 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Switch to logs viewing mode
   void showLogs() {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       emit(currentState.copyWith(
         clearSelectedRole: true,
-        viewMode: PolicyManagerViewMode.logsViewing,
+        viewMode: PolicyViewMode.logsViewing,
       ));
     }
   }
 
   /// Return to roles browsing mode from logs
   void showRoles() {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       if (currentState.isLogsViewing) {
         emit(currentState.copyWith(
-          viewMode: PolicyManagerViewMode.rolesBrowsing,
+          viewMode: PolicyViewMode.rolesBrowsing,
         ));
       }
     }
@@ -266,8 +266,8 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Recover from error state if possible
   void recoverFromError() {
-    if (state is PolicyManagerError) {
-      final errorState = state as PolicyManagerError;
+    if (state is PolicyError) {
+      final errorState = state as PolicyError;
       final recoverableState = errorState.recoverableState;
       
       if (recoverableState != null) {
@@ -281,14 +281,14 @@ class PolicyManagerCubit extends Cubit<PolicyManagerState> {
 
   /// Force refresh current view
   Future<void> refresh() async {
-    if (state is PolicyManagerLoaded) {
-      final currentState = state as PolicyManagerLoaded;
+    if (state is PolicyLoaded) {
+      final currentState = state as PolicyLoaded;
       
       // Maintain current view mode and selection after refresh
       await loadRoles();
       
-      if (state is PolicyManagerLoaded) {
-        final refreshedState = state as PolicyManagerLoaded;
+      if (state is PolicyLoaded) {
+        final refreshedState = state as PolicyLoaded;
         
         // Try to restore the previous view mode and selection
         if (currentState.hasSelectedRole && currentState.selectedRole?.id != null) {

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 import '../../policy/models/policy.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 import 'role_list_item_widget.dart';
 
 class RolesListWidget extends StatelessWidget {
-  final PolicyManagerState state;
+  final PolicyState state;
 
   const RolesListWidget({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
-    if (state is PolicyManagerLoading) {
+    if (state is PolicyLoading) {
       return const Center(child: CircularProgressIndicator());
-    } else if (state is PolicyManagerError) {
+    } else if (state is PolicyError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -22,15 +22,15 @@ class RolesListWidget extends StatelessWidget {
             const Icon(Icons.error, color: AppColor.errorColor),
             gapH8,
             Text(
-              'Error: ${(state as PolicyManagerError).message}',
+              'Error: ${(state as PolicyError).message}',
               style: const TextStyle(color: AppColor.errorColor),
               textAlign: TextAlign.center,
             ),
           ],
         ),
       );
-    } else if (state is PolicyManagerLoaded) {
-      return _buildLoadedRolesList((state as PolicyManagerLoaded).roles, context);
+    } else if (state is PolicyLoaded) {
+      return _buildLoadedRolesList((state as PolicyLoaded).roles, context);
     } else {
       return const Center(child: CircularProgressIndicator());
     }

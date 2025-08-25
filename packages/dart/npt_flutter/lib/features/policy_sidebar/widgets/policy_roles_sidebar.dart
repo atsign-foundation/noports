@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/sizes.dart';
 import 'roles_list_widget.dart';
 import 'sidebar_header_widget.dart';
 import 'sidebar_action_buttons_widget.dart';
 
-class PolicyManagerRolesSidebar extends StatelessWidget {
-  const PolicyManagerRolesSidebar({super.key});
+class PolicyRolesSidebar extends StatelessWidget {
+  const PolicyRolesSidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
+    return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         return SizedBox(
           width: 255,

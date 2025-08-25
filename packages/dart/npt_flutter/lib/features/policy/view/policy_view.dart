@@ -1,43 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/policy_manager_cubit.dart';
+import '../cubit/policy_cubit.dart';
 import '../repositories/role_repository.dart';
-import '../../policy_form/view/policy_manager_form_view.dart';
+import '../../policy_form/view/policy_form_view.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
 import '../../policy_logs/cubit/policy_logs_cubit.dart';
-import '../../policy_sidebar/policy_manager_roles_sidebar.dart';
+import '../../policy_sidebar/policy_roles_sidebar.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
-class PolicyManagerView extends StatelessWidget {
+class PolicyView extends StatelessWidget {
   final String atSign;
   
-  const PolicyManagerView({super.key, required this.atSign});
+  const PolicyView({super.key, required this.atSign});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyManagerCubit(context.read<RoleRepository>())..loadRoles(),
-      child: PolicyManagerContent(atSign: atSign),
+      create: (context) => PolicyCubit(context.read<RoleRepository>())..loadRoles(),
+      child: PolicyContent(atSign: atSign),
     );
   }
 }
 
-class PolicyManagerContent extends StatelessWidget {
+class PolicyContent extends StatelessWidget {
   final String atSign;
   
-  const PolicyManagerContent({super.key, required this.atSign});
+  const PolicyContent({super.key, required this.atSign});
 
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
-    return BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
+    return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         return Scaffold(
           body: Row(
             children: [
-              const PolicyManagerRolesSidebar(),
+              const PolicyRolesSidebar(),
               Expanded(
                 child: Column(
                   children: [
@@ -58,21 +58,21 @@ class PolicyManagerContent extends StatelessWidget {
     );
   }
 
-  Widget _buildMainContent(PolicyManagerState state, BuildContext context) {
-    if (state is PolicyManagerLoaded) {
+  Widget _buildMainContent(PolicyState state, BuildContext context) {
+    if (state is PolicyLoaded) {
       switch (state.viewMode) {
-        case PolicyManagerViewMode.logsViewing:
+        case PolicyViewMode.logsViewing:
           return _buildLogsView(context);
           
-        case PolicyManagerViewMode.roleViewing:
-        case PolicyManagerViewMode.roleEditing:
-        case PolicyManagerViewMode.roleCreating:
+        case PolicyViewMode.roleViewing:
+        case PolicyViewMode.roleEditing:
+        case PolicyViewMode.roleCreating:
           if (state.hasSelectedRole) {
-            return PolicyManagerFormView(role: state.selectedRole!);
+            return PolicyFormView(role: state.selectedRole!);
           }
           break;
           
-        case PolicyManagerViewMode.rolesBrowsing:
+        case PolicyViewMode.rolesBrowsing:
           return _buildBrowsingView(context);
       }
     }

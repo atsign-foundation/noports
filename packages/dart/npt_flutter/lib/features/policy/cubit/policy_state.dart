@@ -1,7 +1,7 @@
-part of 'policy_manager_cubit.dart';
+part of 'policy_cubit.dart';
 
 /// Comprehensive enum representing different view modes in the Policy Manager
-enum PolicyManagerViewMode {
+enum PolicyViewMode {
   /// Browsing the list of roles with no selection
   rolesBrowsing,
   
@@ -18,45 +18,45 @@ enum PolicyManagerViewMode {
   logsViewing,
 }
 
-abstract class PolicyManagerState extends Equatable {
-  const PolicyManagerState();
+abstract class PolicyState extends Equatable {
+  const PolicyState();
 
   @override
   List<Object?> get props => [];
 }
 
 /// Loading state for any async operations
-class PolicyManagerLoading extends PolicyManagerState {
+class PolicyLoading extends PolicyState {
   final String? operation; // Optional description of what's loading
   
-  const PolicyManagerLoading({this.operation});
+  const PolicyLoading({this.operation});
 
   @override
   List<Object?> get props => [operation];
 }
 
 /// Main loaded state with comprehensive view mode handling
-class PolicyManagerLoaded extends PolicyManagerState {
+class PolicyLoaded extends PolicyState {
   final List<Role> roles;
   final Role? selectedRole;
-  final PolicyManagerViewMode viewMode;
+  final PolicyViewMode viewMode;
 
-  const PolicyManagerLoaded({
+  const PolicyLoaded({
     required this.roles,
     this.selectedRole,
-    this.viewMode = PolicyManagerViewMode.rolesBrowsing,
+    this.viewMode = PolicyViewMode.rolesBrowsing,
   });
 
   @override
   List<Object?> get props => [roles, selectedRole, viewMode];
 
-  PolicyManagerLoaded copyWith({
+  PolicyLoaded copyWith({
     List<Role>? roles,
     Role? selectedRole,
-    PolicyManagerViewMode? viewMode,
+    PolicyViewMode? viewMode,
     bool clearSelectedRole = false,
   }) {
-    return PolicyManagerLoaded(
+    return PolicyLoaded(
       roles: roles ?? this.roles,
       selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
       viewMode: viewMode ?? this.viewMode,
@@ -64,11 +64,11 @@ class PolicyManagerLoaded extends PolicyManagerState {
   }
 
   /// Helper getters for cleaner code
-  bool get isRolesBrowsing => viewMode == PolicyManagerViewMode.rolesBrowsing;
-  bool get isRoleViewing => viewMode == PolicyManagerViewMode.roleViewing;
-  bool get isRoleEditing => viewMode == PolicyManagerViewMode.roleEditing;
-  bool get isRoleCreating => viewMode == PolicyManagerViewMode.roleCreating;
-  bool get isLogsViewing => viewMode == PolicyManagerViewMode.logsViewing;
+  bool get isRolesBrowsing => viewMode == PolicyViewMode.rolesBrowsing;
+  bool get isRoleViewing => viewMode == PolicyViewMode.roleViewing;
+  bool get isRoleEditing => viewMode == PolicyViewMode.roleEditing;
+  bool get isRoleCreating => viewMode == PolicyViewMode.roleCreating;
+  bool get isLogsViewing => viewMode == PolicyViewMode.logsViewing;
   
   /// Combined getters for UI logic
   bool get isInRoleMode => isRolesBrowsing || isRoleViewing || isRoleEditing || isRoleCreating;
@@ -84,29 +84,29 @@ class PolicyManagerLoaded extends PolicyManagerState {
   /// Display getters
   String get viewModeDisplayName {
     switch (viewMode) {
-      case PolicyManagerViewMode.rolesBrowsing:
+      case PolicyViewMode.rolesBrowsing:
         return 'Browsing Roles';
-      case PolicyManagerViewMode.roleViewing:
+      case PolicyViewMode.roleViewing:
         return 'Viewing Role';
-      case PolicyManagerViewMode.roleEditing:
+      case PolicyViewMode.roleEditing:
         return 'Editing Role';
-      case PolicyManagerViewMode.roleCreating:
+      case PolicyViewMode.roleCreating:
         return 'Creating Role';
-      case PolicyManagerViewMode.logsViewing:
+      case PolicyViewMode.logsViewing:
         return 'Policy Logs';
     }
   }
 }
 
 /// Error state with contextual information and recovery data
-class PolicyManagerError extends PolicyManagerState {
+class PolicyError extends PolicyState {
   final String message;
-  final PolicyManagerViewMode? previousViewMode;
+  final PolicyViewMode? previousViewMode;
   final List<Role>? previousRoles;
   final Role? previousSelectedRole;
   final String? operation; // What operation failed
   
-  const PolicyManagerError(
+  const PolicyError(
     this.message, {
     this.previousViewMode,
     this.previousRoles,
@@ -124,12 +124,12 @@ class PolicyManagerError extends PolicyManagerState {
   ];
   
   /// Helper to recover to a valid previous state
-  PolicyManagerLoaded? get recoverableState {
+  PolicyLoaded? get recoverableState {
     if (previousRoles != null) {
-      return PolicyManagerLoaded(
+      return PolicyLoaded(
         roles: previousRoles!,
         selectedRole: previousSelectedRole,
-        viewMode: previousViewMode ?? PolicyManagerViewMode.rolesBrowsing,
+        viewMode: previousViewMode ?? PolicyViewMode.rolesBrowsing,
       );
     }
     return null;

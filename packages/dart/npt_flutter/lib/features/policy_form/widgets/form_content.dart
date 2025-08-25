@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy/models/policy.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 import 'role_name_field.dart';
 import 'role_description_field.dart';
 import 'daemon_at_signs_field.dart';
@@ -13,7 +13,7 @@ import '../../../styles/sizes.dart';
 
 class FormContent extends StatefulWidget {
   final Role role;
-  final PolicyManagerLoaded state;
+  final PolicyLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
 
@@ -54,7 +54,7 @@ class _FormContentState extends State<FormContent> {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
-    final cubit = context.read<PolicyManagerCubit>();
+    final cubit = context.read<PolicyCubit>();
     
     showDialog(
       context: context,
@@ -86,10 +86,10 @@ class _FormContentState extends State<FormContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PolicyManagerCubit, PolicyManagerState>(
+    return BlocListener<PolicyCubit, PolicyState>(
       listener: (context, state) {
         // Update local editing state from bloc and handle save completion
-        if (state is PolicyManagerLoaded) {
+        if (state is PolicyLoaded) {
           setState(() {
             // Backup original data when starting to edit
             if (!_isEditing && state.isInEditMode) {
@@ -100,7 +100,7 @@ class _FormContentState extends State<FormContent> {
               _isSaving = false;
             }
           });
-        } else if (_isSaving && state is PolicyManagerError) {
+        } else if (_isSaving && state is PolicyError) {
           setState(() {
             _isSaving = false;
           });
@@ -139,7 +139,7 @@ class _FormContentState extends State<FormContent> {
                       setState(() {
                         _currentRole = _originalRole;
                       });
-                      context.read<PolicyManagerCubit>().cancelEditing();
+                      context.read<PolicyCubit>().cancelEditing();
                     },
                     child: const Text('Cancel'),
                   ),
@@ -150,10 +150,10 @@ class _FormContentState extends State<FormContent> {
                       // Distinguish between creating new role vs updating existing role
                       if (_currentRole.id == null || _currentRole.id!.isEmpty) {
                         // Creating a new role
-                        context.read<PolicyManagerCubit>().createRole(_currentRole);
+                        context.read<PolicyCubit>().createRole(_currentRole);
                       } else {
                         // Updating an existing role
-                        context.read<PolicyManagerCubit>().updateRole(_currentRole);
+                        context.read<PolicyCubit>().updateRole(_currentRole);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -165,7 +165,7 @@ class _FormContentState extends State<FormContent> {
                 ] else ...[
                   ElevatedButton(
                     onPressed: () {
-                      context.read<PolicyManagerCubit>().startEditingRole(widget.role.id ?? '');
+                      context.read<PolicyCubit>().startEditingRole(widget.role.id ?? '');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primaryColor,

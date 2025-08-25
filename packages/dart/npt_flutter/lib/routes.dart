@@ -34,7 +34,7 @@ class HomeRoutes {
     authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
-    policyManager: (_) => const PolicyManagerPage(),
+    policyManager: (_) => const PolicyPage(),
     policyLogs: (_) => const PolicyLogsPage()
   };
 }

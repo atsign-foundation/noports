@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_manager_cubit.dart';
+import '../../policy/cubit/policy_cubit.dart';
 import '../../../styles/app_color.dart';
 
 class SidebarActionButtonsWidget extends StatelessWidget {
@@ -16,12 +16,12 @@ class SidebarActionButtonsWidget extends StatelessWidget {
           child: SizedBox(
             height: 48,
             width: double.infinity,
-            child: BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
+            child: BlocBuilder<PolicyCubit, PolicyState>(
               builder: (context, state) {
-                final isLogsView = state is PolicyManagerLoaded && state.isLogsViewing;
+                final isLogsView = state is PolicyLoaded && state.isLogsViewing;
                 return OutlinedButton.icon(
                   onPressed: () {
-                    context.read<PolicyManagerCubit>().showLogs();
+                    context.read<PolicyCubit>().showLogs();
                   },
                   icon: const Icon(Icons.list_alt),
                   label: const Text('View Logs'),
@@ -45,13 +45,13 @@ class SidebarActionButtonsWidget extends StatelessWidget {
           child: SizedBox(
             height: 48,
             width: double.infinity,
-            child: BlocBuilder<PolicyManagerCubit, PolicyManagerState>(
+            child: BlocBuilder<PolicyCubit, PolicyState>(
               builder: (context, state) {
                 return ElevatedButton.icon(
-                  onPressed: (state is PolicyManagerLoaded && state.isInEditMode) 
+                  onPressed: (state is PolicyLoaded && state.isInEditMode) 
                     ? null 
                     : () {
-                        context.read<PolicyManagerCubit>().startCreatingRole();
+                        context.read<PolicyCubit>().startCreatingRole();
                       },
                   icon: const Icon(Icons.add),
                   label: const Text('Add New Role'),
