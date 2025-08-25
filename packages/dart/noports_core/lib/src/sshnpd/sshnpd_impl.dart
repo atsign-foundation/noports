@@ -641,7 +641,7 @@ class SshnpdImpl
     if (req.relayAtsign != null && sessionLoggingAtsign != null) {
       final keyForRelay = AtKey.fromString(
         '${req.relayAtsign}:logging.${req.sessionId}.sessions.${Srvd.namespace}$deviceAtsign',
-      )..metadata.namespaceAware=false;
+      )..metadata.namespaceAware = false;
       logger.shout('Sending session logging config to relay : $keyForRelay');
       await notify(
         keyForRelay,

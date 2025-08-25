@@ -136,17 +136,14 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }) async {
     String workingDirectory = directory ?? _defaultDirectory;
 
-    await processRunner(
-        'ssh-keygen',
-        [
-          ..._sshKeygenArgMap[algorithm]!,
-          '-f',
-          identifier,
-          '-q',
-          '-N',
-          '',
-        ],
-        workingDirectory: workingDirectory);
+    await processRunner('ssh-keygen', [
+      ..._sshKeygenArgMap[algorithm]!,
+      '-f',
+      identifier,
+      '-q',
+      '-N',
+      '',
+    ], workingDirectory: workingDirectory);
 
     String pemText = await fs
         .file(path.join(workingDirectory, identifier))

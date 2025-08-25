@@ -239,7 +239,9 @@ class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
         final loggingConfig = jsonDecode(n.value!);
         final candidateLoggingAtsign = loggingConfig['sessionLoggingAtsign'];
         if (!await validAtsign(candidateLoggingAtsign)) {
-          logger.warning('Invalid sessionLoggingAtsign $candidateLoggingAtsign');
+          logger.warning(
+            'Invalid sessionLoggingAtsign $candidateLoggingAtsign',
+          );
           return;
         }
         sessionInfo.sessionLoggingAtsign = candidateLoggingAtsign;

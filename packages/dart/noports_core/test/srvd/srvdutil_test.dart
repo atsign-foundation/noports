@@ -25,11 +25,13 @@ void main() {
   });
 
   test('accept session logging config notification', () {
-    AtNotification n = AtNotification.empty()..id=Uuid().v4()
-        ..key='@relay:logging.de0dbd91-3c42-4cb8-8630-23e51e78c8d3.sessions.sshrvd@service'
-        ..to='@relay'
-        ..from='@service'
-        ..value='';
+    AtNotification n = AtNotification.empty()
+      ..id = Uuid().v4()
+      ..key =
+          '@relay:logging.de0dbd91-3c42-4cb8-8630-23e51e78c8d3.sessions.sshrvd@service'
+      ..to = '@relay'
+      ..from = '@service'
+      ..value = '';
     expect(srvd.wellFormedRequest(n, throwIfFalse: true), true);
   });
 

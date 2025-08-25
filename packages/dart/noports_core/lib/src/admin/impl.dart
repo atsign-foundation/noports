@@ -60,7 +60,9 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
             .replaceAll(n.from, '')
             .toLowerCase();
 
-        final configKey = AtKey.fromString('${n.from}:config.$strippedKey${n.to}');
+        final configKey = AtKey.fromString(
+          '${n.from}:config.$strippedKey${n.to}',
+        );
         logger.shout('Sending config notification $configKey');
         await notify(
           configKey,

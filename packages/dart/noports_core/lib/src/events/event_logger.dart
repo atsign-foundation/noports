@@ -15,7 +15,7 @@ mixin NPEventLogger {
       NotificationParams.forUpdate(
         AtKey.fromString(
           '$loggingAtsign:__logging__.sshnp${atClient.getCurrentAtSign()!}',
-        )..metadata.namespaceAware=false,
+        )..metadata.namespaceAware = false,
         value: jsonEncode(event.toJson()),
       ),
       waitForFinalDeliveryStatus: false,
