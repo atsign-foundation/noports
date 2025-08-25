@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy_manager/models/policy.dart';
-import '../../policy_manager/cubit/policy_manager_cubit.dart';
+import '../../policy/models/policy.dart';
+import '../../policy/cubit/policy_manager_cubit.dart';
 import 'role_name_field.dart';
 import 'role_description_field.dart';
 import 'daemon_at_signs_field.dart';
