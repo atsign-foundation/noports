@@ -546,7 +546,7 @@ void main() {
             '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
             '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
-            '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
+            '"${SshnpArg.rootServerArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
@@ -604,7 +604,7 @@ void main() {
           '${SshnpArg.localSshOptionsArg.bashName} = -L 127.0.01:8080:127.0.0.1:80',
           '${SshnpArg.remoteUserNameArg.bashName} = myUsername',
           '${SshnpArg.tunnelUserNameArg.bashName} = myTunnelUsername',
-          '${SshnpArg.rootDomainArg.bashName} = root.atsign.wtf',
+          '${SshnpArg.rootServerArg.bashName} = root.atsign.wtf',
           '${SshnpArg.remoteSshdPortArg.bashName} = 2222',
           '${SshnpArg.idleTimeoutArg.bashName} = 120',
           '${SshnpArg.addForwardsToTunnelArg.bashName} = true',
@@ -736,7 +736,7 @@ void main() {
           equals('myTunnelUsername'),
         );
         expect(argMap[SshnpArg.verboseArg.name], equals(true));
-        expect(argMap[SshnpArg.rootDomainArg.name], equals('root.atsign.wtf'));
+        expect(argMap[SshnpArg.rootServerArg.name], equals('root.atsign.wtf'));
         expect(argMap[SshnpArg.remoteSshdPortArg.name], equals(2222));
         expect(argMap[SshnpArg.idleTimeoutArg.name], equals(120));
         expect(argMap[SshnpArg.addForwardsToTunnelArg.name], equals(true));
@@ -1113,7 +1113,7 @@ void main() {
             '"${SshnpArg.remoteUserNameArg.name}": "myUsername",'
             '"${SshnpArg.tunnelUserNameArg.name}": "myTunnelUsername",'
             '"${SshnpArg.verboseArg.name}": true,'
-            '"${SshnpArg.rootDomainArg.name}": "root.atsign.wtf",'
+            '"${SshnpArg.rootServerArg.name}": "root.atsign.wtf",'
             '"${SshnpArg.remoteSshdPortArg.name}": 2222,'
             '"${SshnpArg.idleTimeoutArg.name}": 120,'
             '"${SshnpArg.addForwardsToTunnelArg.name}": true,'
@@ -1163,7 +1163,7 @@ void main() {
           SshnpArg.remoteUserNameArg.name: 'myUsername',
           SshnpArg.tunnelUserNameArg.name: 'myTunnelUsername',
           SshnpArg.verboseArg.name: true,
-          SshnpArg.rootDomainArg.name: 'root.atsign.wtf',
+          SshnpArg.rootServerArg.name: 'root.atsign.wtf',
           SshnpArg.remoteSshdPortArg.name: 2222,
           SshnpArg.idleTimeoutArg.name: 120,
           SshnpArg.addForwardsToTunnelArg.name: true,
@@ -1222,7 +1222,7 @@ void main() {
           '--${SshnpArg.tunnelUserNameArg.name}',
           'myTunnelUsername',
           '--${SshnpArg.verboseArg.name}',
-          '--${SshnpArg.rootDomainArg.name}',
+          '--${SshnpArg.rootServerArg.name}',
           'root.atsign.wtf',
           '--${SshnpArg.remoteSshdPortArg.name}',
           '2222',

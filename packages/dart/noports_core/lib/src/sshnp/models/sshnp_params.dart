@@ -418,7 +418,7 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.remoteUserNameArg.name: remoteUsername,
       SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
-      SshnpArg.rootDomainArg.name: rootDomain,
+      SshnpArg.rootServerArg.name: rootDomain,
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
@@ -588,7 +588,7 @@ class SshnpPartialParams {
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
       tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
-      rootDomain: args[SshnpArg.rootDomainArg.name],
+      rootDomain: args[SshnpArg.rootServerArg.name] ?? DefaultArgs.rootDomain,
       listDevices: args[SshnpArg.listDevicesArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
@@ -660,4 +660,5 @@ class SshnpPartialParams {
       SshnpPartialParams.fromArgMap(parsedArgsMap),
     );
   }
+
 }
