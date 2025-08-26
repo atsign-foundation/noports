@@ -101,11 +101,12 @@ packages:
   at_commons:
     dependency: "direct main"
     description:
-      name: at_commons
-      sha256: e10d351bd2b1f4dd3671f265888cc0948803a6bd215b1d89409fc50044a52ba0
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.5.0"
+      path: "packages/at_commons"
+      ref: trunk
+      resolved-ref: b66a9eccf0a86ef00ef636a7f27b3527beee0d96
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "5.6.0"
   at_demo_data:
     dependency: transitive
     description:
