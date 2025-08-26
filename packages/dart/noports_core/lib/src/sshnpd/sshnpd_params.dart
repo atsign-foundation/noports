@@ -128,7 +128,7 @@ class SshnpdParams {
       makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: r['sshpublickey'],
       sshClient: sshClient,
-      rootDomain: r['root-domain'],
+      rootDomain: r['root-server'] ?? 'root.atsign.org',
       localSshdPort:
           int.tryParse(r['local-sshd-port']) ?? DefaultSshnpdArgs.localSshdPort,
       sshPublicKeyPermissions: normalizedPermissions,
@@ -148,10 +148,11 @@ class SshnpdParams {
     );
   }
 
+
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
+      showAliasesInUsage: true
     );
 
     // Basic arguments
@@ -247,7 +248,8 @@ class SshnpdParams {
     );
 
     parser.addOption(
-      'root-domain',
+      'root-server',
+      aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',

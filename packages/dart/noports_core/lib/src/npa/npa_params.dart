@@ -40,7 +40,7 @@ class NPAParams {
           r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, policyAtsign),
       verbose: r['verbose'],
-      rootDomain: r['root-domain'],
+      rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
       sessionLoggingAtsign: r['logging-atsign'] ?? policyAtsign,
     );
@@ -90,7 +90,8 @@ class NPAParams {
     parser.addFlag('verbose', abbr: 'v', help: 'More logging');
 
     parser.addOption(
-      'root-domain',
+      'root-server',
+      aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',

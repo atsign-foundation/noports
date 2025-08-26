@@ -5,7 +5,7 @@ icon: gear
 
 # Daemon Additional Configuration
 
-### Additional Options
+## Additional Options
 
 ### -k, --key-file, --keyFile
 
@@ -29,7 +29,7 @@ What to use for outbound ssh connections.
 
 \[openssh (default), dart]
 
-### --root-domain
+### --root-server
 
 atDirectory domain
 
@@ -76,4 +76,3 @@ Directory for local storage.
 Comma separated-list of host:port to which the daemon will permit a connection from an authorized client. Hosts may be dns names or ip addresses.
 
 (Defaults to "localhost:22,localhost:3389")
-
