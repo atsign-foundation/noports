@@ -12,7 +12,7 @@ dependencies:
   alfred: 1.1.2+1
   at_client: ^3.7.0
   json_annotation: 4.9.0
-  at_cli_commons: 2.1.0
+  at_cli_commons: 2.2.0
   args: 2.6.0
   meta: 1.17.0
   noports_core:
