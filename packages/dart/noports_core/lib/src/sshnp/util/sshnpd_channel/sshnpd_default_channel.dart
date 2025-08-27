@@ -55,7 +55,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         assertValidMapValue(daemonResponse, 'sessionId', String);
       } catch (e) {
         logger.shout(
-            'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+        );
         return SshnpdAck.acknowledgedWithErrors;
       }
 
@@ -69,7 +70,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         );
       } catch (e) {
         logger.shout(
-            'Failed to verify signature of msg from ${params.sshnpdAtSign}');
+          'Failed to verify signature of msg from ${params.sshnpdAtSign}',
+        );
         logger.shout('Exception: $e');
         logger.shout('Notification value: ${notification.value}');
         return SshnpdAck.acknowledgedWithErrors;

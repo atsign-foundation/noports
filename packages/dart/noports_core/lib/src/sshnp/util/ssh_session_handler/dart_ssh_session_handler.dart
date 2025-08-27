@@ -26,11 +26,14 @@ mixin DartSshSessionHandler on SshnpCore
   }) async {
     var username = tunnelUsername ?? getUserName(throwIfNull: true)!;
 
-    logger.info('Starting tunnel ssh session as $username'
-        ' to ${srvdChannel.rvdHost} on port ${srvdChannel.daemonPort}');
+    logger.info(
+      'Starting tunnel ssh session as $username'
+      ' to ${srvdChannel.rvdHost} on port ${srvdChannel.daemonPort}',
+    );
 
-    AtSshKeyPair keyPair =
-        await keyUtil.getKeyPair(identifier: ephemeralKeyPairIdentifier);
+    AtSshKeyPair keyPair = await keyUtil.getKeyPair(
+      identifier: ephemeralKeyPairIdentifier,
+    );
 
     SshClientHelper helper = SshClientHelper(logger);
 
@@ -53,9 +56,11 @@ mixin DartSshSessionHandler on SshnpCore
       );
     }
 
-    logger.info('Starting port forwarding'
-        ' from localhost:$localPort on local side'
-        ' to localhost:${params.remoteSshdPort} on remote side');
+    logger.info(
+      'Starting port forwarding'
+      ' from localhost:$localPort on local side'
+      ' to localhost:${params.remoteSshdPort} on remote side',
+    );
 
     // Start local forwarding to the remote sshd
     localPort = await helper.startForwarding(
@@ -64,14 +69,18 @@ mixin DartSshSessionHandler on SshnpCore
       fRemotePort: params.remoteSshdPort,
     );
 
-    logger.info('Started port forwarding'
-        ' from localhost:$localPort on local side'
-        ' to localhost:${params.remoteSshdPort} on remote side');
+    logger.info(
+      'Started port forwarding'
+      ' from localhost:$localPort on local side'
+      ' to localhost:${params.remoteSshdPort} on remote side',
+    );
 
     if (params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
-      logger.finer('addForwardsToTunnel is true, adding them;'
-          ' localSshOptions split by space is $optionsSplitBySpace');
+      logger.finer(
+        'addForwardsToTunnel is true, adding them;'
+        ' localSshOptions split by space is $optionsSplitBySpace',
+      );
       await helper.addForwards(optionsSplitBySpace);
     }
 
@@ -81,8 +90,9 @@ mixin DartSshSessionHandler on SshnpCore
       if (helper.counter == 0 || tunnelSshClient.isClosed) {
         timer.cancel();
         if (!tunnelSshClient.isClosed) tunnelSshClient.close();
-        logger
-            .shout('$sessionId | no active connections - ssh session complete');
+        logger.shout(
+          '$sessionId | no active connections - ssh session complete',
+        );
       }
     });
 
@@ -97,8 +107,9 @@ mixin DartSshSessionHandler on SshnpCore
 
     var username = remoteUsername ?? getUserName(throwIfNull: true)!;
 
-    logger
-        .info('Starting user ssh session as $username to localhost:$localPort');
+    logger.info(
+      'Starting user ssh session as $username to localhost:$localPort',
+    );
 
     SSHClient userSshClient;
     SshClientHelper helper = SshClientHelper(logger);
@@ -121,9 +132,11 @@ mixin DartSshSessionHandler on SshnpCore
 
     if (!params.addForwardsToTunnel) {
       var optionsSplitBySpace = params.localSshOptions.join(' ').split(' ');
-      logger.finer('addForwardsToTunnel was false,'
-          ' so adding them to user session instead;'
-          ' localSshOptions split by space is $optionsSplitBySpace');
+      logger.finer(
+        'addForwardsToTunnel was false,'
+        ' so adding them to user session instead;'
+        ' localSshOptions split by space is $optionsSplitBySpace',
+      );
       await helper.addForwards(optionsSplitBySpace);
     }
 
@@ -195,10 +208,7 @@ class SshClientHelper {
       late final SSHSocket socket;
       try {
         logger.info('Creating SSHSocket');
-        socket = await SSHSocket.connect(
-          host,
-          port,
-        ).catchError((e) => throw e);
+        socket = await SSHSocket.connect(host, port).catchError((e) => throw e);
       } catch (e, s) {
         var error = SshnpError(
           'Failed to open socket to $host:$port : $e',
@@ -220,38 +230,37 @@ class SshClientHelper {
     } on SshnpError catch (_) {
       rethrow;
     } catch (e, s) {
-      throw SshnpError(
-        'SSH Client failure : $e',
-        error: e,
-        stackTrace: s,
-      );
+      throw SshnpError('SSH Client failure : $e', error: e, stackTrace: s);
     }
   }
 
-  Future<int> startForwarding(
-      {required int fLocalPort,
-      required String fRemoteHost,
-      required int fRemotePort}) async {
+  Future<int> startForwarding({
+    required int fLocalPort,
+    required String fRemoteHost,
+    required int fRemotePort,
+  }) async {
     // TODO remove local dependency on ServerSockets
     /// Do the port forwarding for sshd
     final serverSocket = await ServerSocket.bind('localhost', fLocalPort);
 
-    serverSocket.listen((socket) async {
-      counter++;
-      final forward = await client.forwardLocal(fRemoteHost, fRemotePort);
-      unawaited(
-        forward.stream.cast<List<int>>().pipe(socket).whenComplete(
-          () async {
+    serverSocket.listen(
+      (socket) async {
+        counter++;
+        final forward = await client.forwardLocal(fRemoteHost, fRemotePort);
+        unawaited(
+          forward.stream.cast<List<int>>().pipe(socket).whenComplete(() async {
             counter--;
-          },
-        ),
-      );
-      unawaited(socket.cast<List<int>>().pipe(forward.sink));
-    }, onError: (Object error) {
-      counter = 0;
-    }, onDone: () {
-      counter = 0;
-    });
+          }),
+        );
+        unawaited(socket.cast<List<int>>().pipe(forward.sink));
+      },
+      onError: (Object error) {
+        counter = 0;
+      },
+      onDone: () {
+        counter = 0;
+      },
+    );
 
     return serverSocket.port;
   }
@@ -284,9 +293,11 @@ class SshClientHelper {
         }
 
         // Start the forwarding
-        logger.info('Starting port forwarding'
-            ' from localhost:$fLocalPort on local side'
-            ' to $fRemoteHost:$fRemotePort on remote side');
+        logger.info(
+          'Starting port forwarding'
+          ' from localhost:$fLocalPort on local side'
+          ' to $fRemoteHost:$fRemotePort on remote side',
+        );
 
         await startForwarding(
           fLocalPort: fLocalPort,

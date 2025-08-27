@@ -14,23 +14,19 @@ class AdvanceSection extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     return Column(
       children: [
-        Row(
-          children: [
-            const Icon(Icons.apps),
-            Text(strings.advanced),
-            gapW4,
-          ],
-        ),
+        Row(children: [const Icon(Icons.apps), Text(strings.advanced), gapW4]),
         gapH16,
         CustomContainer.background(
           child: Column(
             children: [
-              Row(children: [
-                const EnableLogsBox(),
-                Expanded(child: Text(strings.enableLogging)),
-                gapW20,
-                const ExportLogsButton(),
-              ]),
+              Row(
+                children: [
+                  const EnableLogsBox(),
+                  Expanded(child: Text(strings.enableLogging)),
+                  gapW20,
+                  const ExportLogsButton(),
+                ],
+              ),
             ],
           ),
         ),

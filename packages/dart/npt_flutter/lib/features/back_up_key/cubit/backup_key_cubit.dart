@@ -13,8 +13,9 @@ import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 
 class BackupKeyCubit extends Cubit<bool> {
   BackupKeyCubit()
-      : super(
-            true); // Initialize with true to indicate that atKeys are backed up by default.
+    : super(
+        true,
+      ); // Initialize with true to indicate that atKeys are backed up by default.
 
   /// Retrieves the backup key status from the repository and emits it.
   Future<bool> getBackupKeyStatus() async {
@@ -69,8 +70,9 @@ class BackupKeyCubit extends Cubit<bool> {
     } catch (e) {
       if (!context.mounted) return;
       CustomSnackBar.error(
-          content: strings.errorAtKeySaveFailed(e.toString()),
-          duration: const Duration(seconds: 10));
+        content: strings.errorAtKeySaveFailed(e.toString()),
+        duration: const Duration(seconds: 10),
+      );
     }
   }
 }

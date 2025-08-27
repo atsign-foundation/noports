@@ -14,22 +14,23 @@ class ProfileListRefreshButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
-            Set<String>>(
-        selector: (ProfilesSelectedState state) => state.selected,
-        builder: (BuildContext context, Set<String> selected) {
-          // Hide this button if something is selected
-          if (selected.isNotEmpty) return gap0;
-          return ElevatedButton.icon(
-              onPressed: () {
-                context
-                    .read<ProfileListBloc>()
-                    .add(const ProfileListLoadEvent());
-              },
-              label: Text(strings.refresh),
-              icon: PhosphorIcon(
-                PhosphorIcons.arrowClockwise(),
-              ));
-        });
+    return BlocSelector<
+      ProfilesSelectedCubit,
+      ProfilesSelectedState,
+      Set<String>
+    >(
+      selector: (ProfilesSelectedState state) => state.selected,
+      builder: (BuildContext context, Set<String> selected) {
+        // Hide this button if something is selected
+        if (selected.isNotEmpty) return gap0;
+        return ElevatedButton.icon(
+          onPressed: () {
+            context.read<ProfileListBloc>().add(const ProfileListLoadEvent());
+          },
+          label: Text(strings.refresh),
+          icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
+        );
+      },
+    );
   }
 }

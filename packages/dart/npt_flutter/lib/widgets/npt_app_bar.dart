@@ -10,9 +10,7 @@ import 'package:npt_flutter/styles/app_color.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
-  const NptAppBar({
-    super.key,
-  });
+  const NptAppBar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(64);

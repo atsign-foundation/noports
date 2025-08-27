@@ -5,7 +5,6 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/notification_request_message.dart';
 import 'package:noports_core/srv.dart';
@@ -88,8 +87,9 @@ abstract class SrvdChannel<T>
       case RelayAuthMode.payload:
         return null;
       case RelayAuthMode.escr:
-        _relayAuthAesKey ??=
-            AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+        _relayAuthAesKey ??= AtChopsUtil.generateSymmetricKey(
+          EncryptionKeyType.aes256,
+        ).key;
         return _relayAuthAesKey;
     }
   }
@@ -143,12 +143,13 @@ abstract class SrvdChannel<T>
     if (params.authenticateClientToRvd) {
       switch (params.relayAuthMode) {
         case RelayAuthMode.payload:
-          relayAuthenticator =
-              RelayAuthenticatorLegacy(signAndWrapAndJsonEncode(atClient, {
-            'sessionId': sessionId,
-            'clientNonce': clientNonce,
-            'rvdNonce': rvdNonce,
-          }));
+          relayAuthenticator = RelayAuthenticatorLegacy(
+            signAndWrapAndJsonEncode(atClient, {
+              'sessionId': sessionId,
+              'clientNonce': clientNonce,
+              'rvdNonce': rvdNonce,
+            }),
+          );
           break;
         case RelayAuthMode.escr:
           relayAuthenticator = RelayAuthenticatorESCR(
@@ -182,14 +183,18 @@ abstract class SrvdChannel<T>
 
   @protected
   @visibleForTesting
-  Future<void> getHostAndPortFromSrvd(
-      {Duration timeout = DefaultArgs.relayResponseTimeoutDuration}) async {
+  Future<void> getHostAndPortFromSrvd({
+    Duration timeout = DefaultArgs.relayResponseTimeoutDuration,
+  }) async {
     srvdAck = SrvdAck.notAcknowledged;
-    subscribe(regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true)
-        .listen((notification) async {
+    subscribe(
+      regex: '$sessionId.${Srvd.namespace}@',
+      shouldDecrypt: true,
+    ).listen((notification) async {
       if (fetched) {
         logger.warning(
-            'Got additional relay response ${notification.value} - ignoring');
+          'Got additional relay response ${notification.value} - ignoring',
+        );
         return;
       }
 
@@ -215,9 +220,11 @@ abstract class SrvdChannel<T>
       fetched = true;
       acked.complete();
 
-      logger.info('Received from srvd:'
-          ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
-          ' rvdNonce: $rvdNonce');
+      logger.info(
+        'Received from srvd:'
+        ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
+        ' rvdNonce: $rvdNonce',
+      );
       logger.info('Daemon will connect to: $rvdHost:$daemonPort');
       srvdAck = SrvdAck.acknowledged;
     });
@@ -278,7 +285,8 @@ abstract class SrvdChannel<T>
     }
 
     logger.info(
-        'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue');
+      'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue',
+    );
     await notify(
       rvdRequestKey,
       rvdRequestValue,
@@ -288,14 +296,17 @@ abstract class SrvdChannel<T>
     );
 
     logger.info(
-        'Will wait for a response for up to ${timeout.inSeconds} seconds');
+      'Will wait for a response for up to ${timeout.inSeconds} seconds',
+    );
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {
       logger.warning(
-          'Timed out waiting for srvd response after ${timeout.inSeconds} seconds');
+        'Timed out waiting for srvd response after ${timeout.inSeconds} seconds',
+      );
       throw TimeoutException(
-          'Connection timeout to srvd ${params.srvdAtSign} service');
+        'Connection timeout to srvd ${params.srvdAtSign} service',
+      );
     }
 
     if (srvdAck == SrvdAck.acknowledgedWithErrors) {

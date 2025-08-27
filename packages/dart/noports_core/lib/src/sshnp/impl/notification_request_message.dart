@@ -51,7 +51,10 @@ class SshnpSessionRequest {
     assertNullOrValidValue('encryptRvdTraffic', encryptRvdTraffic, bool);
     assertNullOrValidValue('clientEphemeralPK', clientEphemeralPK, String);
     assertNullOrValidValue(
-        'clientEphemeralPKType', clientEphemeralPKType, String);
+      'clientEphemeralPKType',
+      clientEphemeralPKType,
+      String,
+    );
 
     // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
     // also require a username (to ssh back to the client), a privateKey (for

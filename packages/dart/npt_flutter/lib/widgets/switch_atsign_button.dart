@@ -44,8 +44,12 @@ class SwitchAtsignButton extends StatelessWidget {
             // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
             final selectedAtSign = await showMenu<dynamic>(
               context: context,
-              position: const RelativeRect.fromLTRB(-1000, 1, 0,
-                  0), // You may want to calculate this based on tap position
+              position: const RelativeRect.fromLTRB(
+                -1000,
+                1,
+                0,
+                0,
+              ), // You may want to calculate this based on tap position
               shape: RoundedRectangleBorder(
                 side: const BorderSide(
                   color: AppColor.primaryColor,
@@ -54,11 +58,13 @@ class SwitchAtsignButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(Sizes.p8),
               ),
               items: (atSignList ?? [])
-                  .map((atSign) => PopupMenuItem<String>(
-                        padding: const EdgeInsets.all(Sizes.p0),
-                        value: atSign,
-                        child: _HoverableMenuItem(atSign: atSign),
-                      ))
+                  .map(
+                    (atSign) => PopupMenuItem<String>(
+                      padding: const EdgeInsets.all(Sizes.p0),
+                      value: atSign,
+                      child: _HoverableMenuItem(atSign: atSign),
+                    ),
+                  )
                   .toList(),
             );
 
@@ -95,8 +101,9 @@ class SwitchAtsignButton extends StatelessWidget {
             final atClientPreference =
                 await AtClientMethods.loadAtClientPreference(rootDomain);
             await preSignout();
-            final result =
-                await AtOnboarding.changePrimaryAtsign(atsign: selectedAtSign);
+            final result = await AtOnboarding.changePrimaryAtsign(
+              atsign: selectedAtSign,
+            );
 
             if (result) {
               final onboardingResult = await AtOnboarding.onboard(
@@ -150,16 +157,20 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   RichText(
-                    text: TextSpan(children: [
-                      const TextSpan(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
                           text: '@',
-                          style: TextStyle(color: AppColor.primaryColor)),
-                      TextSpan(
-                        text: widget.atSign.split('@').last,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(),
-                      ),
-                    ]),
+                          style: TextStyle(color: AppColor.primaryColor),
+                        ),
+                        TextSpan(
+                          text: widget.atSign.split('@').last,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(),
+                        ),
+                      ],
+                    ),
                   ),
                   PhosphorIcon(
                     PhosphorIcons.dotOutline(),
@@ -170,10 +181,7 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
               ),
             ),
             gapH12,
-            const Divider(
-              color: AppColor.dividerColor,
-              height: Sizes.p0,
-            ),
+            const Divider(color: AppColor.dividerColor, height: Sizes.p0),
           ],
         ),
       ),

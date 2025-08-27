@@ -21,25 +21,23 @@ class SettingsActionButton extends StatelessWidget {
       width: 300,
       height: 60,
       decoration: BoxDecoration(
-          color: AppColor.primaryColor,
-          borderRadius: BorderRadius.circular(10)),
+        color: AppColor.primaryColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.p12),
         child: ListTile(
-          leading: Icon(
-            icon,
-            color: Colors.white,
-          ),
+          leading: Icon(icon, color: Colors.white),
           title: Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall!
-                .copyWith(fontSize: 18, color: Colors.white),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall!.copyWith(fontSize: 18, color: Colors.white),
           ),
           onTap: onTap,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
     );

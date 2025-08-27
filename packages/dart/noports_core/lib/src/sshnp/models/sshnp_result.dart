@@ -48,7 +48,7 @@ mixin class SshnpConnectionBean<Bean> {
 @visibleForTesting
 const optionsWithPrivateKey = [
   '-o StrictHostKeyChecking=accept-new',
-  '-o IdentitiesOnly=yes'
+  '-o IdentitiesOnly=yes',
 ];
 
 class SshnpError extends SshnpException implements SshnpFailure {
@@ -75,7 +75,7 @@ class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {
   }) : sshOptions = [
           if (shouldIncludePrivateKey(privateKeyFileName))
             ...optionsWithPrivateKey,
-          ...(localSshOptions ?? [])
+          ...(localSshOptions ?? []),
         ] {
     this.connectionBean = connectionBean;
   }
@@ -90,7 +90,7 @@ class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {
         if (remoteUsername == null) host,
         if (shouldIncludePrivateKey(privateKeyFileName)) ...[
           '-i',
-          '$privateKeyFileName'
+          '$privateKeyFileName',
         ],
       ];
 

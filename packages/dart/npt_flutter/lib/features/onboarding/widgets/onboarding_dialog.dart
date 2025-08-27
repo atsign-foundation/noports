@@ -49,13 +49,9 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                       strings.selectorTitleAtsign,
                       style: titleStyle!.copyWith(color: Colors.black),
                     ),
-                    Text(
-                      strings.selectorSubTitleAtsign,
-                    ),
+                    Text(strings.selectorSubTitleAtsign),
                     gapH16,
-                    AtsignSelector(
-                      options: widget.options,
-                    ),
+                    AtsignSelector(options: widget.options),
                   ],
                 ),
               ),
@@ -72,40 +68,42 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                     ),
                     Text(strings.selectorSubTitleRootDomain),
                     gapH16,
-                    AtDirectorySelector(
-                      options: widget.options,
-                    ),
+                    AtDirectorySelector(options: widget.options),
                   ],
                 ),
               ),
               BlocBuilder<OnboardingCubit, OnboardingState>(
-                  builder: (context, state) {
-                return SizedBox(
-                  width: width,
-                  child: CustomContainer.background(
+                builder: (context, state) {
+                  return SizedBox(
+                    width: width,
+                    child: CustomContainer.background(
                       child: Row(
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(false);
-                        },
-                        child: Text(strings.cancel),
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(false);
+                            },
+                            child: Text(strings.cancel),
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed:
+                                FormValidator.validateRequiredAtsignField(
+                                      state.atSign,
+                                    ) ==
+                                    null
+                                ? () {
+                                    Navigator.of(context).pop(true);
+                                  }
+                                : null,
+                            child: Text(strings.next),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      ElevatedButton(
-                        onPressed: FormValidator.validateRequiredAtsignField(
-                                    state.atSign) ==
-                                null
-                            ? () {
-                                Navigator.of(context).pop(true);
-                              }
-                            : null,
-                        child: Text(strings.next),
-                      ),
-                    ],
-                  )),
-                );
-              })
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),

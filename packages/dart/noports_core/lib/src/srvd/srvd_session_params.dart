@@ -79,7 +79,8 @@ class SrvdUtil {
 
   /// Handles requests from ancient (v3) clients
   SrvdSessionParams _sessionParamsForAncientClientRequest(
-      AtNotification notification) {
+    AtNotification notification,
+  ) {
     return SrvdSessionParams(
       sessionId: notification.value!,
       atSignA: notification.from,
@@ -97,7 +98,8 @@ class SrvdUtil {
   /// what signing keys are going to be used, so the spawned isolate
   /// will ask the main isolate to fetch public signing keys
   Future<SrvdSessionParams> _sessionParamsForJsonRequest(
-      AtNotification notification) async {
+    AtNotification notification,
+  ) async {
     dynamic json = jsonDecode(notification.value ?? '');
     logger.info('Received session request JSON: $json');
 
@@ -119,8 +121,9 @@ class SrvdUtil {
 
     String relayAuthModeName =
         json['relayAuthMode'] ?? RelayAuthMode.payload.name;
-    RelayAuthMode relayAuthMode =
-        RelayAuthMode.values.byName(relayAuthModeName);
+    RelayAuthMode relayAuthMode = RelayAuthMode.values.byName(
+      relayAuthModeName,
+    );
     String? publicKeyA;
     String? publicKeyB;
     if (relayAuthMode == RelayAuthMode.payload && authenticateSocketA) {

@@ -38,10 +38,8 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     int maxTries,
   }) _notify;
 
-  final Stream<AtNotification> Function({
-    String? regex,
-    bool shouldDecrypt,
-  }) _subscribe;
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})
+      _subscribe;
 
   StubbedSrvdChannel({
     required super.atClient,

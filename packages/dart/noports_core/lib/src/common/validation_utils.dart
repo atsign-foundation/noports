@@ -67,7 +67,8 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
 void assertValidValue(String name, dynamic v, Type t) {
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
-        'Parameter $name should be a $t but is actually a ${v.runtimeType} with value $v');
+      'Parameter $name should be a $t but is actually a ${v.runtimeType} with value $v',
+    );
   }
 }
 
@@ -85,7 +86,8 @@ void assertValidMapValue(Map m, String k, Type t) {
   var v = m[k];
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
-        'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
+      'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v',
+    );
   }
 }
 
@@ -127,7 +129,10 @@ Future<void> verifyEnvelopeSignature(
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
   AtSigningVerificationInput input = AtSigningVerificationInput(
-      jsonEncode(payload), base64Decode(signature), pk)
+    jsonEncode(payload),
+    base64Decode(signature),
+    pk,
+  )
     ..signingMode = AtSigningMode.data
     ..signingAlgoType = signingAlgo
     ..hashingAlgoType = hashingAlgo;
@@ -138,7 +143,8 @@ Future<void> verifyEnvelopeSignature(
   logger.info('svr.result is ${svr.result}');
   if (svr.result != true) {
     throw AtSigningVerificationException(
-        'signature verification returned false using cached public key for $requestingAtsign $pk');
+      'signature verification returned false using cached public key for $requestingAtsign $pk',
+    );
   }
 }
 
@@ -162,8 +168,9 @@ Future<void> clearLocallyCachedPKs({
 
   if (atClient != null) {
     // find all `local:` keys which end with `.cached_pks.sshnp`
-    List<AtKey> keys =
-        await atClient.getAtKeys(regex: r'^local:.*\.cached_pks\.sshnp');
+    List<AtKey> keys = await atClient.getAtKeys(
+      regex: r'^local:.*\.cached_pks\.sshnp',
+    );
     for (final key in keys) {
       logger.shout('Deleting $key');
       await atClient.delete(key);
@@ -211,8 +218,9 @@ Future<String?> _fetchFromLocalPKCache(
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String fn = path
-        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe');
+    String fn = path.normalize(
+      '${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe',
+    );
     File f = fs.file(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -222,8 +230,11 @@ Future<String?> _fetchFromLocalPKCache(
   } else {
     late final AtValue av;
     try {
-      av = await atClient.get(AtKey.fromString(
-          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'));
+      av = await atClient.get(
+        AtKey.fromString(
+          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+        ),
+      );
       return av.value;
     } on AtKeyNotFoundException catch (_) {
       return null;
@@ -239,8 +250,9 @@ Future<bool> _storeToLocalPKCache(
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String dirName =
-        path.normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks');
+    String dirName = path.normalize(
+      '${getHomeDirectory()}/.atsign/sshnp/cached_pks',
+    );
     String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = fs.file(fileName);
@@ -252,9 +264,11 @@ Future<bool> _storeToLocalPKCache(
     return true;
   } else {
     await atClient.put(
-        AtKey.fromString(
-            'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'),
-        pk);
+      AtKey.fromString(
+        'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+      ),
+      pk,
+    );
     return true;
   }
 }

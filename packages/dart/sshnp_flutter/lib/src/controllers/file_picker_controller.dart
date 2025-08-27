@@ -7,7 +7,8 @@ import '../utility/constants.dart';
 
 /// A provider that exposes the [FilePickerController] to the app.
 final filePickerController =
-    StateNotifierProvider<FilePickerController, AsyncValue<XFile?>>((ref) => FilePickerController(ref: ref));
+    StateNotifierProvider<FilePickerController, AsyncValue<XFile?>>(
+        (ref) => FilePickerController(ref: ref));
 
 /// A controller class that controls the UI update when the [FilePicker] is used.
 class FilePickerController extends StateNotifier<AsyncValue<XFile?>> {
@@ -22,7 +23,8 @@ class FilePickerController extends StateNotifier<AsyncValue<XFile?>> {
   Future<void> getFileDetails() async {
     state = const AsyncValue.loading();
     try {
-      final file = await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
+      final file =
+          await openFile(acceptedTypeGroups: <XTypeGroup>[dotPrivateTypeGroup]);
       if (file == null) return;
       final content = await file.readAsString();
       if (content.contains("-----BEGIN OPENSSH PRIVATE KEY-----")) {

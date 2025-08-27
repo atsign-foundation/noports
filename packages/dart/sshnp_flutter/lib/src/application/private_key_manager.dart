@@ -42,6 +42,7 @@ class PrivateKeyManager {
   }
 
   AtSshKeyPair toAtSshKeyPair() {
-    return AtSshKeyPair.fromPem(content, identifier: nickname, passphrase: passPhrase);
+    return AtSshKeyPair.fromPem(content,
+        identifier: nickname, passphrase: passPhrase);
   }
 }

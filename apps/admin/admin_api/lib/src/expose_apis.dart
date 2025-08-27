@@ -5,7 +5,7 @@ import 'package:alfred/alfred.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/admin.dart';
 
-policy(Alfred app, String pathPrefix, PolicyService api) {
+void policy(Alfred app, String pathPrefix, PolicyService api) {
   // policy log events
   app.get('$pathPrefix/logs', (req, res) async {
     stderr.writeln('Fetching policy log events');

@@ -2,23 +2,11 @@ import 'package:args/args.dart';
 
 import 'package:noports_core/utils.dart';
 
-enum ArgFormat {
-  option,
-  multiOption,
-  flag,
-}
+enum ArgFormat { option, multiOption, flag }
 
-enum ArgType {
-  string,
-  integer,
-}
+enum ArgType { string, integer }
 
-enum ParseWhen {
-  always,
-  commandLine,
-  configFile,
-  never,
-}
+enum ParseWhen { always, commandLine, configFile, never }
 
 const Map<ParserType, Set<ParseWhen>> _allowListMap = {
   ParserType.all: {
@@ -77,8 +65,11 @@ class SshnpArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
-  List<String> get aliasList =>
-      ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+  List<String> get aliasList => [
+        '--$name',
+        ...aliases?.map((e) => '--$e') ?? [],
+        '-$abbr',
+      ];
 
   factory SshnpArg.noArg() {
     return SshnpArg(name: '');
@@ -115,7 +106,7 @@ class SshnpArg {
     verboseArg,
     remoteUserNameArg,
     tunnelUserNameArg,
-    rootDomainArg,
+    rootServerArg,
     remoteSshdPortArg,
     idleTimeoutArg,
     sshAlgorithmArg,
@@ -295,12 +286,13 @@ class SshnpArg {
     abbr: 'U',
     help: 'username to use for the initial ssh tunnel',
   );
-  static const rootDomainArg = SshnpArg(
-    name: 'root-domain',
+  static const rootServerArg = SshnpArg(
+    name: 'root-server',
     help: 'atDirectory domain',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
+    aliases: ['root-domain', 'rootDomain'],
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',

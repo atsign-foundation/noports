@@ -10,12 +10,16 @@ class ProfileSelectAllBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
-        return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState,
-            (bool, bool)?>(
+        return BlocSelector<
+          ProfilesSelectedCubit,
+          ProfilesSelectedState,
+          (bool, bool)?
+        >(
           selector: (ProfilesSelectedState state) {
             if (list is! ProfileListLoaded) return null;
             // one - whether all elements are selected or not
-            var allChecked = list.profiles.isNotEmpty &&
+            var allChecked =
+                list.profiles.isNotEmpty &&
                 state.selected.containsAll(list.profiles);
             // two - whether some elements are selected or not
             var anyChecked = state.selected.isNotEmpty;
@@ -29,8 +33,8 @@ class ProfileSelectAllBox extends StatelessWidget {
               value: allChecked
                   ? true // if all Checked show checkmark
                   : someChecked
-                      ? null // if some checked show [-]
-                      : false, // if none checked show empty box
+                  ? null // if some checked show [-]
+                  : false, // if none checked show empty box
               onChanged: (bool? value) {
                 // This seems unintuitive, but tristate: true makes the checkbox act a bit strange
                 // How this behaves:

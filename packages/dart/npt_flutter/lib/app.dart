@@ -50,20 +50,14 @@ class App extends StatelessWidget {
         providers: [
           // TODO this should be called LocalSettingsCubit and move
           // Localization from the SettingsCubit to this
-          BlocProvider<EnableLoggingCubit>(
-            create: (_) => EnableLoggingCubit(),
-          ),
+          BlocProvider<EnableLoggingCubit>(create: (_) => EnableLoggingCubit()),
 
           /// Logging provider must come before ALL [LoggingBloc] & [LoggingCubit] providers
           /// There MUST be a [LogsCubit] provider as an ancestor widget
-          BlocProvider<LogsCubit>(
-            create: (_) => LogsCubit(),
-          ),
+          BlocProvider<LogsCubit>(create: (_) => LogsCubit()),
 
           // A bloc which manages the atDirectory state
-          BlocProvider<OnboardingCubit>(
-            create: (_) => OnboardingCubit(),
-          ),
+          BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
 
           /// Settings provider, not much else to say
           /// - If settings are not found, we automatically load some defaults
@@ -98,9 +92,7 @@ class App extends StatelessWidget {
           ),
 
           /// A cubit which manages the system tray entries
-          BlocProvider<TrayCubit>(
-            create: (_) => TrayCubit(),
-          ),
+          BlocProvider<TrayCubit>(create: (_) => TrayCubit()),
 
           /// A bloc which manages favorites
           BlocProvider<FavoriteBloc>(
@@ -114,9 +106,7 @@ class App extends StatelessWidget {
           /// A cubit which tracks the sync status of the profiles
           BlocProvider<SyncCubit>(create: (_) => SyncCubit()),
           // A cubit which tracks if the atkey is backed up
-          BlocProvider<BackupKeyCubit>(
-            create: (ctx) => BackupKeyCubit(),
-          ),
+          BlocProvider<BackupKeyCubit>(create: (ctx) => BackupKeyCubit()),
         ],
         child: BlocSelector<SettingsBloc, SettingsState, Language?>(
           selector: (state) {
@@ -127,9 +117,11 @@ class App extends StatelessWidget {
             return null;
           },
           builder: (context, language) {
-            Locale locale = language?.locale ??
-                LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName))
-                    .locale;
+            Locale locale =
+                language?.locale ??
+                LanguageUtil.getLanguageFromLocale(
+                  Locale(Platform.localeName),
+                ).locale;
             return TrayManager(
               locale: locale,
               child: MaterialApp(

@@ -18,121 +18,133 @@ void main() {
 
   group('NPT Flutter App - Comprehensive End-to-End Tests', () {
     testWidgets(
-        'Complete app workflow: Onboarding → Dashboard → Profile Management → Settings → Error Recovery',
-        (WidgetTester tester) async {
-      // === PHASE 1: APP LAUNCH & INITIAL STATE ===
-      tester
-          .printToConsole('=== Phase 1: App Launch & Initial Verification ===');
+      'Complete app workflow: Onboarding → Dashboard → Profile Management → Settings → Error Recovery',
+      (WidgetTester tester) async {
+        // === PHASE 1: APP LAUNCH & INITIAL STATE ===
+        tester.printToConsole(
+          '=== Phase 1: App Launch & Initial Verification ===',
+        );
 
-      app.main();
-      await tester.pumpAndSettle();
-      tester.printToConsole('✓ App launched and settled');
+        app.main();
+        await tester.pumpAndSettle();
+        tester.printToConsole('✓ App launched and settled');
 
-      // Verify core app structure
-      expect(find.byType(MaterialApp), findsOneWidget);
-      expect(find.byType(Navigator), findsOneWidget);
-      tester.printToConsole('✓ Core app structure verified');
+        // Verify core app structure
+        expect(find.byType(MaterialApp), findsOneWidget);
+        expect(find.byType(Navigator), findsOneWidget);
+        tester.printToConsole('✓ Core app structure verified');
 
-      // Verify onboarding UI elements are present
-      expect(find.byType(OnboardingButton), findsOneWidget);
-      expect(find.widgetWithText(CustomTextButton, 'Reset atSign'),
-          findsOneWidget);
-      expect(find.textContaining('v'), findsOneWidget); // Version display
-      tester.printToConsole('✓ Onboarding interface elements verified');
+        // Verify onboarding UI elements are present
+        expect(find.byType(OnboardingButton), findsOneWidget);
+        expect(
+          find.widgetWithText(CustomTextButton, 'Reset atSign'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('v'), findsOneWidget); // Version display
+        tester.printToConsole('✓ Onboarding interface elements verified');
 
-      // === PHASE 2: ONBOARDING FLOW ===
-      tester.printToConsole('=== Phase 2: Onboarding Process ===');
+        // === PHASE 2: ONBOARDING FLOW ===
+        tester.printToConsole('=== Phase 2: Onboarding Process ===');
 
-      final getStartedButton = find.byType(OnboardingButton);
-      expect(getStartedButton, findsOneWidget);
+        final getStartedButton = find.byType(OnboardingButton);
+        expect(getStartedButton, findsOneWidget);
 
-      // Initiate onboarding
-      await tester.tap(getStartedButton, warnIfMissed: false);
-      await tester.pump();
+        // Initiate onboarding
+        await tester.tap(getStartedButton, warnIfMissed: false);
+        await tester.pump();
 
-      // Verify loading state appears
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.byKey(const Key('loading state')), findsOneWidget);
-      tester.printToConsole('✓ Loading state displayed correctly');
+        // Verify loading state appears
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.byKey(const Key('loading state')), findsOneWidget);
+        tester.printToConsole('✓ Loading state displayed correctly');
 
-      // Wait for onboarding dialog
-      await tester.pump(const Duration(milliseconds: 250));
-      await tester.pump(const Duration(milliseconds: 250));
+        // Wait for onboarding dialog
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.pump(const Duration(milliseconds: 250));
 
-      // Verify and complete onboarding dialog
-      expect(find.byType(AlertDialog), findsOneWidget);
-      tester.printToConsole('✓ Onboarding dialog appeared');
+        // Verify and complete onboarding dialog
+        expect(find.byType(AlertDialog), findsOneWidget);
+        tester.printToConsole('✓ Onboarding dialog appeared');
 
-      final nextButton = find.widgetWithText(ElevatedButton, 'Next');
-      expect(nextButton, findsOneWidget);
+        final nextButton = find.widgetWithText(ElevatedButton, 'Next');
+        expect(nextButton, findsOneWidget);
 
-      await tester.tap(nextButton, warnIfMissed: false);
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
-      tester.printToConsole('✓ Onboarding completed successfully');
+        await tester.tap(nextButton, warnIfMissed: false);
+        await tester.pumpAndSettle(const Duration(milliseconds: 500));
+        tester.printToConsole('✓ Onboarding completed successfully');
 
-      // === PHASE 3: DASHBOARD VERIFICATION ===
-      tester.printToConsole('=== Phase 3: Dashboard Access & Verification ===');
+        // === PHASE 3: DASHBOARD VERIFICATION ===
+        tester.printToConsole(
+          '=== Phase 3: Dashboard Access & Verification ===',
+        );
 
-      // Verify dashboard components
-      expect(find.byType(DashboardPage), findsOneWidget);
-      expect(find.byType(ProfileListView), findsOneWidget);
-      expect(find.byType(ProfileView), findsAtLeastNWidgets(1));
-      tester.printToConsole('✓ Dashboard components verified');
+        // Verify dashboard components
+        expect(find.byType(DashboardPage), findsOneWidget);
+        expect(find.byType(ProfileListView), findsOneWidget);
+        expect(find.byType(ProfileView), findsAtLeastNWidgets(1));
+        tester.printToConsole('✓ Dashboard components verified');
 
-      // Check for profile list state indicators
-      final hasProfiles = find.byType(ProfileView).evaluate().isNotEmpty;
-      if (hasProfiles) {
-        tester.printToConsole('✓ Existing profiles detected');
-      } else {
-        tester.printToConsole('ℹ No existing profiles - testing empty state');
-      }
+        // Check for profile list state indicators
+        final hasProfiles = find.byType(ProfileView).evaluate().isNotEmpty;
+        if (hasProfiles) {
+          tester.printToConsole('✓ Existing profiles detected');
+        } else {
+          tester.printToConsole('ℹ No existing profiles - testing empty state');
+        }
 
-      // === PHASE 4: PROFILE MANAGEMENT TESTING ===
-      tester.printToConsole('=== Phase 4: Profile Management Flow ===');
+        // === PHASE 4: PROFILE MANAGEMENT TESTING ===
+        tester.printToConsole('=== Phase 4: Profile Management Flow ===');
 
-      await _testProfileManagement(tester);
+        await _testProfileManagement(tester);
 
-      // === PHASE 5: NAVIGATION TESTING ===
-      tester.printToConsole('=== Phase 5: Navigation System Testing ===');
+        // === PHASE 5: NAVIGATION TESTING ===
+        tester.printToConsole('=== Phase 5: Navigation System Testing ===');
 
-      await _testAppNavigation(tester);
+        await _testAppNavigation(tester);
 
-      // === PHASE 6: SETTINGS FUNCTIONALITY ===
-      tester.printToConsole('=== Phase 6: Settings Functionality Testing ===');
+        // === PHASE 6: SETTINGS FUNCTIONALITY ===
+        tester.printToConsole(
+          '=== Phase 6: Settings Functionality Testing ===',
+        );
 
-      await _testSettingsFunctionality(tester);
+        await _testSettingsFunctionality(tester);
 
-      // === PHASE 7: PROFILE OPERATIONS ===
-      tester.printToConsole('=== Phase 7: Profile Operations Testing ===');
+        // === PHASE 7: PROFILE OPERATIONS ===
+        tester.printToConsole('=== Phase 7: Profile Operations Testing ===');
 
-      // Return to dashboard for profile operations testing
-      await _navigateToPage(tester, 'Dashboard', DashboardPage);
-      await _testProfileOperations(tester);
+        // Return to dashboard for profile operations testing
+        await _navigateToPage(tester, 'Dashboard', DashboardPage);
+        await _testProfileOperations(tester);
 
-      // === PHASE 8: ERROR RESILIENCE & STRESS TESTING ===
-      tester
-          .printToConsole('=== Phase 8: Error Resilience & Stress Testing ===');
+        // === PHASE 8: ERROR RESILIENCE & STRESS TESTING ===
+        tester.printToConsole(
+          '=== Phase 8: Error Resilience & Stress Testing ===',
+        );
 
-      await _testErrorResilience(tester);
-      await _testRapidInteractions(tester);
+        await _testErrorResilience(tester);
+        await _testRapidInteractions(tester);
 
-      // === PHASE 9: FINAL VALIDATION ===
-      tester.printToConsole('=== Phase 9: Final State Validation ===');
+        // === PHASE 9: FINAL VALIDATION ===
+        tester.printToConsole('=== Phase 9: Final State Validation ===');
 
-      // Verify app is still in a good state
-      expect(tester.takeException(), isNull);
-      expect(find.byType(MaterialApp), findsOneWidget);
-      expect(find.byType(Navigator), findsAtLeastNWidgets(1));
+        // Verify app is still in a good state
+        expect(tester.takeException(), isNull);
+        expect(find.byType(MaterialApp), findsOneWidget);
+        expect(find.byType(Navigator), findsAtLeastNWidgets(1));
 
-      // Verify we can still interact with the app
-      await tester.pump();
-      expect(tester.takeException(), isNull);
+        // Verify we can still interact with the app
+        await tester.pump();
+        expect(tester.takeException(), isNull);
 
-      tester.printToConsole('=== Complete E2E Test Successfully Finished ===');
-    });
+        tester.printToConsole(
+          '=== Complete E2E Test Successfully Finished ===',
+        );
+      },
+    );
 
-    testWidgets('Workflow interruption and recovery scenarios',
-        (WidgetTester tester) async {
+    testWidgets('Workflow interruption and recovery scenarios', (
+      WidgetTester tester,
+    ) async {
       tester.printToConsole('=== Testing Workflow Interruption Recovery ===');
 
       app.main();
@@ -166,12 +178,14 @@ void main() {
         // App should still be stable
         expect(tester.takeException(), isNull);
         tester.printToConsole(
-            '✓ App recovered gracefully from workflow interruption');
+          '✓ App recovered gracefully from workflow interruption',
+        );
       }
     });
 
-    testWidgets('App stability under repeated navigation stress',
-        (WidgetTester tester) async {
+    testWidgets('App stability under repeated navigation stress', (
+      WidgetTester tester,
+    ) async {
       tester.printToConsole('=== Stress Testing: Repeated Navigation ===');
 
       app.main();
@@ -188,7 +202,8 @@ void main() {
 
       expect(tester.takeException(), isNull);
       tester.printToConsole(
-          '✓ App remained stable under intensive navigation stress');
+        '✓ App remained stable under intensive navigation stress',
+      );
     });
   });
 }
@@ -216,7 +231,8 @@ Future<void> _testProfileManagement(WidgetTester tester) async {
     tester.printToConsole('✓ Profile creation workflow tested');
   } else {
     tester.printToConsole(
-        'ℹ Profile creation button not found - testing with existing profiles');
+      'ℹ Profile creation button not found - testing with existing profiles',
+    );
   }
 }
 
@@ -287,7 +303,10 @@ Future<void> _testAppNavigation(WidgetTester tester) async {
 
 /// Navigate to a specific page
 Future<void> _navigateToPage(
-    WidgetTester tester, String pageName, Type pageType) async {
+  WidgetTester tester,
+  String pageName,
+  Type pageType,
+) async {
   var navButton = find.text(pageName);
   if (navButton.evaluate().isEmpty) {
     navButton = find.byIcon(_getIconForPage(pageName));
@@ -365,7 +384,8 @@ Future<void> _testProfileOperations(WidgetTester tester) async {
 
   if (profileViews.evaluate().isNotEmpty) {
     tester.printToConsole(
-        '✓ Found ${profileViews.evaluate().length} profile(s) for operations testing');
+      '✓ Found ${profileViews.evaluate().length} profile(s) for operations testing',
+    );
 
     // Test popup menu interactions
     final popupMenus = find.byIcon(Icons.more_vert);
@@ -479,7 +499,8 @@ Future<void> _quickOnboarding(WidgetTester tester) async {
       }
     } catch (e) {
       tester.printToConsole(
-          '⚠ Quick onboarding handled gracefully: ${e.toString().substring(0, 50)}...');
+        '⚠ Quick onboarding handled gracefully: ${e.toString().substring(0, 50)}...',
+      );
     }
   }
 }

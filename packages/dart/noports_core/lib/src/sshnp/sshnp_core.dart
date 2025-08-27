@@ -5,7 +5,6 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
-import 'package:noports_core/src/common/mixins/apkam_signing.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/default_args.dart';
@@ -97,11 +96,8 @@ abstract class SshnpCore
   @override
   String get privateSigningKey;
 
-  SshnpCore({
-    required this.atClient,
-    required this.params,
-    this.logStream,
-  })  : sessionId = Uuid().v4(),
+  SshnpCore({required this.atClient, required this.params, this.logStream})
+      : sessionId = Uuid().v4(),
         namespace = '${params.device}.${DefaultArgs.namespace}',
         localPort = params.localPort {
     logger.level = params.verbose ? 'info' : 'shout';
@@ -143,8 +139,10 @@ abstract class SshnpCore
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+        featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
@@ -153,7 +151,8 @@ abstract class SshnpCore
     /// Set the username to use for the initial ssh tunnel
     sendProgress('Resolving remote username for tunnel session');
     tunnelUsername = await sshnpdChannel.resolveTunnelUsername(
-        remoteUsername: remoteUsername);
+      remoteUsername: remoteUsername,
+    );
 
     /// Shares the public key if required
     if (params.sendSshPublicKey) {

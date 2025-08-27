@@ -5,10 +5,7 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import '../../../styles/sizes.dart';
 
 class ProfileDisplayName extends StatelessWidget {
-  const ProfileDisplayName({
-    required this.width,
-    super.key,
-  });
+  const ProfileDisplayName({required this.width, super.key});
 
   final double width;
 

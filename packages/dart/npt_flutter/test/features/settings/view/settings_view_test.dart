@@ -21,10 +21,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'settings_view_test.mocks.dart';
 
-@GenerateNiceMocks([
-  MockSpec<SettingsBloc>(),
-  MockSpec<EnableLoggingCubit>(),
-])
+@GenerateNiceMocks([MockSpec<SettingsBloc>(), MockSpec<EnableLoggingCubit>()])
 void main() {
   group('SettingsView Widget Tests', () {
     late MockSettingsBloc mockSettingsBloc;
@@ -48,12 +45,14 @@ void main() {
 
       // Set up default mock behaviors
       when(mockSettingsBloc.state).thenReturn(const SettingsInitial());
-      when(mockSettingsBloc.stream)
-          .thenAnswer((_) => Stream.value(const SettingsInitial()));
+      when(
+        mockSettingsBloc.stream,
+      ).thenAnswer((_) => Stream.value(const SettingsInitial()));
 
       when(mockEnableLoggingCubit.state).thenReturn(false);
-      when(mockEnableLoggingCubit.stream)
-          .thenAnswer((_) => Stream.value(false));
+      when(
+        mockEnableLoggingCubit.stream,
+      ).thenAnswer((_) => Stream.value(false));
     });
 
     Widget createWidgetUnderTest(SettingsState state) {
@@ -69,7 +68,8 @@ void main() {
             providers: [
               BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
               BlocProvider<EnableLoggingCubit>.value(
-                  value: mockEnableLoggingCubit),
+                value: mockEnableLoggingCubit,
+              ),
             ],
             child: const SettingsView(),
           ),
@@ -78,8 +78,9 @@ void main() {
     }
 
     group('SettingsInitial State', () {
-      testWidgets('should display Spinner when state is SettingsInitial',
-          (WidgetTester tester) async {
+      testWidgets('should display Spinner when state is SettingsInitial', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(createWidgetUnderTest(const SettingsInitial()));
         await tester.pump();
 
@@ -87,14 +88,16 @@ void main() {
         expect(find.byType(Center), findsOneWidget);
 
         // Should trigger settings load event
-        verify(mockSettingsBloc.add(const SettingsLoadEvent()))
-            .called(greaterThanOrEqualTo(1));
+        verify(
+          mockSettingsBloc.add(const SettingsLoadEvent()),
+        ).called(greaterThanOrEqualTo(1));
       });
     });
 
     group('SettingsLoading State', () {
-      testWidgets('should display Spinner when state is SettingsLoading',
-          (WidgetTester tester) async {
+      testWidgets('should display Spinner when state is SettingsLoading', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(createWidgetUnderTest(const SettingsLoading()));
         await tester.pump();
 
@@ -104,10 +107,12 @@ void main() {
     });
 
     group('SettingsLoaded State', () {
-      testWidgets('should display all main components when loaded',
-          (WidgetTester tester) async {
-        await tester.pumpWidget(createWidgetUnderTest(
-            const SettingsLoaded(settings: testSettings)));
+      testWidgets('should display all main components when loaded', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+        );
         await tester.pump();
 
         // Should not show spinner
@@ -121,10 +126,12 @@ void main() {
         expect(find.byType(CustomCard), findsAtLeastNWidgets(2));
       });
 
-      testWidgets('should display settings rail with action buttons',
-          (WidgetTester tester) async {
-        await tester.pumpWidget(createWidgetUnderTest(
-            const SettingsLoaded(settings: testSettings)));
+      testWidgets('should display settings rail with action buttons', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+        );
         await tester.pump();
 
         // Should show switch AtSign button
@@ -134,10 +141,12 @@ void main() {
         expect(find.byType(CustomTextButton), findsNWidgets(7));
       });
 
-      testWidgets('should display settings content sections',
-          (WidgetTester tester) async {
-        await tester.pumpWidget(createWidgetUnderTest(
-            const SettingsLoaded(settings: testSettings)));
+      testWidgets('should display settings content sections', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+        );
         await tester
             .pumpAndSettle(); // Use pumpAndSettle to wait for all animations
 
@@ -159,20 +168,24 @@ void main() {
         expect(find.byType(LanguageSection), findsOneWidget);
       });
 
-      testWidgets('should display version information',
-          (WidgetTester tester) async {
-        await tester.pumpWidget(createWidgetUnderTest(
-            const SettingsLoaded(settings: testSettings)));
+      testWidgets('should display version information', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+        );
         await tester.pump();
 
         // Should show FutureBuilder for version info
         expect(find.byType(FutureBuilder<PackageInfo>), findsOneWidget);
       });
 
-      testWidgets('should have proper widget hierarchy',
-          (WidgetTester tester) async {
-        await tester.pumpWidget(createWidgetUnderTest(
-            const SettingsLoaded(settings: testSettings)));
+      testWidgets('should have proper widget hierarchy', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+        );
         await tester.pump();
 
         // Check main structure

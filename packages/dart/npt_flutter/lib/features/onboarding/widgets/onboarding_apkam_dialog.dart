@@ -51,10 +51,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   void initState() {
     super.initState();
     onboardingStatus = OnboardingStatus.preparing;
-    authService = AtAuthServiceImpl(
-      atsign,
-      atClientPreference,
-    );
+    authService = AtAuthServiceImpl(atsign, atClientPreference);
     pinController = TextEditingController();
     init();
   }
@@ -116,8 +113,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     if (sentEnrollRequest != null) {
       if (DateTime.now()
               .toUtc()
-              .difference(DateTime.fromMillisecondsSinceEpoch(
-                  sentEnrollRequest.enrollmentSubmissionTimeEpoch))
+              .difference(
+                DateTime.fromMillisecondsSinceEpoch(
+                  sentEnrollRequest.enrollmentSubmissionTimeEpoch,
+                ),
+              )
               .inHours >=
           48) {
         await _setStateOnStatus(EnrollmentStatus.expired);
@@ -160,8 +160,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       final strings = AppLocalizations.of(context)!;
-      Navigator.of(context)
-          .pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
+      Navigator.of(
+        context,
+      ).pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
     }
   }
 
@@ -182,11 +183,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       appName: 'NoPorts',
       deviceName: deviceName,
       otp: otp,
-      namespaces: {
-        Constants.namespace!: 'rw',
-        "sshnp": 'rw',
-        'sshrvd': 'rw',
-      },
+      namespaces: {Constants.namespace!: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
     );
 
     log('About to enroll with $enrollmentRequest');
@@ -212,11 +209,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         // Doesn't seem like enroll throws an `AtException`.
         if (e.toString().contains('AT0011')) {
           log('Invalid OTP');
-          Navigator.of(context)
-              .pop(AtOnboardingResult.error(message: strings.invalidOtp));
+          Navigator.of(
+            context,
+          ).pop(AtOnboardingResult.error(message: strings.invalidOtp));
         } else {
-          Navigator.of(context)
-              .pop(AtOnboardingResult.error(message: strings.unknownError));
+          Navigator.of(
+            context,
+          ).pop(AtOnboardingResult.error(message: strings.unknownError));
         }
       }
     }
@@ -242,231 +241,215 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         switchOutCurve: Curves.easeInOut,
         child: switch (onboardingStatus) {
           OnboardingStatus.preparing => const CircularProgressIndicator(
-              key: Key('preparing'),
-            ),
+            key: Key('preparing'),
+          ),
           OnboardingStatus.otpRequired ||
-          OnboardingStatus.validatingOtp =>
-            Column(
-              key: const Key('otp'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  strings.enterOtp,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(color: Colors.black),
-                ),
+          OnboardingStatus.validatingOtp => Column(
+            key: const Key('otp'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                strings.enterOtp,
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(color: Colors.black),
+              ),
+              gapH4,
+              Text(
+                strings.findOtp,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (hasExpired) ...[
                 gapH4,
                 Text(
-                  strings.findOtp,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                if (hasExpired) ...[
-                  gapH4,
-                  Text(
-                    strings.requestExpired,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ],
-                gapH24,
-                IntrinsicHeight(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: Sizes.p280,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            PinCodeTextField(
-                              autoDisposeControllers: false,
-                              appContext: context,
-                              length: _kPinLength,
-                              controller: pinController,
-                              autoFocus: true,
-                              textCapitalization: TextCapitalization.characters,
-                              // Styling
-                              animationType: AnimationType.fade,
-                              pinTheme: PinTheme(
-                                shape: PinCodeFieldShape.box,
-                                borderRadius: BorderRadius.circular(5),
-                                activeFillColor: Colors.white,
-                                inactiveFillColor: const Color(0xFFF3F3F3),
-                                disabledColor: Colors.blue,
-                                inactiveColor: const Color(0xFF747474),
-                                selectedFillColor: Colors.white,
-                                selectedColor:
-                                    Theme.of(context).colorScheme.primary,
-                                fieldOuterPadding:
-                                    const EdgeInsets.all(Sizes.p2),
-                              ),
-                              cursorColor: Colors.black,
-                              animationDuration:
-                                  const Duration(milliseconds: 300),
-                              enableActiveFill: true,
-                              keyboardType: TextInputType.text,
-                              beforeTextPaste: (text) => true,
-                            ),
-                            gapH8,
-                            AnimatedBuilder(
-                              animation: pinController,
-                              builder: (context, _) {
-                                return FilledButton(
-                                  style: FilledButton.styleFrom(
-                                    textStyle: const TextStyle(
-                                      fontSize: Sizes.p18,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: Sizes.p32,
-                                        vertical: Sizes.p20),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(Sizes.p8),
-                                    ),
-                                  ),
-                                  onPressed: pinController.text.length ==
-                                              _kPinLength &&
-                                          onboardingStatus !=
-                                              OnboardingStatus.validatingOtp
-                                      ? () async {
-                                          await otpSubmit(pinController.text);
-                                        }
-                                      : null,
-                                  child: onboardingStatus ==
-                                          OnboardingStatus.validatingOtp
-                                      ? const CircularProgressIndicator()
-                                      : Text(strings.submitOtp),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Transform.translate(
-                          offset: const Offset(Sizes.p32, 0),
-                          child: Image.asset(
-                            Constants.authenticatorMockup,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  strings.requestExpired,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ],
-            ),
-          OnboardingStatus.pendingApproval => Column(
-              key: const Key('activating'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
+              gapH24,
+              IntrinsicHeight(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // This is a little hacky to get the white background.
-                    // If this is a problem, we can rethink the EnrollmentDialog widget.
-                    Positioned.fill(
-                      child: Transform.scale(
-                        scaleX: 1.15,
-                        scaleY: 2.8,
-                        child: Container(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            strings.waitingForApproval,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                          ),
-                        ),
-                        gapW8,
-                        const CircularProgressIndicator(),
-                      ],
-                    ),
-                  ],
-                ),
-                gapH56,
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
+                    SizedBox(
+                      width: Sizes.p280,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Just to slightly offset from the top
-                          gapH12,
-                          Text(
-                            strings.whereToAccept,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                          PinCodeTextField(
+                            autoDisposeControllers: false,
+                            appContext: context,
+                            length: _kPinLength,
+                            controller: pinController,
+                            autoFocus: true,
+                            textCapitalization: TextCapitalization.characters,
+                            // Styling
+                            animationType: AnimationType.fade,
+                            pinTheme: PinTheme(
+                              shape: PinCodeFieldShape.box,
+                              borderRadius: BorderRadius.circular(5),
+                              activeFillColor: Colors.white,
+                              inactiveFillColor: const Color(0xFFF3F3F3),
+                              disabledColor: Colors.blue,
+                              inactiveColor: const Color(0xFF747474),
+                              selectedFillColor: Colors.white,
+                              selectedColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              fieldOuterPadding: const EdgeInsets.all(Sizes.p2),
+                            ),
+                            cursorColor: Colors.black,
+                            animationDuration: const Duration(
+                              milliseconds: 300,
+                            ),
+                            enableActiveFill: true,
+                            keyboardType: TextInputType.text,
+                            beforeTextPaste: (text) => true,
                           ),
-                          Text(
-                            strings.whereToAcceptDescription,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                          gapH8,
+                          AnimatedBuilder(
+                            animation: pinController,
+                            builder: (context, _) {
+                              return FilledButton(
+                                style: FilledButton.styleFrom(
+                                  textStyle: const TextStyle(
+                                    fontSize: Sizes.p18,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Sizes.p32,
+                                    vertical: Sizes.p20,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      Sizes.p8,
+                                    ),
+                                  ),
+                                ),
+                                onPressed:
+                                    pinController.text.length == _kPinLength &&
+                                        onboardingStatus !=
+                                            OnboardingStatus.validatingOtp
+                                    ? () async {
+                                        await otpSubmit(pinController.text);
+                                      }
+                                    : null,
+                                child:
+                                    onboardingStatus ==
+                                        OnboardingStatus.validatingOtp
+                                    ? const CircularProgressIndicator()
+                                    : Text(strings.submitOtp),
+                              );
+                            },
                           ),
                         ],
                       ),
                     ),
                     Expanded(
-                      flex: 6,
                       child: Transform.translate(
-                        offset: const Offset(Sizes.p18, 0),
+                        offset: const Offset(Sizes.p32, 0),
                         child: Image.asset(
-                          Constants.authenticatorApprovalMockup,
+                          Constants.authenticatorMockup,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          OnboardingStatus.pendingApproval => Column(
+            key: const Key('activating'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // This is a little hacky to get the white background.
+                  // If this is a problem, we can rethink the EnrollmentDialog widget.
+                  Positioned.fill(
+                    child: Transform.scale(
+                      scaleX: 1.15,
+                      scaleY: 2.8,
+                      child: Container(color: Colors.white),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          strings.waitingForApproval,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: Theme.of(context).primaryColor),
+                        ),
+                      ),
+                      gapW8,
+                      const CircularProgressIndicator(),
+                    ],
+                  ),
+                ],
+              ),
+              gapH56,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Just to slightly offset from the top
+                        gapH12,
+                        Text(
+                          strings.whereToAccept,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          strings.whereToAcceptDescription,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: Transform.translate(
+                      offset: const Offset(Sizes.p18, 0),
+                      child: Image.asset(Constants.authenticatorApprovalMockup),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           OnboardingStatus.success => Row(
-              key: const Key('success'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.check,
-                  color: Colors.green,
-                  size: Sizes.p32,
-                ),
-                gapW4,
-                Text(
-                  strings.enrollApproved,
-                  style: Theme.of(context).textTheme.titleLarge,
-                )
-              ],
-            ),
+            key: const Key('success'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check, color: Colors.green, size: Sizes.p32),
+              gapW4,
+              Text(
+                strings.enrollApproved,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
           OnboardingStatus.denied => Row(
-              key: const Key('denied'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.close,
-                  color: Colors.red,
-                  size: Sizes.p32,
-                ),
-                gapW4,
-                Text(
-                  strings.enrollDenied,
-                  style: Theme.of(context).textTheme.titleLarge,
-                )
-              ],
-            ),
+            key: const Key('denied'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.close, color: Colors.red, size: Sizes.p32),
+              gapW4,
+              Text(
+                strings.enrollDenied,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
         },
       ),
     );

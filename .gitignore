@@ -55,6 +55,7 @@ __pycache__
 
 .env
 
-# Claude
+# AI stuff
 .claude/
 CLAUDE.md
+.serena

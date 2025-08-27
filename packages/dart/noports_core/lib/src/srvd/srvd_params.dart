@@ -62,7 +62,7 @@ class SrvdParams {
       ipAddress: r['ip'],
       verbose: r['verbose'],
       logTraffic: BuildEnv.enableSnoop && r['snoop'],
-      rootDomain: r['root-domain'],
+      rootDomain: r['root-server'] ?? 'root.atsign.org',
       perSessionStorage: r['per-session-storage'],
       bind443: r['443'],
       localBindPort443:
@@ -124,7 +124,8 @@ class SrvdParams {
       );
     }
     parser.addOption(
-      'root-domain',
+      'root-server',
+      aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',

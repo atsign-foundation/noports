@@ -24,13 +24,9 @@ class DefaultRelaySection extends StatelessWidget {
           ],
         ),
         gapH16,
-        const CustomContainer.background(
-          child: SettingsRelayQuickButtons(),
-        ),
+        const CustomContainer.background(child: SettingsRelayQuickButtons()),
         gapH13,
-        const CustomContainer.background(
-          child: SettingsOverrideRelaySwitch(),
-        )
+        const CustomContainer.background(child: SettingsOverrideRelaySwitch()),
       ],
     );
   }

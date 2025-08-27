@@ -6,8 +6,6 @@ class AuthorisationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: AuthorisationView(),
-    );
+    return const Scaffold(body: AuthorisationView());
   }
 }
