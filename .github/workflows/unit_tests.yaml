@@ -36,6 +36,15 @@ jobs:
       - name: dart test
         working-directory: apps/admin/admin_api
         run: dart test
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@456ceb78310755116e0a3738121351006286b797 # v2.2.1
+        with:
+          scan-args: |-
+            --lockfile=./apps/admin/admin_api/pubspec.lock
+
   sshnoports-unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -52,6 +61,15 @@ jobs:
       - name: dart test
         working-directory: packages/dart/sshnoports
         run: dart test
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@456ceb78310755116e0a3738121351006286b797 # v2.2.1
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/sshnoports/pubspec.lock
+
   noports_core-unit_tests:
     runs-on: ubuntu-latest
     strategy:
@@ -72,14 +90,6 @@ jobs:
       - name: dart test
         working-directory: packages/dart/noports_core
         run: dart test
-  osv-scanner:
-    needs: [np_admin-unit-tests, sshnoports-unit-tests, noports_core-unit_tests]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        dart-channel: [stable,beta]
-    steps:
       # Runs osv-scanner to find any vulnerable Dart dependencies
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
@@ -87,6 +97,4 @@ jobs:
         uses: google/osv-scanner-action/osv-scanner-action@456ceb78310755116e0a3738121351006286b797 # v2.2.1
         with:
           scan-args: |-
-            --lockfile=./apps/admin/admin_api/pubspec.lock
-            --lockfile=./packages/dart/sshnoports/pubspec.lock
             --lockfile=./packages/dart/noports_core/pubspec.lock
