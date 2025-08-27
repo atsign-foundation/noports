@@ -87,10 +87,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: a8b91fff674ad4fd701ed4dcfbecc01f0a775fc33359a6f8ccfd1996b657ef52
+      sha256: "8a651a9baf9c83e689bd80a5e9b4e1b2bb3e2f147475fdefa4cf48a9eb78fd92"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.0"
   at_client:
     dependency: "direct main"
     description:
@@ -527,10 +527,10 @@ packages:
     dependency: "direct dev"
     description:
       name: json_serializable
-      sha256: ce2cf974ccdee13be2a510832d7fba0b94b364e0b0395dee42abaa51b855be27
+      sha256: "3f2913b7c2430afe8ac5afe6fb15c1de4a60af4f630625e6e238f80ba4b80cbd"
       url: "https://pub.dev"
     source: hosted
-    version: "6.10.0"
+    version: "6.11.0"
   lints:
     dependency: "direct dev"
     description:
@@ -766,10 +766,10 @@ packages:
     dependency: transitive
     description:
       name: source_gen
-      sha256: fc787b1f89ceac9580c3616f899c9a447413cbdac1df071302127764c023a134
+      sha256: "7b19d6ba131c6eb98bfcbf8d56c1a7002eba438af2e7ae6f8398b2b0f4f381e3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.1.0"
   source_helper:
     dependency: transitive
     description:
