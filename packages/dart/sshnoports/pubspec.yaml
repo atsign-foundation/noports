@@ -31,11 +31,6 @@ dependency_overrides:
     git:
       url: https://github.com/gkc/args
       ref: gkc/show-aliases-in-usage
-  at_commons:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk
-      ref: trunk
-      path: packages/at_commons
 
 dev_dependencies:
   lints: ^6.0.0
