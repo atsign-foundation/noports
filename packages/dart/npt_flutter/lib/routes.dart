@@ -4,7 +4,6 @@ import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 import 'pages/pages.dart';
-import 'features/policy_logs/page/policy_logs_page.dart';
 
 class Routes {
   static const onboarding = '/onboarding';
@@ -23,7 +22,6 @@ class HomeRoutes {
   static const profileForm = '/profile';
   static const loadingPage = '/loading';
   static const policyManager = '/policy-manager';
-  static const policyLogs = '/policy-logs';
 
   static final Map<String, WidgetBuilder> routes = {
     // The parent navigator initially pushes '/' as the route so needs to be handled.
@@ -34,8 +32,7 @@ class HomeRoutes {
     authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
-    policyManager: (_) => const PolicyPage(),
-    policyLogs: (_) => const PolicyLogsPage()
+    policyManager: (_) => const PolicyPage()
   };
 }
 
@@ -57,8 +54,6 @@ String routeName(String route) {
       return strings.loading;
     case 'Policy-manager':
       return strings.policyManager;
-    case 'Policy-logs':
-      return 'Policy Logs';
     case 'Manage-atsign':
       return 'Manage atSigns';
     default:
