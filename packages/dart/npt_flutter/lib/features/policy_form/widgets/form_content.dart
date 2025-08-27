@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../policy/models/policy.dart';
 import '../../policy/cubit/policy_cubit.dart';
+import '../cubit/policy_form_cubit.dart';
 import 'role_name_field.dart';
 import 'role_description_field.dart';
 import 'daemon_at_signs_field.dart';
@@ -11,57 +12,23 @@ import 'device_group_list_widget.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
-class FormContent extends StatefulWidget {
+class FormContent extends StatelessWidget {
   final Role role;
   final PolicyLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
 
-  @override
-  State<FormContent> createState() => _FormContentState();
-}
-
-class _FormContentState extends State<FormContent> {
-  bool _isEditing = false;
-  late Role _currentRole;
-  late Role _originalRole; // Backup of original role for cancel functionality
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentRole = widget.role;
-    _originalRole = widget.role; // Backup original role data
-    // Determine editing state from cubit state
-    _isEditing = widget.state.isInEditMode;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
 
-  @override
-  void didUpdateWidget(FormContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.role != widget.role || oldWidget.state.viewMode != widget.state.viewMode) {
-      _currentRole = widget.role;
-      _originalRole = widget.role; // Update backup when role changes
-      // Update editing state from cubit state
-      _isEditing = widget.state.isInEditMode;
-    }
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    final cubit = context.read<PolicyCubit>();
+  void _showDeleteConfirmation(BuildContext context, Role currentRole) {
+    final formCubit = context.read<PolicyFormCubit>();
     
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Role'),
-          content: Text('Are you sure you want to delete the role "${_currentRole.name}"? This action cannot be undone.'),
+          content: Text('Are you sure you want to delete the role "${currentRole.name}"? This action cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -70,7 +37,7 @@ class _FormContentState extends State<FormContent> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                cubit.deleteRole(_currentRole.id ?? '');
+                formCubit.deleteRole();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
@@ -86,251 +53,215 @@ class _FormContentState extends State<FormContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PolicyCubit, PolicyState>(
-      listener: (context, state) {
-        // Update local editing state from bloc and handle save completion
-        if (state is PolicyLoaded) {
-          setState(() {
-            // Backup original data when starting to edit
-            if (!_isEditing && state.isInEditMode) {
-              _originalRole = _currentRole;
+    // Initialize the form cubit with the current role when in edit mode
+    if (state.isInEditMode) {
+      context.read<PolicyFormCubit>().initializeForm(role: role);
+    }
+
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<PolicyFormCubit, PolicyFormState>(
+          listener: (context, formState) {
+            if (formState is PolicyFormSuccess) {
+              // Handle successful save - could navigate back or show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(formState.wasNewRole ? 'Role created successfully!' : 'Role updated successfully!'),
+                  backgroundColor: AppColor.primaryColor,
+                ),
+              );
+              // Exit editing mode in policy cubit
+              context.read<PolicyCubit>().cancelEditing();
+            } else if (formState is PolicyFormDeleted) {
+              // Handle successful deletion
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Role deleted successfully!'),
+                  backgroundColor: AppColor.primaryColor,
+                ),
+              );
+              // Trigger reload and return to browsing
+              context.read<PolicyCubit>().loadRoles();
+            } else if (formState is PolicyFormError) {
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(formState.message),
+                  backgroundColor: AppColor.errorColor,
+                ),
+              );
             }
-            _isEditing = state.isInEditMode;
-            if (_isSaving) {
-              _isSaving = false;
-            }
-          });
-        } else if (_isSaving && state is PolicyError) {
-          setState(() {
-            _isSaving = false;
-          });
-          // Show error message to user
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColor.errorColor,
-            ),
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Row(
+          },
+        ),
+      ],
+      child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
+        builder: (context, formState) {
+          // Default to viewing mode if not in editing form state
+          final isEditing = state.isInEditMode && formState is PolicyFormEditing;
+          final currentRole = formState is PolicyFormEditing ? formState.currentRole : role;
+          final isSaving = formState is PolicyFormEditing ? formState.isSaving : false;
+          final canDelete = formState is PolicyFormEditing ? formState.canDelete : false;
+
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Spacer(),
-                if (_isEditing) ...[
-                  ElevatedButton(
-                    onPressed: () => _showDeleteConfirmation(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.errorColor,
-                      foregroundColor: Colors.white,
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      if (isEditing) ...[
+                        if (canDelete) ...[
+                          ElevatedButton(
+                            onPressed: () => _showDeleteConfirmation(context, currentRole),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.errorColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                          const SizedBox(width: Sizes.p8),
+                        ],
+                        TextButton(
+                          onPressed: isSaving ? null : () {
+                            context.read<PolicyFormCubit>().cancelEditing();
+                            context.read<PolicyCubit>().cancelEditing();
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: Sizes.p8),
+                        ElevatedButton(
+                          onPressed: isSaving ? null : () {
+                            context.read<PolicyFormCubit>().saveRole();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColor.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: isSaving 
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text('Save'),
+                        ),
+                      ] else ...[
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<PolicyCubit>().startEditingRole(role.id ?? '');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColor.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Edit'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Sizes.p24),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Row 1: Name and Description
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: RoleNameField(
+                                role: currentRole,
+                                isEditing: isEditing,
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateRoleName(value);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: Sizes.p16),
+                            Expanded(
+                              child: RoleDescriptionField(
+                                role: currentRole,
+                                isEditing: isEditing,
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateRoleDescription(value);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Sizes.p24),
+                        // Row 2: Device AtSigns, Devices, Device Groups
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: DaemonAtSignsField(
+                                role: currentRole,
+                                isEditing: isEditing,
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateDaemonAtSigns(value);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: Sizes.p16),
+                            Expanded(
+                              child: DeviceListWidget(
+                                label: 'Devices',
+                                devices: currentRole.devices,
+                                isEditing: isEditing,
+                                tooltip: 'A device name string like "default" that is under a device atSign. A device atSign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user atSigns to this device atSign/device name pair.',
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateDevices(value);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: Sizes.p16),
+                            Expanded(
+                              child: DeviceGroupListWidget(
+                                label: 'Device Groups',
+                                deviceGroups: currentRole.deviceGroups,
+                                isEditing: isEditing,
+                                tooltip: 'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports',
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateDeviceGroups(value);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Sizes.p24),
+                        // Row 3: User AtSigns
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: UserAtSignsField(
+                                role: currentRole,
+                                isEditing: isEditing,
+                                onChanged: (value) {
+                                  context.read<PolicyFormCubit>().updateUserAtSigns(value);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    child: const Text('Delete'),
                   ),
-                  const SizedBox(width: Sizes.p8),
-                  TextButton(
-                    onPressed: () {
-                      // Restore original role data before canceling
-                      setState(() {
-                        _currentRole = _originalRole;
-                      });
-                      context.read<PolicyCubit>().cancelEditing();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: Sizes.p8),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => _isSaving = true);
-                      // Distinguish between creating new role vs updating existing role
-                      if (_currentRole.id == null || _currentRole.id!.isEmpty) {
-                        // Creating a new role
-                        context.read<PolicyCubit>().createRole(_currentRole);
-                      } else {
-                        // Updating an existing role
-                        context.read<PolicyCubit>().updateRole(_currentRole);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Save'),
-                  ),
-                ] else ...[
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<PolicyCubit>().startEditingRole(widget.role.id ?? '');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Edit'),
-                  ),
-                ],
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: Sizes.p24),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Row 1: Name and Description
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: RoleNameField(
-                          role: _currentRole,
-                          isEditing: _isEditing,
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: value,
-                                description: _currentRole.description,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: _currentRole.devices,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: _currentRole.userAtSigns,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: Sizes.p16),
-                      Expanded(
-                        child: RoleDescriptionField(
-                          role: _currentRole,
-                          isEditing: _isEditing,
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: value,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: _currentRole.devices,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: _currentRole.userAtSigns,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Sizes.p24),
-                  // Row 2: Device AtSigns, Devices, Device Groups
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: DaemonAtSignsField(
-                          role: _currentRole,
-                          isEditing: _isEditing,
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: _currentRole.description,
-                                daemonAtSigns: value,
-                                devices: _currentRole.devices,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: _currentRole.userAtSigns,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: Sizes.p16),
-                      Expanded(
-                        child: DeviceListWidget(
-                          label: 'Devices',
-                          devices: _currentRole.devices,
-                          isEditing: _isEditing,
-                          tooltip: 'A device name string like "default" that is under a device atSign. A device atSign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user atSigns to this device atSign/device name pair.',
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: _currentRole.description,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: value,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: _currentRole.userAtSigns,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: Sizes.p16),
-                      Expanded(
-                        child: DeviceGroupListWidget(
-                          label: 'Device Groups',
-                          deviceGroups: _currentRole.deviceGroups,
-                          isEditing: _isEditing,
-                          tooltip: 'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports',
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: _currentRole.description,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: _currentRole.devices,
-                                deviceGroups: value,
-                                userAtSigns: _currentRole.userAtSigns,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Sizes.p24),
-                  // Row 3: User AtSigns
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: UserAtSignsField(
-                          role: _currentRole,
-                          isEditing: _isEditing,
-                          onChanged: (value) {
-                            setState(() {
-                              _currentRole = Role(
-                                id: _currentRole.id,
-                                name: _currentRole.name,
-                                description: _currentRole.description,
-                                daemonAtSigns: _currentRole.daemonAtSigns,
-                                devices: _currentRole.devices,
-                                deviceGroups: _currentRole.deviceGroups,
-                                userAtSigns: value,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
