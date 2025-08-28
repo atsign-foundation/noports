@@ -93,10 +93,11 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: ab0caa6f54a3d0a325dab30dfab8b12e358d1f7ee1ca952137d3913ef6cf8c16
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/at_client"
+      ref: encrypt-decrypt-tech-debt
+      resolved-ref: "0f990be76abeeb6c055eccb1ad25747341ef5599"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
     version: "3.7.0"
   at_commons:
     dependency: "direct main"
