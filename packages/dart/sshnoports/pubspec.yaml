@@ -23,6 +23,11 @@ dependencies:
   yaml: 3.1.3
 
 dependency_overrides:
+  at_lookup:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_lookup
+      ref: encrypt-decrypt-tech-debt
   at_client:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
