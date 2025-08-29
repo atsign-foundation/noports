@@ -15,11 +15,10 @@ class RoleListItemWidget extends StatelessWidget {
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         final isInEditMode = state is PolicyLoaded && state.isInEditMode;
-        final isLogsView = state is PolicyLoaded && state.isLogsViewing;
         final isSelected = state is PolicyLoaded && 
             state.hasSelectedRole && 
             state.selectedRole?.id == role.id;
-        final isDisabled = isInEditMode && !isLogsView;
+        final isDisabled = isInEditMode;
         
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),

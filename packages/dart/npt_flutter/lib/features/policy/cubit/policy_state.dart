@@ -75,7 +75,7 @@ class PolicyLoaded extends PolicyState {
   bool get isInEditMode => isRoleEditing || isRoleCreating;
   bool get hasSelectedRole => selectedRole != null;
   bool get canEdit => isRoleViewing && !isInEditMode;
-  bool get canSelectRole => (isRolesBrowsing || isRoleViewing) && !isInEditMode;
+  bool get canSelectRole => (isRolesBrowsing || isRoleViewing || isLogsViewing) && !isInEditMode;
   
   /// Validation getters
   bool get isValidRoleViewingState => isRoleViewing && hasSelectedRole;
