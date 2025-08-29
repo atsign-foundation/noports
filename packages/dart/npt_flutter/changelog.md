@@ -1,3 +1,9 @@
+## 1.5.0
+
+- **FEAT**: New policy page for policy management and policy logs viewing
+- **FEAT**: New app bar
+- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work)
+
 ## 1.4.0+18
 
 --**TEST**: Unit and integration tests added.
