@@ -19,6 +19,7 @@ final class Profile extends Loggable with Favoritable {
   final int remotePort;
   final int localPort;
   final bool only443;
+  @JsonKey(defaultValue: true)
   final bool keepAlive;
 
   const Profile(
