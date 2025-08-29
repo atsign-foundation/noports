@@ -36,7 +36,7 @@ class ProfileKeepAliveCheckbox extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Keep Alive',
+                        '🕺 Keep Alive',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
