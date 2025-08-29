@@ -256,12 +256,108 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         uuid,
       );
     } finally {
-      await npt?.done;
-      cancel?.call();
-      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-        uuid,
-      );
+      if (npt != null) {
+        await npt.done;
+        cancel?.call();
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
+          uuid,
+        );
+        
+        // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
+        // retry the connection after a delay
+        if (profile.keepAlive && state is ProfileStarted) {
+          await _retryConnection(emit, profile, atClient, atSign, settings);
+        } else {
+          emit(ProfileLoaded(uuid, profile: profile));
+        }
+      }
+    }
+  }
+
+  Future<void> _retryConnection(
+    Emitter<ProfileState> emit,
+    Profile profile,
+    AtClient atClient,
+    String atSign,
+    Settings settings,
+  ) async {
+    // Wait 5 seconds before retrying, similar to npt binary
+    await Future.delayed(const Duration(seconds: 5));
+    
+    // Check if the profile was stopped during the delay
+    if (state is! ProfileStarted) {
       emit(ProfileLoaded(uuid, profile: profile));
+      return;
+    }
+    
+    // Emit starting state for retry
+    emit(ProfileStarting(uuid, profile: profile, status: 'Retrying connection (keep-alive)...'));
+    
+    void Function()? cancel;
+    SocketConnector? sc;
+    Npt? npt;
+    
+    try {
+      npt = Npt.create(
+        atClient: atClient,
+        params: profile.toNptParams(
+          clientAtsign: atSign,
+          rootDomain: atClient.getPreferences()!.rootDomain,
+          fallbackRelayAtsign: settings.relayAtsign,
+          overrideRelayWithFallback: settings.overrideRelay,
+        ),
+      );
+
+      var progressSub = npt.progressStream?.listen((msg) {
+        emit(ProfileStarting(uuid, profile: profile, status: msg));
+      });
+
+      var errorSub = npt.logStream?.listen((err) {
+        emit(ProfileStarting(uuid, profile: profile, status: err));
+      });
+
+      cancel = () {
+        progressSub?.cancel();
+        progressSub = null;
+
+        errorSub?.cancel();
+        errorSub = null;
+
+        if (sc is SocketConnector) sc.close();
+      };
+
+      sc = await npt.runInline();
+
+      if (sc is TimedOutSocketConnector) {
+        cancel();
+        // For retry, just log the timeout and let it retry again
+        emit(ProfileStarting(uuid, profile: profile, status: 'Connection timed out, will retry...'));
+      } else if (sc.closed) {
+        cancel();
+        emit(ProfileStarting(uuid, profile: profile, status: 'Connection closed, will retry...'));
+      } else {
+        // Success - cache the connector and emit started state
+        App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
+        emit(ProfileStarted(uuid, profile: profile));
+      }
+    } catch (err) {
+      cancel?.call();
+      emit(ProfileStarting(uuid, profile: profile, status: 'Retry failed: $err, will retry...'));
+    } finally {
+      if (npt != null) {
+        await npt.done;
+        cancel?.call();
+        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
+          uuid,
+        );
+        
+        // Continue retrying if keep-alive is still enabled and profile is still "started"
+        if (profile.keepAlive && state is ProfileStarted) {
+          await _retryConnection(emit, profile, atClient, atSign, settings);
+        } else {
+          emit(ProfileLoaded(uuid, profile: profile));
+        }
+      }
     }
   }
 
