@@ -1663,7 +1663,8 @@ Future<AesKeyBundle> genBundle(
   String aesKey, aesKeyEncrypted, iv, ivEncrypted;
 
   aesKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-  iv = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+  // iv = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+  iv = base64Encode(AtChopsUtil.generateRandomIV(24).ivBytes);
 
   switch (encKeyType) {
     case EncryptionKeyType.rsa2048:

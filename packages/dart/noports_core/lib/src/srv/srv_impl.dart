@@ -268,9 +268,10 @@ class SrvImplInline implements Srv<SSHSocket> {
     // Only used on client side, so we know to use C2D for the encrypter
     // and D2C for the decrypter (or C2D for backwards compatibility)
     if (aesC2D != null && ivC2D != null) {
-      final DartAesCtr algorithm = DartAesCtr.with256bits(
-        macAlgorithm: Hmac.sha256(),
-      );
+      // final DartAesCtr algorithm = DartAesCtr.with256bits(
+      //   macAlgorithm: Hmac.sha256(),
+      // );
+      final DartXchacha20 algorithm = DartXchacha20(macAlgorithm: MacAlgorithm.empty);
       final SecretKey sessionAESKeyC2D = SecretKey(base64Decode(aesC2D!));
       final List<int> sessionIVC2D = base64Decode(ivC2D!);
 
@@ -478,9 +479,10 @@ class SrvImplDart implements Srv<SocketConnector> {
   }
 
   DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
+    // final DartAesCtr algorithm = DartAesCtr.with256bits(
+    //   macAlgorithm: MacAlgorithm.empty,
+    // );
+    final DartXchacha20 algorithm = DartXchacha20(macAlgorithm: MacAlgorithm.empty);
     final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> iv = base64Decode(ivBase64);
 
@@ -495,9 +497,10 @@ class SrvImplDart implements Srv<SocketConnector> {
   }
 
   DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
+    // final DartAesCtr algorithm = DartAesCtr.with256bits(
+    //   macAlgorithm: MacAlgorithm.empty,
+    // );
+    final DartXchacha20 algorithm = DartXchacha20(macAlgorithm: MacAlgorithm.empty);
     final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
     final List<int> iv = base64Decode(ivBase64);
 
@@ -894,7 +897,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             EncryptionKeyType.aes256,
           ).key;
           String socketIVC2D = base64Encode(
-            AtChopsUtil.generateRandomIV(16).ivBytes,
+            // AtChopsUtil.generateRandomIV(16).ivBytes,
+            AtChopsUtil.generateRandomIV(24).ivBytes,
           );
 
           String socketAESKeyD2C, socketIVD2C;
@@ -904,7 +908,8 @@ class SrvImplDart implements Srv<SocketConnector> {
               EncryptionKeyType.aes256,
             ).key;
             socketIVD2C = base64Encode(
-              AtChopsUtil.generateRandomIV(16).ivBytes,
+              // AtChopsUtil.generateRandomIV(16).ivBytes,
+              AtChopsUtil.generateRandomIV(24).ivBytes,
             );
           } else {
             // Backwards compatibility
