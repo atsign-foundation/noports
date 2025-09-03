@@ -225,8 +225,6 @@ jobs:
         run: |
           pwd
           ls -latr
-          chmod -R +w ~/tarballs
-          ls -latr
           sha256sum * > checksums.txt
       - name: Upload artifacts to GitHub Release
         env:
