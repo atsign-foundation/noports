@@ -222,10 +222,7 @@ jobs:
           UPLOAD: true
       - name: Generate SHA256 checksums
         working-directory: tarballs
-        run: |
-          pwd
-          ls -latr
-          sha256sum * > checksums.txt
+        run: sha256sum * > checksums.txt
       - name: Upload artifacts to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
