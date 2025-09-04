@@ -107,7 +107,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       try {
         final success = await _roleRepository.createNewRole(role);
         if (success) {
-          // Refresh roles and show the created role
           final updatedRoles = await _roleRepository.fetchRoles();
           final createdRole = updatedRoles.firstWhere(
             (r) => r.name == role.name && r.description == role.description,
@@ -150,7 +149,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       try {
         final success = await _roleRepository.updateExistingRole(role);
         if (success) {
-          // Refresh roles and stay in viewing mode
           final updatedRoles = await _roleRepository.fetchRoles();
           final updatedRole = updatedRoles.firstWhere(
             (r) => r.id == role.id,
@@ -183,7 +181,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  /// Delete a role
   Future<void> deleteRole(String roleId) async {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
@@ -193,7 +190,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       try {
         final success = await _roleRepository.deleteRole(roleId);
         if (success) {
-          // Refresh roles and return to browsing
           final updatedRoles = await _roleRepository.fetchRoles();
           emit(PolicyLoaded(
             roles: updatedRoles,
@@ -220,7 +216,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  /// Switch to logs viewing mode
   void showLogs() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
@@ -232,7 +227,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  /// Return to roles browsing mode from logs
   void showRoles() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
@@ -245,7 +239,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  /// Recover from error state if possible
   void recoverFromError() {
     if (state is PolicyError) {
       final errorState = state as PolicyError;
@@ -254,24 +247,19 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       if (recoverableState != null) {
         emit(recoverableState);
       } else {
-        // Fallback to loading roles
         loadRoles();
       }
     }
   }
 
-  /// Force refresh current view
   Future<void> refresh() async {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
       
-      // Maintain current view mode and selection after refresh
       await loadRoles();
       
       if (state is PolicyLoaded) {
         final refreshedState = state as PolicyLoaded;
-        
-        // Try to restore the previous view mode and selection
         if (currentState.hasSelectedRole && currentState.selectedRole?.id != null) {
           final stillExists = refreshedState.roles.any(
             (role) => role.id == currentState.selectedRole!.id,
@@ -288,7 +276,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
             ));
           }
         } else {
-          // Restore view mode without selection
           emit(refreshedState.copyWith(
             viewMode: currentState.viewMode,
           ));

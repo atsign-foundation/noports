@@ -26,8 +26,6 @@ class _RoleNameFieldState extends State<RoleNameField> {
   void didUpdateWidget(RoleNameField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.role.name != widget.role.name) {
-      // `only update if the controller text doesn't match the new role name
-      // prevents unnecessary text selection
       if (_controller.text != widget.role.name) {
         _controller.text = widget.role.name;
       }

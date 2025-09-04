@@ -7,7 +7,6 @@ abstract class PolicyFormState extends Loggable {
   List<Object?> get props => [];
 }
 
-/// Initial state before any form interaction
 class PolicyFormInitial extends PolicyFormState {
   const PolicyFormInitial();
 
@@ -15,10 +14,9 @@ class PolicyFormInitial extends PolicyFormState {
   String toString() => 'PolicyFormInitial';
 }
 
-/// State when editing a role (both new and existing)
 class PolicyFormEditing extends PolicyFormState {
   final Role currentRole;
-  final Role originalRole; // For cancel functionality
+  final Role originalRole;
   final bool isNewRole;
   final bool isSaving;
 
@@ -46,7 +44,6 @@ class PolicyFormEditing extends PolicyFormState {
     );
   }
 
-  /// Helper getters
   bool get hasChanges => currentRole != originalRole;
   bool get canSave => !isSaving;
   bool get canDelete => !isNewRole && !isSaving;
@@ -60,7 +57,6 @@ class PolicyFormEditing extends PolicyFormState {
   }
 }
 
-/// State when role was successfully saved
 class PolicyFormSuccess extends PolicyFormState {
   final Role savedRole;
   final bool wasNewRole;
@@ -80,7 +76,6 @@ class PolicyFormSuccess extends PolicyFormState {
   }
 }
 
-/// State when role was successfully deleted
 class PolicyFormDeleted extends PolicyFormState {
   final Role deletedRole;
 
@@ -93,7 +88,6 @@ class PolicyFormDeleted extends PolicyFormState {
   String toString() => 'PolicyFormDeleted(role: ${deletedRole.name})';
 }
 
-/// Error state with recovery information
 class PolicyFormError extends PolicyFormState {
   final String message;
   final PolicyFormEditing previousState;

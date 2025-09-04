@@ -5,7 +5,7 @@ import '../models/policy.dart';
 
 class RoleRepository {
   static const String groupsPolicyNamespace =
-      'groups.policy.sshnp'; // TODO move string somewhere
+      'groups.policy.sshnp';
 
   Future<List<Role>> fetchRoles() async {
     final rolesJson = <String>[];
@@ -13,7 +13,6 @@ class RoleRepository {
     const String regex =
         r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
 
-    // atClient.syncService.sync();
     List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
     List<AtKey> groupAtKeys =
         groupAtKeyStrs.map((key) => AtKey.fromString(key)).toList();
@@ -24,7 +23,6 @@ class RoleRepository {
       try {
         atValue = await atClient.get(atKey, getRequestOptions: gro);
       } catch (e) {
-        // Key not found or other error, continue to next key
         continue;
       }
       if (atValue.value == null) continue;
@@ -58,7 +56,6 @@ class RoleRepository {
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
-    // ensure currentAtSign is not null and starts with '@'
     if (currentAtSign != null && !currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }
@@ -93,7 +90,6 @@ class RoleRepository {
     }
   }
 
-  /// Creates a new role. This method overwrites the role.id of the object you pass in
   Future<bool> createNewRole(Role role) async {
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
@@ -101,7 +97,6 @@ class RoleRepository {
 
     role.id = newRoleId;
 
-    // ensure currentAtSign is not null and starts with '@'
     if (currentAtSign != null && !currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }
@@ -116,7 +111,6 @@ class RoleRepository {
           putRequestOptions: pro);
 
       if (success) {
-        // Send notification about new role creation
         try {
           await atClient.notificationService.notify(
             NotificationParams.forUpdate(
@@ -128,7 +122,6 @@ class RoleRepository {
           App.log(
               '[WARNING] createNewRole: Failed to send notification: $notifyError'
                   .loggable);
-          // Continue anyway since the role creation was successful
         }
       }
 
@@ -148,7 +141,6 @@ class RoleRepository {
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
-    // ensure currentAtSign is not null and starts with '@'
     if (currentAtSign != null && !currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }

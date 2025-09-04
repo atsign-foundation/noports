@@ -19,7 +19,6 @@ class DeviceCard extends StatelessWidget {
             ? IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () {
-                  // TODO: Remove device functionality
                 },
               )
             : null,

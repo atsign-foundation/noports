@@ -1,10 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'policy.dart';
 
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
 
 DaemonAtSign _$DaemonAtSignFromJson(Map<String, dynamic> json) => DaemonAtSign(
       atSign: json['atSign'] as String,

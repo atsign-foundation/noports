@@ -26,7 +26,6 @@ class DeviceGroupsSection extends StatelessWidget {
             if (isEditing)
               TextButton.icon(
                 onPressed: () {
-                  // TODO: Add device group functionality
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Add Group'),

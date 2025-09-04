@@ -13,7 +13,6 @@ class LogsViewer extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status and controls row
             Row(
               children: [
                 Container(
@@ -77,7 +76,6 @@ class LogsViewer extends StatelessWidget {
               ],
             ),
         const SizedBox(height: 16),
-        // Main logs container
         Expanded(
           child: Container(
             decoration: BoxDecoration(
@@ -86,7 +84,6 @@ class LogsViewer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Header row
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
@@ -173,7 +170,6 @@ class LogsViewer extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Logs container
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

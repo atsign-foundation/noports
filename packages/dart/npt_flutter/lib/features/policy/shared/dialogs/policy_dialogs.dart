@@ -4,7 +4,6 @@ import '../../models/policy.dart';
 class PolicyDialogs {
   PolicyDialogs._();
 
-  /// Shows a dialog to add a new item (generic string input)
   static Future<String?> showAddItemDialog(
     BuildContext context, {
     required String title,
@@ -47,7 +46,6 @@ class PolicyDialogs {
     );
   }
 
-  /// Shows a dialog to add a new role
   static Future<String?> showAddRoleDialog(BuildContext context) async {
     return showAddItemDialog(
       context,
@@ -58,7 +56,6 @@ class PolicyDialogs {
     );
   }
 
-  /// Shows a dialog to add a new list item
   static Future<String?> showAddListItemDialog(BuildContext context) async {
     return showAddItemDialog(
       context,
@@ -68,7 +65,6 @@ class PolicyDialogs {
     );
   }
 
-  /// Shows a confirmation dialog for deleting a role
   static Future<bool?> showDeleteRoleDialog(
     BuildContext context,
     Role role,
@@ -109,7 +105,6 @@ class PolicyDialogs {
     );
   }
 
-  /// Shows a generic confirmation dialog
   static Future<bool?> showConfirmationDialog(
     BuildContext context, {
     required String title,

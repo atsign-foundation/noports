@@ -10,7 +10,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
 
   PolicyFormCubit(this._roleRepository) : super(const PolicyFormInitial());
 
-  /// Initialize the form with a role (for editing) or create a new empty role
   void initializeForm({Role? role}) {
     if (role != null) {
       emit(PolicyFormEditing(
@@ -30,7 +29,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update the role name
   void updateRoleName(String name) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -48,7 +46,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update the role description
   void updateRoleDescription(String description) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -66,7 +63,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update daemon atSigns
   void updateDaemonAtSigns(List<String> daemonAtSigns) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -84,7 +80,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update devices
   void updateDevices(List<Device> devices) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -102,7 +97,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update device groups
   void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -120,7 +114,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Update user atSigns
   void updateUserAtSigns(List<String> userAtSigns) {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -138,7 +131,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Cancel editing and reset to original role
   void cancelEditing() {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -149,7 +141,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Save the current role
   Future<void> saveRole() async {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
@@ -184,12 +175,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Delete the current role
   Future<void> deleteRole() async {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
       
-      // Can't delete a role that hasn't been saved yet
       if (currentState.isNewRole) return;
       
       final roleId = currentState.currentRole.id;
@@ -217,7 +206,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Recover from error state
   void recoverFromError() {
     if (state is PolicyFormError) {
       final errorState = state as PolicyFormError;
@@ -225,7 +213,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Reset form to initial state
   void reset() {
     emit(const PolicyFormInitial());
   }

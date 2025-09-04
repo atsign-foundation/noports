@@ -10,7 +10,6 @@ class SidebarActionButtonsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // View Logs Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: SizedBox(
@@ -39,7 +38,6 @@ class SidebarActionButtonsWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Add New Role Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: SizedBox(

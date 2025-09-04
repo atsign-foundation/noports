@@ -53,7 +53,6 @@ class FormContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize the form cubit with the current role when in edit mode
     if (state.isInEditMode) {
       context.read<PolicyFormCubit>().initializeForm(role: role);
     }
@@ -63,27 +62,22 @@ class FormContent extends StatelessWidget {
         BlocListener<PolicyFormCubit, PolicyFormState>(
           listener: (context, formState) {
             if (formState is PolicyFormSuccess) {
-              // Handle successful save - could navigate back or show success message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(formState.wasNewRole ? 'Role created successfully!' : 'Role updated successfully!'),
                   backgroundColor: AppColor.primaryColor,
                 ),
               );
-              // Exit editing mode in policy cubit
               context.read<PolicyCubit>().cancelEditing();
             } else if (formState is PolicyFormDeleted) {
-              // Handle successful deletion
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Role deleted successfully!'),
                   backgroundColor: AppColor.primaryColor,
                 ),
               );
-              // Trigger reload and return to browsing
               context.read<PolicyCubit>().loadRoles();
             } else if (formState is PolicyFormError) {
-              // Show error message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(formState.message),
@@ -96,7 +90,6 @@ class FormContent extends StatelessWidget {
       ],
       child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
         builder: (context, formState) {
-          // Default to viewing mode if not in editing form state
           final isEditing = state.isInEditMode && formState is PolicyFormEditing;
           final currentRole = formState is PolicyFormEditing ? formState.currentRole : role;
           final isSaving = formState is PolicyFormEditing ? formState.isSaving : false;
@@ -173,7 +166,6 @@ class FormContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Row 1: Name and Description
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -199,7 +191,6 @@ class FormContent extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: Sizes.p24),
-                        // Row 2: Device AtSigns, Devices, Device Groups
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -239,7 +230,6 @@ class FormContent extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: Sizes.p24),
-                        // Row 3: User AtSigns
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

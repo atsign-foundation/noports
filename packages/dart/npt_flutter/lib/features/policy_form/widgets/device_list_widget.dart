@@ -146,7 +146,6 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
         ),
         const SizedBox(height: 12),
         
-        // List of devices
         if (_localDevices.isEmpty)
           Container(
             padding: const EdgeInsets.all(16),
@@ -220,7 +219,6 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
             ),
           ),
         
-        // Add button below the list
         if (widget.isEditing) ...[
           const SizedBox(height: 12),
           SizedBox(
@@ -276,10 +274,8 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
   void _addPermitOpen() {
     final value = _permitOpenController.text.trim();
     
-    // Validate host:port format
     final validationError = FormValidator.validateHostPortField(value);
     if (validationError != null) {
-      // Show error message to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(validationError),

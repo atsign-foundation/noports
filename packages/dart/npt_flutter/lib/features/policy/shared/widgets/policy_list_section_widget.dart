@@ -30,7 +30,6 @@ class PolicyListSectionWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -62,7 +61,6 @@ class PolicyListSectionWidget extends StatelessWidget {
               ],
             ),
           ),
-          // Content
           Expanded(
             child: items.isEmpty
                 ? emptyWidget ??

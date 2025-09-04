@@ -77,7 +77,6 @@ class PolicyContent extends StatelessWidget {
       }
     }
     
-    // Fallback view
     return _buildBrowsingView(context);
   }
 
@@ -85,7 +84,6 @@ class PolicyContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
@@ -99,7 +97,6 @@ class PolicyContent extends StatelessWidget {
             ],
           ),
         ),
-        // Logs viewer
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),

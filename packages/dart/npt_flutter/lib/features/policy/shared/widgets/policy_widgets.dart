@@ -1,4 +1,3 @@
-// Policy Manager Widgets - Barrel file for all widgets
 export 'policy_card_widget.dart';
 export 'policy_centered_message_widget.dart';
 export 'policy_empty_state_widget.dart';

@@ -1,20 +1,10 @@
 part of 'policy_cubit.dart';
 
-/// Comprehensive enum representing different view modes in the Policy Manager
 enum PolicyViewMode {
-  /// Browsing the list of roles with no selection
   rolesBrowsing,
-  
-  /// Viewing details of an existing role (read-only)
   roleViewing,
-  
-  /// Editing an existing role
   roleEditing,
-  
-  /// Creating a new role
   roleCreating,
-  
-  /// Viewing policy logs (completely separate from roles)
   logsViewing,
 }
 
@@ -25,9 +15,8 @@ abstract class PolicyState extends Loggable {
   List<Object?> get props => [];
 }
 
-/// Loading state for any async operations
 class PolicyLoading extends PolicyState {
-  final String? operation; // Optional description of what's loading
+  final String? operation;
   
   const PolicyLoading({this.operation});
 
@@ -69,7 +58,6 @@ class PolicyLoaded extends PolicyState {
     );
   }
 
-  /// Helper getters for cleaner code
   bool get isRolesBrowsing => viewMode == PolicyViewMode.rolesBrowsing;
   bool get isRoleViewing => viewMode == PolicyViewMode.roleViewing;
   bool get isRoleEditing => viewMode == PolicyViewMode.roleEditing;
@@ -80,10 +68,8 @@ class PolicyLoaded extends PolicyState {
   bool get hasSelectedRole => selectedRole != null;
   bool get canEdit => isRoleViewing && !isInEditMode;
   bool get canSelectRole => (isRolesBrowsing || isRoleViewing || isLogsViewing) && !isInEditMode;
-
   bool get isValidRoleViewingState => isRoleViewing && hasSelectedRole;
   bool get isValidRoleEditingState => (isRoleEditing || isRoleCreating) && hasSelectedRole;
-
   String get viewModeDisplayName {
     switch (viewMode) {
       case PolicyViewMode.rolesBrowsing:
@@ -106,13 +92,12 @@ class PolicyLoaded extends PolicyState {
   }
 }
 
-/// Error state with contextual information and recovery data
 class PolicyError extends PolicyState {
   final String message;
   final PolicyViewMode? previousViewMode;
   final List<Role>? previousRoles;
   final Role? previousSelectedRole;
-  final String? operation; // What operation failed
+  final String? operation;
   
   const PolicyError(
     this.message, {
@@ -130,7 +115,6 @@ class PolicyError extends PolicyState {
     previousSelectedRole,
     operation
   ];
-  /// Helper to recover the last state when cancelled
   PolicyLoaded? get recoverableState {
     if (previousRoles != null) {
       return PolicyLoaded(
