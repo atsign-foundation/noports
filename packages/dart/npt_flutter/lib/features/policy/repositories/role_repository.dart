@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:path/path.dart';
 import '../models/policy.dart';
 
 class RoleRepository {
@@ -9,10 +10,20 @@ class RoleRepository {
   Future<List<Role>> fetchRoles() async {
     final rolesJson = <String>[];
     final AtClient atClient = AtClientManager.getInstance().atClient;
-    const String regex = 'groups\\.policy\\.sshnp' r'@(.{1,55})$';
+    String? currentAtSign = atClient.getCurrentAtSign();
+    if (currentAtSign == null) {
+      App.log(
+        '[ERROR] fetchRoles: Current atSign is null'.loggable,
+      );
+      return [];
+    }
+    if (!currentAtSign.startsWith('@')) {
+      currentAtSign = '@$currentAtSign';
+    }
+    final String regex = 'groups\\.policy\\.sshnp$currentAtSign';
 
-    List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
-    List<AtKey> groupAtKeys = groupAtKeyStrs
+    final List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
+    final List<AtKey> groupAtKeys = groupAtKeyStrs
         .map((key) => AtKey.fromString(key))
         .toList();
 
@@ -22,9 +33,13 @@ class RoleRepository {
       try {
         atValue = await atClient.get(atKey, getRequestOptions: gro);
       } catch (e) {
+        App.log('[ERROR] fetchRoles: Failed to get value for key $atKey: $e ... Continuing anyways :/'
+            .loggable);
         continue;
       }
-      if (atValue.value == null) continue;
+      if (atValue.value == null) {
+        continue;
+      }
       final String groupJsonStr = atValue.value;
       rolesJson.add(groupJsonStr);
     }
@@ -65,8 +80,8 @@ class RoleRepository {
     final String value = jsonEncode(role.toJson());
 
     try {
-      PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
-      bool success = await atClient.put(
+      final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+      final bool success = await atClient.put(
         AtKey.fromString(atKeyStr),
         value,
         putRequestOptions: pro,
