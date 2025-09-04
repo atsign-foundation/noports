@@ -14,10 +14,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     emit(const PolicyLoading(operation: 'Loading roles'));
     try {
       final roles = await _roleRepository.fetchRoles();
-      emit(PolicyLoaded(
-        roles: roles,
-        viewMode: PolicyViewMode.rolesBrowsing,
-      ));
+      emit(RolesBrowsingState(roles: roles));
     } catch (e) {
       emit(PolicyError(
         'Failed to load roles: $e',
@@ -29,17 +26,17 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   void selectRoleForViewing(String roleId) {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      if (!currentState.canSelectRole) return;
-      if (currentState.isRoleViewing && currentState.selectedRole?.id == roleId) {
+      if (state is RoleEditingState || state is RoleCreatingState) return;
+      if (state is RoleViewingState && (state as RoleViewingState).selectedRole.id == roleId) {
         return;
       }
       final selectedRole = currentState.roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => currentState.roles.first,
       );
-      emit(currentState.copyWith(
+      emit(RoleViewingState(
+        roles: currentState.roles,
         selectedRole: selectedRole,
-        viewMode: PolicyViewMode.roleViewing,
       ));
     }
   }
@@ -51,9 +48,9 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         (role) => role.id == roleId,
         orElse: () => currentState.roles.first,
       );
-      emit(currentState.copyWith(
+      emit(RoleEditingState(
+        roles: currentState.roles,
         selectedRole: roleToEdit,
-        viewMode: PolicyViewMode.roleEditing,
       ));
     }
   }
@@ -62,45 +59,36 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
       final emptyRole = Role.empty(name: '');
-      emit(currentState.copyWith(
+      emit(RoleCreatingState(
+        roles: currentState.roles,
         selectedRole: emptyRole,
-        viewMode: PolicyViewMode.roleCreating,
       ));
     }
   }
 
   void cancelEditing() {
-    if (state is PolicyLoaded) {
-      final currentState = state as PolicyLoaded;
-      if (currentState.isRoleCreating) {
-        emit(currentState.copyWith(
-          clearSelectedRole: true,
-          viewMode: PolicyViewMode.rolesBrowsing,
-        ));
-      } else if (currentState.isRoleEditing && currentState.hasSelectedRole) {
-        emit(currentState.copyWith(
-          viewMode: PolicyViewMode.roleViewing,
-        ));
-      }
+    if (state is RoleCreatingState) {
+      final currentState = state as RoleCreatingState;
+      emit(RolesBrowsingState(roles: currentState.roles));
+    } else if (state is RoleEditingState) {
+      final currentState = state as RoleEditingState;
+      emit(RoleViewingState(
+        roles: currentState.roles,
+        selectedRole: currentState.selectedRole,
+      ));
     }
   }
 
   void exitViewing() {
-    if (state is PolicyLoaded) {
-      final currentState = state as PolicyLoaded;
-      if (currentState.isRoleViewing) {
-        emit(currentState.copyWith(
-          clearSelectedRole: true,
-          viewMode: PolicyViewMode.rolesBrowsing,
-        ));
-      }
+    if (state is RoleViewingState) {
+      final currentState = state as RoleViewingState;
+      emit(RolesBrowsingState(roles: currentState.roles));
     }
   }
 
   Future<void> createRole(Role role) async {
-    if (state is PolicyLoaded) {
-      final currentState = state as PolicyLoaded;
-      if (!currentState.isRoleCreating) return;
+    if (state is RoleCreatingState) {
+      final currentState = state as RoleCreatingState;
 
       emit(const PolicyLoading(operation: 'Creating role'));
 
@@ -113,36 +101,30 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
             orElse: () => updatedRoles.last,
           );
 
-          emit(PolicyLoaded(
+          emit(RoleViewingState(
             roles: updatedRoles,
             selectedRole: createdRole,
-            viewMode: PolicyViewMode.roleViewing,
           ));
         } else {
           emit(PolicyError(
             'Failed to create role',
             operation: 'createRole',
-            previousViewMode: currentState.viewMode,
-            previousRoles: currentState.roles,
-            previousSelectedRole: currentState.selectedRole,
+            previousState: currentState,
           ));
         }
       } catch (error) {
         emit(PolicyError(
           'Failed to create role: $error',
           operation: 'createRole',
-          previousViewMode: currentState.viewMode,
-          previousRoles: currentState.roles,
-          previousSelectedRole: currentState.selectedRole,
+          previousState: currentState,
         ));
       }
     }
   }
 
   Future<void> updateRole(Role role) async {
-    if (state is PolicyLoaded) {
-      final currentState = state as PolicyLoaded;
-      if (!currentState.isRoleEditing) return;
+    if (state is RoleEditingState) {
+      final currentState = state as RoleEditingState;
 
       emit(const PolicyLoading(operation: 'Updating role'));
 
@@ -155,27 +137,22 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
             orElse: () => role,
           );
 
-          emit(PolicyLoaded(
+          emit(RoleViewingState(
             roles: updatedRoles,
             selectedRole: updatedRole,
-            viewMode: PolicyViewMode.roleViewing,
           ));
         } else {
           emit(PolicyError(
             'Failed to update role',
             operation: 'updateRole',
-            previousViewMode: currentState.viewMode,
-            previousRoles: currentState.roles,
-            previousSelectedRole: currentState.selectedRole,
+            previousState: currentState,
           ));
         }
       } catch (error) {
         emit(PolicyError(
           'Failed to update role: $error',
           operation: 'updateRole',
-          previousViewMode: currentState.viewMode,
-          previousRoles: currentState.roles,
-          previousSelectedRole: currentState.selectedRole,
+          previousState: currentState,
         ));
       }
     }
@@ -191,26 +168,19 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         final success = await _roleRepository.deleteRole(roleId);
         if (success) {
           final updatedRoles = await _roleRepository.fetchRoles();
-          emit(PolicyLoaded(
-            roles: updatedRoles,
-            viewMode: PolicyViewMode.rolesBrowsing,
-          ));
+          emit(RolesBrowsingState(roles: updatedRoles));
         } else {
           emit(PolicyError(
             'Failed to delete role',
             operation: 'deleteRole',
-            previousViewMode: currentState.viewMode,
-            previousRoles: currentState.roles,
-            previousSelectedRole: currentState.selectedRole,
+            previousState: currentState,
           ));
         }
       } catch (error) {
         emit(PolicyError(
           'Failed to delete role: $error',
           operation: 'deleteRole',
-          previousViewMode: currentState.viewMode,
-          previousRoles: currentState.roles,
-          previousSelectedRole: currentState.selectedRole,
+          previousState: currentState,
         ));
       }
     }
@@ -219,23 +189,14 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   void showLogs() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      
-      emit(currentState.copyWith(
-        clearSelectedRole: true,
-        viewMode: PolicyViewMode.logsViewing,
-      ));
+      emit(LogsViewingState(roles: currentState.roles));
     }
   }
 
   void showRoles() {
-    if (state is PolicyLoaded) {
-      final currentState = state as PolicyLoaded;
-      
-      if (currentState.isLogsViewing) {
-        emit(currentState.copyWith(
-          viewMode: PolicyViewMode.rolesBrowsing,
-        ));
-      }
+    if (state is LogsViewingState) {
+      final currentState = state as LogsViewingState;
+      emit(RolesBrowsingState(roles: currentState.roles));
     }
   }
 
@@ -258,27 +219,41 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       
       await loadRoles();
       
-      if (state is PolicyLoaded) {
-        final refreshedState = state as PolicyLoaded;
-        if (currentState.hasSelectedRole && currentState.selectedRole?.id != null) {
+      if (state is RolesBrowsingState) {
+        final refreshedState = state as RolesBrowsingState;
+        
+        if (currentState is RoleViewingState) {
+          final selectedRoleId = currentState.selectedRole.id;
           final stillExists = refreshedState.roles.any(
-            (role) => role.id == currentState.selectedRole!.id,
+            (role) => role.id == selectedRoleId,
           );
           
           if (stillExists) {
             final updatedRole = refreshedState.roles.firstWhere(
-              (role) => role.id == currentState.selectedRole!.id,
+              (role) => role.id == selectedRoleId,
             );
-            
-            emit(refreshedState.copyWith(
+            emit(RoleViewingState(
+              roles: refreshedState.roles,
               selectedRole: updatedRole,
-              viewMode: currentState.viewMode,
             ));
           }
-        } else {
-          emit(refreshedState.copyWith(
-            viewMode: currentState.viewMode,
-          ));
+        } else if (currentState is RoleEditingState) {
+          final selectedRoleId = currentState.selectedRole.id;
+          final stillExists = refreshedState.roles.any(
+            (role) => role.id == selectedRoleId,
+          );
+          
+          if (stillExists) {
+            final updatedRole = refreshedState.roles.firstWhere(
+              (role) => role.id == selectedRoleId,
+            );
+            emit(RoleEditingState(
+              roles: refreshedState.roles,
+              selectedRole: updatedRole,
+            ));
+          }
+        } else if (currentState is LogsViewingState) {
+          emit(LogsViewingState(roles: refreshedState.roles));
         }
       }
     }
