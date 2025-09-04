@@ -1,23 +1,27 @@
 part of 'policy_cubit.dart';
 
-enum PolicyViewMode {
-  rolesBrowsing,
-  roleViewing,
-  roleEditing,
-  roleCreating,
-  logsViewing,
-}
-
-abstract class PolicyState extends Loggable {
+// This class extends Loggable to integrate with LoggingCubit for automatic logging of state changes.
+sealed class PolicyState extends Loggable {
   const PolicyState();
 
   @override
   List<Object?> get props => [];
 }
 
-class PolicyLoading extends PolicyState {
+/// Overview of states
+/// - PolicyState (base class)
+/// - PolicyLoading (we're loading something)
+/// - PolicyLoaded (roles are done loading)
+///   - RolesBrowsingState (we're just browsing roles, nothing is selected)
+///   - RoleViewingState (a role is selected for viewing)
+///   - RoleEditingState (a role is selected for editing)
+///   - RoleCreatingState (a new role is being created)
+///   - LogsViewingState (we're viewing logs)
+/// - PolicyError (we hit an error)
+
+final class PolicyLoading extends PolicyState {
   final String? operation;
-  
+
   const PolicyLoading({this.operation});
 
   @override
@@ -31,100 +35,106 @@ class PolicyLoading extends PolicyState {
   }
 }
 
-class PolicyLoaded extends PolicyState {
+sealed class PolicyLoaded extends PolicyState {
   final List<Role> roles;
-  final Role? selectedRole;
-  final PolicyViewMode viewMode;
 
-  const PolicyLoaded({
-    required this.roles,
-    this.selectedRole,
-    this.viewMode = PolicyViewMode.rolesBrowsing,
+  const PolicyLoaded({required this.roles});
+
+  @override
+  List<Object?> get props => [roles];
+
+  String get viewModeDisplayName;
+}
+
+final class RolesBrowsingState extends PolicyLoaded {
+  const RolesBrowsingState({required super.roles});
+
+  @override
+  String get viewModeDisplayName => 'Browsing Roles';
+
+  @override
+  String toString() => 'RolesBrowsingState(roles: ${roles.length})';
+}
+
+final class RoleViewingState extends PolicyLoaded {
+  final Role selectedRole;
+
+  const RoleViewingState({
+    required super.roles,
+    required this.selectedRole,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole, viewMode];
-
-  PolicyLoaded copyWith({
-    List<Role>? roles,
-    Role? selectedRole,
-    PolicyViewMode? viewMode,
-    bool clearSelectedRole = false,
-  }) {
-    return PolicyLoaded(
-      roles: roles ?? this.roles,
-      selectedRole: clearSelectedRole ? null : selectedRole ?? this.selectedRole,
-      viewMode: viewMode ?? this.viewMode,
-    );
-  }
-
-  bool get isRolesBrowsing => viewMode == PolicyViewMode.rolesBrowsing;
-  bool get isRoleViewing => viewMode == PolicyViewMode.roleViewing;
-  bool get isRoleEditing => viewMode == PolicyViewMode.roleEditing;
-  bool get isRoleCreating => viewMode == PolicyViewMode.roleCreating;
-  bool get isLogsViewing => viewMode == PolicyViewMode.logsViewing;
-  bool get isInRoleMode => isRolesBrowsing || isRoleViewing || isRoleEditing || isRoleCreating;
-  bool get isInEditMode => isRoleEditing || isRoleCreating;
-  bool get hasSelectedRole => selectedRole != null;
-  bool get canEdit => isRoleViewing && !isInEditMode;
-  bool get canSelectRole => (isRolesBrowsing || isRoleViewing || isLogsViewing) && !isInEditMode;
-  bool get isValidRoleViewingState => isRoleViewing && hasSelectedRole;
-  bool get isValidRoleEditingState => (isRoleEditing || isRoleCreating) && hasSelectedRole;
-  String get viewModeDisplayName {
-    switch (viewMode) {
-      case PolicyViewMode.rolesBrowsing:
-        return 'Browsing Roles';
-      case PolicyViewMode.roleViewing:
-        return 'Viewing Role';
-      case PolicyViewMode.roleEditing:
-        return 'Editing Role';
-      case PolicyViewMode.roleCreating:
-        return 'Creating Role';
-      case PolicyViewMode.logsViewing:
-        return 'Policy Logs';
-    }
-  }
+  List<Object?> get props => [roles, selectedRole];
 
   @override
-  String toString() {
-    final roleInfo = selectedRole != null ? ' (${selectedRole!.name})' : '';
-    return 'PolicyLoaded(viewMode: ${viewMode.name}, roles: ${roles.length}$roleInfo)';
-  }
+  String get viewModeDisplayName => 'Viewing Role';
+
+  @override
+  String toString() => 'RoleViewingState(roles: ${roles.length}, role: ${selectedRole.name})';
 }
 
-class PolicyError extends PolicyState {
+final class RoleEditingState extends PolicyLoaded {
+  final Role selectedRole;
+
+  const RoleEditingState({
+    required super.roles,
+    required this.selectedRole,
+  });
+
+  @override
+  List<Object?> get props => [roles, selectedRole];
+
+  @override
+  String get viewModeDisplayName => 'Editing Role';
+
+  @override
+  String toString() => 'RoleEditingState(roles: ${roles.length}, role: ${selectedRole.name})';
+}
+
+final class RoleCreatingState extends PolicyLoaded {
+  final Role selectedRole;
+
+  const RoleCreatingState({
+    required super.roles,
+    required this.selectedRole,
+  });
+
+  @override
+  List<Object?> get props => [roles, selectedRole];
+
+  @override
+  String get viewModeDisplayName => 'Creating Role';
+
+  @override
+  String toString() => 'RoleCreatingState(roles: ${roles.length}, role: ${selectedRole.name})';
+}
+
+final class LogsViewingState extends PolicyLoaded {
+  const LogsViewingState({required super.roles});
+
+  @override
+  String get viewModeDisplayName => 'Policy Logs';
+
+  @override
+  String toString() => 'LogsViewingState(roles: ${roles.length})';
+}
+
+final class PolicyError extends PolicyState {
   final String message;
-  final PolicyViewMode? previousViewMode;
-  final List<Role>? previousRoles;
-  final Role? previousSelectedRole;
+  final PolicyLoaded? previousState;
   final String? operation;
   
   const PolicyError(
     this.message, {
-    this.previousViewMode,
-    this.previousRoles,
-    this.previousSelectedRole,
+    this.previousState,
     this.operation,
   });
 
   @override
-  List<Object?> get props => [
-    message,
-    previousViewMode,
-    previousRoles,
-    previousSelectedRole,
-    operation
-  ];
-  PolicyLoaded? get recoverableState {
-    if (previousRoles != null) {
-      return PolicyLoaded(
-        roles: previousRoles!,
-        selectedRole: previousSelectedRole,
-        viewMode: previousViewMode ?? PolicyViewMode.rolesBrowsing,
-      );
-    }
-    return null;
-  }
+  List<Object?> get props => [message, previousState, operation];
+
+  PolicyLoaded? get recoverableState => previousState;
 
   @override
   String toString() {
