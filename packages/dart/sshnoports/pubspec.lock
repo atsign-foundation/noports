@@ -86,10 +86,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: a8b91fff674ad4fd701ed4dcfbecc01f0a775fc33359a6f8ccfd1996b657ef52
+      sha256: "8a651a9baf9c83e689bd80a5e9b4e1b2bb3e2f147475fdefa4cf48a9eb78fd92"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.2.0"
   at_client:
     dependency: "direct main"
     description:
@@ -126,10 +126,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "2fd2f963ead0018f198971a7a2a489597a991673d68e5198f9d0b1e379c8398b"
+      sha256: "264be4a871a4d6cc417ae74886eebac36defc72297f4a9dd4dda37b720bdfbc0"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.12.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -166,10 +166,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: "97507d219c528ee2f3f7aba0d6b2641221e79ff67264fe2e24531dfd8edf8edd"
+      sha256: "88a31fac0f046935cfced7c5fc7e1c2a781b6e0cc3d2101cbfd9bdf721425723"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.3.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -571,14 +571,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
-  mime_type:
-    dependency: transitive
-    description:
-      name: mime_type
-      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   mocktail:
     dependency: "direct dev"
     description:
@@ -714,14 +706,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
-  queue:
-    dependency: transitive
-    description:
-      name: queue
-      sha256: "9bc29632072f4dac6cd0056acbb63361f654e2def9ceb4b08cfe0f9cf5618409"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.4.0"
   shelf:
     dependency: transitive
     description:
