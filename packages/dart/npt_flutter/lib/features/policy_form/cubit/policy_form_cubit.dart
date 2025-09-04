@@ -7,23 +7,41 @@ part 'policy_form_state.dart';
 
 class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   final RoleRepository _roleRepository;
+  final void Function(String message)? onSuccess;
+  final void Function()? onDeleted;
 
-  PolicyFormCubit(this._roleRepository) : super(const PolicyFormInitial());
+  PolicyFormCubit(
+    this._roleRepository, {
+    this.onSuccess,
+    this.onDeleted,
+  }) : super(const PolicyFormLoading());
 
-  void initializeForm({Role? role}) {
-    if (role != null) {
-      emit(PolicyFormEditing(
+  void _updateCurrentRole(Role updatedRole) {
+    if (state is PolicyFormEditing) {
+      final currentState = state as PolicyFormEditing;
+      switch (currentState) {
+        case PolicyFormEditingNew():
+          emit(currentState.copyWith(currentRole: updatedRole));
+        case PolicyFormEditingExisting():
+          emit(currentState.copyWith(currentRole: updatedRole));
+      }
+    }
+  }
+
+  Future<void> initializeForm({Role? role}) async {
+    if (role != null && role.id.isNotEmpty) {
+      emit(PolicyFormEditingExisting(
         currentRole: role,
         originalRole: role,
-        isNewRole: role.id == null || role.id!.isEmpty,
         isSaving: false,
       ));
     } else {
-      final emptyRole = Role.empty(name: '');
-      emit(PolicyFormEditing(
+      final int maxGroupId = await _roleRepository.getMaxGroupId();
+      const String defaultName = '';
+      final int newId = maxGroupId + 1;
+      final emptyRole = Role.empty(id: newId.toString(), name: defaultName);
+      emit(PolicyFormEditingNew(
         currentRole: emptyRole,
-        originalRole: emptyRole,
-        isNewRole: true,
         isSaving: false,
       ));
     }
@@ -41,8 +59,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: currentState.currentRole.deviceGroups,
         userAtSigns: currentState.currentRole.userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
@@ -58,8 +75,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: currentState.currentRole.deviceGroups,
         userAtSigns: currentState.currentRole.userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
@@ -75,8 +91,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: currentState.currentRole.deviceGroups,
         userAtSigns: currentState.currentRole.userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
@@ -92,8 +107,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: currentState.currentRole.deviceGroups,
         userAtSigns: currentState.currentRole.userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
@@ -109,8 +123,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: deviceGroups,
         userAtSigns: currentState.currentRole.userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
@@ -126,16 +139,22 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         deviceGroups: currentState.currentRole.deviceGroups,
         userAtSigns: userAtSigns,
       );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+      _updateCurrentRole(updatedRole);
     }
   }
 
   void cancelEditing() {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
+    if (state is PolicyFormEditingExisting) {
+      final currentState = state as PolicyFormEditingExisting;
       emit(currentState.copyWith(
         currentRole: currentState.originalRole,
+        isSaving: false,
+      ));
+    } else if (state is PolicyFormEditingNew) {
+      final currentState = state as PolicyFormEditingNew;
+      final emptyRole = Role.empty(id: '', name: '');
+      emit(currentState.copyWith(
+        currentRole: emptyRole,
         isSaving: false,
       ));
     }
@@ -145,44 +164,65 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     if (state is PolicyFormEditing) {
       final currentState = state as PolicyFormEditing;
       
-      emit(currentState.copyWith(isSaving: true));
-
-      try {
-        bool success;
-        if (currentState.isNewRole) {
-          success = await _roleRepository.createNewRole(currentState.currentRole);
-        } else {
-          success = await _roleRepository.updateExistingRole(currentState.currentRole);
-        }
-
-        if (success) {
-          emit(PolicyFormSuccess(
-            savedRole: currentState.currentRole,
-            wasNewRole: currentState.isNewRole,
-          ));
-        } else {
-          emit(PolicyFormError(
-            message: 'Failed to save role',
-            previousState: currentState.copyWith(isSaving: false),
-          ));
-        }
-      } catch (error) {
-        emit(PolicyFormError(
-          message: 'Failed to save role: $error',
-          previousState: currentState.copyWith(isSaving: false),
-        ));
+      switch (currentState) {
+        case PolicyFormEditingNew():
+          final editingState = currentState;
+          emit(editingState.copyWith(isSaving: true));
+          
+          try {
+            // For new roles, we already have the ID from initializeForm
+            final success = await _roleRepository.updateRole(editingState.currentRole);
+            if (success) {
+              // Notify success
+              onSuccess?.call('Role created successfully!');
+              // Reset to loading state after successful save
+              reset();
+            } else {
+              emit(PolicyFormError(
+                message: 'Failed to save role',
+                previousState: editingState.copyWith(isSaving: false),
+              ));
+            }
+          } catch (error) {
+            emit(PolicyFormError(
+              message: 'Failed to save role: $error',
+              previousState: editingState.copyWith(isSaving: false),
+            ));
+          }
+          
+        case PolicyFormEditingExisting():
+          final editingState = currentState;
+          emit(editingState.copyWith(isSaving: true));
+          
+          try {
+            final success = await _roleRepository.updateRole(editingState.currentRole);
+            if (success) {
+              // Notify success
+              onSuccess?.call('Role updated successfully!');
+              // Reset to loading state after successful save
+              reset();
+            } else {
+              emit(PolicyFormError(
+                message: 'Failed to save role',
+                previousState: editingState.copyWith(isSaving: false),
+              ));
+            }
+          } catch (error) {
+            emit(PolicyFormError(
+              message: 'Failed to save role: $error',
+              previousState: editingState.copyWith(isSaving: false),
+            ));
+          }
       }
     }
   }
 
   Future<void> deleteRole() async {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      
-      if (currentState.isNewRole) return;
+    if (state is PolicyFormEditingExisting) {
+      final currentState = state as PolicyFormEditingExisting;
       
       final roleId = currentState.currentRole.id;
-      if (roleId == null || roleId.isEmpty) return;
+      if (roleId.isEmpty) return;
 
       emit(currentState.copyWith(isSaving: true));
 
@@ -190,7 +230,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         final success = await _roleRepository.deleteRole(roleId);
         
         if (success) {
-          emit(PolicyFormDeleted(deletedRole: currentState.currentRole));
+          // Notify deletion
+          onDeleted?.call();
+          // Reset to loading state after successful delete
+          reset();
         } else {
           emit(PolicyFormError(
             message: 'Failed to delete role',
@@ -214,6 +257,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   }
 
   void reset() {
-    emit(const PolicyFormInitial());
+    emit(const PolicyFormLoading());
   }
 }

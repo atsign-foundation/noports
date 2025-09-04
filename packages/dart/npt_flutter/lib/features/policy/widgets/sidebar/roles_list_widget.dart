@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../policy/cubit/policy_cubit.dart';
-import '../../policy/models/policy.dart';
-import '../../../styles/app_color.dart';
-import '../../../styles/sizes.dart';
+import '../../cubit/policy_cubit.dart';
+import '../../models/policy.dart';
+import '../../../../styles/app_color.dart';
+import '../../../../styles/sizes.dart';
 import 'role_list_item_widget.dart';
 
 class RolesListWidget extends StatelessWidget {

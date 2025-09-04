@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_cubit.dart';
-import '../../../widgets/custom_card.dart';
-import '../../../styles/sizes.dart';
+import '../../cubit/policy_cubit.dart';
+import '../../../../widgets/custom_card.dart';
+import '../../../../styles/sizes.dart';
 import 'roles_list_widget.dart';
 import 'sidebar_header_widget.dart';
 import 'sidebar_action_buttons_widget.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_cubit.dart';
-import '../../policy/models/policy.dart';
-import '../../../styles/app_color.dart';
-import '../../../styles/sizes.dart';
+import '../../cubit/policy_cubit.dart';
+import '../../models/policy.dart';
+import '../../../../styles/app_color.dart';
+import '../../../../styles/sizes.dart';
 
 class RoleListItemWidget extends StatelessWidget {
   final Role role;
@@ -14,10 +14,9 @@ class RoleListItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
-        final isInEditMode = state is PolicyLoaded && state.isInEditMode;
-        final isSelected = state is PolicyLoaded && 
-            state.hasSelectedRole && 
-            state.selectedRole?.id == role.id;
+        final isInEditMode = state is RoleEditingState || state is RoleCreatingState;
+        final isSelected = (state is RoleViewingState && state.selectedRole.id == role.id) ||
+                          (state is RoleEditingState && state.selectedRole.id == role.id);
         final isDisabled = isInEditMode;
         
         return Padding(
@@ -53,7 +52,7 @@ class RoleListItemWidget extends StatelessWidget {
                   style: const TextStyle(color: AppColor.onSurfaceColor),
                 ),
                 onTap: isDisabled ? null : () {
-                  context.read<PolicyCubit>().selectRoleForViewing(role.id ?? '');
+                  context.read<PolicyCubit>().selectRoleForViewing(role.id);
                 },
                 enabled: !isDisabled,
               ),

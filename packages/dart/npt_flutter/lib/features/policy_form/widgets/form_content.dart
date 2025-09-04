@@ -12,11 +12,25 @@ import 'device_group_list_widget.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
-class FormContent extends StatelessWidget {
+class FormContent extends StatefulWidget {
   final Role role;
   final PolicyLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
+
+  @override
+  State<FormContent> createState() => _FormContentState();
+}
+
+class _FormContentState extends State<FormContent> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the form when the widget is created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PolicyFormCubit>().initializeForm(role: widget.role);
+    });
+  }
 
 
 
@@ -53,47 +67,30 @@ class FormContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.isInEditMode) {
-      context.read<PolicyFormCubit>().initializeForm(role: role);
-    }
 
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<PolicyFormCubit, PolicyFormState>(
-          listener: (context, formState) {
-            if (formState is PolicyFormSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(formState.wasNewRole ? 'Role created successfully!' : 'Role updated successfully!'),
-                  backgroundColor: AppColor.primaryColor,
-                ),
-              );
-              context.read<PolicyCubit>().cancelEditing();
-            } else if (formState is PolicyFormDeleted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Role deleted successfully!'),
-                  backgroundColor: AppColor.primaryColor,
-                ),
-              );
-              context.read<PolicyCubit>().loadRoles();
-            } else if (formState is PolicyFormError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(formState.message),
-                  backgroundColor: AppColor.errorColor,
-                ),
-              );
-            }
-          },
-        ),
-      ],
+    return BlocListener<PolicyFormCubit, PolicyFormState>(
+      listener: (context, formState) {
+        if (formState is PolicyFormError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(formState.message),
+              backgroundColor: AppColor.errorColor,
+            ),
+          );
+        }
+      },
       child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
         builder: (context, formState) {
-          final isEditing = state.isInEditMode && formState is PolicyFormEditing;
-          final currentRole = formState is PolicyFormEditing ? formState.currentRole : role;
+          if (formState is PolicyFormLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          
+          final isEditing = (widget.state is RoleEditingState || widget.state is RoleCreatingState) && formState is PolicyFormEditing;
+          final currentRole = formState is PolicyFormEditing ? formState.currentRole : widget.role;
           final isSaving = formState is PolicyFormEditing ? formState.isSaving : false;
-          final canDelete = formState is PolicyFormEditing ? formState.canDelete : false;
+          final canDelete = formState is PolicyFormEditingExisting ? formState.canDelete : false;
 
           return Padding(
             padding: const EdgeInsets.all(8.0),
@@ -147,7 +144,7 @@ class FormContent extends StatelessWidget {
                       ] else ...[
                         ElevatedButton(
                           onPressed: () {
-                            context.read<PolicyCubit>().startEditingRole(role.id ?? '');
+                            context.read<PolicyCubit>().startEditingRole(widget.role.id);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColor.primaryColor,

@@ -7,24 +7,24 @@ part of 'profile.dart';
 // **************************************************************************
 
 Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
-      json['uuid'] as String? ?? '',
-      displayName: json['displayName'] as String,
-      relayAtsign: json['relayAtsign'] as String?,
-      sshnpdAtsign: json['sshnpdAtsign'] as String,
-      deviceName: json['deviceName'] as String,
-      remoteHost: json['remoteHost'] as String? ?? 'localhost',
-      remotePort: (json['remotePort'] as num).toInt(),
-      localPort: (json['localPort'] as num).toInt(),
-      only443: json['only443'] as bool? ?? false,
-    );
+  json['uuid'] as String? ?? '',
+  displayName: json['displayName'] as String,
+  relayAtsign: json['relayAtsign'] as String?,
+  sshnpdAtsign: json['sshnpdAtsign'] as String,
+  deviceName: json['deviceName'] as String,
+  remoteHost: json['remoteHost'] as String? ?? 'localhost',
+  remotePort: (json['remotePort'] as num).toInt(),
+  localPort: (json['localPort'] as num).toInt(),
+  only443: json['only443'] as bool? ?? false,
+);
 
 Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
-      'displayName': instance.displayName,
-      'relayAtsign': instance.relayAtsign,
-      'sshnpdAtsign': instance.sshnpdAtsign,
-      'deviceName': instance.deviceName,
-      'remoteHost': instance.remoteHost,
-      'remotePort': instance.remotePort,
-      'localPort': instance.localPort,
-      'only443': instance.only443,
-    };
+  'displayName': instance.displayName,
+  'relayAtsign': instance.relayAtsign,
+  'sshnpdAtsign': instance.sshnpdAtsign,
+  'deviceName': instance.deviceName,
+  'remoteHost': instance.remoteHost,
+  'remotePort': instance.remotePort,
+  'localPort': instance.localPort,
+  'only443': instance.only443,
+};

@@ -2,29 +2,37 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'policy.g.dart';
 
-@JsonSerializable()
-class DaemonAtSign {
-  final String atSign;
-
-  DaemonAtSign({
-    required this.atSign,
-  });
-
-  factory DaemonAtSign.fromJson(Map<String, dynamic> json) => _$DaemonAtSignFromJson(json);
-  Map<String, dynamic> toJson() => _$DaemonAtSignToJson(this);
-}
-
-@JsonSerializable()
-class UserAtSign {
-  final String atSign;
-
-  UserAtSign({
-    required this.atSign,
-  });
-
-  factory UserAtSign.fromJson(Map<String, dynamic> json) => _$UserAtSignFromJson(json);
-  Map<String, dynamic> toJson() => _$UserAtSignToJson(this);
-}
+/// Example of a Role object
+/// {
+///  "id": "3",
+///  "name": "What Up",
+///  "description": "Description!!!",
+///  "daemonAtSigns": [
+///    "@colin"
+///  ],
+///  "devices": [
+///    {
+///      "name": "Jeremy",
+///      "permitOpens": [
+///        "localhost:22",
+///        "localhost:3389",
+///        "127.0.0.1:22",
+///        "127.0.0.1:3389"
+///      ]
+///    }
+///  ],
+///  "deviceGroups": [
+///    {
+///      "name": "jeremystuff",
+///      "permitOpens": [
+///        "localhost:22"
+///      ]
+///    }
+///  ],
+///  "userAtSigns": [
+///    "@barbara"
+///  ]
+/// }
 
 @JsonSerializable()
 class Device {
@@ -56,7 +64,7 @@ class DeviceGroup {
 
 @JsonSerializable()
 class Role {
-  String? id;
+  final String id;
   final String name;
   final String description;
   final List<String> daemonAtSigns;
@@ -65,13 +73,13 @@ class Role {
   final List<String> userAtSigns;
 
   factory Role.empty({
-    String? id,
+    required String id,
     required String name,
   }) {
     return Role(
       id: id,
-      description: '',
       name: name,
+      description: '',
       daemonAtSigns: [],
       devices: [],
       deviceGroups: [],
@@ -80,7 +88,7 @@ class Role {
   }
 
   Role({
-    this.id,
+    required this.id,
     required this.name,
     required this.description,
     required this.daemonAtSigns,

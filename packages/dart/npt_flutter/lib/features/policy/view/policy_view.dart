@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/policy/widgets/sidebar/policy_roles_sidebar.dart';
 import '../cubit/policy_cubit.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_form/view/policy_form_view.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
 import '../../policy_logs/cubit/policy_logs_cubit.dart';
-import '../../policy_sidebar/policy_roles_sidebar.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
 class PolicyView extends StatelessWidget {
   final String atSign;
-  
+
   const PolicyView({super.key, required this.atSign});
 
   @override
@@ -26,7 +26,7 @@ class PolicyView extends StatelessWidget {
 
 class PolicyContent extends StatelessWidget {
   final String atSign;
-  
+
   const PolicyContent({super.key, required this.atSign});
 
   @override
@@ -59,25 +59,15 @@ class PolicyContent extends StatelessWidget {
   }
 
   Widget _buildMainContent(PolicyState state, BuildContext context) {
-    if (state is PolicyLoaded) {
-      switch (state.viewMode) {
-        case PolicyViewMode.logsViewing:
-          return _buildLogsView(context);
-          
-        case PolicyViewMode.roleViewing:
-        case PolicyViewMode.roleEditing:
-        case PolicyViewMode.roleCreating:
-          if (state.hasSelectedRole) {
-            return PolicyFormView(role: state.selectedRole!);
-          }
-          break;
-          
-        case PolicyViewMode.rolesBrowsing:
-          return _buildBrowsingView(context);
-      }
-    }
-    
-    return _buildBrowsingView(context);
+    return switch (state) {
+      LogsViewingState() => _buildLogsView(context),
+      RoleViewingState(:final selectedRole) => PolicyFormView(role: selectedRole),
+      RoleEditingState(:final selectedRole) => PolicyFormView(role: selectedRole),
+      RoleCreatingState(:final selectedRole) => PolicyFormView(role: selectedRole),
+      RolesBrowsingState() => _buildBrowsingView(context),
+      PolicyLoading() => _buildBrowsingView(context),
+      PolicyError() => _buildBrowsingView(context),
+    };
   }
 
   Widget _buildLogsView(BuildContext context) {

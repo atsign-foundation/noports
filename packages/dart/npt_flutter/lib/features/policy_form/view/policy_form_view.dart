@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../styles/app_color.dart';
 import '../../policy/models/policy.dart';
 import '../../policy/cubit/policy_cubit.dart';
 import '../../policy/repositories/role_repository.dart';
@@ -14,7 +15,27 @@ class PolicyFormView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PolicyFormCubit(context.read<RoleRepository>()),
+      create: (context) => PolicyFormCubit(
+        context.read<RoleRepository>(),
+        onSuccess: (message) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: AppColor.primaryColor,
+            ),
+          );
+          context.read<PolicyCubit>().cancelEditing();
+        },
+        onDeleted: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Role deleted successfully!'),
+              backgroundColor: AppColor.primaryColor,
+            ),
+          );
+          context.read<PolicyCubit>().loadRoles();
+        },
+      ),
       child: BlocBuilder<PolicyCubit, PolicyState>(
         builder: (context, state) {
           if (state is PolicyLoading) {
@@ -34,9 +55,14 @@ class PolicyFormView extends StatelessWidget {
                 ],
               ),
             );
+          } else if (state is RoleViewingState) {
+            return _buildForm(context, state.selectedRole, state);
+          } else if (state is RoleEditingState) {
+            return _buildForm(context, state.selectedRole, state);
+          } else if (state is RoleCreatingState) {
+            return _buildForm(context, state.selectedRole, state);
           } else if (state is PolicyLoaded) {
-            final selectedRole = state.selectedRole ?? role;
-            return _buildForm(context, selectedRole, state);
+            return _buildForm(context, role, state);
           } else {
             return const Center(
               child: Text('No role selected'),

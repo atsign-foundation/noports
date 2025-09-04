@@ -58,7 +58,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   void startCreatingRole() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      final emptyRole = Role.empty(name: '');
+      final emptyRole = Role.empty(id: '', name: '');
       emit(RoleCreatingState(
         roles: currentState.roles,
         selectedRole: emptyRole,
@@ -93,7 +93,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       emit(const PolicyLoading(operation: 'Creating role'));
 
       try {
-        final success = await _roleRepository.createNewRole(role);
+        final success = await _roleRepository.updateRole(role);
         if (success) {
           final updatedRoles = await _roleRepository.fetchRoles();
           final createdRole = updatedRoles.firstWhere(
@@ -129,7 +129,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       emit(const PolicyLoading(operation: 'Updating role'));
 
       try {
-        final success = await _roleRepository.updateExistingRole(role);
+        final success = await _roleRepository.updateRole(role);
         if (success) {
           final updatedRoles = await _roleRepository.fetchRoles();
           final updatedRole = updatedRoles.firstWhere(

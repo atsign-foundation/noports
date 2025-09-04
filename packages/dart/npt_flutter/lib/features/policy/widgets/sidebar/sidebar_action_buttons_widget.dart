@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_cubit.dart';
-import '../../../styles/app_color.dart';
+import '../../cubit/policy_cubit.dart';
+import '../../../../styles/app_color.dart';
 
 class SidebarActionButtonsWidget extends StatelessWidget {
   const SidebarActionButtonsWidget({super.key});
@@ -17,7 +17,7 @@ class SidebarActionButtonsWidget extends StatelessWidget {
             width: double.infinity,
             child: BlocBuilder<PolicyCubit, PolicyState>(
               builder: (context, state) {
-                final isLogsView = state is PolicyLoaded && state.isLogsViewing;
+                final isLogsView = state is LogsViewingState;
                 return OutlinedButton.icon(
                   onPressed: () {
                     context.read<PolicyCubit>().showLogs();
@@ -46,7 +46,7 @@ class SidebarActionButtonsWidget extends StatelessWidget {
             child: BlocBuilder<PolicyCubit, PolicyState>(
               builder: (context, state) {
                 return ElevatedButton.icon(
-                  onPressed: (state is PolicyLoaded && state.isInEditMode) 
+                  onPressed: (state is RoleEditingState || state is RoleCreatingState) 
                     ? null 
                     : () {
                         context.read<PolicyCubit>().startCreatingRole();

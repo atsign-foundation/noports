@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../policy/cubit/policy_cubit.dart';
+import '../../cubit/policy_cubit.dart';
 
 class SidebarHeaderWidget extends StatelessWidget {
   const SidebarHeaderWidget({super.key});

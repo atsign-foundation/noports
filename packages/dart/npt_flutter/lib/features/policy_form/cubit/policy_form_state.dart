@@ -1,94 +1,103 @@
 part of 'policy_form_cubit.dart';
 
-abstract class PolicyFormState extends Loggable {
+/// Summary of the states for the PolicyFormCubit
+/// - PolicyFormState (base state class)
+///   - PolicyFormLoading: Loading state when the form is being initialized
+///   - PolicyFormEditing (abstract class for editing states)
+///     - PolicyFormEditingNew (creating a new role)
+///     - PolicyFormEditingExisting (state when editing an existing role)
+
+sealed class PolicyFormState extends Loggable {
   const PolicyFormState();
 
   @override
   List<Object?> get props => [];
 }
 
-class PolicyFormInitial extends PolicyFormState {
-  const PolicyFormInitial();
+final class PolicyFormLoading extends PolicyFormState {
+  const PolicyFormLoading();
 
   @override
-  String toString() => 'PolicyFormInitial';
+  String toString() => 'PolicyFormLoading';
 }
 
-class PolicyFormEditing extends PolicyFormState {
+sealed class PolicyFormEditing extends PolicyFormState {
   final Role currentRole;
-  final Role originalRole;
-  final bool isNewRole;
   final bool isSaving;
 
   const PolicyFormEditing({
     required this.currentRole,
-    required this.originalRole,
-    required this.isNewRole,
     required this.isSaving,
   });
 
   @override
-  List<Object?> get props => [currentRole, originalRole, isNewRole, isSaving];
+  List<Object?> get props => [currentRole, isSaving];
 
-  PolicyFormEditing copyWith({
+  bool get canSave => !isSaving;
+  bool get canCancel => !isSaving;
+}
+
+final class PolicyFormEditingNew extends PolicyFormEditing {
+  const PolicyFormEditingNew({
+    required super.currentRole,
+    required super.isSaving,
+  });
+
+  PolicyFormEditingNew copyWith({
     Role? currentRole,
-    Role? originalRole,
-    bool? isNewRole,
     bool? isSaving,
   }) {
-    return PolicyFormEditing(
+    return PolicyFormEditingNew(
+      currentRole: currentRole ?? this.currentRole,
+      isSaving: isSaving ?? this.isSaving,
+    );
+  }
+
+  bool get hasChanges => currentRole.name.isNotEmpty || currentRole.description.isNotEmpty;
+  bool get canDelete => false;
+
+  @override
+  String toString() {
+    final status = isSaving ? ' (saving)' : '';
+    return 'PolicyFormEditingNew(role: ${currentRole.name}$status)';
+  }
+}
+
+final class PolicyFormEditingExisting extends PolicyFormEditing {
+  final Role originalRole;
+
+  const PolicyFormEditingExisting({
+    required super.currentRole,
+    required this.originalRole,
+    required super.isSaving,
+  });
+
+  @override
+  List<Object?> get props => [currentRole, originalRole, isSaving];
+
+  PolicyFormEditingExisting copyWith({
+    Role? currentRole,
+    Role? originalRole,
+    bool? isSaving,
+  }) {
+    return PolicyFormEditingExisting(
       currentRole: currentRole ?? this.currentRole,
       originalRole: originalRole ?? this.originalRole,
-      isNewRole: isNewRole ?? this.isNewRole,
       isSaving: isSaving ?? this.isSaving,
     );
   }
 
   bool get hasChanges => currentRole != originalRole;
-  bool get canSave => !isSaving;
-  bool get canDelete => !isNewRole && !isSaving;
-  bool get canCancel => !isSaving;
+  bool get canDelete => !isSaving;
 
   @override
   String toString() {
     final status = isSaving ? ' (saving)' : '';
-    final type = isNewRole ? 'new' : 'existing';
-    return 'PolicyFormEditing($type role: ${currentRole.name}$status)';
+    return 'PolicyFormEditingExisting(role: ${currentRole.name}$status)';
   }
 }
 
-class PolicyFormSuccess extends PolicyFormState {
-  final Role savedRole;
-  final bool wasNewRole;
-
-  const PolicyFormSuccess({
-    required this.savedRole,
-    required this.wasNewRole,
-  });
-
-  @override
-  List<Object?> get props => [savedRole, wasNewRole];
-
-  @override
-  String toString() {
-    final action = wasNewRole ? 'created' : 'updated';
-    return 'PolicyFormSuccess($action role: ${savedRole.name})';
-  }
-}
-
-class PolicyFormDeleted extends PolicyFormState {
-  final Role deletedRole;
-
-  const PolicyFormDeleted({required this.deletedRole});
-
-  @override
-  List<Object?> get props => [deletedRole];
-
-  @override
-  String toString() => 'PolicyFormDeleted(role: ${deletedRole.name})';
-}
-
-class PolicyFormError extends PolicyFormState {
+final class PolicyFormError extends PolicyFormState {
   final String message;
   final PolicyFormEditing previousState;
 
