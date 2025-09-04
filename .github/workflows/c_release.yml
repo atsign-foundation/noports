@@ -188,6 +188,12 @@ jobs:
       id-token: write # IMPORTANT: mandatory for sigstore
       attestations: write
     steps:
+      - name: Get lockfile
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          sparse-checkout: |
+            packages/c/conan.lock
+          sparse-checkout-cone-mode: false
       - name: Download all the tarballs
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -203,18 +209,13 @@ jobs:
           rm -Rf -- */
           echo "After:"
           ls -latrR *
-      - name: Get lockfile
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          sparse-checkout: |
-            packages/c/conan.lock
-          sparse-checkout-cone-mode: false
       - name: Generate SBOM
         uses: sbomify/github-action@8ea6f28cd562edee2665001cd4f17aaf7a283722 # v0.5.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
           LOCK_FILE: './packages/c/conan.lock'
+          COMPONENT_NAME: 'csshnpd'
           COMPONENT_VERSION: ${{github.ref_name}}
           OUTPUT_FILE: 'tarballs/csshnpd-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
