@@ -9,9 +9,7 @@ class RoleRepository {
 
   Future<List<Role>> fetchRoles() async {
     final rolesJson = <String>[];
-    AtClient atClient = AtClientManager.getInstance().atClient;
-    const String regex =
-        r'^[a-zA-Z0-9]+\.' + groupsPolicyNamespace + r'@[a-zA-Z0-9]+$';
+    const String regex = 'groups\\.policy\\.sshnp' r'@(.{1,55})$';
 
     List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
     List<AtKey> groupAtKeys =
