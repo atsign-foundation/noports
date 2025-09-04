@@ -1,16 +1,15 @@
-import 'package:equatable/equatable.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logging/models/loggable.dart';
+import '../../logging/models/logging_bloc.dart';
 import '../repositories/role_repository.dart';
 import '../models/policy.dart';
 
 part 'policy_state.dart';
 
-class PolicyCubit extends Cubit<PolicyState> {
+class PolicyCubit extends LoggingCubit<PolicyState> {
   final RoleRepository _roleRepository;
-  
+
   PolicyCubit(this._roleRepository) : super(const PolicyLoading());
 
-  /// Load all roles and enter browsing mode
   Future<void> loadRoles() async {
     emit(const PolicyLoading(operation: 'Loading roles'));
     try {
@@ -27,22 +26,17 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Select a role for viewing (read-only)
   void selectRoleForViewing(String roleId) {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
       if (!currentState.canSelectRole) return;
-      
-      // Don't switch if already viewing the same role
       if (currentState.isRoleViewing && currentState.selectedRole?.id == roleId) {
         return;
       }
-      
       final selectedRole = currentState.roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => currentState.roles.first,
       );
-      
       emit(currentState.copyWith(
         selectedRole: selectedRole,
         viewMode: PolicyViewMode.roleViewing,
@@ -50,16 +44,13 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Start editing an existing role
   void startEditingRole(String roleId) {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      
       final roleToEdit = currentState.roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => currentState.roles.first,
       );
-      
       emit(currentState.copyWith(
         selectedRole: roleToEdit,
         viewMode: PolicyViewMode.roleEditing,
@@ -67,11 +58,9 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Start creating a new role
   void startCreatingRole() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      
       final emptyRole = Role.empty(name: '');
       emit(currentState.copyWith(
         selectedRole: emptyRole,
@@ -80,19 +69,15 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Cancel editing or creating and return to appropriate state
   void cancelEditing() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      
       if (currentState.isRoleCreating) {
-        // Return to browsing mode when canceling creation
         emit(currentState.copyWith(
           clearSelectedRole: true,
           viewMode: PolicyViewMode.rolesBrowsing,
         ));
       } else if (currentState.isRoleEditing && currentState.hasSelectedRole) {
-        // Return to viewing mode when canceling edit
         emit(currentState.copyWith(
           viewMode: PolicyViewMode.roleViewing,
         ));
@@ -100,11 +85,9 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Exit viewing mode and return to browsing
   void exitViewing() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      
       if (currentState.isRoleViewing) {
         emit(currentState.copyWith(
           clearSelectedRole: true,
@@ -114,14 +97,13 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Create a new role
   Future<void> createRole(Role role) async {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
       if (!currentState.isRoleCreating) return;
-      
+
       emit(const PolicyLoading(operation: 'Creating role'));
-      
+
       try {
         final success = await _roleRepository.createNewRole(role);
         if (success) {
@@ -131,7 +113,7 @@ class PolicyCubit extends Cubit<PolicyState> {
             (r) => r.name == role.name && r.description == role.description,
             orElse: () => updatedRoles.last,
           );
-          
+
           emit(PolicyLoaded(
             roles: updatedRoles,
             selectedRole: createdRole,
@@ -158,14 +140,13 @@ class PolicyCubit extends Cubit<PolicyState> {
     }
   }
 
-  /// Update an existing role
   Future<void> updateRole(Role role) async {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
       if (!currentState.isRoleEditing) return;
-      
+
       emit(const PolicyLoading(operation: 'Updating role'));
-      
+
       try {
         final success = await _roleRepository.updateExistingRole(role);
         if (success) {
@@ -175,7 +156,7 @@ class PolicyCubit extends Cubit<PolicyState> {
             (r) => r.id == role.id,
             orElse: () => role,
           );
-          
+
           emit(PolicyLoaded(
             roles: updatedRoles,
             selectedRole: updatedRole,

@@ -1,11 +1,11 @@
-import 'package:equatable/equatable.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logging/models/loggable.dart';
+import '../../logging/models/logging_bloc.dart';
 import '../../policy/models/policy.dart';
 import '../../policy/repositories/role_repository.dart';
 
 part 'policy_form_state.dart';
 
-class PolicyFormCubit extends Cubit<PolicyFormState> {
+class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   final RoleRepository _roleRepository;
 
   PolicyFormCubit(this._roleRepository) : super(const PolicyFormInitial());

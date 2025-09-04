@@ -1,6 +1,6 @@
 part of 'policy_form_cubit.dart';
 
-abstract class PolicyFormState extends Equatable {
+abstract class PolicyFormState extends Loggable {
   const PolicyFormState();
 
   @override
@@ -10,6 +10,9 @@ abstract class PolicyFormState extends Equatable {
 /// Initial state before any form interaction
 class PolicyFormInitial extends PolicyFormState {
   const PolicyFormInitial();
+
+  @override
+  String toString() => 'PolicyFormInitial';
 }
 
 /// State when editing a role (both new and existing)
@@ -48,6 +51,13 @@ class PolicyFormEditing extends PolicyFormState {
   bool get canSave => !isSaving;
   bool get canDelete => !isNewRole && !isSaving;
   bool get canCancel => !isSaving;
+
+  @override
+  String toString() {
+    final status = isSaving ? ' (saving)' : '';
+    final type = isNewRole ? 'new' : 'existing';
+    return 'PolicyFormEditing($type role: ${currentRole.name}$status)';
+  }
 }
 
 /// State when role was successfully saved
@@ -62,6 +72,12 @@ class PolicyFormSuccess extends PolicyFormState {
 
   @override
   List<Object?> get props => [savedRole, wasNewRole];
+
+  @override
+  String toString() {
+    final action = wasNewRole ? 'created' : 'updated';
+    return 'PolicyFormSuccess($action role: ${savedRole.name})';
+  }
 }
 
 /// State when role was successfully deleted
@@ -72,6 +88,9 @@ class PolicyFormDeleted extends PolicyFormState {
 
   @override
   List<Object?> get props => [deletedRole];
+
+  @override
+  String toString() => 'PolicyFormDeleted(role: ${deletedRole.name})';
 }
 
 /// Error state with recovery information
@@ -86,4 +105,7 @@ class PolicyFormError extends PolicyFormState {
 
   @override
   List<Object?> get props => [message, previousState];
+
+  @override
+  String toString() => 'PolicyFormError(message: $message)';
 }

@@ -18,7 +18,7 @@ enum PolicyViewMode {
   logsViewing,
 }
 
-abstract class PolicyState extends Equatable {
+abstract class PolicyState extends Loggable {
   const PolicyState();
 
   @override
@@ -33,9 +33,15 @@ class PolicyLoading extends PolicyState {
 
   @override
   List<Object?> get props => [operation];
+
+  @override
+  String toString() {
+    return operation != null 
+        ? 'PolicyLoading(operation: $operation)'
+        : 'PolicyLoading';
+  }
 }
 
-/// Main loaded state with comprehensive view mode handling
 class PolicyLoaded extends PolicyState {
   final List<Role> roles;
   final Role? selectedRole;
@@ -69,19 +75,15 @@ class PolicyLoaded extends PolicyState {
   bool get isRoleEditing => viewMode == PolicyViewMode.roleEditing;
   bool get isRoleCreating => viewMode == PolicyViewMode.roleCreating;
   bool get isLogsViewing => viewMode == PolicyViewMode.logsViewing;
-  
-  /// Combined getters for UI logic
   bool get isInRoleMode => isRolesBrowsing || isRoleViewing || isRoleEditing || isRoleCreating;
   bool get isInEditMode => isRoleEditing || isRoleCreating;
   bool get hasSelectedRole => selectedRole != null;
   bool get canEdit => isRoleViewing && !isInEditMode;
   bool get canSelectRole => (isRolesBrowsing || isRoleViewing || isLogsViewing) && !isInEditMode;
-  
-  /// Validation getters
+
   bool get isValidRoleViewingState => isRoleViewing && hasSelectedRole;
   bool get isValidRoleEditingState => (isRoleEditing || isRoleCreating) && hasSelectedRole;
-  
-  /// Display getters
+
   String get viewModeDisplayName {
     switch (viewMode) {
       case PolicyViewMode.rolesBrowsing:
@@ -95,6 +97,12 @@ class PolicyLoaded extends PolicyState {
       case PolicyViewMode.logsViewing:
         return 'Policy Logs';
     }
+  }
+
+  @override
+  String toString() {
+    final roleInfo = selectedRole != null ? ' (${selectedRole!.name})' : '';
+    return 'PolicyLoaded(viewMode: ${viewMode.name}, roles: ${roles.length}$roleInfo)';
   }
 }
 
@@ -116,14 +124,13 @@ class PolicyError extends PolicyState {
 
   @override
   List<Object?> get props => [
-    message, 
-    previousViewMode, 
-    previousRoles, 
-    previousSelectedRole, 
+    message,
+    previousViewMode,
+    previousRoles,
+    previousSelectedRole,
     operation
   ];
-  
-  /// Helper to recover to a valid previous state
+  /// Helper to recover the last state when cancelled
   PolicyLoaded? get recoverableState {
     if (previousRoles != null) {
       return PolicyLoaded(
@@ -133,5 +140,11 @@ class PolicyError extends PolicyState {
       );
     }
     return null;
+  }
+
+  @override
+  String toString() {
+    final operationInfo = operation != null ? ' (operation: $operation)' : '';
+    return 'PolicyError(message: $message$operationInfo)';
   }
 }

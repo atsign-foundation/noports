@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/logging/models/loggable.dart';
+import '../../logging/models/logging_bloc.dart';
 import '../services/policy_log_monitor_service.dart';
 
 part 'policy_logs_state.dart';
 
-class PolicyLogsCubit extends Cubit<PolicyLogsState> {
+class PolicyLogsCubit extends LoggingCubit<PolicyLogsState> {
   final PolicyLogMonitorService _monitorService = PolicyLogMonitorService.getInstance();
   StreamSubscription<PolicyLogEntry>? _logSubscription;
 
