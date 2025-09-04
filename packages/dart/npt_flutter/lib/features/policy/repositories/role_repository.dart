@@ -71,8 +71,15 @@ class RoleRepository {
     AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
+    if (currentAtSign == null) {
+      App.log(
+        '[ERROR] updateExistingRole: Current atSign is null'.loggable,
+      );
+      return false;
+    }
+
     // ensure currentAtSign starts with '@'
-    if (currentAtSign != null && !currentAtSign.startsWith('@')) {
+    if (!currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }
 
@@ -119,7 +126,14 @@ class RoleRepository {
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
-    if (currentAtSign != null && !currentAtSign.startsWith('@')) {
+    if(currentAtSign == null) {
+      App.log(
+        '[ERROR] deleteRole: Current atSign is null'.loggable,
+      );
+      return false;
+    }
+
+    if (!currentAtSign.startsWith('@')) {
       currentAtSign = '@$currentAtSign';
     }
 
