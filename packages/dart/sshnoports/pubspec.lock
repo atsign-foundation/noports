@@ -174,10 +174,10 @@ packages:
     dependency: transitive
     description:
       name: build
-      sha256: "6439a9c71a4e6eca8d9490c1b380a25b02675aa688137dfbe66d2062884a23ac"
+      sha256: "5b887c55a0f734b433b3b2d89f9cd1f99eb636b17e268a5b4259258bc916504b"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.2"
+    version: "4.0.0"
   build_config:
     dependency: transitive
     description:
@@ -198,34 +198,34 @@ packages:
     dependency: transitive
     description:
       name: build_resolvers
-      sha256: "2b21a125d66a86b9511cc3fb6c668c42e9a1185083922bf60e46d483a81a9712"
+      sha256: "065445f16bde0abf5dab8ff20dcc6773125fe387a128cb175f77df756910b452"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.4"
   build_runner:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: fd3c09f4bbff7fa6e8d8ef688a0b2e8a6384e6483a25af0dac75fef362bcfe6f
+      sha256: b1c7d812e9dd647d8dec0dc1041ec549f7bc2270d60cd1f8ec13f206c10227f8
       url: "https://pub.dev"
     source: hosted
-    version: "2.7.0"
+    version: "2.7.2"
   build_runner_core:
     dependency: transitive
     description:
       name: build_runner_core
-      sha256: ab27e46c8aa233e610cf6084ee6d8a22c6f873a0a9929241d8855b7a72978ae7
+      sha256: "59dc22b9724207519e6c8790fa706d7517dd8cff2d0d55da439c5ce7285200c9"
       url: "https://pub.dev"
     source: hosted
-    version: "9.3.0"
+    version: "9.3.2"
   build_version:
     dependency: "direct dev"
     description:
       name: build_version
-      sha256: "3b2a09c952f50974e70f5470f548969a4f6f53da010e8d027574a7e58f0930e0"
+      sha256: "1063066ec338c18f0629d01077c9315f92fae3e7e0e06d0dc10e8aa3145d44f5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.2"
+    version: "2.1.3"
   built_collection:
     dependency: transitive
     description:
