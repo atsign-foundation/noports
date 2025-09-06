@@ -98,7 +98,7 @@ class _PolicyFormViewState extends State<PolicyFormView> {
 
   Widget _buildForm(BuildContext context) {
     return FormContent(
-      key: ValueKey('form_${role.tempId}'),
+      key: ValueKey('form_${widget.role.tempId}'),
     );
   }
 }
