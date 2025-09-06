@@ -168,7 +168,7 @@ class PolicyContent extends StatelessWidget {
           },
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          cubit.initializeWithRole(role, isEditingMode: isEditing);
+          cubit.initializeWithRole(role, isEditing: isEditing);
         });
         return cubit;
       },

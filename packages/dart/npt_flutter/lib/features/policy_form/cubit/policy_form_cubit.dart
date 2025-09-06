@@ -47,19 +47,17 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   }
 
   /// General initializer that decides between new or existing role
-  void initializeWithRole(RoleInProgress role, {bool isEditingMode = false}) {
+  void initializeWithRole(RoleInProgress role, {bool isEditing = false}) {
     if (role is FetchedRole) {
-      if (isEditingMode) { // we want to edit an existing role
+      if (isEditing) {
         emit(PolicyFormEditingExistingRole(
           currentRole: role,
           originalRole: role,
         ));
       } else {
-        // Viewing mode - emit a read-only state
         emit(PolicyFormViewingRole(currentRole: role));
       }
     } else {
-      // For new roles, always in editing mode
       emit(PolicyFormEditingNewRole(roleInProgress: role));
     }
   }
