@@ -20,8 +20,6 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-
-
   Future<void> updateExistingRole(FetchedRole role) async {
     if (state is PolicyEditingRole) {
       final currentState = state as PolicyEditingRole;
