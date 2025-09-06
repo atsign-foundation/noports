@@ -39,20 +39,91 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Example: updateExistingRole((current) => current.copyWith(name: 'New Name'));
-  void updateExistingRole(FetchedRole Function(FetchedRole current) updater) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = updater(currentState.currentRole);
-      emit(currentState.copyWith(currentRole: updatedRole));
+  /// Initialize form with an existing role instance
+  void initializeWithRole(RoleInProgress role, {bool isEditingMode = false}) {
+    if (role is FetchedRole) {
+      // For existing roles, check if we're in editing mode
+      if (isEditingMode) {
+        emit(PolicyFormEditingExistingRole(
+          currentRole: role,
+          originalRole: role,
+        ));
+      } else {
+        // Viewing mode - emit a read-only state
+        emit(PolicyFormViewingRole(currentRole: role));
+      }
+    } else {
+      // For new roles, always in editing mode
+      emit(PolicyFormEditingNewRole(roleInProgress: role));
     }
   }
 
-  void updateRoleField<T>(
-    T value,
-    FetchedRole Function(FetchedRole role, T value) fieldUpdater,
-  ) {
-    updateExistingRole((current) => fieldUpdater(current, value));
+  void startEditingExistingRole(String roleId) {
+    initializeFormExisting(roleId);
+  }
+
+  /// Elegant method to update the entire role - similar to ProfileBloc's _onEdit
+  void updateRole(RoleInProgress role) {
+    if (state is PolicyFormEditingExistingRole && role is FetchedRole) {
+      final currentState = state as PolicyFormEditingExistingRole;
+      emit(currentState.copyWith(currentRole: role));
+    } else if (state is PolicyFormEditingNewRole) {
+      final currentState = state as PolicyFormEditingNewRole;
+      emit(currentState.copyWith(roleInProgress: role));
+    }
+  }
+
+  // Specific update methods for each field - more direct and type-safe
+  void updateName(String name) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(name: name));
+    }
+  }
+
+  void updateDescription(String description) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(description: description));
+    }
+  }
+
+  void updateDaemonAtSigns(List<String> daemonAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(daemonAtSigns: daemonAtSigns));
+    }
+  }
+
+  void updateDevices(List<Device> devices) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(devices: devices));
+    }
+  }
+
+  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(deviceGroups: deviceGroups));
+    }
+  }
+
+  void updateUserAtSigns(List<String> userAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
+    }
+  }
+
+  /// Helper to get the current role being edited
+  RoleInProgress? _getCurrentRole() {
+    if (state is PolicyFormEditingExistingRole) {
+      return (state as PolicyFormEditingExistingRole).currentRole;
+    } else if (state is PolicyFormEditingNewRole) {
+      return (state as PolicyFormEditingNewRole).roleInProgress;
+    }
+    return null;
   }
 
   void cancelEditing() {
@@ -162,175 +233,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     if (state is PolicyFormError) {
       final errorState = state as PolicyFormError;
       emit(errorState.previousState ?? const PolicyFormError(message: 'Could not load previous state error'));
-    }
-  }
-
-  // Field update methods
-  void updateRoleName(String name) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: name,
-        description: currentState.roleInProgress.description,
-        daemonAtSigns: currentState.roleInProgress.daemonAtSigns,
-        devices: currentState.roleInProgress.devices,
-        deviceGroups: currentState.roleInProgress.deviceGroups,
-        userAtSigns: currentState.roleInProgress.userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
-    }
-  }
-
-  void updateRoleDescription(String description) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: currentState.roleInProgress.name,
-        description: description,
-        daemonAtSigns: currentState.roleInProgress.daemonAtSigns,
-        devices: currentState.roleInProgress.devices,
-        deviceGroups: currentState.roleInProgress.deviceGroups,
-        userAtSigns: currentState.roleInProgress.userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
-    }
-  }
-
-  void updateDaemonAtSigns(List<String> daemonAtSigns) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: currentState.roleInProgress.name,
-        description: currentState.roleInProgress.description,
-        daemonAtSigns: daemonAtSigns,
-        devices: currentState.roleInProgress.devices,
-        deviceGroups: currentState.roleInProgress.deviceGroups,
-        userAtSigns: currentState.roleInProgress.userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
-    }
-  }
-
-  void updateDevices(List<Device> devices) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: currentState.roleInProgress.name,
-        description: currentState.roleInProgress.description,
-        daemonAtSigns: currentState.roleInProgress.daemonAtSigns,
-        devices: devices,
-        deviceGroups: currentState.roleInProgress.deviceGroups,
-        userAtSigns: currentState.roleInProgress.userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
-    }
-  }
-
-  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: currentState.roleInProgress.name,
-        description: currentState.roleInProgress.description,
-        daemonAtSigns: currentState.roleInProgress.daemonAtSigns,
-        devices: currentState.roleInProgress.devices,
-        deviceGroups: deviceGroups,
-        userAtSigns: currentState.roleInProgress.userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
-    }
-  }
-
-  void updateUserAtSigns(List<String> userAtSigns) {
-    if (state is PolicyFormEditingExistingRole) {
-      final currentState = state as PolicyFormEditingExistingRole;
-      final updatedRole = FetchedRole(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: userAtSigns,
-      );
-      emit(currentState.copyWith(currentRole: updatedRole));
-    } else if (state is PolicyFormEditingNewRole) {
-      final currentState = state as PolicyFormEditingNewRole;
-      final updatedRole = RoleInProgress(
-        tempId: currentState.roleInProgress.tempId,
-        name: currentState.roleInProgress.name,
-        description: currentState.roleInProgress.description,
-        daemonAtSigns: currentState.roleInProgress.daemonAtSigns,
-        devices: currentState.roleInProgress.devices,
-        deviceGroups: currentState.roleInProgress.deviceGroups,
-        userAtSigns: userAtSigns,
-      );
-      emit(currentState.copyWith(roleInProgress: updatedRole));
     }
   }
 }

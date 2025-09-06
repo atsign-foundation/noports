@@ -46,7 +46,7 @@ class SidebarActionButtonsWidget extends StatelessWidget {
             child: BlocBuilder<PolicyCubit, PolicyState>(
               builder: (context, state) {
                 return ElevatedButton.icon(
-                  onPressed: (state is PolicyEditingExistingRole || state is PolicyEditingNewRole) 
+                  onPressed: (state is PolicyEditingRole || state is PolicyCreatingRole) 
                     ? null 
                     : () {
                         context.read<PolicyCubit>().startCreatingRole();

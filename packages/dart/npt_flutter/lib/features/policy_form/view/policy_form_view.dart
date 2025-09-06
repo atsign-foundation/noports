@@ -9,8 +9,13 @@ import '../widgets/form_content.dart';
 
 class PolicyFormView extends StatelessWidget {
   final RoleInProgress role;
+  final bool isEditing;
 
-  const PolicyFormView({super.key, required this.role});
+  const PolicyFormView({
+    super.key, 
+    required this.role,
+    this.isEditing = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +40,12 @@ class PolicyFormView extends StatelessWidget {
           );
           context.read<PolicyCubit>().loadRoles();
         },
-      ),
-      child: BlocBuilder<PolicyCubit, PolicyState>(
-        builder: (context, state) {
-          if (state is PolicyLoading) {
+      )..initializeWithRole(role, isEditingMode: isEditing),
+      child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
+        builder: (context, formState) {
+          if (formState is PolicyFormLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (state is PolicyError) {
+          } else if (formState is PolicyFormError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -48,36 +53,24 @@ class PolicyFormView extends StatelessWidget {
                   const Icon(Icons.error, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
                   Text(
-                    'Error: ${state.message}',
+                    'Error: ${formState.message}',
                     style: const TextStyle(color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             );
-          } else if (state is PolicyViewingExistingRole) {
-            return _buildForm(context, state.selectedRole, state);
-          } else if (state is PolicyEditingExistingRole) {
-            return _buildForm(context, state.selectedRole, state);
-          } else if (state is PolicyEditingNewRole) {
-            return _buildForm(context, state.roleInProgress, state);
-          } else if (state is PolicyLoaded) {
-            return _buildForm(context, role, state);
-          } else {
-            return const Center(
-              child: Text('No role selected'),
-            );
           }
+          
+          return _buildForm(context);
         },
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, RoleInProgress roleInProgress, PolicyLoaded state) {
+  Widget _buildForm(BuildContext context) {
     return FormContent(
       key: ValueKey('form_${role.tempId}'),
-      role: roleInProgress,
-      state: state,
     );
   }
 }

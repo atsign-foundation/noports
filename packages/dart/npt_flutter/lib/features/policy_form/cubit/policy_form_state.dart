@@ -3,15 +3,35 @@ part of 'policy_form_cubit.dart';
 /// Summary of the states for the PolicyFormCubit
 /// - PolicyFormState (base state class)
 ///   - PolicyFormLoading: Loading state when the form is being initialized
-///   - PolicyFormEditing (abstract class for editing states)
-///     - PolicyFormEditingNew (creating a new role)
-///     - PolicyFormEditingExisting (state when editing an existing role)
+///   - PolicyFormViewingRole: Read-only viewing of an existing role
+///   - PolicyFormEditingNewRole: Creating a new role
+///   - PolicyFormEditingExistingRole: Editing an existing role
 
 sealed class PolicyFormState extends Loggable {
   const PolicyFormState();
 
   @override
   List<Object?> get props => [];
+  
+  // Convenience getters that work across all states
+  RoleInProgress? get currentRole => switch (this) {
+    PolicyFormEditingExistingRole(:final currentRole) => currentRole,
+    PolicyFormEditingNewRole(:final roleInProgress) => roleInProgress,
+    _ => null,
+  };
+
+  bool get isSaving => switch (this) {
+    PolicyFormEditingExistingRole(:final isSaving) => isSaving,
+    PolicyFormEditingNewRole(:final isSaving) => isSaving,
+    _ => false,
+  };
+
+  bool get canDelete => switch (this) {
+    PolicyFormEditingExistingRole(:final canDelete) => canDelete,
+    _ => false,
+  };
+
+  bool get isEditingState => this is PolicyFormEditingExistingRole || this is PolicyFormEditingNewRole;
 }
 
 final class PolicyFormLoading extends PolicyFormState {
@@ -27,8 +47,24 @@ final class PolicyFormLoading extends PolicyFormState {
   }
 }
 
+final class PolicyFormViewingRole extends PolicyFormState {
+  @override
+  final FetchedRole currentRole;
+
+  const PolicyFormViewingRole({
+    required this.currentRole,
+  });
+
+  @override
+  List<Object?> get props => [currentRole];
+
+  @override
+  String toString() => 'PolicyFormViewingRole(role: ${currentRole.name})';
+}
+
 final class PolicyFormEditingNewRole extends PolicyFormState {
   final RoleInProgress roleInProgress;
+  @override
   final bool isSaving;
 
   const PolicyFormEditingNewRole({
@@ -49,14 +85,22 @@ final class PolicyFormEditingNewRole extends PolicyFormState {
     );
   }
 
+  @override
+  RoleInProgress get currentRole => roleInProgress;
+
   bool get canSave => !isSaving;
   bool get canCancel => !isSaving;
+
+  @override
+  String toString() => 'PolicyFormEditingNewRole(roleInProgress: ${roleInProgress.name}, isSaving: $isSaving)';
 }
 
 final class PolicyFormEditingExistingRole extends PolicyFormState {
+  @override
   final FetchedRole currentRole;
   final FetchedRole? _originalRole;
   FetchedRole get originalRole => _originalRole ?? currentRole;
+  @override
   final bool isSaving;
 
   const PolicyFormEditingExistingRole({
@@ -81,8 +125,12 @@ final class PolicyFormEditingExistingRole extends PolicyFormState {
   }
 
   bool get canSave => !isSaving;
+  @override
   bool get canDelete => !isSaving;
   bool get canCancel => !isSaving;
+
+  @override
+  String toString() => 'PolicyFormEditingExistingRole(currentRole: ${currentRole.name}, isSaving: $isSaving)';
 }
 
 final class PolicyFormError extends PolicyFormState {

@@ -20,19 +20,11 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  Future<void> createEmptyRole() async {
-    if (state is PolicyLoaded) {
-      emit(const PolicyLoading(operation: 'Creating empty role'));
-      RoleInProgress roleInProgress = RoleInProgress.empty();
-      final currentState = state as PolicyLoaded;
-      List<FetchedRole> roles = currentState.roles;
-      emit(PolicyEditingNewRole(roles: roles, roleInProgress: roleInProgress));
-    }
-  }
+
 
   Future<void> updateExistingRole(FetchedRole role) async {
-    if (state is PolicyEditingExistingRole) {
-      final currentState = state as PolicyEditingExistingRole;
+    if (state is PolicyEditingRole) {
+      final currentState = state as PolicyEditingRole;
       emit(const PolicyLoading(operation: 'Updating role'));
       try {
         final success = await _roleRepository.updateExistingRole(role);
@@ -44,7 +36,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
           );
 
           emit(
-            PolicyViewingExistingRole(
+            PolicyViewingRole(
               roles: updatedRoles,
               selectedRole: updatedRole,
             ),
@@ -105,11 +97,11 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   void selectRoleForViewing(String roleId) {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      if (state is PolicyEditingExistingRole || state is PolicyEditingNewRole) {
+      if (state is PolicyEditingRole || state is PolicyCreatingRole) {
         return;
       }
-      if (state is PolicyViewingExistingRole &&
-          (state as PolicyViewingExistingRole).selectedRole.id == roleId) {
+      if (state is PolicyViewingRole &&
+          (state as PolicyViewingRole).selectedRole.id == roleId) {
         return;
       }
       final selectedRole = currentState.roles.firstWhere(
@@ -117,7 +109,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         orElse: () => currentState.roles.first,
       );
       emit(
-        PolicyViewingExistingRole(
+        PolicyViewingRole(
           roles: currentState.roles,
           selectedRole: selectedRole,
         ),
@@ -133,7 +125,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         orElse: () => currentState.roles.first,
       );
       emit(
-        PolicyEditingExistingRole(
+        PolicyEditingRole(
           roles: currentState.roles,
           selectedRole: roleToEdit,
         ),
@@ -143,26 +135,23 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
 
   void startCreatingRole() {
     if (state is PolicyLoaded) {
-      emit(const PolicyLoading(operation: 'Creating empty role'));
       final currentState = state as PolicyLoaded;
-      final emptyRole = RoleInProgress.empty();
       emit(
-        PolicyEditingNewRole(
+        PolicyCreatingRole(
           roles: currentState.roles,
-          roleInProgress: emptyRole
         ),
       );
     }
   }
 
   void cancelEditing() {
-    if (state is PolicyEditingNewRole) {
-      final currentState = state as PolicyEditingNewRole;
+    if (state is PolicyCreatingRole) {
+      final currentState = state as PolicyCreatingRole;
       emit(PolicyBrowsingRoles(roles: currentState.roles));
-    } else if (state is PolicyEditingExistingRole) {
-      final currentState = state as PolicyEditingExistingRole;
+    } else if (state is PolicyEditingRole) {
+      final currentState = state as PolicyEditingRole;
       emit(
-        PolicyViewingExistingRole(
+        PolicyViewingRole(
           roles: currentState.roles,
           selectedRole: currentState.selectedRole,
         ),
@@ -171,8 +160,8 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   }
 
   void exitViewing() {
-    if (state is PolicyViewingExistingRole) {
-      final currentState = state as PolicyViewingExistingRole;
+    if (state is PolicyViewingRole) {
+      final currentState = state as PolicyViewingRole;
       emit(PolicyBrowsingRoles(roles: currentState.roles));
     }
   }

@@ -14,9 +14,9 @@ class RoleListItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
-        final isInEditMode = state is PolicyEditingExistingRole || state is PolicyEditingNewRole;
-        final isSelected = (state is PolicyViewingExistingRole && state.selectedRole.id == role.id) ||
-                          (state is PolicyEditingExistingRole && state.selectedRole.id == role.id);
+        final isInEditMode = state is PolicyEditingRole || state is PolicyCreatingRole;
+        final isSelected = (state is PolicyViewingRole && state.selectedRole.id == role.id) ||
+                          (state is PolicyEditingRole && state.selectedRole.id == role.id);
         final isDisabled = isInEditMode;
         
         return Padding(

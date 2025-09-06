@@ -13,10 +13,7 @@ import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
 class FormContent extends StatelessWidget {
-  final RoleInProgress role;
-  final PolicyLoaded state;
-
-  const FormContent({super.key, required this.role, required this.state});
+  const FormContent({super.key});
 
   void _showDeleteConfirmation(BuildContext context, RoleInProgress currentRole) {
     final formCubit = context.read<PolicyFormCubit>();
@@ -51,10 +48,6 @@ class FormContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PolicyFormCubit>().initializeFormNew();
-    });
-
     return BlocListener<PolicyFormCubit, PolicyFormState>(
       listener: (context, formState) {
         if (formState is PolicyFormError) {
@@ -74,10 +67,18 @@ class FormContent extends StatelessWidget {
             );
           }
           
-          final isEditing = (state is PolicyEditingExistingRole || state is PolicyEditingNewRole) && formState is PolicyFormEditingExistingRole;
-          final currentRole = formState is PolicyFormEditingExistingRole ? formState.currentRole : role;
-          final isSaving = formState is PolicyFormEditingExistingRole ? formState.isSaving : false;
-          final canDelete = formState is PolicyFormEditingExistingRole ? formState.canDelete : false;
+          // Get the current role from the form state
+          final currentRole = formState.currentRole;
+          if (currentRole == null) {
+            return const Center(
+              child: Text('No role loaded'),
+            );
+          }
+          
+          // Determine if we're in editing mode based on the form state
+          final isEditing = formState.isEditingState;
+          final isSaving = formState.isSaving;
+          final canDelete = formState.canDelete;
 
           return Padding(
             padding: const EdgeInsets.all(8.0),
@@ -129,10 +130,12 @@ class FormContent extends StatelessWidget {
                             : const Text('Save'),
                         ),
                       ] else ...[
-                        if (role is FetchedRole)
+                        if (currentRole is FetchedRole)
                           ElevatedButton(
                             onPressed: () {
-                              context.read<PolicyCubit>().startEditingRole((role as FetchedRole).id);
+                              final roleId = currentRole.id;
+                              context.read<PolicyCubit>().startEditingRole(roleId);
+                              context.read<PolicyFormCubit>().startEditingExistingRole(roleId);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColor.primaryColor,
@@ -159,7 +162,7 @@ class FormContent extends StatelessWidget {
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateRoleName(value);
+                                  context.read<PolicyFormCubit>().updateName(value);
                                 },
                               ),
                             ),
@@ -169,7 +172,7 @@ class FormContent extends StatelessWidget {
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateRoleDescription(value);
+                                  context.read<PolicyFormCubit>().updateDescription(value);
                                 },
                               ),
                             ),

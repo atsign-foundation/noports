@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:path/path.dart';
 import '../models/policy.dart';
 
 class RoleRepository {

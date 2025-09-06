@@ -91,6 +91,26 @@ class RoleInProgress {
       userAtSigns: [],
     );
   }
+
+  RoleInProgress copyWith({
+    String? tempId,
+    String? name,
+    String? description,
+    List<String>? daemonAtSigns,
+    List<Device>? devices,
+    List<DeviceGroup>? deviceGroups,
+    List<String>? userAtSigns,
+  }) {
+    return RoleInProgress(
+      tempId: tempId ?? this.tempId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      devices: devices ?? this.devices,
+      deviceGroups: deviceGroups ?? this.deviceGroups,
+      userAtSigns: userAtSigns ?? this.userAtSigns,
+    );
+  }
 }
 
 /// Represents a Role that we fetched from an AtKey (id exists)
@@ -126,4 +146,26 @@ class FetchedRole extends RoleInProgress {
   factory FetchedRole.fromJson(Map<String, dynamic> json) =>
       _$FetchedRoleFromJson(json);
   Map<String, dynamic> toJson() => _$FetchedRoleToJson(this);
+
+  @override
+  FetchedRole copyWith({
+    String? id,
+    String? tempId,
+    String? name,
+    String? description,
+    List<String>? daemonAtSigns,
+    List<Device>? devices,
+    List<DeviceGroup>? deviceGroups,
+    List<String>? userAtSigns,
+  }) {
+    return FetchedRole(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      devices: devices ?? this.devices,
+      deviceGroups: deviceGroups ?? this.deviceGroups,
+      userAtSigns: userAtSigns ?? this.userAtSigns,
+    );
+  }
 }

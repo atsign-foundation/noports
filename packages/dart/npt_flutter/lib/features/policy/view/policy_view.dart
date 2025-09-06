@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/policy/widgets/sidebar/policy_roles_sidebar.dart';
 import '../cubit/policy_cubit.dart';
+import '../models/policy.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_form/view/policy_form_view.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
@@ -62,17 +63,20 @@ class PolicyContent extends StatelessWidget {
     return switch (state) {
       PolicyInitial() => _buildBrowsingView(context),
       PolicyViewingLogs() => _buildLogsView(context),
-      PolicyViewingExistingRole(:final selectedRole) => PolicyFormView(
+      PolicyViewingRole(:final selectedRole) => PolicyFormView(
         key: ValueKey('policy_form_view_${selectedRole.id}'),
         role: selectedRole,
+        isEditing: false,
       ),
-      PolicyEditingExistingRole(:final selectedRole) => PolicyFormView(
+      PolicyEditingRole(:final selectedRole) => PolicyFormView(
         key: ValueKey('policy_form_edit_${selectedRole.id}'),
         role: selectedRole,
+        isEditing: true,
       ),
-      PolicyEditingNewRole(:final roleInProgress) => PolicyFormView(
+      PolicyCreatingRole() => PolicyFormView(
         key: const ValueKey('policy_form_create_new'),
-        role: roleInProgress,
+        role: RoleInProgress.empty(),
+        isEditing: true,
       ),
       PolicyBrowsingRoles() => _buildBrowsingView(context),
       PolicyLoading() => _buildBrowsingView(context),
