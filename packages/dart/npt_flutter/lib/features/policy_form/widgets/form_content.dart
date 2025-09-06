@@ -135,7 +135,7 @@ class FormContent extends StatelessWidget {
                             onPressed: () {
                               final roleId = currentRole.id;
                               context.read<PolicyCubit>().startEditingRole(roleId);
-                              context.read<PolicyFormCubit>().startEditingExistingRole(roleId);
+                              context.read<PolicyFormCubit>().initializeFormExisting(roleId);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColor.primaryColor,

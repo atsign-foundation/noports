@@ -13,12 +13,14 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   PolicyFormCubit(this._roleRepository, {this.onSuccess, this.onDeleted})
     : super(const PolicyFormLoading());
 
+  /// Used when "Add New Role" is pressed
   void initializeFormNew() {
     emit(const PolicyFormLoading(operation: 'Initializing new role form'));
     final roleInProgress = RoleInProgress.empty();
     emit(PolicyFormEditingNewRole(roleInProgress: roleInProgress));
   }
 
+  /// Used when editing an existing role
   Future<void> initializeFormExisting(String roleId) async {
     final backupState = state;
     emit(const PolicyFormLoading(operation: 'Loading existing role'));
@@ -44,6 +46,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
+  /// General initializer that decides between new or existing role
   void initializeWithRole(RoleInProgress role, {bool isEditingMode = false}) {
     if (role is FetchedRole) {
       if (isEditingMode) { // we want to edit an existing role
@@ -59,10 +62,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
       // For new roles, always in editing mode
       emit(PolicyFormEditingNewRole(roleInProgress: role));
     }
-  }
-
-  void startEditingExistingRole(String roleId) {
-    initializeFormExisting(roleId);
   }
 
   /// Elegant method to update the entire role - similar to ProfileBloc's _onEdit
