@@ -25,12 +25,12 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     try {
       final roles = await _roleRepository.fetchRoles();
       if (isClosed) return;
-      
+
       final FetchedRole existingRole = roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => throw Exception('Role not found'),
       );
-      
+
       if (isClosed) return;
       emit(PolicyFormEditingExistingRole(currentRole: existingRole));
     } catch (error) {
@@ -44,11 +44,9 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  /// Initialize form with an existing role instance
   void initializeWithRole(RoleInProgress role, {bool isEditingMode = false}) {
     if (role is FetchedRole) {
-      // For existing roles, check if we're in editing mode
-      if (isEditingMode) {
+      if (isEditingMode) { // we want to edit an existing role
         emit(PolicyFormEditingExistingRole(
           currentRole: role,
           originalRole: role,
@@ -75,49 +73,6 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     } else if (state is PolicyFormEditingNewRole) {
       final currentState = state as PolicyFormEditingNewRole;
       emit(currentState.copyWith(roleInProgress: role));
-    }
-  }
-
-  // Specific update methods for each field - more direct and type-safe
-  void updateName(String name) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(name: name));
-    }
-  }
-
-  void updateDescription(String description) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(description: description));
-    }
-  }
-
-  void updateDaemonAtSigns(List<String> daemonAtSigns) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(daemonAtSigns: daemonAtSigns));
-    }
-  }
-
-  void updateDevices(List<Device> devices) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(devices: devices));
-    }
-  }
-
-  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(deviceGroups: deviceGroups));
-    }
-  }
-
-  void updateUserAtSigns(List<String> userAtSigns) {
-    final currentRole = _getCurrentRole();
-    if (currentRole != null) {
-      updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
     }
   }
 
@@ -265,4 +220,48 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
       emit(errorState.previousState ?? const PolicyFormError(message: 'Could not load previous state error'));
     }
   }
+
+  /// Update Fields ---------------------------
+  void updateName(String name) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(name: name));
+    }
+  }
+
+  void updateDescription(String description) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(description: description));
+    }
+  }
+
+  void updateDaemonAtSigns(List<String> daemonAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(daemonAtSigns: daemonAtSigns));
+    }
+  }
+
+  void updateDevices(List<Device> devices) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(devices: devices));
+    }
+  }
+
+  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(deviceGroups: deviceGroups));
+    }
+  }
+
+  void updateUserAtSigns(List<String> userAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
+    }
+  }
+
 }
