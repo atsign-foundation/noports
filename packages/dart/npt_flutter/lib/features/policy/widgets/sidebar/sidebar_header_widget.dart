@@ -21,7 +21,7 @@ class SidebarHeaderWidget extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<PolicyCubit>().refresh();
+              context.read<PolicyCubit>().loadRoles();
             },
             tooltip: 'Refresh roles',
           ),

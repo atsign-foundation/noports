@@ -3,7 +3,7 @@ import '../../policy/models/policy.dart';
 import 'form_field_widget.dart';
 
 class RoleDescriptionField extends StatefulWidget {
-  final Role role;
+  final RoleInProgress role;
   final bool isEditing;
   final Function(String) onChanged;
 

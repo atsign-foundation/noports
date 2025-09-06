@@ -36,7 +36,7 @@ class RolesListWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildLoadedRolesList(List<Role> roles, BuildContext context) {
+  Widget _buildLoadedRolesList(List<FetchedRole> roles, BuildContext context) {
     if (roles.isEmpty) {
       return const Center(
         child: Column(

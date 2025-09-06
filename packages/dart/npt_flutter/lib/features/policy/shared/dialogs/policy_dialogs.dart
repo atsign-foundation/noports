@@ -67,7 +67,7 @@ class PolicyDialogs {
 
   static Future<bool?> showDeleteRoleDialog(
     BuildContext context,
-    Role role,
+    RoleInProgress role,
   ) async {
     return showDialog<bool>(
       context: context,

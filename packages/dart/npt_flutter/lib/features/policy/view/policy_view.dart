@@ -60,11 +60,21 @@ class PolicyContent extends StatelessWidget {
 
   Widget _buildMainContent(PolicyState state, BuildContext context) {
     return switch (state) {
-      LogsViewingState() => _buildLogsView(context),
-      RoleViewingState(:final selectedRole) => PolicyFormView(role: selectedRole),
-      RoleEditingState(:final selectedRole) => PolicyFormView(role: selectedRole),
-      RoleCreatingState(:final selectedRole) => PolicyFormView(role: selectedRole),
-      RolesBrowsingState() => _buildBrowsingView(context),
+      PolicyInitial() => _buildBrowsingView(context),
+      PolicyViewingLogs() => _buildLogsView(context),
+      PolicyViewingExistingRole(:final selectedRole) => PolicyFormView(
+        key: ValueKey('policy_form_view_${selectedRole.id}'),
+        role: selectedRole,
+      ),
+      PolicyEditingExistingRole(:final selectedRole) => PolicyFormView(
+        key: ValueKey('policy_form_edit_${selectedRole.id}'),
+        role: selectedRole,
+      ),
+      PolicyEditingNewRole(:final roleInProgress) => PolicyFormView(
+        key: const ValueKey('policy_form_create_new'),
+        role: roleInProgress,
+      ),
+      PolicyBrowsingRoles() => _buildBrowsingView(context),
       PolicyLoading() => _buildBrowsingView(context),
       PolicyError() => _buildBrowsingView(context),
     };

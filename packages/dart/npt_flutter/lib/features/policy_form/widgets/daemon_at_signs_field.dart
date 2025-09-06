@@ -3,7 +3,7 @@ import '../../policy/models/policy.dart';
 import 'at_signs_list_widget.dart';
 
 class DaemonAtSignsField extends StatelessWidget {
-  final Role role;
+  final RoleInProgress role;
   final bool isEditing;
   final Function(List<String>) onChanged;
 

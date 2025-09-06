@@ -31,7 +31,7 @@ Map<String, dynamic> _$DeviceGroupToJson(DeviceGroup instance) =>
       'permitOpens': instance.permitOpens,
     };
 
-Role _$RoleFromJson(Map<String, dynamic> json) => Role(
+FetchedRole _$FetchedRoleFromJson(Map<String, dynamic> json) => FetchedRole(
   id: json['id'] as String,
   name: json['name'] as String,
   description: json['description'] as String,
@@ -47,14 +47,16 @@ Role _$RoleFromJson(Map<String, dynamic> json) => Role(
   userAtSigns: (json['userAtSigns'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
-);
+)..tempId = json['tempId'] as String?;
 
-Map<String, dynamic> _$RoleToJson(Role instance) => <String, dynamic>{
-  'id': instance.id,
-  'name': instance.name,
-  'description': instance.description,
-  'daemonAtSigns': instance.daemonAtSigns,
-  'devices': instance.devices,
-  'deviceGroups': instance.deviceGroups,
-  'userAtSigns': instance.userAtSigns,
-};
+Map<String, dynamic> _$FetchedRoleToJson(FetchedRole instance) =>
+    <String, dynamic>{
+      'tempId': instance.tempId,
+      'name': instance.name,
+      'description': instance.description,
+      'daemonAtSigns': instance.daemonAtSigns,
+      'devices': instance.devices,
+      'deviceGroups': instance.deviceGroups,
+      'userAtSigns': instance.userAtSigns,
+      'id': instance.id,
+    };

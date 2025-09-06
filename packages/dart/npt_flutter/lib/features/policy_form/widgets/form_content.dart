@@ -12,31 +12,15 @@ import 'device_group_list_widget.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
-class FormContent extends StatefulWidget {
-  final Role role;
+class FormContent extends StatelessWidget {
+  final RoleInProgress role;
   final PolicyLoaded state;
 
   const FormContent({super.key, required this.role, required this.state});
 
-  @override
-  State<FormContent> createState() => _FormContentState();
-}
-
-class _FormContentState extends State<FormContent> {
-  @override
-  void initState() {
-    super.initState();
-    // Initialize the form when the widget is created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PolicyFormCubit>().initializeForm(role: widget.role);
-    });
-  }
-
-
-
-  void _showDeleteConfirmation(BuildContext context, Role currentRole) {
+  void _showDeleteConfirmation(BuildContext context, RoleInProgress currentRole) {
     final formCubit = context.read<PolicyFormCubit>();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -51,7 +35,7 @@ class _FormContentState extends State<FormContent> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                formCubit.deleteRole();
+                formCubit.deleteCurrentRole();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
@@ -67,6 +51,9 @@ class _FormContentState extends State<FormContent> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PolicyFormCubit>().initializeFormNew();
+    });
 
     return BlocListener<PolicyFormCubit, PolicyFormState>(
       listener: (context, formState) {
@@ -87,10 +74,10 @@ class _FormContentState extends State<FormContent> {
             );
           }
           
-          final isEditing = (widget.state is RoleEditingState || widget.state is RoleCreatingState) && formState is PolicyFormEditing;
-          final currentRole = formState is PolicyFormEditing ? formState.currentRole : widget.role;
-          final isSaving = formState is PolicyFormEditing ? formState.isSaving : false;
-          final canDelete = formState is PolicyFormEditingExisting ? formState.canDelete : false;
+          final isEditing = (state is PolicyEditingExistingRole || state is PolicyEditingNewRole) && formState is PolicyFormEditingExistingRole;
+          final currentRole = formState is PolicyFormEditingExistingRole ? formState.currentRole : role;
+          final isSaving = formState is PolicyFormEditingExistingRole ? formState.isSaving : false;
+          final canDelete = formState is PolicyFormEditingExistingRole ? formState.canDelete : false;
 
           return Padding(
             padding: const EdgeInsets.all(8.0),
@@ -142,16 +129,17 @@ class _FormContentState extends State<FormContent> {
                             : const Text('Save'),
                         ),
                       ] else ...[
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<PolicyCubit>().startEditingRole(widget.role.id);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColor.primaryColor,
-                            foregroundColor: Colors.white,
+                        if (role is FetchedRole)
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<PolicyCubit>().startEditingRole((role as FetchedRole).id);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.primaryColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Edit'),
                           ),
-                          child: const Text('Edit'),
-                        ),
                       ],
                     ],
                   ),

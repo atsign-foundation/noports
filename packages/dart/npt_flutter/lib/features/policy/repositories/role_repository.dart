@@ -7,7 +7,7 @@ import '../models/policy.dart';
 class RoleRepository {
   static const String groupsPolicyNamespace = 'groups.policy.sshnp';
 
-  Future<List<Role>> fetchRoles() async {
+  Future<List<FetchedRole>> fetchRoles() async {
     final rolesJson = <String>[];
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
@@ -44,12 +44,12 @@ class RoleRepository {
       rolesJson.add(groupJsonStr);
     }
 
-    final roles = <Role>[];
+    final roles = <FetchedRole>[];
 
     for (final roleJsonStr in rolesJson) {
       try {
         final roleJson = jsonDecode(roleJsonStr) as Map<String, dynamic>;
-        final role = Role.fromJson(roleJson);
+        final role = FetchedRole.fromJson(roleJson);
         roles.add(role);
       } catch (e) {
         App.log('[ERROR] fetchRoles: Failed to parse role JSON: $e'.loggable);
@@ -60,7 +60,63 @@ class RoleRepository {
     return roles;
   }
 
-  Future<bool> updateRole(final Role role) async {
+  Future<bool> putNewRole(final RoleInProgress roleInProgress) async {
+    
+    final AtClient atClient = AtClientManager.getInstance().atClient;
+    String? currentAtSign = atClient.getCurrentAtSign();
+
+    if (currentAtSign == null) {
+      App.log(
+        '[ERROR] updateExistingRole: Current atSign is null'.loggable,
+      );
+      return false;
+    }
+
+    // ensure currentAtSign starts with '@'
+    if (!currentAtSign.startsWith('@')) {
+      currentAtSign = '@$currentAtSign';
+    }
+
+    final int maxId = await getMaxGroupId();
+    final int newId = maxId + 1;
+
+    FetchedRole newRole = FetchedRole.fromRoleInProgress(id: newId.toString(), roleInProgress: roleInProgress);
+
+    final String atKeyStr = '${newRole.id}.$groupsPolicyNamespace$currentAtSign';
+    final String value = jsonEncode(newRole.toJson());
+
+    try {
+      final PutRequestOptions pro = PutRequestOptions()..useRemoteAtServer = true;
+      final bool success = await atClient.put(
+        AtKey.fromString(atKeyStr),
+        value,
+        putRequestOptions: pro,
+      );
+
+      if (success) {
+        try {
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(
+              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              value: jsonEncode(newRole),
+            ),
+          );
+        } catch (notifyError) {
+          App.log(
+            '[WARNING] updateExistingRole: Failed to send notification: $notifyError'
+                .loggable,
+          );
+        }
+      }
+      return success;
+    } catch (e) {
+      App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
+      return false;
+    }
+
+  }
+
+  Future<bool> updateExistingRole(final FetchedRole role) async {
     if (role.id.isEmpty) {
       App.log(
         '[ERROR] updateRole: Role ID is required for update'.loggable,
@@ -68,7 +124,7 @@ class RoleRepository {
       return false;
     }
 
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
     if (currentAtSign == null) {
@@ -109,7 +165,6 @@ class RoleRepository {
           );
         }
       }
-
       return success;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
@@ -168,7 +223,7 @@ class RoleRepository {
   }
 
   Future<int> getMaxGroupId() async {
-    final roles = await fetchRoles();
+    final List<FetchedRole> roles = await fetchRoles();
     if (roles.isEmpty) return 0;
 
     int maxId = 0;

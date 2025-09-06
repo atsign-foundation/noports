@@ -8,7 +8,7 @@ import '../cubit/policy_form_cubit.dart';
 import '../widgets/form_content.dart';
 
 class PolicyFormView extends StatelessWidget {
-  final Role role;
+  final RoleInProgress role;
 
   const PolicyFormView({super.key, required this.role});
 
@@ -55,12 +55,12 @@ class PolicyFormView extends StatelessWidget {
                 ],
               ),
             );
-          } else if (state is RoleViewingState) {
+          } else if (state is PolicyViewingExistingRole) {
             return _buildForm(context, state.selectedRole, state);
-          } else if (state is RoleEditingState) {
+          } else if (state is PolicyEditingExistingRole) {
             return _buildForm(context, state.selectedRole, state);
-          } else if (state is RoleCreatingState) {
-            return _buildForm(context, state.selectedRole, state);
+          } else if (state is PolicyEditingNewRole) {
+            return _buildForm(context, state.roleInProgress, state);
           } else if (state is PolicyLoaded) {
             return _buildForm(context, role, state);
           } else {
@@ -73,7 +73,11 @@ class PolicyFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildForm(BuildContext context, Role role, PolicyLoaded state) {
-    return FormContent(role: role, state: state);
+  Widget _buildForm(BuildContext context, RoleInProgress roleInProgress, PolicyLoaded state) {
+    return FormContent(
+      key: ValueKey('form_${role.tempId}'),
+      role: roleInProgress,
+      state: state,
+    );
   }
 }

@@ -15,95 +15,83 @@ sealed class PolicyFormState extends Loggable {
 }
 
 final class PolicyFormLoading extends PolicyFormState {
-  const PolicyFormLoading();
+  final String? operation;
+
+  const PolicyFormLoading({this.operation});
 
   @override
-  String toString() => 'PolicyFormLoading';
+  String toString() {
+    return operation != null 
+        ? 'PolicyFormLoading(operation: $operation)'
+        : 'PolicyFormLoading';
+  }
 }
 
-sealed class PolicyFormEditing extends PolicyFormState {
-  final Role currentRole;
+final class PolicyFormEditingNewRole extends PolicyFormState {
+  final RoleInProgress roleInProgress;
   final bool isSaving;
 
-  const PolicyFormEditing({
-    required this.currentRole,
-    required this.isSaving,
+  const PolicyFormEditingNewRole({
+    required this.roleInProgress,
+    this.isSaving = false,
   });
 
   @override
-  List<Object?> get props => [currentRole, isSaving];
+  List<Object?> get props => [roleInProgress, isSaving];
+
+  PolicyFormEditingNewRole copyWith({
+    RoleInProgress? roleInProgress,
+    bool? isSaving,
+  }) {
+    return PolicyFormEditingNewRole(
+      roleInProgress: roleInProgress ?? this.roleInProgress,
+      isSaving: isSaving ?? this.isSaving,
+    );
+  }
 
   bool get canSave => !isSaving;
   bool get canCancel => !isSaving;
 }
 
-final class PolicyFormEditingNew extends PolicyFormEditing {
-  const PolicyFormEditingNew({
-    required super.currentRole,
-    required super.isSaving,
-  });
+final class PolicyFormEditingExistingRole extends PolicyFormState {
+  final FetchedRole currentRole;
+  final FetchedRole? _originalRole;
+  FetchedRole get originalRole => _originalRole ?? currentRole;
+  final bool isSaving;
 
-  PolicyFormEditingNew copyWith({
-    Role? currentRole,
+  const PolicyFormEditingExistingRole({
+    required this.currentRole,
+    FetchedRole? originalRole,
+    this.isSaving = false,
+  }) : _originalRole = originalRole;
+
+  @override
+  List<Object?> get props => [currentRole, isSaving];
+
+  PolicyFormEditingExistingRole copyWith({
+    FetchedRole? currentRole,
+    FetchedRole? originalRole,
     bool? isSaving,
   }) {
-    return PolicyFormEditingNew(
+    return PolicyFormEditingExistingRole(
       currentRole: currentRole ?? this.currentRole,
+      originalRole: originalRole ?? _originalRole,
       isSaving: isSaving ?? this.isSaving,
     );
   }
 
-  bool get hasChanges => currentRole.name.isNotEmpty || currentRole.description.isNotEmpty;
-  bool get canDelete => false;
-
-  @override
-  String toString() {
-    final status = isSaving ? ' (saving)' : '';
-    return 'PolicyFormEditingNew(role: ${currentRole.name}$status)';
-  }
-}
-
-final class PolicyFormEditingExisting extends PolicyFormEditing {
-  final Role originalRole;
-
-  const PolicyFormEditingExisting({
-    required super.currentRole,
-    required this.originalRole,
-    required super.isSaving,
-  });
-
-  @override
-  List<Object?> get props => [currentRole, originalRole, isSaving];
-
-  PolicyFormEditingExisting copyWith({
-    Role? currentRole,
-    Role? originalRole,
-    bool? isSaving,
-  }) {
-    return PolicyFormEditingExisting(
-      currentRole: currentRole ?? this.currentRole,
-      originalRole: originalRole ?? this.originalRole,
-      isSaving: isSaving ?? this.isSaving,
-    );
-  }
-
-  bool get hasChanges => currentRole != originalRole;
+  bool get canSave => !isSaving;
   bool get canDelete => !isSaving;
-
-  @override
-  String toString() {
-    final status = isSaving ? ' (saving)' : '';
-    return 'PolicyFormEditingExisting(role: ${currentRole.name}$status)';
-  }
+  bool get canCancel => !isSaving;
 }
 
 final class PolicyFormError extends PolicyFormState {
   final String message;
-  final PolicyFormEditing previousState;
+  final PolicyFormState? previousState;
 
   const PolicyFormError({
     required this.message,
-    required this.previousState,
+    this.previousState,
   });
 
   @override

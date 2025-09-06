@@ -10,14 +10,22 @@ sealed class PolicyState extends Loggable {
 
 /// Overview of states
 /// - PolicyState (base class)
-/// - PolicyLoading (we're loading something)
-/// - PolicyLoaded (roles are done loading)
-///   - RolesBrowsingState (we're just browsing roles, nothing is selected)
-///   - RoleViewingState (a role is selected for viewing)
-///   - RoleEditingState (a role is selected for editing)
-///   - RoleCreatingState (a new role is being created)
-///   - LogsViewingState (we're viewing logs)
-/// - PolicyError (we hit an error)
+///   - PolicyInitial (initial state)
+///   - PolicyLoading (we're loading something)
+///   - PolicyLoaded (roles are done loading)
+///     - RolesBrowsingState (we're just browsing roles, nothing is selected)
+///     - RoleViewingState (a role is selected for viewing)
+///     - RoleEditingState (a role is selected for editing)
+///     - RoleCreatingState (a new role is being created)
+///     - LogsViewingState (we're viewing logs)
+///   - PolicyError (we hit an error)
+
+final class PolicyInitial extends PolicyState {
+  const PolicyInitial();
+
+  @override
+  String toString() => 'PolicyInitial';
+}
 
 final class PolicyLoading extends PolicyState {
   final String? operation;
@@ -36,7 +44,7 @@ final class PolicyLoading extends PolicyState {
 }
 
 sealed class PolicyLoaded extends PolicyState {
-  final List<Role> roles;
+  final List<FetchedRole> roles;
 
   const PolicyLoaded({required this.roles});
 
@@ -46,20 +54,20 @@ sealed class PolicyLoaded extends PolicyState {
   String get viewModeDisplayName;
 }
 
-final class RolesBrowsingState extends PolicyLoaded {
-  const RolesBrowsingState({required super.roles});
+final class PolicyBrowsingRoles extends PolicyLoaded {
+  const PolicyBrowsingRoles({required super.roles});
 
   @override
   String get viewModeDisplayName => 'Browsing Roles';
 
   @override
-  String toString() => 'RolesBrowsingState(roles: ${roles.length})';
+  String toString() => 'PolicyBrowsingRoles(roles: ${roles.length})';
 }
 
-final class RoleViewingState extends PolicyLoaded {
-  final Role selectedRole;
+final class PolicyViewingExistingRole extends PolicyLoaded {
+  final FetchedRole selectedRole;
 
-  const RoleViewingState({
+  const PolicyViewingExistingRole({
     required super.roles,
     required this.selectedRole,
   });
@@ -71,13 +79,13 @@ final class RoleViewingState extends PolicyLoaded {
   String get viewModeDisplayName => 'Viewing Role';
 
   @override
-  String toString() => 'RoleViewingState(roles: ${roles.length}, role: ${selectedRole.name})';
+  String toString() => 'PolicyViewingExistingRole(roles: ${roles.length}, role: ${selectedRole.name})';
 }
 
-final class RoleEditingState extends PolicyLoaded {
-  final Role selectedRole;
+final class PolicyEditingExistingRole extends PolicyLoaded {
+  final FetchedRole selectedRole;
 
-  const RoleEditingState({
+  const PolicyEditingExistingRole({
     required super.roles,
     required this.selectedRole,
   });
@@ -89,42 +97,42 @@ final class RoleEditingState extends PolicyLoaded {
   String get viewModeDisplayName => 'Editing Role';
 
   @override
-  String toString() => 'RoleEditingState(roles: ${roles.length}, role: ${selectedRole.name})';
+  String toString() => 'PolicyEditingExistingRoleState(roles: ${roles.length}, role: ${selectedRole.name})';
 }
 
-final class RoleCreatingState extends PolicyLoaded {
-  final Role selectedRole;
+final class PolicyEditingNewRole extends PolicyLoaded {
+  final RoleInProgress roleInProgress;
 
-  const RoleCreatingState({
+  const PolicyEditingNewRole({
     required super.roles,
-    required this.selectedRole,
+    required this.roleInProgress,
   });
 
   @override
-  List<Object?> get props => [roles, selectedRole];
+  List<Object?> get props => [roles, roleInProgress];
 
   @override
   String get viewModeDisplayName => 'Creating Role';
 
   @override
-  String toString() => 'RoleCreatingState(roles: ${roles.length}, role: ${selectedRole.name})';
+  String toString() => 'RoleCreatingState(roles: ${roles.length}, role: ${roleInProgress.name})';
 }
 
-final class LogsViewingState extends PolicyLoaded {
-  const LogsViewingState({required super.roles});
+final class PolicyViewingLogs extends PolicyLoaded {
+  const PolicyViewingLogs({required super.roles});
 
   @override
   String get viewModeDisplayName => 'Policy Logs';
 
   @override
-  String toString() => 'LogsViewingState(roles: ${roles.length})';
+  String toString() => 'PolicyViewingLogs(roles: ${roles.length})';
 }
 
 final class PolicyError extends PolicyState {
   final String message;
   final PolicyLoaded? previousState;
   final String? operation;
-  
+
   const PolicyError(
     this.message, {
     this.previousState,
