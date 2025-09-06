@@ -13,7 +13,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   PolicyFormCubit(this._roleRepository, {this.onSuccess, this.onDeleted})
     : super(const PolicyFormLoading());
 
-  void initializeFormNew() async {
+  void initializeFormNew() {
     emit(const PolicyFormLoading(operation: 'Initializing new role form'));
     final roleInProgress = RoleInProgress.empty();
     emit(PolicyFormEditingNewRole(roleInProgress: roleInProgress));
@@ -24,12 +24,17 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     emit(const PolicyFormLoading(operation: 'Loading existing role'));
     try {
       final roles = await _roleRepository.fetchRoles();
+      if (isClosed) return;
+      
       final FetchedRole existingRole = roles.firstWhere(
         (role) => role.id == roleId,
         orElse: () => throw Exception('Role not found'),
       );
+      
+      if (isClosed) return;
       emit(PolicyFormEditingExistingRole(currentRole: existingRole));
     } catch (error) {
+      if (isClosed) return;
       emit(
         PolicyFormError(
           message: 'Failed to load role: $error',
@@ -148,25 +153,33 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
 
       try {
         final success = await _roleRepository.updateExistingRole(currentState.currentRole);
+        
+        if (isClosed) return;
 
         if (success) {
           onSuccess?.call('Role saved successfully');
-          emit(const PolicyFormLoading());
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
         } else {
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to save role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to save role',
+              message: 'Failed to save role: $error',
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
         }
-      } catch (error) {
-        emit(
-          PolicyFormError(
-            message: 'Failed to save role: $error',
-            previousState: currentState.copyWith(isSaving: false),
-          ),
-        );
       }
     } else if( state is PolicyFormEditingNewRole) {
       final currentState = state as PolicyFormEditingNewRole;
@@ -174,25 +187,33 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
 
       try {
         final success = await _roleRepository.putNewRole(currentState.roleInProgress);
+        
+        if (isClosed) return;
 
         if (success) {
           onSuccess?.call('Role created successfully');
-          emit(const PolicyFormLoading());
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
         } else {
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to create role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to create role',
+              message: 'Failed to create role: $error',
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
         }
-      } catch (error) {
-        emit(
-          PolicyFormError(
-            message: 'Failed to create role: $error',
-            previousState: currentState.copyWith(isSaving: false),
-          ),
-        );
       }
     }
   }
@@ -206,25 +227,34 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
 
       try {
         final success = await _roleRepository.deleteRole(roleId);
+        
+        // Check if cubit is still active after async operation
+        if (isClosed) return;
 
         if (success) {
           onDeleted?.call();
-          emit(const PolicyFormLoading());
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
         } else {
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to delete role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to delete role',
+              message: 'Failed to delete role: $error',
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
         }
-      } catch (error) {
-        emit(
-          PolicyFormError(
-            message: 'Failed to delete role: $error',
-            previousState: currentState.copyWith(isSaving: false),
-          ),
-        );
       }
     }
   }

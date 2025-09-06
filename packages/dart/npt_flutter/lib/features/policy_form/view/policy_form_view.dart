@@ -7,7 +7,7 @@ import '../../policy/repositories/role_repository.dart';
 import '../cubit/policy_form_cubit.dart';
 import '../widgets/form_content.dart';
 
-class PolicyFormView extends StatelessWidget {
+class PolicyFormView extends StatefulWidget {
   final RoleInProgress role;
   final bool isEditing;
 
@@ -18,11 +18,19 @@ class PolicyFormView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => PolicyFormCubit(
-        context.read<RoleRepository>(),
-        onSuccess: (message) {
+  State<PolicyFormView> createState() => _PolicyFormViewState();
+}
+
+class _PolicyFormViewState extends State<PolicyFormView> {
+  late PolicyFormCubit _formCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _formCubit = PolicyFormCubit(
+      context.read<RoleRepository>(),
+      onSuccess: (message) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
@@ -30,8 +38,10 @@ class PolicyFormView extends StatelessWidget {
             ),
           );
           context.read<PolicyCubit>().cancelEditing();
-        },
-        onDeleted: () {
+        }
+      },
+      onDeleted: () {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Role deleted successfully!'),
@@ -39,8 +49,26 @@ class PolicyFormView extends StatelessWidget {
             ),
           );
           context.read<PolicyCubit>().loadRoles();
-        },
-      )..initializeWithRole(role, isEditingMode: isEditing),
+        }
+      },
+    );
+    
+    // Initialize the form after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _formCubit.initializeWithRole(widget.role, isEditingMode: widget.isEditing);
+    });
+  }
+
+  @override
+  void dispose() {
+    _formCubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _formCubit,
       child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
         builder: (context, formState) {
           if (formState is PolicyFormLoading) {
