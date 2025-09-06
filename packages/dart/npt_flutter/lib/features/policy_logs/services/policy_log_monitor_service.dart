@@ -25,21 +25,21 @@ class PolicyLogEntry {
 
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(notification.epochMillis ?? DateTime.now().millisecondsSinceEpoch);
-    
+
     String deviceName = 'unknown';
     String deviceGroup = '';
     String allowedServices = '';
     String type = 'heartbeat';
     String? policyPayload;
-    
+
     if (notification.key.contains('logs.policy.sshnp')) {
       type = 'policy request';
       policyPayload = notification.value;
-      
+
       if (notification.value != null && notification.value!.isNotEmpty) {
         try {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
-          
+
           final payload = data['payload'];
           if (payload is Map<String, dynamic>) {
             final request = payload['request'];
@@ -48,13 +48,13 @@ class PolicyLogEntry {
               if (requestPayload is Map<String, dynamic>) {
                 deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
                 deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
-                
+
                 final clientAtSign = requestPayload['clientAtsign'] ?? 'unknown';
                 final daemonAtSign = requestPayload['daemonAtsign'] ?? 'unknown';
                 allowedServices = 'Request: $clientAtSign → $daemonAtSign';
               }
             }
-            
+
             final response = payload['response'];
             if (response is Map<String, dynamic>) {
               final responsePayload = response['payload'];
@@ -62,7 +62,7 @@ class PolicyLogEntry {
                 final authorized = responsePayload['authorized'] ?? false;
                 final message = responsePayload['message'] ?? '';
                 final permitOpen = responsePayload['permitOpen'];
-                
+
                 String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
                 String permits = '';
                 if (permitOpen is List && permitOpen.isNotEmpty) {
@@ -82,7 +82,7 @@ class PolicyLogEntry {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
           deviceName = data['devicename'] ?? 'unknown';
           deviceGroup = data['deviceGroupName'] ?? '';
-          
+
           if (data['allowedServices'] != null && data['allowedServices'] is List) {
             final List<String> services = List<String>.from(data['allowedServices']);
             allowedServices = services.join(', ');
@@ -139,20 +139,20 @@ class PolicyLogMonitorService {
 
     try {
       final AtClient atClient = AtClientManager.getInstance().atClient;
-      
+
       final deviceRegexParts = deviceNames.map((device) => '$device\\.devices\\.policy\\.sshnp').toList();
       final deviceRegex = deviceRegexParts.isNotEmpty ? '(${deviceRegexParts.join('|')})' : '';
       const policyLogRegex = 'logs\\.policy\\.sshnp';
-      
+
       final monitorRegex = deviceRegex.isNotEmpty ? '($deviceRegex|$policyLogRegex)' : policyLogRegex;
 
       var notificationService = atClient.notificationService;
-      
+
       _subscription = notificationService.subscribe(regex: monitorRegex, shouldDecrypt: true).listen(
         (notification) {
           final logEntry = PolicyLogEntry.fromNotification(notification);
           _logs.insert(0, logEntry);
-          
+
           if (_logs.length > 100) {
             _logs.removeRange(100, _logs.length);
           }
@@ -168,6 +168,7 @@ class PolicyLogMonitorService {
       _isMonitoring = true;
       
     } catch (error) {
+      // TODO
     }
   }
 
@@ -178,23 +179,23 @@ class PolicyLogMonitorService {
 
     try {
       final AtClient atClient = AtClientManager.getInstance().atClient;
-      
+
       const deviceRegex = r'[^:]*\.devices\.policy\.sshnp';
       const policyLogRegex = 'logs\\.policy\\.sshnp';
-      
+
       const monitorRegex = '($deviceRegex|$policyLogRegex)';
 
       var notificationService = atClient.notificationService;
-      
+
       _subscription = notificationService.subscribe(regex: monitorRegex, shouldDecrypt: true).listen(
         (notification) {
           final logEntry = PolicyLogEntry.fromNotification(notification);
           _logs.insert(0, logEntry);
-          
+
           if (_logs.length > 100) {
             _logs.removeRange(100, _logs.length);
           }
-          
+
           _logStreamController.add(logEntry);
         },
         onError: (error) {
@@ -204,8 +205,9 @@ class PolicyLogMonitorService {
       );
 
       _isMonitoring = true;
-      
+
     } catch (error) {
+      // TODO
     }
   }
 
