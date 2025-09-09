@@ -120,7 +120,8 @@ class SshnpdParams {
       homeDirectory: homeDirectory,
       managerAtsigns: managerAtsigns,
       policyManagerAtsign: r['policy-manager'],
-      atKeysFilePath: r['key-file'] ??
+      atKeysFilePath:
+          r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
@@ -134,7 +135,8 @@ class SshnpdParams {
       ephemeralPermissions: r['ephemeral-permissions'],
       sshAlgorithm: SupportedSshAlgorithm.fromString(r['ssh-algorithm']),
       deviceGroup: r['device-group'],
-      storagePath: r['storage-path'] ??
+      storagePath:
+          r['storage-path'] ??
           standardAtClientStoragePath(
             baseDir: homeDirectory,
             atSign: deviceAtsign,
@@ -146,11 +148,9 @@ class SshnpdParams {
     );
   }
 
-
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true
     );
 
     // Basic arguments
@@ -159,7 +159,9 @@ class SshnpdParams {
       abbr: 'k',
       mandatory: false,
       aliases: const ['keyFile'],
-      help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/',
+      help:
+          'Sending atSign\'s keyFile if not in ~/.atsign/keys/'
+          '  Alias: --keyFile',
     );
 
     parser.addOption(
@@ -174,7 +176,8 @@ class SshnpdParams {
       aliases: ['manager'],
       abbr: 'm',
       mandatory: false,
-      help: 'atSign or list of atSigns (comma separated)'
+      help:
+          'atSign or list of atSigns (comma separated)'
           ' that this device will accept requests from.'
           ' At least one of --managers and --policy-manager must be supplied.'
           ' If both --managers and --policy-manager are supplied then '
@@ -186,7 +189,8 @@ class SshnpdParams {
       'policy-manager',
       abbr: 'p',
       mandatory: false,
-      help: 'The atSign which this device will use to decide whether or not to '
+      help:
+          'The atSign which this device will use to decide whether or not to '
           ' accept requests from some client atSign. '
           ' At least one of --managers and --policy-manager must be supplied.'
           ' If both --managers and --policy-manager are supplied then '
@@ -199,7 +203,8 @@ class SshnpdParams {
       abbr: 'd',
       mandatory: false,
       defaultsTo: "default",
-      help: 'This daemon will operate with this device name;'
+      help:
+          'This daemon will operate with this device name;'
           ' allows multiple devices to share an atSign.'
           ' $deviceNameFormatHelp',
     );
@@ -208,7 +213,8 @@ class SshnpdParams {
       'sshpublickey',
       abbr: 's',
       defaultsTo: false,
-      help: 'When set, will update authorized_keys'
+      help:
+          'When set, will update authorized_keys'
           ' to include public key sent by manager',
     );
 
@@ -217,7 +223,8 @@ class SshnpdParams {
       abbr: 'h',
       negatable: false,
       defaultsTo: false,
-      help: 'Hides the device from advertising its information to the manager'
+      help:
+          'Hides the device from advertising its information to the manager'
           ' atSign. Even with this enabled, sshnpd will still respond to ping'
           ' requests from the manager. (This takes priority over -u / --un-hide)',
     );
@@ -245,7 +252,9 @@ class SshnpdParams {
       aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain',
+      help:
+          'atDirectory domain.'
+          ' Alias (for backwards compatibility): --root-domain',
     );
 
     parser.addOption(
@@ -253,10 +262,12 @@ class SshnpdParams {
       aliases: const ['dg'],
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.deviceGroupName,
-      help: 'The name of this device\'s group. When delegated authorization'
+      help:
+          'The name of this device\'s group. When delegated authorization'
           ' is being used then the group name is sent to the authorizer'
           ' service as well as the device name, this daemon\'s atSign, '
-          ' and the client atSign which is requesting a connection',
+          ' and the client atSign which is requesting a connection.'
+          ' Alias: --dg',
     );
 
     parser.addOption(
@@ -279,7 +290,8 @@ class SshnpdParams {
       'ephemeral-permissions',
       mandatory: false,
       defaultsTo: '',
-      help: 'The permissions which will be added to the authorized_keys file'
+      help:
+          'The permissions which will be added to the authorized_keys file'
           ' for the ephemeral public keys which are generated when a client'
           ' is connecting via forward ssh'
           ' e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"',
@@ -295,7 +307,8 @@ class SshnpdParams {
     parser.addOption(
       'storage-path',
       mandatory: false,
-      help: 'Directory for local storage.'
+      help:
+          'Directory for local storage.'
           r' Defaults to $HOME/.atsign/storage/$atSign/.npd/$deviceName/',
     );
 
@@ -304,9 +317,11 @@ class SshnpdParams {
       aliases: ['po'],
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.permitOpen,
-      help: 'Comma separated-list of host:port to which the daemon will permit'
+      help:
+          'Comma separated-list of host:port to which the daemon will permit'
           ' a connection from an authorized client. Hosts may be dns names or'
-          ' ip addresses.',
+          ' ip addresses.'
+          ' Alias: --po',
     );
 
     parser.addFlag(

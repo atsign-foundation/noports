@@ -65,8 +65,9 @@ class SrvdParams {
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       perSessionStorage: r['per-session-storage'],
       bind443: r['443'],
-      localBindPort443:
-          r['443-bind-port'] == null ? 443 : int.parse(r['443-bind-port']),
+      localBindPort443: r['443-bind-port'] == null
+          ? 443
+          : int.parse(r['443-bind-port']),
       debug: r['debug'],
     );
   }
@@ -74,7 +75,6 @@ class SrvdParams {
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
     );
 
     // Basic arguments
@@ -83,7 +83,9 @@ class SrvdParams {
       abbr: 'k',
       mandatory: false,
       aliases: const ['keyFile'],
-      help: 'atSign\'s atKeys file if not in ~/.atsign/keys/',
+      help:
+          'atSign\'s atKeys file if not in ~/.atsign/keys/'
+          '  Alias: --keyFile',
     );
     parser.addOption(
       'atsign',
@@ -128,28 +130,34 @@ class SrvdParams {
       aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain',
+      help:
+          'atDirectory domain.'
+          ' Alias (for backwards compatibility): --root-domain',
     );
     parser.addFlag(
       'per-session-storage',
       aliases: ['pss'],
       defaultsTo: true,
       negatable: true,
-      help: 'Use ephemeral local storage for each session.'
+      help:
+          'Use ephemeral local storage for each session.'
           ' When true, allows you to run multiple srvds concurrently on the'
           ' same host, as the same user. When false, only a single local srvd'
-          ' may run concurrently on the same host as the same user.',
+          ' may run concurrently on the same host as the same user.'
+          ' Alias: --pss',
     );
     parser.addFlag(
       '443',
       defaultsTo: false,
-      help: 'Also bind to port 443, to support clients which want to connect'
+      help:
+          'Also bind to port 443, to support clients which want to connect'
           ' only to port 443 (for ... \$reasons)',
     );
     parser.addOption(
       '443-bind-port',
       mandatory: false,
-      help: 'The actual port to bind to - for example in a docker env you may'
+      help:
+          'The actual port to bind to - for example in a docker env you may'
           ' wish to forward port 443 on the host to a different port in the'
           ' container',
     );
