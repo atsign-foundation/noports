@@ -17,7 +17,7 @@ Future<void> main(List<String> args) async {
 
   AtSignLogger logger = AtSignLogger(' srv.main ');
 
-  final ArgParser parser = ArgParser(showAliasesInUsage: true)
+  final ArgParser parser = ArgParser()
     ..addOption('host', abbr: 'h', mandatory: true, help: 'rvd host')
     ..addOption('port', abbr: 'p', mandatory: true, help: 'rvd port')
     ..addOption('local-port',
