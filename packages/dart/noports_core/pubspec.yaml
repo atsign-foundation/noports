@@ -2,7 +2,7 @@ name: noports_core
 description: Core library code for sshnoports
 homepage: https://docs.atsign.com/
 
-version: 6.6.1
+version: 6.7.0
 
 environment:
   sdk: ">=3.8.0"
@@ -33,10 +33,6 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
-  args:
-    git:
-      ref: gkc/show-aliases-in-usage
-      url: https://github.com/gkc/args
 
 dev_dependencies:
   build_runner: ^2.4.12
