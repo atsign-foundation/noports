@@ -60,6 +60,7 @@ class Constants {
     }
   }
 
+
   // Root Domain configuration
   static bool rootsIsEmpty() => _rootMap.isEmpty;
   static LocalizedRootMap getRoots(BuildContext context) {
@@ -70,8 +71,6 @@ class Constants {
           v.description["en"] ?? // fallback to english
           k; // fallback to the domain if we couldn't find a description
 
-  static String get favoriteKeyName => 'favorites';
-  static String? get namespace => 'noports';
 
       return MapEntry(k, (
         port: v.port,
@@ -81,6 +80,8 @@ class Constants {
       ));
     });
   }
+
+  static const String favoriteKeyName = 'favorites';
 
   static const pngIconDark = 'assets/noports-icon64-dark.png';
   static const icoIconDark = 'assets/noports-icon64-dark.ico';

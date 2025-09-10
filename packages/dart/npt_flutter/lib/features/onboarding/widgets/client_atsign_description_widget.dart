@@ -146,7 +146,7 @@ class _ClientAtsignDescriptionWidgetState
                                   ),
                                   children: [
                                     TextSpan(
-                                      text: StringConst.atsign_client,
+                                      text: StringConst.atsignClient,
                                       style: TextStyle(
                                         color: Colors.black,
                                         fontSize: Sizes.p10,
