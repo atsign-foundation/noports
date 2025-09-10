@@ -1,3 +1,7 @@
+## 1.0.16
+
+- build(deps): Bump at_c to use cJSON 1.7.19
+
 ## 1.0.15
 
 - feat: Add SBOM using Conan lock file
