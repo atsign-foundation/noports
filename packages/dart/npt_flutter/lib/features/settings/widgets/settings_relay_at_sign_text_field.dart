@@ -10,10 +10,12 @@ class SettingsRelayAtSignTextField extends StatefulWidget {
   const SettingsRelayAtSignTextField({super.key});
 
   @override
-  State<SettingsRelayAtSignTextField> createState() => _SettingsRelayAtSignTextFieldState();
+  State<SettingsRelayAtSignTextField> createState() =>
+      _SettingsRelayAtSignTextFieldState();
 }
 
-class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextField> {
+class _SettingsRelayAtSignTextFieldState
+    extends State<SettingsRelayAtSignTextField> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -26,29 +28,39 @@ class _SettingsRelayAtSignTextFieldState extends State<SettingsRelayAtSignTextFi
       },
       builder: (BuildContext context, String? relayAtsign) {
         if (relayAtsign == null) return gap0;
-        Future.microtask(() => controller.value =
-            TextEditingValue(text: relayAtsign, selection: TextSelection.collapsed(offset: relayAtsign.length)));
+        Future.microtask(
+          () => controller.value = TextEditingValue(
+            text: relayAtsign,
+            selection: TextSelection.collapsed(offset: relayAtsign.length),
+          ),
+        );
         return SizedBox(
           width: Sizes.p200,
           height: Sizes.p70,
           child: TextFormField(
-              controller: controller,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: FormValidator.validateEmptyRelayField,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.custom,
-                errorMaxLines: 2,
-              ),
-              onChanged: (value) {
-                value = value.atsignify();
-                controller.value =
-                    TextEditingValue(text: value, selection: TextSelection.collapsed(offset: value.length));
-                var bloc = context.read<SettingsBloc>();
-                bloc.add(SettingsEditEvent(
-                  settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
+            controller: controller,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: FormValidator.validateEmptyRelayField,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.custom,
+              errorMaxLines: 2,
+            ),
+            onChanged: (value) {
+              value = value.atsignify();
+              controller.value = TextEditingValue(
+                text: value,
+                selection: TextSelection.collapsed(offset: value.length),
+              );
+              var bloc = context.read<SettingsBloc>();
+              bloc.add(
+                SettingsEditEvent(
+                  settings: (bloc.state as SettingsLoadedState).settings
+                      .copyWith(relayAtsign: value),
                   save: true,
-                ));
-              }),
+                ),
+              );
+            },
+          ),
         );
       },
     );

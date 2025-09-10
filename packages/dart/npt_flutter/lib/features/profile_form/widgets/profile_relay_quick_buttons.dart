@@ -13,29 +13,31 @@ class ProfileRelayQuickButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final ScrollController controller = ScrollController();
-    return BlocSelector<ProfileBloc, ProfileState, String?>(selector: (ProfileState state) {
-      if (state is ProfileLoadedState) {
-        return state.profile.relayAtsign;
-      }
-      return null;
-    }, builder: (BuildContext context, String? relayAtsign) {
-      if (relayAtsign == null) return gap0;
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(strings.relay),
-            gapH4,
-            Text(
-              strings.relayDescription,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            gapH10,
-            Scrollbar(
-              controller: controller,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
+    return BlocSelector<ProfileBloc, ProfileState, String?>(
+      selector: (ProfileState state) {
+        if (state is ProfileLoadedState) {
+          return state.profile.relayAtsign;
+        }
+        return null;
+      },
+      builder: (BuildContext context, String? relayAtsign) {
+        if (relayAtsign == null) return gap0;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings.relay),
+              gapH4,
+              Text(
+                strings.relayDescription,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              gapH10,
+              Scrollbar(
+                controller: controller,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   controller: controller,
                   child: Padding(
@@ -57,9 +59,14 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                                   groupValue: relayAtsign,
                                   onChanged: (value) {
                                     var bloc = context.read<ProfileBloc>();
-                                    bloc.add(ProfileEditEvent(
-                                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(relayAtsign: value),
-                                    ));
+                                    bloc.add(
+                                      ProfileEditEvent(
+                                        profile:
+                                            (bloc.state as ProfileLoadedState)
+                                                .profile
+                                                .copyWith(relayAtsign: value),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -72,11 +79,13 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )),
-            ),
-          ],
-        ),
-      );
-    });
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

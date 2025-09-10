@@ -6,7 +6,10 @@ final class ProfilesRunningState extends Loggable {
 
   ProfilesRunningState withConnector(String uuid, SocketConnector? connector) {
     return ProfilesRunningState(
-      Map.fromEntries([...socketConnectors.entries.where((e) => e.key != uuid), MapEntry(uuid, connector)]),
+      Map.fromEntries([
+        ...socketConnectors.entries.where((e) => e.key != uuid),
+        MapEntry(uuid, connector),
+      ]),
     );
   }
 

@@ -40,8 +40,9 @@ class _TrayManagerState extends State<TrayManager>
       case ProfilesRunningState _:
         cubit.reload(profilesRunningState: state);
       case SettingsLoadedState _:
-        var localizations = await AppLocalizations.delegate
-            .load(state.settings.language.locale);
+        var localizations = await AppLocalizations.delegate.load(
+          state.settings.language.locale,
+        );
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
@@ -70,28 +71,23 @@ class _TrayManagerState extends State<TrayManager>
           /// Reload the tray whenever one of the following states changes
           /// Note: this doesn't always result in a change to the tray, but we
           /// still have to check
-          BlocListener<FavoriteBloc, FavoritesState>(
-            listener: reloadTray,
-          ),
-          BlocListener<ProfileListBloc, ProfileListState>(
-            listener: reloadTray,
-          ),
+          BlocListener<FavoriteBloc, FavoritesState>(listener: reloadTray),
+          BlocListener<ProfileListBloc, ProfileListState>(listener: reloadTray),
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
             listener: reloadTray,
           ),
           BlocListener<SettingsBloc, SettingsState>(
-              listener: reloadTray,
-              // Only call listener when the language changes in settings
-              listenWhen: (prev, next) {
-                if (prev is SettingsLoadedState &&
-                    next is SettingsLoadedState) {
-                  return prev.settings.language != next.settings.language;
-                }
-                // This may cause some extra reloading (very occasionally, settings shouldn't change often)
-                // but it should catch all of the edge cases
-                return prev is SettingsLoadedState ||
-                    next is SettingsLoadedState;
-              }),
+            listener: reloadTray,
+            // Only call listener when the language changes in settings
+            listenWhen: (prev, next) {
+              if (prev is SettingsLoadedState && next is SettingsLoadedState) {
+                return prev.settings.language != next.settings.language;
+              }
+              // This may cause some extra reloading (very occasionally, settings shouldn't change often)
+              // but it should catch all of the edge cases
+              return prev is SettingsLoadedState || next is SettingsLoadedState;
+            },
+          ),
 
           /// Yeah I really hate this... an indefinite list of listeners
           /// but it's the only way to decouple the profiles from having to know
@@ -102,13 +98,15 @@ class _TrayManagerState extends State<TrayManager>
           /// calls where we take the performance hit are:
           /// 1. In an asynchronous background task (who cares)
           /// 2. Worth it, compared to the potential maintenance costs
-          ...profiles.map((uuid) => BlocProvider<ProfileBloc>(
-                key: Key("TrayManager-$uuid"),
-                create: (context) => profileCacheCubit.getProfileBloc(uuid),
-                child: BlocListener<ProfileBloc, ProfileState>(
-                  listener: reloadTray,
-                ),
-              )),
+          ...profiles.map(
+            (uuid) => BlocProvider<ProfileBloc>(
+              key: Key("TrayManager-$uuid"),
+              create: (context) => profileCacheCubit.getProfileBloc(uuid),
+              child: BlocListener<ProfileBloc, ProfileState>(
+                listener: reloadTray,
+              ),
+            ),
+          ),
         ],
         child: widget.child,
       ),

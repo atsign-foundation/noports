@@ -22,7 +22,9 @@ class DemoProfileInfoWidget extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: Sizes.p16, vertical: Sizes.p10),
+        horizontal: Sizes.p16,
+        vertical: Sizes.p10,
+      ),
       width: MediaQuery.of(context).size.width * 0.8,
       decoration: BoxDecoration(
         color: AppColor.primaryColorBackground,
@@ -36,21 +38,21 @@ class DemoProfileInfoWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(Sizes.p40),
             ),
             padding: const EdgeInsets.all(Sizes.p8),
-            child: Row(children: [
-              PhosphorIcon(
-                PhosphorIcons.lightbulbFilament(),
-                color: AppColor.primaryColor,
-              ),
-              Text(strings.demo,
-                  style: const TextStyle(
-                    color: AppColor.primaryColor,
-                  ))
-            ]),
+            child: Row(
+              children: [
+                PhosphorIcon(
+                  PhosphorIcons.lightbulbFilament(),
+                  color: AppColor.primaryColor,
+                ),
+                Text(
+                  strings.demo,
+                  style: const TextStyle(color: AppColor.primaryColor),
+                ),
+              ],
+            ),
           ),
           gapW16,
-          Text(
-            strings.demoDescription,
-          ),
+          Text(strings.demoDescription),
           TextButton(
             onPressed: () async {
               // Show a progress indicator before fetching the demo profile
@@ -61,16 +63,21 @@ class DemoProfileInfoWidget extends StatelessWidget {
                     const Center(child: CircularProgressIndicator()),
               );
               final content = await Export.getDemoProfile();
-              Navigator.of(context, rootNavigator: true)
-                  .pop(); // Dismiss the progress indicator
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pop(); // Dismiss the progress indicator
               Export.convertExternalDataSourceToProfile(
-                  fileType: ExportableProfileFiletype.json, contents: content);
+                fileType: ExportableProfileFiletype.json,
+                contents: content,
+              );
             },
             child: Text(
               strings.demoTextButton,
               style: const TextStyle(
-                  color: AppColor.primaryColor,
-                  decoration: TextDecoration.underline),
+                color: AppColor.primaryColor,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
         ],

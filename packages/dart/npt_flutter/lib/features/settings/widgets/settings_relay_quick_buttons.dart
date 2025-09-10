@@ -11,17 +11,19 @@ class SettingsRelayQuickButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScrollController controller = ScrollController();
-    return BlocSelector<SettingsBloc, SettingsState, String?>(selector: (SettingsState state) {
-      if (state is SettingsLoadedState) {
-        return state.settings.relayAtsign;
-      }
-      return null;
-    }, builder: (BuildContext context, String? relayAtsign) {
-      if (relayAtsign == null) return gap0;
-      return Scrollbar(
-        controller: controller,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
+    return BlocSelector<SettingsBloc, SettingsState, String?>(
+      selector: (SettingsState state) {
+        if (state is SettingsLoadedState) {
+          return state.settings.relayAtsign;
+        }
+        return null;
+      },
+      builder: (BuildContext context, String? relayAtsign) {
+        if (relayAtsign == null) return gap0;
+        return Scrollbar(
+          controller: controller,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
             controller: controller,
             scrollDirection: Axis.horizontal,
             child: Padding(
@@ -31,7 +33,10 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                 children: [
                   ...RelayOptions.values.map(
                     (e) => Padding(
-                      padding: const EdgeInsets.only(right: Sizes.p10, top: Sizes.p4),
+                      padding: const EdgeInsets.only(
+                        right: Sizes.p10,
+                        top: Sizes.p4,
+                      ),
                       child: CustomContainer.foreground(
                         key: Key(e.name),
                         child: SizedBox(
@@ -42,10 +47,14 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                             groupValue: relayAtsign,
                             onChanged: (value) {
                               var bloc = context.read<SettingsBloc>();
-                              bloc.add(SettingsEditEvent(
-                                settings: (bloc.state as SettingsLoadedState).settings.copyWith(relayAtsign: value),
-                                save: true,
-                              ));
+                              bloc.add(
+                                SettingsEditEvent(
+                                  settings: (bloc.state as SettingsLoadedState)
+                                      .settings
+                                      .copyWith(relayAtsign: value),
+                                  save: true,
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -58,8 +67,10 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                   ),
                 ],
               ),
-            )),
-      );
-    });
+            ),
+          ),
+        );
+      },
+    );
   }
 }

@@ -26,18 +26,20 @@ class ProfileRemoteHostTextField extends StatelessWidget {
             return SizedBox(
               height: Sizes.p100,
               child: TextFormField(
-                  initialValue: state,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: FormValidator.validateRemoteHostField,
-                  decoration: const InputDecoration(
-                    errorMaxLines: 3,
-                  ),
-                  onChanged: (value) {
-                    var bloc = context.read<ProfileBloc>();
-                    bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(remoteHost: value),
-                    ));
-                  }),
+                initialValue: state,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: FormValidator.validateRemoteHostField,
+                decoration: const InputDecoration(errorMaxLines: 3),
+                onChanged: (value) {
+                  var bloc = context.read<ProfileBloc>();
+                  bloc.add(
+                    ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile
+                          .copyWith(remoteHost: value),
+                    ),
+                  );
+                },
+              ),
             );
           },
         ),

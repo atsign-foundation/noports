@@ -21,16 +21,22 @@ enum ExportableProfileFiletype {
   final String filetype;
   const ExportableProfileFiletype(this.filetype);
 
-  static ExportableProfileFiletype? fromExtension(String ext) =>
-      switch (ext) { "json" => json, "yaml" => yaml, _ => null };
+  static ExportableProfileFiletype? fromExtension(String ext) => switch (ext) {
+    "json" => json,
+    "yaml" => yaml,
+    _ => null,
+  };
 
-  static Iterable<String> get filetypes => ExportableProfileFiletype.values.map((e) => e.filetype);
+  static Iterable<String> get filetypes =>
+      ExportableProfileFiletype.values.map((e) => e.filetype);
 }
 
 class Export {
   static const profilesKey = 'profiles';
   @visibleForTesting
-  static Future<File?> pickAndCreateFile(ExportableProfileFiletype filetype) async {
+  static Future<File?> pickAndCreateFile(
+    ExportableProfileFiletype filetype,
+  ) async {
     String? outputFile = await FilePicker.platform.saveFile(
       dialogTitle: 'Please select a file to export to:',
       fileName: 'export.${filetype.filetype}',
@@ -63,7 +69,9 @@ class Export {
       case ExportableProfileFiletype.yaml:
         f.writeAsString(YamlWriter().convert(json));
     }
-    CustomSnackBar.success(content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved);
+    CustomSnackBar.success(
+      content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
+    );
   }
 
   /// A closure function which returns a void Function() that prompts the user
@@ -97,9 +105,7 @@ class Export {
         throw 'decoded $fileType document is not a Map';
       }
       if (json[profilesKey] is! List) {
-        CustomSnackBar.error(
-          content: strings.fileFormatInvalidDetails,
-        );
+        CustomSnackBar.error(content: strings.fileFormatInvalidDetails);
         throw 'profiles is not a List in this document';
       }
 
@@ -110,7 +116,9 @@ class Export {
           })
           .where((e) => e != null)
           .cast<Profile>();
-      App.navState.currentContext?.read<ProfileListBloc>().add(ProfileListAddEvent(profiles));
+      App.navState.currentContext?.read<ProfileListBloc>().add(
+        ProfileListAddEvent(profiles),
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         CustomSnackBar.success(content: strings.fileImported);
       });
@@ -125,8 +133,10 @@ class Export {
   static void importProfiles() async {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     try {
-      FilePickerResult? result =
-          await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json', 'yaml']);
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'yaml'],
+      );
 
       if (result == null) {
         return;
@@ -139,7 +149,10 @@ class Export {
 
       if (fileType == null) return;
 
-      convertExternalDataSourceToProfile(fileType: fileType, contents: contents);
+      convertExternalDataSourceToProfile(
+        fileType: fileType,
+        contents: contents,
+      );
     } catch (e) {
       CustomSnackBar.error(content: strings.profileImportFailed);
       App.log('Failed to import file: $e'.loggable);
@@ -150,7 +163,10 @@ class Export {
     final context = App.navState.currentContext!;
 
     final result = await showDialog<String?>(
-        useRootNavigator: true, context: context, builder: (BuildContext context) => const ImportTypePasteDialog());
+      useRootNavigator: true,
+      context: context,
+      builder: (BuildContext context) => const ImportTypePasteDialog(),
+    );
     if (result == null) {
       return;
     }
@@ -165,7 +181,10 @@ class Export {
       profileFileType = ExportableProfileFiletype.yaml;
     }
 
-    convertExternalDataSourceToProfile(fileType: profileFileType, contents: result);
+    convertExternalDataSourceToProfile(
+      fileType: profileFileType,
+      contents: result,
+    );
   }
 
   /// Fetches and returns the demo profile JSON from the provided Google Drive link.
@@ -180,7 +199,9 @@ class Export {
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
       if (response.statusCode != 200) {
-        throw Exception('Failed to download demo profile: HTTP ${response.statusCode}');
+        throw Exception(
+          'Failed to download demo profile: HTTP ${response.statusCode}',
+        );
       }
       final content = await response.transform(utf8.decoder).join();
 

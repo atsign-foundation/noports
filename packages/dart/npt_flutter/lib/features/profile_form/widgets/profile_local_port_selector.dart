@@ -27,20 +27,24 @@ class ProfileLocalPortSelector extends StatelessWidget {
             return SizedBox(
               height: Sizes.p100,
               child: TextFormField(
-                  initialValue: state == 0 ? null : state.toString(),
-                  autovalidateMode: AutovalidateMode.always,
-                  validator: FormValidator.validateLocalPortField,
-                  decoration: InputDecoration(
-                    hintText: '0',
-                    hintStyle: Theme.of(context).textTheme.bodyLarge,
-                    errorMaxLines: 2,
-                  ),
-                  onChanged: (value) {
-                    var bloc = context.read<ProfileBloc>();
-                    bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(localPort: Port.fromString(value)),
-                    ));
-                  }),
+                initialValue: state == 0 ? null : state.toString(),
+                autovalidateMode: AutovalidateMode.always,
+                validator: FormValidator.validateLocalPortField,
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: Theme.of(context).textTheme.bodyLarge,
+                  errorMaxLines: 2,
+                ),
+                onChanged: (value) {
+                  var bloc = context.read<ProfileBloc>();
+                  bloc.add(
+                    ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile
+                          .copyWith(localPort: Port.fromString(value)),
+                    ),
+                  );
+                },
+              ),
             );
           },
         ),

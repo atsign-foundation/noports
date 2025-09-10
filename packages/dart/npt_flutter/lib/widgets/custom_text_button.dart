@@ -23,44 +23,44 @@ class CustomTextButton extends StatelessWidget {
     required this.type,
   });
 
-  const CustomTextButton.email({
+  const CustomTextButton.email({super.key})
+    : iconData = Icons.email_outlined,
+      type = CustomListTileType.email;
+
+  const CustomTextButton.discord({super.key})
+    : iconData = Icons.discord,
+      type = CustomListTileType.discord;
+
+  const CustomTextButton.faq({super.key})
+    : iconData = Icons.help_center_outlined,
+      type = CustomListTileType.faq;
+
+  const CustomTextButton.privacyPolicy({super.key})
+    : iconData = Icons.account_balance_wallet_outlined,
+      type = CustomListTileType.privacyPolicy;
+
+  const CustomTextButton.backUpYourKey({
+    this.iconData = Icons.bookmark_outline,
+    this.type = CustomListTileType.backupYourKey,
     super.key,
-  })  : iconData = Icons.email_outlined,
-        type = CustomListTileType.email;
+  });
 
-  const CustomTextButton.discord({
+  const CustomTextButton.resetAtsign({
+    this.iconData = Icons.rotate_right,
+    this.type = CustomListTileType.resetAtsign,
     super.key,
-  })  : iconData = Icons.discord,
-        type = CustomListTileType.discord;
-
-  const CustomTextButton.faq({
+  });
+  const CustomTextButton.signOut({
+    this.iconData = Icons.logout_outlined,
+    this.type = CustomListTileType.signOut,
     super.key,
-  })  : iconData = Icons.help_center_outlined,
-        type = CustomListTileType.faq;
+  });
 
-  const CustomTextButton.privacyPolicy({
+  const CustomTextButton.feedback({
+    this.iconData = Icons.feedback_outlined,
+    this.type = CustomListTileType.feedback,
     super.key,
-  })  : iconData = Icons.account_balance_wallet_outlined,
-        type = CustomListTileType.privacyPolicy;
-
-  const CustomTextButton.backUpYourKey(
-      {this.iconData = Icons.bookmark_outline,
-      this.type = CustomListTileType.backupYourKey,
-      super.key});
-
-  const CustomTextButton.resetAtsign(
-      {this.iconData = Icons.rotate_right,
-      this.type = CustomListTileType.resetAtsign,
-      super.key});
-  const CustomTextButton.signOut(
-      {this.iconData = Icons.logout_outlined,
-      this.type = CustomListTileType.signOut,
-      super.key});
-
-  const CustomTextButton.feedback(
-      {this.iconData = Icons.feedback_outlined,
-      this.type = CustomListTileType.feedback,
-      super.key});
+  });
 
   final IconData iconData;
 
@@ -75,25 +75,25 @@ class CustomTextButton extends StatelessWidget {
     Future<void> onTap({String? rootDomain}) async {
       switch (type) {
         case CustomListTileType.email:
-          Uri emailUri = Uri(
-            scheme: 'mailto',
-            path: 'info@noports.com',
-          );
+          Uri emailUri = Uri(scheme: 'mailto', path: 'info@noports.com');
           if (!await launchUrl(emailUri)) {
             CustomSnackBar.notification(
-                content: strings.noEmailClientAvailable);
+              content: strings.noEmailClientAvailable,
+            );
           }
           break;
         case CustomListTileType.discord:
-          final Uri url =
-              Uri.parse('https://discord.gg/atsign-778383211214536722');
+          final Uri url = Uri.parse(
+            'https://discord.gg/atsign-778383211214536722',
+          );
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
           break;
         case CustomListTileType.faq:
-          final Uri url =
-              Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
+          final Uri url = Uri.parse(
+            'https://docs.noports.com/ssh-no-ports/faq',
+          );
           if (!await launchUrl(url)) {
             throw Exception('Could not launch $url');
           }
@@ -110,8 +110,9 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.resetAtsign:
-          final futurePreference =
-              await AtClientMethods.loadAtClientPreference(rootDomain!);
+          final futurePreference = await AtClientMethods.loadAtClientPreference(
+            rootDomain!,
+          );
           if (context.mounted) {
             final result = await AtOnboarding.reset(
               context: context,
@@ -127,11 +128,10 @@ class CustomTextButton extends StatelessWidget {
 
             if (context.mounted && result == AtOnboardingResetResult.success) {
               onboardingService.setAtsign = null;
-              Navigator.of(context, rootNavigator: true)
-                  .pushNamedAndRemoveUntil(
-                Routes.onboarding,
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
             }
           }
           break;
@@ -145,7 +145,8 @@ class CustomTextButton extends StatelessWidget {
 
           if (!await launchUrl(emailUri)) {
             CustomSnackBar.notification(
-                content: strings.noEmailClientAvailable);
+              content: strings.noEmailClientAvailable,
+            );
           }
           break;
 
@@ -156,10 +157,10 @@ class CustomTextButton extends StatelessWidget {
           );
           await preSignout();
           if (context.mounted) {
-            Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-              Routes.onboarding,
-              (route) => false,
-            );
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
           }
           break;
       }
@@ -190,33 +191,36 @@ class CustomTextButton extends StatelessWidget {
 
     if (type == CustomListTileType.resetAtsign) {
       return BlocBuilder<OnboardingCubit, AtsignInformation>(
-          builder: (context, atsignInformation) {
-        return Padding(
-          padding: const EdgeInsets.only(
-              left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
-          child: TextButton.icon(
-            label: Text(getTitle(strings)),
-            onPressed: () {
-              onTap(rootDomain: atsignInformation.rootDomain);
-            },
-            icon: Icon(
-              iconData,
+        builder: (context, atsignInformation) {
+          return Padding(
+            padding: const EdgeInsets.only(
+              left: Sizes.p30,
+              right: Sizes.p30,
+              bottom: Sizes.p10,
             ),
-          ),
-        );
-      });
+            child: TextButton.icon(
+              label: Text(getTitle(strings)),
+              onPressed: () {
+                onTap(rootDomain: atsignInformation.rootDomain);
+              },
+              icon: Icon(iconData),
+            ),
+          );
+        },
+      );
     }
     return Padding(
       padding: const EdgeInsets.only(
-          left: Sizes.p30, right: Sizes.p30, bottom: Sizes.p10),
+        left: Sizes.p30,
+        right: Sizes.p30,
+        bottom: Sizes.p10,
+      ),
       child: TextButton.icon(
         label: Text(getTitle(strings)),
         onPressed: () {
           onTap();
         },
-        icon: Icon(
-          iconData,
-        ),
+        icon: Icon(iconData),
       ),
     );
   }

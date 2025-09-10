@@ -47,8 +47,9 @@ class _ActivateCramDialogState extends State<ActivateCramDialog> {
       title: Center(
         child: switch (status) {
           ActivationStatus.initial => Text(strings.typePasteLicense),
-          ActivationStatus.activating =>
-            Text(strings.activationStatusActivating),
+          ActivationStatus.activating => Text(
+            strings.activationStatusActivating,
+          ),
         },
       ),
       content: SizedBox(
@@ -57,39 +58,37 @@ class _ActivateCramDialogState extends State<ActivateCramDialog> {
         child: switch (status) {
           ActivationStatus.activating => const Spinner(),
           ActivationStatus.initial => SizedBox(
-              height: Sizes.p80,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: Sizes.p600,
-                    child: TextField(
-                      focusNode: cramFocusNode,
-                      maxLength: widget.cramKeyLength,
-                      controller: cramController,
-                      onChanged: (value) {
-                        var normalized = value.trim().toLowerCase();
-                        setState(() {
-                          cramController.value = TextEditingValue(
-                            text: normalized,
-                            selection: TextSelection.collapsed(
-                              offset: normalized.length,
-                            ),
-                          );
-                        });
-                      },
-                      onSubmitted: (textChanged) {},
-                      cursorColor: AppColor.primaryColor,
-                      style: const TextStyle(
-                        color: AppColor.onSurfaceColor,
-                      ),
-                      textCapitalization: TextCapitalization.none,
-                      canRequestFocus: true,
-                      autofocus: true,
-                    ),
-                  )
-                ],
-              ),
+            height: Sizes.p80,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: Sizes.p600,
+                  child: TextField(
+                    focusNode: cramFocusNode,
+                    maxLength: widget.cramKeyLength,
+                    controller: cramController,
+                    onChanged: (value) {
+                      var normalized = value.trim().toLowerCase();
+                      setState(() {
+                        cramController.value = TextEditingValue(
+                          text: normalized,
+                          selection: TextSelection.collapsed(
+                            offset: normalized.length,
+                          ),
+                        );
+                      });
+                    },
+                    onSubmitted: (textChanged) {},
+                    cursorColor: AppColor.primaryColor,
+                    style: const TextStyle(color: AppColor.onSurfaceColor),
+                    textCapitalization: TextCapitalization.none,
+                    canRequestFocus: true,
+                    autofocus: true,
+                  ),
+                ),
+              ],
             ),
+          ),
         },
       ),
       actions: switch (status) {
@@ -102,20 +101,20 @@ class _ActivateCramDialogState extends State<ActivateCramDialog> {
   }
 
   Widget get cancelButton => TextButton(
-        key: const Key("NoPortsActivateCancelButton"),
-        child: Text(strings.cancel),
-        onPressed: () {
-          Navigator.of(context).pop(AtOnboardingResult.cancelled());
-        },
-      );
+    key: const Key("NoPortsActivateCancelButton"),
+    child: Text(strings.cancel),
+    onPressed: () {
+      Navigator.of(context).pop(AtOnboardingResult.cancelled());
+    },
+  );
 
   Widget get confirmPinButton => TextButton(
-        key: const Key("NoPortsActivateConfirmButton"),
-        onPressed: cramController.text.length != widget.cramKeyLength
-            ? null // disable the button when key isn't complete
-            : onSubmit,
-        child: Text(strings.confirm),
-      );
+    key: const Key("NoPortsActivateConfirmButton"),
+    onPressed: cramController.text.length != widget.cramKeyLength
+        ? null // disable the button when key isn't complete
+        : onSubmit,
+    child: Text(strings.confirm),
+  );
 
   void onSubmit() async {
     setState(() {

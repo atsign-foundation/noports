@@ -27,18 +27,20 @@ class ProfileRemotePortSelector extends StatelessWidget {
             return SizedBox(
               height: Sizes.p100,
               child: TextFormField(
-                  initialValue: state.toString(),
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: FormValidator.validateRemotePortField,
-                  decoration: const InputDecoration(
-                    errorMaxLines: 2,
-                  ),
-                  onChanged: (value) {
-                    var bloc = context.read<ProfileBloc>();
-                    bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(remotePort: Port.fromString(value)),
-                    ));
-                  }),
+                initialValue: state.toString(),
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: FormValidator.validateRemotePortField,
+                decoration: const InputDecoration(errorMaxLines: 2),
+                onChanged: (value) {
+                  var bloc = context.read<ProfileBloc>();
+                  bloc.add(
+                    ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile
+                          .copyWith(remotePort: Port.fromString(value)),
+                    ),
+                  );
+                },
+              ),
             );
           },
         ),

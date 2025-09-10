@@ -27,8 +27,10 @@ class Constants {
 
   static final RootMap _rootMap = {};
   static initialize() {
-    String rootsJson =
-        const String.fromEnvironment('roots', defaultValue: '{}');
+    String rootsJson = const String.fromEnvironment(
+      'roots',
+      defaultValue: '{}',
+    );
     Map<String, dynamic> roots = jsonDecode(rootsJson);
     for (var root in roots.entries) {
       var domain = root.key;
@@ -63,7 +65,8 @@ class Constants {
   static LocalizedRootMap getRoots(BuildContext context) {
     return _rootMap.map((k, v) {
       var locale = Locale(AppLocalizations.of(context)?.localeName ?? "en");
-      var desc = v.description[locale.toString()] ?? // localized string
+      var desc =
+          v.description[locale.toString()] ?? // localized string
           v.description["en"] ?? // fallback to english
           k; // fallback to the domain if we couldn't find a description
 

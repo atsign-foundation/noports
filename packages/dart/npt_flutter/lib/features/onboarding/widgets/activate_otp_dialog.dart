@@ -65,10 +65,7 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
   @override
   Widget build(BuildContext context) {
     if (_showCram) {
-      return ActivateCramDialog(
-        atSign: widget.atSign,
-        config: widget.config,
-      );
+      return ActivateCramDialog(atSign: widget.atSign, config: widget.config);
     }
 
     var theme = Theme.of(context);
@@ -77,8 +74,9 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
         child: switch (status) {
           ActivationStatus.preparing => Text(strings.activationStatusPreparing),
           ActivationStatus.otpWait => Text(strings.activationStatusOtpWait),
-          ActivationStatus.activating =>
-            Text(strings.activationStatusActivating),
+          ActivationStatus.activating => Text(
+            strings.activationStatusActivating,
+          ),
         },
       ),
       content: SizedBox(
@@ -86,83 +84,82 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
         width: Sizes.p400,
         child: switch (status) {
           ActivationStatus.preparing ||
-          ActivationStatus.activating =>
-            const Spinner(),
+          ActivationStatus.activating => const Spinner(),
           ActivationStatus.otpWait => SizedBox(
-              height: Sizes.p100,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 50,
-                    child: PinCodeTextField(
-                      focusNode: pinFocusNode,
-                      appContext: context,
-                      length: widget.pinLength,
-                      controller: pinController,
-                      onChanged: (value) {
-                        setState(() {
-                          pinController.text = value.toUpperCase();
-                        });
-                      },
-                      // Styling
-                      animationType: AnimationType.fade,
-                      pinTheme: PinTheme(
-                        shape: PinCodeFieldShape.box,
-                        borderRadius: BorderRadius.circular(5),
-                        fieldHeight: 50,
-                        fieldWidth: 40,
-                        activeFillColor: Colors.white,
-                        inactiveFillColor: Colors.white,
-                        selectedFillColor: Colors.white,
-                        activeColor: AppColor.primaryColor,
-                        selectedColor: AppColor.primaryColor,
-                        inactiveColor: theme.colorScheme.onSurface,
-                        errorBorderColor: theme.colorScheme.onSurface,
+            height: Sizes.p100,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 50,
+                  child: PinCodeTextField(
+                    focusNode: pinFocusNode,
+                    appContext: context,
+                    length: widget.pinLength,
+                    controller: pinController,
+                    onChanged: (value) {
+                      setState(() {
+                        pinController.text = value.toUpperCase();
+                      });
+                    },
+                    // Styling
+                    animationType: AnimationType.fade,
+                    pinTheme: PinTheme(
+                      shape: PinCodeFieldShape.box,
+                      borderRadius: BorderRadius.circular(5),
+                      fieldHeight: 50,
+                      fieldWidth: 40,
+                      activeFillColor: Colors.white,
+                      inactiveFillColor: Colors.white,
+                      selectedFillColor: Colors.white,
+                      activeColor: AppColor.primaryColor,
+                      selectedColor: AppColor.primaryColor,
+                      inactiveColor: theme.colorScheme.onSurface,
+                      errorBorderColor: theme.colorScheme.onSurface,
+                    ),
+                    cursorColor: Colors.black,
+                    animationDuration: const Duration(milliseconds: 300),
+                    enableActiveFill: true,
+                    keyboardType: TextInputType.number,
+                    boxShadows: const [],
+                    onSubmitted: (valueChanged) {
+                      if (pinController.text.length == 4) {
+                        onSubmit();
+                      }
+                    },
+                    beforeTextPaste: (text) => true,
+                  ),
+                ),
+                gapH10,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: strings.orSpace,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                       ),
-                      cursorColor: Colors.black,
-                      animationDuration: const Duration(milliseconds: 300),
-                      enableActiveFill: true,
-                      keyboardType: TextInputType.number,
-                      boxShadows: const [],
-                      onSubmitted: (valueChanged) {
-                        if (pinController.text.length == 4) {
-                          onSubmit();
-                        }
-                      },
-                      beforeTextPaste: (text) => true,
-                    ),
+                      TextSpan(
+                        text: strings.activateUsingLicense,
+                        style: const TextStyle(color: AppColor.primaryColor),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => setState(() {
+                            _showCram = true;
+                          }),
+                      ),
+                    ],
                   ),
-                  gapH10,
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: strings.orSpace,
-                          style: TextStyle(color: theme.colorScheme.onSurface),
-                        ),
-                        TextSpan(
-                          text: strings.activateUsingLicense,
-                          style: const TextStyle(color: AppColor.primaryColor),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => setState(() {
-                                  _showCram = true;
-                                }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
         },
       ),
       actions: switch (status) {
         ActivationStatus.preparing => [cancelButton],
         ActivationStatus.otpWait => [
-            cancelButton,
-            resendPinButton,
-            confirmPinButton
-          ],
+          cancelButton,
+          resendPinButton,
+          confirmPinButton,
+        ],
         // Don't allow the user to cancel activate as this opens up a bunch of
         // edge cases around navigation and onboarding state
         ActivationStatus.activating => [],
@@ -188,42 +185,43 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
     } else {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
-        Navigator.of(context).pop(AtOnboardingResult.error(
-            message: "@${jsonDecode(res.body)["message"]}"));
+        Navigator.of(context).pop(
+          AtOnboardingResult.error(
+            message: "@${jsonDecode(res.body)["message"]}",
+          ),
+        );
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
-          content: Text(
-            strings.errorOtpRequestFailed,
-          ),
+          content: Text(strings.errorOtpRequestFailed),
         ),
       );
     }
   }
 
   Widget get cancelButton => TextButton(
-        key: const Key("NoPortsActivateCancelButton"),
-        child: Text(strings.cancel),
-        onPressed: () {
-          Navigator.of(context).pop(AtOnboardingResult.cancelled());
-        },
-      );
+    key: const Key("NoPortsActivateCancelButton"),
+    child: Text(strings.cancel),
+    onPressed: () {
+      Navigator.of(context).pop(AtOnboardingResult.cancelled());
+    },
+  );
 
   Widget get resendPinButton => TextButton(
-        key: const Key("NoPortsActivateResendButton"),
-        onPressed: _getPinCode,
-        child: Text(strings.resendPin),
-      );
+    key: const Key("NoPortsActivateResendButton"),
+    onPressed: _getPinCode,
+    child: Text(strings.resendPin),
+  );
 
   Widget get confirmPinButton => TextButton(
-        key: const Key("NoPortsActivateConfirmButton"),
-        onPressed: pinController.text.length < 4
-            ? null // disable the button when pin isn't complete
-            : onSubmit,
-        child: Text(strings.confirm),
-      );
+    key: const Key("NoPortsActivateConfirmButton"),
+    onPressed: pinController.text.length < 4
+        ? null // disable the button when pin isn't complete
+        : onSubmit,
+    child: Text(strings.confirm),
+  );
 
   void onSubmit() async {
     setState(() {
@@ -243,9 +241,7 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
-          content: Text(
-            strings.errorOtpVerificationFailed,
-          ),
+          content: Text(strings.errorOtpVerificationFailed),
         ),
       );
       setState(() {
@@ -261,8 +257,9 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
     if (widget.waitForTeapot) {
       int round = 1;
       getStatus() async {
-        return (await widget.onboardingUtil.atServerStatus(widget.atSign))
-            .status();
+        return (await widget.onboardingUtil.atServerStatus(
+          widget.atSign,
+        )).status();
       }
 
       AtSignStatus? atSignStatus = await getStatus();
@@ -283,7 +280,8 @@ class _ActivateOtpDialogState extends State<ActivateOtpDialog> {
         if (mounted) {
           Navigator.of(context).pop(
             AtOnboardingResult.error(
-                message: strings.errorAuthenticationTimedOut),
+              message: strings.errorAuthenticationTimedOut,
+            ),
           );
         }
         return;

@@ -8,10 +8,7 @@ import 'package:npt_flutter/features/favorite/favorite.dart';
 class FavoriteRepository {
   Map<String, Favorite>? _favoriteCache;
   static AtKey getFavoriteAtKey({String? sharedBy}) {
-    var key = AtKey.self(
-      'favorites',
-      namespace: Constants.namespace,
-    );
+    var key = AtKey.self('favorites', namespace: Constants.namespace);
     if (sharedBy != null) key.sharedBy(sharedBy);
     return key.build();
   }

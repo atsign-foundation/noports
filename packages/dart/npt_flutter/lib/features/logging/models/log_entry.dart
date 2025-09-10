@@ -5,7 +5,7 @@ final class LogEntry extends Loggable {
   final Loggable loggable;
 
   LogEntry(this.loggable, {DateTime? timestamp})
-      : timestamp = EquatableDateTime.fromDateTime(timestamp ?? DateTime.now());
+    : timestamp = EquatableDateTime.fromDateTime(timestamp ?? DateTime.now());
 
   @override
   List<Object?> get props => [timestamp, loggable];

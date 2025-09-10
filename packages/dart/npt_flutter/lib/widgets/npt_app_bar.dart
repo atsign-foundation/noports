@@ -15,9 +15,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../styles/sizes.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
-  const NptAppBar({
-    super.key,
-  });
+  const NptAppBar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(Sizes.p150);
@@ -68,12 +66,13 @@ class _NptAppBarState extends State<NptAppBar> {
                       transitionBuilder: (child, animation) {
                         final offsetAnimation = child.key == ValueKey(state)
                             ? Tween<Offset>(
-                                    begin: const Offset(0, 1), end: Offset.zero)
-                                .animate(animation)
+                                begin: const Offset(0, 1),
+                                end: Offset.zero,
+                              ).animate(animation)
                             : Tween<Offset>(
-                                    begin: const Offset(0, -1),
-                                    end: Offset.zero)
-                                .animate(animation);
+                                begin: const Offset(0, -1),
+                                end: Offset.zero,
+                              ).animate(animation);
                         return SlideTransition(
                           position: offsetAnimation,
                           child: FadeTransition(
@@ -109,12 +108,8 @@ class _NptAppBarState extends State<NptAppBar> {
                       onPressed: () {
                         wrapperNav.currentState!.pop(context);
                       },
-                      label: Text(
-                        strings.back,
-                      ),
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                      ),
+                      label: Text(strings.back),
+                      icon: const Icon(Icons.arrow_back_ios),
                       style: StyleConstants.backButtonStyle,
                     ),
                   ),
@@ -123,10 +118,11 @@ class _NptAppBarState extends State<NptAppBar> {
             actions: [
               Container(
                 padding: const EdgeInsets.only(
-                    top: Sizes.p8,
-                    bottom: Sizes.p8,
-                    left: Sizes.p8,
-                    right: Sizes.p0),
+                  top: Sizes.p8,
+                  bottom: Sizes.p8,
+                  left: Sizes.p8,
+                  right: Sizes.p0,
+                ),
                 decoration: BoxDecoration(
                   color: AppColor.outlinePaddingColor,
                   borderRadius: BorderRadius.circular(Sizes.p4),
@@ -140,8 +136,9 @@ class _NptAppBarState extends State<NptAppBar> {
                         curve: Curves.easeInOut,
                         opacity: 1,
                         child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: Sizes.p8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Sizes.p8,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(Sizes.p4),
@@ -151,12 +148,11 @@ class _NptAppBarState extends State<NptAppBar> {
                             children: [
                               Text(
                                 '@',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge!
+                                style: Theme.of(context).textTheme.bodyLarge!
                                     .copyWith(
-                                        color: AppColor.primaryColor,
-                                        fontSize: Sizes.p20),
+                                      color: AppColor.primaryColor,
+                                      fontSize: Sizes.p20,
+                                    ),
                               ),
                               Text(
                                 atsign.withoutAt(),
@@ -192,9 +188,7 @@ class _NptAppBarState extends State<NptAppBar> {
                   opacity: isDashboard ? 1 : 0,
                   child: IconButton(
                     tooltip: strings.settings,
-                    icon: const Icon(
-                      Icons.settings_outlined,
-                    ),
+                    icon: const Icon(Icons.settings_outlined),
                     onPressed: () {
                       wrapperNav.currentState!.pushNamed(HomeRoutes.settings);
                     },
