@@ -9,6 +9,34 @@ information.
 
 ## Getting Started
 
+### Prerequisites
+
+- Flutter 3.0 or higher
+- Dart SDK
+- Platform-specific requirements:
+  - **macOS:** Xcode for iOS/macOS builds
+  - **Windows:** Visual Studio with C++ tools
+
+### Run from Source
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/atsign-foundation/sshnoports.git
+   cd sshnoports/packages/dart/npt_flutter
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   flutter pub get
+   ```
+
+3. Run the application:
+   ```bash
+   flutter run
+   ```
+
 ## Building From Source
 
 Building from source is possible and will work with already activated atSigns.
@@ -48,3 +76,65 @@ Example .env.json file for production NoPorts Desktop:
   }
 }
 ```
+
+## Testing
+
+### Running Tests
+
+Run all tests:
+
+```bash
+flutter test
+```
+
+Run integration tests:
+
+```bash
+flutter test integration_test/
+```
+
+Run specific test files:
+
+```bash
+flutter test test/features/profile/
+```
+
+Run tests with coverage:
+
+```bash
+flutter test --coverage
+```
+
+## Development
+
+### Code Style
+
+- Follow Dart/Flutter conventions
+- Use meaningful variable and function names
+- Add documentation for public APIs
+- Maintain test coverage for new features
+
+### State Management
+
+The app uses BLoC pattern for state management:
+
+- **Cubits** for simple state management
+- **BLoCs** for complex state with events
+- **Repositories** for data access abstraction
+
+### Testing Guidelines
+
+- Write tests for all new features
+- Maintain existing test coverage
+- Use meaningful test descriptions
+- Mock external dependencies appropriately
+
+## License
+
+This project is licensed under the BSD 3-Clause License. See the LICENSE file for details.
+
+## Support
+
+- [Documentation](https://docs.noports.com)
+- [Issues](https://github.com/atsign-foundation/sshnoports/issues)
+- [Community Discord](https://discord.atsign.com)

@@ -8,10 +8,7 @@ class Device {
 
   final List<String> permitOpens;
 
-  Device({
-    required this.name,
-    required this.permitOpens,
-  });
+  Device({required this.name, required this.permitOpens});
 
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
 
@@ -24,10 +21,7 @@ class DeviceGroup {
 
   List<String> permitOpens;
 
-  DeviceGroup({
-    required this.name,
-    required this.permitOpens,
-  });
+  DeviceGroup({required this.name, required this.permitOpens});
 
   Map<String, dynamic> toJson() => _$DeviceGroupToJson(this);
 
@@ -63,16 +57,20 @@ class UserGroup {
 
   final List<String> userAtSigns;
 
-  factory UserGroup.empty(
-      {String? id, required String name, required String description}) {
+  factory UserGroup.empty({
+    String? id,
+    required String name,
+    required String description,
+  }) {
     return UserGroup(
-        id: id,
-        name: name,
-        description: description,
-        userAtSigns: [],
-        daemonAtSigns: [],
-        devices: [],
-        deviceGroups: []);
+      id: id,
+      name: name,
+      description: description,
+      userAtSigns: [],
+      daemonAtSigns: [],
+      devices: [],
+      deviceGroups: [],
+    );
   }
 
   UserGroup({

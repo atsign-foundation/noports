@@ -1,7 +1,6 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:noports_core/utils.dart';
-import 'package:version/version.dart';
 import 'package:path/path.dart' as path;
 
 Future<AtClient> createAtClientCli({
@@ -12,6 +11,11 @@ Future<AtClient> createAtClientCli({
   required String namespace,
   String rootDomain = DefaultArgs.rootDomain,
 }) async {
+  // Parse the rootDomain using AtRootDomain class
+  final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
+  String domain = parsedRootDomain.rootDomain;
+  int port = parsedRootDomain.rootPort;
+
   // Now on to the atPlatform startup
   //onboarding preference builder can be used to set onboardingService parameters
   AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
@@ -22,8 +26,8 @@ Future<AtClient> createAtClientCli({
     ..commitLogPath = path.normalize('$storagePath/commitLog')
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
-    ..atProtocolEmitted = Version(2, 0, 0)
-    ..rootDomain = rootDomain;
+    ..rootDomain = domain
+    ..rootPort = port;
 
   AtOnboardingService onboardingService = AtOnboardingServiceImpl(
       atsign, atOnboardingConfig,

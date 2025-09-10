@@ -3,15 +3,15 @@ description: How to integrate NoPorts into your native Linux and macOS ssh confi
 icon: square-sliders-vertical
 ---
 
-# OpenSSH config
+# OpenSSH Config
 
-## Overview
+### Overview
 
-This guide will help you setup NoPorts in your ssh configuration. Once setup, you will be able to ssh to machines using NoPorts the same way you would for a normal ssh host. As this is integrated with the SSH configuration, it will also work with other applications that support SSH proxying.
+This guide will help you setup NoPorts in your SSH configuration. Once set up, you will be able to ssh to machines using NoPorts the same way you would for a normal ssh host. As this is integrated with the SSH configuration, it will also work with other applications that support SSH proxying.
 
 ### Usage
 
-Once you've setup your configuration, you will be able to SSH over NoPorts just like any other host, using your own custom hostnames for devices.
+Once you've set up your configuration, you will be able to SSH over NoPorts just like any other host, using your own custom hostnames for devices.
 
 For example, with a device called `my_lab`:
 
@@ -144,4 +144,3 @@ See [basic-usage-1](../usage/basic-usage-1/ "mention") to learn more about filli
 #### Lines 8 & 9
 
 ControlMaster and ControlPath tell ssh to try to reuse existing ssh connections if you start up multiple. This means only the first connection will setup sshnp, the rest of the connections will use the tunnel that is already there!
-

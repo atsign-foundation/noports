@@ -1,5 +1,6 @@
 ---
 description: Full installation of client and server software on two Linux machines
+hidden: true
 icon: linux
 ---
 

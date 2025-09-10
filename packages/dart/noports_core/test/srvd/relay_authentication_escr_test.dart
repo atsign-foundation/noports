@@ -22,27 +22,33 @@ void main() {
     late AtEncryptionKeyPair signingKP;
     late AtEncryptionKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late String wrongChallenge =
-        AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+    late String wrongChallenge = AtChopsUtil.generateSymmetricKey(
+      EncryptionKeyType.aes256,
+    ).key;
 
     setUpAll(() {
       signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
       wrongKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
-      relayAuthAesKey =
-          AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-      wrongAesKey =
-          AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
+      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
+        EncryptionKeyType.aes256,
+      ).key;
+      wrongAesKey = AtChopsUtil.generateSymmetricKey(
+        EncryptionKeyType.aes256,
+      ).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
-      when(() => helper.isSessionActive(relaySessionId))
-          .thenAnswer((_) => Future.value(true));
-      when(() => helper.getRelayAuthAesKey(relaySessionId))
-          .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookup(relaySessionId, publicSigningKeyUri))
-          .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
+      when(
+        () => helper.isSessionActive(relaySessionId),
+      ).thenAnswer((_) => Future.value(true));
+      when(
+        () => helper.getRelayAuthAesKey(relaySessionId),
+      ).thenAnswer((_) => Future.value(relayAuthAesKey));
+      when(
+        () => helper.lookup(relaySessionId, publicSigningKeyUri),
+      ).thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
     });
 
     test('all is well', () async {
@@ -54,22 +60,28 @@ void main() {
         privateSigningKey: signingKP.atPrivateKey.privateKey,
         isSideA: false,
       );
-      RelayAuthVerifierESCR verifier =
-          RelayAuthVerifierESCR('test all is well', helper);
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'test all is well',
+        helper,
+      );
 
-      when(() => helper.isSessionActive(relaySessionId))
-          .thenAnswer((_) => Future.value(true));
-      when(() => helper.getRelayAuthAesKey(relaySessionId))
-          .thenAnswer((_) => Future.value(relayAuthAesKey));
-      when(() => helper.lookup(relaySessionId, publicSigningKeyUri))
-          .thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
+      when(
+        () => helper.isSessionActive(relaySessionId),
+      ).thenAnswer((_) => Future.value(true));
+      when(
+        () => helper.getRelayAuthAesKey(relaySessionId),
+      ).thenAnswer((_) => Future.value(relayAuthAesKey));
+      when(
+        () => helper.lookup(relaySessionId, publicSigningKeyUri),
+      ).thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
 
       expect(verifier.atSign, isNull);
       expect(verifier.sessionId, isNull);
       expect(verifier.isSideA, null);
 
       bool verified = await verifier.verifyChallengeResponse(
-          authenticator.responseToChallenge(verifier.challenge));
+        authenticator.responseToChallenge(verifier.challenge),
+      );
 
       expect(verified, true);
       expect(verifier.atSign, '@alice');
@@ -87,14 +99,23 @@ void main() {
         isSideA: true,
       );
 
-      RelayAuthVerifierESCR verifier =
-          RelayAuthVerifierESCR('test wrong signing key', helper);
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'test wrong signing key',
+        helper,
+      );
 
       await expectLater(
-          verifier.verifyChallengeResponse(
-              authenticator.responseToChallenge(verifier.challenge)),
-          throwsA(isA<RAVE>().having((e) => e.reason, 'reason',
-              RAVEReason.signatureVerificationFailed)));
+        verifier.verifyChallengeResponse(
+          authenticator.responseToChallenge(verifier.challenge),
+        ),
+        throwsA(
+          isA<RAVE>().having(
+            (e) => e.reason,
+            'reason',
+            RAVEReason.signatureVerificationFailed,
+          ),
+        ),
+      );
 
       expect(verifier.atSign, '@alice');
       expect(verifier.sessionId, relaySessionId);
@@ -111,14 +132,23 @@ void main() {
         isSideA: true,
       );
 
-      RelayAuthVerifierESCR verifier =
-          RelayAuthVerifierESCR('test wrong AES key', helper);
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'test wrong AES key',
+        helper,
+      );
 
       await expectLater(
-          verifier.verifyChallengeResponse(
-              authenticator.responseToChallenge(verifier.challenge)),
-          throwsA(isA<RAVE>()
-              .having((e) => e.reason, 'reason', RAVEReason.decryptionFailed)));
+        verifier.verifyChallengeResponse(
+          authenticator.responseToChallenge(verifier.challenge),
+        ),
+        throwsA(
+          isA<RAVE>().having(
+            (e) => e.reason,
+            'reason',
+            RAVEReason.decryptionFailed,
+          ),
+        ),
+      );
 
       expect(verifier.atSign, null);
       expect(verifier.sessionId, relaySessionId);
@@ -135,16 +165,25 @@ void main() {
         isSideA: false,
       );
 
-      RelayAuthVerifierESCR verifier =
-          RelayAuthVerifierESCR('test wrong challenge', helper);
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'test wrong challenge',
+        helper,
+      );
 
       await expectLater(
-          verifier.verifyChallengeResponse(
-              authenticator.responseToChallenge(wrongChallenge)),
-          throwsA(isA<RAVE>()
+        verifier.verifyChallengeResponse(
+          authenticator.responseToChallenge(wrongChallenge),
+        ),
+        throwsA(
+          isA<RAVE>()
               .having((e) => e.reason, 'reason', RAVEReason.dataMismatch)
-              .having((e) => e.message, 'message',
-                  contains('does not match challenge issued'))));
+              .having(
+                (e) => e.message,
+                'message',
+                contains('does not match challenge issued'),
+              ),
+        ),
+      );
 
       expect(verifier.atSign, null);
       expect(verifier.sessionId, relaySessionId);

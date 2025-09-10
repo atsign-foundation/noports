@@ -1,6 +1,6 @@
 ---
-icon: cloud
 description: How to install NoPorts as part of creating a new VM
+icon: cloud
 ---
 
 # Cloud Installation Guides

@@ -70,7 +70,7 @@
   "error": "Erro",
   "errorOtpRequestFailed": "Falha ao solicitar um OTP, tente reenviar ou entre em contato com o suporte se o problema persistir.",
   "errorOtpVerificationFailed": "Falha ao verificar o OTP com o servidor de ativação, tente novamente. Entre em contato com o suporte se o problema persistir.",
-  "errorProfileLoadFailed": "Falha ao carregar este perfil, por favor, atualize manualmente:",
+  "errorProfileLoadFailed": "Falha ao carregar este perfil:",
   "errorRootDomainNotSupported": "O domínio raiz especificado não é suportado pela ativação automática.",
   "errorSwitchAtSignFailed": "Falha ao trocar de atSigns após a ativação.",
   "europe": "Europa",

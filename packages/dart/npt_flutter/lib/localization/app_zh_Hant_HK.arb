@@ -69,7 +69,7 @@
   "errorAuthenticationTimedOut": "身分驗證逾時。",
   "errorOtpRequestFailed": "要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。",
   "errorOtpVerificationFailed": "使用啟動伺服器驗證 OTP 失敗，請重試。如果問題仍然存在，請聯絡支援人員。",
-  "errorProfileLoadFailed": "載入此設定檔失敗，請手動重新整理：",
+  "errorProfileLoadFailed": "載入此設定檔失敗：",
   "errorRootDomainNotSupported": "自動啟動不支援指定的根網域。",
   "errorSwitchAtSignFailed": "啟動後切換 atSign 失敗。",
   "error": "錯誤",

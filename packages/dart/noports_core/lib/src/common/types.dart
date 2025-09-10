@@ -60,5 +60,5 @@ enum RelayAuthMode {
   payload,
 
   /// encrypted signed response to explicit challenge
-  escr;
+  escr,
 }

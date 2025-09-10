@@ -22,20 +22,21 @@ void main() {
   });
 
   test(
-      'srvd backwards compatibility test - should handle both legacy and new messages in JSON format',
-      () async {
-    Map m = {};
-    m['session'] = 'hello';
-    m['atSignA'] = '@4314sagittarius';
-    m['atSignB'] = '@4314sagittarius';
-    m['authenticateSocketA'] = false;
-    m['authenticateSocketB'] = false;
+    'srvd backwards compatibility test - should handle both legacy and new messages in JSON format',
+    () async {
+      Map m = {};
+      m['session'] = 'hello';
+      m['atSignA'] = '@4314sagittarius';
+      m['atSignB'] = '@4314sagittarius';
+      m['authenticateSocketA'] = false;
+      m['authenticateSocketB'] = false;
 
-    // New message
-    AtNotification notification = AtNotification.empty();
-    notification.key = 'request_ports.test.${Srvd.namespace}';
-    notification.value = jsonEncode(m);
+      // New message
+      AtNotification notification = AtNotification.empty();
+      notification.key = 'request_ports.test.${Srvd.namespace}';
+      notification.value = jsonEncode(m);
 
-    expect(SrvdUtil(MockAtClient()).accept(notification), true);
-  });
+      expect(SrvdUtil(MockAtClient()).accept(notification), true);
+    },
+  );
 }

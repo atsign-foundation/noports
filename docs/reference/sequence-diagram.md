@@ -106,4 +106,3 @@ sequenceDiagram
     note over c,d: Phase - using the connection
     c ->> c: You connect to the local socket as if it were the remote service!
 ```
-

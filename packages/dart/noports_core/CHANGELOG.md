@@ -1,3 +1,8 @@
+# 6.7.0
+
+- build(deps): Remove dependency on fork of args package. Output alias info
+  explicitly via the option's or flag's help text.
+
 # 6.6.1
 - fix: better srvd exception handling
 

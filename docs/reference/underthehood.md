@@ -1,8 +1,8 @@
 ---
-icon: engine
 description: >-
   This guide provides information on the technical aspects of NoPorts, including
   its architecture, protocols, and security mechanisms.
+icon: engine
 ---
 
 # Under The Hood

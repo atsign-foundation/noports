@@ -27,13 +27,15 @@ class DefaultArgs {
 
   /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
-  static const Duration daemonPingTimeoutDuration =
-      Duration(seconds: daemonPingTimeoutSeconds);
+  static const Duration daemonPingTimeoutDuration = Duration(
+    seconds: daemonPingTimeoutSeconds,
+  );
 
   /// How long a client should wait for response from a NoPorts relay
   static const int relayResponseTimeoutSeconds = 20;
-  static const Duration relayResponseTimeoutDuration =
-      Duration(seconds: relayResponseTimeoutSeconds);
+  static const Duration relayResponseTimeoutDuration = Duration(
+    seconds: relayResponseTimeoutSeconds,
+  );
 
   /// How long srv should stay running if SocketConnector has no connections
   static const int srvTimeoutInSeconds = 30;
@@ -45,8 +47,9 @@ class DefaultArgs {
   /// intermediaries that the control channel shouldn't be closed due to lack
   /// of activity.
   static const int controlChannelHeartbeatIntervalMins = 30;
-  static const Duration controlChannelHeartbeatInterval =
-      Duration(minutes: controlChannelHeartbeatIntervalMins);
+  static const Duration controlChannelHeartbeatInterval = Duration(
+    minutes: controlChannelHeartbeatIntervalMins,
+  );
 }
 
 class DefaultSshnpArgs {

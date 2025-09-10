@@ -10,19 +10,15 @@ environment:
 # Add regular dependencies here.
 dependencies:
   alfred: 1.1.2+1
-  at_client: 3.6.0
+  at_client: ^3.7.0
   json_annotation: 4.9.0
-  at_cli_commons: 2.1.0
-  args: 2.6.0
+  at_cli_commons: 2.2.0
+  args: 2.7.0
   meta: 1.17.0
   noports_core:
     path: ../../../packages/dart/noports_core
 
 dependency_overrides:
-  args:
-    git:
-      ref: gkc/show-aliases-in-usage
-      url: https://github.com/gkc/args
   alfred:
     git:
       ref: cc-directory-4-windows
@@ -33,4 +29,4 @@ dev_dependencies:
   test: ^1.25.14
   mocktail: ^1.0.4
   build_runner: ^2.4.14
-  json_serializable: ^6.9.3
+  json_serializable: ^6.11.0

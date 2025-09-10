@@ -1,0 +1,11 @@
+{
+    "version": "0.5",
+    "requires": [
+        "mbedtls/3.6.4#b686248bee97f7bc92b88c6bc6e514a2%1752241954.6017513",
+        "cjson/1.7.18#e67d95071acf8902d892d89a858d31ab%1743006050.674",
+        "at_c/0.3.5#34b56d9094830185b0edbc3911bb9a6d%1756826801.317262"
+    ],
+    "build_requires": [],
+    "python_requires": [],
+    "config_requires": []
+}

@@ -12,10 +12,12 @@ class StreamingLoggingHandler implements LoggingHandler {
   @override
   void call(LogRecord record) {
     _wrappedLoggingHandler.call(record);
-    _logSC.add('${record.level.name}'
-        '|${record.time}'
-        '|${record.loggerName}'
-        '|${record.message}');
+    _logSC.add(
+      '${record.level.name}'
+      '|${record.time}'
+      '|${record.loggerName}'
+      '|${record.message}',
+    );
   }
 
   Stream<String> get stream => _logSC.stream;

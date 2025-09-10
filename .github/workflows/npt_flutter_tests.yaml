@@ -1,0 +1,50 @@
+name: npt_flutter
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - trunk
+
+    paths:
+      - ".github/workflows/npt_flutter_tests.yaml"
+      - "packages/dart/npt_flutter/**"
+
+  pull_request:
+    branches:
+      - trunk
+    paths:
+      - ".github/workflows/npt_flutter_tests.yaml"
+      - "packages/dart/npt_flutter/**"
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          channel: "stable"
+      - name: flutter pub get
+        working-directory: packages/dart/npt_flutter
+        run: flutter pub get
+      - name: Create .env file for tests
+        working-directory: packages/dart/npt_flutter
+        run: touch .env
+      - name: Run build runner
+        working-directory: packages/dart/npt_flutter
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: flutter analyze
+        working-directory: packages/dart/npt_flutter
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+      - name: flutter test --exclude-tags=integration
+        working-directory: packages/dart/npt_flutter
+        run: flutter test --exclude-tags=integration
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@90b209d0ea55cea1da9fc0c4e65782cc6acb6e2e # v2.2.2
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/npt_flutter/pubspec.lock

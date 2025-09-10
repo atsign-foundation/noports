@@ -70,6 +70,9 @@ class Constants {
           v.description["en"] ?? // fallback to english
           k; // fallback to the domain if we couldn't find a description
 
+  static String get favoriteKeyName => 'favorites';
+  static String? get namespace => 'noports';
+
       return MapEntry(k, (
         port: v.port,
         description: desc,
@@ -79,8 +82,6 @@ class Constants {
     });
   }
 
-  static const kWindowsMinWindowSize = Size(1053, 691);
-
   static const pngIconDark = 'assets/noports-icon64-dark.png';
   static const icoIconDark = 'assets/noports-icon64-dark.ico';
   static const pngIconLight = 'assets/noports-icon64-light.png';
@@ -88,4 +89,6 @@ class Constants {
   static const authenticatorMockup = 'assets/authenticator-mockup.png';
   static const authenticatorApprovalMockup =
       'assets/authenticator-approval-mockup.png';
+
+  static const kWindowsMinWindowSize = Size(1053, 691);
 }

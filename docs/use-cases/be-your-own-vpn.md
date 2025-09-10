@@ -1,19 +1,19 @@
 ---
-icon: house-signal
 description: Using sshuttle and SSH built in SOCKS proxy.
+icon: house-signal
 ---
 
 # Be your own VPN
 
-To follow this guide, you will need to set up an SSH No Ports device (`sshnpd)`on your home network. For this, you could use a Raspberry Pi, an old PC running Linux, a virtual machine, or even a docker container—the choice is yours. You can get your No Ports free trial account [here](https://noports.com) and follow the [installation guide](../installation/linux/) to get started.
+To follow this guide, you will need to set up a NoPorts device (`sshnpd)`on your home network. For this, you could use a Raspberry Pi, an old PC running Linux, a virtual machine, or even a docker container—the choice is yours. You can get your NoPorts free trial account [here](https://my.noports.com/no-ports-plans) and follow the [installation guide](../installation/connecting-from-linux/) to get started.
 
 SSH is a hugely versatile tool for command line access, but what if you want a full IP tunnel, like a VPN?
 
-SSH has you covered, with the use of two tools: the first is a built in SOCKS proxy; the second is an open source piece of code called `sshuttle`. With these two tools you can use your sshnp service as your own VPN.&#x20;
+SSH has you covered with the use of two tools: the first is a built in SOCKS proxy; the second is an open source piece of code called `sshuttle`. With these two tools you can use your sshnp service as your own VPN.
 
-### The amazing sshuttle&#x20;
+### The amazing sshuttle
 
-Once you have SSH No Ports up and running, you will be able to connect to your device from anywhere on the Internet. You will notice that you did not have to open any ports to the Internet in order to connect. _There is no access to the device from the Internet and yet you can connect._&#x20;
+Once you have NoPorts up and running, you will be able to connect to your device from anywhere on the Internet. You will notice that you did not have to open any ports to the Internet in order to connect. _There is no access to the device from the Internet and yet you can connect._
 
 If you are happy with command line access only, great; but you might want to now use your SSH connection as a VPN and have a full IP tunnel. For this, [sshuttle](https://github.com/sshuttle/sshuttle) is the perfect tool. However, if you are using Windows, then you will have to set up a local VM/Container. (If that sounds like too much, skip down to the section below on using SOCKS.)
 
@@ -22,7 +22,7 @@ To use sshuttle, we need to make sure that the SSH command itself can log in wit
 1. **Create SSH keys:** First, make sure that you have created SSH keys.
 2. **Place public keys on the remote device:** Next, either:
    * **Manual placement:** Place the public keys directly on the remote device.
-   * &#x20;**`sshnpd`flag:** Or, use the `-s` flag of `sshnp` to place them on the remote `sshnpd`. That requires the `-s` flag to be enabled on the `sshnpd` service/config file.&#x20;
+   * **`sshnpd`flag:** Or, use the `-s` flag of `sshnp` to place them on the remote `sshnpd`. That requires the `-s` flag to be enabled on the `sshnpd` service/config file.
 
 Once the SSH keys are in place, you can put an entry in `~/.ssh/config` to let SSH know which key to use to log into localhost. For example:
 
@@ -36,18 +36,18 @@ Host localhost
 
 The next thing to do is install `sshuttle` on your machine. The GitHub page details this very well for both Linux and OSX machines.
 
-Once sshuttle is installed, let's use it !&#x20;
+Once sshuttle is installed, let's use it!
 
-This is a two step process:&#x20;
+This is a two step process:
 
-1. **Connect to the device using `sshnp:`** Add the `-x` flag. This flag prints out the SSH command that you can cut and paste to log into the remote device.&#x20;
-2. **Establish the VPN:** In another terminal window, run the sshuttle command to connect to the remote device. You'll need to tweak your IP routing to use this connection as a VPN. **The important part is to use the port number that the** `-x` **flag gave you in the** `sshuttle` **command**.&#x20;
+1. **Connect to the device using `sshnp:`** Add the `-x` flag. This flag prints out the SSH command that you can cut and paste to log into the remote device.
+2. **Establish the VPN:** In another terminal window, run the sshuttle command to connect to the remote device. You'll need to tweak your IP routing to use this connection as a VPN. **The important part is to use the port number that the** `-x` **flag gave you in the** `sshuttle` **command**.
 
 {% embed url="https://asciinema.org/a/msDJ8hPaVtRFEZZHFbnlNnWGh" %}
 Be your own VPN
 {% endembed %}
 
-With this example, you can see that port `63155` was used in the sshuttle command. You do not need to SSH into the machine—you can just get the port number and use `sshuttle.`  The choice is yours.
+With this example, you can see that port `63155` was used in the sshuttle command. You do not need to SSH into the machine—you can just get the port number and use `sshuttle.` The choice is yours.
 
 This can get a bit tedious to do every day so feel free to script for your environment. Here is an example bash script that does just that!
 
@@ -79,7 +79,7 @@ sshuttle --dns -r $USER@127.0.0.1:$LOCALPORT $NETA $NETB $NETC
 
 If you are using Windows, this is likely your best option unless you are comfortable setting up a virtual machine and using sshuttle.
 
-&#x20;All you need to do is add an option to the normal `sshnp` command and that will set up a local SOCKS proxy: `-o "-D 1080"`  That's it!&#x20;
+All you need to do is add an option to the normal `sshnp` command and that will set up a local SOCKS proxy: `-o "-D 1080"` That's it!
 
 ```bash
 sshnp -f @my_client -t @my_device -h @rv_am -d my_pi -o "-D 1080"

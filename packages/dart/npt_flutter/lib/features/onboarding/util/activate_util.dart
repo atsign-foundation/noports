@@ -59,10 +59,12 @@ class ActivateUtil {
     required String atsign,
     required String otp,
   }) async {
-    var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate, {
-      'atsign': atsign,
-      'otp': otp,
-    });
+    var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate,
+      {
+        'atsign': atsign,
+        'otp': otp,
+      },
+    );
     if (res.statusCode != 200) {
       return (
         errorMessage:
@@ -118,7 +120,7 @@ class ActivateUtil {
           if (round > 10) {
             break;
           }
-          await Future.delayed(const Duration(seconds: 3));
+          await Future.delayed(const Duration(seconds: 1));
           round++;
           atSignStatus = await onboardingService.checkAtSignServerStatus(
             atsign,

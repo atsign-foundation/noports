@@ -1,6 +1,6 @@
 ---
-icon: magnifying-glass
 description: NoPorts connection establishment and architecture
+icon: magnifying-glass
 ---
 
 # How It Works

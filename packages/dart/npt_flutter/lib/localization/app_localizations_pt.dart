@@ -245,8 +245,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Falha ao verificar o OTP com o servidor de ativação, tente novamente. Entre em contato com o suporte se o problema persistir.';
 
   @override
-  String get errorProfileLoadFailed =>
-      'Falha ao carregar este perfil, por favor, atualize manualmente:';
+  String get errorProfileLoadFailed => 'Falha ao carregar este perfil:';
 
   @override
   String get errorRootDomainNotSupported =>
@@ -903,8 +902,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Falha ao verificar o OTP com o servidor de ativação, tente novamente. Entre em contato com o suporte se o problema persistir.';
 
   @override
-  String get errorProfileLoadFailed =>
-      'Falha ao carregar este perfil, por favor, atualize manualmente:';
+  String get errorProfileLoadFailed => 'Falha ao carregar este perfil:';
 
   @override
   String get errorRootDomainNotSupported =>
