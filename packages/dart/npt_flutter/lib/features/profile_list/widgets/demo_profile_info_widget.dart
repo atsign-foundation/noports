@@ -44,7 +44,10 @@ class DemoProfileInfoWidget extends StatelessWidget {
             ),
           ),
           gapW16,
-          Text(strings.demoDescription),
+          Text(
+            strings.demoDescription,
+            style: const TextStyle(color: Colors.black),
+          ),
           TextButton(
             onPressed: () async {
               // Show a progress indicator before fetching the demo profile
