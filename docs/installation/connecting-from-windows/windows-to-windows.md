@@ -97,7 +97,7 @@ Install the Device Software
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
 
-5.2 Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in S**tep 7**.
+5.2 Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in **Step 7**.
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
 
