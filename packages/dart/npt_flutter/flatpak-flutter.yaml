@@ -1,0 +1,42 @@
+id: com.atsign.NoPortsDesktop
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm19
+command: todo
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+modules:
+  - name: NoPortsDesktop
+    buildsystem: simple
+    build-options:
+      arch:
+        x86_64:
+          env:
+            BUNDLE_PATH: build/linux/x64/release/bundle
+        aarch64:
+          env:
+            BUNDLE_PATH: build/linux/arm64/release/bundle
+      append-path: /usr/lib/sdk/llvm19/bin:/run/build/NoPortsDesktop/flutter/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm19/lib
+      env:
+        PUB_CACHE: /run/build/NoPortsDesktop/.pub-cache
+    build-commands:
+      - flutter build linux --release
+      - install -D $BUNDLE_PATH/npt_flutter '/app/bin/NoPortsDesktop'
+      - cp -r $BUNDLE_PATH/lib /app/bin/lib
+      - cp -r $BUNDLE_PATH/data /app/bin/data
+    sources:
+      - type: git
+        url: https://github.com/atsign-foundation/noports.git
+        # N.B. for some reason 'commit' actually expects a branch name
+        commit: noports-desktop-cram-auth
+        # tag:
+      - type: git
+        url: https://github.com/flutter/flutter.git
+        tag: 3.32.4
+        dest: flutter

@@ -15,7 +15,7 @@ class FavoriteRepository {
 
   static AtKey getFavoriteAtKey({String? sharedBy}) {
     var key = AtKey.self(
-      Constants.favoriteKeyName,
+      'favorites',
       namespace: Constants.namespace,
     );
     if (sharedBy != null) key.sharedBy(sharedBy);

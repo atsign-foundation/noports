@@ -1,26 +1,87 @@
+import 'dart:convert' show jsonDecode;
+import 'dart:io' show exit;
+
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart' show dotenv;
-import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/localization/app_localizations.dart'
+    show AppLocalizations;
+
+typedef RootMetadata = ({
+  int port,
+  LocalizedString description,
+  String? registrarUrl,
+  String? apiKey,
+});
+typedef RootMap = Map<String, RootMetadata>;
+
+typedef LocalizedRootMetadata = ({
+  int port,
+  String description,
+  String? registrarUrl,
+  String? apiKey,
+});
+typedef LocalizedRootMap = Map<String, LocalizedRootMetadata>;
+typedef LocalizedString = Map<String, String>;
 
 class Constants {
-  static bool dotenvLoaded = false;
-  static Future<void> loadDotenv() async {
-    if (dotenvLoaded) return;
-    try {
-      await dotenv.load();
-      dotenvLoaded = true;
-    } catch (_) {
-      dotenvLoaded = false;
+  static const String namespace = 'noports';
+
+  static final RootMap _rootMap = {};
+  static initialize() {
+    String rootsJson = const String.fromEnvironment(
+      'roots',
+      defaultValue: '{}',
+    );
+    Map<String, dynamic> roots = jsonDecode(rootsJson);
+    for (var root in roots.entries) {
+      var domain = root.key;
+      if (root.value is! Map<String, dynamic>) {
+        // ignore: avoid_print
+        print("ERROR with configuration, root entry is not a JSON object");
+        exit(1);
+      }
+      var port = root.value['port'] ?? 64;
+      var descriptionJson = root.value['description'];
+      var registrarUrl = root.value['registrarUrl'];
+      var apiKey = root.value['api-key'];
+
+      LocalizedString description = {};
+      for (var desc in descriptionJson.entries) {
+        if (desc.value is String) {
+          description[desc.key] = desc.value;
+        }
+      }
+
+      _rootMap[domain] = (
+        port: (port is int && port > 0 && port < 65536) ? port : 64,
+        description: description,
+        registrarUrl: (registrarUrl is String) ? registrarUrl : null,
+        apiKey: (apiKey is String) ? apiKey : null,
+      );
     }
   }
 
-  static String get favoriteKeyName => 'favorites';
-  static String? get namespace => 'noports';
 
-  static Future<String?> get appAPIKey async {
-    await loadDotenv();
-    return dotenv.env["APP_API_KEY"];
+  // Root Domain configuration
+  static bool rootsIsEmpty() => _rootMap.isEmpty;
+  static LocalizedRootMap getRoots(BuildContext context) {
+    return _rootMap.map((k, v) {
+      var locale = Locale(AppLocalizations.of(context)?.localeName ?? "en");
+      var desc =
+          v.description[locale.toString()] ?? // localized string
+          v.description["en"] ?? // fallback to english
+          k; // fallback to the domain if we couldn't find a description
+
+
+      return MapEntry(k, (
+        port: v.port,
+        description: desc,
+        registrarUrl: v.registrarUrl,
+        apiKey: v.apiKey,
+      ));
+    });
   }
+
+  static const String favoriteKeyName = 'favorites';
 
   static const pngIconDark = 'assets/noports-icon64-dark.png';
   static const icoIconDark = 'assets/noports-icon64-dark.ico';
@@ -29,15 +90,6 @@ class Constants {
   static const authenticatorMockup = 'assets/authenticator-mockup.png';
   static const authenticatorApprovalMockup =
       'assets/authenticator-approval-mockup.png';
-
-  static Map<String, String> getRootDomains(BuildContext context) {
-    AppLocalizations strings = AppLocalizations.of(context)!;
-
-    return {
-      'root.atsign.org': strings.rootDomainDefault,
-      'vip.ve.atsign.zone': strings.rootDomainDemo,
-    };
-  }
 
   static const kWindowsMinWindowSize = Size(1053, 691);
 }

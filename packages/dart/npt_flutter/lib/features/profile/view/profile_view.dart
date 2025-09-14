@@ -28,15 +28,12 @@ class ProfileView extends StatelessWidget {
             );
 
           case ProfileFailedLoad _:
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(AppLocalizations.of(context)!.errorProfileLoadFailed),
-                  const ProfileDeleteButton(),
-                ],
-              ),
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(AppLocalizations.of(context)!.errorProfileLoadFailed),
+                const ProfileRefreshButton(),
+              ],
             );
 
           case ProfileLoadedState _:

@@ -8,7 +8,8 @@ import 'package:npt_flutter/util/general_extensions.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtsignSelector extends StatefulWidget {
-  const AtsignSelector({required this.options, super.key});
+  final void Function(String)? onSubmit;
+  const AtsignSelector({required this.options, this.onSubmit, super.key});
   final Map<String, AtsignInformation> options;
   @override
   State<AtsignSelector> createState() => _AtsignSelectorState();
@@ -41,6 +42,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                 rootDomain: widget.options[atsign]?.rootDomain,
               );
             },
+            onFieldSubmitted: widget.onSubmit,
             validator: FormValidator.validateRequiredAtsignField,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: InputDecoration(

@@ -2,7 +2,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
@@ -114,7 +113,6 @@ class CustomTextButton extends StatelessWidget {
           final futurePreference = await AtClientMethods.loadAtClientPreference(
             rootDomain!,
           );
-          final apiKey = await Constants.appAPIKey;
           if (context.mounted) {
             final result = await AtOnboarding.reset(
               context: context,
@@ -122,7 +120,7 @@ class CustomTextButton extends StatelessWidget {
                 atClientPreference: futurePreference,
                 rootEnvironment: RootEnvironment.Testing,
                 domain: rootDomain,
-                appAPIKey: apiKey,
+                appAPIKey: null,
               ),
             );
             final OnboardingService onboardingService =

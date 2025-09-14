@@ -9,6 +9,8 @@ import 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.da
 import 'package:at_server_status/at_server_status.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
+// ignore: implementation_imports
+import 'package:at_onboarding_flutter/src/utils/at_onboarding_app_constants.dart';
 
 // Type returned from a method below
 export 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.dart';
@@ -24,11 +26,11 @@ enum NoPortsActivateApiEndpoints {
 }
 
 class ActivateUtil {
-  final String registrarUrl;
-  final String apiKey;
+  final String? registrarUrl;
+  final String? apiKey;
   late final IOClient _http;
 
-  ActivateUtil({required this.registrarUrl, required this.apiKey}) {
+  ActivateUtil({this.registrarUrl, this.apiKey}) {
     var innerClient = HttpClient();
     innerClient.badCertificateCallback =
         (X509Certificate cert, String host, int port) => true;
@@ -39,13 +41,15 @@ class ActivateUtil {
     NoPortsActivateApiEndpoints endpoint,
     Map<String, String?> data,
   ) async {
-    Uri url = Uri.https(registrarUrl, endpoint.path);
+    if (registrarUrl == null) throw "registrar url not set";
+    if (apiKey == null) throw "registrar api key not set";
+    Uri url = Uri.https(registrarUrl!, endpoint.path);
 
     return _http.post(
       url,
       body: jsonEncode(data),
       headers: <String, String>{
-        'Authorization': apiKey,
+        'Authorization': apiKey!,
         'Content-Type': 'application/json',
       },
     );
@@ -55,10 +59,12 @@ class ActivateUtil {
     required String atsign,
     required String otp,
   }) async {
-    var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate, {
-      'atsign': atsign,
-      'otp': otp,
-    });
+    var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate,
+      {
+        'atsign': atsign,
+        'otp': otp,
+      },
+    );
     if (res.statusCode != 200) {
       return (
         errorMessage:
@@ -95,9 +101,12 @@ class ActivateUtil {
 
       config.atClientPreference.cramSecret = cramkey;
       onboardingService.setAtClientPreference = config.atClientPreference;
+      AtOnboardingConstants.rootDomain = config.atClientPreference.rootDomain;
 
       onboardingService.setAtsign = atsign;
       AtOnboardingRequest req = AtOnboardingRequest(atsign);
+      req.rootDomain = config.atClientPreference.rootDomain;
+      req.rootPort = config.atClientPreference.rootPort;
       var res = await onboardingService.onboard(
         cramSecret: cramkey,
         atOnboardingRequest: req,
@@ -111,7 +120,7 @@ class ActivateUtil {
           if (round > 10) {
             break;
           }
-          await Future.delayed(const Duration(seconds: 3));
+          await Future.delayed(const Duration(seconds: 1));
           round++;
           atSignStatus = await onboardingService.checkAtSignServerStatus(
             atsign,

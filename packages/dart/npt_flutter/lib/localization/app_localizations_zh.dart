@@ -9,6 +9,9 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get activateUsingLicense => '使用许可证密钥激活';
+
+  @override
   String get activationStatusActivating => '正在激活';
 
   @override
@@ -122,16 +125,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demoTextButton => '立即试用';
 
   @override
-  String get deviceAtsign => '设备 atSign';
-
-  @override
   String get deviceAtsignDescription => '这是与您的设备关联的 atSign。';
 
   @override
-  String get deviceName => '设备名称';
+  String get deviceAtsign => '设备 atSign';
 
   @override
   String get deviceNameDescription => '这是您的远程设备的名称。';
+
+  @override
+  String get deviceName => '设备名称';
 
   @override
   String get disconnected => '已断开连接';
@@ -158,28 +161,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableLogging => '启用日志记录';
 
   @override
-  String get enroll => '注册';
-
-  @override
   String get enrollApproved => '注册请求已获批准';
 
   @override
   String get enrollDenied => '注册请求被拒绝';
 
   @override
-  String get enrollRequestDenied => '注册请求被拒绝';
+  String get enroll => '注册';
 
   @override
-  String get enrollWithAuthenticator => '使用 Authenticator 注册';
+  String get enrollRequestDenied => '注册请求被拒绝';
 
   @override
   String get enrollWithAuthenticatorDescription => '通过具有管理员密钥的应用进行身份验证';
 
   @override
-  String get enterOtp => '输入 OTP';
+  String get enrollWithAuthenticator => '使用 Authenticator 注册';
 
   @override
-  String get error => '错误';
+  String get enterOtp => '输入 OTP';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -220,6 +220,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
+  String get error => '错误';
+
+  @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
 
   @override
@@ -251,10 +254,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feedback => '反馈';
 
   @override
-  String get fileFormatInvalid => '文档格式无效。请上传有效文件。';
+  String get fileFormatInvalidDetails => '缺少配置文件部分或格式不正确。请检查文档。';
 
   @override
-  String get fileFormatInvalidDetails => '缺少配置文件部分或格式不正确。请检查文档。';
+  String get fileFormatInvalid => '文档格式无效。请上传有效文件。';
 
   @override
   String get fileImported => '文件已导入';
@@ -270,10 +273,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get getStarted => '开始使用';
 
   @override
-  String get import => '导入';
+  String get importFile => '导入文件';
 
   @override
-  String get importFile => '导入文件';
+  String get import => '导入';
 
   @override
   String get info => '信息';
@@ -321,9 +324,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get onboard => '引导';
-
-  @override
   String get onboardingButtonStatusPicking => '等待选择文件';
 
   @override
@@ -339,25 +339,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingTitle => '欢迎';
 
   @override
+  String get onboard => '引导';
+
+  @override
   String get or => '或';
+
+  @override
+  String get orSpace => '或者';
 
   @override
   String get overrideAllProfile => '使用默认 Relay 选择覆盖所有配置文件';
 
   @override
-  String get pasteProfile => '粘贴配置文件';
+  String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
 
   @override
-  String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
+  String get pasteProfile => '粘贴配置文件';
 
   @override
   String get preview => '预览';
 
   @override
   String get privacyPolicy => '隐私政策';
-
-  @override
-  String get profile => '配置文件';
 
   @override
   String get profileDeleteMessage => '此配置文件将被永久删除。';
@@ -397,10 +400,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
-  String get profileNameDescription => '这将是您的配置的名称。';
+  String get profile => '配置文件';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -451,10 +457,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get register => '注册';
 
   @override
-  String get relay => 'Relay';
+  String get relayDescription => '从我们现有的 Relay 中选择或创建一个新的。';
 
   @override
-  String get relayDescription => '从我们现有的 Relay 中选择或创建一个新的。';
+  String get relay => 'Relay';
 
   @override
   String get reload => '重新加载';
@@ -535,16 +541,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stopping => '正在关闭';
 
   @override
-  String get submit => '提交';
-
-  @override
   String get submitOtp => '提交 OTP';
 
   @override
-  String get success => '成功';
+  String get submit => '提交';
 
   @override
-  String get switchAtSign => '切换 atSign';
+  String get success => '成功';
 
   @override
   String get switchAtSignDescription => '您确定要切换 atSign 吗？';
@@ -553,16 +556,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get switchAtSign => '切换 atSign';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
+
+  @override
+  String get typePasteLicense => '输入/粘贴您的许可证密钥';
 
   @override
   String get unknownError => '发生了未知错误';
 
   @override
-  String get uploadKey => '上传 atKey';
+  String get uploadKeyDescription => '选择本地 .atkey 文件';
 
   @override
-  String get uploadKeyDescription => '选择本地 .atkey 文件';
+  String get uploadKey => '上传 atKey';
 
   @override
   String get validationErrorAtsignField => '字段必须是有效的 atSign';
@@ -598,16 +607,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get whatIsClientAtsign => '什么是 NoPorts atSign？';
 
   @override
-  String get whereToAccept => '在哪里接受？';
-
-  @override
   String get whereToAcceptDescription => '请在具有管理密钥的应用中批准该请求。';
 
   @override
-  String get yaml => 'YAML';
+  String get whereToAccept => '在哪里接受？';
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get yaml => 'YAML';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).
@@ -615,6 +624,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   AppLocalizationsZhHansCh() : super('zh_Hans_CH');
 
   @override
+  String get activateUsingLicense => '使用许可密钥激活';
+
+  @override
   String get activationStatusActivating => '正在激活';
 
   @override
@@ -728,16 +740,16 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get demoTextButton => '立即试用';
 
   @override
-  String get deviceAtsign => '设备 atSign';
-
-  @override
   String get deviceAtsignDescription => '这是与您的设备关联的 atSign。';
 
   @override
-  String get deviceName => '设备名称';
+  String get deviceAtsign => '设备 atSign';
 
   @override
   String get deviceNameDescription => '这是您的远程设备的名称。';
+
+  @override
+  String get deviceName => '设备名称';
 
   @override
   String get disconnected => '已断开连接';
@@ -764,28 +776,25 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get enableLogging => '启用日志记录';
 
   @override
-  String get enroll => '注册';
-
-  @override
   String get enrollApproved => '注册请求已获批准';
 
   @override
   String get enrollDenied => '注册请求被拒绝';
 
   @override
-  String get enrollRequestDenied => '注册请求被拒绝';
+  String get enroll => '注册';
 
   @override
-  String get enrollWithAuthenticator => '使用 Authenticator 注册';
+  String get enrollRequestDenied => '注册请求被拒绝';
 
   @override
   String get enrollWithAuthenticatorDescription => '通过具有管理员密钥的应用进行身份验证';
 
   @override
-  String get enterOtp => '输入 OTP';
+  String get enrollWithAuthenticator => '使用 Authenticator 注册';
 
   @override
-  String get error => '错误';
+  String get enterOtp => '输入 OTP';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -826,6 +835,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
+  String get error => '错误';
+
+  @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
 
   @override
@@ -857,10 +869,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get feedback => '反馈';
 
   @override
-  String get fileFormatInvalid => '文档格式无效。请上传有效文件。';
+  String get fileFormatInvalidDetails => '缺少配置文件部分或格式不正确。请检查文档。';
 
   @override
-  String get fileFormatInvalidDetails => '缺少配置文件部分或格式不正确。请检查文档。';
+  String get fileFormatInvalid => '文档格式无效。请上传有效文件。';
 
   @override
   String get fileImported => '文件已导入';
@@ -876,10 +888,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get getStarted => '开始使用';
 
   @override
-  String get import => '导入';
+  String get importFile => '导入文件';
 
   @override
-  String get importFile => '导入文件';
+  String get import => '导入';
 
   @override
   String get info => '信息';
@@ -927,9 +939,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get onboard => '引导';
-
-  @override
   String get onboardingButtonStatusPicking => '等待选择文件';
 
   @override
@@ -945,25 +954,28 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get onboardingTitle => '欢迎';
 
   @override
+  String get onboard => '引导';
+
+  @override
   String get or => '或';
+
+  @override
+  String get orSpace => '或者';
 
   @override
   String get overrideAllProfile => '使用默认 Relay 选择覆盖所有配置文件';
 
   @override
-  String get pasteProfile => '粘贴配置文件';
+  String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
 
   @override
-  String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
+  String get pasteProfile => '粘贴配置文件';
 
   @override
   String get preview => '预览';
 
   @override
   String get privacyPolicy => '隐私政策';
-
-  @override
-  String get profile => '配置文件';
 
   @override
   String get profileDeleteMessage => '此配置文件将被永久删除。';
@@ -1003,10 +1015,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
-  String get profileNameDescription => '这将是您的配置的名称。';
+  String get profile => '配置文件';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -1057,10 +1072,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get register => '注册';
 
   @override
-  String get relay => 'Relay';
+  String get relayDescription => '从我们现有的 Relay 中选择或创建一个新的。';
 
   @override
-  String get relayDescription => '从我们现有的 Relay 中选择或创建一个新的。';
+  String get relay => 'Relay';
 
   @override
   String get reload => '重新加载';
@@ -1141,16 +1156,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get stopping => '正在关闭';
 
   @override
-  String get submit => '提交';
-
-  @override
   String get submitOtp => '提交 OTP';
 
   @override
-  String get success => '成功';
+  String get submit => '提交';
 
   @override
-  String get switchAtSign => '切换 atSign';
+  String get success => '成功';
 
   @override
   String get switchAtSignDescription => '您确定要切换 atSign 吗？';
@@ -1159,16 +1171,22 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get switchAtSign => '切换 atSign';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
+
+  @override
+  String get typePasteLicense => '输入或粘贴您的许可密钥';
 
   @override
   String get unknownError => '发生了未知错误';
 
   @override
-  String get uploadKey => '上传 atKey';
+  String get uploadKeyDescription => '选择本地 .atkey 文件';
 
   @override
-  String get uploadKeyDescription => '选择本地 .atkey 文件';
+  String get uploadKey => '上传 atKey';
 
   @override
   String get validationErrorAtsignField => '字段必须是有效的 atSign';
@@ -1204,21 +1222,24 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get whatIsClientAtsign => '什么是 NoPorts atSign？';
 
   @override
-  String get whereToAccept => '在哪里接受？';
-
-  @override
   String get whereToAcceptDescription => '请在具有管理密钥的应用中批准该请求。';
 
   @override
-  String get yaml => 'YAML';
+  String get whereToAccept => '在哪里接受？';
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get yaml => 'YAML';
 }
 
 /// The translations for Chinese, as used in Hong Kong, using the Han script (`zh_Hant_HK`).
 class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   AppLocalizationsZhHantHk() : super('zh_Hant_HK');
+
+  @override
+  String get activateUsingLicense => '使用授權金鑰啟用';
 
   @override
   String get activationStatusActivating => '正在啟動';
@@ -1334,16 +1355,16 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get demoTextButton => '立即試用';
 
   @override
-  String get deviceAtsign => '裝置 atSign';
-
-  @override
   String get deviceAtsignDescription => '這是與您的裝置相關聯的 atSign。';
 
   @override
-  String get deviceName => '裝置名稱';
+  String get deviceAtsign => '裝置 atSign';
 
   @override
   String get deviceNameDescription => '這是您遠端裝置的名稱。';
+
+  @override
+  String get deviceName => '裝置名稱';
 
   @override
   String get disconnected => '已斷線';
@@ -1370,28 +1391,25 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get enableLogging => '啟用日誌記錄';
 
   @override
-  String get enroll => '註冊';
-
-  @override
   String get enrollApproved => '註冊請求已獲核准';
 
   @override
   String get enrollDenied => '註冊請求被拒絕';
 
   @override
-  String get enrollRequestDenied => '註冊請求被拒絕';
+  String get enroll => '註冊';
 
   @override
-  String get enrollWithAuthenticator => '使用 Authenticator 註冊';
+  String get enrollRequestDenied => '註冊請求被拒絕';
 
   @override
   String get enrollWithAuthenticatorDescription => '透過具有管理員金鑰的應用程式進行驗證';
 
   @override
-  String get enterOtp => '輸入 OTP';
+  String get enrollWithAuthenticator => '使用 Authenticator 註冊';
 
   @override
-  String get error => '錯誤';
+  String get enterOtp => '輸入 OTP';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -1431,6 +1449,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身分驗證逾時。';
 
   @override
+  String get error => '錯誤';
+
+  @override
   String get errorOtpRequestFailed => '要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。';
 
   @override
@@ -1462,10 +1483,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get feedback => '意見反應';
 
   @override
-  String get fileFormatInvalid => '文件格式無效。請上傳有效檔案。';
+  String get fileFormatInvalidDetails => '設定檔區段遺失或格式不正確。請檢查文件。';
 
   @override
-  String get fileFormatInvalidDetails => '設定檔區段遺失或格式不正確。請檢查文件。';
+  String get fileFormatInvalid => '文件格式無效。請上傳有效檔案。';
 
   @override
   String get fileImported => '檔案已匯入';
@@ -1481,10 +1502,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get getStarted => '開始使用';
 
   @override
-  String get import => '匯入';
+  String get importFile => '匯入檔案';
 
   @override
-  String get importFile => '匯入檔案';
+  String get import => '匯入';
 
   @override
   String get info => '資訊';
@@ -1532,9 +1553,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get onboard => '引導';
-
-  @override
   String get onboardingButtonStatusPicking => '等待選取檔案';
 
   @override
@@ -1550,25 +1568,28 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get onboardingTitle => '歡迎';
 
   @override
+  String get onboard => '引導';
+
+  @override
   String get or => '或';
+
+  @override
+  String get orSpace => '或者';
 
   @override
   String get overrideAllProfile => '使用預設 Relay 選取覆寫所有設定檔';
 
   @override
-  String get pasteProfile => '貼上設定檔';
+  String get pasteProfileDescription => '在此處貼上 JSON/YAML 內容';
 
   @override
-  String get pasteProfileDescription => '在此處貼上 JSON/YAML 內容';
+  String get pasteProfile => '貼上設定檔';
 
   @override
   String get preview => '預覽';
 
   @override
   String get privacyPolicy => '隱私權政策';
-
-  @override
-  String get profile => '設定檔';
 
   @override
   String get profileDeleteMessage => '此設定檔將被永久刪除。';
@@ -1607,10 +1628,13 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何匯入設定檔？';
 
   @override
+  String get profileNameDescription => '這將是您的設定的名稱。';
+
+  @override
   String get profileName => '設定檔名稱';
 
   @override
-  String get profileNameDescription => '這將是您的設定的名稱。';
+  String get profile => '設定檔';
 
   @override
   String get profileRunningActionDeniedMessage => '設定檔執行時無法執行此操作。';
@@ -1661,10 +1685,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get register => '註冊';
 
   @override
-  String get relay => 'Relay';
+  String get relayDescription => '從我們現有的 Relay 中選擇或建立一個新的。';
 
   @override
-  String get relayDescription => '從我們現有的 Relay 中選擇或建立一個新的。';
+  String get relay => 'Relay';
 
   @override
   String get reload => '重新載入';
@@ -1745,16 +1769,13 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get stopping => '正在關閉';
 
   @override
-  String get submit => '提交';
-
-  @override
   String get submitOtp => '提交 OTP';
 
   @override
-  String get success => '成功';
+  String get submit => '提交';
 
   @override
-  String get switchAtSign => '切換 atSign';
+  String get success => '成功';
 
   @override
   String get switchAtSignDescription => '您確定要切換 atSign 嗎？';
@@ -1763,16 +1784,22 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get switchAtSignNote => '注意：切換 atSign 將結束所有連線。';
 
   @override
+  String get switchAtSign => '切換 atSign';
+
+  @override
   String get syncInProgress => '同步進行中。某些設定檔可能仍在載入。';
+
+  @override
+  String get typePasteLicense => '輸入或貼上您的授權金鑰';
 
   @override
   String get unknownError => '發生未知錯誤';
 
   @override
-  String get uploadKey => '上傳 atKey';
+  String get uploadKeyDescription => '選取本機 .atkey 檔案';
 
   @override
-  String get uploadKeyDescription => '選取本機 .atkey 檔案';
+  String get uploadKey => '上傳 atKey';
 
   @override
   String get validationErrorAtsignField => '欄位必須是有效的 atSign';
@@ -1808,14 +1835,14 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get whatIsClientAtsign => '什麼是 NoPorts atSign？';
 
   @override
-  String get whereToAccept => '在哪裡接受？';
-
-  @override
   String get whereToAcceptDescription => '請在具有管理金鑰的應用程式中核准該請求。';
 
   @override
-  String get yaml => 'YAML';
+  String get whereToAccept => '在哪裡接受？';
 
   @override
   String get yamlRecommended => 'YAML (推薦)';
+
+  @override
+  String get yaml => 'YAML';
 }

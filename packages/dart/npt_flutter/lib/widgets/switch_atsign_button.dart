@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,6 +42,7 @@ class SwitchAtsignButton extends StatelessWidget {
             // Select atsign to switch
             final atSignList = await KeychainUtil.getAtsignList();
             // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
+            if (!context.mounted) return;
             final selectedAtSign = await showMenu<dynamic>(
               context: context,
               position: const RelativeRect.fromLTRB(
@@ -74,6 +77,7 @@ class SwitchAtsignButton extends StatelessWidget {
             // Check for connected profiles before switching
             var isProfileConnected = false;
 
+            if (!context.mounted) return;
             if (context
                 .read<ProfilesRunningCubit>()
                 .state
@@ -81,6 +85,7 @@ class SwitchAtsignButton extends StatelessWidget {
                 .keys
                 .toSet()
                 .isNotEmpty) {
+              log('tap triggered more than once');
               isProfileConnected = await showDialog(
                 barrierDismissible: false,
                 context: context,
@@ -93,6 +98,7 @@ class SwitchAtsignButton extends StatelessWidget {
             }
             final currentContext = App.navState.currentContext!;
 
+            if (!currentContext.mounted) return;
             final rootDomain = currentContext
                 .read<OnboardingCubit>()
                 .getRootDomain(); // Or get from your state/cubit if needed
@@ -103,15 +109,19 @@ class SwitchAtsignButton extends StatelessWidget {
               atsign: selectedAtSign,
             );
 
+            if (!currentContext.mounted) return;
+            final root = Constants.getRoots(currentContext)[rootDomain];
+
             if (result) {
               final onboardingResult = await AtOnboarding.onboard(
                 atsign: selectedAtSign,
+                // ignore: use_build_context_synchronously
                 context: currentContext,
                 config: AtOnboardingConfig(
                   atClientPreference: atClientPreference,
                   domain: rootDomain,
                   rootEnvironment: RootEnvironment.Production,
-                  appAPIKey: await Constants.appAPIKey,
+                  appAPIKey: await root?.apiKey,
                 ),
               );
 

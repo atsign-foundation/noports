@@ -1,3 +1,4 @@
+import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -154,7 +155,7 @@ class _NptAppBarState extends State<NptAppBar> {
                                     ),
                               ),
                               Text(
-                                atsign.replaceFirst('@', ''),
+                                atsign.withoutAt(),
                                 style: Theme.of(context).textTheme.bodyLarge,
                               ),
                             ],

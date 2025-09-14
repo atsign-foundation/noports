@@ -20,7 +20,7 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
 
   @override
   Widget build(BuildContext context) {
-    final rootDomains = Constants.getRootDomains(context);
+    final rootDomains = Constants.getRoots(context);
     return SizedBox(
       width: double.infinity,
       child: BlocBuilder<OnboardingCubit, OnboardingState>(
@@ -50,7 +50,7 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
                           return Directionality(
                             textDirection: TextDirection.ltr,
                             child: MenuItemButton(
-                              child: Text(e.value),
+                              child: Text(e.value.description),
                               onPressed: () {
                                 context.read<OnboardingCubit>().setRootDomain(
                                   e.key,

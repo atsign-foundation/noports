@@ -16,7 +16,8 @@ import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
-import 'package:npt_flutter/features/onboarding/widgets/activate_atsign_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/activate_cram_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/activate_otp_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/apkam_choice_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
@@ -107,7 +108,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
-      rootDomain = Constants.getRootDomains(context).keys.first;
+      var keys = Constants.getRoots(context).keys;
+      rootDomain = keys.isNotEmpty ? keys.first : "";
     }
 
     cubit.setState(atSign: atsign, rootDomain: rootDomain);
@@ -125,7 +127,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
   }) async {
     var atSigns = await KeyChainManager.getInstance()
         .getAtSignListFromKeychain();
-    var apiKey = await Constants.appAPIKey;
+    final roots = Constants.getRoots(App.navState.currentContext!)[rootDomain];
+    var apiKey = await roots?.apiKey;
     var config = AtOnboardingConfig(
       atClientPreference: await AtClientMethods.loadAtClientPreference(
         rootDomain,
@@ -216,18 +219,21 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
         // When onboarding from teapot, set backup status to false (not atKeys not backed up)
-        App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(
-          false,
-        );
-        final apiKey = await Constants.appAPIKey;
+        var context = App.navState.currentContext!;
+        // ignore: use_build_context_synchronously
+        context.read<BackupKeyCubit>().setBackupKeyStatus(false);
+        // ignore: use_build_context_synchronously
+        final rootDomain = context
+            .read<OnboardingCubit>()
+            .getRootDomain(); // Or get from your state/cubit if needed
+        final root =
+            // ignore: use_build_context_synchronously
+            Constants.getRoots(context)[rootDomain];
 
-        if (apiKey == null) {
-          result = AtOnboardingResult.error(
-            message: strings.errorAtSignNotExist,
-          );
-          break;
+        final apiKey = await root?.apiKey;
+        if (apiKey != null) {
+          AtOnboardingConstants.setApiKey(apiKey);
         }
-        AtOnboardingConstants.setApiKey(apiKey);
         AtOnboardingConstants.rootDomain =
             util.config.atClientPreference.rootDomain;
 
@@ -237,28 +243,21 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           ).locale,
         );
         if (!mounted) return null;
-        Map<String, String> apis = {
-          "root.atsign.org": "my.atsign.com",
-          "root.atsign.wtf": "my.atsign.wtf",
-        };
-        var regUrl = apis[util.config.atClientPreference.rootDomain];
-        if (regUrl == null) {
-          result ??= AtOnboardingResult.error(
-            message: strings.errorRootDomainNotSupported,
-          );
-          break;
-        }
+
         result = await showDialog<AtOnboardingResult>(
+          // ignore: use_build_context_synchronously
           context: context,
           barrierDismissible: false,
-          builder: (context) => ActivateAtsignDialog(
-            atSign: atsign,
-            apiKey: apiKey,
-            config: util.config,
-            registrarUrl: regUrl,
-            onboardingUtil: util,
-            waitForTeapot: initialStatus != AtSignStatus.teapot,
-          ),
+          builder: (context) => (root?.registrarUrl == null || apiKey == null)
+              ? ActivateCramDialog(atSign: atsign, config: util.config)
+              : ActivateOtpDialog(
+                  atSign: atsign,
+                  apiKey: apiKey,
+                  config: util.config,
+                  registrarUrl: root!.registrarUrl!,
+                  onboardingUtil: util,
+                  waitForTeapot: initialStatus != AtSignStatus.teapot,
+                ),
         );
 
         if (result is AtOnboardingResult) {

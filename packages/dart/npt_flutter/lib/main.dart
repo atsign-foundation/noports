@@ -4,7 +4,8 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
+  Constants.initialize();
   WidgetsFlutterBinding.ensureInitialized();
 
   var windowOptions = const WindowOptions(

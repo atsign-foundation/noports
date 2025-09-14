@@ -22,7 +22,7 @@ class AdvanceSection extends StatelessWidget {
               Row(
                 children: [
                   const EnableLogsBox(),
-                  Expanded(child: Text(strings.enableLogging)),
+                  Text(strings.enableLogging),
                   gapW20,
                   const ExportLogsButton(),
                 ],

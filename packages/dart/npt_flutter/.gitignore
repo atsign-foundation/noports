@@ -1,4 +1,13 @@
 .env
+.env.json
+
+# Flatpak-flutter build files
+com.atsign.NoPortsDesktop.yaml
+flutter-sdk*.json
+flutter-shared.sh.patch
+pubspec-sources.json
+package_config.json
+.flatpak-builder/**
 
 # Miscellaneous
 *.class

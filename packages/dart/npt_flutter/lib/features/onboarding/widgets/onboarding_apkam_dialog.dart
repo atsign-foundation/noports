@@ -183,7 +183,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       appName: 'NoPorts',
       deviceName: deviceName,
       otp: otp,
-      namespaces: {Constants.namespace!: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
     );
 
     log('About to enroll with $enrollmentRequest');
