@@ -23,9 +23,7 @@ class _ClientAtsignDescriptionWidgetState
   bool visibility = false;
 
   void visitRegistarSite() async {
-    final Uri url = Uri.parse(
-      'https://my.noports.com/no-ports-invite/14dayfreetrial',
-    );
+    final Uri url = Uri.parse('https://my.noports.com/no-ports-plans/');
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
     }
@@ -95,7 +93,13 @@ class _ClientAtsignDescriptionWidgetState
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(strings.myNoPortsMsg + StringConst.myNoPorts),
+                            Flexible(
+                              child: Text(
+                                strings.myNoPortsMsg +
+                                    StringConst.managementPortal,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                             IconButton(
                               icon: Icon(
                                 PhosphorIcons.arrowUpRight(),
@@ -113,47 +117,8 @@ class _ClientAtsignDescriptionWidgetState
                             Card(
                               elevation: Sizes.p15,
                               child: SvgPicture.asset(
-                                'assets/my_noports_main.svg',
+                                'assets/management_portal.svg',
                                 width: width / 3.2,
-                              ),
-                            ),
-                            Positioned(
-                              top: (width / -40),
-                              child: Card(
-                                margin: EdgeInsets.zero,
-                                shape: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(Sizes.p8),
-                                  borderSide: const BorderSide(
-                                    color: Colors.transparent,
-                                  ),
-                                ),
-                                elevation: Sizes.p15,
-                                child: SvgPicture.asset(
-                                  'assets/my_noports_sec_2.svg',
-                                  height: (width / Sizes.p8) / 2.3,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: (width / Sizes.p15),
-                              left: width / Sizes.p15,
-                              child: RichText(
-                                text: const TextSpan(
-                                  text: StringConst.ampersand,
-                                  style: TextStyle(
-                                    color: AppColor.primaryColor,
-                                    fontSize: 10,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: StringConst.atsignClient,
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: Sizes.p10,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                             ),
                           ],

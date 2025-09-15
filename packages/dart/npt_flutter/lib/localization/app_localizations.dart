@@ -974,7 +974,7 @@ abstract class AppLocalizations {
   /// No description provided for @register.
   ///
   /// In en, this message translates to:
-  /// **'register'**
+  /// **'Register'**
   String get register;
 
   /// No description provided for @relay.

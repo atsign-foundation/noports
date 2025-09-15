@@ -86,5 +86,5 @@ class LanguageUtil {
 class StringConst {
   static const String ampersand = '@';
   static const String atsignClient = 'atsign_client';
-  static const String myNoPorts = 'My NoPorts';
+  static const String managementPortal = 'Management Portal';
 }

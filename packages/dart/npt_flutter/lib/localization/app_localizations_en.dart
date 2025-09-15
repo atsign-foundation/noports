@@ -473,7 +473,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refresh => 'Refresh';
 
   @override
-  String get register => 'register';
+  String get register => 'Register';
 
   @override
   String get relay => 'Relay';
