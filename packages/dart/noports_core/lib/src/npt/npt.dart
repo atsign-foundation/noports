@@ -67,7 +67,6 @@ abstract interface class Npt {
   static ArgParser createArgParser() {
     ArgParser parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
     );
 
     return parser;
@@ -113,8 +112,8 @@ abstract class NptBase implements Npt {
   bool sendControlHeartbeats = false;
 
   NptBase({required this.params, required this.atClient, this.logStream})
-      : sessionId = Uuid().v4(),
-        namespace = '${params.device}.${DefaultArgs.namespace}' {
+    : sessionId = Uuid().v4(),
+      namespace = '${params.device}.${DefaultArgs.namespace}' {
     AtSignLogger.defaultLoggingHandler = _slh;
     logger.level = params.verbose ? 'info' : 'shout';
 
@@ -203,7 +202,7 @@ class _NptImpl extends NptBase
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(
+    featureCheckFuture = sshnpdChannel.featureCheck(
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
@@ -342,8 +341,9 @@ class _NptImpl extends NptBase
         multi: true,
         detached: true,
         timeout: params.timeout,
-        controlChannelHeartbeat:
-            sendControlHeartbeats ? params.controlChannelHeartbeat : null,
+        controlChannelHeartbeat: sendControlHeartbeats
+            ? params.controlChannelHeartbeat
+            : null,
       );
       _completer.complete();
     }
@@ -370,8 +370,9 @@ class _NptImpl extends NptBase
       multi: true,
       detached: false,
       timeout: params.timeout,
-      controlChannelHeartbeat:
-          sendControlHeartbeats ? params.controlChannelHeartbeat : null,
+      controlChannelHeartbeat: sendControlHeartbeats
+          ? params.controlChannelHeartbeat
+          : null,
     );
 
     unawaited(
