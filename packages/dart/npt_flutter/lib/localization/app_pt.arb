@@ -177,6 +177,7 @@
   "switchAtSign": "Mudar atSign",
   "switchAtSignDescription": "Tem certeza de que deseja mudar de atSign?",
   "switchAtSignNote": "Observação: Mudar de atSign encerra todas as conexões.",
+  "syncCompleted": "Sincronização concluída. Todos os perfis carregados.",
   "syncInProgress": "Sincronização em andamento. Alguns perfis ainda podem estar carregando.",
   "unknownError": "Ocorreu um erro desconhecido",
   "uploadKey": "Enviar atKey",

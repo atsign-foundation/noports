@@ -587,6 +587,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Observação: Mudar de atSign encerra todas as conexões.';
 
   @override
+  String get syncCompleted =>
+      'Sincronização concluída. Todos os perfis carregados.';
+
+  @override
   String get syncInProgress =>
       'Sincronização em andamento. Alguns perfis ainda podem estar carregando.';
 
@@ -1233,6 +1237,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get switchAtSignNote =>
       'Observação: Mudar de atSign encerra todas as conexões.';
+
+  @override
+  String get syncCompleted =>
+      'Sincronização concluída. Todos os perfis carregados.';
 
   @override
   String get syncInProgress =>

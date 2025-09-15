@@ -590,6 +590,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Nota: Cambiar de atSign finaliza todas las conexiones.';
 
   @override
+  String get syncCompleted =>
+      'Sincronización completada. Todos los perfiles cargados.';
+
+  @override
   String get syncInProgress =>
       'Sincronización en curso. Algunos perfiles podrían estar todavía cargando.';
 

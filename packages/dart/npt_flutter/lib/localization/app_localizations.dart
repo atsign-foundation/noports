@@ -1181,6 +1181,12 @@ abstract class AppLocalizations {
   /// **'Note: Switching atSigns ends all connections.'**
   String get switchAtSignNote;
 
+  /// No description provided for @syncCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync completed. All profiles loaded.'**
+  String get syncCompleted;
+
   /// No description provided for @syncInProgress.
   ///
   /// In en, this message translates to:

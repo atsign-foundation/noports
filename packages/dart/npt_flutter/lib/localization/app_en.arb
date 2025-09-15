@@ -177,6 +177,7 @@
    "switchAtSign": "Switch atSign",
    "switchAtSignDescription": "Are you sure you want to switch atSigns?",
    "switchAtSignNote": "Note: Switching atSigns ends all connections.",
+   "syncCompleted": "Sync completed. All profiles loaded.",
    "syncInProgress": "Sync in progress. Some profiles may still be loading.",
    "unknownError": "An unknown error occurred",
    "uploadKey": "Upload atKey",

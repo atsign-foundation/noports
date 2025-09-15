@@ -583,6 +583,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Note: Switching atSigns ends all connections.';
 
   @override
+  String get syncCompleted => 'Sync completed. All profiles loaded.';
+
+  @override
   String get syncInProgress =>
       'Sync in progress. Some profiles may still be loading.';
 

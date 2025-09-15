@@ -553,6 +553,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get syncCompleted => '同步完成。所有配置文件已加载。';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
 
   @override
@@ -1159,6 +1162,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get syncCompleted => '同步完成。所有配置文件已加载。';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
 
   @override
@@ -1761,6 +1767,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get switchAtSignNote => '注意：切換 atSign 將結束所有連線。';
+
+  @override
+  String get syncCompleted => '同步完成。所有設定檔已載入。';
 
   @override
   String get syncInProgress => '同步進行中。某些設定檔可能仍在載入。';

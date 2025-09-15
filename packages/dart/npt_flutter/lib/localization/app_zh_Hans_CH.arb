@@ -177,6 +177,7 @@
   "switchAtSign": "切换 atSign",
   "switchAtSignDescription": "您确定要切换 atSign 吗？",
   "switchAtSignNote": "注意：切换 atSign 将结束所有连接。",
+  "syncCompleted": "同步完成。所有配置文件已加载。",
   "syncInProgress": "同步进行中。某些配置文件可能仍在加载。",
   "unknownError": "发生了未知错误",
   "uploadKey": "上传 atKey",
