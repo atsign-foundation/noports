@@ -122,6 +122,7 @@ final class Profile extends Loggable with Favoritable {
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings
       inline: true,
+      timeout: keepAlive ? const Duration(days: 3650) : const Duration(days: 1),
     );
   }
 
