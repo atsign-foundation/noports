@@ -140,7 +140,7 @@ final class PolicyError extends PolicyState {
 
   @override
   String toString() {
-    const operationInfo = '';
+    final operationInfo = operation != null ? ' (operation: $operation)' : '';
     return 'PolicyError(message: $message$operationInfo)';
   }
 }

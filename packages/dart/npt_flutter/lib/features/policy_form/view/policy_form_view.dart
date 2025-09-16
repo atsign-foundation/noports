@@ -37,12 +37,12 @@ class PolicyFormView extends StatelessWidget {
           );
         }
         
-        return buildForm(context);
+        return _buildForm(context);
       },
     );
   }
 
-  Widget buildForm(BuildContext context) {
+  Widget _buildForm(BuildContext context) {
     return FormContent(
       key: ValueKey('form_${role.tempId}'),
     );
