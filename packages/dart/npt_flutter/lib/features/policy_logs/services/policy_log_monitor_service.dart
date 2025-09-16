@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:npt_flutter/app.dart';
 
 class PolicyLogEntry {
   final String timestamp;
@@ -26,7 +27,7 @@ class PolicyLogEntry {
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(notification.epochMillis ?? DateTime.now().millisecondsSinceEpoch);
 
-    String deviceName = 'unknown';
+    String deviceName = '';
     String deviceGroup = '';
     String allowedServices = '';
     String type = 'heartbeat';
@@ -73,6 +74,7 @@ class PolicyLogEntry {
             }
           }
         } catch (e) {
+          App.log('[ERROR] PolicyLogEntry.fromNotification: Failed to parse policy log payload: $e'.loggable);
           allowedServices = 'Parse error: ${e.toString()}';
         }
       }
@@ -88,6 +90,7 @@ class PolicyLogEntry {
             allowedServices = services.join(', ');
           }
         } catch (e) {
+          App.log('[ERROR] PolicyLogEntry.fromNotification: Failed to parse device log payload: $e'.loggable);
           final keyParts = notification.key.split(':');
           if (keyParts.length > 1) {
             final devicePart = keyParts[1].split('.devices.policy.sshnp')[0];
@@ -156,19 +159,25 @@ class PolicyLogMonitorService {
           if (_logs.length > 100) {
             _logs.removeRange(100, _logs.length);
           }
-          
           _logStreamController.add(logEntry);
         },
         onError: (error) {
+          App.log('[ERROR] PolicyLogMonitorService.startMonitoring stream error: $error'.loggable);
+          unawaited(stopMonitoring());
         },
         onDone: () {
+          App.log('[INFO] PolicyLogMonitorService.startMonitoring stream closed'.loggable);
+          unawaited(stopMonitoring());
         }
       );
 
       _isMonitoring = true;
-      
+
     } catch (error) {
-      // TODO
+      App.log('[ERROR] PolicyLogMonitorService.startMonitoring failed: $error'.loggable);
+      _subscription?.cancel();
+      _subscription = null;
+      _isMonitoring = false;
     }
   }
 
@@ -199,15 +208,22 @@ class PolicyLogMonitorService {
           _logStreamController.add(logEntry);
         },
         onError: (error) {
+          App.log('[ERROR] PolicyLogMonitorService.startGlobalMonitoring stream error: $error'.loggable);
+          unawaited(stopMonitoring()); // unawait so it tells analyzer that we're intentionally unawaiting
         },
         onDone: () {
+          App.log('[INFO] PolicyLogMonitorService.startGlobalMonitoring stream closed'.loggable);
+          unawaited(stopMonitoring()); // unawait so it tells naalyzer that we're intentionally unawaiting
         }
       );
 
       _isMonitoring = true;
 
     } catch (error) {
-      // TODO
+      App.log('[ERROR] PolicyLogMonitorService.startGlobalMonitoring failed: $error'.loggable);
+      _subscription?.cancel();
+      _subscription = null;
+      _isMonitoring = false;
     }
   }
 
