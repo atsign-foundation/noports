@@ -19,6 +19,7 @@ final class Profile extends Loggable with Favoritable {
   final int remotePort;
   final int localPort;
   final bool only443;
+  final bool keepAlive;
 
   const Profile(
     this.uuid, {
@@ -30,6 +31,7 @@ final class Profile extends Loggable with Favoritable {
     required this.remotePort,
     required this.localPort,
     this.only443 = false,
+    this.keepAlive = false,
   });
 
   Profile copyWith({
@@ -42,6 +44,7 @@ final class Profile extends Loggable with Favoritable {
     int? remotePort,
     int? localPort,
     bool? only443,
+    bool? keepAlive,
   }) {
     return Profile(
       uuid ?? this.uuid,
@@ -53,6 +56,7 @@ final class Profile extends Loggable with Favoritable {
       remotePort: remotePort ?? this.remotePort,
       localPort: localPort ?? this.localPort,
       only443: only443 ?? this.only443,
+      keepAlive: keepAlive ?? this.keepAlive,
     );
   }
 
@@ -83,6 +87,8 @@ final class Profile extends Loggable with Favoritable {
     remoteHost,
     remotePort,
     localPort,
+    only443,
+    keepAlive,
   ];
 
   @override
@@ -112,7 +118,6 @@ final class Profile extends Loggable with Favoritable {
       only443: only443,
       // When using 443, we must use ESCR relay auth mode
       relayAuthMode: only443 ? RelayAuthMode.escr : RelayAuthMode.payload,
-
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings
       inline: true,
