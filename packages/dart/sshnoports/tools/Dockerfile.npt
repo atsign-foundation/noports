@@ -1,6 +1,6 @@
 # Dockerfile.activate
 # Build image for a containerized call of the at_activate binary
-FROM dart:3.9.1@sha256:1245685edacccab41a36e57ca7eb503de1fc60e2538332888741c8a58c1d403c AS buildimage
+FROM dart:3.9.3@sha256:9ce249a31fea84c84e1ed4f146efd151e396a5ecb7e63132761b31ef49b806f8 AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -15,7 +15,7 @@ RUN \
   dart compile exe bin/npt.dart -o ${BINARYDIR}/npt
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20250811-slim@sha256:8810492a2dd16b7f59239c1e0cc1e56c1a1a5957d11f639776bd6798e795608b
+FROM debian:stable-20250908-slim@sha256:0c80836db6d5bd1f89ed3c1300bbd888fc8a415130a52fd86e501ce38471fe5b
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at

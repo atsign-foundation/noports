@@ -6,18 +6,6 @@ part of 'policy.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-DaemonAtSign _$DaemonAtSignFromJson(Map<String, dynamic> json) =>
-    DaemonAtSign(atSign: json['atSign'] as String);
-
-Map<String, dynamic> _$DaemonAtSignToJson(DaemonAtSign instance) =>
-    <String, dynamic>{'atSign': instance.atSign};
-
-UserAtSign _$UserAtSignFromJson(Map<String, dynamic> json) =>
-    UserAtSign(atSign: json['atSign'] as String);
-
-Map<String, dynamic> _$UserAtSignToJson(UserAtSign instance) =>
-    <String, dynamic>{'atSign': instance.atSign};
-
 Device _$DeviceFromJson(Map<String, dynamic> json) => Device(
   name: json['name'] as String,
   permitOpens: (json['permitOpens'] as List<dynamic>)
@@ -43,8 +31,8 @@ Map<String, dynamic> _$DeviceGroupToJson(DeviceGroup instance) =>
       'permitOpens': instance.permitOpens,
     };
 
-Role _$RoleFromJson(Map<String, dynamic> json) => Role(
-  id: json['id'] as String?,
+FetchedRole _$FetchedRoleFromJson(Map<String, dynamic> json) => FetchedRole(
+  id: json['id'] as String,
   name: json['name'] as String,
   description: json['description'] as String,
   daemonAtSigns: (json['daemonAtSigns'] as List<dynamic>)
@@ -59,14 +47,16 @@ Role _$RoleFromJson(Map<String, dynamic> json) => Role(
   userAtSigns: (json['userAtSigns'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
-);
+)..tempId = json['tempId'] as String?;
 
-Map<String, dynamic> _$RoleToJson(Role instance) => <String, dynamic>{
-  'id': instance.id,
-  'name': instance.name,
-  'description': instance.description,
-  'daemonAtSigns': instance.daemonAtSigns,
-  'devices': instance.devices,
-  'deviceGroups': instance.deviceGroups,
-  'userAtSigns': instance.userAtSigns,
-};
+Map<String, dynamic> _$FetchedRoleToJson(FetchedRole instance) =>
+    <String, dynamic>{
+      'tempId': instance.tempId,
+      'name': instance.name,
+      'description': instance.description,
+      'daemonAtSigns': instance.daemonAtSigns,
+      'devices': instance.devices,
+      'deviceGroups': instance.deviceGroups,
+      'userAtSigns': instance.userAtSigns,
+      'id': instance.id,
+    };

@@ -19,7 +19,6 @@ final class Profile extends Loggable with Favoritable {
   final int remotePort;
   final int localPort;
   final bool only443;
-  final bool keepAlive;
 
   const Profile(
     this.uuid, {
@@ -31,7 +30,6 @@ final class Profile extends Loggable with Favoritable {
     required this.remotePort,
     required this.localPort,
     this.only443 = false,
-    this.keepAlive = true,
   });
 
   Profile copyWith({
@@ -44,7 +42,6 @@ final class Profile extends Loggable with Favoritable {
     int? remotePort,
     int? localPort,
     bool? only443,
-    bool? keepAlive,
   }) {
     return Profile(
       uuid ?? this.uuid,
@@ -56,7 +53,6 @@ final class Profile extends Loggable with Favoritable {
       remotePort: remotePort ?? this.remotePort,
       localPort: localPort ?? this.localPort,
       only443: only443 ?? this.only443,
-      keepAlive: keepAlive ?? this.keepAlive,
     );
   }
 
@@ -87,8 +83,6 @@ final class Profile extends Loggable with Favoritable {
     remoteHost,
     remotePort,
     localPort,
-    only443,
-    keepAlive,
   ];
 
   @override
@@ -122,7 +116,7 @@ final class Profile extends Loggable with Favoritable {
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings
       inline: true,
-      timeout: keepAlive ? const Duration(hours: 24) : const Duration(days: 1),
+      timeout: const Duration(days: 1),
     );
   }
 

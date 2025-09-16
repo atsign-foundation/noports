@@ -1,40 +1,46 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:npt_flutter/util/uuid.dart';
 
 part 'policy.g.dart';
 
-@JsonSerializable()
-class DaemonAtSign {
-  final String atSign;
-
-  DaemonAtSign({
-    required this.atSign,
-  });
-
-  factory DaemonAtSign.fromJson(Map<String, dynamic> json) => _$DaemonAtSignFromJson(json);
-  Map<String, dynamic> toJson() => _$DaemonAtSignToJson(this);
-}
-
-@JsonSerializable()
-class UserAtSign {
-  final String atSign;
-
-  UserAtSign({
-    required this.atSign,
-  });
-
-  factory UserAtSign.fromJson(Map<String, dynamic> json) => _$UserAtSignFromJson(json);
-  Map<String, dynamic> toJson() => _$UserAtSignToJson(this);
-}
+/// Example of a Role object
+/// {
+///  "id": "3",
+///  "name": "What Up",
+///  "description": "Description!!!",
+///  "daemonAtSigns": [
+///    "@colin"
+///  ],
+///  "devices": [
+///    {
+///      "name": "Jeremy",
+///      "permitOpens": [
+///        "localhost:22",
+///        "localhost:3389",
+///        "127.0.0.1:22",
+///        "127.0.0.1:3389"
+///      ]
+///    }
+///  ],
+///  "deviceGroups": [
+///    {
+///      "name": "jeremystuff",
+///      "permitOpens": [
+///        "localhost:22"
+///      ]
+///    }
+///  ],
+///  "userAtSigns": [
+///    "@barbara"
+///  ]
+/// }
 
 @JsonSerializable()
 class Device {
   final String name;
   final List<String> permitOpens;
 
-  Device({
-    required this.name,
-    required this.permitOpens,
-  });
+  Device({required this.name, required this.permitOpens});
 
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
@@ -45,18 +51,17 @@ class DeviceGroup {
   final String name;
   List<String> permitOpens;
 
-  DeviceGroup({
-    required this.name,
-    required this.permitOpens,
-  });
+  DeviceGroup({required this.name, required this.permitOpens});
 
-  factory DeviceGroup.fromJson(Map<String, dynamic> json) => _$DeviceGroupFromJson(json);
+  factory DeviceGroup.fromJson(Map<String, dynamic> json) =>
+      _$DeviceGroupFromJson(json);
   Map<String, dynamic> toJson() => _$DeviceGroupToJson(this);
 }
 
-@JsonSerializable()
-class Role {
-  String? id;
+/// Similar to FetchedRole, but no id
+/// This class represents a Role that the user may be currently editing but unfinished.
+class RoleInProgress {
+  String? tempId; // temporary id for UI purposes only
   final String name;
   final String description;
   final List<String> daemonAtSigns;
@@ -64,14 +69,22 @@ class Role {
   final List<DeviceGroup> deviceGroups;
   final List<String> userAtSigns;
 
-  factory Role.empty({
-    String? id,
-    required String name,
+  RoleInProgress({
+    this.tempId,
+    required this.name,
+    required this.description,
+    required this.daemonAtSigns,
+    required this.devices,
+    required this.deviceGroups,
+    required this.userAtSigns,
   }) {
-    return Role(
-      id: id,
+    tempId ??= Uuid.generate();
+  }
+
+  factory RoleInProgress.empty() {
+    return RoleInProgress(
+      name: '',
       description: '',
-      name: name,
       daemonAtSigns: [],
       devices: [],
       deviceGroups: [],
@@ -79,16 +92,80 @@ class Role {
     );
   }
 
-  Role({
-    this.id,
-    required this.name,
-    required this.description,
-    required this.daemonAtSigns,
-    required this.devices,
-    required this.deviceGroups,
-    required this.userAtSigns,
-  });
+  RoleInProgress copyWith({
+    String? tempId,
+    String? name,
+    String? description,
+    List<String>? daemonAtSigns,
+    List<Device>? devices,
+    List<DeviceGroup>? deviceGroups,
+    List<String>? userAtSigns,
+  }) {
+    return RoleInProgress(
+      tempId: tempId ?? this.tempId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      devices: devices ?? this.devices,
+      deviceGroups: deviceGroups ?? this.deviceGroups,
+      userAtSigns: userAtSigns ?? this.userAtSigns,
+    );
+  }
+}
 
-  factory Role.fromJson(Map<String, dynamic> json) => _$RoleFromJson(json);
-  Map<String, dynamic> toJson() => _$RoleToJson(this);
+/// Represents a Role that we fetched from an AtKey (id exists)
+@JsonSerializable()
+class FetchedRole extends RoleInProgress {
+  final String id;
+
+  FetchedRole({
+    required this.id,
+    required super.name,
+    required super.description,
+    required super.daemonAtSigns,
+    required super.devices,
+    required super.deviceGroups,
+    required super.userAtSigns,
+  }) : super(tempId: id);
+
+  factory FetchedRole.fromRoleInProgress({
+    required String id,
+    required RoleInProgress roleInProgress,
+  }) {
+    return FetchedRole(
+      id: id,
+      name: roleInProgress.name,
+      description: roleInProgress.description,
+      daemonAtSigns: roleInProgress.daemonAtSigns,
+      devices: roleInProgress.devices,
+      deviceGroups: roleInProgress.deviceGroups,
+      userAtSigns: roleInProgress.userAtSigns,
+    );
+  }
+
+  factory FetchedRole.fromJson(Map<String, dynamic> json) =>
+      _$FetchedRoleFromJson(json);
+  Map<String, dynamic> toJson() => _$FetchedRoleToJson(this);
+
+  @override
+  FetchedRole copyWith({
+    String? id,
+    String? tempId,
+    String? name,
+    String? description,
+    List<String>? daemonAtSigns,
+    List<Device>? devices,
+    List<DeviceGroup>? deviceGroups,
+    List<String>? userAtSigns,
+  }) {
+    return FetchedRole(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      devices: devices ?? this.devices,
+      deviceGroups: deviceGroups ?? this.deviceGroups,
+      userAtSigns: userAtSigns ?? this.userAtSigns,
+    );
+  }
 }

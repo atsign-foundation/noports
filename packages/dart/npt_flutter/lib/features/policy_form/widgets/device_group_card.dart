@@ -19,7 +19,6 @@ class DeviceGroupCard extends StatelessWidget {
             ? IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () {
-                  // TODO: Remove device group functionality
                 },
               )
             : null,

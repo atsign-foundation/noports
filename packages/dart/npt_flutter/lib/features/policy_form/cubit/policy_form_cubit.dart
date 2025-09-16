@@ -1,232 +1,264 @@
-import 'package:equatable/equatable.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logging/models/loggable.dart';
+import '../../logging/models/logging_bloc.dart';
 import '../../policy/models/policy.dart';
 import '../../policy/repositories/role_repository.dart';
 
 part 'policy_form_state.dart';
 
-class PolicyFormCubit extends Cubit<PolicyFormState> {
+class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   final RoleRepository _roleRepository;
+  final void Function(String message)? onSuccess;
+  final void Function()? onDeleted;
 
-  PolicyFormCubit(this._roleRepository) : super(const PolicyFormInitial());
+  PolicyFormCubit(this._roleRepository, {this.onSuccess, this.onDeleted})
+    : super(const PolicyFormLoading());
 
-  /// Initialize the form with a role (for editing) or create a new empty role
-  void initializeForm({Role? role}) {
-    if (role != null) {
-      emit(PolicyFormEditing(
-        currentRole: role,
-        originalRole: role,
-        isNewRole: role.id == null || role.id!.isEmpty,
-        isSaving: false,
-      ));
+  /// Used when "Add New Role" is pressed
+  void initializeFormNew() {
+    emit(const PolicyFormLoading(operation: 'Initializing new role form'));
+    final roleInProgress = RoleInProgress.empty();
+    emit(PolicyFormEditingNewRole(roleInProgress: roleInProgress));
+  }
+
+  /// Used when editing an existing role
+  Future<void> initializeFormExisting(String roleId) async {
+    final backupState = state;
+    emit(const PolicyFormLoading(operation: 'Loading existing role'));
+    try {
+      final roles = await _roleRepository.fetchRoles();
+      if (isClosed) return;
+
+      final FetchedRole existingRole = roles.firstWhere(
+        (role) => role.id == roleId,
+        orElse: () => throw Exception('Role not found'),
+      );
+
+      if (isClosed) return;
+      emit(PolicyFormEditingExistingRole(currentRole: existingRole));
+    } catch (error) {
+      if (isClosed) return;
+      emit(
+        PolicyFormError(
+          message: 'Failed to load role: $error',
+          previousState: backupState,
+        ),
+      );
+    }
+  }
+
+  /// General initializer that decides between new or existing role
+  void initializeWithRole(RoleInProgress role, {bool isEditing = false}) {
+    if (role is FetchedRole) {
+      if (isEditing) {
+        emit(PolicyFormEditingExistingRole(
+          currentRole: role,
+          originalRole: role,
+        ));
+      } else {
+        emit(PolicyFormViewingRole(currentRole: role));
+      }
     } else {
-      final emptyRole = Role.empty(name: '');
-      emit(PolicyFormEditing(
-        currentRole: emptyRole,
-        originalRole: emptyRole,
-        isNewRole: true,
-        isSaving: false,
-      ));
+      emit(PolicyFormEditingNewRole(roleInProgress: role));
     }
   }
 
-  /// Update the role name
-  void updateRoleName(String name) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+  /// Elegant method to update the entire role - similar to ProfileBloc's _onEdit
+  void updateRole(RoleInProgress role) {
+    if (state is PolicyFormEditingExistingRole && role is FetchedRole) {
+      final currentState = state as PolicyFormEditingExistingRole;
+      emit(currentState.copyWith(currentRole: role));
+    } else if (state is PolicyFormEditingNewRole) {
+      final currentState = state as PolicyFormEditingNewRole;
+      emit(currentState.copyWith(roleInProgress: role));
     }
   }
 
-  /// Update the role description
-  void updateRoleDescription(String description) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
+  /// Helper to get the current role being edited
+  RoleInProgress? _getCurrentRole() {
+    if (state is PolicyFormEditingExistingRole) {
+      return (state as PolicyFormEditingExistingRole).currentRole;
+    } else if (state is PolicyFormEditingNewRole) {
+      return (state as PolicyFormEditingNewRole).roleInProgress;
     }
+    return null;
   }
 
-  /// Update daemon atSigns
-  void updateDaemonAtSigns(List<String> daemonAtSigns) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
-    }
-  }
-
-  /// Update devices
-  void updateDevices(List<Device> devices) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
-    }
-  }
-
-  /// Update device groups
-  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: deviceGroups,
-        userAtSigns: currentState.currentRole.userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
-    }
-  }
-
-  /// Update user atSigns
-  void updateUserAtSigns(List<String> userAtSigns) {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      final updatedRole = Role(
-        id: currentState.currentRole.id,
-        name: currentState.currentRole.name,
-        description: currentState.currentRole.description,
-        daemonAtSigns: currentState.currentRole.daemonAtSigns,
-        devices: currentState.currentRole.devices,
-        deviceGroups: currentState.currentRole.deviceGroups,
-        userAtSigns: userAtSigns,
-      );
-      
-      emit(currentState.copyWith(currentRole: updatedRole));
-    }
-  }
-
-  /// Cancel editing and reset to original role
   void cancelEditing() {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      emit(currentState.copyWith(
-        currentRole: currentState.originalRole,
-        isSaving: false,
-      ));
+    if (state is PolicyFormEditingExistingRole) {
+      final PolicyFormEditingExistingRole currentState =
+          state as PolicyFormEditingExistingRole;
+      emit(
+        currentState.copyWith(
+          currentRole: currentState.originalRole
+        ),
+      );
+    } else if (state is PolicyFormEditingNewRole) {
+      final RoleInProgress emptyRole = RoleInProgress.empty();
+      emit(PolicyFormEditingNewRole(roleInProgress: emptyRole));
     }
   }
 
-  /// Save the current role
   Future<void> saveRole() async {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      
+    if (state is PolicyFormEditingExistingRole) {
+      final currentState = state as PolicyFormEditingExistingRole;
       emit(currentState.copyWith(isSaving: true));
 
       try {
-        bool success;
-        if (currentState.isNewRole) {
-          success = await _roleRepository.createNewRole(currentState.currentRole);
-        } else {
-          success = await _roleRepository.updateExistingRole(currentState.currentRole);
-        }
+        final success = await _roleRepository.updateExistingRole(currentState.currentRole);
+        
+        if (isClosed) return;
 
         if (success) {
-          emit(PolicyFormSuccess(
-            savedRole: currentState.currentRole,
-            wasNewRole: currentState.isNewRole,
-          ));
+          onSuccess?.call('Role saved successfully');
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
         } else {
-          emit(PolicyFormError(
-            message: 'Failed to save role',
-            previousState: currentState.copyWith(isSaving: false),
-          ));
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to save role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
         }
       } catch (error) {
-        emit(PolicyFormError(
-          message: 'Failed to save role: $error',
-          previousState: currentState.copyWith(isSaving: false),
-        ));
+        if (!isClosed) {
+          emit(
+            PolicyFormError(
+              message: 'Failed to save role: $error',
+              previousState: currentState.copyWith(isSaving: false),
+            ),
+          );
+        }
+      }
+    } else if( state is PolicyFormEditingNewRole) {
+      final currentState = state as PolicyFormEditingNewRole;
+      emit(currentState.copyWith(isSaving: true));
+
+      try {
+        final success = await _roleRepository.putNewRole(currentState.roleInProgress);
+        
+        if (isClosed) return;
+
+        if (success) {
+          onSuccess?.call('Role created successfully');
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
+        } else {
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to create role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        if (!isClosed) {
+          emit(
+            PolicyFormError(
+              message: 'Failed to create role: $error',
+              previousState: currentState.copyWith(isSaving: false),
+            ),
+          );
+        }
       }
     }
   }
 
-  /// Delete the current role
-  Future<void> deleteRole() async {
-    if (state is PolicyFormEditing) {
-      final currentState = state as PolicyFormEditing;
-      
-      // Can't delete a role that hasn't been saved yet
-      if (currentState.isNewRole) return;
-      
+  Future<void> deleteCurrentRole() async {
+    if (state is PolicyFormEditingExistingRole) {
+      final currentState = state as PolicyFormEditingExistingRole;
       final roleId = currentState.currentRole.id;
-      if (roleId == null || roleId.isEmpty) return;
 
       emit(currentState.copyWith(isSaving: true));
 
       try {
         final success = await _roleRepository.deleteRole(roleId);
         
+        // Check if cubit is still active after async operation
+        if (isClosed) return;
+
         if (success) {
-          emit(PolicyFormDeleted(deletedRole: currentState.currentRole));
+          onDeleted?.call();
+          if (!isClosed) {
+            emit(const PolicyFormLoading());
+          }
         } else {
-          emit(PolicyFormError(
-            message: 'Failed to delete role',
-            previousState: currentState.copyWith(isSaving: false),
-          ));
+          if (!isClosed) {
+            emit(
+              PolicyFormError(
+                message: 'Failed to delete role',
+                previousState: currentState.copyWith(isSaving: false),
+              ),
+            );
+          }
         }
       } catch (error) {
-        emit(PolicyFormError(
-          message: 'Failed to delete role: $error',
-          previousState: currentState.copyWith(isSaving: false),
-        ));
+        if (!isClosed) {
+          emit(
+            PolicyFormError(
+              message: 'Failed to delete role: $error',
+              previousState: currentState.copyWith(isSaving: false),
+            ),
+          );
+        }
       }
     }
   }
 
-  /// Recover from error state
   void recoverFromError() {
     if (state is PolicyFormError) {
       final errorState = state as PolicyFormError;
-      emit(errorState.previousState);
+      emit(errorState.previousState ?? const PolicyFormError(message: 'Could not load previous state error'));
     }
   }
 
-  /// Reset form to initial state
-  void reset() {
-    emit(const PolicyFormInitial());
+  /// Update Fields ---------------------------
+  void updateName(String name) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(name: name));
+    }
   }
+
+  void updateDescription(String description) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(description: description));
+    }
+  }
+
+  void updateDaemonAtSigns(List<String> daemonAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(daemonAtSigns: daemonAtSigns));
+    }
+  }
+
+  void updateDevices(List<Device> devices) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(devices: devices));
+    }
+  }
+
+  void updateDeviceGroups(List<DeviceGroup> deviceGroups) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(deviceGroups: deviceGroups));
+    }
+  }
+
+  void updateUserAtSigns(List<String> userAtSigns) {
+    final currentRole = _getCurrentRole();
+    if (currentRole != null) {
+      updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
+    }
+  }
+
 }

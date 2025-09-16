@@ -147,7 +147,6 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     ),
                   ),
                 ),
-                // Add expand button for policy requests
                 if (widget.type == 'policy request' && widget.policyPayload != null) ...[
                   const SizedBox(width: 8),
                   IconButton(
@@ -163,7 +162,6 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
               ],
             ),
           ),
-          // Expandable JSON payload section
           if (_isExpanded && widget.type == 'policy request' && widget.policyPayload != null)
             Container(
               width: double.infinity,
@@ -238,7 +236,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
       const encoder = JsonEncoder.withIndent('  ');
       return encoder.convert(jsonData);
     } catch (e) {
-      return jsonString; // Return original if parsing fails
+      return jsonString;
     }
   }
 

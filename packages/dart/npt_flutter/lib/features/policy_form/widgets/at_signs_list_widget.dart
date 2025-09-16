@@ -52,7 +52,6 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
     final input = _addController.text.trim();
     if (input.isEmpty) return;
     
-    // Automatically prepend @ if not present
     final newAtSign = input.startsWith('@') ? input : '@$input';
     
     if (!_localAtSigns.contains(newAtSign)) {
@@ -139,7 +138,6 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
         ),
         const SizedBox(height: 12),
 
-        // List of atSigns
         if (_localAtSigns.isEmpty)
           Container(
             padding: const EdgeInsets.all(16),

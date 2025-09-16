@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/policy/widgets/sidebar/policy_roles_sidebar.dart';
 import '../cubit/policy_cubit.dart';
+import '../models/policy.dart';
 import '../repositories/role_repository.dart';
 import '../../policy_form/view/policy_form_view.dart';
+import '../../policy_form/cubit/policy_form_cubit.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
 import '../../policy_logs/cubit/policy_logs_cubit.dart';
-import '../../policy_sidebar/policy_roles_sidebar.dart';
 import '../../../widgets/custom_card.dart';
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
 class PolicyView extends StatelessWidget {
   final String atSign;
-  
   const PolicyView({super.key, required this.atSign});
 
   @override
@@ -26,7 +27,6 @@ class PolicyView extends StatelessWidget {
 
 class PolicyContent extends StatelessWidget {
   final String atSign;
-  
   const PolicyContent({super.key, required this.atSign});
 
   @override
@@ -59,33 +59,37 @@ class PolicyContent extends StatelessWidget {
   }
 
   Widget _buildMainContent(PolicyState state, BuildContext context) {
-    if (state is PolicyLoaded) {
-      switch (state.viewMode) {
-        case PolicyViewMode.logsViewing:
-          return _buildLogsView(context);
-          
-        case PolicyViewMode.roleViewing:
-        case PolicyViewMode.roleEditing:
-        case PolicyViewMode.roleCreating:
-          if (state.hasSelectedRole) {
-            return PolicyFormView(role: state.selectedRole!);
-          }
-          break;
-          
-        case PolicyViewMode.rolesBrowsing:
-          return _buildBrowsingView(context);
-      }
-    }
-    
-    // Fallback view
-    return _buildBrowsingView(context);
+    return switch (state) {
+      PolicyInitial() => _buildBrowsingView(context),
+      PolicyViewingLogs() => _buildLogsView(context),
+      PolicyViewingRole(:final selectedRole) => _buildPolicyForm(
+        context: context,
+        key: ValueKey('policy_form_view_${selectedRole.id}'),
+        role: selectedRole,
+        isEditing: false,
+      ),
+      PolicyEditingRole(:final selectedRole) => _buildPolicyForm(
+        context: context,
+        key: ValueKey('policy_form_edit_${selectedRole.id}'),
+        role: selectedRole,
+        isEditing: true,
+      ),
+      PolicyCreatingRole() => _buildPolicyForm(
+        context: context,
+        key: const ValueKey('policy_form_create_new'),
+        role: RoleInProgress.empty(),
+        isEditing: true,
+      ),
+      PolicyBrowsingRoles() => _buildBrowsingView(context),
+      PolicyLoading() => _buildBrowsingView(context),
+      PolicyError() => _buildBrowsingView(context),
+    };
   }
 
   Widget _buildLogsView(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
@@ -99,7 +103,6 @@ class PolicyContent extends StatelessWidget {
             ],
           ),
         ),
-        // Logs viewer
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -128,6 +131,48 @@ class PolicyContent extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyForm({
+    required BuildContext context,
+    required Key key,
+    required RoleInProgress role,
+    required bool isEditing,
+  }) {
+    return BlocProvider(
+      key: key,
+      create: (context) {
+        final cubit = PolicyFormCubit(
+          context.read<RoleRepository>(),
+          onSuccess: (message) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                backgroundColor: AppColor.primaryColor,
+              ),
+            );
+            context.read<PolicyCubit>().cancelEditing();
+          },
+          onDeleted: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Role deleted successfully!'),
+                backgroundColor: AppColor.primaryColor,
+              ),
+            );
+            context.read<PolicyCubit>().loadRoles();
+          },
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          cubit.initializeWithRole(role, isEditing: isEditing);
+        });
+        return cubit;
+      },
+      child: PolicyFormView(
+        role: role,
+        isEditing: isEditing,
       ),
     );
   }

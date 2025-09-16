@@ -13,16 +13,11 @@ import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
 
 class FormContent extends StatelessWidget {
-  final Role role;
-  final PolicyLoaded state;
+  const FormContent({super.key});
 
-  const FormContent({super.key, required this.role, required this.state});
-
-
-
-  void _showDeleteConfirmation(BuildContext context, Role currentRole) {
+  void _showDeleteConfirmation(BuildContext context, RoleInProgress currentRole) {
     final formCubit = context.read<PolicyFormCubit>();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -37,7 +32,7 @@ class FormContent extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                formCubit.deleteRole();
+                formCubit.deleteCurrentRole();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
@@ -53,54 +48,37 @@ class FormContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize the form cubit with the current role when in edit mode
-    if (state.isInEditMode) {
-      context.read<PolicyFormCubit>().initializeForm(role: role);
-    }
-
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<PolicyFormCubit, PolicyFormState>(
-          listener: (context, formState) {
-            if (formState is PolicyFormSuccess) {
-              // Handle successful save - could navigate back or show success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(formState.wasNewRole ? 'Role created successfully!' : 'Role updated successfully!'),
-                  backgroundColor: AppColor.primaryColor,
-                ),
-              );
-              // Exit editing mode in policy cubit
-              context.read<PolicyCubit>().cancelEditing();
-            } else if (formState is PolicyFormDeleted) {
-              // Handle successful deletion
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Role deleted successfully!'),
-                  backgroundColor: AppColor.primaryColor,
-                ),
-              );
-              // Trigger reload and return to browsing
-              context.read<PolicyCubit>().loadRoles();
-            } else if (formState is PolicyFormError) {
-              // Show error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(formState.message),
-                  backgroundColor: AppColor.errorColor,
-                ),
-              );
-            }
-          },
-        ),
-      ],
+    return BlocListener<PolicyFormCubit, PolicyFormState>(
+      listener: (context, formState) {
+        if (formState is PolicyFormError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(formState.message),
+              backgroundColor: AppColor.errorColor,
+            ),
+          );
+        }
+      },
       child: BlocBuilder<PolicyFormCubit, PolicyFormState>(
         builder: (context, formState) {
-          // Default to viewing mode if not in editing form state
-          final isEditing = state.isInEditMode && formState is PolicyFormEditing;
-          final currentRole = formState is PolicyFormEditing ? formState.currentRole : role;
-          final isSaving = formState is PolicyFormEditing ? formState.isSaving : false;
-          final canDelete = formState is PolicyFormEditing ? formState.canDelete : false;
+          if (formState is PolicyFormLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          
+          // Get the current role from the form state
+          final currentRole = formState.currentRole;
+          if (currentRole == null) {
+            return const Center(
+              child: Text('No role loaded'),
+            );
+          }
+          
+          // Determine if we're in editing mode based on the form state
+          final isEditing = formState.isEditingState;
+          final isSaving = formState.isSaving;
+          final canDelete = formState.canDelete;
 
           return Padding(
             padding: const EdgeInsets.all(8.0),
@@ -152,16 +130,19 @@ class FormContent extends StatelessWidget {
                             : const Text('Save'),
                         ),
                       ] else ...[
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<PolicyCubit>().startEditingRole(role.id ?? '');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColor.primaryColor,
-                            foregroundColor: Colors.white,
+                        if (currentRole is FetchedRole)
+                          ElevatedButton(
+                            onPressed: () {
+                              final roleId = currentRole.id;
+                              context.read<PolicyCubit>().startEditingRole(roleId);
+                              context.read<PolicyFormCubit>().initializeFormExisting(roleId);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.primaryColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Edit'),
                           ),
-                          child: const Text('Edit'),
-                        ),
                       ],
                     ],
                   ),
@@ -173,7 +154,6 @@ class FormContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Row 1: Name and Description
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -182,7 +162,7 @@ class FormContent extends StatelessWidget {
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateRoleName(value);
+                                  context.read<PolicyFormCubit>().updateName(value);
                                 },
                               ),
                             ),
@@ -192,14 +172,13 @@ class FormContent extends StatelessWidget {
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateRoleDescription(value);
+                                  context.read<PolicyFormCubit>().updateDescription(value);
                                 },
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: Sizes.p24),
-                        // Row 2: Device AtSigns, Devices, Device Groups
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -239,7 +218,6 @@ class FormContent extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: Sizes.p24),
-                        // Row 3: User AtSigns
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

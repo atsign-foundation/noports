@@ -16,7 +16,6 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
   remotePort: (json['remotePort'] as num).toInt(),
   localPort: (json['localPort'] as num).toInt(),
   only443: json['only443'] as bool? ?? false,
-  keepAlive: json['keepAlive'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
@@ -28,5 +27,4 @@ Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'remotePort': instance.remotePort,
   'localPort': instance.localPort,
   'only443': instance.only443,
-  'keepAlive': instance.keepAlive,
 };
