@@ -31,7 +31,7 @@ final class Profile extends Loggable with Favoritable {
     required this.remotePort,
     required this.localPort,
     this.only443 = false,
-    this.keepAlive = false,
+    this.keepAlive = true,
   });
 
   Profile copyWith({
@@ -118,10 +118,11 @@ final class Profile extends Loggable with Favoritable {
       only443: only443,
       // When using 443, we must use ESCR relay auth mode
       relayAuthMode: only443 ? RelayAuthMode.escr : RelayAuthMode.payload,
+
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings
       inline: true,
-      timeout: const Duration(days: 1),
+      timeout: keepAlive ? const Duration(days: 3650) : const Duration(days: 1),
     );
   }
 
