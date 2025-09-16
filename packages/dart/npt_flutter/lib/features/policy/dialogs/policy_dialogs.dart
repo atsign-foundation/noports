@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/policy.dart';
+import '../models/policy.dart';
 
 class PolicyDialogs {
   PolicyDialogs._();
