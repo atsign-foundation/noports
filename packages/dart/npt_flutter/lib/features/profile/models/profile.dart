@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:noports_core/npt.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/util/uuid.dart';
@@ -18,6 +18,7 @@ final class Profile extends Loggable with Favoritable {
   final String remoteHost;
   final int remotePort;
   final int localPort;
+  final bool only443;
 
   const Profile(
     this.uuid, {
@@ -28,6 +29,7 @@ final class Profile extends Loggable with Favoritable {
     this.remoteHost = 'localhost',
     required this.remotePort,
     required this.localPort,
+    this.only443 = false,
   });
 
   Profile copyWith({
@@ -39,6 +41,7 @@ final class Profile extends Loggable with Favoritable {
     String? remoteHost,
     int? remotePort,
     int? localPort,
+    bool? only443,
   }) {
     return Profile(
       uuid ?? this.uuid,
@@ -49,6 +52,7 @@ final class Profile extends Loggable with Favoritable {
       remoteHost: remoteHost ?? this.remoteHost,
       remotePort: remotePort ?? this.remotePort,
       localPort: localPort ?? this.localPort,
+      only443: only443 ?? this.only443,
     );
   }
 
@@ -105,6 +109,9 @@ final class Profile extends Loggable with Favoritable {
       device: deviceName,
       localPort: localPort,
       rootDomain: rootDomain,
+      only443: only443,
+      // When using 443, we must use ESCR relay auth mode
+      relayAuthMode: only443 ? RelayAuthMode.escr : RelayAuthMode.payload,
 
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings

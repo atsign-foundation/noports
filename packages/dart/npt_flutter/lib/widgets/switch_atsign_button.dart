@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -117,7 +119,7 @@ class SwitchAtsignButton extends StatelessWidget {
 
               if (onboardingResult.status == AtOnboardingResultStatus.success) {
                 await BackupKeyUtils().backupKeyStatusCheck();
-
+                log("postOnbarding called");
                 await postOnboard(selectedAtSign, rootDomain);
               }
             }

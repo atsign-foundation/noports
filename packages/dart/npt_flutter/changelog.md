@@ -1,10 +1,13 @@
-## 1.4.0+18
+## 1.6.0+19
 
---**TEST**: Unit and integration tests added.
+- **FEAT**: New policy page for policy management and policy logs viewing
+- **FEAT**: New app bar
+- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work)
+- **TEST**: Unit and integration tests added.
 
-## 1.4.0+17
+## 1.5.0+18
 
---**FIX**: changed imports for app_localization.dart
+- **FIX**: changed imports for app_localization.dart
 
 ## 1.3.0+16
 

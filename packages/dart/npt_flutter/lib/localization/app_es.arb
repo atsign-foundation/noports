@@ -1,4 +1,4 @@
-{
+      {
   "activationStatusActivating": "Activando",
   "activationStatusOtpWait": "Por favor, ingresa el OTP de tu correo electrónico",
   "activationStatusPreparing": "Preparando para la activación",
@@ -195,5 +195,6 @@
   "whereToAccept": "¿Dónde aceptar?",
   "whereToAcceptDescription": "Por favor, aprueba la solicitud en una aplicación con una clave de administrador.",
   "yaml": "YAML",
-  "yamlRecommended": "YAML (Recomendado)"
+  "yamlRecommended": "YAML (Recomendado)",
+  "policyManager": "Administrador de Políticas"
 }
