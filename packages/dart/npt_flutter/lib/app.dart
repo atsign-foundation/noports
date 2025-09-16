@@ -41,7 +41,9 @@ class App extends StatelessWidget {
         RepositoryProvider<AuthorisationService>(
           create: (_) => AuthorisationService(),
         ),
-        RepositoryProvider<BackUpKeyRepository>(create: (_) => BackUpKeyRepository()),
+        RepositoryProvider<BackUpKeyRepository>(
+          create: (_) => BackUpKeyRepository()
+        ),
         RepositoryProvider<RoleRepository>(
           create: (_) => RoleRepository(),
         ),
