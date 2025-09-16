@@ -262,7 +262,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
           uuid,
         );
-        
+ 
         // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
         // retry the connection after a delay
         if (profile.keepAlive && state is ProfileStarted) {
@@ -283,20 +283,20 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   ) async {
     // Wait 5 seconds before retrying, similar to npt binary
     await Future.delayed(const Duration(seconds: 5));
-    
+
     // Check if the profile was stopped during the delay
     if (state is! ProfileStarted) {
       emit(ProfileLoaded(uuid, profile: profile));
       return;
     }
-    
+
     // Emit starting state for retry
     emit(ProfileStarting(uuid, profile: profile, status: 'Retrying connection (keep-alive)...'));
-    
+
     void Function()? cancel;
     SocketConnector? sc;
     Npt? npt;
-    
+
     try {
       npt = Npt.create(
         atClient: atClient,
