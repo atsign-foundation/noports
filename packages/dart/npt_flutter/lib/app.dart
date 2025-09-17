@@ -47,9 +47,6 @@ class App extends StatelessWidget {
         RepositoryProvider<RoleRepository>(
           create: (_) => RoleRepository(),
         ),
-        RepositoryProvider<RoleRepository>(
-          create: (_) => RoleRepository(),
-        ),
       ],
       child: MultiBlocProvider(
         providers: [
