@@ -31,7 +31,7 @@ final class Profile extends Loggable with Favoritable {
     required this.remotePort,
     required this.localPort,
     this.only443 = false,
-    this.keepAlive = true,
+    this.keepAlive = false,
   });
 
   Profile copyWith({
