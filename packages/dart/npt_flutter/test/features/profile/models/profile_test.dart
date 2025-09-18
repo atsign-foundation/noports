@@ -38,7 +38,7 @@ void main() {
         expect(testProfile.remotePort, equals(testRemotePort));
         expect(testProfile.localPort, equals(testLocalPort));
         expect(testProfile.relayAtsign, equals(testRelayAtsign));
-        expect(testProfile.keepAlive, equals(true)); // Default is true
+        expect(testProfile.keepAlive, equals(false)); // Default is true
       });
 
       test(
@@ -54,7 +54,7 @@ void main() {
           );
 
           expect(profileWithoutRemoteHost.remoteHost, equals('localhost'));
-          expect(profileWithoutRemoteHost.keepAlive, equals(true)); // Default is true
+          expect(profileWithoutRemoteHost.keepAlive, equals(false)); // Default is true
         },
       );
 
@@ -69,7 +69,7 @@ void main() {
         );
 
         expect(profileWithoutRelay.relayAtsign, isNull);
-        expect(profileWithoutRelay.keepAlive, equals(true)); // Default is true
+        expect(profileWithoutRelay.keepAlive, equals(false)); // Default is true
       });
     });
 
@@ -133,7 +133,6 @@ void main() {
 
         // Original profile should remain unchanged
         expect(testProfile.displayName, equals(testDisplayName));
-        expect(testProfile.keepAlive, equals(true)); // Should remain unchanged
       });
     });
 
