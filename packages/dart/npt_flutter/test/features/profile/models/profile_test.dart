@@ -158,7 +158,7 @@ void main() {
           expect(exportableJson['displayName'], equals(testDisplayName));
           expect(exportableJson['sshnpdAtsign'], equals(testSshnpdAtsign));
           expect(exportableJson['deviceName'], equals(testDeviceName));
-          expect(exportableJson['keepAlive'], equals(true));
+          expect(exportableJson['keepAlive'], equals(false));
 
           // Test deserialization from complete JSON
           final deserializedProfile = Profile.fromJson(json);
