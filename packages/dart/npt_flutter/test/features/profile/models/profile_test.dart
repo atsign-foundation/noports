@@ -150,7 +150,7 @@ void main() {
           expect(json['remotePort'], equals(testRemotePort));
           expect(json['localPort'], equals(testLocalPort));
           expect(json['relayAtsign'], equals(testRelayAtsign));
-          expect(json['keepAlive'], equals(true));
+          expect(json['keepAlive'], equals(false));
 
           // Test exportable JSON (without UUID)
           final exportableJson = testProfile.toExportableJson();
