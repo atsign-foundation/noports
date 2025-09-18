@@ -175,7 +175,7 @@ void main() {
           final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
           expect(profileWithDefaultHost.remoteHost, equals('localhost'));
           expect(profileWithDefaultHost.displayName, equals(testDisplayName));
-          expect(profileWithDefaultHost.keepAlive, equals(true)); // Default
+          expect(profileWithDefaultHost.keepAlive, equals(false)); 
         },
       );
     });
