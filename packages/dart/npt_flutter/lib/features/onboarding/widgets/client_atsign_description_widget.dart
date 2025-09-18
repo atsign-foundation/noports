@@ -93,35 +93,41 @@ class _ClientAtsignDescriptionWidgetState
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Flexible(
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
                               child: Text(
                                 strings.myNoPortsMsg +
                                     StringConst.managementPortal,
                                 textAlign: TextAlign.center,
                               ),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                PhosphorIcons.arrowUpRight(),
-                                color: AppColor.primaryColor,
+                            Flexible(
+                              child: IconButton(
+                                icon: Icon(
+                                  PhosphorIcons.arrowUpRight(),
+                                  color: AppColor.primaryColor,
+                                ),
+                                onPressed: visitMyNoPorts,
                               ),
-                              onPressed: visitMyNoPorts,
                             ),
                           ],
                         ),
-                        gapH25,
-                        Stack(
-                          clipBehavior: Clip.none,
-                          alignment: Alignment.center,
-                          children: [
-                            Card(
-                              elevation: Sizes.p15,
-                              child: SvgPicture.asset(
-                                'assets/management_portal.svg',
-                                width: width / 3.2,
-                              ),
+                        gapH20,
+                        // const Spacer(),
+                        Material(
+                          color: Colors.transparent,
+                          elevation: Sizes.p15,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: Sizes.p150,
+
+                            child: SvgPicture.asset(
+                              'assets/management_portal.svg',
+
+                              fit: BoxFit.fill,
+                              // width: width / 3.2,
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
