@@ -1300,6 +1300,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML (Recommended)'**
   String get yamlRecommended;
+
+  /// No description provided for @policyManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy Manager'**
+  String get policyManager;
 }
 
 class _AppLocalizationsDelegate

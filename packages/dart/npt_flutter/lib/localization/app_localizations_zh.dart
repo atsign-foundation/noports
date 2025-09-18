@@ -611,6 +611,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get policyManager => '策略管理器';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).
@@ -1220,6 +1223,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get policyManager => '策略管理器';
 }
 
 /// The translations for Chinese, as used in Hong Kong, using the Han script (`zh_Hant_HK`).
@@ -1827,4 +1833,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get yamlRecommended => 'YAML (推薦)';
+
+  @override
+  String get policyManager => '政策管理員';
 }

@@ -27,16 +27,16 @@ class CustomCard extends StatelessWidget {
     // this.width = Sizes.p240,
     this.width = 255,
     super.key,
-  }) : color = Colors.white,
-       radiusTopLeft = const Radius.circular(Sizes.p10),
-       radiusTopRight = const Radius.circular(Sizes.p10),
-       radiusBottomLeft = const Radius.circular(Sizes.p10),
-       radiusBottomRight = const Radius.circular(Sizes.p10),
-       leftPadding = 0,
-       rightPadding = 0,
-       topPadding = 0,
-       bottomPadding = 0,
-       bottomBorderSide = BorderSide.none;
+  })  : color = AppColor.cardColorDark,
+        radiusTopLeft = const Radius.circular(Sizes.p10),
+        radiusTopRight = const Radius.circular(Sizes.p10),
+        radiusBottomLeft = const Radius.circular(Sizes.p10),
+        radiusBottomRight = const Radius.circular(Sizes.p10),
+        leftPadding = 0,
+        rightPadding = 0,
+        topPadding = 0,
+        bottomPadding = 0,
+        bottomBorderSide = BorderSide.none;
 
   const CustomCard.settingsContent({
     required this.child,
