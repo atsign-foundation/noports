@@ -356,6 +356,17 @@ class SshnpdImpl
         // keys to lower case when received
         .toLowerCase();
 
+    // For session-based requests, try to acquire mutex before processing
+    if (['ssh_request', 'npt_request', 'sshd'].contains(messageType)) {
+      bool mutexAcquired = await tryAcquireSessionMutex(
+        notification,
+        messageType,
+      );
+      if (!mutexAcquired) {
+        return; // Another sshnpd instance will handle this request
+      }
+    }
+
     switch (messageType) {
       case 'privatekey':
         logger.info(
@@ -464,6 +475,92 @@ class SshnpdImpl
       message: '$clientAtsign is not in --managers list',
       permitOpen: [],
     );
+  }
+
+  /// Attempts to acquire a session-based mutex for load balancing between multiple sshnpd instances.
+  /// Returns true if mutex was acquired (this instance should handle the request),
+  /// false if another instance already acquired the mutex (this instance should ignore the request).
+  @visibleForTesting
+  Future<bool> tryAcquireSessionMutex(
+    AtNotification notification,
+    String notificationKey,
+  ) async {
+    try {
+      // Extract session ID from the notification payload
+      String? sessionId = await extractSessionId(notification, notificationKey);
+      if (sessionId == null) {
+        logger.warning(
+          'Could not extract session ID from $notificationKey notification, proceeding without mutex',
+        );
+        return true; // Proceed without mutex for backward compatibility
+      }
+
+      // Create a mutex key using the session ID
+      var mutexKey =
+          AtKey.fromString(
+              '$sessionId'
+              '.session_mutexes.${DefaultArgs.namespace}'
+              '${atClient.getCurrentAtSign()!}',
+            )
+            ..metadata = (Metadata()
+              ..immutable =
+                  true // only one sshnpd will succeed in doing this
+              ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+
+      PutRequestOptions pro = PutRequestOptions()
+        ..shouldEncrypt = false
+        ..useRemoteAtServer = true;
+
+      await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
+      logger.shout(
+        '😎 Will handle $notificationKey request from ${notification.from}'
+        '; acquired mutex $mutexKey',
+      );
+      return true;
+    } catch (err) {
+      if (err.toString().toLowerCase().contains('immutable')) {
+        logger.shout(
+          '🤷‍♂️ Will not handle $notificationKey request from ${notification.from}'
+          '; did not acquire session mutex (another sshnpd instance will handle this)',
+        );
+        return false;
+      } else {
+        logger.shout('Unexpected error acquiring session mutex: $err');
+        return true; // Proceed anyway to maintain functionality
+      }
+    }
+  }
+
+  /// Extracts the session ID from notification payloads for mutex purposes
+  @visibleForTesting
+  Future<String?> extractSessionId(
+    AtNotification notification,
+    String notificationKey,
+  ) async {
+    try {
+      if (notificationKey == 'ssh_request' ||
+          notificationKey == 'npt_request') {
+        // Parse the JSON payload to extract session ID
+        final envelope = jsonDecode(notification.value!);
+        final Map<String, dynamic> params = envelope['payload'];
+        return params['sessionId'] as String?;
+      } else if (notificationKey == 'sshd') {
+        // Legacy format: notification value is `$remoteForwardPort $remotePort $username $remoteHost $sessionId`
+        List<String> sshList = notification.value!.split(' ');
+        if (sshList.length >= 5) {
+          // sshnp >=2.0.0 clients send sessionId as the 5th parameter
+          return sshList[4];
+        } else {
+          // sshnp <2.0.0 clients do not send sessionId - generate one based on notification ID
+          // This ensures the same sessionId is generated consistently for the same notification
+          return 'legacy_${notification.id}';
+        }
+      }
+      return null;
+    } catch (e) {
+      logger.warning('Failed to extract session ID from notification: $e');
+      return null;
+    }
   }
 
   void _handlePingNotification(AtNotification notification) {

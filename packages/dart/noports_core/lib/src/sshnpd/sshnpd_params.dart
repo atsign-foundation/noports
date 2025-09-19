@@ -148,11 +148,9 @@ class SshnpdParams {
     );
   }
 
-
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true
     );
 
     // Basic arguments
@@ -161,7 +159,9 @@ class SshnpdParams {
       abbr: 'k',
       mandatory: false,
       aliases: const ['keyFile'],
-      help: 'Sending atSign\'s keyFile if not in ~/.atsign/keys/',
+      help:
+          'Sending atSign\'s keyFile if not in ~/.atsign/keys/'
+          '  Alias: --keyFile',
     );
 
     parser.addOption(
@@ -252,7 +252,9 @@ class SshnpdParams {
       aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain',
+      help:
+          'atDirectory domain.'
+          ' Alias (for backwards compatibility): --root-domain',
     );
 
     parser.addOption(
@@ -264,7 +266,8 @@ class SshnpdParams {
           'The name of this device\'s group. When delegated authorization'
           ' is being used then the group name is sent to the authorizer'
           ' service as well as the device name, this daemon\'s atSign, '
-          ' and the client atSign which is requesting a connection',
+          ' and the client atSign which is requesting a connection.'
+          ' Alias: --dg',
     );
 
     parser.addOption(
@@ -317,7 +320,8 @@ class SshnpdParams {
       help:
           'Comma separated-list of host:port to which the daemon will permit'
           ' a connection from an authorized client. Hosts may be dns names or'
-          ' ip addresses.',
+          ' ip addresses.'
+          ' Alias: --po',
     );
 
     parser.addFlag(

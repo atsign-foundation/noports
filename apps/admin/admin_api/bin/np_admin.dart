@@ -100,7 +100,7 @@ void main(List<String> args) async {
     print('Will serve webapp from ${dir.absolute}');
     app.get('/*', (req, res) => dir);
   }
-  await expose.policy(app, '/api/policy', api);
+  expose.policy(app, '/api/policy', api);
 
   // Track connected clients
   var users = <WebSocket>[];

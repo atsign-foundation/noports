@@ -135,10 +135,7 @@ class SshnpArg {
     Iterable<String>? excludeList,
     int? usageLineLength,
   }) {
-    var parser = ArgParser(
-      usageLineLength: usageLineLength,
-      showAliasesInUsage: true,
-    );
+    var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen) ||
@@ -289,7 +286,9 @@ class SshnpArg {
   );
   static const rootServerArg = SshnpArg(
     name: 'root-server',
-    help: 'atDirectory domain',
+    help:
+        'atDirectory domain.'
+        ' Aliases (for backwards compatibility): --root-domain, --rootDomain',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
@@ -338,7 +337,9 @@ class SshnpArg {
   );
   static const listDevicesArg = SshnpArg(
     name: 'list-devices',
-    help: 'List available devices',
+    help:
+        'List available devices.'
+        ' Alias: --ls',
     defaultsTo: DefaultSshnpArgs.listDevices,
     format: ArgFormat.flag,
     aliases: ['ls'],
@@ -348,7 +349,9 @@ class SshnpArg {
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client-to-rvd',
     aliases: ['ac'],
-    help: 'When false, client will not authenticate itself to rvd',
+    help:
+        'When false, client will not authenticate itself to rvd.'
+        ' Alias: --ac',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -356,7 +359,9 @@ class SshnpArg {
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device-to-rvd',
     aliases: ['ad'],
-    help: 'When false, device will not authenticate to the socket rendezvous',
+    help:
+        'When false, device will not authenticate itself to rvd.'
+        ' Alias: --ad',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -367,7 +372,8 @@ class SshnpArg {
     help:
         'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
-        ' (e.g. an ssh session)',
+        ' (e.g. an ssh session).'
+        ' Alias: --et',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     mandatory: false,
@@ -377,7 +383,8 @@ class SshnpArg {
     aliases: ['ram'],
     help:
         'The authentication mode to use. "escr" (encrypted signed challenge'
-        ' response) is strongest',
+        ' response) is strongest.'
+        ' Alias: --ram',
     defaultsTo: 'payload',
     allowed: ['payload', 'escr'],
     // allowed: RelayAuthMode.values.map((c) => c.name).toList(),
@@ -386,7 +393,9 @@ class SshnpArg {
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
     aliases: ['dpt'],
-    help: 'Seconds the client should wait for response after pinging a daemon',
+    help:
+        'Seconds the client should wait for response after pinging a daemon.'
+        ' Alias: --dpt',
     defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
     mandatory: false,
     format: ArgFormat.option,

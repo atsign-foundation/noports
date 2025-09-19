@@ -188,16 +188,16 @@ jobs:
       id-token: write # IMPORTANT: mandatory for sigstore
       attestations: write
     steps:
+      - name: Get lockfile
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          sparse-checkout: |
+            packages/c/conan.lock
+          sparse-checkout-cone-mode: false
       - name: Download all the tarballs
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           path: tarballs/
-      ## 20240806: Need a different approach to SBOMs for C daemon
-      #    - name: Generate SBOMs
-      #      run: |
-      #        syft scan file:./packages/dart/sshnoports/pubspec.lock \
-      #          -o 'spdx-json=tarballs/dart_sshnoports_sbom.spdx.json' \
-      #          -o 'cyclonedx-json=tarballs/dart_sshnoports_sbom.cyclonedx.json'
       - name: Move packages for signing
         run: |
           cd tarballs
@@ -209,6 +209,18 @@ jobs:
           rm -Rf -- */
           echo "After:"
           ls -latrR *
+      - name: Generate SBOM
+        uses: sbomify/github-action@8ea6f28cd562edee2665001cd4f17aaf7a283722 # v0.5.0
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: 'Y6pppn8rC4'
+          LOCK_FILE: './packages/c/conan.lock'
+          COMPONENT_NAME: 'csshnpd'
+          COMPONENT_VERSION: ${{github.ref_name}}
+          OUTPUT_FILE: 'tarballs/csshnpd-${{github.ref_name}}-sbom.cdx.json'
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: true
       - name: Generate SHA256 checksums
         working-directory: tarballs
         run: sha256sum * > checksums.txt
@@ -223,7 +235,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
         with:
           subject-path: "tarballs/**"
 

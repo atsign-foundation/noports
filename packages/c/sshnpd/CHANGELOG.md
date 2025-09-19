@@ -1,3 +1,11 @@
+## 1.0.16
+
+- build(deps): Bump at_c to use cJSON 1.7.19
+
+## 1.0.15
+
+- feat: Add SBOM using Conan lock file
+
 ## 1.0.14
 
 - build(deps): Bump at_c to use MbedTLS 3.6.4

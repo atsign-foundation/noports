@@ -75,7 +75,6 @@ class SrvdParams {
   static ArgParser _createArgParser() {
     var parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
     );
 
     // Basic arguments
@@ -84,7 +83,9 @@ class SrvdParams {
       abbr: 'k',
       mandatory: false,
       aliases: const ['keyFile'],
-      help: 'atSign\'s atKeys file if not in ~/.atsign/keys/',
+      help:
+          'atSign\'s atKeys file if not in ~/.atsign/keys/'
+          '  Alias: --keyFile',
     );
     parser.addOption(
       'atsign',
@@ -129,7 +130,9 @@ class SrvdParams {
       aliases: const ['root-domain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain',
+      help:
+          'atDirectory domain.'
+          ' Alias (for backwards compatibility): --root-domain',
     );
     parser.addFlag(
       'per-session-storage',
@@ -140,7 +143,8 @@ class SrvdParams {
           'Use ephemeral local storage for each session.'
           ' When true, allows you to run multiple srvds concurrently on the'
           ' same host, as the same user. When false, only a single local srvd'
-          ' may run concurrently on the same host as the same user.',
+          ' may run concurrently on the same host as the same user.'
+          ' Alias: --pss',
     );
     parser.addFlag(
       '443',

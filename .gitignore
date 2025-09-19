@@ -54,4 +54,8 @@ dist/
 __pycache__
 
 .env
+
+# AI stuff
+.claude/
+CLAUDE.md
 .serena

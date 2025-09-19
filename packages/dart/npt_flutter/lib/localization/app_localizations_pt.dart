@@ -650,6 +650,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get policyManager => 'Gerenciador de Políticas';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1298,4 +1301,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get policyManager => 'Gerenciador de Políticas';
 }

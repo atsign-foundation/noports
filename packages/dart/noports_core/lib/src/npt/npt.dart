@@ -67,7 +67,6 @@ abstract interface class Npt {
   static ArgParser createArgParser() {
     ArgParser parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
     );
 
     return parser;
