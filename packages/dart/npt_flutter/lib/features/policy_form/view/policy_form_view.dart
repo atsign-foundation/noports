@@ -9,7 +9,7 @@ class PolicyFormView extends StatelessWidget {
   final bool isEditing;
 
   const PolicyFormView({
-    super.key, 
+    super.key,
     required this.role,
     this.isEditing = false,
   });
@@ -36,7 +36,7 @@ class PolicyFormView extends StatelessWidget {
             ),
           );
         }
-        
+ 
         return _buildForm(context);
       },
     );

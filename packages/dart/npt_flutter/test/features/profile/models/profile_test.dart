@@ -38,6 +38,7 @@ void main() {
         expect(testProfile.remotePort, equals(testRemotePort));
         expect(testProfile.localPort, equals(testLocalPort));
         expect(testProfile.relayAtsign, equals(testRelayAtsign));
+        expect(testProfile.keepAlive, equals(false)); // Default is true
       });
 
       test(
@@ -53,6 +54,7 @@ void main() {
           );
 
           expect(profileWithoutRemoteHost.remoteHost, equals('localhost'));
+          expect(profileWithoutRemoteHost.keepAlive, equals(false)); // Default is true
         },
       );
 
@@ -67,6 +69,7 @@ void main() {
         );
 
         expect(profileWithoutRelay.relayAtsign, isNull);
+        expect(profileWithoutRelay.keepAlive, equals(false)); // Default is true
       });
     });
 
@@ -102,6 +105,15 @@ void main() {
         expect(updatedProfile.remotePort, equals(newRemotePort));
         expect(updatedProfile.localPort, equals(newLocalPort));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
+        expect(updatedProfile.keepAlive, equals(testProfile.keepAlive));
+      });
+
+      test('should copy profile with updated keepAlive', () {
+        final updatedProfile = testProfile.copyWith(keepAlive: false);
+
+        expect(updatedProfile.keepAlive, equals(false));
+        expect(updatedProfile.uuid, equals(testProfile.uuid));
+        expect(updatedProfile.displayName, equals(testProfile.displayName));
       });
 
       test('should copy profile with updated relayAtsign', () {
@@ -112,6 +124,7 @@ void main() {
 
         expect(updatedProfile.relayAtsign, equals(newRelayAtsign));
         expect(updatedProfile.uuid, equals(testProfile.uuid));
+        expect(updatedProfile.keepAlive, equals(testProfile.keepAlive));
       });
 
       test('should not modify original profile when copying', () {
@@ -137,6 +150,7 @@ void main() {
           expect(json['remotePort'], equals(testRemotePort));
           expect(json['localPort'], equals(testLocalPort));
           expect(json['relayAtsign'], equals(testRelayAtsign));
+          expect(json['keepAlive'], equals(false));
 
           // Test exportable JSON (without UUID)
           final exportableJson = testProfile.toExportableJson();
@@ -144,6 +158,7 @@ void main() {
           expect(exportableJson['displayName'], equals(testDisplayName));
           expect(exportableJson['sshnpdAtsign'], equals(testSshnpdAtsign));
           expect(exportableJson['deviceName'], equals(testDeviceName));
+          expect(exportableJson['keepAlive'], equals(false));
 
           // Test deserialization from complete JSON
           final deserializedProfile = Profile.fromJson(json);
@@ -160,6 +175,7 @@ void main() {
           final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
           expect(profileWithDefaultHost.remoteHost, equals('localhost'));
           expect(profileWithDefaultHost.displayName, equals(testDisplayName));
+          expect(profileWithDefaultHost.keepAlive, equals(false)); 
         },
       );
     });

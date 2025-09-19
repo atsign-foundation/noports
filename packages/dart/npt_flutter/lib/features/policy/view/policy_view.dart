@@ -14,7 +14,6 @@ import '../../../styles/sizes.dart';
 
 class PolicyView extends StatelessWidget {
   final String atSign;
-
   const PolicyView({super.key, required this.atSign});
 
   @override
@@ -28,7 +27,6 @@ class PolicyView extends StatelessWidget {
 
 class PolicyContent extends StatelessWidget {
   final String atSign;
-
   const PolicyContent({super.key, required this.atSign});
 
   @override
