@@ -74,8 +74,9 @@ class Sizes {
   static const p853 = 853.0;
   static const p941 = 941.0;
   // The below size factors are constants that are used to determine the height or width based on the device size.
-  static const dashboardCardHeightFactor = 489 / 691;
+  static const dashboardCardHeightFactor = 489 / 600;
   static const dashboardCardWidthFactor = 941 / 1053;
+  static const dashboardCardEmptyWidthFactor = 853 / 450;
   static const profileFieldsWidthFactor = 136 / 1053;
   static const statusFieldsWidthFactor = 150 / 1053;
   static const statusFieldsWidthFactorMinimalView = 300 / 1053;
@@ -133,10 +134,10 @@ class SizeConfig {
 
   static final SizeConfig _instance = SizeConfig._();
 
-  static double setDashboardWidth() {
+  static double setDashboardWidth({double? widthFactor}) {
     final calculation =
         MediaQuery.of(App.navState.currentContext!).size.width *
-        Sizes.dashboardCardWidthFactor;
+        (widthFactor ?? Sizes.dashboardCardWidthFactor);
 
     if (calculation > 1351) {
       return 1351;

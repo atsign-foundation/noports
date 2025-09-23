@@ -29,16 +29,14 @@ class SettingsView extends StatelessWidget {
           case SettingsLoading():
             return const Center(child: Spinner());
           case SettingsLoadedState():
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Row(
+            return Padding(
+              padding: const EdgeInsets.all(Sizes.p40),
+              child: Center(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CustomCard.settingsRail(
-                      height:
-                          deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height: double.infinity,
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,32 +75,33 @@ class SettingsView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    CustomCard.settingsContent(
-                      height:
-                          deviceSize.height * Sizes.settingsCardHeightFactor,
-                      width: deviceSize.width * Sizes.settingsCardWidthFactor,
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: Sizes.p43,
-                          right: Sizes.p33,
-                          top: Sizes.p28,
-                        ),
-                        child: ListView(
-                          children: const [
-                            DefaultRelaySection(),
-                            gapH25,
-                            DashboardSection(),
-                            gapH25,
-                            AdvanceSection(),
-                            gapH25,
-                            LanguageSection(),
-                          ],
+                    Expanded(
+                      child: CustomCard.settingsContent(
+                        height: double.infinity,
+                        width: deviceSize.width * Sizes.settingsCardWidthFactor,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: Sizes.p43,
+                            right: Sizes.p33,
+                            top: Sizes.p28,
+                          ),
+                          child: ListView(
+                            children: const [
+                              DefaultRelaySection(),
+                              gapH25,
+                              DashboardSection(),
+                              gapH25,
+                              AdvanceSection(),
+                              gapH25,
+                              LanguageSection(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             );
         }
       },

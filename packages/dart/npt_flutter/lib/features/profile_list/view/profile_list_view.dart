@@ -52,26 +52,28 @@ class _ProfileListViewState extends State<ProfileListView> {
     final bodyMedium = Theme.of(context).textTheme.bodyMedium;
     SizeConfig().init();
 
-    return Column(
-      children: [
-        BlocListener<SyncCubit, bool>(
-          listenWhen: (previous, current) => previous != current,
-          listener: (context, isInSync) {
-            if (isInSync == false) {
-              CustomSnackBar.notification(content: strings.syncInProgress);
-            } else {
-              CustomSnackBar.notification(content: strings.syncCompleted);
-            }
-          },
+    return Padding(
+      padding: const EdgeInsets.only(top: Sizes.p20),
+      child: Column(
+        children: [
+          BlocListener<SyncCubit, bool>(
+            listenWhen: (previous, current) => previous != current,
+            listener: (context, isInSync) {
+              if (isInSync == false) {
+                CustomSnackBar.notification(content: strings.syncInProgress);
+              } else {
+                CustomSnackBar.notification(content: strings.syncCompleted);
+              }
+            },
 
-          child: BlocBuilder<ProfileListBloc, ProfileListState>(
-            builder: (context, state) {
-              return switch (state) {
-                ProfileListInitial() ||
-                ProfileListLoading() => const Center(child: Spinner()),
-                ProfileListFailedLoad() => const ProfileListFailedLoadContent(),
-                ProfileListLoaded() =>
-                  BlocBuilder<ProfileListBloc, ProfileListState>(
+            child: BlocBuilder<ProfileListBloc, ProfileListState>(
+              builder: (context, state) {
+                return switch (state) {
+                  ProfileListInitial() ||
+                  ProfileListLoading() => const Center(child: Spinner()),
+                  ProfileListFailedLoad() =>
+                    const ProfileListFailedLoadContent(),
+                  ProfileListLoaded() => BlocBuilder<ProfileListBloc, ProfileListState>(
                     builder: (BuildContext context, ProfileListState state) {
                       if (state is! ProfileListLoaded) {
                         // These states should be handled by the ancestor
@@ -94,7 +96,9 @@ class _ProfileListViewState extends State<ProfileListView> {
                                   height:
                                       deviceSize.height *
                                       Sizes.dashboardCardHeightFactor,
-                                  width: SizeConfig.setDashboardWidth(),
+                                  width: SizeConfig.setDashboardWidth(
+                                    widthFactor: Sizes.dashboardCardWidthFactor,
+                                  ),
                                   child: Column(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceEvenly,
@@ -122,7 +126,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                                                 ProfileListImportButton(),
                                               ],
                                             ),
-                                      gapH25,
+                                      gapH16,
                                       isFullProfile
                                           ? const ProfileHeaderView()
                                           : gap0,
@@ -153,32 +157,45 @@ class _ProfileListViewState extends State<ProfileListView> {
                                                 },
                                               ),
                                             )
-                                          : Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                Align(
-                                                  alignment: Alignment.center,
-                                                  child: SvgPicture.asset(
-                                                    'assets/empty_state_profile_bg.svg',
-                                                  ),
-                                                ),
-                                                Align(
-                                                  alignment:
-                                                      Alignment.bottomCenter,
-                                                  child: Text(
-                                                    strings.emptyProfileMessage,
-                                                    style: bodyMedium?.copyWith(
-                                                      fontSize: Sizes.p16,
+                                          : CustomCard.dashboardContentEmpty(
+                                              width: SizeConfig.setDashboardWidth(
+                                                widthFactor: Sizes
+                                                    .dashboardCardEmptyWidthFactor,
+                                              ),
+                                              height:
+                                                  deviceSize.height *
+                                                  Sizes
+                                                      .dashboardCardHeightFactor,
+                                              child: Stack(
+                                                alignment: Alignment.center,
+                                                children: [
+                                                  Align(
+                                                    alignment: Alignment.center,
+                                                    child: SvgPicture.asset(
+                                                      'assets/empty_state_profile_bg.svg',
                                                     ),
-                                                    textAlign: TextAlign.center,
                                                   ),
-                                                ),
-                                                const Positioned(
-                                                  top: 1,
-                                                  child:
-                                                      DemoProfileInfoWidget(),
-                                                ),
-                                              ],
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.bottomCenter,
+                                                    child: Text(
+                                                      strings
+                                                          .emptyProfileMessage,
+                                                      style: bodyMedium
+                                                          ?.copyWith(
+                                                            fontSize: Sizes.p16,
+                                                          ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                  const Positioned(
+                                                    top: 1,
+                                                    child:
+                                                        DemoProfileInfoWidget(),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                     ],
                                   ),
@@ -190,11 +207,12 @@ class _ProfileListViewState extends State<ProfileListView> {
                       );
                     },
                   ),
-              };
-            },
+                };
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

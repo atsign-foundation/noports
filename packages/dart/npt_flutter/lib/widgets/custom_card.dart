@@ -27,16 +27,16 @@ class CustomCard extends StatelessWidget {
     // this.width = Sizes.p240,
     this.width = 255,
     super.key,
-  })  : color = AppColor.cardColorDark,
-        radiusTopLeft = const Radius.circular(Sizes.p10),
-        radiusTopRight = const Radius.circular(Sizes.p10),
-        radiusBottomLeft = const Radius.circular(Sizes.p10),
-        radiusBottomRight = const Radius.circular(Sizes.p10),
-        leftPadding = 0,
-        rightPadding = 0,
-        topPadding = 0,
-        bottomPadding = 0,
-        bottomBorderSide = BorderSide.none;
+  }) : color = AppColor.cardColorDark,
+       radiusTopLeft = const Radius.circular(Sizes.p10),
+       radiusTopRight = const Radius.circular(Sizes.p10),
+       radiusBottomLeft = const Radius.circular(Sizes.p10),
+       radiusBottomRight = const Radius.circular(Sizes.p10),
+       leftPadding = 0,
+       rightPadding = 0,
+       topPadding = 0,
+       bottomPadding = 0,
+       bottomBorderSide = BorderSide.none;
 
   const CustomCard.settingsContent({
     required this.child,
@@ -80,10 +80,24 @@ class CustomCard extends StatelessWidget {
        radiusBottomRight = const Radius.circular(Sizes.p20),
        leftPadding = Sizes.p44,
        rightPadding = Sizes.p44,
-       topPadding = Sizes.p32,
+       topPadding = Sizes.p16,
        bottomPadding = 0,
        bottomBorderSide = BorderSide.none;
-
+  const CustomCard.dashboardContentEmpty({
+    required this.child,
+    this.height = Sizes.p450,
+    this.width = Sizes.p853,
+    super.key,
+  }) : color = Colors.white,
+       radiusTopLeft = const Radius.circular(Sizes.p20),
+       radiusTopRight = const Radius.circular(Sizes.p20),
+       radiusBottomLeft = const Radius.circular(Sizes.p20),
+       radiusBottomRight = const Radius.circular(Sizes.p20),
+       leftPadding = Sizes.p10,
+       rightPadding = Sizes.p10,
+       topPadding = Sizes.p16,
+       bottomPadding = 0,
+       bottomBorderSide = BorderSide.none;
   const CustomCard.settingsPreview({required this.child, super.key})
     : height = null,
       width = null,
