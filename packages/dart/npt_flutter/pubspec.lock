@@ -324,7 +324,7 @@ packages:
     source: hosted
     version: "8.12.0"
   chalkdart:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: chalkdart
       sha256: "82dfa884e3cf97641eb0742a3b9ffd41490666b9ece548b2e32cbfefe540bf86"
