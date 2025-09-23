@@ -157,44 +157,59 @@ class _ProfileListViewState extends State<ProfileListView> {
                                                 },
                                               ),
                                             )
-                                          : CustomCard.dashboardContentEmpty(
-                                              width: SizeConfig.setDashboardWidth(
-                                                widthFactor: Sizes
-                                                    .dashboardCardEmptyWidthFactor,
-                                              ),
-                                              height:
-                                                  deviceSize.height *
-                                                  Sizes
-                                                      .dashboardCardHeightFactor,
-                                              child: Stack(
-                                                alignment: Alignment.center,
-                                                children: [
-                                                  Align(
+                                          : Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 20.0,
+                                                ),
+                                                child: CustomCard.dashboardContentEmpty(
+                                                  width: SizeConfig.setDashboardWidth(
+                                                    widthFactor: Sizes
+                                                        .dashboardCardEmptyWidthFactor,
+                                                  ),
+                                                  // height:
+                                                  //     deviceSize.height *
+                                                  //     Sizes
+                                                  //         .dashboardCardHeightFactor,
+                                                  child: Stack(
                                                     alignment: Alignment.center,
-                                                    child: SvgPicture.asset(
-                                                      'assets/empty_state_profile_bg.svg',
-                                                    ),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.bottomCenter,
-                                                    child: Text(
-                                                      strings
-                                                          .emptyProfileMessage,
-                                                      style: bodyMedium
-                                                          ?.copyWith(
-                                                            fontSize: Sizes.p16,
+                                                    children: [
+                                                      Align(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child: SvgPicture.asset(
+                                                          'assets/empty_state_profile_bg.svg',
+                                                        ),
+                                                      ),
+                                                      Align(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                top: Sizes.p300,
+                                                              ),
+                                                          child: Text(
+                                                            strings
+                                                                .emptyProfileMessage,
+                                                            style: bodyMedium
+                                                                ?.copyWith(
+                                                                  fontSize:
+                                                                      Sizes.p16,
+                                                                ),
+                                                            textAlign: TextAlign
+                                                                .center,
                                                           ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
+                                                        ),
+                                                      ),
+                                                      const Positioned(
+                                                        top: 1,
+                                                        child:
+                                                            DemoProfileInfoWidget(),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const Positioned(
-                                                    top: 1,
-                                                    child:
-                                                        DemoProfileInfoWidget(),
-                                                  ),
-                                                ],
+                                                ),
                                               ),
                                             ),
                                     ],
