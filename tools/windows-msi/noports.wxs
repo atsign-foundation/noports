@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="NoPorts" Language="1033" Version="1.0.0.0" 
+           Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
+           InstallerVersion="200" Compressed="yes" Scope="perMachine">
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    
+    
+    <!-- Directory structure -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="NoPorts">
+      </Directory>
+    </StandardDirectory>
+    
+    <!-- Files to install -->
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!-- Your Dart executable -->
+      <Component Id="sshnpd" >
+    <File Id="sshnpdfile" Source="tools\windows-msi\bin\sshnpd.exe" 
+              Name="sshnpd.exe" />
+      </Component>
+   
+     <Component Id="sshnp">
+        <File Id="sshnpfile" Source="tools\windows-msi\bin\sshnp.exe" 
+              Name="sshnp.exe" />
+      </Component> 
+
+      <Component Id="at_activate">
+        <File Id="at_activatefile" Source="tools\windows-msi\bin\at_activate.exe" 
+              Name="at_activate.exe" />
+      </Component>
+
+      <Component Id="np_admin">
+        <File Id="np_adminfile" Source="tools\windows-msi\bin\np_admin.exe" 
+              Name="np_admin.exe" />
+      </Component>
+
+
+      <Component Id="npa_file">
+        <File Id="npa_files" Source="tools\windows-msi\bin\npa_file.exe" 
+              Name="npa_file.exe" />
+      </Component>
+
+
+      <Component Id="npp_atserver">
+        <File Id="npp_atserverfile" Source="tools\windows-msi\bin\npp_atserver.exe" 
+              Name="npp_atserver.exe" />
+      </Component>
+
+      <Component Id="npp_file">
+        <File Id="npp_files" Source="tools\windows-msi\bin\npp_file.exe" 
+              Name="npp_file.exe" />
+      </Component>
+
+      <Component Id="npt">
+        <File Id="nptfile" Source="tools\windows-msi\bin\npt.exe" 
+              Name="npt.exe" />
+      </Component>
+
+
+      <Component Id="srv">
+        <File Id="srvfile" Source="tools\windows-msi\bin\srv.exe" 
+              Name="srv.exe" />
+      </Component>
+
+
+      <!-- Environment PATH - add explicit GUID for component with Environment -->
+      <Component Id="UpdatePath" Guid="12345678-1234-1234-1234-123456789012">
+        <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" 
+                     Permanent="no" Part="last" Action="set" System="no" />
+      </Component>
+
+  </ComponentGroup>
+
+    <!-- Feature definition -->
+    <Feature Id="ProductFeature" Title="sshnpd Service" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Package>
+</Wix>
