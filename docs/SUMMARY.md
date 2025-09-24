@@ -76,6 +76,7 @@
 * [Integrations](integrations/README.md)
   * [OpenSSH Config](integrations/integrate-with-ssh-config.md)
   * [PuTTY config](integrations/putty-config.md)
+  * [Remmina Config](integrations/remmina-config.md)
 * [Copy of Troubleshooting](troubleshooting.md)
 * [Troubleshooting](troubleshooting-1.md)
 * [Resources](installation-faq/README.md)
