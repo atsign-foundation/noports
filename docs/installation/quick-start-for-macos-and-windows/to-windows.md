@@ -47,7 +47,7 @@ After setting up the machine you're connecting from, you'll configure the machin
 
 ### <mark style="color:orange;">Step 4:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
 
 Install the Device Software
 
