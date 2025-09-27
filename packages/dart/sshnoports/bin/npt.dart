@@ -113,6 +113,17 @@ void main(List<String> args) async {
             ' Alias: --rh',
       );
       parser.addOption(
+        'local-host',
+        aliases: ['lh'],
+        help:
+            'Local IP address to bind to, or comma-separated list with fallbacks.'
+            ' When specified, npt will act as a gateway by binding to the'
+            ' first available IP instead of the default localhost (127.0.0.1).'
+            ' If multiple IPs are provided, only the first valid one is used.'
+            ' Example: --local-host 192.168.1.100,10.0.0.50'
+            ' Alias: --lh',
+      );
+      parser.addOption(
         'key-file',
         abbr: 'k',
         mandatory: false,
@@ -364,6 +375,54 @@ void main(List<String> args) async {
         timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
 
+      // Parse and validate local host if provided
+      String? localHost;
+      if (parsedArgs['local-host'] != null) {
+        final parsedHosts = (parsedArgs['local-host'] as String)
+            .split(',')
+            .map<String>((ip) => ip.trim())
+            .where((String ip) => ip.isNotEmpty)
+            .toList();
+
+        // Find the first valid IP address from the list
+        for (String ip in parsedHosts) {
+          bool isValid = false;
+          try {
+            // Try to parse as IP address - this will throw if invalid
+            InternetAddress(ip);
+            isValid = true;
+          } catch (e) {
+            // If not a valid IP, try to resolve as hostname
+            try {
+              await InternetAddress.lookup(ip);
+              isValid = true;
+            } catch (e2) {
+              // Continue to next IP
+            }
+          }
+
+          if (isValid) {
+            localHost = ip;
+            if (!quiet) {
+              if (parsedHosts.length == 1) {
+                stderr.writeln(
+                    '${DateTime.now()} : Will bind to local host: $ip');
+              } else {
+                stderr.writeln(
+                    '${DateTime.now()} : Will bind to local host: $ip (first valid from: ${parsedHosts.join(', ')})');
+              }
+            }
+            break;
+          }
+        }
+
+        if (localHost == null) {
+          stderr.writeln(
+              'Error: No valid IP addresses found in: ${parsedHosts.join(', ')}');
+          exitProgram(exitCode: 1);
+        }
+      }
+
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -382,6 +441,7 @@ void main(List<String> args) async {
             RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
         timeout: parseDuration(timeoutArg),
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
+        localHost: localHost,
         only443: parsedArgs['443'],
       );
 
@@ -397,7 +457,9 @@ void main(List<String> args) async {
           final actualLocalPort = await npt.run();
           params.localPort = actualLocalPort;
 
-          logProgress('npt is listening on localhost:$actualLocalPort');
+          // Show the actual binding address
+          String bindingAddress = params.localHost ?? 'localhost';
+          logProgress('npt is listening on $bindingAddress:$actualLocalPort');
 
           if (!inline) {
             stdout.writeln('$actualLocalPort');

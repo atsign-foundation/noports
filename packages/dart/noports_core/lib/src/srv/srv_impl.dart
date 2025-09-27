@@ -598,8 +598,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       }
     }
     // client side
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     SocketConnector sc = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -617,8 +619,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             ' new connection to rvd',
           );
           try {
-            var (authenticated, authenticatedStream) =
-                await relayAuthenticator!.authenticate(sideB.socket);
+            var (authenticated, authenticatedStream) = await relayAuthenticator!
+                .authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -746,8 +748,10 @@ class SrvImplDart implements Srv<SocketConnector> {
         socketConnector?.close();
       },
     );
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -769,8 +773,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             'authenticating new connection to rvd',
           );
           try {
-            var (authenticated, authenticatedStream) =
-                await relayAuthenticator!.authenticate(sideB.socket);
+            var (authenticated, authenticatedStream) = await relayAuthenticator!
+                .authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -864,8 +868,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       '_runClientSideMulti  (_clientSideEncryptedSocket)'
       ' calling SocketConnector.serverToSocket',
     );
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -882,8 +888,8 @@ class SrvImplDart implements Srv<SocketConnector> {
               '_runClientSideMulti  (_clientSideEncryptedSocket)'
               ' authenticating new connection to rvd',
             );
-            var (authenticated, authenticatedStream) =
-                await relayAuthenticator!.authenticate(sideB.socket);
+            var (authenticated, authenticatedStream) = await relayAuthenticator!
+                .authenticate(sideB.socket);
             if (!authenticated || authenticatedStream == null) {
               sideB.socket.destroy();
             } else {
@@ -1003,8 +1009,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             ' new socket connection to relay',
           );
           try {
-            var (authenticated, authenticatedStream) =
-                await relayAuthenticator!.authenticate(candidateSideB.socket);
+            var (authenticated, authenticatedStream) = await relayAuthenticator!
+                .authenticate(candidateSideB.socket);
             logger.info(
               '_runDaemonSideMulti authentication apparently complete'
               '\n\t=> authenticated: $authenticated'
@@ -1323,8 +1329,9 @@ class SrvImplDart implements Srv<SocketConnector> {
                     try {
                       List<int> toProcess = rcvBuffer.getData().toList();
                       while (toProcess.isNotEmpty) {
-                        String controlMsg =
-                            utf8.decode(toProcess.sublist(0, oldMagic)).trim();
+                        String controlMsg = utf8
+                            .decode(toProcess.sublist(0, oldMagic))
+                            .trim();
                         toProcess = toProcess.sublist(oldMagic);
                         try {
                           await _handleControlMessage(
@@ -1363,6 +1370,9 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<InternetAddress> resolveRequestedLocalHost() async {
     String hostToLookup = localHost ?? 'localhost';
+    logger.info(
+      'Resolving local host: $hostToLookup (localHost field = $localHost)',
+    );
     List<InternetAddress> candidates = await InternetAddress.lookup(
       hostToLookup,
       type: InternetAddressType.IPv4,
@@ -1376,6 +1386,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     if (candidates.isEmpty) {
       throw Exception("Cannot resolve address for $hostToLookup");
     }
+    logger.info('Resolved local host $hostToLookup to ${candidates[0]}');
     return candidates[0];
   }
 
@@ -1428,8 +1439,8 @@ class SrvImplDart implements Srv<SocketConnector> {
     if (relayAuthenticator != null) {
       logger.info('_runDaemonSideSingle authenticating socketB to rvd');
       try {
-        var (authenticated, authenticatedStream) =
-            await relayAuthenticator!.authenticate(sideB.socket);
+        var (authenticated, authenticatedStream) = await relayAuthenticator!
+            .authenticate(sideB.socket);
         if (!authenticated || authenticatedStream == null) {
           sideB.socket.destroy();
         } else {

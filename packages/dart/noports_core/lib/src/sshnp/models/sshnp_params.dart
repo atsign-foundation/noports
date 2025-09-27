@@ -167,6 +167,9 @@ class NptParams extends ClientParamsBase
   /// Interval between heartbeats on the control channel.
   final Duration? controlChannelHeartbeat;
 
+  /// Local IP address to bind to. If null, binds to localhost (127.0.0.1)
+  final String? localHost;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
@@ -186,6 +189,7 @@ class NptParams extends ClientParamsBase
     super.daemonPingTimeout,
     required this.timeout,
     this.controlChannelHeartbeat,
+    this.localHost,
     super.only443 = false,
   }) {
     try {
@@ -366,9 +370,11 @@ class SshnpParams extends ClientParamsBase
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      authenticateClientToRvd: partial.authenticateClientToRvd ??
+      authenticateClientToRvd:
+          partial.authenticateClientToRvd ??
           DefaultArgs.authenticateClientToRvd,
-      authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
+      authenticateDeviceToRvd:
+          partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
       relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
       encryptRvdTraffic:
@@ -605,7 +611,8 @@ class SshnpPartialParams {
           ? null
           : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
-        seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
+        seconds:
+            args[SshnpArg.daemonPingTimeoutArg.name] ??
             DefaultArgs.daemonPingTimeoutSeconds,
       ),
       only443: args[SshnpArg.only443Arg.name],
@@ -660,5 +667,4 @@ class SshnpPartialParams {
       SshnpPartialParams.fromArgMap(parsedArgsMap),
     );
   }
-
 }
