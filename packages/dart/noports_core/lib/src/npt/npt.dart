@@ -308,8 +308,8 @@ class _NptImpl extends NptBase
     if (params.localPort == 0) {
       sendProgress('Finding an available local port');
 
-      /// Find a port to use - use the specified local host if provided, otherwise localhost hostname
-      String hostToResolve = params.localHost ?? 'localhost';
+      /// Find a port to use - use the specified local host
+      String hostToResolve = params.localHost!;
       InternetAddress bindAddress = InternetAddress.loopbackIPv4; // fallback
 
       try {

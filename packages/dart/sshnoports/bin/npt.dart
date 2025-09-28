@@ -115,10 +115,11 @@ void main(List<String> args) async {
       parser.addOption(
         'local-host',
         aliases: ['lh'],
+        defaultsTo: 'localhost',
         help:
             'Local IP address to bind to, or comma-separated list with fallbacks.'
             ' When specified, npt will act as a gateway by binding to the'
-            ' first available IP instead of the default localhost (127.0.0.1).'
+            ' first available IP instead of the default localhost.'
             ' If multiple IPs are provided, only the first valid one is used.'
             ' Example: --local-host 192.168.1.100,10.0.0.50'
             ' To bind to all interfaces, use 0 or 0.0.0.0'
@@ -377,14 +378,13 @@ void main(List<String> args) async {
         timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
 
-      // Parse and validate local host if provided
+      // Parse and validate local host (always has a value due to defaultsTo)
       String? localHost;
-      if (parsedArgs['local-host'] != null) {
-        final parsedHosts = (parsedArgs['local-host'] as String)
-            .split(',')
-            .map<String>((ip) => ip.trim())
-            .where((String ip) => ip.isNotEmpty)
-            .toList();
+      final parsedHosts = (parsedArgs['local-host'] as String)
+          .split(',')
+          .map<String>((ip) => ip.trim())
+          .where((String ip) => ip.isNotEmpty)
+          .toList();
 
         // Find the first valid IP address from the list
         for (String ip in parsedHosts) {
@@ -418,11 +418,10 @@ void main(List<String> args) async {
           }
         }
 
-        if (localHost == null) {
-          stderr.writeln(
-              'Error: No valid IP addresses found in: ${parsedHosts.join(', ')}');
-          exitProgram(exitCode: 1);
-        }
+      if (localHost == null) {
+        stderr.writeln(
+            'Error: No valid IP addresses found in: ${parsedHosts.join(', ')}');
+        exitProgram(exitCode: 1);
       }
 
       NptParams params = NptParams(
@@ -460,7 +459,7 @@ void main(List<String> args) async {
           params.localPort = actualLocalPort;
 
           // Show detailed binding address including resolved IP
-          String hostDisplay = params.localHost ?? 'localhost';
+          String hostDisplay = params.localHost!;
           String resolvedIP;
           try {
             List<InternetAddress> addresses = await InternetAddress.lookup(
