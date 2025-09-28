@@ -121,6 +121,8 @@ void main(List<String> args) async {
             ' first available IP instead of the default localhost (127.0.0.1).'
             ' If multiple IPs are provided, only the first valid one is used.'
             ' Example: --local-host 192.168.1.100,10.0.0.50'
+            ' To bind to all interfaces, use 0 or 0.0.0.0'
+            ' Example: --local-host 0 or --local-host 0.0.0.0'
             ' Alias: --lh',
       );
       parser.addOption(
