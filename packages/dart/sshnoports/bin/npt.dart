@@ -457,9 +457,21 @@ void main(List<String> args) async {
           final actualLocalPort = await npt.run();
           params.localPort = actualLocalPort;
 
-          // Show the actual binding address
-          String bindingAddress = params.localHost ?? 'localhost';
-          logProgress('npt is listening on $bindingAddress:$actualLocalPort');
+          // Show detailed binding address including resolved IP
+          String hostDisplay = params.localHost ?? 'localhost';
+          String resolvedIP;
+          try {
+            List<InternetAddress> addresses = await InternetAddress.lookup(
+              hostDisplay,
+              type: InternetAddressType.any, // Let OS choose IPv4 or IPv6
+            );
+            resolvedIP =
+                addresses.isNotEmpty ? addresses.first.address : hostDisplay;
+          } catch (e) {
+            resolvedIP = '127.0.0.1'; // fallback
+          }
+          logProgress(
+              'npt is listening on $hostDisplay:$actualLocalPort ($resolvedIP:$actualLocalPort)');
 
           if (!inline) {
             stdout.writeln('$actualLocalPort');

@@ -308,22 +308,23 @@ class _NptImpl extends NptBase
     if (params.localPort == 0) {
       sendProgress('Finding an available local port');
 
-      /// Find a port to use - use the specified local host if provided, otherwise localhost (127.0.0.1)
-      InternetAddress bindAddress = InternetAddress.loopbackIPv4;
-      if (params.localHost != null) {
-        try {
-          List<InternetAddress> addresses = await InternetAddress.lookup(
-            params.localHost!,
-            type: InternetAddressType.IPv4,
-          );
-          if (addresses.isNotEmpty) {
-            bindAddress = addresses.first;
-          }
-        } catch (e) {
-          logger.warning(
-            'Failed to resolve ${params.localHost}, using localhost: $e',
-          );
+      /// Find a port to use - use the specified local host if provided, otherwise localhost hostname
+      String hostToResolve = params.localHost ?? 'localhost';
+      InternetAddress bindAddress = InternetAddress.loopbackIPv4; // fallback
+
+      try {
+        List<InternetAddress> addresses = await InternetAddress.lookup(
+          hostToResolve,
+          type: InternetAddressType.any, // Let OS choose IPv4 or IPv6
+        );
+        if (addresses.isNotEmpty) {
+          bindAddress = addresses.first;
         }
+      } catch (e) {
+        logger.warning(
+          'Failed to resolve $hostToResolve, using IPv4 localhost fallback: $e',
+        );
+        // Keep the fallback bindAddress = InternetAddress.loopbackIPv4
       }
       final server = await ServerSocket.bind(bindAddress, 0);
       localRvPort = server.port;

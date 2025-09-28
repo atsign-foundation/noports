@@ -1375,14 +1375,8 @@ class SrvImplDart implements Srv<SocketConnector> {
     );
     List<InternetAddress> candidates = await InternetAddress.lookup(
       hostToLookup,
-      type: InternetAddressType.IPv4,
+      type: InternetAddressType.any, // Let OS choose IPv4 or IPv6
     );
-    if (candidates.isEmpty) {
-      candidates = await InternetAddress.lookup(
-        hostToLookup,
-        type: InternetAddressType.IPv6,
-      );
-    }
     if (candidates.isEmpty) {
       throw Exception("Cannot resolve address for $hostToLookup");
     }
