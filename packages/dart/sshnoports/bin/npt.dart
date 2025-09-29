@@ -389,16 +389,16 @@ void main(List<String> args) async {
         // Find the first valid IP address from the list
         for (String ip in parsedHosts) {
           bool isValid = false;
-          try {
-            // Try to parse as IP address - this will throw if invalid
-            InternetAddress(ip);
+          
+          // Try to parse as IP address first
+          if (InternetAddress.tryParse(ip) != null) {
             isValid = true;
-          } catch (e) {
+          } else {
             // If not a valid IP, try to resolve as hostname
             try {
               await InternetAddress.lookup(ip);
               isValid = true;
-            } catch (e2) {
+            } catch (e) {
               // Continue to next IP
             }
           }
