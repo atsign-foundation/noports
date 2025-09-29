@@ -379,44 +379,19 @@ void main(List<String> args) async {
       }
 
       // Parse and validate local host (always has a value due to defaultsTo)
-      String? localHost;
-      final parsedHosts = (parsedArgs['local-host'] as String)
-          .split(',')
-          .map<String>((ip) => ip.trim())
-          .where((String ip) => ip.isNotEmpty)
-          .toList();
+      final hostsString = parsedArgs['local-host'] as String;
+      final parsedHosts = HostValidator.parseHostsList(hostsString);
+      final localHost = await HostValidator.findFirstValidHost(hostsString);
 
-        // Find the first valid IP address from the list
-        for (String ip in parsedHosts) {
-          bool isValid = false;
-          
-          // Try to parse as IP address first
-          if (InternetAddress.tryParse(ip) != null) {
-            isValid = true;
-          } else {
-            // If not a valid IP, try to resolve as hostname
-            try {
-              await InternetAddress.lookup(ip);
-              isValid = true;
-            } catch (e) {
-              // Continue to next IP
-            }
-          }
-
-          if (isValid) {
-            localHost = ip;
-            if (!quiet) {
-              if (parsedHosts.length == 1) {
-                stderr.writeln(
-                    '${DateTime.now()} : Will bind to local host: $ip');
-              } else {
-                stderr.writeln(
-                    '${DateTime.now()} : Will bind to local host: $ip (first valid from: ${parsedHosts.join(', ')})');
-              }
-            }
-            break;
-          }
+      if (localHost != null && !quiet) {
+        if (parsedHosts.length == 1) {
+          stderr.writeln(
+              '${DateTime.now()} : Will bind to local host: $localHost');
+        } else {
+          stderr.writeln(
+              '${DateTime.now()} : Will bind to local host: $localHost (first valid from: ${parsedHosts.join(', ')})');
         }
+      }
 
       if (localHost == null) {
         stderr.writeln(
