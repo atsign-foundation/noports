@@ -84,6 +84,9 @@ jobs:
       - name: dart pub get
         working-directory: packages/dart/noports_core
         run: dart pub get
+      - name: dart run build_runner build
+        working-directory: packages/dart/noports_core
+        run: dart run build_runner build
       - name: dart analyze
         working-directory: packages/dart/noports_core
         run: dart analyze
