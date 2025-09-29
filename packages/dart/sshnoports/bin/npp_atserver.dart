@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
@@ -10,6 +11,35 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 
 late AtSignLogger logger;
+
+void startHeartbeat(final AtClient atClient) {
+  Timer.periodic(const Duration(seconds: 30), (_) async {
+    final timestamp = DateTime.now();
+    final atKey = AtKey()
+      ..key = 'heartbeat'
+      ..sharedBy = atClient.getCurrentAtSign()
+      ..namespace = DefaultArgs.namespace
+      ;
+
+    final String data = jsonEncode({
+      'timestamp': timestamp.toIso8601String()
+    });
+
+    try {
+      final bool success = await atClient.put(
+        atKey,
+        data,
+        putRequestOptions: PutRequestOptions()
+          ..shouldEncrypt=true
+          ..useRemoteAtServer=true
+      );
+
+      logger.info('Put timestamp key `${atKey.toString()}`: $timestamp, success: $success');
+    } catch (e) {
+      logger.severe('Failed to write heartbeat timestamp: $e');
+    }
+  });
+}
 
 void main(List<String> args) async {
   try {
@@ -118,6 +148,8 @@ void main(List<String> args) async {
     sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
     logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
   });
+
+  startHeartbeat(atClient);
 
   await sshnpa.run();
 }
