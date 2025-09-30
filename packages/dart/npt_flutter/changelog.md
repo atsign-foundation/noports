@@ -4,6 +4,10 @@
 - **FEAT**: New app bar
 - **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work)
 - **TEST**: Unit and integration tests added.
+- **FIX**: Localization added for unlocalized strings.
+- **FIX**: Updated onboarding widget to reflect management portal website UI.
+- **FIX**: Updated connection screen screen empty profile state UI.
+- **FIX**: Moved version number & switch atsign button from settings page to the appbar.
 
 ## 1.5.0+18
 
