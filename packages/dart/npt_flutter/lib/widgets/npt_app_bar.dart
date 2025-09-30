@@ -8,6 +8,7 @@ import 'package:npt_flutter/pages/pages.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -65,7 +66,7 @@ class _NptAppBarState extends State<NptAppBar> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: 'NoPorts',
+                                text: StringConst.noPorts,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
@@ -73,7 +74,7 @@ class _NptAppBarState extends State<NptAppBar> {
                                     ),
                               ),
                               TextSpan(
-                                text: 'Desktop',
+                                text: StringConst.desktop,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.w300,
@@ -119,7 +120,7 @@ class _NptAppBarState extends State<NptAppBar> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _NavTab(
-                          label: 'Connections',
+                          label: strings.connections,
                           isActive: state == HomeRoutes.dashboard,
                           onTap: () {
                             if (state != HomeRoutes.dashboard) {
@@ -131,7 +132,7 @@ class _NptAppBarState extends State<NptAppBar> {
                           },
                         ),
                         _NavTab(
-                          label: 'Policy',
+                          label: strings.policy,
                           isActive: state == HomeRoutes.policyManager,
                           onTap: () {
                             if (state != HomeRoutes.policyManager) {
@@ -145,7 +146,7 @@ class _NptAppBarState extends State<NptAppBar> {
                           },
                         ),
                         _NavTab(
-                          label: 'Authenticator',
+                          label: strings.authenticator,
                           isActive: state == HomeRoutes.authorisation,
                           onTap: () {
                             if (state != HomeRoutes.authorisation) {

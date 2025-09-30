@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 class AtSignsListWidget extends StatefulWidget {
   final String label;
@@ -51,9 +52,9 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
   void _addAtSign() {
     final input = _addController.text.trim();
     if (input.isEmpty) return;
-    
+
     final newAtSign = input.startsWith('@') ? input : '@$input';
-    
+
     if (!_localAtSigns.contains(newAtSign)) {
       setState(() {
         _localAtSigns.add(newAtSign);
@@ -70,9 +71,9 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
     widget.onChanged(_localAtSigns);
   }
 
-  void _showTooltipModal() {
+  void _showTooltipModal(AppLocalizations strings) {
     if (widget.tooltip == null) return;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -82,7 +83,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(strings.ok),
             ),
           ],
         );
@@ -92,6 +93,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,10 +101,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             if (widget.tooltip != null) ...[
               const SizedBox(width: 8),
@@ -110,7 +109,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
                 child: GestureDetector(
-                  onTap: _showTooltipModal,
+                  onTap: () => _showTooltipModal(strings),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
@@ -146,10 +145,10 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
               borderRadius: BorderRadius.circular(4),
               color: Colors.grey[50],
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'No atSigns added yet',
-                style: TextStyle(
+                strings.noAtsignsAdded,
+                style: const TextStyle(
                   color: Colors.grey,
                   fontStyle: FontStyle.italic,
                 ),
@@ -175,7 +174,10 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                   title: Text(atSign),
                   trailing: widget.isEditing
                       ? IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: Colors.red,
+                          ),
                           onPressed: () => _removeAtSign(atSign),
                           iconSize: 20,
                         )
@@ -194,7 +196,10 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                   controller: _addController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                   onChanged: (_) => setState(() {}),
                   onFieldSubmitted: (_) => _addAtSign(),
@@ -202,9 +207,11 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: _addController.text.trim().isEmpty ? null : _addAtSign,
+                onPressed: _addController.text.trim().isEmpty
+                    ? null
+                    : _addAtSign,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add'),
+                label: Text(strings.add),
               ),
             ],
           ),

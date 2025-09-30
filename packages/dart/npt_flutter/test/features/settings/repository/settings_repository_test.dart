@@ -5,9 +5,9 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/settings/models/settings.dart';
 import 'package:npt_flutter/features/settings/repository/settings_repository.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/util/language.dart';
 
 // Import the existing mocks from ProfileRepository tests

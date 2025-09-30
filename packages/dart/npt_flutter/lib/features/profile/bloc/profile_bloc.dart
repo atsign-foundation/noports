@@ -8,6 +8,7 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 part 'profile_event.dart';
@@ -148,6 +149,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     App.navState.currentContext?.read<ProfilesRunningCubit>().prepare(uuid);
 
     AtClient atClient = AtClientManager.getInstance().atClient;
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
     String? atSign = atClient.getCurrentAtSign();
     if (atSign == null) {
@@ -166,7 +168,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         ProfileFailedStart(
           uuid,
           profile: profile,
-          reason: "Couldn't fetch settings",
+          reason: strings.settingsCouldNotFetch,
         ),
       );
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
@@ -216,7 +218,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ProfileFailedStart(
             uuid,
             profile: profile,
-            reason: 'Npt startup timedout',
+            reason: strings.nptStartupTimedout,
           ),
         );
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
@@ -231,7 +233,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ProfileFailedStart(
             uuid,
             profile: profile,
-            reason: 'Socketconnector closed prematurely',
+            reason: strings.socketconnectorClosedPrematurely,
           ),
         );
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
@@ -249,7 +251,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         ProfileFailedStart(
           uuid,
           profile: profile,
-          reason: 'Error during startup: $err',
+          reason: strings.errorDuringStartupWithDetails(err.toString()),
         ),
       );
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
@@ -262,7 +264,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
           uuid,
         );
- 
+
         // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
         // retry the connection after a delay
         if (profile.keepAlive && state is ProfileStarted) {
@@ -289,9 +291,16 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       emit(ProfileLoaded(uuid, profile: profile));
       return;
     }
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
     // Emit starting state for retry
-    emit(ProfileStarting(uuid, profile: profile, status: 'Retrying connection (keep-alive)...'));
+    emit(
+      ProfileStarting(
+        uuid,
+        profile: profile,
+        status: strings.connectionRetrying,
+      ),
+    );
 
     void Function()? cancel;
     SocketConnector? sc;
@@ -331,18 +340,39 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       if (sc is TimedOutSocketConnector) {
         cancel();
         // For retry, just log the timeout and let it retry again
-        emit(ProfileStarting(uuid, profile: profile, status: 'Connection timed out, will retry...'));
+        emit(
+          ProfileStarting(
+            uuid,
+            profile: profile,
+            status: strings.connectionTimedOut,
+          ),
+        );
       } else if (sc.closed) {
         cancel();
-        emit(ProfileStarting(uuid, profile: profile, status: 'Connection closed, will retry...'));
+        emit(
+          ProfileStarting(
+            uuid,
+            profile: profile,
+            status: strings.connectionClosed,
+          ),
+        );
       } else {
         // Success - cache the connector and emit started state
-        App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
+        App.navState.currentContext?.read<ProfilesRunningCubit>().cache(
+          uuid,
+          sc,
+        );
         emit(ProfileStarted(uuid, profile: profile));
       }
     } catch (err) {
       cancel?.call();
-      emit(ProfileStarting(uuid, profile: profile, status: 'Retry failed: $err, will retry...'));
+      emit(
+        ProfileStarting(
+          uuid,
+          profile: profile,
+          status: strings.retryFailedWithDetails(err.toString()),
+        ),
+      );
     } finally {
       if (npt != null) {
         await npt.done;
@@ -350,7 +380,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
           uuid,
         );
-        
+
         // Continue retrying if keep-alive is still enabled and profile is still "started"
         if (profile.keepAlive && state is ProfileStarted) {
           await _retryConnection(emit, profile, atClient, atSign, settings);

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/features/policy/widgets/sidebar/policy_roles_sidebar.dart';
-import '../cubit/policy_cubit.dart';
-import '../models/policy.dart';
-import '../repositories/role_repository.dart';
-import '../../policy_form/view/policy_form_view.dart';
-import '../../policy_form/cubit/policy_form_cubit.dart';
-import '../../policy_logs/widgets/logs_viewer.dart';
-import '../../policy_logs/cubit/policy_logs_cubit.dart';
-import '../../../widgets/custom_card.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
+import '../../../widgets/custom_card.dart';
+import '../../policy_form/cubit/policy_form_cubit.dart';
+import '../../policy_form/view/policy_form_view.dart';
+import '../../policy_logs/cubit/policy_logs_cubit.dart';
+import '../../policy_logs/widgets/logs_viewer.dart';
 
 class PolicyView extends StatelessWidget {
   final String atSign;
@@ -18,8 +18,10 @@ class PolicyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocProvider(
-      create: (context) => PolicyCubit(context.read<RoleRepository>())..loadRoles(),
+      create: (context) =>
+          PolicyCubit(context.read<RoleRepository>())..loadRoles(strings),
       child: PolicyContent(atSign: atSign),
     );
   }
@@ -43,7 +45,8 @@ class PolicyContent extends StatelessWidget {
                   children: [
                     Expanded(
                       child: CustomCard.dashboardContent(
-                        height: deviceSize.height * Sizes.dashboardCardHeightFactor,
+                        height:
+                            deviceSize.height * Sizes.dashboardCardHeightFactor,
                         width: SizeConfig.setDashboardWidth(),
                         child: _buildMainContent(state, context),
                       ),
@@ -87,6 +90,7 @@ class PolicyContent extends StatelessWidget {
   }
 
   Widget _buildLogsView(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -95,7 +99,7 @@ class PolicyContent extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                'Policy Logs',
+                strings.policyLogs,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -117,15 +121,16 @@ class PolicyContent extends StatelessWidget {
   }
 
   Widget _buildBrowsingView(BuildContext context) {
-    return const Center(
+    final strings = AppLocalizations.of(context)!;
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.group, size: 64, color: AppColor.onSurfaceColor),
-          SizedBox(height: Sizes.p16),
+          const Icon(Icons.group, size: 64, color: AppColor.onSurfaceColor),
+          const SizedBox(height: Sizes.p16),
           Text(
-            'Select a role to view details',
-            style: TextStyle(
+            strings.roleSelectToViewDetails,
+            style: const TextStyle(
               fontSize: Sizes.p18,
               color: AppColor.onSurfaceColor,
             ),
@@ -141,6 +146,7 @@ class PolicyContent extends StatelessWidget {
     required RoleInProgress role,
     required bool isEditing,
   }) {
+    final strings = AppLocalizations.of(context)!;
     return BlocProvider(
       key: key,
       create: (context) {
@@ -157,12 +163,12 @@ class PolicyContent extends StatelessWidget {
           },
           onDeleted: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Role deleted successfully!'),
+              SnackBar(
+                content: Text(strings.roleDeletedSuccessfully),
                 backgroundColor: AppColor.primaryColor,
               ),
             );
-            context.read<PolicyCubit>().loadRoles();
+            context.read<PolicyCubit>().loadRoles(strings);
           },
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -170,10 +176,7 @@ class PolicyContent extends StatelessWidget {
         });
         return cubit;
       },
-      child: PolicyFormView(
-        role: role,
-        isEditing: isEditing,
-      ),
+      child: PolicyFormView(role: role, isEditing: isEditing),
     );
   }
 }

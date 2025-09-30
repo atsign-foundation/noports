@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../cubit/policy_cubit.dart';
 
 class SidebarHeaderWidget extends StatelessWidget {
@@ -7,23 +9,24 @@ class SidebarHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
           Text(
-            'Roles',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            strings.roles,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<PolicyCubit>().loadRoles();
+              context.read<PolicyCubit>().loadRoles(strings);
             },
-            tooltip: 'Refresh roles',
+            tooltip: strings.rolesRefresh,
           ),
         ],
       ),

@@ -1,5 +1,5 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AtClientMethods {

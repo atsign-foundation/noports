@@ -4,7 +4,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
@@ -15,6 +14,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {

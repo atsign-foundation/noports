@@ -55,7 +55,7 @@ String routeName(String route) {
     case 'Policy-manager':
       return strings.policyManager;
     case 'Manage-atsign':
-      return 'Manage atSigns';
+      return strings.manageAtsigns;
     default:
   }
   return capitalized;

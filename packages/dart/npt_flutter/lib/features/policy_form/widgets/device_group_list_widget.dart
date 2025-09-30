@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../policy/models/policy.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../../util/form_validator.dart';
+import '../../policy/models/policy.dart';
 
 class DeviceGroupListWidget extends StatefulWidget {
   final String label;
@@ -78,9 +80,9 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
     widget.onChanged(_localDeviceGroups);
   }
 
-  void _showTooltipModal() {
+  void _showTooltipModal(AppLocalizations strings) {
     if (widget.tooltip == null) return;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -90,7 +92,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(strings.ok),
             ),
           ],
         );
@@ -100,6 +102,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -107,10 +110,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             if (widget.tooltip != null) ...[
               const SizedBox(width: 8),
@@ -118,7 +118,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
                 child: GestureDetector(
-                  onTap: _showTooltipModal,
+                  onTap: () => _showTooltipModal(strings),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
@@ -145,7 +145,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           ],
         ),
         const SizedBox(height: 12),
-        
+
         if (_localDeviceGroups.isEmpty)
           Container(
             padding: const EdgeInsets.all(16),
@@ -154,10 +154,10 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
               borderRadius: BorderRadius.circular(4),
               color: Colors.grey[50],
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'No device groups added yet',
-                style: TextStyle(
+                strings.deviceGroupsNotAdded,
+                style: const TextStyle(
                   color: Colors.grey,
                   fontStyle: FontStyle.italic,
                 ),
@@ -183,15 +183,17 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
                   title: Text(deviceGroup.name),
                   subtitle: deviceGroup.permitOpens.isNotEmpty
                       ? Text(
-                          'Permit Opens: ${deviceGroup.permitOpens.join(', ')}',
+                          strings.permitOpens(
+                            deviceGroup.permitOpens.join(', '),
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
                         )
-                      : const Text(
-                          'No permit opens configured',
-                          style: TextStyle(
+                      : Text(
+                          strings.permitOpensNotConfigured,
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
                             fontStyle: FontStyle.italic,
@@ -218,7 +220,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
               },
             ),
           ),
-        
+
         if (widget.isEditing) ...[
           const SizedBox(height: 12),
           SizedBox(
@@ -226,10 +228,8 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
             child: ElevatedButton.icon(
               onPressed: _addDeviceGroup,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Group'),
-              style: ElevatedButton.styleFrom(
-                alignment: Alignment.center,
-              ),
+              label: Text(strings.groupAdd),
+              style: ElevatedButton.styleFrom(alignment: Alignment.center),
             ),
           ),
         ],
@@ -242,10 +242,7 @@ class _AddDeviceGroupDialog extends StatefulWidget {
   final DeviceGroup? deviceGroup;
   final Function(DeviceGroup) onAdd;
 
-  const _AddDeviceGroupDialog({
-    this.deviceGroup,
-    required this.onAdd,
-  });
+  const _AddDeviceGroupDialog({this.deviceGroup, required this.onAdd});
 
   @override
   State<_AddDeviceGroupDialog> createState() => _AddDeviceGroupDialogState();
@@ -259,7 +256,9 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.deviceGroup?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.deviceGroup?.name ?? '',
+    );
     _permitOpenController = TextEditingController();
     _permitOpens = List.from(widget.deviceGroup?.permitOpens ?? []);
   }
@@ -273,18 +272,15 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
 
   void _addPermitOpen() {
     final value = _permitOpenController.text.trim();
-    
+
     final validationError = FormValidator.validateHostPortField(value);
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validationError),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
       );
       return;
     }
-    
+
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
         _permitOpens.add(value);
@@ -312,8 +308,13 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(widget.deviceGroup == null ? 'Add Device Group' : 'Edit Device Group'),
+      title: Text(
+        widget.deviceGroup == null
+            ? strings.deviceGroupAdd
+            : strings.deviceGroupEdit,
+      ),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 400,
@@ -323,19 +324,19 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Group Name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: strings.groupName,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
-              
-              const Text(
-                'Permit Opens (host:port)',
-                style: TextStyle(fontWeight: FontWeight.w500),
+
+              Text(
+                strings.permitOpensHostPort,
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -350,12 +351,12 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _addPermitOpen,
-                    child: const Text('Add'),
+                    child: Text(strings.add),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              
+
               if (_permitOpens.isNotEmpty)
                 Container(
                   height: 150,
@@ -372,7 +373,10 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                         leading: const Icon(Icons.link, size: 16),
                         title: Text(permitOpen),
                         trailing: IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: Colors.red,
+                          ),
                           onPressed: () => _removePermitOpen(permitOpen),
                           iconSize: 16,
                         ),
@@ -387,12 +391,9 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(strings.cancel),
         ),
-        ElevatedButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _save, child: Text(strings.save)),
       ],
     );
   }

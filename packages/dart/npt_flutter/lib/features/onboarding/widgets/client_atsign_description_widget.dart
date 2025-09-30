@@ -3,7 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
-import 'package:npt_flutter/util/language.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';

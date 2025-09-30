@@ -131,6 +131,12 @@ abstract class AppLocalizations {
   /// **'Preparing for activation'**
   String get activationStatusPreparing;
 
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
   /// No description provided for @addNew.
   ///
   /// In en, this message translates to:
@@ -197,6 +203,30 @@ abstract class AppLocalizations {
   /// **'AtSign'**
   String get atsignDialogTitle;
 
+  /// No description provided for @atsignFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From atSign'**
+  String get atsignFrom;
+
+  /// No description provided for @atsignsUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User atSigns'**
+  String get atsignsUser;
+
+  /// No description provided for @atsignsUserTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'An atSign like \"@alice\" that will be connecting to other devices'**
+  String get atsignsUserTooltip;
+
+  /// No description provided for @atsignTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To atSign'**
+  String get atsignTo;
+
   /// No description provided for @atsignUncreated.
   ///
   /// In en, this message translates to:
@@ -208,6 +238,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authenticate'**
   String get authenticate;
+
+  /// No description provided for @authenticator.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator'**
+  String get authenticator;
 
   /// No description provided for @authorisation.
   ///
@@ -281,6 +317,36 @@ abstract class AppLocalizations {
   /// **'Connected'**
   String get connected;
 
+  /// No description provided for @connectionClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection closed, will retry...'**
+  String get connectionClosed;
+
+  /// No description provided for @connectionRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying connection (keep-alive)...'**
+  String get connectionRetrying;
+
+  /// No description provided for @connections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get connections;
+
+  /// No description provided for @connectionTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out, will retry...'**
+  String get connectionTimedOut;
+
+  /// No description provided for @couldNotLoadPreviousState.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load previous state error'**
+  String get couldNotLoadPreviousState;
+
   /// No description provided for @custom.
   ///
   /// In en, this message translates to:
@@ -335,6 +401,18 @@ abstract class AppLocalizations {
   /// **'Try Now'**
   String get demoTextButton;
 
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @deviceAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Device'**
+  String get deviceAdd;
+
   /// No description provided for @deviceAtsign.
   ///
   /// In en, this message translates to:
@@ -347,6 +425,66 @@ abstract class AppLocalizations {
   /// **'This is the atSign associated with your device.'**
   String get deviceAtsignDescription;
 
+  /// No description provided for @deviceAtsignDescriptionTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'An atSign like \"@bob_device\", that will be connected to. This is also known as the daemon or npd machine that is running the daemon process that will be receiving connection requests where connections will be established to this device.'**
+  String get deviceAtsignDescriptionTwo;
+
+  /// No description provided for @deviceAtsigns.
+  ///
+  /// In en, this message translates to:
+  /// **'Device atSigns'**
+  String get deviceAtsigns;
+
+  /// No description provided for @deviceEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Device'**
+  String get deviceEdit;
+
+  /// No description provided for @deviceGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Group'**
+  String get deviceGroup;
+
+  /// No description provided for @deviceGroupAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Device Group'**
+  String get deviceGroupAdd;
+
+  /// No description provided for @deviceGroupEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Device Group'**
+  String get deviceGroupEdit;
+
+  /// No description provided for @deviceGroupNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No Device Group'**
+  String get deviceGroupNo;
+
+  /// No description provided for @deviceGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Groups'**
+  String get deviceGroups;
+
+  /// No description provided for @deviceGroupsNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No device groups added yet'**
+  String get deviceGroupsNotAdded;
+
+  /// No description provided for @deviceGroupTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports'**
+  String get deviceGroupTooltip;
+
   /// No description provided for @deviceName.
   ///
   /// In en, this message translates to:
@@ -358,6 +496,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is the name of your remote device.'**
   String get deviceNameDescription;
+
+  /// No description provided for @devices.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get devices;
+
+  /// No description provided for @devicesNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices added yet'**
+  String get devicesNotAdded;
+
+  /// No description provided for @devicesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'A device name string like \"default\" that is under a device atSign. A device atSign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user atSigns to this device atSign/device name pair.'**
+  String get devicesTooltip;
 
   /// No description provided for @disconnected.
   ///
@@ -521,6 +677,12 @@ abstract class AppLocalizations {
   /// **'Authentication timed out.'**
   String get errorAuthenticationTimedOut;
 
+  /// No description provided for @errorDuringStartupWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Error during startup: {errorMessage}'**
+  String errorDuringStartupWithDetails(Object errorMessage);
+
   /// No description provided for @errorOtpRequestFailed.
   ///
   /// In en, this message translates to:
@@ -550,6 +712,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to switch atSigns after activation.'**
   String get errorSwitchAtSignFailed;
+
+  /// No description provided for @errorWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {errorMessage},'**
+  String errorWithDetails(Object errorMessage);
 
   /// No description provided for @europe.
   ///
@@ -617,6 +785,18 @@ abstract class AppLocalizations {
   /// **'Get Started'**
   String get getStarted;
 
+  /// No description provided for @groupAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Group'**
+  String get groupAdd;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Name'**
+  String get groupName;
+
   /// No description provided for @import.
   ///
   /// In en, this message translates to:
@@ -646,6 +826,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'JSON'**
   String get json;
+
+  /// No description provided for @jsonCopyToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy JSON to Clipboard'**
+  String get jsonCopyToClipboard;
+
+  /// No description provided for @jsonPayloadCopiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON payload copied to clipboard'**
+  String get jsonPayloadCopiedToClipboard;
 
   /// No description provided for @keys.
   ///
@@ -677,17 +869,83 @@ abstract class AppLocalizations {
   /// **'Logs'**
   String get logs;
 
+  /// No description provided for @logsClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Logs'**
+  String get logsClear;
+
+  /// No description provided for @logsNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs available yet.\nActivity will appear here when policy requests are made.'**
+  String get logsNotAvailable;
+
+  /// No description provided for @logsNotAvailableStartMonitoring.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs available.\nStart monitoring from the Policy Manager to see activity.'**
+  String get logsNotAvailableStartMonitoring;
+
+  /// No description provided for @logsView.
+  ///
+  /// In en, this message translates to:
+  /// **'View Logs'**
+  String get logsView;
+
+  /// No description provided for @logType.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Type'**
+  String get logType;
+
+  /// No description provided for @manageAtsigns.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage atSigns'**
+  String get manageAtsigns;
+
   /// No description provided for @minimal.
   ///
   /// In en, this message translates to:
   /// **'Simple'**
   String get minimal;
 
+  /// No description provided for @monitoringActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitoring Active'**
+  String get monitoringActive;
+
+  /// No description provided for @monitoringInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitoring Inactive'**
+  String get monitoringInactive;
+
+  /// No description provided for @monitoringStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Monitoring'**
+  String get monitoringStart;
+
+  /// No description provided for @monitoringStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Monitoring'**
+  String get monitoringStop;
+
   /// No description provided for @myNoPortsMsg.
   ///
   /// In en, this message translates to:
   /// **'Retrieve yours in '**
   String get myNoPortsMsg;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
 
   /// No description provided for @next.
   ///
@@ -700,6 +958,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No atSign'**
   String get noAtsign;
+
+  /// No description provided for @noAtsignsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No atSigns added yet'**
+  String get noAtsignsAdded;
+
+  /// No description provided for @noDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No description'**
+  String get noDescription;
 
   /// No description provided for @noEmailClientAvailable.
   ///
@@ -718,6 +988,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NoPorts'**
   String get noPorts;
+
+  /// No description provided for @nptStartupTimedout.
+  ///
+  /// In en, this message translates to:
+  /// **'Npt startup timed out'**
+  String get nptStartupTimedout;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
 
   /// No description provided for @onboard.
   ///
@@ -778,6 +1060,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paste the JSON/YAML content here'**
   String get pasteProfileDescription;
+
+  /// No description provided for @permitOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Permit Opens: {permitOpens}'**
+  String permitOpens(Object permitOpens);
+
+  /// No description provided for @permitOpensHostPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Permit Opens (host:port)'**
+  String get permitOpensHostPort;
+
+  /// No description provided for @permitOpensNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'No permit opens configured'**
+  String get permitOpensNotConfigured;
+
+  /// No description provided for @policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy'**
+  String get policy;
+
+  /// No description provided for @policyLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy Logs'**
+  String get policyLogs;
+
+  /// No description provided for @policyManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy Manager'**
+  String get policyManager;
+
+  /// No description provided for @policyRequestPayload.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy Request Payload'**
+  String get policyRequestPayload;
 
   /// No description provided for @preview.
   ///
@@ -1031,6 +1355,126 @@ abstract class AppLocalizations {
   /// **'Reset atSign'**
   String get resetAtsign;
 
+  /// No description provided for @retryFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed: {errorMessage}, will retry...'**
+  String retryFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roleAddNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Role'**
+  String get roleAddNew;
+
+  /// No description provided for @roleCreatingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create role'**
+  String get roleCreatingFailed;
+
+  /// No description provided for @roleCreatingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create role: {errorMessage}'**
+  String roleCreatingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roleDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Role'**
+  String get roleDelete;
+
+  /// No description provided for @roleDeleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the role \"{roleName}\"? This action cannot be undone.'**
+  String roleDeleteConfirmation(Object roleName);
+
+  /// No description provided for @roleDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Role deleted successfully!'**
+  String get roleDeletedSuccessfully;
+
+  /// No description provided for @roleDeletingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete role'**
+  String get roleDeletingFailed;
+
+  /// No description provided for @roleDeletingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete role: {errorMessage}'**
+  String roleDeletingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roleLoadingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load role: {errorMessage}'**
+  String roleLoadingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roleNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No roles found'**
+  String get roleNotFound;
+
+  /// No description provided for @roleNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No role loaded'**
+  String get roleNotLoaded;
+
+  /// No description provided for @roles.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get roles;
+
+  /// No description provided for @roleSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save role'**
+  String get roleSaveFailed;
+
+  /// No description provided for @roleSaveFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save role: {errorMessage}'**
+  String roleSaveFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roleSelectToViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a role to view details'**
+  String get roleSelectToViewDetails;
+
+  /// No description provided for @rolesLoadingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load roles: {errorMessage}'**
+  String rolesLoadingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @rolesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Roles'**
+  String get rolesRefresh;
+
+  /// No description provided for @roleUpdatingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update role'**
+  String get roleUpdatingFailed;
+
+  /// No description provided for @roleUpdatingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update role: {errorMessage}'**
+  String roleUpdatingFailedWithDetails(Object errorMessage);
+
   /// No description provided for @rootDomainDefault.
   ///
   /// In en, this message translates to:
@@ -1042,6 +1486,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Demo (VE)'**
   String get rootDomainDemo;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
 
   /// No description provided for @saveAtKeys.
   ///
@@ -1103,11 +1553,23 @@ abstract class AppLocalizations {
   /// **'Service Mapping'**
   String get serviceMapping;
 
+  /// No description provided for @servicesAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed Services'**
+  String get servicesAllowed;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
+
+  /// No description provided for @settingsCouldNotFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch settings'**
+  String get settingsCouldNotFetch;
 
   /// No description provided for @showWindow.
   ///
@@ -1120,6 +1582,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign Out'**
   String get signout;
+
+  /// No description provided for @socketconnectorClosedPrematurely.
+  ///
+  /// In en, this message translates to:
+  /// **'Socketconnector Closed Prematurely'**
+  String get socketconnectorClosedPrematurely;
 
   /// No description provided for @sshStyle.
   ///
@@ -1192,6 +1660,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync in progress. Some profiles may still be loading.'**
   String get syncInProgress;
+
+  /// No description provided for @timestamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Timestamp'**
+  String get timestamp;
 
   /// No description provided for @unknownError.
   ///
@@ -1300,12 +1774,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML (Recommended)'**
   String get yamlRecommended;
-
-  /// No description provided for @policyManager.
-  ///
-  /// In en, this message translates to:
-  /// **'Policy Manager'**
-  String get policyManager;
 }
 
 class _AppLocalizationsDelegate
