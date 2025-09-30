@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:noports_core/src/common/host_validator.dart';
+import 'dart:io';
 
 void main() {
   group('HostValidator Tests', () {
@@ -201,6 +202,69 @@ void main() {
           '  ,  , 127.0.0.1  ,  ',
         );
         expect(result, equals('127.0.0.1'));
+      });
+    });
+
+    group('IPv4/IPv6 Integration Tests', () {
+      test('canBind should work with IPv4 flag', () async {
+        final canBindIPv4 = await HostValidator.canBind(
+          'localhost',
+          0, // Use OS-assigned port
+          addressType: InternetAddressType.IPv4,
+        );
+        expect(
+          canBindIPv4,
+          isTrue,
+          reason: 'Should be able to bind to IPv4 localhost',
+        );
+      });
+
+      test('canBind should work with IPv6 flag if available', () async {
+        final canBindIPv6 = await HostValidator.canBind(
+          'localhost',
+          0, // Use OS-assigned port
+          addressType: InternetAddressType.IPv6,
+        );
+        // IPv6 might not be available on all systems, so we just test it doesn't crash
+        expect(canBindIPv6, isA<bool>());
+      });
+
+      test('resolveHost should respect address type filtering', () async {
+        final ipv4Address = await HostValidator.resolveHost(
+          'localhost',
+          addressType: InternetAddressType.IPv4,
+        );
+
+        if (ipv4Address != null) {
+          expect(ipv4Address.type, equals(InternetAddressType.IPv4));
+          expect(ipv4Address.address, equals('127.0.0.1'));
+        }
+      });
+
+      test(
+        'findBindableHost should find available host with address type',
+        () async {
+          final bindableHost = await HostValidator.findBindableHost(
+            'localhost,127.0.0.1',
+            0, // Use OS-assigned port
+            addressType: InternetAddressType.IPv4,
+          );
+
+          expect(bindableHost, isNotNull);
+          expect(['localhost', '127.0.0.1'].contains(bindableHost), isTrue);
+        },
+      );
+
+      test('findBindableHost should handle fallback list correctly', () async {
+        // Test with a mix of valid and invalid hosts
+        final bindableHost = await HostValidator.findBindableHost(
+          'invalid-host-999999,localhost,127.0.0.1',
+          0, // Use OS-assigned port
+          addressType: InternetAddressType.IPv4,
+        );
+
+        expect(bindableHost, isNotNull);
+        expect(['localhost', '127.0.0.1'].contains(bindableHost), isTrue);
       });
     });
   });
