@@ -5,6 +5,7 @@ import 'package:npt_flutter/app.dart';
 class Sizes {
   static const p10n = -10.0;
   static const p0 = 0.0;
+  static const p1 = 1.0;
   static const p2 = 2.0;
   // static const p3 = 3.0;
   static const p4 = 4.0;
@@ -73,6 +74,7 @@ class Sizes {
   static const p743 = 743.0;
   static const p853 = 853.0;
   static const p941 = 941.0;
+  static const p1000 = 1000.0;
   // The below size factors are constants that are used to determine the height or width based on the device size.
   static const dashboardCardHeightFactor = 489 / 600;
   static const dashboardCardWidthFactor = 941 / 1053;

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -23,107 +24,126 @@ class SwitchAtsignButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final atsign = context.watch<OnboardingCubit>().getAtSign();
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Sizes.p10,
-          vertical: Sizes.p6,
-        ),
-        decoration: BoxDecoration(
-          color: AppColor.surfaceColor,
-          borderRadius: BorderRadius.circular(Sizes.p8),
-        ),
-        child: ListTile(
-          leading: PhosphorIcon(PhosphorIcons.userCircle()),
-          title: Text(strings.switchAtSign),
-          trailing: PhosphorIcon(PhosphorIcons.caretUpDown()),
-          onTap: () async {
-            // Select atsign to switch
-            final atSignList = await KeychainUtil.getAtsignList();
-            // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
-            final selectedAtSign = await showMenu<dynamic>(
-              context: context,
-              position: const RelativeRect.fromLTRB(
-                -1000,
-                1,
-                0,
-                0,
-              ), // You may want to calculate this based on tap position
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(
-                  color: AppColor.primaryColor,
-                  width: Sizes.p2,
-                ),
-                borderRadius: BorderRadius.circular(Sizes.p8),
+      padding: const EdgeInsets.only(right: 24.0),
+      child: GestureDetector(
+        onTap: () async {
+          // Select atsign to switch
+          final atSignList = await KeychainUtil.getAtsignList();
+          // set to dynamic to handle being popped by the AppBar back button which returns a 'StatefulElement'
+          final selectedAtSign = await showMenu<dynamic>(
+            context: context,
+            position: const RelativeRect.fromLTRB(
+              Sizes.p1000,
+              Sizes.p0,
+              Sizes.p0,
+              Sizes.p0,
+            ), // You may want to calculate this based on tap position
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(
+                color: AppColor.primaryColor,
+                width: Sizes.p2,
               ),
-              items: (atSignList ?? [])
-                  .map(
-                    (atSign) => PopupMenuItem<String>(
-                      padding: const EdgeInsets.all(Sizes.p0),
-                      value: atSign,
-                      child: _HoverableMenuItem(atSign: atSign),
-                    ),
-                  )
-                  .toList(),
+              borderRadius: BorderRadius.circular(Sizes.p8),
+            ),
+            items: (atSignList ?? [])
+                .map(
+                  (atSign) => PopupMenuItem<String>(
+                    padding: const EdgeInsets.all(Sizes.p0),
+                    value: atSign,
+                    child: _HoverableMenuItem(atSign: atSign),
+                  ),
+                )
+                .toList(),
+          );
+
+          if (selectedAtSign is! String) {
+            //
+            return; // Exit if selectedAtsign is not a string.
+          }
+
+          // Check for connected profiles before switching
+          var isProfileConnected = false;
+
+          if (context
+              .read<ProfilesRunningCubit>()
+              .state
+              .socketConnectors
+              .keys
+              .toSet()
+              .isNotEmpty) {
+            isProfileConnected = await showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (context) => const ConnectedProfilesDialog(),
             );
+          }
+          if (context.mounted && isProfileConnected) {
+            // If a proifle is connected, exit.
+            return;
+          }
+          final currentContext = App.navState.currentContext!;
 
-            if (selectedAtSign is! String) {
-              //
-              return; // Exit if selectedAtsign is not a string.
-            }
+          final rootDomain = currentContext
+              .read<OnboardingCubit>()
+              .getRootDomain(); // Or get from your state/cubit if needed
+          final atClientPreference =
+              await AtClientMethods.loadAtClientPreference(rootDomain);
+          await preSignout();
+          final result = await AtOnboarding.changePrimaryAtsign(
+            atsign: selectedAtSign,
+          );
 
-            // Check for connected profiles before switching
-            var isProfileConnected = false;
-
-            if (context
-                .read<ProfilesRunningCubit>()
-                .state
-                .socketConnectors
-                .keys
-                .toSet()
-                .isNotEmpty) {
-              isProfileConnected = await showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) => const ConnectedProfilesDialog(),
-              );
-            }
-            if (context.mounted && isProfileConnected) {
-              // If a proifle is connected, exit.
-              return;
-            }
-            final currentContext = App.navState.currentContext!;
-
-            final rootDomain = currentContext
-                .read<OnboardingCubit>()
-                .getRootDomain(); // Or get from your state/cubit if needed
-            final atClientPreference =
-                await AtClientMethods.loadAtClientPreference(rootDomain);
-            await preSignout();
-            final result = await AtOnboarding.changePrimaryAtsign(
+          if (result) {
+            final onboardingResult = await AtOnboarding.onboard(
               atsign: selectedAtSign,
+              context: currentContext,
+              config: AtOnboardingConfig(
+                atClientPreference: atClientPreference,
+                domain: rootDomain,
+                rootEnvironment: RootEnvironment.Production,
+                appAPIKey: await Constants.appAPIKey,
+              ),
             );
 
-            if (result) {
-              final onboardingResult = await AtOnboarding.onboard(
-                atsign: selectedAtSign,
-                context: currentContext,
-                config: AtOnboardingConfig(
-                  atClientPreference: atClientPreference,
-                  domain: rootDomain,
-                  rootEnvironment: RootEnvironment.Production,
-                  appAPIKey: await Constants.appAPIKey,
-                ),
-              );
-
-              if (onboardingResult.status == AtOnboardingResultStatus.success) {
-                await BackupKeyUtils().backupKeyStatusCheck();
-                log("postOnbarding called");
-                await postOnboard(selectedAtSign, rootDomain);
-              }
+            if (onboardingResult.status == AtOnboardingResultStatus.success) {
+              await BackupKeyUtils().backupKeyStatusCheck();
+              log("postOnbarding called");
+              await postOnboard(selectedAtSign, rootDomain);
             }
-          },
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Sizes.p10,
+            vertical: Sizes.p6,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColor.primaryColor, width: Sizes.p1),
+          ),
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                'assets/At.svg',
+                width: Sizes.p16,
+                height: Sizes.p16,
+              ),
+              gapW4,
+              Text(
+                atsign.isNotEmpty
+                    ? atsign.replaceFirst('@', '')
+                    : strings.switchAtSign,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: Sizes.p12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              gapW4,
+              PhosphorIcon(PhosphorIcons.caretUpDown()),
+            ],
+          ),
         ),
       ),
     );

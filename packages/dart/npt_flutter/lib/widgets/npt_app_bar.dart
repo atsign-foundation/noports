@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -9,6 +8,7 @@ import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/util/constants.dart';
+import 'package:npt_flutter/widgets/switch_atsign_button.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -172,37 +172,9 @@ class _NptAppBarState extends State<NptAppBar> {
                   ),
                 ),
               ),
+              const SwitchAtsignButton(),
 
               // User section on right
-              Padding(
-                padding: const EdgeInsets.only(right: 24),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColor.primaryColor, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset('assets/At.svg', width: 16, height: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        atsign.isNotEmpty
-                            ? atsign.replaceFirst('@', '')
-                            : 'user',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         );
