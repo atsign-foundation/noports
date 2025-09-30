@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.11.3
+version: 5.12.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
