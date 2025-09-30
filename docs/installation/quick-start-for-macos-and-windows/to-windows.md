@@ -6,6 +6,81 @@ icon: windows
 
 This guide provides instructions for connecting from the NoPorts desktop application, to a machine running Windows.
 
+### Step 6 and Step 7
+
+Complete these steps **on the machine you are connecting to (Windows)**
+
+<details>
+
+<summary>On the machine you are connecting to</summary>
+
+### <mark style="color:orange;">Step 6:</mark> Download and run the Installer
+
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+
+Install the Device Software
+
+6.1: Click **Device Install**.
+
+<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
+
+6.2: Enter both of your atSigns into the associated fields, then enter the device name, and click **Next**. You will need to enter this device name in **Step 10**.
+
+<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
+
+6.3: (Optional) If you wish to add additional arguments to pass, enter them and then click **Next.**
+
+<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
+
+6.4: Wait for the installation to complete, then click **Next.**
+
+### <mark style="color:orange;">Step 7:</mark> Initiate atSign authorization request
+
+You will see the following screen. Enter the **one-time passcode generated in Step 5** on the machine you are connecting from (macOS). Then click **Generate** and move onto **Step 8**.
+
+<figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
+
+</details>
+
+### Step 8 to Step 11
+
+With both machines now configured, the final steps bring us back to the machine initiating the connection.
+
+<details>
+
+<summary>On the machine you are connecting from</summary>
+
+### <mark style="color:orange;">Step 8:</mark> Approve the atSign authorization request
+
+1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
+2. After a few seconds, the request will also show as approved on the machine you are connecting to.
+
+### <mark style="color:orange;">Step 9:</mark> Switch back to your client atSign (@example01\_np)
+
+1. Click **Back**, and then click on the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
+
+2) Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
+
+### <mark style="color:orange;">Step 10:</mark> Create a Connection Profile
+
+1. Click **Add New**, to create a new profile.
+2. Enter the following information into the profile then click **Submit**.
+   1. Profile Name - The name that will be displayed in the profile list.
+   2. Device atSign - Your device atSign (eg example02\_np).
+   3. Device Name - The name of your remote device.
+   4. Relay - Select the relay sever closest to you for optimum speed.
+   5. Local Port - The port you will use on your local machine.
+   6. Remote Host - The hostname or IP address of the machine you are connecting to.
+   7. Remote Port - The port that will be used on the remote machine.
+
+For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+
+### <mark style="color:orange;">Step 11:</mark> Establish a connection
+
+Click the **Connect Icon ▶️** to establish a connection with your remote device. If the connection is successful, you will see green. If you see red, hover over the icon to see reason for failure.
+
+</details>
+
 ### Step 1 to Step 3
 
 Complete these steps in the NoPorts desktop application on the machine you are connecting from
@@ -21,7 +96,7 @@ Both the client and device atSigns are activated on the machine you are connecti
 {% endhint %}
 
 1. You'll need to switch atSigns. To sign out from the client atSign, click the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
-2. Click **Get Started** and enter your **device atSign** into the text field (e.g., @pluto83\_client). Leave the root domain as is, and then click **Next**.
+2. Click **Get Started** and enter your **device atSign** into the text field (e.g., @pluto02\_np). Leave the root domain as is, and then click **Next**.
 3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
 
 ### <mark style="color:orange;">Step 2:</mark> Save a copy of your device atKeys&#x20;
@@ -51,23 +126,23 @@ Download the installer [from GitHub](https://github.com/atsign-foundation/noport
 
 Install the Device Software
 
-1\. Click **Device Install**.
+4.1: Click **Device Install**.
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
 
-2\. Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in S**tep 7**.
+4.2: Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in S**tep 7**.
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
 
-3\. If you wish to add additional arguments to pass sshnpd, enter them and then click **Next.**
+4.3: (Optional) If you wish to add additional arguments to pass to sshnpd, enter them, and then click **Next.**
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
 
-4\. Wait for the installation to complete, then click **Next.**
+4.4: Wait for the installation to complete, then click **Next.**
 
 ### <mark style="color:orange;">Step 5:</mark> Initiate atSign authorization request
 
-You will see the following screen. Enter the **one-time passcode generated in Step 3** on the machine you are connecting from. Then click **Generate**.
+You will see the following screen. Enter the **one-time passcode generated in Step 3** on the machine you are connecting from. Then click **Generate** and move on to **Step 6**.
 
 <figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
 
@@ -98,7 +173,7 @@ With both machines now configured, the final steps bring us back to the machine 
 2. Enter the following information into the profile then click **Submit**.
    1. Profile Name - The name that will be displayed in the profile list.
    2. Device atSign - Your device atSign.
-   3. Device Name - The name assigned to your remote device.
+   3. Device Name - The name of your remote device.
    4. Relay - Select the relay sever closest to you for optimum speed.
    5. Local Port - The port you will use on your local machine.
    6. Remote Host - The hostname or IP address of the machine you are connecting to.

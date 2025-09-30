@@ -13,6 +13,10 @@ These initial steps set up the machine initiating the connection.
 
 <summary>On the machine you are connecting from</summary>
 
+{% hint style="warning" %}
+In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
+{% endhint %}
+
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
 Download the installer from [GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
@@ -29,7 +33,7 @@ Launch the NoPortsInstaller.exe program and allow it administrative permissions.
 
 
 
-### <mark style="color:orange;">Step 2:</mark> Activate your client atSign
+### <mark style="color:orange;">Step 2:</mark> Activate your client atSign (@example01\_np)
 
 {% hint style="warning" %}
 If you've already activated your **client** atSign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
@@ -51,7 +55,7 @@ Step 2.4 Once activated, the master keys will save at `~/.atsign/keys`. Wait for
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.24.43@2x.png" alt=""><figcaption></figcaption></figure>
 
-### <mark style="color:orange;">Step 3:</mark> Activate your device atSign
+### <mark style="color:orange;">Step 3:</mark> Activate your device atSign (@example02\_np)
 
 Repeat the activation process, but for your device atSign. The device master keys will also save at `~/.atsign/keys`.&#x20;
 
@@ -97,11 +101,11 @@ Install the Device Software
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
 
-5.2 Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in **Step 7**.
+5.2 Enter both of your atSigns into the associated fields, then enter the name of the machine you are on into the a device name field, and click **Next**. You will need to enter this device name in **Step 7**.
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
 
-5.3 If you wish to add additional arguments to pass sshnpd, enter them and then click **Next.**
+5.3 If you wish to add additional arguments to pass to sshnpd, enter them, and then click **Next.**
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
 

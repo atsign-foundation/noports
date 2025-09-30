@@ -13,6 +13,10 @@ These initial steps set up the machine initiating the connection.
 
 <summary>On the machine you are connecting from</summary>
 
+{% hint style="warning" %}
+In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
+{% endhint %}
+
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
 Download the installer from GitHub by running the following command:
@@ -34,7 +38,7 @@ chmod u+x universal.sh
 ./universal.sh
 ```
 
-### <mark style="color:orange;">Step 2:</mark> Activate your client atSign
+### <mark style="color:orange;">Step 2:</mark> Activate your client atSign (@example01\_np)
 
 {% hint style="warning" %}
 If you've already activated your **client** atSign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
@@ -42,12 +46,12 @@ If you've already activated your **client** atSign on another device, this step 
 
 This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atSign.
 
-{% hint style="warning" %}
-Replace `@<REPLACE>_client` with your **client atSign.**
+{% hint style="info" %}
+Replace `@<REPLACE>_np` with your **client atSign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_client
+~/.local/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -56,16 +60,16 @@ at\_activate will pause and wait for the input of a one-time pin (OTP) sent to y
 \
 Once activated, the master keys will save at `~/.atsign/keys`.
 
-### <mark style="color:orange;">Step 3:</mark> Activate your device atSign
+### <mark style="color:orange;">Step 3:</mark> Activate your device atSign (@example02\_np)
 
 Run the same command, but for your device atSign.
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_device` with your **device atSign.**
+Replace `@<REPLACE>_np` with your **device atSign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_device
+~/.local/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -79,11 +83,11 @@ Once activated, the master keys will save at `~/.atsign/keys`.
 Run the following command to generate a 6-character one-time passcode. You will use this passcode in **Step 6.**
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_device` with your device **atSign.**
+Replace `@<REPLACE>_np` with your device **atSign.**
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate otp -a @<REPLACE>_device
+~/.local/bin/at_activate otp -a @<REPLACE>_np
 ```
 
 </details>
@@ -119,24 +123,24 @@ chmod u+x universal.sh
 
 ### <mark style="color:orange;">Step 6:</mark> Initiate atSign authorization request
 
-Run the following command to make an authorization request.&#x20;
+Run the following command to make an authorization request:&#x20;
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_device` with your **device atSign**,
+`@<REPLACE>_np` with your **device atSign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
 
-`@<REPLACE>_device_key` with your **device atSign**,&#x20;
+`@<REPLACE>_np_key` with your **device atSign**,&#x20;
 
-`<DEVICE_NAME>` with a unique name for the machine you are on
+`<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
+<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
 <strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
-</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_device_key.atKeys \
+</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_np_key.atKeys \
 </strong><strong>  -d &#x3C;DEVICE_NAME> \
 </strong><strong>  -n "sshnp:rw,sshrvd:rw"
 </strong></code></pre>
@@ -166,13 +170,13 @@ Run the following command:
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_device` with your **device atSign**,
+`@<REPLACE>_np` with your **device atSign**,
 
-`@<REPLACE_NAME>` with the unique **device name** **from Step 6.**
+`@<REPLACE_NAME>` with the **device name** **from Step 6.**
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate approve -a @<REPLACE>_device --arx noports --drx <DEVICE_NAME>
+~/.local/bin/at_activate approve -a @<REPLACE>_np --arx noports --drx <DEVICE_NAME>
 ```
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
@@ -181,6 +185,3 @@ That's it. You can start using NoPorts or explore some of the documented use cas
 
 </details>
 
-### Connecting more machines to your device atSign
-
-To connect more machines to your device atSign, repeat **Steps 4 through 7**.

@@ -13,6 +13,10 @@ These initial steps set up the machine initiating the connection.
 
 <summary>On the machine you are connecting from</summary>
 
+{% hint style="warning" %}
+In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
+{% endhint %}
+
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
 Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
@@ -29,7 +33,7 @@ Launch the NoPortsInstaller.exe program and allow it administrative permissions.
 
 
 
-### <mark style="color:orange;">Step 2:</mark> Activate your client atSign
+### <mark style="color:orange;">Step 2:</mark> Activate your client atSign (@example01\_np)
 
 {% hint style="warning" %}
 If you've already activated your **client** atSign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
@@ -51,7 +55,7 @@ Step 2.4 Once activated, the master keys will save at `~/.atsign/keys`. Wait for
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.24.43@2x.png" alt=""><figcaption></figcaption></figure>
 
-### <mark style="color:orange;">Step 3:</mark> Activate your device atSign
+### <mark style="color:orange;">Step 3:</mark> Activate your device atSign (@example02\_np)
 
 Repeat the activation process, but for your device atSign. The device master keys will also save at `~/.atsign/keys`.&#x20;
 
@@ -115,19 +119,19 @@ Run the following command to make an authorization request:&#x20;
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_device` with your **device atSign**,
+`@<REPLACE>_np` with your **device atSign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
 
-`@<REPLACE>_device_key` with your **device atSign**,&#x20;
+`@<REPLACE>_np_key` with your **device atSign**,&#x20;
 
-`<DEVICE_NAME>` with a unique name for the machine you are on
+`<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
+<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
 <strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
-</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_device_key.atKeys \
+</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_np_key.atKeys \
 </strong><strong>  -d &#x3C;DEVICE_NAME> \
 </strong><strong>  -n "sshnp:rw,sshrvd:rw"
 </strong></code></pre>
