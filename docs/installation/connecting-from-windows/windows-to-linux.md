@@ -45,11 +45,11 @@ Step 2.1 Click on **Activate atSign.**
 
 Step 2.2 Enter the atSign you wish to activate and click **Submit.**
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.27.40@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.19.37 PM.png" alt=""><figcaption></figcaption></figure>
 
 Step 2.3 Check your email for the OTP (one-time password), then enter it and press **Generate**.
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.23.37@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.20.54 PM.png" alt=""><figcaption></figcaption></figure>
 
 Step 2.4 Once activated, the master keys will save at `~/.atsign/keys`. Wait for the keys to generate, then go back **Home**.
 

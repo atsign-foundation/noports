@@ -112,7 +112,7 @@ Install the Device Software
 
 5.2 Enter both of your atSigns into the associated fields, then enter the name of the machine you are on into the a device name field, and click **Next**. You will need to enter this device name in **Step 7**.
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.17.31 PM.png" alt=""><figcaption></figcaption></figure>
 
 5.3 (Optional) If you wish to add additional arguments to pass to sshnpd, enter them, then click **Next**.
 
@@ -124,7 +124,7 @@ Install the Device Software
 
 You will see the following screen. Enter the **one-time passcode generated in Step 4** on the machine you are connecting from. Then click **Generate** and move on to **Step 6**.
 
-<figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.25.05 PM.png" alt=""><figcaption></figcaption></figure>
 
 </details>
 

@@ -45,11 +45,11 @@ Step 2.1 Click on **Activate atSign.**
 
 Step 2.2 Enter the atSign you wish to activate and click **Submit**.
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.27.40@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.19.37 PM.png" alt=""><figcaption></figcaption></figure>
 
 Step 2.3 Check your email for the OTP (one-time password), then enter it and press **Generate.**
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.23.37@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.20.54 PM.png" alt=""><figcaption></figcaption></figure>
 
 Step 2.4 Once activated, the master keys will save at `~/.atsign/keys`. Wait for the keys to generate, then go back **Home**.
 
@@ -103,7 +103,7 @@ Install the Device Software
 
 5.2 Enter both of your atSigns into the associated fields, then enter the name of the machine you are on into the a device name field, and click **Next**. You will need to enter this device name in **Step 7**.
 
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.17.31 PM.png" alt=""><figcaption></figcaption></figure>
 
 5.3 If you wish to add additional arguments to pass to sshnpd, enter them, and then click **Next.**
 
@@ -115,7 +115,7 @@ Install the Device Software
 
 You will see the following screen. Enter the **one-time passcode generated in Step 4** on the machine you are connecting from. Then click **Generate**.
 
-<figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.25.05 PM.png" alt=""><figcaption></figcaption></figure>
 
 </details>
 
