@@ -163,11 +163,20 @@ abstract class SrvdChannel<T>
           break;
       }
     }
+    // Get the local host to bind to
+    String? localHost;
+    if (params is NptParams && (params as NptParams).localHost != null) {
+      final nptParams = params as NptParams;
+      localHost = nptParams.localHost;
+      logger.info('Will bind to: $localHost');
+    }
+
     srv = srvGenerator(
       rvdHost,
       clientPort,
       localPort: localRvPort,
       bindLocalPort: true,
+      localHost: localHost,
       relayAuthenticator: relayAuthenticator,
       aesC2D: aesC2D,
       ivC2D: ivC2D,
@@ -236,8 +245,10 @@ abstract class SrvdChannel<T>
     if (params.authenticateClientToRvd || params.authenticateDeviceToRvd) {
       rvdRequestKey = AtKey()
         ..key = '${params.device}.request_ports.${Srvd.namespace}'
-        ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = params.srvdAtSign // shared with the srvd host
+        ..sharedBy = params
+            .clientAtSign // shared by us
+        ..sharedWith = params
+            .srvdAtSign // shared with the srvd host
         ..metadata = (Metadata()
           // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace
@@ -273,8 +284,10 @@ abstract class SrvdChannel<T>
       // send a legacy message since no new rvd features are being used
       rvdRequestKey = AtKey()
         ..key = '${params.device}.${Srvd.namespace}'
-        ..sharedBy = params.clientAtSign // shared by us
-        ..sharedWith = params.srvdAtSign // shared with the srvd host
+        ..sharedBy = params
+            .clientAtSign // shared by us
+        ..sharedWith = params
+            .srvdAtSign // shared with the srvd host
         ..metadata = (Metadata()
           // as we are sending a notification to the srvd namespace,
           // we don't want to append our namespace

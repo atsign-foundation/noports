@@ -1,3 +1,9 @@
+# 6.8.0
+
+- feat: Enable npt clients to choose which local IP address to bind to, 
+  supporting both ipv4 and ipv6, and defaulting to `localhost` on ipv4/ipv6 
+  as per the host's preference
+
 # 6.7.0
 
 - build(deps): Remove dependency on fork of args package. Output alias info
