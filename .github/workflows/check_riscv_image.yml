@@ -46,7 +46,7 @@ jobs:
           # 2. Use 'docker buildx imagetools inspect' and pipe the JSON output to jq.
           # We use the same 'jq' filter to check for the 'riscv64' platform.
           # The '2>/dev/null' suppresses warnings from the inspect command.
-          RISCV_COUNT=$(docker buildx imagetools inspect "${IMAGE_REF}" 2>/dev/null | \
+          RISCV_COUNT=$(docker buildx imagetools inspect "${IMAGE_REF}" --format "{{json .Manifest}}" 2>/dev/null | \
             jq -r '[.manifests[]?.platform.architecture | select(. == "riscv64")] | length')
 
           if [ "$RISCV_COUNT" -gt 0 ]; then
