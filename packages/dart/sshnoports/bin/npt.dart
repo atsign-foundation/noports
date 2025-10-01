@@ -182,14 +182,16 @@ void main(List<String> args) async {
           defaultsTo: false, negatable: false, help: 'Print usage');
 
       parser.addFlag(
-        '4',
+        'ipv4',
+        abbr: '4',
         defaultsTo: false,
         negatable: false,
         help: 'Forces npt to bind to IPv4 addresses only',
       );
 
       parser.addFlag(
-        '6',
+        'ipv6',
+        abbr: '6',
         defaultsTo: false,
         negatable: false,
         help: 'Forces npt to bind to IPv6 addresses only',
@@ -394,12 +396,12 @@ void main(List<String> args) async {
 
       // Determine address type from IPv4/IPv6 flags
       InternetAddressType? addressType;
-      if (parsedArgs['4'] && parsedArgs['6']) {
-        stderr.writeln('Error: Cannot specify both --4 and --6 flags');
+      if (parsedArgs['ipv4'] && parsedArgs['ipv6']) {
+        stderr.writeln('Error: Cannot specify both --ipv4 and --ipv6 flags');
         exitProgram(exitCode: 1);
-      } else if (parsedArgs['4']) {
+      } else if (parsedArgs['ipv4']) {
         addressType = InternetAddressType.IPv4;
-      } else if (parsedArgs['6']) {
+      } else if (parsedArgs['ipv6']) {
         addressType = InternetAddressType.IPv6;
       }
 
@@ -413,7 +415,8 @@ void main(List<String> args) async {
           addressType: addressType);
 
       String? resolvedLocalHost;
-      String? originalLocalHost; // Keep track of the original hostname for display
+      String?
+          originalLocalHost; // Keep track of the original hostname for display
       if (localHost != null) {
         originalLocalHost = localHost; // Store the original hostname
         final resolvedAddress = await HostValidator.resolveHost(localHost,
@@ -439,12 +442,12 @@ void main(List<String> args) async {
           if (addressType == InternetAddressType.IPv4 &&
               resolvedAddress.type != InternetAddressType.IPv4) {
             stderr.writeln(
-                'Error: --4 flag specified but resolved to IPv6 address: $resolvedLocalHost');
+                'Error: --ipv4 flag specified but resolved to IPv6 address: $resolvedLocalHost');
             exitProgram(exitCode: 1);
           } else if (addressType == InternetAddressType.IPv6 &&
               resolvedAddress.type != InternetAddressType.IPv6) {
             stderr.writeln(
-                'Error: --6 flag specified but resolved to IPv4 address: $resolvedLocalHost');
+                'Error: --ipv6 flag specified but resolved to IPv4 address: $resolvedLocalHost');
             exitProgram(exitCode: 1);
           }
         }
@@ -497,8 +500,9 @@ void main(List<String> args) async {
 
           // Show detailed binding address with original hostname and resolved IP
           String resolvedIP = params.localHost!; // This is now the resolved IP
-          String hostDisplay = originalLocalHost ?? resolvedIP; // Use original hostname if available
-          
+          String hostDisplay = originalLocalHost ??
+              resolvedIP; // Use original hostname if available
+
           logProgress(
               'npt is listening on $hostDisplay:$actualLocalPort ($resolvedIP:$actualLocalPort)');
 
