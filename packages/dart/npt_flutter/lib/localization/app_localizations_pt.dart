@@ -27,6 +27,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get advanced => 'Avançado';
 
   @override
+  String get advancedSettings => 'Configurações Avançadas';
+
+  @override
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
@@ -421,7 +424,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loading => 'Carregando';
 
   @override
+  String get localHost => 'Host Local';
+
+  @override
+  String get localHostDescription =>
+      'O nome do host ou endereço IP para vincular à sua máquina local';
+
+  @override
   String get localPort => 'Porta Local';
+
+  @override
+  String get localPortDescription =>
+      'A porta que você usará em sua máquina local';
 
   @override
   String get logs => 'Logs';
@@ -602,11 +616,25 @@ class AppLocalizationsPt extends AppLocalizations {
       'Como você gostaria de importar um perfil?';
 
   @override
+  String get profileKeepAlive => '🕺 Manter Ativo';
+
+  @override
+  String get profileKeepAliveDescription =>
+      'Manter ativo. Se uma sessão terminar, crie uma nova sessão e religue à porta local. As sessões podem terminar devido a não serem usadas após um tempo limite ou por problemas de rede.';
+
+  @override
   String get profileName => 'Nome do Perfil';
 
   @override
   String get profileNameDescription =>
       'Este será o nome de suas configurações.';
+
+  @override
+  String get profilePort443 => 'Usar Porta 443';
+
+  @override
+  String get profilePort443Description =>
+      'Força o relay a usar a porta 443 em vez de uma porta efêmera. Habilita automaticamente o modo de autenticação ESCR do relay para segurança.';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -672,7 +700,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get remoteHost => 'Host Remoto';
 
   @override
+  String get remoteHostDescription =>
+      'O nome do host ou endereço IP do serviço ao qual você está se conectando na máquina remota';
+
+  @override
   String get remotePort => 'Porta Remota';
+
+  @override
+  String get remotePortDescription =>
+      'A porta que será usada na máquina remota';
 
   @override
   String get requestExpired =>
@@ -953,6 +989,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get advanced => 'Avançado';
 
   @override
+  String get advancedSettings => 'Configurações Avançadas';
+
+  @override
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
@@ -1347,7 +1386,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get loading => 'Carregando';
 
   @override
+  String get localHost => 'Host Local';
+
+  @override
+  String get localHostDescription =>
+      'O nome do host ou endereço IP para vincular à sua máquina local';
+
+  @override
   String get localPort => 'Porta Local';
+
+  @override
+  String get localPortDescription =>
+      'A porta que você usará em sua máquina local';
 
   @override
   String get logs => 'Logs';
@@ -1528,11 +1578,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Como você gostaria de importar um perfil?';
 
   @override
+  String get profileKeepAlive => '🕺 Manter Ativo';
+
+  @override
+  String get profileKeepAliveDescription =>
+      'Manter ativo. Se uma sessão terminar, crie uma nova sessão e religue à porta local. As sessões podem terminar devido a não serem usadas após um tempo limite ou por problemas de rede.';
+
+  @override
   String get profileName => 'Nome do Perfil';
 
   @override
   String get profileNameDescription =>
       'Este será o nome de suas configurações.';
+
+  @override
+  String get profilePort443 => 'Usar Porta 443';
+
+  @override
+  String get profilePort443Description =>
+      'Força o relay a usar a porta 443 em vez de uma porta efêmera. Habilita automaticamente o modo de autenticação ESCR do relay para segurança.';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -1598,7 +1662,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get remoteHost => 'Host Remoto';
 
   @override
+  String get remoteHostDescription =>
+      'O nome do host ou endereço IP do serviço ao qual você está se conectando na máquina remota';
+
+  @override
   String get remotePort => 'Porta Remota';
+
+  @override
+  String get remotePortDescription =>
+      'A porta que será usada na máquina remota';
 
   @override
   String get requestExpired =>

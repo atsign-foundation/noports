@@ -149,6 +149,12 @@ abstract class AppLocalizations {
   /// **'Advanced'**
   String get advanced;
 
+  /// No description provided for @advancedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Settings'**
+  String get advancedSettings;
+
   /// No description provided for @alertDialogTitle.
   ///
   /// In en, this message translates to:
@@ -857,11 +863,29 @@ abstract class AppLocalizations {
   /// **'Loading'**
   String get loading;
 
+  /// No description provided for @localHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Host'**
+  String get localHost;
+
+  /// No description provided for @localHostDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The hostname or IP address to bind to on your local machine'**
+  String get localHostDescription;
+
   /// No description provided for @localPort.
   ///
   /// In en, this message translates to:
   /// **'Local Port'**
   String get localPort;
+
+  /// No description provided for @localPortDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The port you\'ll use on your local machine'**
+  String get localPortDescription;
 
   /// No description provided for @logs.
   ///
@@ -1193,6 +1217,18 @@ abstract class AppLocalizations {
   /// **'How would you like to import a profile?'**
   String get profileImportSelectedMessage;
 
+  /// No description provided for @profileKeepAlive.
+  ///
+  /// In en, this message translates to:
+  /// **'🕺 Keep Alive'**
+  String get profileKeepAlive;
+
+  /// No description provided for @profileKeepAliveDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay alive. If a session ends, create a new session and re-bind to the local port. Sessions can end due to being unused after a timeout or network issues.'**
+  String get profileKeepAliveDescription;
+
   /// No description provided for @profileName.
   ///
   /// In en, this message translates to:
@@ -1204,6 +1240,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will be the name of your configurations.'**
   String get profileNameDescription;
+
+  /// No description provided for @profilePort443.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Port 443'**
+  String get profilePort443;
+
+  /// No description provided for @profilePort443Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Forces the relay to use port 443 instead of an ephemeral port. Automatically enables ESCR relay authentication mode for security.'**
+  String get profilePort443Description;
 
   /// No description provided for @profileRunningActionDeniedMessage.
   ///
@@ -1325,11 +1373,23 @@ abstract class AppLocalizations {
   /// **'Remote Host'**
   String get remoteHost;
 
+  /// No description provided for @remoteHostDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The hostname or IP address of the service you are connecting to on the remote machine'**
+  String get remoteHostDescription;
+
   /// No description provided for @remotePort.
   ///
   /// In en, this message translates to:
   /// **'Remote Port'**
   String get remotePort;
+
+  /// No description provided for @remotePortDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The port that will be used on the remote machine'**
+  String get remotePortDescription;
 
   /// No description provided for @requestExpired.
   ///

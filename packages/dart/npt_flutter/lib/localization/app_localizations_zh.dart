@@ -27,6 +27,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advanced => '高级';
 
   @override
+  String get advancedSettings => '高级设置';
+
+  @override
   String get alertDialogTitle => '你确定吗？';
 
   @override
@@ -396,7 +399,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loading => '加载中';
 
   @override
+  String get localHost => '本地主机';
+
+  @override
+  String get localHostDescription => '要绑定到本地机器的hostname或IP地址';
+
+  @override
   String get localPort => '本地端口';
+
+  @override
+  String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
   String get logs => '日志';
@@ -567,10 +579,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileKeepAlive => '🕺 保持活动';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持活动。如果会话结束，则创建一个新的会话并重新绑定到本地端口。会话可能会因超时或网络问题而未被使用而结束。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
   String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
+  String get profilePort443 => '使用端口 443';
+
+  @override
+  String get profilePort443Description =>
+      '强制中继使用端口 443 而不是临时端口。 自动启用 ESCR 中继身份验证模式以提高安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -633,7 +659,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remoteHost => '远程主机';
 
   @override
+  String get remoteHostDescription => '您在远程机器上连接到的服务的hostname或IP地址';
+
+  @override
   String get remotePort => '远程端口';
+
+  @override
+  String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -897,6 +929,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get advanced => '高级';
 
   @override
+  String get advancedSettings => '高级设置';
+
+  @override
   String get alertDialogTitle => '你确定吗？';
 
   @override
@@ -1266,7 +1301,16 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get loading => '加载中';
 
   @override
+  String get localHost => '本地主机';
+
+  @override
+  String get localHostDescription => '要绑定到本地机器的hostname或IP地址';
+
+  @override
   String get localPort => '本地端口';
+
+  @override
+  String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
   String get logs => '日志';
@@ -1437,10 +1481,24 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileKeepAlive => '🕺 保持活动';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持活动。如果会话结束，则创建一个新的会话并重新绑定到本地端口。会话可能会因超时或网络问题而未被使用而结束。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
   String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
+  String get profilePort443 => '使用端口 443';
+
+  @override
+  String get profilePort443Description =>
+      '强制中继使用端口 443 而不是临时端口。 自动启用 ESCR 中继身份验证模式以提高安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -1503,7 +1561,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get remoteHost => '远程主机';
 
   @override
+  String get remoteHostDescription => '您在远程机器上连接到的服务的hostname或IP地址';
+
+  @override
   String get remotePort => '远程端口';
+
+  @override
+  String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -1765,6 +1829,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get advanced => '進階';
+
+  @override
+  String get advancedSettings => '進階設定';
 
   @override
   String get alertDialogTitle => '您確定嗎？';
@@ -2136,7 +2203,16 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get loading => '載入中';
 
   @override
+  String get localHost => '本機主機';
+
+  @override
+  String get localHostDescription => '要繫結至本機機器的 host name 或 IP 位址';
+
+  @override
   String get localPort => '本地連接埠';
+
+  @override
+  String get localPortDescription => '您將在本機機器上使用的連接埠';
 
   @override
   String get logs => '日誌';
@@ -2306,10 +2382,24 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何匯入設定檔？';
 
   @override
+  String get profileKeepAlive => '🕺 保持運作';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持運作。如果工作階段結束，請建立新的工作階段並重新繫結至本機連接埠。工作階段可能會因為逾時或網路問題而未使用而結束。';
+
+  @override
   String get profileName => '設定檔名稱';
 
   @override
   String get profileNameDescription => '這將是您的設定的名稱。';
+
+  @override
+  String get profilePort443 => '使用連接埠 443';
+
+  @override
+  String get profilePort443Description =>
+      '強制中繼使用連接埠 443，而非臨時連接埠。自動啟用 ESCR 中繼驗證模式以確保安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '設定檔執行時無法執行此操作。';
@@ -2372,7 +2462,13 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get remoteHost => '遠端主機';
 
   @override
+  String get remoteHostDescription => '您連線至遠端機器上服務的主機名稱或 IP 位址';
+
+  @override
   String get remotePort => '遠端連接埠';
+
+  @override
+  String get remotePortDescription => '將在遠端機器上使用的連接埠';
 
   @override
   String get requestExpired => '原始請求已過期。請再次提交';

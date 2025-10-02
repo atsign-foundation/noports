@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advanced => 'Advanced';
 
   @override
+  String get advancedSettings => 'Advanced Settings';
+
+  @override
   String get alertDialogTitle => 'Are you sure?';
 
   @override
@@ -414,7 +417,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading';
 
   @override
+  String get localHost => 'Local Host';
+
+  @override
+  String get localHostDescription =>
+      'The hostname or IP address to bind to on your local machine';
+
+  @override
   String get localPort => 'Local Port';
+
+  @override
+  String get localPortDescription =>
+      'The port you\'ll use on your local machine';
 
   @override
   String get logs => 'Logs';
@@ -593,11 +607,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'How would you like to import a profile?';
 
   @override
+  String get profileKeepAlive => '🕺 Keep Alive';
+
+  @override
+  String get profileKeepAliveDescription =>
+      'Stay alive. If a session ends, create a new session and re-bind to the local port. Sessions can end due to being unused after a timeout or network issues.';
+
+  @override
   String get profileName => 'Profile Name';
 
   @override
   String get profileNameDescription =>
       'This will be the name of your configurations.';
+
+  @override
+  String get profilePort443 => 'Use Port 443';
+
+  @override
+  String get profilePort443Description =>
+      'Forces the relay to use port 443 instead of an ephemeral port. Automatically enables ESCR relay authentication mode for security.';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -663,7 +691,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remoteHost => 'Remote Host';
 
   @override
+  String get remoteHostDescription =>
+      'The hostname or IP address of the service you are connecting to on the remote machine';
+
+  @override
   String get remotePort => 'Remote Port';
+
+  @override
+  String get remotePortDescription =>
+      'The port that will be used on the remote machine';
 
   @override
   String get requestExpired =>

@@ -4,10 +4,9 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
-import 'package:npt_flutter/util/port.dart';
 
-class ProfileRemotePortSelector extends StatelessWidget {
-  const ProfileRemotePortSelector({super.key});
+class ProfileLocalHostTextField extends StatelessWidget {
+  const ProfileLocalHostTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,34 +14,34 @@ class ProfileRemotePortSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(strings.remotePort),
+        Text(strings.localHost),
         gapH4,
         Text(
-          strings.remotePortDescription,
+          strings.localHostDescription,
           style: Theme.of(context).textTheme.bodySmall,
         ),
         gapH14,
-        BlocSelector<ProfileBloc, ProfileState, int?>(
+        BlocSelector<ProfileBloc, ProfileState, String?>(
           selector: (ProfileState state) {
-            if (state is ProfileLoadedState) return state.profile.remotePort;
+            if (state is ProfileLoadedState) return state.profile.remoteHost;
             return null;
           },
-          builder: (BuildContext context, int? state) {
+          builder: (BuildContext context, String? state) {
             if (state == null) return gap0;
             return SizedBox(
               height: Sizes.p100,
               width: Sizes.p300,
               child: TextFormField(
-                initialValue: state.toString(),
+                initialValue: state,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: FormValidator.validateRemotePortField,
-                decoration: const InputDecoration(errorMaxLines: 2),
+                validator: FormValidator.validateRemoteHostField,
+                decoration: const InputDecoration(errorMaxLines: 3),
                 onChanged: (value) {
                   var bloc = context.read<ProfileBloc>();
                   bloc.add(
                     ProfileEditEvent(
                       profile: (bloc.state as ProfileLoadedState).profile
-                          .copyWith(remotePort: Port.fromString(value)),
+                          .copyWith(remoteHost: value),
                     ),
                   );
                 },
