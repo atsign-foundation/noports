@@ -405,7 +405,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..namespaceAware = true;
+        ..namespaceAware = false;
 
       var pingKey = AtKey()
         ..key = "ping.$devicename"
