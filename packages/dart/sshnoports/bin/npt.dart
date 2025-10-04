@@ -113,6 +113,20 @@ void main(List<String> args) async {
             ' Alias: --rh',
       );
       parser.addOption(
+        'local-host',
+        aliases: ['lh'],
+        defaultsTo: 'localhost',
+        help:
+            'Local IP address to bind to, or comma-separated list with fallbacks.'
+            ' When specified, npt will act as a gateway by binding to the'
+            ' first available IP instead of the default localhost.'
+            ' If multiple IPs are provided, only the first valid one is used.'
+            ' Example: --local-host 192.168.1.100,10.0.0.50'
+            ' To bind to all interfaces, use 0 or 0.0.0.0'
+            ' Example: --local-host 0 or --local-host 0.0.0.0'
+            ' Alias: --lh',
+      );
+      parser.addOption(
         'key-file',
         abbr: 'k',
         mandatory: false,
@@ -166,6 +180,22 @@ void main(List<String> args) async {
       );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
+
+      parser.addFlag(
+        'ipv4',
+        abbr: '4',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv4 addresses only',
+      );
+
+      parser.addFlag(
+        'ipv6',
+        abbr: '6',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv6 addresses only',
+      );
 
       parser.addFlag(
         'exit-when-connected',
@@ -364,6 +394,76 @@ void main(List<String> args) async {
         timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
 
+      // Determine address type from IPv4/IPv6 flags
+      InternetAddressType? addressType;
+      if (parsedArgs['ipv4'] && parsedArgs['ipv6']) {
+        stderr.writeln('Error: Cannot specify both --ipv4 and --ipv6 flags');
+        exitProgram(exitCode: 1);
+      } else if (parsedArgs['ipv4']) {
+        addressType = InternetAddressType.IPv4;
+      } else if (parsedArgs['ipv6']) {
+        addressType = InternetAddressType.IPv6;
+      }
+
+      // Parse and validate local host with address type filtering
+      final hostsString = parsedArgs['local-host'] as String;
+      final parsedHosts = HostValidator.parseHostsList(hostsString);
+
+      // Find the first host that can actually bind to the port
+      final localHost = await HostValidator.findBindableHost(
+          hostsString, localPort,
+          addressType: addressType);
+
+      String? resolvedLocalHost;
+      String?
+          originalLocalHost; // Keep track of the original hostname for display
+      if (localHost != null) {
+        originalLocalHost = localHost; // Store the original hostname
+        final resolvedAddress = await HostValidator.resolveHost(localHost,
+            addressType: addressType);
+        if (resolvedAddress != null) {
+          resolvedLocalHost = resolvedAddress.address;
+          if (!quiet) {
+            if (parsedHosts.length == 1) {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address})');
+            } else {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address}) (first bindable from: ${parsedHosts.join(', ')})');
+            }
+          }
+        }
+      }
+
+      // Validate that resolved IP matches the requested address type
+      if (resolvedLocalHost != null && addressType != null) {
+        final resolvedAddress = InternetAddress.tryParse(resolvedLocalHost);
+        if (resolvedAddress != null) {
+          if (addressType == InternetAddressType.IPv4 &&
+              resolvedAddress.type != InternetAddressType.IPv4) {
+            stderr.writeln(
+                'Error: --ipv4 flag specified but resolved to IPv6 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          } else if (addressType == InternetAddressType.IPv6 &&
+              resolvedAddress.type != InternetAddressType.IPv6) {
+            stderr.writeln(
+                'Error: --ipv6 flag specified but resolved to IPv4 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          }
+        }
+      }
+
+      if (localHost == null || resolvedLocalHost == null) {
+        final addressTypeStr = addressType == InternetAddressType.IPv4
+            ? ' (IPv4 only)'
+            : addressType == InternetAddressType.IPv6
+                ? ' (IPv6 only)'
+                : '';
+        stderr.writeln(
+            'Error: No bindable hosts found for port $localPort in: ${parsedHosts.join(', ')}$addressTypeStr');
+        exitProgram(exitCode: 1);
+      }
+
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -382,6 +482,7 @@ void main(List<String> args) async {
             RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
         timeout: parseDuration(timeoutArg),
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
+        localHost: resolvedLocalHost,
         only443: parsedArgs['443'],
       );
 
@@ -397,7 +498,13 @@ void main(List<String> args) async {
           final actualLocalPort = await npt.run();
           params.localPort = actualLocalPort;
 
-          logProgress('npt is listening on localhost:$actualLocalPort');
+          // Show detailed binding address with original hostname and resolved IP
+          String resolvedIP = params.localHost!; // This is now the resolved IP
+          String hostDisplay = originalLocalHost ??
+              resolvedIP; // Use original hostname if available
+
+          logProgress(
+              'npt is listening on $hostDisplay:$actualLocalPort ($resolvedIP:$actualLocalPort)');
 
           if (!inline) {
             stdout.writeln('$actualLocalPort');
