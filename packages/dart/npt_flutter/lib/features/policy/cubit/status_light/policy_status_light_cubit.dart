@@ -1,54 +1,45 @@
 import 'dart:convert';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:npt_flutter/features/logging/models/logging_bloc.dart';
 import 'package:npt_flutter/features/policy/cubit/status_light/policy_status_light_state.dart';
 
-final class PolicyStatusLightCubit extends LoggingCubit<PolicyStatusLightState> {
+final class PolicyStatusLightCubit
+    extends LoggingCubit<PolicyStatusLightState> {
   PolicyStatusLightCubit() : super(const PolicyStatusLightInitial());
 
   final AtSignLogger logger = AtSignLogger('PolicyStatusLightCubit');
   static const Duration _freshThreshold = Duration(seconds: 10);
 
+  /// Just reads the heartbeat key then emits state accordingly
   Future<void> loadStatusLight() async {
     try {
       final AtClient atClient = AtClientManager.getInstance().atClient;
 
       final AtKey atKey = AtKey()
         ..key = 'heartbeat'
-        ..sharedBy = atClient.getCurrentAtSign();
-
-      final GetRequestOptions requestOptions = GetRequestOptions()
-        ..useRemoteAtServer = true;
+        ..sharedBy = atClient.getCurrentAtSign()
+        ..namespace = 'sshnp';
 
       final AtValue atValue = await atClient.get(
         atKey,
-        getRequestOptions: requestOptions,
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
       );
 
       final dynamic rawValue = atValue.value;
 
       if (rawValue == null || (rawValue is String && rawValue.trim().isEmpty)) {
         final String msg = 'Heartbeat value for ${atKey.toString()} is empty';
-        emit(
-          PolicyStatusLightLoaded(
-            lightState: LightState.red,
-            message: msg,
-          ),
-        );
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
       }
 
       if (rawValue is! String) {
-        final String msg = 'Unexpected heartbeat value type: ${rawValue.runtimeType}';
-        emit(
-          PolicyStatusLightLoaded(
-            lightState: LightState.red,
-            message: msg,
-          ),
-        );
+        final String msg =
+            'Unexpected heartbeat value type: ${rawValue.runtimeType}';
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
       }
@@ -62,12 +53,7 @@ final class PolicyStatusLightCubit extends LoggingCubit<PolicyStatusLightState> 
         payload = decoded;
       } catch (e) {
         final String msg = 'Failed to parse heartbeat payload: $e';
-        emit(
-          PolicyStatusLightLoaded(
-            lightState: LightState.red,
-            message: msg,
-          ),
-        );
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
       }
@@ -75,25 +61,16 @@ final class PolicyStatusLightCubit extends LoggingCubit<PolicyStatusLightState> 
       final Object? timestampObject = payload['timestamp'];
       if (timestampObject is! String || timestampObject.trim().isEmpty) {
         final String msg = 'Heartbeat payload missing timestamp: $payload';
-        emit(
-          PolicyStatusLightLoaded(
-            lightState: LightState.red,
-            message: msg,
-          ),
-        );
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
       }
 
       final DateTime? timestamp = DateTime.tryParse(timestampObject);
       if (timestamp == null) {
-        final String msg = 'Unable to parse heartbeat timestamp: $timestampObject';
-        emit(
-          PolicyStatusLightLoaded(
-            lightState: LightState.red,
-            message: msg,
-          ),
-        );
+        final String msg =
+            'Unable to parse heartbeat timestamp: $timestampObject';
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
       }
@@ -110,32 +87,68 @@ final class PolicyStatusLightCubit extends LoggingCubit<PolicyStatusLightState> 
       final LightState lightState = isFresh ? LightState.green : LightState.red;
       final String message = _buildMessage(delta, heartbeatUtc);
 
-      emit(
-        PolicyStatusLightLoaded(
-          lightState: lightState,
-          message: message,
-        ),
-      );
+      emit(PolicyStatusLightLoaded(lightState: lightState, message: message));
     } catch (error) {
       final String msg = 'Failed to load policy heartbeat: $error';
-      emit(
-        PolicyStatusLightLoaded(
-          lightState: LightState.red,
-          message: msg,
-        ),
-      );
+      emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
       logger.severe(msg);
     }
   }
 
+  Future<void> forceHeartbeat() async {
+    emit(const PolicyStatusLightLoading());
+
+    final AtClient atClient = AtClientManager.getInstance().atClient;
+
+    if (atClient.getCurrentAtSign() == null) {
+      emit(
+        const PolicyStatusLightLoaded(
+          lightState: LightState.red,
+          message:
+              'unknown error occurred... atClient.getCurrentAtSign() is null',
+        ),
+      );
+      return;
+    }
+
+    final rpc = AtRpcClient(
+      serverAtsign: atClient.getCurrentAtSign()!,
+      atClient: atClient,
+      baseNameSpace: 'sshnp.noports',
+      domainNameSpace: 'npp_atserver_heartbeat',
+    );
+
+    final Future<Map<String, dynamic>> rpcFuture = rpc.call({});
+
+    const int timeoutSeconds = 10;
+    rpcFuture.timeout(const Duration(seconds: timeoutSeconds), onTimeout: () {
+      emit(const PolicyStatusLightLoaded(lightState: LightState.clear, message: 'Heartbeat RPC call timed out after $timeoutSeconds seconds...'));
+      return {'success': false};
+    });
+
+    final Map<String, dynamic> response = await rpcFuture;
+
+    if (!response['success']) {
+      emit(
+        PolicyStatusLightLoaded(
+          lightState: LightState.red,
+          message:
+              'Failed to force heartbeat onto Policy Server: ${response.toString()}',
+        ),
+      );
+      return;
+    }
+
+    logger.info('Successfully sent RPC call to force heartbeat');
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    emit(const PolicyStatusLightLoading());
+    await loadStatusLight();
+  }
+
   String _buildMessage(Duration delta, DateTime heartbeatUtc) {
-    if (delta.isNegative) {
-      return 'Heartbeat expected in ${_formatDuration(delta.abs())}';
-    }
-    if (delta < const Duration(seconds: 5)) {
-      return 'Last heartbeat just now';
-    }
-    return 'Last heartbeat ${_formatDuration(delta)} ago (${heartbeatUtc.toLocal().toIso8601String()})';
+    return 'Last heartbeat ${_formatDuration(delta)} ago';
   }
 
   String _formatDuration(Duration duration) {

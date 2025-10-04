@@ -15,12 +15,19 @@ class PolicyStatusLight extends StatelessWidget {
       builder: (context, state) {
         final _StatusIndicatorData data = _resolveStateData(state);
 
-        return Tooltip(
-          message: data.tooltip,
-          waitDuration: const Duration(milliseconds: 400),
-          child: Semantics(
-            label: data.tooltip,
-            child: StatusLight(color: data.color),
+        return MouseRegion(
+          onEnter: (_) {
+            if (state is! PolicyStatusLightLoading) {
+              context.read<PolicyStatusLightCubit>().loadStatusLight();
+            }
+          },
+          child: Tooltip(
+            message: data.tooltip,
+            waitDuration: const Duration(milliseconds: 400),
+            child: Semantics(
+              label: data.tooltip,
+              child: StatusLight(color: data.color),
+            ),
           ),
         );
       },
@@ -39,7 +46,7 @@ class PolicyStatusLight extends StatelessWidget {
 
     return const _StatusIndicatorData(
       color: AppColor.greyColor,
-      tooltip: 'Loading heartbeat status…',
+      tooltip: '',
     );
   }
 
@@ -47,6 +54,7 @@ class PolicyStatusLight extends StatelessWidget {
     return switch (lightState) {
       LightState.green => 'Heartbeat healthy',
       LightState.red => 'Heartbeat unavailable',
+      LightState.clear => 'Heartbeat unknown'
     };
   }
 }

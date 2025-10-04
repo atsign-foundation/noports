@@ -1,8 +1,9 @@
 import 'package:npt_flutter/features/logging/models/loggable.dart';
 
 enum LightState {
-  green, // on
-  red, // off
+  green, // connected
+  red, // disconnected
+  clear, // unsure
 }
 
 sealed class PolicyStatusLightState extends Loggable {
@@ -23,6 +24,18 @@ final class PolicyStatusLightInitial extends PolicyStatusLightState {
 
   @override
   String toString() => 'PolicyStatusLightInitial()';
+}
+
+final class PolicyStatusLightLoading extends PolicyStatusLightState {  
+  final LightState lightState = LightState.clear;
+
+  const PolicyStatusLightLoading();
+
+  @override
+  List<Object?> get props => [lightState];
+
+  @override
+  String toString() => 'PolicyStatusLightLoading()';
 }
 
 final class PolicyStatusLightLoaded extends PolicyStatusLightState {
