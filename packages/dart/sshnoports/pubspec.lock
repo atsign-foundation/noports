@@ -76,11 +76,12 @@ packages:
   at_cli_commons:
     dependency: "direct main"
     description:
-      name: at_cli_commons
-      sha256: "73f5b651d3b7074f3516a61b8ff27374eb22364dbe712432a811678ae844bc5f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
+      path: "packages/at_cli_commons"
+      ref: "at_cli_commons-3.0.1"
+      resolved-ref: "63b8758aa9e01dc6a124ca258108290b65505dd0"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.0.1"
   at_client:
     dependency: "direct main"
     description:
