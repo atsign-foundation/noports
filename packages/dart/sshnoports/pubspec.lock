@@ -77,18 +77,18 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: "8a651a9baf9c83e689bd80a5e9b4e1b2bb3e2f147475fdefa4cf48a9eb78fd92"
+      sha256: "73f5b651d3b7074f3516a61b8ff27374eb22364dbe712432a811678ae844bc5f"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "3.0.0"
   at_client:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: ab0caa6f54a3d0a325dab30dfab8b12e358d1f7ee1ca952137d3913ef6cf8c16
+      sha256: "17f92dc153308b7a0809aa52d311d2f85965bfdd94678f4718a6502cbf34e4e3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.7.0"
+    version: "3.8.0"
   at_commons:
     dependency: "direct main"
     description:
@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "264be4a871a4d6cc417ae74886eebac36defc72297f4a9dd4dda37b720bdfbc0"
+      sha256: e6ab94bbfcbfeaf8211773a32b47be07726c33c364b9322fe21d97b6500a8311
       url: "https://pub.dev"
     source: hosted
-    version: "1.12.0"
+    version: "1.13.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
