@@ -1,3 +1,7 @@
+# 6.8.1
+
+- build(deps): at_client -> 3.8.0, at_cli_commons -> 3.0.0
+
 # 6.8.0
 
 - feat: Enable npt clients to choose which local IP address to bind to, 
