@@ -19,6 +19,11 @@ dependencies:
     path: ../../../packages/dart/noports_core
 
 dependency_overrides:
+  at_cli_commons:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      ref: at_cli_commons-3.0.1
+      path: packages/at_cli_commons
   alfred:
     git:
       ref: cc-directory-4-windows
