@@ -1,0 +1,64 @@
+name: Check RISC-V Image in Docker Manifest
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - trunk
+    paths:
+      - tests/end2end_tests/image/Dockerfile
+      - tools/multibuild/Dockerfile.package
+    
+jobs:
+  check-riscv64-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - dockerfile_path: tests/end2end_tests/image/Dockerfile
+            name: Debian slim base image
+          - dockerfile_path: tools/multibuild/Dockerfile.package
+            name: Dart base image
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Extract Docker Image and Verify riscv64 Support
+        id: check_arch
+        run: |
+          DOCKERFILE_PATH='${{ matrix.dockerfile_path }}'
+          IMAGE_NAME='${{ matrix.name }}'
+          
+          # 1. Extract the image name and tag from the first FROM line,
+          # and remove any build stage alias (e.g., 'AS build-stage').
+          IMAGE_REF=$(grep -E '^FROM' "$DOCKERFILE_PATH" | awk '{print $2}' | head -n 1 | awk -F ' AS ' '{print $1}')
+          
+          if [ -z "$IMAGE_REF" ]; then
+            echo "::error::Could not extract a valid image reference from $DOCKERFILE_PATH 'FROM' instruction."
+            exit 1
+          fi
+          
+          echo "Inspecting manifest for: $IMAGE_REF (from $IMAGE_NAME)"
+
+          # 2. Use 'docker buildx imagetools inspect' and pipe the JSON output to jq.
+          # We use the same 'jq' filter to check for the 'riscv64' platform.
+          # The '2>/dev/null' suppresses warnings from the inspect command.
+          RISCV_COUNT=$(docker buildx imagetools inspect "${IMAGE_REF}" --format "{{json .Manifest}}" 2>/dev/null | \
+            jq -r '[.manifests[]?.platform.architecture | select(. == "riscv64")] | length')
+
+          if [ "$RISCV_COUNT" -gt 0 ]; then
+            echo "✅ SUCCESS: Image manifest for ${IMAGE_REF} (from $IMAGE_NAME) explicitly lists riscv64 architecture."
+          else
+            # Also fetch all supported architectures for better feedback
+            ALL_ARCHS=$(docker buildx imagetools inspect "${IMAGE_REF}" 2>/dev/null | \
+              jq -r '[.manifests[]?.platform.architecture] | unique | .[]')
+              
+            echo "::error::FAILURE: Image ${IMAGE_REF} (from $IMAGE_NAME) does not support riscv64."
+            echo "::error::Supported Architectures found in manifest for ${IMAGE_REF}:"
+            # Prefix '::error::' ensures this output is visible as an error message
+            echo "$ALL_ARCHS" | sed 's/^/::error::  - /' 
+            exit 1
+          fi
