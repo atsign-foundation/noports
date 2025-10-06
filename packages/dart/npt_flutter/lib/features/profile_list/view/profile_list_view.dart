@@ -33,18 +33,6 @@ class _ProfileListViewState extends State<ProfileListView> {
     super.initState();
   }
 
-  // @override
-  // void didChangeDependencies() {
-  //   WidgetsBinding.instance.addPostFrameCallback((_) async {
-  //     context.read<SyncCubit>().state == false
-  //         ? CustomSnackBar.notification(
-  //             content: AppLocalizations.of(context)!.syncInProgress,
-  //           )
-  //         : null;
-  //   });
-  //   super.didChangeDependencies();
-  // }
-
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;

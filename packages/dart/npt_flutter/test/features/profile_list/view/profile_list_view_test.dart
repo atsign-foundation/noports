@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -66,6 +68,7 @@ void main() {
       darkMode: false,
       language: Language.english,
     );
+    late StreamController<bool> syncCubitStreamController;
 
     setUpAll(() {
       // Disable overflow errors in tests
@@ -89,6 +92,8 @@ void main() {
       mockProfilesSelectedCubit = MockProfilesSelectedCubit();
       mockFavoriteBloc = MockFavoriteBloc();
 
+      syncCubitStreamController = StreamController<bool>.broadcast();
+
       // Provide dummy values for non-nullable states
       provideDummy<ProfileListState>(const ProfileListInitial());
       provideDummy<ProfileCacheState>(const ProfileCacheState({}));
@@ -111,7 +116,9 @@ void main() {
       ).thenAnswer((_) => Stream.value(const ProfileListInitial()));
 
       when(mockSyncCubit.state).thenReturn(true);
-      when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(true));
+      when(
+        mockSyncCubit.stream,
+      ).thenAnswer((_) => syncCubitStreamController.stream);
 
       when(mockProfileBloc.uuid).thenReturn(testUuid1);
       when(
@@ -324,53 +331,58 @@ void main() {
         ).called(greaterThanOrEqualTo(1));
       });
 
-      testWidgets('should display sync status when sync is in progress', (
-        WidgetTester tester,
-      ) async {
-        // Set test window size to match production
-        tester.view.physicalSize = const Size(1053, 691);
-        tester.view.devicePixelRatio = 1.0;
+      testWidgets(
+        'should display sync status when sync is in progress and when it completes',
+        (WidgetTester tester) async {
+          // Set test window size to match production
+          tester.view.physicalSize = const Size(1053, 691);
+          tester.view.devicePixelRatio = 1.0;
 
-        when(mockSyncCubit.state).thenReturn(false);
-        when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(false));
+          when(mockSyncCubit.state).thenReturn(true);
 
-        await tester.pumpWidget(
-          createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)),
-        );
-        await tester.pump();
+          await tester.pumpWidget(
+            createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)),
+          );
 
-        // Should show sync in progress message
-        expect(
-          find.text(
-            AppLocalizations.of(App.navState.currentContext!)!.syncInProgress,
-          ),
-          findsOneWidget,
-        );
-      });
+          // Initially, no snackbar should be visible
+          expect(find.byType(SnackBar), findsNothing);
 
-      testWidgets('should not display sync status when sync is complete', (
-        WidgetTester tester,
-      ) async {
-        // Set test window size to match production
-        tester.view.physicalSize = const Size(1053, 691);
-        tester.view.devicePixelRatio = 1.0;
+          // Trigger the listener by adding a new state to the stream
+          syncCubitStreamController.add(false);
 
-        when(mockSyncCubit.state).thenReturn(true);
-        when(mockSyncCubit.stream).thenAnswer((_) => Stream.value(true));
+          // 4. Pump the widget tree to process the state change and build the snackbar
+          await tester.pump();
 
-        await tester.pumpWidget(
-          createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)),
-        );
-        await tester.pump();
+          expect(find.byType(SnackBar), findsOneWidget);
+          expect(
+            find.textContaining(
+              AppLocalizations.of(App.navState.currentContext!)!.syncInProgress,
+            ),
+            findsOneWidget,
+          );
 
-        // Should not show sync in progress message
-        expect(
-          find.text(
-            AppLocalizations.of(App.navState.currentContext!)!.syncInProgress,
-          ),
-          findsNothing,
-        );
-      });
+          // Manually clear any remaining snackbars
+          ScaffoldMessenger.of(
+            tester.element(find.byType(Scaffold)),
+          ).clearSnackBars();
+          await tester.pumpAndSettle();
+
+          // Verify the first snackbar has disappeared
+          expect(find.byType(SnackBar), findsNothing);
+
+          syncCubitStreamController.add(true);
+
+          await tester.pump(const Duration(milliseconds: 100));
+
+          expect(find.byType(SnackBar), findsOneWidget);
+          expect(
+            find.textContaining(
+              AppLocalizations.of(App.navState.currentContext!)!.syncCompleted,
+            ),
+            findsOneWidget,
+          );
+        },
+      );
 
       testWidgets('should provide correct BlocProvider keys for profiles', (
         WidgetTester tester,
