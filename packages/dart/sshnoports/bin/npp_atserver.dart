@@ -220,10 +220,13 @@ Future<bool> _updateHeartbeatKey(final AtClient atClient) async {
         ..namespace = DefaultArgs.namespace // sshnp
       ;
 
-  final String data = jsonEncode({'timestamp': timestamp.toIso8601String()});
+  final objData = {
+    'timestamp': timestamp.toIso8601String(),
+    'interval': 60, // seconds
+  };
 
   try {
-    final bool success = await atClient.put(atKey, data,
+    final bool success = await atClient.put(atKey, jsonEncode(objData),
         putRequestOptions: PutRequestOptions()
           ..shouldEncrypt = true
           ..useRemoteAtServer = true);

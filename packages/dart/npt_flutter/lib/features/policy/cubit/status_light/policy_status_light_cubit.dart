@@ -10,7 +10,6 @@ final class PolicyStatusLightCubit
   PolicyStatusLightCubit() : super(const PolicyStatusLightInitial());
 
   final AtSignLogger logger = AtSignLogger('PolicyStatusLightCubit');
-  static const Duration _freshThreshold = Duration(seconds: 60); // if the delta is more than this, light is red
 
   /// Just reads the heartbeat key then emits state accordingly
   Future<void> loadStatusLight() async {
@@ -20,7 +19,7 @@ final class PolicyStatusLightCubit
       final AtKey atKey = AtKey()
         ..key = 'heartbeat'
         ..sharedBy = atClient.getCurrentAtSign()
-        ..namespace = 'sshnp';
+        ..namespace = atClient.getPreferences()!.namespace!;
 
       final AtValue atValue = await atClient.get(
         atKey,
@@ -75,13 +74,24 @@ final class PolicyStatusLightCubit
         return;
       }
 
+      final Object? intervalObject = payload['interval'];
+      if (intervalObject is! int || intervalObject <= 0) {
+        final String msg = 'Heartbeat payload missing or invalid interval: $payload';
+        emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
+        logger.severe(msg);
+        return;
+      }
+
+      final Duration interval = Duration(seconds: intervalObject);
+
       final DateTime nowUtc = DateTime.now().toUtc();
       final DateTime heartbeatUtc = timestamp.toUtc();
       final Duration delta = nowUtc.difference(heartbeatUtc);
 
       bool isFresh = false;
       if (!delta.isNegative) {
-        isFresh = delta <= _freshThreshold;
+        // e.g. if interval is 60 seconds, then heartbeat is fresh if last heartbeat was within the last 60 seconds
+        isFresh = delta <= interval;
       }
 
       final LightState lightState = isFresh ? LightState.green : LightState.red;
