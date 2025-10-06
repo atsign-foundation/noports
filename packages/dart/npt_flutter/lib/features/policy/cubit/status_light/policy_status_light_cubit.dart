@@ -10,7 +10,7 @@ final class PolicyStatusLightCubit
   PolicyStatusLightCubit() : super(const PolicyStatusLightInitial());
 
   final AtSignLogger logger = AtSignLogger('PolicyStatusLightCubit');
-  static const Duration _freshThreshold = Duration(seconds: 30); // if the delta is more than this, light is red
+  static const Duration _freshThreshold = Duration(seconds: 60); // if the delta is more than this, light is red
 
   /// Just reads the heartbeat key then emits state accordingly
   Future<void> loadStatusLight() async {
