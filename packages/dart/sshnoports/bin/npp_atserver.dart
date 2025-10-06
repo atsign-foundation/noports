@@ -121,10 +121,12 @@ void main(List<String> args) async {
   });
 
   // start updating the heartbeat atkey periodically
-  _startHeartbeat(atClient);
+  Timer.periodic(const Duration(seconds: 60), (_) async {
+    await _updateHeartbeatKey(atClient); // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
+  });
 
   // start listening for force heartbeats from the same atSign
-  logger.shout('Starting AtRpc Server to listen for heartbeats...');
+  logger.shout('Starting AtRpc Server to listen for forced heartbeats...');
   AtRpc(
     atClient: atClient,
     baseNameSpace: 'sshnp.noports',
@@ -233,12 +235,6 @@ Future<bool> _updateHeartbeatKey(final AtClient atClient) async {
     logger.severe('Failed to write heartbeat timestamp: $e');
     return false;
   }
-}
-
-void _startHeartbeat(final AtClient atClient) {
-  Timer.periodic(const Duration(seconds: 10), (_) async {
-    await _updateHeartbeatKey(atClient);
-  });
 }
 
 class _HeartbeatHelper implements AtRpcCallbacks {
