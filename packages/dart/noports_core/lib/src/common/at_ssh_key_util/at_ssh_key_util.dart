@@ -15,14 +15,18 @@ abstract interface class AtSshKeyUtil {
     SupportedSshAlgorithm algorithm,
   });
 
-  FutureOr<AtSshKeyPair> getKeyPair({required String identifier});
+  FutureOr<AtSshKeyPair> getKeyPair({
+    required String identifier,
+  });
 
   FutureOr<dynamic> addKeyPair({
     required AtSshKeyPair keyPair,
     String? identifier,
   });
 
-  FutureOr<dynamic> deleteKeyPair({required String identifier});
+  FutureOr<dynamic> deleteKeyPair({
+    required String identifier,
+  });
 }
 
 class AtSshKeyPair {
@@ -34,12 +38,10 @@ class AtSshKeyPair {
     required String identifier,
     String? directory,
     String? passphrase,
-  }) : identifier = directory == null
-           ? identifier
-           : path.join(directory, identifier),
-       keyPair =
-           SSHKeyPair.fromPem(pemText, passphrase).firstOrNull ??
-           (throw ArgumentError.value(pemText, 'pemText', 'Invalid PEM text'));
+  })  : identifier =
+            directory == null ? identifier : path.join(directory, identifier),
+        keyPair = SSHKeyPair.fromPem(pemText, passphrase).firstOrNull ??
+            (throw ArgumentError.value(pemText, 'pemText', 'Invalid PEM text'));
 
   String get type => keyPair.type;
 
