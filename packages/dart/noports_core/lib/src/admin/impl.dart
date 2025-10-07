@@ -19,20 +19,20 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   Future<void> init() async {
     await super.init();
 
-    atClient.notificationService
-        .subscribe(regex: r'.*\.groups\.policy\.sshnp', shouldDecrypt: true)
-        .listen((AtNotification n) {
-          String groupId = n.key.split(':')[1].split('.').first;
-          logger.info(
-            'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
-          );
-          if (n.operation == 'delete') {
-            groups.remove(groupId);
-          } else {
-            UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
-            groups[groupId] = g;
-          }
-        });
+    subscribe(regex: r'.*\.groups\.policy\.sshnp', shouldDecrypt: true).listen((
+      AtNotification n,
+    ) {
+      String groupId = n.key.split(':')[1].split('.').first;
+      logger.info(
+        'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
+      );
+      if (n.operation == 'delete') {
+        groups.remove(groupId);
+      } else {
+        UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
+        groups[groupId] = g;
+      }
+    });
 
     subscribe(regex: r'.*\.logs\.policy\.sshnp', shouldDecrypt: true).listen((
       AtNotification n,
