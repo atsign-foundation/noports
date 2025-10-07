@@ -128,15 +128,14 @@ Future<void> verifyEnvelopeSignature(
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
-  AtSigningVerificationInput input =
-      AtSigningVerificationInput(
-          jsonEncode(payload),
-          base64Decode(signature),
-          pk,
-        )
-        ..signingMode = AtSigningMode.data
-        ..signingAlgoType = signingAlgo
-        ..hashingAlgoType = hashingAlgo;
+  AtSigningVerificationInput input = AtSigningVerificationInput(
+    jsonEncode(payload),
+    base64Decode(signature),
+    pk,
+  )
+    ..signingMode = AtSigningMode.data
+    ..signingAlgoType = signingAlgo
+    ..hashingAlgoType = hashingAlgo;
 
   AtSigningResult svr = atClient.atChops!.verify(input);
   logger.info('Signing Verification Result: $svr');
