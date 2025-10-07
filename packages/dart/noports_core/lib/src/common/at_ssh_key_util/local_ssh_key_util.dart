@@ -139,12 +139,12 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     await processRunner(
         'ssh-keygen',
         [
-      ..._sshKeygenArgMap[algorithm]!,
-      '-f',
-      identifier,
-      '-q',
-      '-N',
-      '',
+          ..._sshKeygenArgMap[algorithm]!,
+          '-f',
+          identifier,
+          '-q',
+          '-N',
+          '',
         ],
         workingDirectory: workingDirectory);
 
