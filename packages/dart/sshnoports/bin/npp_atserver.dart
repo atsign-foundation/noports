@@ -136,7 +136,8 @@ void main(List<String> args) async {
 
   // start updating the heartbeat atkey periodically
   Timer.periodic(const Duration(seconds: 60), (_) async {
-    await _updateHeartbeatKey(atClient); // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
+    // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
+    await _updateHeartbeatKey(atClient);
   });
 
   // start listening for force heartbeats from the same atSign
@@ -261,7 +262,6 @@ class _HeartbeatHelper implements AtRpcCallbacks {
 
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
-
     logger.shout('Received heartbeat. Updating heartbeat key...');
     // someone is trying to force a heartbeat on us
     if (fromAtSign != atClient.getCurrentAtSign()) {

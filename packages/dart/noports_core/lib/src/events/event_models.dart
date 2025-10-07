@@ -11,7 +11,7 @@ class AtEventLoggingConfig {
   /// The topic for the notifications - e.g. `abcdefg.events.logging.sshnp`
   final String topic;
 
-  String get topicListenRegex => '\\.${topic.split('.').join('\\.')}';
+  String get topicListenRegex => topic.split('.').join('\\.');
 
   /// Since events are logged using ephemeral notifications, they will
   /// generally have a short lifetime, as the expectation is that the receiver
