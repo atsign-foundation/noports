@@ -25,8 +25,14 @@ wait
 echo "$(date) : Compilation complete"
 
 echo "Compiling policy binaries"
-echo "Compiling npp_file.dart to npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
-echo "Compiling npp_atserver (BETA)"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
+echo "Compiling npp_file (DEMO)"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
+echo "Compiling npp_atserver (DEMO)"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
+
+wait
+echo "$(date) : Compilation complete"
+
+echo "Compiling experimental binaries"
+echo "Compiling experimental/event_listener.dart"; dart compile exe --verbosity error bin/experimental/event_listener.dart -o build/sshnp/event_listener &
 
 wait
 echo "$(date) : Compilation complete"

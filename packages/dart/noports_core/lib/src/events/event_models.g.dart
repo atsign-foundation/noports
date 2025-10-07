@@ -11,9 +11,7 @@ AtEventLoggingConfig _$AtEventLoggingConfigFromJson(
 ) => AtEventLoggingConfig(
   atSign: json['atSign'] as String,
   topic: json['topic'] as String,
-  ttln: json['ttln'] == null
-      ? const Duration(hours: 1)
-      : Duration(microseconds: (json['ttln'] as num).toInt()),
+  ttln: (json['ttln'] as num).toInt(),
 );
 
 Map<String, dynamic> _$AtEventLoggingConfigToJson(
@@ -21,24 +19,28 @@ Map<String, dynamic> _$AtEventLoggingConfigToJson(
 ) => <String, dynamic>{
   'atSign': instance.atSign,
   'topic': instance.topic,
-  'ttln': instance.ttln.inMicroseconds,
+  'ttln': instance.ttln,
 };
 
 NPSessionEvent _$NPSessionEventFromJson(Map<String, dynamic> json) =>
     NPSessionEvent(
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      payload: json['payload'] as Map<String, dynamic>?,
-      sessionId: json['sessionId'] as String,
-      sessionEventType: $enumDecode(
-        _$NPSessionEventTypeEnumMap,
-        json['sessionEventType'],
-      ),
-    );
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        payload: json['payload'] as Map<String, dynamic>?,
+        sessionId: json['sessionId'] as String,
+        sessionEventType: $enumDecode(
+          _$NPSessionEventTypeEnumMap,
+          json['sessionEventType'],
+        ),
+      )
+      ..traceId = json['traceId'] as String
+      ..eventType = json['eventType'] as String;
 
 Map<String, dynamic> _$NPSessionEventToJson(
   NPSessionEvent instance,
 ) => <String, dynamic>{
   'timestamp': instance.timestamp.toIso8601String(),
+  'traceId': instance.traceId,
+  'eventType': instance.eventType,
   'payload': instance.payload,
   'sessionId': instance.sessionId,
   'sessionEventType': _$NPSessionEventTypeEnumMap[instance.sessionEventType]!,
@@ -64,12 +66,13 @@ NPLifecycleEvent _$NPLifecycleEventFromJson(Map<String, dynamic> json) =>
       traceId: json['traceId'] as String,
       payload: json['payload'] as Map<String, dynamic>?,
       program: $enumDecode(_$NPProgramEnumMap, json['program']),
-    );
+    )..eventType = json['eventType'] as String;
 
 Map<String, dynamic> _$NPLifecycleEventToJson(NPLifecycleEvent instance) =>
     <String, dynamic>{
       'timestamp': instance.timestamp.toIso8601String(),
       'traceId': instance.traceId,
+      'eventType': instance.eventType,
       'payload': instance.payload,
       'program': _$NPProgramEnumMap[instance.program]!,
     };

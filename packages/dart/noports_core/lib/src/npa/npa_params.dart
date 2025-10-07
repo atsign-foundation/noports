@@ -11,7 +11,7 @@ class NPAParams {
   final bool verbose;
   final String rootDomain;
   final String homeDirectory;
-  final String eventLoggingAtsign;
+  final String? eventLoggingAtsign;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -42,7 +42,7 @@ class NPAParams {
       verbose: r['verbose'],
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
-      eventLoggingAtsign: r['logging-atsign'] ?? policyAtsign,
+      eventLoggingAtsign: r['event-logging-atsign'],
     );
   }
 
@@ -61,11 +61,9 @@ class NPAParams {
     );
 
     parser.addOption(
-      'logging-atsign',
+      'event-logging-atsign',
       abbr: 'l',
-      help:
-          'atSign of a noports logging service. Defaults to'
-          ' being the same as this policy service\'s atSign',
+      help: 'atSign of a noports logging service.',
     );
 
     // This is basically obsolete, thus is now hidden.

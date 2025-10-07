@@ -16,13 +16,13 @@ class AtEventLoggingConfig {
   /// Since events are logged using ephemeral notifications, they will
   /// generally have a short lifetime, as the expectation is that the receiver
   /// will be up and running most of the time. However we don't want to
-  /// hard-code a duration.
-  final Duration ttln;
+  /// hard-code a duration. Value is in milliseconds.
+  final int ttln;
 
   AtEventLoggingConfig({
     required this.atSign,
     required this.topic,
-    this.ttln = const Duration(hours: 1),
+    required this.ttln,
   });
 
   Map<String, dynamic> toJson() => _$AtEventLoggingConfigToJson(this);
@@ -36,10 +36,10 @@ class AtEventLoggingConfig {
 
 abstract class AtEvent {
   static Map<String, Function> fromJsonFunctions = {};
-  final DateTime timestamp;
-  final String traceId;
-  final String eventType;
-  final Map<String, dynamic>? payload;
+  DateTime timestamp;
+  String traceId;
+  String eventType;
+  Map<String, dynamic>? payload;
 
   AtEvent({
     required this.timestamp,

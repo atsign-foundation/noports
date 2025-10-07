@@ -52,7 +52,6 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
     Set<String>? daemonAtsigns,
-    String? eventLoggingAtsign,
   }) async {
     try {
       var p = await NPAParams.fromArgs(args);
@@ -73,13 +72,14 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
 
       atClient ??= await atClientGenerator!(p);
 
-      eventLoggingAtsign ??= p.eventLoggingAtsign.toAtsign();
-
-      AtEventLoggingConfig elc = await AtEventLogger.staticGetEventLoggingConfig(
-        atClient: atClient,
-        atSign: eventLoggingAtsign,
-        namespace: DefaultArgs.eventLoggingNamespace,
-      );
+      AtEventLoggingConfig? elc;
+      if (p.eventLoggingAtsign != null) {
+        elc = await AtEventLogger.staticGetEventLoggingConfig(
+          atClient: atClient,
+          atSign: p.eventLoggingAtsign!,
+          namespace: DefaultArgs.eventLoggingNamespace,
+        );
+      }
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
@@ -118,10 +118,11 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
         final configKey = AtKey.fromString(
           '${n.from}:config.$strippedKey${n.to}',
         );
-        logger.shout('Sending config notification $configKey');
+        final configValue = jsonEncode({'eventLoggingConfig': elc?.toJson()});
+        logger.shout('Sending config notification $configKey : $configValue');
         await notify(
           configKey,
-          jsonEncode({'eventLoggingConfig': elc?.toJson()}),
+          configValue,
           checkForFinalDeliveryStatus: false,
           waitForFinalDeliveryStatus: false,
           ttln: Duration(hours: 1),

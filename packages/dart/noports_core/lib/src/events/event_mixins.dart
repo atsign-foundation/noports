@@ -16,6 +16,7 @@ mixin AtEventListener {
   AtSignLogger get logger;
 
   Future<AtEventLoggingConfig> _getConfig(AtKey key) async {
+    logger.shout('Fetching EventLoggingConfig from $key');
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
     final elc = AtEventLoggingConfig.fromJson(jsonDecode(v.value));
     logger.shout('Fetched EventLoggingConfig $elc');
@@ -27,16 +28,15 @@ mixin AtEventListener {
   /// topic something like `abc123def4.events.logging.sshnp`
   Future<AtEventLoggingConfig> getOrCreateConfig({
     required String namespace,
-    Duration ttln = const Duration(hours: 1),
+    required int ttln,
   }) async {
     final configKey = AtKey.fromString('config.$namespace$myAtsign')
-      ..metadata.namespaceAware = false
       ..metadata.immutable = true;
 
     try {
       return await _getConfig(configKey);
     } catch (e) {
-      if (e is! KeyNotFoundException) {
+      if (e is! AtKeyNotFoundException) {
         rethrow;
       }
     }
@@ -45,8 +45,14 @@ mixin AtEventListener {
       final elc = AtEventLoggingConfig(
         atSign: myAtsign,
         topic: '${_generateRandomString(8)}.$namespace',
+        ttln: ttln,
       );
-      await atClient.put(configKey, elc, putRequestOptions: _pro);
+      logger.shout('Creating new EventLoggingConfig at $configKey');
+      await atClient.put(
+        configKey,
+        jsonEncode(elc.toJson()),
+        putRequestOptions: _pro,
+      );
       logger.shout('Created new EventLoggingConfig $elc');
       return elc;
     } catch (err) {
@@ -69,8 +75,8 @@ mixin AtEventListener {
     required String namespace,
   }) async {
     for (final theirAtsign in atSigns) {
-      AtKey key = AtKey.fromString('$theirAtsign:config.$namespace$myAtsign')
-        ..metadata.namespaceAware = false;
+      logger.shout('Sharing EventLoggingConfig $config with $theirAtsign');
+      AtKey key = AtKey.fromString('$theirAtsign:config.$namespace$myAtsign');
       await atClient.put(
         key,
         jsonEncode(config.toJson()),
@@ -93,8 +99,7 @@ mixin AtEventLogger {
     required String namespace,
   }) async {
     Atsign myAtsign = atClient.getCurrentAtSign()!.toAtsign();
-    AtKey key = AtKey.fromString('$myAtsign:config.$namespace:$atSign')
-      ..metadata.namespaceAware = false;
+    AtKey key = AtKey.fromString('$myAtsign:config.$namespace$atSign');
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
     return AtEventLoggingConfig.fromJson(jsonDecode(v.value));
   }
@@ -114,7 +119,7 @@ mixin AtEventLogger {
 
   Future<void> logEvent(AtEventLoggingConfig config, AtEvent event) async {
     logger.shout(
-      'Sending log to ${config.atSign}: ${event.toJson().toString()}',
+      'Sending log to ${config.atSign} on ${config.topic}: ${event.toJson().toString()}',
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
@@ -122,6 +127,7 @@ mixin AtEventLogger {
           '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
         )..metadata.namespaceAware = false,
         value: jsonEncode(event.toJson()),
+        notificationExpiry: Duration(milliseconds: config.ttln),
       ),
       waitForFinalDeliveryStatus: false,
       checkForFinalDeliveryStatus: false,

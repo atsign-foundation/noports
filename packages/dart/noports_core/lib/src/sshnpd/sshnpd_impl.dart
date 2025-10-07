@@ -1698,7 +1698,7 @@ class SshnpdImpl
     String messageType = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll(
-          '.$device.policy.${DefaultArgs.namespace}$policyManagerAtsign',
+          '.$device.devices.policy.${DefaultArgs.namespace}$policyManagerAtsign',
           '',
         )
         .toLowerCase();

@@ -83,7 +83,7 @@ void main(List<String> args) async {
       AtEventListenerService svc =
           AtEventListenerService(atClient: cliBase.atClient);
       final elc = await svc.getOrCreateConfig(
-          namespace: DefaultArgs.eventLoggingNamespace);
+          namespace: DefaultArgs.eventLoggingNamespace, ttln: 60 * 60 * 1000);
       await svc.shareEventLoggingConfigWithAtsigns(
           config: elc,
           atSigns: loggingAtsigns,

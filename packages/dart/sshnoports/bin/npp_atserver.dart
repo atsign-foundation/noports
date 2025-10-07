@@ -83,11 +83,16 @@ void main(List<String> args) async {
 
   logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
 
-  AtEventLoggingConfig elc = await AtEventLogger.staticGetEventLoggingConfig(
-    atClient: atClient,
-    atSign: p.eventLoggingAtsign,
-    namespace: DefaultArgs.eventLoggingNamespace,
-  );
+  AtEventLoggingConfig? elc;
+
+  if (p.eventLoggingAtsign != null) {
+    logger.shout('Fetching config from ${p.eventLoggingAtsign}');
+    elc = await AtEventLogger.staticGetEventLoggingConfig(
+      atClient: atClient,
+      atSign: p.eventLoggingAtsign!,
+      namespace: DefaultArgs.eventLoggingNamespace,
+    );
+  }
 
   var sshnpa = NPAImpl(
     atClient: atClient,
