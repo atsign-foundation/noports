@@ -12,10 +12,9 @@ class EventListenerService with EventListener, AtClientBindings {
   EventListenerService({required this.atClient});
 
   void listen(EventLoggingConfig elc, Function f) {
-    subscribe(
-      regex: elc.topicListenRegex,
-      shouldDecrypt: true,
-    ).listen((AtNotification n) {
+    subscribe(regex: elc.topicListenRegex, shouldDecrypt: true).listen((
+      AtNotification n,
+    ) {
       f(n);
     });
   }

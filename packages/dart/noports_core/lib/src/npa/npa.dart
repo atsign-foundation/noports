@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/src/npa/npa_params.dart';
 import 'package:noports_core/src/npa/npa_impl.dart';
 import 'package:noports_core/src/npa/npa_rpcs.dart';

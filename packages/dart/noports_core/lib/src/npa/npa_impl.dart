@@ -103,30 +103,31 @@ class NPAImpl with AtClientBindings, EventLogger implements NPA {
   Future<void> run() async {
     _startPolicyInfoRpcServer();
 
-    subscribe(
-        regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen ((AtNotification n) async {
-      final v = jsonDecode(n.value!);
-      final e = {};
-      e['timestamp'] = n.epochMillis;
-      e['daemon'] = n.from;
-      e['payload'] = v;
-      String strippedKey = n.key
-          .replaceAll('${n.to}:', '')
-          .replaceAll(n.from, '')
-          .toLowerCase();
+    subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
+      (AtNotification n) async {
+        final v = jsonDecode(n.value!);
+        final e = {};
+        e['timestamp'] = n.epochMillis;
+        e['daemon'] = n.from;
+        e['payload'] = v;
+        String strippedKey = n.key
+            .replaceAll('${n.to}:', '')
+            .replaceAll(n.from, '')
+            .toLowerCase();
 
-      final configKey = AtKey.fromString(
-        '${n.from}:config.$strippedKey${n.to}',
-      );
-      logger.shout('Sending config notification $configKey');
-      await notify(
-        configKey,
-        jsonEncode({'eventLoggingConfig':elc?.toJson()}),
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-        ttln: Duration(hours: 1),
-      );
-    });
+        final configKey = AtKey.fromString(
+          '${n.from}:config.$strippedKey${n.to}',
+        );
+        logger.shout('Sending config notification $configKey');
+        await notify(
+          configKey,
+          jsonEncode({'eventLoggingConfig': elc?.toJson()}),
+          checkForFinalDeliveryStatus: false,
+          waitForFinalDeliveryStatus: false,
+          ttln: Duration(hours: 1),
+        );
+      },
+    );
   }
 
   late final AtRpc _policyInfoRpcServer;
