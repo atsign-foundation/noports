@@ -38,6 +38,7 @@ class AtSshKeyPair {
             directory == null ? identifier : path.join(directory, identifier),
         keyPair = SSHKeyPair.fromPem(pemText, passphrase).firstOrNull ??
             (throw ArgumentError.value(pemText, 'pemText', 'Invalid PEM text'));
+
   String get type => keyPair.type;
 
   String get privateKeyContents => keyPair.toPem();
