@@ -21,7 +21,7 @@ import 'isolates/types.dart';
 import 'srvd_session_params.dart';
 
 @protected
-class SrvdImpl with EventLogger, SrvdUtilMixin implements Srvd {
+class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
   @override
   final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
@@ -237,7 +237,7 @@ class SrvdImpl with EventLogger, SrvdUtilMixin implements Srvd {
           );
           return;
         }
-        final elc = EventLoggingConfig.fromJson(jsonDecode(n.value!));
+        final elc = AtEventLoggingConfig.fromJson(jsonDecode(n.value!));
         if (!await validAtsign(elc.atSign)) {
           logger.warning('Invalid sessionLoggingAtsign ${elc.atSign}');
           return;

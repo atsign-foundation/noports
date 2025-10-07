@@ -6,21 +6,23 @@ part of 'event_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-EventLoggingConfig _$EventLoggingConfigFromJson(Map<String, dynamic> json) =>
-    EventLoggingConfig(
-      atSign: json['atSign'] as String,
-      topic: json['topic'] as String,
-      ttln: json['ttln'] == null
-          ? const Duration(hours: 1)
-          : Duration(microseconds: (json['ttln'] as num).toInt()),
-    );
+AtEventLoggingConfig _$AtEventLoggingConfigFromJson(
+  Map<String, dynamic> json,
+) => AtEventLoggingConfig(
+  atSign: json['atSign'] as String,
+  topic: json['topic'] as String,
+  ttln: json['ttln'] == null
+      ? const Duration(hours: 1)
+      : Duration(microseconds: (json['ttln'] as num).toInt()),
+);
 
-Map<String, dynamic> _$EventLoggingConfigToJson(EventLoggingConfig instance) =>
-    <String, dynamic>{
-      'atSign': instance.atSign,
-      'topic': instance.topic,
-      'ttln': instance.ttln.inMicroseconds,
-    };
+Map<String, dynamic> _$AtEventLoggingConfigToJson(
+  AtEventLoggingConfig instance,
+) => <String, dynamic>{
+  'atSign': instance.atSign,
+  'topic': instance.topic,
+  'ttln': instance.ttln.inMicroseconds,
+};
 
 NPSessionEvent _$NPSessionEventFromJson(Map<String, dynamic> json) =>
     NPSessionEvent(

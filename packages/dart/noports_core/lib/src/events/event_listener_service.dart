@@ -3,15 +3,15 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart' show AtSignLogger;
 import 'package:noports_core/events.dart';
 
-class EventListenerService with EventListener, AtClientBindings {
+class AtEventListenerService with AtEventListener, AtClientBindings {
   @override
   final AtClient atClient;
   @override
-  final AtSignLogger logger = AtSignLogger(' EventListenerService ');
+  final AtSignLogger logger = AtSignLogger(' AtEventListenerService ');
 
-  EventListenerService({required this.atClient});
+  AtEventListenerService({required this.atClient});
 
-  void listen(EventLoggingConfig elc, Function f) {
+  void listen(AtEventLoggingConfig elc, Function f) {
     subscribe(regex: elc.topicListenRegex, shouldDecrypt: true).listen((
       AtNotification n,
     ) {

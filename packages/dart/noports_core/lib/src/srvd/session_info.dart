@@ -13,7 +13,7 @@ class SessionInfo {
 
   String get atSignB => params.atSignB!;
 
-  EventLoggingConfig? eventLoggingConfig;
+  AtEventLoggingConfig? eventLoggingConfig;
 
   SessionInfo({required this.params, required this.connector});
 }

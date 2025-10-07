@@ -83,7 +83,7 @@ void main(List<String> args) async {
 
   logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
 
-  EventLoggingConfig elc = await EventLogger.staticGetEventLoggingConfig(
+  AtEventLoggingConfig elc = await AtEventLogger.staticGetEventLoggingConfig(
     atClient: atClient,
     atSign: p.eventLoggingAtsign,
     namespace: DefaultArgs.eventLoggingNamespace,

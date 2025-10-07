@@ -80,8 +80,8 @@ void main(List<String> args) async {
           .toList();
       CLIBase cliBase = await CLIBase.fromCommandLineArgs(args, parser: parser);
 
-      EventListenerService svc =
-          EventListenerService(atClient: cliBase.atClient);
+      AtEventListenerService svc =
+          AtEventListenerService(atClient: cliBase.atClient);
       final elc = await svc.getOrCreateConfig(
           namespace: DefaultArgs.eventLoggingNamespace);
       await svc.shareEventLoggingConfigWithAtsigns(

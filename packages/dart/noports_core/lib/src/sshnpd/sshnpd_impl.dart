@@ -28,7 +28,7 @@ import 'package:uuid/uuid.dart';
 
 @protected
 class SshnpdImpl
-    with AtClientBindings, ApkamSigning, EventLogger
+    with AtClientBindings, ApkamSigning, AtEventLogger
     implements Sshnpd {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
@@ -101,7 +101,7 @@ class SshnpdImpl
   final List<String> permitOpen;
 
   @override
-  EventLoggingConfig? elc;
+  AtEventLoggingConfig? elc;
 
   SshnpdImpl({
     // final fields
@@ -421,7 +421,7 @@ class SshnpdImpl
     }
   }
 
-  Future<void> _npEventLog(Event event) async {
+  Future<void> _npEventLog(AtEvent event) async {
     if (elc != null) {
       // Log the session requested event
       await logEvent(elc!, event);
@@ -1730,7 +1730,7 @@ class SshnpdImpl
       logger.shout('No eventLoggingConfig');
       return;
     }
-    elc = EventLoggingConfig.fromJson(elcJson);
+    elc = AtEventLoggingConfig.fromJson(elcJson);
   }
 
   /// If using a policy service, tell it we're here

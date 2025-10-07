@@ -8,16 +8,16 @@ import 'package:noports_core/src/events/event_models.dart';
 final GetRequestOptions _gro = GetRequestOptions()..useRemoteAtServer = true;
 final PutRequestOptions _pro = PutRequestOptions()..useRemoteAtServer = true;
 
-mixin EventListener {
+mixin AtEventListener {
   AtClient get atClient;
 
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
 
   AtSignLogger get logger;
 
-  Future<EventLoggingConfig> _getConfig(AtKey key) async {
+  Future<AtEventLoggingConfig> _getConfig(AtKey key) async {
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
-    final elc = EventLoggingConfig.fromJson(jsonDecode(v.value));
+    final elc = AtEventLoggingConfig.fromJson(jsonDecode(v.value));
     logger.shout('Fetched EventLoggingConfig $elc');
     return elc;
   }
@@ -25,7 +25,7 @@ mixin EventListener {
   /// namespace like `events.logging.sshnp` will result in the config being
   /// stored at `config.events.logging.sshnp`, and an EventLoggingConfig with a
   /// topic something like `abc123def4.events.logging.sshnp`
-  Future<EventLoggingConfig> getOrCreateConfig({
+  Future<AtEventLoggingConfig> getOrCreateConfig({
     required String namespace,
     Duration ttln = const Duration(hours: 1),
   }) async {
@@ -42,7 +42,7 @@ mixin EventListener {
     }
 
     try {
-      final elc = EventLoggingConfig(
+      final elc = AtEventLoggingConfig(
         atSign: myAtsign,
         topic: '${_generateRandomString(8)}.$namespace',
       );
@@ -64,7 +64,7 @@ mixin EventListener {
   /// namespace like `events.logging.sshnp` will result in the config being
   /// shared as `@bob:config.events.logging.sshnp@alice` etc
   Future<void> shareEventLoggingConfigWithAtsigns({
-    required EventLoggingConfig config,
+    required AtEventLoggingConfig config,
     required List<Atsign> atSigns,
     required String namespace,
   }) async {
@@ -80,14 +80,14 @@ mixin EventListener {
   }
 }
 
-mixin EventLogger {
+mixin AtEventLogger {
   AtClient get atClient;
 
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
 
   AtSignLogger get logger;
 
-  static Future<EventLoggingConfig> staticGetEventLoggingConfig({
+  static Future<AtEventLoggingConfig> staticGetEventLoggingConfig({
     required AtClient atClient,
     required Atsign atSign,
     required String namespace,
@@ -96,12 +96,12 @@ mixin EventLogger {
     AtKey key = AtKey.fromString('$myAtsign:config.$namespace:$atSign')
       ..metadata.namespaceAware = false;
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
-    return EventLoggingConfig.fromJson(jsonDecode(v.value));
+    return AtEventLoggingConfig.fromJson(jsonDecode(v.value));
   }
 
   /// atSign `@alice` and namespace `events.logging.sshnp` will result in the
   /// config being fetched from `@bob:config.events.logging.sshnp@alice`
-  Future<EventLoggingConfig> getEventLoggingConfigFrom({
+  Future<AtEventLoggingConfig> getEventLoggingConfigFrom({
     required Atsign atSign,
     required String namespace,
   }) async {
@@ -112,7 +112,7 @@ mixin EventLogger {
     );
   }
 
-  Future<void> logEvent(EventLoggingConfig config, Event event) async {
+  Future<void> logEvent(AtEventLoggingConfig config, AtEvent event) async {
     logger.shout(
       'Sending log to ${config.atSign}: ${event.toJson().toString()}',
     );

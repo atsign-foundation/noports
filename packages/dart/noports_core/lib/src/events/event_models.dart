@@ -4,7 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'event_models.g.dart';
 
 @JsonSerializable()
-class EventLoggingConfig {
+class AtEventLoggingConfig {
   /// The atSign to which we will send the event log notifications
   final Atsign atSign;
 
@@ -19,29 +19,29 @@ class EventLoggingConfig {
   /// hard-code a duration.
   final Duration ttln;
 
-  EventLoggingConfig({
+  AtEventLoggingConfig({
     required this.atSign,
     required this.topic,
     this.ttln = const Duration(hours: 1),
   });
 
-  Map<String, dynamic> toJson() => _$EventLoggingConfigToJson(this);
+  Map<String, dynamic> toJson() => _$AtEventLoggingConfigToJson(this);
 
-  static EventLoggingConfig fromJson(Map<String, dynamic> json) =>
-      _$EventLoggingConfigFromJson(json);
+  static AtEventLoggingConfig fromJson(Map<String, dynamic> json) =>
+      _$AtEventLoggingConfigFromJson(json);
 
   @override
   String toString() => toJson().toString();
 }
 
-abstract class Event {
+abstract class AtEvent {
   static Map<String, Function> fromJsonFunctions = {};
   final DateTime timestamp;
   final String traceId;
   final String eventType;
   final Map<String, dynamic>? payload;
 
-  Event({
+  AtEvent({
     required this.timestamp,
     required this.traceId,
     required this.eventType,
@@ -50,7 +50,7 @@ abstract class Event {
 
   Map<String, dynamic> toJson();
 
-  static Event fromJson(Map<String, dynamic> json) {
+  static AtEvent fromJson(Map<String, dynamic> json) {
     var eventType = json['eventType'];
     if (eventType == null) {
       throw ArgumentError('Missing eventType in json: $json');
@@ -85,7 +85,7 @@ enum NPSessionEventType {
 }
 
 @JsonSerializable()
-class NPSessionEvent extends Event {
+class NPSessionEvent extends AtEvent {
   final String sessionId;
   final NPSessionEventType sessionEventType;
 
@@ -110,7 +110,7 @@ enum NPProgram { client, daemon, relay, policy, events }
 enum NPLifecycleEventType { started, stopped }
 
 @JsonSerializable()
-class NPLifecycleEvent extends Event {
+class NPLifecycleEvent extends AtEvent {
   final NPProgram program;
 
   NPLifecycleEvent({

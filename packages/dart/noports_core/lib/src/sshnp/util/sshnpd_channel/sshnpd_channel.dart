@@ -30,7 +30,7 @@ enum SshnpdAck {
 /// and the daemon. It is responsible for sending the request to the daemon and
 /// receiving the response from the daemon.
 abstract class SshnpdChannel
-    with AsyncInitialization, AtClientBindings, EventLogger {
+    with AsyncInitialization, AtClientBindings, AtEventLogger {
   @override
   final logger = AtSignLogger(' SshnpdChannel ');
   @override
@@ -40,7 +40,7 @@ abstract class SshnpdChannel
   final String sessionId;
   final String namespace;
 
-  EventLoggingConfig? eventLoggingConfig;
+  AtEventLoggingConfig? eventLoggingConfig;
 
   // * Volatile fields set at runtime
 

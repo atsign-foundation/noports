@@ -12,7 +12,7 @@ import 'package:noports_core/utils.dart';
 
 final AtSignLogger _logger = AtSignLogger('NPAImpl');
 
-class NPAImpl with AtClientBindings, EventLogger implements NPA {
+class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   @override
   final AtSignLogger logger = _logger;
 
@@ -31,7 +31,7 @@ class NPAImpl with AtClientBindings, EventLogger implements NPA {
   @override
   final NPARequestHandler handler;
 
-  final EventLoggingConfig? elc;
+  final AtEventLoggingConfig? elc;
 
   NPAImpl({
     // final fields
@@ -75,7 +75,7 @@ class NPAImpl with AtClientBindings, EventLogger implements NPA {
 
       eventLoggingAtsign ??= p.eventLoggingAtsign.toAtsign();
 
-      EventLoggingConfig elc = await EventLogger.staticGetEventLoggingConfig(
+      AtEventLoggingConfig elc = await AtEventLogger.staticGetEventLoggingConfig(
         atClient: atClient,
         atSign: eventLoggingAtsign,
         namespace: DefaultArgs.eventLoggingNamespace,
@@ -170,7 +170,7 @@ class PolicyInfoRpcRequestHandler
   final AtSignLogger logger = AtSignLogger('PolicyInfoRpcRequestHandler');
 
   final Atsign policyAtsign;
-  final EventLoggingConfig? elc;
+  final AtEventLoggingConfig? elc;
   final String namespace;
   final NPARequestHandler handler;
 
