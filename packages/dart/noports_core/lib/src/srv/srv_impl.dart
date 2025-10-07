@@ -598,8 +598,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       }
     }
     // client side
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     SocketConnector sc = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -746,8 +748,10 @@ class SrvImplDart implements Srv<SocketConnector> {
         socketConnector?.close();
       },
     );
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -864,8 +868,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       '_runClientSideMulti  (_clientSideEncryptedSocket)'
       ' calling SocketConnector.serverToSocket',
     );
+    InternetAddress localAddress = await resolveRequestedLocalHost();
     socketConnector = await SocketConnector.serverToSocket(
       portA: localPort,
+      addressA: localAddress,
       addressB: relayAddress,
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
@@ -1364,19 +1370,17 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<InternetAddress> resolveRequestedLocalHost() async {
     String hostToLookup = localHost ?? 'localhost';
+    logger.info(
+      'Resolving local host: $hostToLookup (localHost field = $localHost)',
+    );
     List<InternetAddress> candidates = await InternetAddress.lookup(
       hostToLookup,
-      type: InternetAddressType.IPv4,
+      type: InternetAddressType.any, // Let OS choose IPv4 or IPv6
     );
-    if (candidates.isEmpty) {
-      candidates = await InternetAddress.lookup(
-        hostToLookup,
-        type: InternetAddressType.IPv6,
-      );
-    }
     if (candidates.isEmpty) {
       throw Exception("Cannot resolve address for $hostToLookup");
     }
+    logger.info('Resolved local host $hostToLookup to ${candidates[0]}');
     return candidates[0];
   }
 

@@ -167,6 +167,9 @@ class NptParams extends ClientParamsBase
   /// Interval between heartbeats on the control channel.
   final Duration? controlChannelHeartbeat;
 
+  /// Local IP address to bind to. If null, binds to localhost (127.0.0.1)
+  final String? localHost;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
@@ -186,6 +189,7 @@ class NptParams extends ClientParamsBase
     super.daemonPingTimeout,
     required this.timeout,
     this.controlChannelHeartbeat,
+    this.localHost,
     super.only443 = false,
   }) {
     try {
@@ -663,5 +667,4 @@ class SshnpPartialParams {
       SshnpPartialParams.fromArgMap(parsedArgsMap),
     );
   }
-
 }

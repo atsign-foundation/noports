@@ -163,11 +163,20 @@ abstract class SrvdChannel<T>
           break;
       }
     }
+    // Get the local host to bind to
+    String? localHost;
+    if (params is NptParams && (params as NptParams).localHost != null) {
+      final nptParams = params as NptParams;
+      localHost = nptParams.localHost;
+      logger.info('Will bind to: $localHost');
+    }
+
     srv = srvGenerator(
       rvdHost,
       clientPort,
       localPort: localRvPort,
       bindLocalPort: true,
+      localHost: localHost,
       relayAuthenticator: relayAuthenticator,
       aesC2D: aesC2D,
       ivC2D: ivC2D,

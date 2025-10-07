@@ -421,7 +421,7 @@ abstract class SshnpdChannel
       var metaData = Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..namespaceAware = true;
+        ..namespaceAware = false;
 
       var pingKey = AtKey()
         ..key = "ping.$devicename"

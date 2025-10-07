@@ -49,13 +49,11 @@ class PolicyLogEntry {
               if (requestPayload is Map<String, dynamic>) {
                 deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
                 deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
-
                 final clientAtSign = requestPayload['clientAtsign'] ?? 'unknown';
                 final daemonAtSign = requestPayload['daemonAtsign'] ?? 'unknown';
                 allowedServices = 'Request: $clientAtSign → $daemonAtSign';
               }
             }
-
             final response = payload['response'];
             if (response is Map<String, dynamic>) {
               final responsePayload = response['payload'];
@@ -63,7 +61,6 @@ class PolicyLogEntry {
                 final authorized = responsePayload['authorized'] ?? false;
                 final message = responsePayload['message'] ?? '';
                 final permitOpen = responsePayload['permitOpen'];
-
                 String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
                 String permits = '';
                 if (permitOpen is List && permitOpen.isNotEmpty) {
@@ -84,7 +81,6 @@ class PolicyLogEntry {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
           deviceName = data['devicename'] ?? 'unknown';
           deviceGroup = data['deviceGroupName'] ?? '';
-
           if (data['allowedServices'] != null && data['allowedServices'] is List) {
             final List<String> services = List<String>.from(data['allowedServices']);
             allowedServices = services.join(', ');

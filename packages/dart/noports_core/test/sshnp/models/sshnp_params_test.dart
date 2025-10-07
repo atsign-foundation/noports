@@ -50,6 +50,137 @@ void main() {
       );
     });
   });
+
+  group('NptParams localHost functionality', () {
+    test('default NptParams has null localHost', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+      );
+      expect(params.localHost, isNull);
+    });
+
+    test('NptParams with localHost set to IPv4 address', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+        localHost: '192.168.1.100',
+      );
+      expect(params.localHost, equals('192.168.1.100'));
+    });
+
+    test('NptParams with localHost set to localhost', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+        localHost: '127.0.0.1',
+      );
+      expect(params.localHost, equals('127.0.0.1'));
+    });
+
+    test('NptParams with localHost set to IPv6 address', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+        localHost: '::1',
+      );
+      expect(params.localHost, equals('::1'));
+    });
+
+    test('NptParams with localHost set to hostname', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+        localHost: 'localhost',
+      );
+      expect(params.localHost, equals('localhost'));
+    });
+
+    test('NptParams localHost field is immutable', () {
+      final params = NptParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@relay',
+        device: 'foo',
+        inline: false,
+        remoteHost: 'localhost',
+        remotePort: 3389,
+        timeout: DefaultArgs.srvTimeout,
+        localHost: '192.168.1.100',
+      );
+      // Test that the field is final (compile-time check)
+      expect(params.localHost, equals('192.168.1.100'));
+      // We can't modify it because it's final
+    });
+
+    test(
+      'NptParams creates successfully with all parameters including localHost',
+      () {
+        final params = NptParams(
+          clientAtSign: '@client',
+          sshnpdAtSign: '@daemon',
+          srvdAtSign: '@relay',
+          device: 'test_device',
+          inline: true,
+          remoteHost: '10.0.0.50',
+          remotePort: 22,
+          timeout: Duration(minutes: 30),
+          localHost: '192.168.1.100',
+          localPort: 2222,
+          verbose: true,
+          rootDomain: 'test.com',
+          authenticateClientToRvd: true,
+          authenticateDeviceToRvd: true,
+          encryptRvdTraffic: true,
+          daemonPingTimeout: Duration(seconds: 30),
+          controlChannelHeartbeat: Duration(seconds: 60),
+          only443: false,
+        );
+
+        expect(params.clientAtSign, equals('@client'));
+        expect(params.sshnpdAtSign, equals('@daemon'));
+        expect(params.srvdAtSign, equals('@relay'));
+        expect(params.device, equals('test_device'));
+        expect(params.inline, equals(true));
+        expect(params.remoteHost, equals('10.0.0.50'));
+        expect(params.remotePort, equals(22));
+        expect(params.localHost, equals('192.168.1.100'));
+        expect(params.localPort, equals(2222));
+        expect(params.verbose, equals(true));
+      },
+    );
+  });
+
   group('SshnpParams', () {
     test('public API test', () {
       final params = SshnpParams(

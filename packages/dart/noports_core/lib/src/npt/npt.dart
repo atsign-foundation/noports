@@ -306,16 +306,20 @@ class _NptImpl extends NptBase
     }
 
     int localRvPort;
+
     if (params.localPort == 0) {
       sendProgress('Finding an available local port');
 
-      /// Find a port to use
-      final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+      /// Find a port to use - params.localHost is now a resolved IP address
+      final bindAddress =
+          InternetAddress.tryParse(params.localHost!) ??
+          InternetAddress.loopbackIPv4; // Fallback if somehow not a valid IP
+
+      final server = await ServerSocket.bind(bindAddress, 0);
       localRvPort = server.port;
       await server.close();
     } else {
       sendProgress('Will use local port ${params.localPort}');
-
       localRvPort = params.localPort;
     }
 
