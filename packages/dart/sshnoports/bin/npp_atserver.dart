@@ -5,6 +5,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/admin.dart';
+import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
@@ -81,12 +82,19 @@ void main(List<String> args) async {
   }
 
   logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
+
+  EventLoggingConfig elc = await EventLogger.staticGetEventLoggingConfig(
+    atClient: atClient,
+    atSign: p.eventLoggingAtsign,
+    namespace: DefaultArgs.eventLoggingNamespace,
+  );
+
   var sshnpa = NPAImpl(
     atClient: atClient,
     homeDirectory: p.homeDirectory,
     daemonAtsigns: handler.daemonAtSigns,
     handler: handler,
-    sessionLoggingAtsign: p.sessionLoggingAtsign,
+    elc: elc,
   );
 
   if (p.verbose) {

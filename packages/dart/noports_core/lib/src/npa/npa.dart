@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/src/npa/npa_params.dart';
 import 'package:noports_core/src/npa/npa_impl.dart';
 import 'package:noports_core/src/npa/npa_rpcs.dart';
@@ -30,9 +31,6 @@ abstract class NPA {
 
   /// Policy service's atSign
   String get policyAtsign;
-
-  /// atSign to which to send various log events
-  String get sessionLoggingAtsign;
 
   Set<String> get daemonAtsigns;
 

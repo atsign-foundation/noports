@@ -7,7 +7,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
-import 'package:noports_core/src/events/event_logger.dart';
+import 'package:noports_core/src/events/event_mixins.dart';
 import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
@@ -21,7 +21,7 @@ import 'isolates/types.dart';
 import 'srvd_session_params.dart';
 
 @protected
-class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
+class SrvdImpl with EventLogger, SrvdUtilMixin implements Srvd {
   @override
   final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
@@ -216,11 +216,12 @@ class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
     String sessionsMessageType = parts[0];
     String sessionId = parts[1];
 
-    final sessionInfo = sessions[sessionId];
-    if (sessionInfo == null) {
+    if (sessions[sessionId] == null) {
       logger.info('This relay does not know about session $sessionId');
       return;
     }
+
+    final SessionInfo sessionInfo = sessions[sessionId]!;
 
     // Is the atSign who sent this message one of the participants in the session?
     if (n.from != sessionInfo.atSignA && n.from != sessionInfo.atSignB) {
@@ -230,37 +231,36 @@ class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
 
     switch (sessionsMessageType) {
       case 'logging':
-        if (sessionInfo.sessionLoggingAtsign != null) {
+        if (sessionInfo.eventLoggingConfig != null) {
           logger.warning(
             'We already have session logging config for $sessionId',
           );
           return;
         }
-        final loggingConfig = jsonDecode(n.value!);
-        final candidateLoggingAtsign = loggingConfig['sessionLoggingAtsign'];
-        if (!await validAtsign(candidateLoggingAtsign)) {
-          logger.warning(
-            'Invalid sessionLoggingAtsign $candidateLoggingAtsign',
-          );
+        final elc = EventLoggingConfig.fromJson(jsonDecode(n.value!));
+        if (!await validAtsign(elc.atSign)) {
+          logger.warning('Invalid sessionLoggingAtsign ${elc.atSign}');
           return;
         }
-        sessionInfo.sessionLoggingAtsign = candidateLoggingAtsign;
-        // Log the session requested event
-        await log(
-          sessionInfo.sessionLoggingAtsign!,
+        sessionInfo.eventLoggingConfig = elc;
+        // Log the session requested event, now that we have a session logging config
+        await logEvent(
+          sessionInfo.eventLoggingConfig!,
           NPSessionEvent(
             timestamp: sessionInfo.requestTime,
-            message: '',
+            payload: null,
             sessionId: sessionId,
             sessionEventType: NPSessionEventType.requested,
           ),
         );
-        // Log the session started event
-        await log(
-          sessionInfo.sessionLoggingAtsign!,
+
+        // And log a session started event, since the fact we've received
+        // this message means the session is starting
+        await logEvent(
+          sessionInfo.eventLoggingConfig!,
           NPSessionEvent(
             timestamp: DateTime.timestamp(),
-            message: '',
+            payload: null,
             sessionId: sessionId,
             sessionEventType: NPSessionEventType.started,
           ),
@@ -563,14 +563,12 @@ class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
             break;
           case 'sessionComplete':
             final sessionId = msg.payload['sessionId'];
-            final sessionLoggingAtsign =
-                sessions[sessionId]?.sessionLoggingAtsign;
-            if (sessionLoggingAtsign != null) {
-              await log(
-                sessionLoggingAtsign,
+            if (sessions[sessionId]?.eventLoggingConfig != null) {
+              await logEvent(
+                sessions[sessionId]!.eventLoggingConfig!,
                 NPSessionEvent(
                   timestamp: DateTime.timestamp(),
-                  message: msg.payload['message'],
+                  payload: {'message': msg.payload['message']},
                   sessionId: msg.payload['sessionId'],
                   sessionEventType: NPSessionEventType.ended,
                 ),
@@ -702,14 +700,12 @@ class SrvdImpl with NPEventLogger, SrvdUtilMixin implements Srvd {
             break;
           case 'sessionComplete':
             final sessionId = msg.payload['sessionId'];
-            final sessionLoggingAtsign =
-                sessions[sessionId]?.sessionLoggingAtsign;
-            if (sessionLoggingAtsign != null) {
-              await log(
-                sessionLoggingAtsign,
+            if (sessions[sessionId]?.eventLoggingConfig != null) {
+              await logEvent(
+                sessions[sessionId]!.eventLoggingConfig!,
                 NPSessionEvent(
                   timestamp: DateTime.timestamp(),
-                  message: msg.payload['message'],
+                  payload: {'message': msg.payload['message']},
                   sessionId: msg.payload['sessionId'],
                   sessionEventType: NPSessionEventType.ended,
                 ),

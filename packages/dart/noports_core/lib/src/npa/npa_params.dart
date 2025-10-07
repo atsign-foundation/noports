@@ -11,7 +11,7 @@ class NPAParams {
   final bool verbose;
   final String rootDomain;
   final String homeDirectory;
-  final String sessionLoggingAtsign;
+  final String eventLoggingAtsign;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -23,7 +23,7 @@ class NPAParams {
     required this.verbose,
     required this.rootDomain,
     required this.homeDirectory,
-    required this.sessionLoggingAtsign,
+    required this.eventLoggingAtsign,
   });
 
   static Future<NPAParams> fromArgs(List<String> args) async {
@@ -42,7 +42,7 @@ class NPAParams {
       verbose: r['verbose'],
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
-      sessionLoggingAtsign: r['logging-atsign'] ?? policyAtsign,
+      eventLoggingAtsign: r['logging-atsign'] ?? policyAtsign,
     );
   }
 

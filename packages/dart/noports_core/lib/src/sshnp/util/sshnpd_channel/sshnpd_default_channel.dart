@@ -5,6 +5,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
@@ -118,7 +119,10 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
             .result;
       }
 
-      sessionLoggingAtsign = daemonResponse['sessionLoggingAtsign'];
+      final elcJson = daemonResponse['sessionLoggingAtsign'];
+      if (elcJson != null) {
+        eventLoggingConfig = EventLoggingConfig.fromJson(elcJson);
+      }
 
       return SshnpdAck.acknowledged;
     }

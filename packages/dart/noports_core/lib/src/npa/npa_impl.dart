@@ -6,12 +6,13 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
+import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 
 final AtSignLogger _logger = AtSignLogger('NPAImpl');
 
-class NPAImpl with AtClientBindings implements NPA {
+class NPAImpl with AtClientBindings, EventLogger implements NPA {
   @override
   final AtSignLogger logger = _logger;
 
@@ -25,13 +26,12 @@ class NPAImpl with AtClientBindings implements NPA {
   String get policyAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  final String sessionLoggingAtsign;
-
-  @override
   final Set<String> daemonAtsigns;
 
   @override
   final NPARequestHandler handler;
+
+  final EventLoggingConfig? elc;
 
   NPAImpl({
     // final fields
@@ -39,7 +39,7 @@ class NPAImpl with AtClientBindings implements NPA {
     required this.homeDirectory,
     required this.daemonAtsigns,
     required this.handler,
-    required this.sessionLoggingAtsign,
+    required this.elc,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -52,7 +52,7 @@ class NPAImpl with AtClientBindings implements NPA {
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
     Set<String>? daemonAtsigns,
-    String? sessionLoggingAtsign,
+    String? eventLoggingAtsign,
   }) async {
     try {
       var p = await NPAParams.fromArgs(args);
@@ -73,12 +73,19 @@ class NPAImpl with AtClientBindings implements NPA {
 
       atClient ??= await atClientGenerator!(p);
 
+      eventLoggingAtsign ??= p.eventLoggingAtsign.toAtsign();
+
+      EventLoggingConfig elc = await EventLogger.staticGetEventLoggingConfig(
+        atClient: atClient,
+        atSign: eventLoggingAtsign,
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
         daemonAtsigns: daemonAtsigns ?? p.daemonAtsigns,
         handler: handler,
-        sessionLoggingAtsign: sessionLoggingAtsign ?? p.sessionLoggingAtsign,
+        elc: elc,
       );
 
       if (p.verbose) {
@@ -95,9 +102,35 @@ class NPAImpl with AtClientBindings implements NPA {
   @override
   Future<void> run() async {
     _startPolicyInfoRpcServer();
+
+    subscribe(
+        regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen ((AtNotification n) async {
+      final v = jsonDecode(n.value!);
+      final e = {};
+      e['timestamp'] = n.epochMillis;
+      e['daemon'] = n.from;
+      e['payload'] = v;
+      String strippedKey = n.key
+          .replaceAll('${n.to}:', '')
+          .replaceAll(n.from, '')
+          .toLowerCase();
+
+      final configKey = AtKey.fromString(
+        '${n.from}:config.$strippedKey${n.to}',
+      );
+      logger.shout('Sending config notification $configKey');
+      await notify(
+        configKey,
+        jsonEncode({'eventLoggingConfig':elc?.toJson()}),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+        ttln: Duration(hours: 1),
+      );
+    });
   }
 
   late final AtRpc _policyInfoRpcServer;
+
   void _startPolicyInfoRpcServer() {
     _policyInfoRpcServer = AtRpc(
       atClient: atClient,
@@ -108,7 +141,7 @@ class NPAImpl with AtClientBindings implements NPA {
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
-        sessionLoggingAtsign: sessionLoggingAtsign,
+        elc: elc,
       ),
       allowList: daemonAtsigns,
       allowAll: true,
@@ -136,7 +169,7 @@ class PolicyInfoRpcRequestHandler
   final AtSignLogger logger = AtSignLogger('PolicyInfoRpcRequestHandler');
 
   final Atsign policyAtsign;
-  final Atsign sessionLoggingAtsign;
+  final EventLoggingConfig? elc;
   final String namespace;
   final NPARequestHandler handler;
 
@@ -145,7 +178,7 @@ class PolicyInfoRpcRequestHandler
     required this.namespace,
     required this.handler,
     required this.atClient,
-    required this.sessionLoggingAtsign,
+    required this.elc,
   });
 
   @override

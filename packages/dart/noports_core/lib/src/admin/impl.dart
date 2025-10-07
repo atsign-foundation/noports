@@ -45,7 +45,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     });
 
     subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
-      (AtNotification n) async {
+      (AtNotification n) {
         logger.shout('Received device heartbeat from ${n.from}');
         // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
         final v = jsonDecode(n.value!);
@@ -53,24 +53,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
         e['timestamp'] = n.epochMillis;
         e['daemon'] = n.from;
         e['payload'] = v;
-        await onDaemonEvent(jsonEncode(e));
-        String strippedKey = n.key
-            .replaceAll('${n.to}:', '')
-            .replaceAll('.devices.policy.sshnp', '.policy.sshnp')
-            .replaceAll(n.from, '')
-            .toLowerCase();
-
-        final configKey = AtKey.fromString(
-          '${n.from}:config.$strippedKey${n.to}',
-        );
-        logger.shout('Sending config notification $configKey');
-        await notify(
-          configKey,
-          jsonEncode({'sessionLoggingAtsign': n.to}),
-          checkForFinalDeliveryStatus: false,
-          waitForFinalDeliveryStatus: false,
-          ttln: Duration(hours: 1),
-        );
+        onDaemonEvent(jsonEncode(e));
       },
     );
 

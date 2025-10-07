@@ -13,7 +13,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/events/event_logger.dart';
+import 'package:noports_core/src/events/event_mixins.dart';
 import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -28,7 +28,7 @@ import 'package:uuid/uuid.dart';
 
 @protected
 class SshnpdImpl
-    with AtClientBindings, ApkamSigning, NPEventLogger
+    with AtClientBindings, ApkamSigning, EventLogger
     implements Sshnpd {
   @override
   final AtSignLogger logger = AtSignLogger(' sshnpd ');
@@ -101,7 +101,7 @@ class SshnpdImpl
   final List<String> permitOpen;
 
   @override
-  String? sessionLoggingAtsign;
+  EventLoggingConfig? elc;
 
   SshnpdImpl({
     // final fields
@@ -326,10 +326,12 @@ class SshnpdImpl
         await _npEventLog(
           NPSessionEvent(
             timestamp: DateTime.timestamp(),
-            message:
-                'Notification ignored from ${notification.from}'
-                ' which is not authorized: ${auth.message ?? '[n/a]'}'
-                ' Notification value was ${notification.value}',
+            payload: {
+              'message':
+                  'Notification ignored from ${notification.from}'
+                  ' which is not authorized: ${auth.message ?? '[n/a]'}'
+                  ' Notification value was ${notification.value}',
+            },
             sessionId: sessionId,
             sessionEventType: NPSessionEventType.sessionDenied,
           ),
@@ -342,7 +344,7 @@ class SshnpdImpl
       await _npEventLog(
         NPSessionEvent(
           timestamp: DateTime.timestamp(),
-          message: auth.message ?? '',
+          payload: auth.message != null ? {'message': auth.message} : null,
           sessionId: sessionId,
           sessionEventType: NPSessionEventType.sessionApproved,
         ),
@@ -419,10 +421,10 @@ class SshnpdImpl
     }
   }
 
-  Future<void> _npEventLog(NPEvent event) async {
-    if (sessionLoggingAtsign != null) {
+  Future<void> _npEventLog(Event event) async {
+    if (elc != null) {
       // Log the session requested event
-      await log(sessionLoggingAtsign!, event);
+      await logEvent(elc!, event);
     }
   }
 
@@ -732,16 +734,16 @@ class SshnpdImpl
 
     logger.shout(
       'relayAtsign ${req.relayAtsign}'
-      ' sessionLoggingAtsign $sessionLoggingAtsign',
+      ' eventLoggingConfig $elc',
     );
-    if (req.relayAtsign != null && sessionLoggingAtsign != null) {
+    if (req.relayAtsign != null && elc != null) {
       final keyForRelay = AtKey.fromString(
         '${req.relayAtsign}:logging.${req.sessionId}.sessions.${Srvd.namespace}$deviceAtsign',
       )..metadata.namespaceAware = false;
       logger.shout('Sending session logging config to relay : $keyForRelay');
       await notify(
         keyForRelay,
-        jsonEncode({'sessionLoggingAtsign': sessionLoggingAtsign}),
+        jsonEncode(elc!.toJson()),
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         ttln: Duration(minutes: 1),
@@ -885,7 +887,7 @@ class SshnpdImpl
           ivC2DName: c2dBundle?.ivEncrypted,
           'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
           'ivD2C': d2cBundle?.ivEncrypted,
-          'sessionLoggingAtsign': sessionLoggingAtsign,
+          'eventLoggingConfig': elc?.toJson(),
         }),
         sessionId: req.sessionId,
       );
@@ -1195,7 +1197,7 @@ class SshnpdImpl
           ivC2DName: c2dBundle?.ivEncrypted,
           'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
           'ivD2C': d2cBundle?.ivEncrypted,
-          'sessionLoggingAtsign': sessionLoggingAtsign,
+          'eventLoggingConfig': elc?.toJson(),
         }),
         sessionId: req.sessionId,
       );
@@ -1684,7 +1686,7 @@ class SshnpdImpl
       return;
     }
     String regex =
-        '\\.$device\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign';
+        '\\.$device\\.devices\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign';
     logger.shout('Subscribing to $regex');
     subscribe(
       regex: regex,
@@ -1722,7 +1724,13 @@ class SshnpdImpl
     if (n.value == null) {
       return;
     }
-    sessionLoggingAtsign = jsonDecode(n.value!)['sessionLoggingAtsign'];
+    final json = jsonDecode(n.value!);
+    final elcJson = json['eventLoggingConfig'];
+    if (elcJson == null) {
+      logger.shout('No eventLoggingConfig');
+      return;
+    }
+    elc = EventLoggingConfig.fromJson(elcJson);
   }
 
   /// If using a policy service, tell it we're here

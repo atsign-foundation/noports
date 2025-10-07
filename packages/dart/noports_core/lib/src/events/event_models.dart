@@ -1,42 +1,73 @@
+import 'package:at_commons/atsign.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'event_models.g.dart';
 
-@JsonEnum()
-enum NPEventType { session, lifecycle }
+@JsonSerializable()
+class EventLoggingConfig {
+  /// The atSign to which we will send the event log notifications
+  final Atsign atSign;
 
-abstract class NPEvent {
+  /// The topic for the notifications - e.g. `abcdefg.events.logging.sshnp`
+  final String topic;
+
+  String get topicListenRegex => '\\.${topic.split('.').join('\\.')}';
+
+  /// Since events are logged using ephemeral notifications, they will
+  /// generally have a short lifetime, as the expectation is that the receiver
+  /// will be up and running most of the time. However we don't want to
+  /// hard-code a duration.
+  final Duration ttln;
+
+  EventLoggingConfig({
+    required this.atSign,
+    required this.topic,
+    this.ttln = const Duration(hours: 1),
+  });
+
+  Map<String, dynamic> toJson() => _$EventLoggingConfigToJson(this);
+
+  static EventLoggingConfig fromJson(Map<String, dynamic> json) =>
+      _$EventLoggingConfigFromJson(json);
+
+  @override
+  String toString() => toJson().toString();
+}
+
+abstract class Event {
+  static Map<String, Function> fromJsonFunctions = {};
   final DateTime timestamp;
-  final NPEventType eventType;
-  final String message;
+  final String traceId;
+  final String eventType;
+  final Map<String, dynamic>? payload;
 
-  NPEvent({
+  Event({
     required this.timestamp,
+    required this.traceId,
     required this.eventType,
-    required this.message,
+    required this.payload,
   });
 
   Map<String, dynamic> toJson();
 
-  static NPEvent fromJson(Map<String, dynamic> json) {
-    dynamic etStr = json['eventType'];
-    if (etStr == null) {
+  static Event fromJson(Map<String, dynamic> json) {
+    var eventType = json['eventType'];
+    if (eventType == null) {
       throw ArgumentError('Missing eventType in json: $json');
     }
-    NPEventType et;
-    try {
-      et = NPEventType.values.byName(etStr);
-    } catch (_) {
-      throw ArgumentError('Invalid eventType $etStr in json: $json');
+
+    if (fromJsonFunctions.containsKey(eventType)) {
+      return fromJsonFunctions[eventType]!(json);
     }
-    switch (et) {
-      case NPEventType.session:
-        return NPSessionEvent.fromJson(json);
-      case NPEventType.lifecycle:
-        return NPLifecycleEvent.fromJson(json);
-    }
+
+    throw StateError(
+      'No fromJson function registered for eventType $eventType',
+    );
   }
 }
+
+@JsonEnum()
+enum NPEventType { session, lifecycle }
 
 @JsonEnum()
 enum NPSessionEventType {
@@ -54,16 +85,16 @@ enum NPSessionEventType {
 }
 
 @JsonSerializable()
-class NPSessionEvent extends NPEvent {
+class NPSessionEvent extends Event {
   final String sessionId;
   final NPSessionEventType sessionEventType;
 
   NPSessionEvent({
     required super.timestamp,
-    required super.message,
+    required super.payload,
     required this.sessionId,
     required this.sessionEventType,
-  }) : super(eventType: NPEventType.session);
+  }) : super(eventType: NPEventType.session.name, traceId: sessionId);
 
   @override
   Map<String, dynamic> toJson() => _$NPSessionEventToJson(this);
@@ -79,14 +110,15 @@ enum NPProgram { client, daemon, relay, policy, events }
 enum NPLifecycleEventType { started, stopped }
 
 @JsonSerializable()
-class NPLifecycleEvent extends NPEvent {
+class NPLifecycleEvent extends Event {
   final NPProgram program;
 
   NPLifecycleEvent({
     required super.timestamp,
-    required super.message,
+    required super.traceId,
+    required super.payload,
     required this.program,
-  }) : super(eventType: NPEventType.lifecycle);
+  }) : super(eventType: NPEventType.lifecycle.name);
 
   @override
   Map<String, dynamic> toJson() => _$NPLifecycleEventToJson(this);

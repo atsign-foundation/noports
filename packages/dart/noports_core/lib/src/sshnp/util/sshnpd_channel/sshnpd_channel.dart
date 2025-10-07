@@ -7,7 +7,7 @@ import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
-import 'package:noports_core/src/events/event_logger.dart';
+import 'package:noports_core/src/events/event_mixins.dart';
 import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -30,7 +30,7 @@ enum SshnpdAck {
 /// and the daemon. It is responsible for sending the request to the daemon and
 /// receiving the response from the daemon.
 abstract class SshnpdChannel
-    with AsyncInitialization, AtClientBindings, NPEventLogger {
+    with AsyncInitialization, AtClientBindings, EventLogger {
   @override
   final logger = AtSignLogger(' SshnpdChannel ');
   @override
@@ -40,7 +40,7 @@ abstract class SshnpdChannel
   final String sessionId;
   final String namespace;
 
-  String? sessionLoggingAtsign;
+  EventLoggingConfig? eventLoggingConfig;
 
   // * Volatile fields set at runtime
 
@@ -135,12 +135,12 @@ abstract class SshnpdChannel
     } on TimeoutException catch (_) {}
     logger.info('sshnpdAck: $sshnpdAck');
 
-    if (sessionLoggingAtsign != null) {
-      await log(
-        sessionLoggingAtsign!,
+    if (eventLoggingConfig != null) {
+      await logEvent(
+        eventLoggingConfig!,
         NPSessionEvent(
           timestamp: DateTime.timestamp(),
-          message: '',
+          payload: null,
           sessionId: sessionId,
           sessionEventType: NPSessionEventType.daemonResponseReceived,
         ),

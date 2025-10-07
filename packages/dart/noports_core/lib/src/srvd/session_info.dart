@@ -1,4 +1,4 @@
-import 'package:at_commons/atsign.dart';
+import 'package:noports_core/src/events/event_models.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:socket_connector/socket_connector.dart';
 
@@ -13,7 +13,7 @@ class SessionInfo {
 
   String get atSignB => params.atSignB!;
 
-  Atsign? sessionLoggingAtsign;
+  EventLoggingConfig? eventLoggingConfig;
 
   SessionInfo({required this.params, required this.connector});
 }

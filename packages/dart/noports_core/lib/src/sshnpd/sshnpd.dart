@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/events.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_params.dart';
@@ -86,7 +87,7 @@ abstract class Sshnpd {
   abstract final String version;
 
   /// Sent by the policy atSign when using policy service
-  abstract String? sessionLoggingAtsign;
+  abstract EventLoggingConfig? elc;
 
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
