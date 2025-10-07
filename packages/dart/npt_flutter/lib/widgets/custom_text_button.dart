@@ -107,7 +107,7 @@ class CustomTextButton extends StatelessWidget {
           break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            context.read<BackupKeyCubit>().backUpKeys();
+            context.read<BackupKeyCubit>().backUpKeys(popDialog: false);
           }
           break;
         case CustomListTileType.resetAtsign:
