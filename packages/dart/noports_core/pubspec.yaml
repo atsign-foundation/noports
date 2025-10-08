@@ -29,6 +29,10 @@ dependencies:
   version: ^3.0.2
 
 dependency_overrides:
+  socket_connector:
+    git:
+      url: https://github.com/atsign-foundation/socket_connector
+      ref: add-connector-stats
   at_client:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk

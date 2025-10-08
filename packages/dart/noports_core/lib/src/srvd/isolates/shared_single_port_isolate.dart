@@ -245,7 +245,10 @@ class SinglePortWorker extends RelayWorker {
         logger.shout('sc.done for ${params.sessionId}');
         sessions.remove(params.sessionId);
         toMain.send(
-          IIRequest.create('sessionComplete', {'sessionId': params.sessionId}),
+          IIRequest.create('sessionComplete', {
+            'sessionId': params.sessionId,
+            'stats': connector.stats,
+          }),
         );
       }),
     );

@@ -250,7 +250,11 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
             timestamp: sessionInfo.requestTime,
             traceId: sessionId,
             eventType: NPEventType.session.name,
-            payload: {'sessionEventType': NPSessionEventType.requested.name},
+            payload: {
+              'sessionEventType': NPSessionEventType.requested.name,
+              'atSignA': sessionInfo.atSignA,
+              'atSignB': sessionInfo.atSignB,
+            },
           ),
         );
 
@@ -495,6 +499,28 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
     }
   }
 
+  Future<void> _handleSessionComplete(IIRequest msg) async {
+    final sessionId = msg.payload['sessionId'];
+    SessionInfo? si = sessions[sessionId];
+    if (si != null && si.eventLoggingConfig != null) {
+      await logEvent(
+        si.eventLoggingConfig!,
+        AtEvent(
+          timestamp: DateTime.timestamp(),
+          traceId: msg.payload['sessionId'],
+          eventType: NPEventType.session.name,
+          payload: {
+            'sessionEventType': NPSessionEventType.ended.name,
+            'atSignA': si.atSignA,
+            'atSignB': si.atSignB,
+            'stats': msg.payload['stats'].toJson(),
+          },
+        ),
+      );
+    }
+    sessions.remove(sessionId);
+  }
+
   /// This function spawns a new socketConnector in a background isolate
   /// once the socketConnector has spawned and is ready to accept connections
   /// it sends back the port numbers to the main isolate
@@ -562,22 +588,7 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
             await lookup(msg, toSpawned);
             break;
           case 'sessionComplete':
-            final sessionId = msg.payload['sessionId'];
-            if (sessions[sessionId]?.eventLoggingConfig != null) {
-              await logEvent(
-                sessions[sessionId]!.eventLoggingConfig!,
-                AtEvent(
-                  timestamp: DateTime.timestamp(),
-                  traceId: msg.payload['sessionId'],
-                  eventType: NPEventType.session.name,
-                  payload: {
-                    'sessionEventType': NPSessionEventType.ended.name,
-                    'message': msg.payload['message'],
-                  },
-                ),
-              );
-            }
-            sessions.remove(sessionId);
+            await _handleSessionComplete(msg);
             break;
           default:
             toSpawned.send(
@@ -702,22 +713,7 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
             await lookup(msg, toSpawned);
             break;
           case 'sessionComplete':
-            final sessionId = msg.payload['sessionId'];
-            if (sessions[sessionId]?.eventLoggingConfig != null) {
-              await logEvent(
-                sessions[sessionId]!.eventLoggingConfig!,
-                AtEvent(
-                  timestamp: DateTime.timestamp(),
-                  traceId: msg.payload['sessionId'],
-                  eventType: NPEventType.session.name,
-                  payload: {
-                    'sessionEventType': NPSessionEventType.ended.name,
-                    'message': msg.payload['message'],
-                  },
-                ),
-              );
-            }
-            sessions.remove(sessionId);
+            await _handleSessionComplete(msg);
             break;
           case 'handleIsolateFailure':
             logger.shout('');
