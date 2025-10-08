@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
+import 'package:at_client/events.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
-import 'package:noports_core/src/events/event_mixins.dart';
-import 'package:noports_core/src/events/event_models.dart';
+import 'package:noports_core/src/events/event_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
@@ -138,11 +138,13 @@ abstract class SshnpdChannel
     if (eventLoggingConfig != null) {
       await logEvent(
         eventLoggingConfig!,
-        NPSessionEvent(
+        AtEvent(
           timestamp: DateTime.timestamp(),
-          payload: null,
-          sessionId: sessionId,
-          sessionEventType: NPSessionEventType.daemonResponseReceived,
+          traceId: sessionId,
+          eventType: NPEventType.session.name,
+          payload: {
+            'sessionEventType': NPSessionEventType.daemonResponseReceived.name,
+          },
         ),
       );
     }

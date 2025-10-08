@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
+import 'package:at_client/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:file/local.dart';
@@ -13,8 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/events/event_mixins.dart';
-import 'package:noports_core/src/events/event_models.dart';
+import 'package:noports_core/src/events/event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
@@ -324,16 +324,17 @@ class SshnpdImpl
 
       if (sessionId != null) {
         await _npEventLog(
-          NPSessionEvent(
+          AtEvent(
             timestamp: DateTime.timestamp(),
+            eventType: NPEventType.session.name,
             payload: {
+              'sessionEventType': NPSessionEventType.sessionDenied.name,
               'message':
                   'Notification ignored from ${notification.from}'
                   ' which is not authorized: ${auth.message ?? '[n/a]'}'
                   ' Notification value was ${notification.value}',
             },
-            sessionId: sessionId,
-            sessionEventType: NPSessionEventType.sessionDenied,
+            traceId: sessionId,
           ),
         );
       }
@@ -342,11 +343,14 @@ class SshnpdImpl
 
     if (sessionId != null) {
       await _npEventLog(
-        NPSessionEvent(
+        AtEvent(
           timestamp: DateTime.timestamp(),
-          payload: auth.message != null ? {'message': auth.message} : null,
-          sessionId: sessionId,
-          sessionEventType: NPSessionEventType.sessionApproved,
+          eventType: NPEventType.session.name,
+          payload: {
+            'sessionEventType': NPSessionEventType.sessionApproved.name,
+            'message': auth.message,
+          },
+          traceId: sessionId,
         ),
       );
     }

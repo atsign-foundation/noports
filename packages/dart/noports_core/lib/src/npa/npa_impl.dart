@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
+import 'package:at_client/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
-import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 

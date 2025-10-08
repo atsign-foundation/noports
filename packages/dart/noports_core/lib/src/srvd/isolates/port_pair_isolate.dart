@@ -43,9 +43,11 @@ class PortPairWorker extends RelayWorker {
     logger.info('Waiting for connector to close');
     await connector!.done;
 
-    IIRequest.create('sessionComplete', {
-      'sessionId': srvdSessionParams.sessionId,
-    });
+    toMain.send(
+      IIRequest.create('sessionComplete', {
+        'sessionId': srvdSessionParams.sessionId,
+      }),
+    );
 
     logger.shout(
       'Finished session ${srvdSessionParams.sessionId}'

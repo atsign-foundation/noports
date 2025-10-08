@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
-import 'package:noports_core/src/events/event_mixins.dart';
-import 'package:noports_core/src/events/event_models.dart';
+import 'package:noports_core/src/events/event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
@@ -246,11 +246,11 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         // Log the session requested event, now that we have a session logging config
         await logEvent(
           sessionInfo.eventLoggingConfig!,
-          NPSessionEvent(
+          AtEvent(
             timestamp: sessionInfo.requestTime,
-            payload: null,
-            sessionId: sessionId,
-            sessionEventType: NPSessionEventType.requested,
+            traceId: sessionId,
+            eventType: NPEventType.session.name,
+            payload: {'sessionEventType': NPSessionEventType.requested.name},
           ),
         );
 
@@ -258,11 +258,11 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         // this message means the session is starting
         await logEvent(
           sessionInfo.eventLoggingConfig!,
-          NPSessionEvent(
+          AtEvent(
             timestamp: DateTime.timestamp(),
-            payload: null,
-            sessionId: sessionId,
-            sessionEventType: NPSessionEventType.started,
+            traceId: sessionId,
+            eventType: NPEventType.session.name,
+            payload: {'sessionEventType': NPSessionEventType.started.name},
           ),
         );
         break;
@@ -566,11 +566,14 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
             if (sessions[sessionId]?.eventLoggingConfig != null) {
               await logEvent(
                 sessions[sessionId]!.eventLoggingConfig!,
-                NPSessionEvent(
+                AtEvent(
                   timestamp: DateTime.timestamp(),
-                  payload: {'message': msg.payload['message']},
-                  sessionId: msg.payload['sessionId'],
-                  sessionEventType: NPSessionEventType.ended,
+                  traceId: msg.payload['sessionId'],
+                  eventType: NPEventType.session.name,
+                  payload: {
+                    'sessionEventType': NPSessionEventType.ended.name,
+                    'message': msg.payload['message'],
+                  },
                 ),
               );
             }
@@ -703,11 +706,14 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
             if (sessions[sessionId]?.eventLoggingConfig != null) {
               await logEvent(
                 sessions[sessionId]!.eventLoggingConfig!,
-                NPSessionEvent(
+                AtEvent(
                   timestamp: DateTime.timestamp(),
-                  payload: {'message': msg.payload['message']},
-                  sessionId: msg.payload['sessionId'],
-                  sessionEventType: NPSessionEventType.ended,
+                  traceId: msg.payload['sessionId'],
+                  eventType: NPEventType.session.name,
+                  payload: {
+                    'sessionEventType': NPSessionEventType.ended.name,
+                    'message': msg.payload['message'],
+                  },
                 ),
               );
             }
