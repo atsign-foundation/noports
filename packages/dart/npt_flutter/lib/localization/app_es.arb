@@ -278,7 +278,7 @@
   "validationErrorLocalPortField": "El número debe estar entre 1024 y 65535",
   "validationErrorLongField": "El campo debe tener entre 1 y 36 caracteres",
   "validationErrorRelayField": "El relay debe ser un atSign válido",
-  "validationErrorRemoteHostField": "El campo debe ser un nombre de host parcial o totalmente cualificado o una dirección IP",
+  "validationErrorHostField": "El campo debe ser un nombre de host parcial o totalmente cualificado o una dirección IP",
   "validationErrorRemotePortField": "El número debe estar entre 1 y 65535",
   "waitingForApproval": "Esperando aprobación...",
   "whatAreAtKeys": "¿Qué son las atKeys?",

@@ -34,7 +34,7 @@ class ProfileRemoteHostTextField extends StatelessWidget {
               child: TextFormField(
                 initialValue: state,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: FormValidator.validateRemoteHostField,
+                validator: FormValidator.validateHostField,
                 decoration: const InputDecoration(errorMaxLines: 3),
                 onChanged: (value) {
                   var bloc = context.read<ProfileBloc>();

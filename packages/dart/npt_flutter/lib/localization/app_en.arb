@@ -277,7 +277,7 @@
    "validationErrorLocalPortField": "Number must be between 1024 and 65535",
    "validationErrorLongField": "Field must be 1-36 characters long",
    "validationErrorRelayField": "Relay must be a valid atsign",
-   "validationErrorRemoteHostField": "Field must be partially or fully qualified hostname or an IP address",
+   "validationErrorHostField": "Field must be partially or fully qualified hostname or an IP address",
    "validationErrorRemotePortField": "Number must be between 1 and 65535",
    "waitingForApproval": "Waiting for approval...",
    "whatAreAtKeys": "What are atKeys?",

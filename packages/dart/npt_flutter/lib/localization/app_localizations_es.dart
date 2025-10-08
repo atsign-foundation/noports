@@ -935,7 +935,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get validationErrorRelayField => 'El relay debe ser un atSign válido';
 
   @override
-  String get validationErrorRemoteHostField =>
+  String get validationErrorHostField =>
       'El campo debe ser un nombre de host parcial o totalmente cualificado o una dirección IP';
 
   @override

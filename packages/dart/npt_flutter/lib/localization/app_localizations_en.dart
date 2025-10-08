@@ -921,7 +921,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validationErrorRelayField => 'Relay must be a valid atsign';
 
   @override
-  String get validationErrorRemoteHostField =>
+  String get validationErrorHostField =>
       'Field must be partially or fully qualified hostname or an IP address';
 
   @override

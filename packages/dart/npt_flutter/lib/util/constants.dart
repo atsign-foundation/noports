@@ -50,4 +50,5 @@ class StringConst {
   static const String monospace = 'monospace';
   static const String noPorts = 'NoPorts';
   static const String desktop = 'Desktop';
+  static const String localhost = 'localhost';
 }

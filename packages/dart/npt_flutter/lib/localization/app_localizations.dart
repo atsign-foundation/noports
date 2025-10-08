@@ -1781,11 +1781,11 @@ abstract class AppLocalizations {
   /// **'Relay must be a valid atsign'**
   String get validationErrorRelayField;
 
-  /// No description provided for @validationErrorRemoteHostField.
+  /// No description provided for @validationErrorHostField.
   ///
   /// In en, this message translates to:
   /// **'Field must be partially or fully qualified hostname or an IP address'**
-  String get validationErrorRemoteHostField;
+  String get validationErrorHostField;
 
   /// No description provided for @validationErrorRemotePortField.
   ///

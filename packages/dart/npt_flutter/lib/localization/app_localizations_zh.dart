@@ -879,7 +879,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -1781,7 +1781,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -2682,7 +2682,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
+  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
 
   @override
   String get validationErrorRemotePortField => '數字必須介於 1 和 65535 之間';
