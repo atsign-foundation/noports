@@ -95,6 +95,7 @@ const gap0 = SizedBox();
 const gapW4 = SizedBox(width: Sizes.p4);
 const gapW8 = SizedBox(width: Sizes.p8);
 const gapW10 = SizedBox(width: Sizes.p10);
+const gapW12 = SizedBox(width: Sizes.p12);
 const gapW14 = SizedBox(width: Sizes.p14);
 const gapW16 = SizedBox(width: Sizes.p16);
 const gapW20 = SizedBox(width: Sizes.p20);
