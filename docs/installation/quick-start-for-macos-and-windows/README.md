@@ -16,7 +16,7 @@ For people connecting from Linux please follow the [Linux Installation Guide](..
 Go to [noports.com](https://my.noports.com/no-ports-invite/30dayfreetrial) and sign up for a subscription or free trial&#x20;
 
 {% hint style="info" %}
-Make note of your atSigns (e.g., @example01\_np, @example01\_np). You'll need them shortly.
+Make note of your atSigns (e.g., @example01\_np, @example02\_np). You'll need them shortly.
 {% endhint %}
 
 ### <mark style="color:orange;">Step 2:</mark> Download the NoPorts desktop application
