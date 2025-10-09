@@ -1,4 +1,4 @@
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:socket_connector/socket_connector.dart';
 

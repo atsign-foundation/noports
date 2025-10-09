@@ -8,7 +8,7 @@ import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -16,6 +16,8 @@ import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 void main(List<String> args) async {
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+
   ArgParser parser = CLIBase.createArgsParser(
       namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);
   parser.addFlag('debug', help: 'maximum debug verbosity ');
@@ -53,8 +55,6 @@ void main(List<String> args) async {
 
       verboseLogging = parsedArgs['verbose'];
       debugLogging = parsedArgs['debug'];
-
-      AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
       if (debugLogging) {
         AtSignLogger.root_level = 'FINEST';

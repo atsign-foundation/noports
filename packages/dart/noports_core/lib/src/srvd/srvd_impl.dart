@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:at_client/at_client.dart';
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
-import 'package:noports_core/src/events/event_types.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
@@ -16,6 +16,7 @@ import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 import 'package:noports_core/src/srvd/srvd_util_mixin.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 import 'isolates/types.dart';
 import 'srvd_session_params.dart';
@@ -239,36 +240,10 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         }
         final elc = AtEventLoggingConfig.fromJson(jsonDecode(n.value!));
         if (!await validAtsign(elc.atSign)) {
-          logger.warning('Invalid sessionLoggingAtsign ${elc.atSign}');
+          logger.warning('Invalid eventLoggingAtsign ${elc.atSign}');
           return;
         }
         sessionInfo.eventLoggingConfig = elc;
-        // Log the session requested event, now that we have a session logging config
-        await logEvent(
-          sessionInfo.eventLoggingConfig!,
-          AtEvent(
-            timestamp: sessionInfo.requestTime,
-            traceId: sessionId,
-            eventType: NPEventType.session.name,
-            payload: {
-              'sessionEventType': NPSessionEventType.requested.name,
-              'atSignA': sessionInfo.atSignA,
-              'atSignB': sessionInfo.atSignB,
-            },
-          ),
-        );
-
-        // And log a session started event, since the fact we've received
-        // this message means the session is starting
-        await logEvent(
-          sessionInfo.eventLoggingConfig!,
-          AtEvent(
-            timestamp: DateTime.timestamp(),
-            traceId: sessionId,
-            eventType: NPEventType.session.name,
-            payload: {'sessionEventType': NPSessionEventType.started.name},
-          ),
-        );
         break;
       default:
         logger.warning(
@@ -505,16 +480,9 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
     if (si != null && si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
-        AtEvent(
-          timestamp: DateTime.timestamp(),
-          traceId: msg.payload['sessionId'],
-          eventType: NPEventType.session.name,
-          payload: {
-            'sessionEventType': NPSessionEventType.ended.name,
-            'atSignA': si.atSignA,
-            'atSignB': si.atSignB,
-            'stats': msg.payload['stats'].toJson(),
-          },
+        NPSessionEvent.ended(
+          sessionId: sessionId,
+          stats: msg.payload['stats'] as Stats,
         ),
       );
     }

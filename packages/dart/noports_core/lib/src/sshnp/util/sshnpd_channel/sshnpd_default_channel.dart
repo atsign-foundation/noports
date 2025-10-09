@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -119,7 +119,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
             .result;
       }
 
-      final elcJson = daemonResponse['sessionLoggingAtsign'];
+      final elcJson = daemonResponse['eventLoggingConfig'];
       if (elcJson != null) {
         eventLoggingConfig = AtEventLoggingConfig.fromJson(elcJson);
       }

@@ -84,11 +84,10 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: event-logging
-      resolved-ref: "6b089c5992e743572693b7041b98624f772302f3"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
+      name: at_client
+      sha256: "17f92dc153308b7a0809aa52d311d2f85965bfdd94678f4718a6502cbf34e4e3"
+      url: "https://pub.dev"
+    source: hosted
     version: "3.8.0"
   at_commons:
     dependency: "direct main"
@@ -709,12 +708,11 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      path: "."
-      ref: add-connector-stats
-      resolved-ref: "31766febd8050238b6ee101d678a06c87553e4f4"
-      url: "https://github.com/atsign-foundation/socket_connector"
-    source: git
-    version: "2.3.3"
+      name: socket_connector
+      sha256: "893d5968b5e8cadb454ecbe99fca91db8c2d36c046b63bb8041ccf33d2a4fd8e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   source_map_stack_trace:
     dependency: transitive
     description:

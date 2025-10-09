@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:file/local.dart';
@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/events/event_types.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
@@ -309,8 +309,15 @@ class SshnpdImpl
   }
 
   /// Notification handler for requests from clients
-  void clientRequestNotificationHandler(AtNotification notification) async {
-    String? sessionId = sessionIdFromNotification(notification);
+  Future<void> clientRequestNotificationHandler(
+    AtNotification notification,
+  ) async {
+    String messageType = notification.key
+        .replaceAll('${notification.to}:', '')
+        .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
+        // convert to lower case as the latest AtClient converts notification
+        // keys to lower case when received
+        .toLowerCase();
 
     NPAAuthCheckResponse auth = await authCheck(notification);
     if (!auth.authorized) {
@@ -322,45 +329,8 @@ class SshnpdImpl
         ' Notification value was ${notification.value}',
       );
 
-      if (sessionId != null) {
-        await _npEventLog(
-          AtEvent(
-            timestamp: DateTime.timestamp(),
-            eventType: NPEventType.session.name,
-            payload: {
-              'sessionEventType': NPSessionEventType.sessionDenied.name,
-              'message':
-                  'Notification ignored from ${notification.from}'
-                  ' which is not authorized: ${auth.message ?? '[n/a]'}'
-                  ' Notification value was ${notification.value}',
-            },
-            traceId: sessionId,
-          ),
-        );
-      }
       return;
     }
-
-    if (sessionId != null) {
-      await _npEventLog(
-        AtEvent(
-          timestamp: DateTime.timestamp(),
-          eventType: NPEventType.session.name,
-          payload: {
-            'sessionEventType': NPSessionEventType.sessionApproved.name,
-            'message': auth.message,
-          },
-          traceId: sessionId,
-        ),
-      );
-    }
-
-    String messageType = notification.key
-        .replaceAll('${notification.to}:', '')
-        .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
-        // convert to lower case as the latest AtClient converts notification
-        // keys to lower case when received
-        .toLowerCase();
 
     // For session-based requests, try to acquire mutex before processing
     if (['ssh_request', 'npt_request', 'sshd'].contains(messageType)) {
@@ -425,7 +395,7 @@ class SshnpdImpl
     }
   }
 
-  Future<void> _npEventLog(AtEvent event) async {
+  Future<void> _logEvent(Map<String, dynamic> event) async {
     if (elc != null) {
       // Log the session requested event
       await logEvent(elc!, event);
@@ -677,6 +647,17 @@ class SshnpdImpl
       return;
     }
 
+    await logEvent(
+      elc!,
+      NPSessionEvent.requested(
+        sessionId: req.sessionId,
+        atsignA: requestingAtsign,
+        atsignB: deviceAtsign,
+        policyAtsign: policyManagerAtsign,
+        relayAtsign: req.relayAtsign,
+      ),
+    );
+
     try {
       await verifyEnvelopeSignature(
         atClient,
@@ -685,6 +666,15 @@ class SshnpdImpl
         envelope,
       );
     } catch (e) {
+      await _logEvent(
+        NPSessionEvent.denied(
+          sessionId: req.sessionId,
+          message:
+          'Failed to verify signature of msg from $requestingAtsign'
+              ' : $e',
+        ),
+      );
+
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
       logger.shout('Notification value: ${notification.value}');
@@ -705,6 +695,14 @@ class SshnpdImpl
     String requested = '${req.requestedHost}:${req.requestedPort}';
     // Check if this *daemon* allows connections to the requested host / port
     if (!_permittedToOpen(permitOpen, req)) {
+      await _logEvent(
+        NPSessionEvent.denied(
+          sessionId: req.sessionId,
+          message:
+          'Daemon permit-open $permitOpen but request is for $requested',
+        ),
+      );
+
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
@@ -720,6 +718,14 @@ class SshnpdImpl
 
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
+      await _logEvent(
+        NPSessionEvent.denied(
+          sessionId: req.sessionId,
+          message:
+          'Policy is to allow $permitOpen but request is for $requested',
+        ),
+      );
+
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
@@ -734,7 +740,13 @@ class SshnpdImpl
     }
 
     // Start our side of the tunnel
-    await startNpt(requestingAtsign: requestingAtsign, req: req);
+    try {
+      await startNpt(requestingAtsign: requestingAtsign, req: req);
+    } catch (_) {
+      // has already been handled inside startNpt
+      // we need to catch here in order to return at this point
+      return;
+    }
 
     logger.shout(
       'relayAtsign ${req.relayAtsign}'
@@ -753,6 +765,8 @@ class SshnpdImpl
         ttln: Duration(minutes: 1),
       );
     }
+
+    await _logEvent(NPSessionEvent.started(sessionId: req.sessionId));
   }
 
   /// request can be a [NptSessionRequest] or [SshnpSessionRequest]
@@ -907,6 +921,7 @@ class SshnpdImpl
             'Failed to start up the daemon side of the relay socket tunnel : $e',
         sessionId: req.sessionId,
       );
+      rethrow;
     }
   }
 
@@ -942,7 +957,15 @@ class SshnpdImpl
       );
       return;
     }
-
+    await _logEvent(
+      NPSessionEvent.requested(
+        sessionId: req.sessionId,
+        atsignA: requestingAtsign,
+        atsignB: deviceAtsign,
+        policyAtsign: policyManagerAtsign,
+        relayAtsign: req.relayAtsign,
+      ),
+    );
     try {
       await verifyEnvelopeSignature(
         atClient,
@@ -951,6 +974,14 @@ class SshnpdImpl
         envelope,
       );
     } catch (e) {
+      await _logEvent(
+        NPSessionEvent.denied(
+          sessionId: req.sessionId,
+          message:
+              'Failed to verify signature of msg from $requestingAtsign'
+              ' : $e',
+        ),
+      );
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
       logger.shout('Notification value: ${notification.value}');

@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_client/events.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
-import 'package:noports_core/src/events/event_types.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
@@ -133,21 +133,15 @@ abstract class SshnpdChannel
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {}
+
     logger.info('sshnpdAck: $sshnpdAck');
 
     if (eventLoggingConfig != null) {
       await logEvent(
         eventLoggingConfig!,
-        AtEvent(
-          timestamp: DateTime.timestamp(),
-          traceId: sessionId,
-          eventType: NPEventType.session.name,
-          payload: {
-            'sessionEventType': NPSessionEventType.daemonResponseReceived.name,
-          },
-        ),
-      );
+        NPSessionEvent.daemonRespRcvd(sessionId: sessionId, ack: sshnpdAck));
     }
+
     // Might be nicer to return a Future<SshnpdAck, String>
     // with the String being the failure reason (if any)
     return sshnpdAck;
