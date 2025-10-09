@@ -133,7 +133,7 @@ void main() {
         await tester.pump();
 
         // Should show custom text buttons
-        expect(find.byType(CustomTextButton), findsNWidgets(7));
+        expect(find.byType(CustomTextButton), findsNWidgets(6));
       });
 
       testWidgets('should display settings content sections', (

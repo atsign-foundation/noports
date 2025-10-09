@@ -46,10 +46,6 @@ class SettingsView extends StatelessWidget {
                           CustomTextButton.discord(),
                           CustomTextButton.feedback(),
                           CustomTextButton.privacyPolicy(),
-
-                          CustomTextButton.signOut(),
-
-                          // const Spacer(),
                         ],
                       ),
                     ),

@@ -7,7 +7,7 @@
 - **FIX**: Localization added for unlocalized strings.
 - **FIX**: Updated onboarding widget to reflect management portal website UI.
 - **FIX**: Updated connection screen screen empty profile state UI.
-- **FIX**: Moved version number & switch atsign button from settings page to the appbar.
+- **FIX**: Moved version number, switch atSign and Sign Out button from settings page to the appbar.
 - **FEAT**: Updated Profiles to set localHost property.
 
 ## 1.5.0+18
