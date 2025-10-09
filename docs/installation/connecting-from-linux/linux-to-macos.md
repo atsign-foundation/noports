@@ -31,12 +31,26 @@ To check if the installation downloaded correctly:
 stat universal.sh
 ```
 
-Make the script executable and run the script.
+Make the script executable and run the script by running the command below:
 
 ```bash
 chmod u+x universal.sh
 ./universal.sh
 ```
+
+During installation, you’ll be prompted to enter the following items:
+
+{% hint style="info" %}
+You may be asked to enter your password if your machine requires sudo privileges.
+{% endhint %}
+
+**The install type**
+
+* Enter  `client` when prompted.
+
+**Your atSigns (Skip this step)**
+
+* To skip this step, simply press the Enter/Return key twice. Your atSigns will be activated in the upcoming steps.
 
 ### <mark style="color:orange;">Step 2:</mark> Activate your client atSign (@example01\_np)
 
@@ -114,12 +128,31 @@ To check if the installation downloaded correctly:
 stat universal.sh
 ```
 
-Make the script executable and run the script.
+Make the script executable and run the script by running the command below:
 
 ```bash
 chmod u+x universal.sh
 ./universal.sh
 ```
+
+During installation, you’ll be prompted to enter the following items:
+
+{% hint style="info" %}
+You may be asked to enter your password if your machine requires sudo privileges.
+{% endhint %}
+
+**The install type**
+
+* Enter  `device` when prompted.
+
+**Your atSigns**
+
+* Client atSign: e.g., `@example01_np`
+* Device atSign: e.g., `@example02_np`&#x20;
+
+**Your device name**
+
+* This should be the name of the machine you're currently installing on.
 
 ### <mark style="color:orange;">Step 6:</mark> Initiate atSign authorization request
 
