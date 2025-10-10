@@ -129,7 +129,7 @@ void main(List<String> args) async {
   logger.shout('Starting AtRpc Server to listen for forced heartbeats...');
   AtRpc(
     atClient: atClient,
-    baseNameSpace: 'sshnp.noports',
+    baseNameSpace: 'sshnp',
     domainNameSpace: 'npp_atserver_heartbeat',
     callbacks: _HeartbeatHelper(atClient: atClient),
     allowList: {atClient.getCurrentAtSign()!}.toSet(),

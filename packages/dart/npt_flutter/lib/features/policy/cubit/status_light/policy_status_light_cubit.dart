@@ -124,7 +124,7 @@ final class PolicyStatusLightCubit
     final rpc = AtRpcClient(
       serverAtsign: atClient.getCurrentAtSign()!,
       atClient: atClient,
-      baseNameSpace: 'sshnp.noports',
+      baseNameSpace: 'sshnp',
       domainNameSpace: 'npp_atserver_heartbeat',
     );
 
