@@ -47,8 +47,8 @@ class CustomTextButton extends StatelessWidget {
   });
 
   const CustomTextButton.resetAtsign({
-    this.iconData = Icons.rotate_right,
-    this.type = CustomListTileType.resetAtsign,
+    this.iconData = Icons.delete_outline,
+    this.type = CustomListTileType.removeAtsign,
     super.key,
   });
   const CustomTextButton.signOut({
@@ -110,7 +110,7 @@ class CustomTextButton extends StatelessWidget {
             context.read<BackupKeyCubit>().backUpKeys(popDialog: false);
           }
           break;
-        case CustomListTileType.resetAtsign:
+        case CustomListTileType.removeAtsign:
           final futurePreference = await AtClientMethods.loadAtClientPreference(
             rootDomain!,
           );
@@ -182,8 +182,8 @@ class CustomTextButton extends StatelessWidget {
         //   return strings.switchAtsign;
         case CustomListTileType.backupYourKey:
           return strings.backupYourKey;
-        case CustomListTileType.resetAtsign:
-          return strings.resetAtsign;
+        case CustomListTileType.removeAtsign:
+          return strings.removeAtsign;
         case CustomListTileType.feedback:
           return strings.feedback;
         case CustomListTileType.signOut:
@@ -191,7 +191,7 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
-    if (type == CustomListTileType.resetAtsign) {
+    if (type == CustomListTileType.removeAtsign) {
       return BlocBuilder<OnboardingCubit, AtsignInformation>(
         builder: (context, atsignInformation) {
           return Padding(
@@ -234,7 +234,7 @@ enum CustomListTileType {
   faq,
   privacyPolicy,
   backupYourKey,
-  resetAtsign,
+  removeAtsign,
   feedback,
   signOut,
 }

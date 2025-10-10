@@ -33,7 +33,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -711,6 +711,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'A porta que será usada na máquina remota';
 
   @override
+  String get removeAtsign => 'Remover atSign';
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -719,9 +722,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String get resetAtsign => 'Redefinir atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {
@@ -995,7 +995,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -1673,6 +1673,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'A porta que será usada na máquina remota';
 
   @override
+  String get removeAtsign => 'Remover atSign';
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -1681,9 +1684,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String get resetAtsign => 'Redefinir atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {

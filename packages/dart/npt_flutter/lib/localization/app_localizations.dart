@@ -164,7 +164,7 @@ abstract class AppLocalizations {
   /// No description provided for @allRightsReserved.
   ///
   /// In en, this message translates to:
-  /// **'@ 2025 Atsign, All Rights Reserved'**
+  /// **'© 2025 Atsign, All Rights Reserved'**
   String get allRightsReserved;
 
   /// No description provided for @americas.
@@ -1391,6 +1391,12 @@ abstract class AppLocalizations {
   /// **'The port that will be used on the remote machine'**
   String get remotePortDescription;
 
+  /// No description provided for @removeAtsign.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove atSign'**
+  String get removeAtsign;
+
   /// No description provided for @requestExpired.
   ///
   /// In en, this message translates to:
@@ -1408,12 +1414,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resend Pin'**
   String get resendPin;
-
-  /// No description provided for @resetAtsign.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset atSign'**
-  String get resetAtsign;
 
   /// No description provided for @retryFailedWithDetails.
   ///

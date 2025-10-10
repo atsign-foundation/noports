@@ -35,7 +35,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get allRightsReserved =>
-      '@ 2025 Atsign, Todos los derechos reservados';
+      '© 2025 Atsign, Todos los derechos reservados';
 
   @override
   String get americas => 'Américas';
@@ -711,6 +711,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'El puerto que se usará en la máquina remota';
 
   @override
+  String get removeAtsign => 'Eliminar atSign';
+
+  @override
   String get requestExpired =>
       'La solicitud original ha expirado. Por favor, vuelve a enviar.';
 
@@ -719,9 +722,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String get resetAtsign => 'Restablecer atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {

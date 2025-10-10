@@ -33,7 +33,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertDialogTitle => 'Are you sure?';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, All Rights Reserved';
+  String get allRightsReserved => '© 2025 Atsign, All Rights Reserved';
 
   @override
   String get americas => 'Americas';
@@ -702,6 +702,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The port that will be used on the remote machine';
 
   @override
+  String get removeAtsign => 'Remove atSign';
+
+  @override
   String get requestExpired =>
       'The original request has expired. Please submit again';
 
@@ -710,9 +713,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resendPin => 'Resend Pin';
-
-  @override
-  String get resetAtsign => 'Reset atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {

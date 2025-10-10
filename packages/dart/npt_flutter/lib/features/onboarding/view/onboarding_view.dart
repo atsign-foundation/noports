@@ -47,16 +47,16 @@ class OnboardingView extends StatelessWidget {
           ),
         ),
         const Align(
-          alignment: Alignment.bottomRight,
+          alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.only(bottom: Sizes.p44, right: Sizes.p44),
+            padding: EdgeInsets.only(top: Sizes.p44, right: 120),
             child: CustomTextButton.resetAtsign(),
           ),
         ),
         const Align(
-          alignment: Alignment.bottomRight,
+          alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.only(bottom: Sizes.p20, right: 80),
+            padding: EdgeInsets.only(top: Sizes.p44, right: 20),
             child: ExportLogsButton(),
           ),
         ),

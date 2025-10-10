@@ -33,7 +33,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2025 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -668,6 +668,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
+  String get removeAtsign => '删除 atSign';
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -675,9 +678,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String get resetAtsign => '重置 atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {
@@ -935,7 +935,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2025 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -1570,6 +1570,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
+  String get removeAtsign => '删除 atSign';
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -1577,9 +1580,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String get resetAtsign => '重置 atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {
@@ -1837,7 +1837,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get alertDialogTitle => '您確定嗎？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign，保留所有權利';
+  String get allRightsReserved => '© 2025 Atsign，保留所有權利';
 
   @override
   String get americas => '美洲';
@@ -2471,6 +2471,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get remotePortDescription => '將在遠端機器上使用的連接埠';
 
   @override
+  String get removeAtsign => '移除 atSign';
+
+  @override
   String get requestExpired => '原始請求已過期。請再次提交';
 
   @override
@@ -2478,9 +2481,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新傳送 Pin';
-
-  @override
-  String get resetAtsign => '重設 atSign';
 
   @override
   String retryFailedWithDetails(Object errorMessage) {
