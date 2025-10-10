@@ -195,7 +195,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             // 2. It will trigger the email/text OTP
             var (:cramkey, :errorMessage) = await util.verifyActivation(
               atsign: widget.atSign,
-              otp: pinController.text,
+              otp: pinController.text.toUpperCase(),
             );
 
             if (cramkey == null) {
