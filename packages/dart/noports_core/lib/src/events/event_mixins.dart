@@ -16,10 +16,10 @@ mixin AtEventListener {
   AtSignLogger get logger;
 
   Future<AtEventLoggingConfig> _getConfig(AtKey key) async {
-    logger.shout('Fetching EventLoggingConfig from $key');
+    logger.info('Fetching EventLoggingConfig from $key');
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
     final elc = AtEventLoggingConfig.fromJson(jsonDecode(v.value));
-    logger.shout('Fetched EventLoggingConfig $elc');
+    logger.info('Fetched EventLoggingConfig $elc');
     return elc;
   }
 
@@ -47,17 +47,17 @@ mixin AtEventListener {
         topic: '${_generateRandomString(8)}.$namespace',
         ttln: ttln,
       );
-      logger.shout('Creating new EventLoggingConfig at $configKey');
+      logger.info('Creating new EventLoggingConfig at $configKey');
       await atClient.put(
         configKey,
         jsonEncode(elc.toJson()),
         putRequestOptions: _pro,
       );
-      logger.shout('Created new EventLoggingConfig $elc');
+      logger.info('Created new EventLoggingConfig $elc');
       return elc;
     } catch (err) {
       if (err.toString().toLowerCase().contains('immutable')) {
-        logger.shout(
+        logger.info(
           'EventLoggingConfig has been created by another program - will try to fetch again',
         );
         return await _getConfig(configKey);
@@ -75,7 +75,7 @@ mixin AtEventListener {
     required String namespace,
   }) async {
     for (final theirAtsign in atSigns) {
-      logger.shout('Sharing EventLoggingConfig $config with $theirAtsign');
+      logger.info('Sharing EventLoggingConfig $config with $theirAtsign');
       AtKey key = AtKey.fromString('$theirAtsign:config.$namespace$myAtsign');
       await atClient.put(
         key,
@@ -118,8 +118,8 @@ mixin AtEventLogger {
   }
 
   Future<void> logEvent(AtEventLoggingConfig config, Map<String, dynamic> json) async {
-    logger.shout(
-      'Sending log to ${config.atSign} on ${config.topic}: $json',
+    logger.info(
+      'Sending log to ${config.atSign} on ${config.topic}: ${jsonEncode(json)}',
     );
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(

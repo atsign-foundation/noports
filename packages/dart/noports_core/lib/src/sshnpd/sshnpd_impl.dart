@@ -647,14 +647,15 @@ class SshnpdImpl
       return;
     }
 
-    await logEvent(
-      elc!,
-      NPSessionEvent.requested(
+    await _logEvent(
+      SessionEvent.requested(
         sessionId: req.sessionId,
         atsignA: requestingAtsign,
         atsignB: deviceAtsign,
         policyAtsign: policyManagerAtsign,
         relayAtsign: req.relayAtsign,
+        host: req.requestedHost,
+        port: req.requestedPort,
       ),
     );
 
@@ -667,11 +668,14 @@ class SshnpdImpl
       );
     } catch (e) {
       await _logEvent(
-        NPSessionEvent.denied(
+        SessionEvent.denied(
           sessionId: req.sessionId,
-          message:
-          'Failed to verify signature of msg from $requestingAtsign'
-              ' : $e',
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message:
+                'Failed to verify signature of msg from $requestingAtsign : $e',
+            permitOpen: [],
+          ).toJson(),
         ),
       );
 
@@ -696,10 +700,13 @@ class SshnpdImpl
     // Check if this *daemon* allows connections to the requested host / port
     if (!_permittedToOpen(permitOpen, req)) {
       await _logEvent(
-        NPSessionEvent.denied(
+        SessionEvent.denied(
           sessionId: req.sessionId,
-          message:
-          'Daemon permit-open $permitOpen but request is for $requested',
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'DAEMON denied',
+            permitOpen: permitOpen,
+          ).toJson(),
         ),
       );
 
@@ -709,7 +716,8 @@ class SshnpdImpl
           requestingAtsign: requestingAtsign,
           sessionId: req.sessionId,
         ),
-        value: 'Daemon does not permit connections to $requested',
+        value:
+            'Connection to $requested denied based on daemon --permit-open $permitOpen',
         sessionId: req.sessionId,
       );
 
@@ -719,11 +727,7 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-        NPSessionEvent.denied(
-          sessionId: req.sessionId,
-          message:
-          'Policy is to allow $permitOpen but request is for $requested',
-        ),
+        SessionEvent.denied(sessionId: req.sessionId, authInfo: auth.toJson()),
       );
 
       // Notify noports client that this session is NOT connected
@@ -732,12 +736,21 @@ class SshnpdImpl
           requestingAtsign: requestingAtsign,
           sessionId: req.sessionId,
         ),
-        value: 'Client is not permitted connections to $requested',
+        value:
+            'Connection to $requested denied based on POLICY --permit-open ${auth.permitOpen}',
         sessionId: req.sessionId,
       );
 
       return;
     }
+
+    await _logEvent(
+      SessionEvent.approved(
+        sessionId: req.sessionId,
+        message: 'Connection approved',
+        authInfo: auth.toJson(),
+      ),
+    );
 
     // Start our side of the tunnel
     try {
@@ -766,7 +779,7 @@ class SshnpdImpl
       );
     }
 
-    await _logEvent(NPSessionEvent.started(sessionId: req.sessionId));
+    await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
   }
 
   /// request can be a [NptSessionRequest] or [SshnpSessionRequest]
@@ -958,12 +971,14 @@ class SshnpdImpl
       return;
     }
     await _logEvent(
-      NPSessionEvent.requested(
+      SessionEvent.requested(
         sessionId: req.sessionId,
         atsignA: requestingAtsign,
         atsignB: deviceAtsign,
         policyAtsign: policyManagerAtsign,
         relayAtsign: req.relayAtsign,
+        host: localSshdHost,
+        port: localSshdPort,
       ),
     );
     try {
@@ -975,11 +990,14 @@ class SshnpdImpl
       );
     } catch (e) {
       await _logEvent(
-        NPSessionEvent.denied(
+        SessionEvent.denied(
           sessionId: req.sessionId,
-          message:
-              'Failed to verify signature of msg from $requestingAtsign'
-              ' : $e',
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message:
+                'Failed to verify signature of msg from $requestingAtsign : $e',
+            permitOpen: [],
+          ).toJson(),
         ),
       );
       logger.shout('Failed to verify signature of msg from $requestingAtsign');

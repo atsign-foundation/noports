@@ -536,8 +536,10 @@ void main(List<String> args) async {
               ' will wait 5 seconds and retry');
           await Future.delayed(Duration(seconds: 5));
         } else {
+          if (inline) {
+            logProgress('Session ended');
+          }
           // not keeping alive - break out of the "while (true)"
-          logProgress('Session ended');
           break;
         }
       }

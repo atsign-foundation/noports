@@ -11,13 +11,11 @@ class AtEventListenerService with AtEventListener, AtClientBindings {
 
   AtEventListenerService({required this.atClient});
 
-  void listen(AtEventLoggingConfig elc, Function f) {
-    logger.shout('Subscribing to ${elc.topicListenRegex}');
-    subscribe(regex: elc.topicListenRegex.toLowerCase(), shouldDecrypt: true).listen((
-      AtNotification n,
-    ) {
-      logger.shout('Received ${n.key}');
-      f(n);
-    });
+  Stream<AtNotification> eventStream(AtEventLoggingConfig elc) {
+    logger.info('Subscribing to ${elc.topicListenRegex}');
+    return subscribe(
+      regex: elc.topicListenRegex.toLowerCase(),
+      shouldDecrypt: true,
+    );
   }
 }

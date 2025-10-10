@@ -38,6 +38,9 @@ class NPAAuthCheckRequest {
 class NPAAuthCheckResponse {
   static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
 
+  /// The clientAtsign is 'known' to the policy service.
+  /// Should not be called 'authorized' but this code will all be replaced soon
+  /// when we move to using the at_policy package
   final bool authorized;
   final String? message;
   final List<String> permitOpen;

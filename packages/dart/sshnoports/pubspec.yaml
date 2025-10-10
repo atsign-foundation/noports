@@ -23,6 +23,10 @@ dependencies:
   yaml: 3.1.3
 
 dependency_overrides:
+  socket_connector:
+    git:
+      url: https://github.com/atsign-foundation/socket_connector
+      ref: 2.4.1
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

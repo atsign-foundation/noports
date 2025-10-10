@@ -7,6 +7,8 @@ class SessionInfo {
   final SocketConnector? connector;
   final Map<String, String> lookups = {};
 
+  bool hasHadConnections = false;
+
   final DateTime requestTime = DateTime.timestamp();
 
   String get atSignA => params.atSignA!;

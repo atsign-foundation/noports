@@ -233,6 +233,13 @@ class SinglePortWorker extends RelayWorker {
       logTraffic: logTraffic,
       logger: ioSinkForLogger(sessionLogger),
     );
+    connector.connectionStream.listen(
+      (Connection c) => toMain.send(
+        IIRequest.create('newConnection', {
+          'sessionId': params.sessionId,
+        }),
+      ),
+    );
 
     sessions[params.sessionId] = SessionInfo(
       params: params,

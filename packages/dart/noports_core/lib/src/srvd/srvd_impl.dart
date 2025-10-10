@@ -244,6 +244,19 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
           return;
         }
         sessionInfo.eventLoggingConfig = elc;
+
+        // Normally the first connection will happen before
+        // the relay has received the eventLoggingConfig, so
+        // we check here for that situation.
+        if (sessionInfo.hasHadConnections) {
+          await logEvent(
+            sessionInfo.eventLoggingConfig!,
+            SessionEvent.connected(
+              sessionId: sessionId,
+            ),
+          );
+        }
+
         break;
       default:
         logger.warning(
@@ -476,17 +489,39 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
 
   Future<void> _handleSessionComplete(IIRequest msg) async {
     final sessionId = msg.payload['sessionId'];
+    logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
     if (si != null && si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
-        NPSessionEvent.ended(
+        SessionEvent.ended(
           sessionId: sessionId,
           stats: msg.payload['stats'] as Stats,
         ),
       );
     }
     sessions.remove(sessionId);
+  }
+
+  Future<void> _handleNewConnection(IIRequest msg) async {
+    final sessionId = msg.payload['sessionId'];
+    logger.info('_handleNewConnection $sessionId');
+    SessionInfo? si = sessions[sessionId];
+    if (si == null) {
+      return;
+    }
+    if (si.hasHadConnections) {
+      return;
+    }
+    si.hasHadConnections = true;
+    if (si.eventLoggingConfig != null) {
+      await logEvent(
+        si.eventLoggingConfig!,
+        SessionEvent.connected(
+          sessionId: sessionId,
+        ),
+      );
+    }
   }
 
   /// This function spawns a new socketConnector in a background isolate
@@ -554,6 +589,9 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'newConnection':
+            await _handleNewConnection(msg);
             break;
           case 'sessionComplete':
             await _handleSessionComplete(msg);
@@ -679,6 +717,9 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'newConnection':
+            await _handleNewConnection(msg);
             break;
           case 'sessionComplete':
             await _handleSessionComplete(msg);

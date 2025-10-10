@@ -89,9 +89,12 @@ void main(List<String> args) async {
           atSigns: loggingAtsigns,
           namespace: DefaultArgs.eventLoggingNamespace);
 
-      svc.listen(elc, (AtNotification n) {
-        stdout.writeln(n.value);
-      });
+      while (true) {
+        await for (AtNotification n in svc.eventStream(elc)) {
+          stdout.writeln(n.value);
+        }
+        await Future.delayed(Duration(milliseconds: 100));
+      }
     } on ArgumentError catch (error) {
       printUsage(error: error);
       exitProgram(exitCode: 1);

@@ -136,10 +136,11 @@ abstract class SshnpdChannel
 
     logger.info('sshnpdAck: $sshnpdAck');
 
-    if (eventLoggingConfig != null) {
+    if (eventLoggingConfig != null && sshnpdAck == SshnpdAck.acknowledged) {
       await logEvent(
         eventLoggingConfig!,
-        NPSessionEvent.daemonRespRcvd(sessionId: sessionId, ack: sshnpdAck));
+        SessionEvent.clientStarted(sessionId: sessionId),
+      );
     }
 
     // Might be nicer to return a Future<SshnpdAck, String>
