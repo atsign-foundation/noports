@@ -94,6 +94,10 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  socket_connector:
+    git:
+      url: https://github.com/atsign-foundation/socket_connector
+      ref: 2.4.1
   intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1
