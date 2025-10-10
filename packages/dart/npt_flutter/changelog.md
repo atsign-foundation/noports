@@ -9,6 +9,7 @@
 - **FIX**: Updated connection screen screen empty profile state UI.
 - **FIX**: Moved version number, switch atSign and Sign Out button from settings page to the appbar.
 - **FEAT**: Updated Profiles to set localHost property.
+- **FEAT**: Replaced simple and advance preview image from the settings screen.
 
 ## 1.5.0+18
 
