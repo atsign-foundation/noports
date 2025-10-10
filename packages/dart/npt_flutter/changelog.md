@@ -2,14 +2,16 @@
 
 - **FEAT**: New policy page for policy management and policy logs viewing
 - **FEAT**: New app bar
-- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work)
+- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work).
 - **TEST**: Unit and integration tests added.
 - **FIX**: Localization added for unlocalized strings.
 - **FIX**: Updated onboarding widget to reflect management portal website UI.
 - **FIX**: Updated connection screen screen empty profile state UI.
 - **FIX**: Moved version number, switch atSign and Sign Out button from settings page to the appbar.
 - **FEAT**: Updated Profiles to set localHost property.
-- **FEAT**: Replaced simple and advance preview image from the settings screen.
+- **FIX**: Added export logs to the top right of the onboarding/start screen.
+- **FIX**: Renamed "Reset atSign" to "Remove atSign and move it from the bottom right to the top right of the onboarding/start screen.
+- **FIX**: Replaced simple and advance preview image from the settings screen.
 
 ## 1.5.0+18
 
