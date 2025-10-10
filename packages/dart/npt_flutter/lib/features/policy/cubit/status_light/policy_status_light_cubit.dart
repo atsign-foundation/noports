@@ -19,7 +19,7 @@ final class PolicyStatusLightCubit
       final AtKey atKey = AtKey()
         ..key = 'heartbeat'
         ..sharedBy = atClient.getCurrentAtSign()
-        ..namespace = atClient.getPreferences()!.namespace!;
+        ..namespace = 'sshnp';
 
       final AtValue atValue = await atClient.get(
         atKey,
