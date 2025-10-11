@@ -90,8 +90,8 @@ void main(List<String> args) async {
           namespace: DefaultArgs.eventLoggingNamespace);
 
       while (true) {
-        await for (AtNotification n in svc.eventStream(elc)) {
-          stdout.writeln(n.value);
+        await for (final String json in svc.getJsonStream(elc)) {
+          stdout.writeln(json);
         }
         await Future.delayed(Duration(milliseconds: 100));
       }

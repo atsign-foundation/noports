@@ -84,7 +84,7 @@ void main(List<String> args) async {
 
   logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
 
-  AtEventLoggingConfig? elc;
+  AtEventConfig? elc;
 
   if (p.eventLoggingAtsign != null) {
     logger.shout('Fetching config from ${p.eventLoggingAtsign}');

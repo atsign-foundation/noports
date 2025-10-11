@@ -6,18 +6,16 @@ part of 'event_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-AtEventLoggingConfig _$AtEventLoggingConfigFromJson(
-  Map<String, dynamic> json,
-) => AtEventLoggingConfig(
-  atSign: json['atSign'] as String,
-  topic: json['topic'] as String,
-  ttln: (json['ttln'] as num).toInt(),
-);
+AtEventConfig _$AtEventConfigFromJson(Map<String, dynamic> json) =>
+    AtEventConfig(
+      atSign: json['atSign'] as String,
+      topic: json['topic'] as String,
+      ttln: (json['ttln'] as num).toInt(),
+    );
 
-Map<String, dynamic> _$AtEventLoggingConfigToJson(
-  AtEventLoggingConfig instance,
-) => <String, dynamic>{
-  'atSign': instance.atSign,
-  'topic': instance.topic,
-  'ttln': instance.ttln,
-};
+Map<String, dynamic> _$AtEventConfigToJson(AtEventConfig instance) =>
+    <String, dynamic>{
+      'atSign': instance.atSign,
+      'topic': instance.topic,
+      'ttln': instance.ttln,
+    };

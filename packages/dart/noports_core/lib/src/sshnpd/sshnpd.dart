@@ -87,7 +87,7 @@ abstract class Sshnpd {
   abstract final String version;
 
   /// Sent by the policy atSign when using policy service
-  abstract AtEventLoggingConfig? elc;
+  abstract AtEventConfig? elc;
 
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {

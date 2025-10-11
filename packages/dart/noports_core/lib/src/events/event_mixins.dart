@@ -1,24 +1,23 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:at_base2e15/at_base2e15.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
-import 'package:at_utils/at_logger.dart';
+import 'package:shrink/core/core.dart';
 
 final GetRequestOptions _gro = GetRequestOptions()..useRemoteAtServer = true;
 final PutRequestOptions _pro = PutRequestOptions()..useRemoteAtServer = true;
 
-mixin AtEventListener {
-  AtClient get atClient;
-
+mixin AtEventListener on AtClientBindings {
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
 
-  AtSignLogger get logger;
-
-  Future<AtEventLoggingConfig> _getConfig(AtKey key) async {
+  Future<AtEventConfig> _getConfig(AtKey key) async {
     logger.info('Fetching EventLoggingConfig from $key');
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
-    final elc = AtEventLoggingConfig.fromJson(jsonDecode(v.value));
+    final elc = AtEventConfig.fromJson(jsonDecode(v.value));
     logger.info('Fetched EventLoggingConfig $elc');
     return elc;
   }
@@ -26,7 +25,7 @@ mixin AtEventListener {
   /// namespace like `events.logging.sshnp` will result in the config being
   /// stored at `config.events.logging.sshnp`, and an EventLoggingConfig with a
   /// topic something like `abc123def4.events.logging.sshnp`
-  Future<AtEventLoggingConfig> getOrCreateConfig({
+  Future<AtEventConfig> getOrCreateConfig({
     required String namespace,
     required int ttln,
   }) async {
@@ -42,7 +41,7 @@ mixin AtEventListener {
     }
 
     try {
-      final elc = AtEventLoggingConfig(
+      final elc = AtEventConfig(
         atSign: myAtsign,
         topic: '${_generateRandomString(8)}.$namespace',
         ttln: ttln,
@@ -70,7 +69,7 @@ mixin AtEventListener {
   /// namespace like `events.logging.sshnp` will result in the config being
   /// shared as `@bob:config.events.logging.sshnp@alice` etc
   Future<void> shareEventLoggingConfigWithAtsigns({
-    required AtEventLoggingConfig config,
+    required AtEventConfig config,
     required List<Atsign> atSigns,
     required String namespace,
   }) async {
@@ -84,16 +83,33 @@ mixin AtEventListener {
       );
     }
   }
+
+  Stream<String> getJsonStream(AtEventConfig elc) async* {
+    logger.info('Subscribing to ${elc.topicListenRegex}');
+    Stream<AtNotification> stream = subscribe(
+      regex: elc.topicListenRegex.toLowerCase(),
+      shouldDecrypt: true,
+    );
+    await for (final n in stream) {
+      if (n.value == null) {
+        continue;
+      }
+      String base2e15EncodedShrunkJson = n.value!;
+      Uint8List shrunkJson = Base2e15.decode(base2e15EncodedShrunkJson);
+      String jsonEncoded = Restore.text(shrunkJson);
+      logger.finer(
+        'bytes: json: ${jsonEncoded.length},'
+        ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
+      );
+      yield jsonEncoded;
+    }
+  }
 }
 
-mixin AtEventLogger {
-  AtClient get atClient;
-
+mixin AtEventLogger on AtClientBindings {
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
 
-  AtSignLogger get logger;
-
-  static Future<AtEventLoggingConfig> staticGetEventLoggingConfig({
+  static Future<AtEventConfig> staticGetEventLoggingConfig({
     required AtClient atClient,
     required Atsign atSign,
     required String namespace,
@@ -101,12 +117,13 @@ mixin AtEventLogger {
     Atsign myAtsign = atClient.getCurrentAtSign()!.toAtsign();
     AtKey key = AtKey.fromString('$myAtsign:config.$namespace$atSign');
     AtValue v = await atClient.get(key, getRequestOptions: _gro);
-    return AtEventLoggingConfig.fromJson(jsonDecode(v.value));
+    return AtEventConfig.fromJson(jsonDecode(v.value));
   }
 
-  /// atSign `@alice` and namespace `events.logging.sshnp` will result in the
-  /// config being fetched from `@bob:config.events.logging.sshnp@alice`
-  Future<AtEventLoggingConfig> getEventLoggingConfigFrom({
+  /// [atSign] `@alice` and [namespace] `events.logging.sshnp` and our atSign
+  /// being `@bob` will result in the config being fetched from
+  /// `@bob:config.events.logging.sshnp@alice`
+  Future<AtEventConfig> getEventLoggingConfig({
     required Atsign atSign,
     required String namespace,
   }) async {
@@ -117,18 +134,34 @@ mixin AtEventLogger {
     );
   }
 
-  Future<void> logEvent(AtEventLoggingConfig config, Map<String, dynamic> json) async {
-    logger.info(
-      'Sending log to ${config.atSign} on ${config.topic}: ${jsonEncode(json)}',
+  Future<void> logEvent(
+    AtEventConfig config,
+    Map<String, dynamic> json, {
+    int maxTries = 3,
+  }) async {
+    String jsonEncoded;
+    try {
+      jsonEncoded = jsonEncode(json);
+    } catch (e) {
+      logger.severe('Could not jsonEncode $json');
+      return;
+    }
+    logger.finer(
+      'Sending log to ${config.atSign} on ${config.topic}: $jsonEncoded',
     );
-    await atClient.notificationService.notify(
-      NotificationParams.forUpdate(
-        AtKey.fromString(
-          '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
-        )..metadata.namespaceAware = false,
-        value: jsonEncode(json),
-        notificationExpiry: Duration(milliseconds: config.ttln),
-      ),
+    final shrunkJson = Shrink.text(jsonEncoded);
+    String base2e15EncodedShrunkJson = Base2e15.encode(shrunkJson);
+    logger.finer(
+      'bytes: json: ${jsonEncoded.length},'
+      ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
+    );
+    await notify(
+      AtKey.fromString(
+        '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
+      )..metadata.namespaceAware = false,
+      base2e15EncodedShrunkJson,
+      maxTries: maxTries,
+      ttln: Duration(milliseconds: config.ttln),
       waitForFinalDeliveryStatus: false,
       checkForFinalDeliveryStatus: false,
     );
@@ -138,10 +171,9 @@ mixin AtEventLogger {
 final random = Random();
 
 String _generateRandomString(int length) {
-  const charset =
-      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
   return List.generate(
     length,
     (_) => charset[random.nextInt(charset.length)],
-  ).join();
+  ).join().toLowerCase();
 }

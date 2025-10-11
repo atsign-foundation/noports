@@ -101,7 +101,7 @@ class SshnpdImpl
   final List<String> permitOpen;
 
   @override
-  AtEventLoggingConfig? elc;
+  AtEventConfig? elc;
 
   SshnpdImpl({
     // final fields
@@ -1783,7 +1783,7 @@ class SshnpdImpl
       logger.shout('No eventLoggingConfig');
       return;
     }
-    elc = AtEventLoggingConfig.fromJson(elcJson);
+    elc = AtEventConfig.fromJson(elcJson);
   }
 
   /// If using a policy service, tell it we're here

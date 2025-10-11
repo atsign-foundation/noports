@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
@@ -22,7 +23,9 @@ import 'isolates/types.dart';
 import 'srvd_session_params.dart';
 
 @protected
-class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
+class SrvdImpl
+    with AtClientBindings, AtEventLogger, SrvdUtilMixin
+    implements Srvd {
   @override
   final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
@@ -238,7 +241,7 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
           );
           return;
         }
-        final elc = AtEventLoggingConfig.fromJson(jsonDecode(n.value!));
+        final elc = AtEventConfig.fromJson(jsonDecode(n.value!));
         if (!await validAtsign(elc.atSign)) {
           logger.warning('Invalid eventLoggingAtsign ${elc.atSign}');
           return;
@@ -251,9 +254,7 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
         if (sessionInfo.hasHadConnections) {
           await logEvent(
             sessionInfo.eventLoggingConfig!,
-            SessionEvent.connected(
-              sessionId: sessionId,
-            ),
+            SessionEvent.connected(sessionId: sessionId),
           );
         }
 
@@ -517,9 +518,7 @@ class SrvdImpl with AtEventLogger, SrvdUtilMixin implements Srvd {
     if (si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
-        SessionEvent.connected(
-          sessionId: sessionId,
-        ),
+        SessionEvent.connected(sessionId: sessionId),
       );
     }
   }

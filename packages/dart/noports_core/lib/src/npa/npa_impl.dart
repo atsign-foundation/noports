@@ -31,7 +31,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   @override
   final NPARequestHandler handler;
 
-  final AtEventLoggingConfig? elc;
+  final AtEventConfig? elc;
 
   NPAImpl({
     // final fields
@@ -72,7 +72,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
 
       atClient ??= await atClientGenerator!(p);
 
-      AtEventLoggingConfig? elc;
+      AtEventConfig? elc;
       if (p.eventLoggingAtsign != null) {
         elc = await AtEventLogger.staticGetEventLoggingConfig(
           atClient: atClient,
@@ -171,7 +171,7 @@ class PolicyInfoRpcRequestHandler
   final AtSignLogger logger = AtSignLogger('PolicyInfoRpcRequestHandler');
 
   final Atsign policyAtsign;
-  final AtEventLoggingConfig? elc;
+  final AtEventConfig? elc;
   final String namespace;
   final NPARequestHandler handler;
 

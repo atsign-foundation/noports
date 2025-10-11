@@ -121,7 +121,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
       final elcJson = daemonResponse['eventLoggingConfig'];
       if (elcJson != null) {
-        eventLoggingConfig = AtEventLoggingConfig.fromJson(elcJson);
+        eventLoggingConfig = AtEventConfig.fromJson(elcJson);
       }
 
       return SshnpdAck.acknowledged;

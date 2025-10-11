@@ -40,7 +40,7 @@ abstract class SshnpdChannel
   final String sessionId;
   final String namespace;
 
-  AtEventLoggingConfig? eventLoggingConfig;
+  AtEventConfig? eventLoggingConfig;
 
   // * Volatile fields set at runtime
 

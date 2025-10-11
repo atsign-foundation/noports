@@ -4,7 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'event_models.g.dart';
 
 @JsonSerializable()
-class AtEventLoggingConfig {
+class AtEventConfig {
   /// The atSign to which we will send the event log notifications
   final Atsign atSign;
 
@@ -19,16 +19,16 @@ class AtEventLoggingConfig {
   /// hard-code a duration. Value is in milliseconds.
   final int ttln;
 
-  AtEventLoggingConfig({
+  AtEventConfig({
     required this.atSign,
     required this.topic,
     required this.ttln,
   });
 
-  Map<String, dynamic> toJson() => _$AtEventLoggingConfigToJson(this);
+  Map<String, dynamic> toJson() => _$AtEventConfigToJson(this);
 
-  static AtEventLoggingConfig fromJson(Map<String, dynamic> json) =>
-      _$AtEventLoggingConfigFromJson(json);
+  static AtEventConfig fromJson(Map<String, dynamic> json) =>
+      _$AtEventConfigFromJson(json);
 
   @override
   String toString() => toJson().toString();
