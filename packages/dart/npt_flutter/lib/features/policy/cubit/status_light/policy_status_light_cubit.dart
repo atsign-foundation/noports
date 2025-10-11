@@ -19,7 +19,7 @@ final class PolicyStatusLightCubit
       final AtKey atKey = AtKey()
         ..key = 'heartbeat'
         ..sharedBy = atClient.getCurrentAtSign()
-        ..namespace = atClient.getPreferences()!.namespace!;
+        ..namespace = 'sshnp';
 
       final AtValue atValue = await atClient.get(
         atKey,
@@ -124,7 +124,7 @@ final class PolicyStatusLightCubit
     final rpc = AtRpcClient(
       serverAtsign: atClient.getCurrentAtSign()!,
       atClient: atClient,
-      baseNameSpace: 'sshnp.noports',
+      baseNameSpace: 'sshnp',
       domainNameSpace: 'npp_atserver_heartbeat',
     );
 
