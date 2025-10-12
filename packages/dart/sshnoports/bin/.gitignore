@@ -6,3 +6,4 @@
 !.gitignore
 !experimental
 !experimental/*
+!experimental/opensearch/*

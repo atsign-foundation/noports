@@ -87,12 +87,13 @@ void main(List<String> args) async {
   AtEventConfig? elc;
 
   if (p.eventLoggingAtsign != null) {
-    logger.shout('Fetching config from ${p.eventLoggingAtsign}');
     elc = await AtEventLogger.staticGetEventLoggingConfig(
       atClient: atClient,
       atSign: p.eventLoggingAtsign!,
       namespace: DefaultArgs.eventLoggingNamespace,
     );
+    logger.shout(
+        'Fetched AtEventLogger config $elc from ${p.eventLoggingAtsign}');
   }
 
   var sshnpa = NPAImpl(

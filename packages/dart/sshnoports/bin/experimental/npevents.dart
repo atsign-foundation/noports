@@ -88,6 +88,7 @@ void main(List<String> args) async {
           config: elc,
           atSigns: loggingAtsigns,
           namespace: DefaultArgs.eventLoggingNamespace);
+      svc.logger.shout('Shared AtEventLogger config $elc with $loggingAtsigns');
 
       while (true) {
         await for (final String json in svc.getJsonStream(elc)) {

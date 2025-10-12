@@ -34,6 +34,7 @@ echo "$(date) : Compilation complete"
 
 echo "Compiling experimental binaries"
 echo "Compiling experimental/npevents.dart"; dart compile exe --verbosity error bin/experimental/npevents.dart -o build/sshnp/experimental/npevents &
+echo "Copying experimental/to.opensearch.sh"; cp bin/experimental/to.opensearch.sh build/sshnp/experimental
 
 wait
 echo "$(date) : Compilation complete"
