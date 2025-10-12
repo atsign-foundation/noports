@@ -97,6 +97,7 @@ class PortPairWorker extends RelayWorker {
       (Connection c) => toMain.send(
         IIRequest.create('newConnection', {
           'sessionId': srvdSessionParams.sessionId,
+          'stats': connector!.stats,
         }),
       ),
     );

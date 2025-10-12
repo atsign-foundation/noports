@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -106,8 +107,13 @@ mixin AtEventListener on AtClientBindings {
   }
 }
 
+typedef AtEvent = Map<String, dynamic>;
 mixin AtEventLogger on AtClientBindings {
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
+
+  final StreamController<(AtEventConfig, AtEvent)> eventStreamController =
+      StreamController<(AtEventConfig, AtEvent)>();
+  bool eventLoggerRunning = false;
 
   static Future<AtEventConfig> staticGetEventLoggingConfig({
     required AtClient atClient,
@@ -134,46 +140,57 @@ mixin AtEventLogger on AtClientBindings {
     );
   }
 
-  Future<void> logEvent(
-    AtEventConfig config,
-    Map<String, dynamic> json, {
-    int maxTries = 3,
-  }) async {
-    String jsonEncoded;
-    try {
-      jsonEncoded = jsonEncode(json);
-    } catch (e) {
-      logger.severe('Could not jsonEncode $json');
-      return;
+  Future<void> logEvent(AtEventConfig config, AtEvent json) async {
+    eventStreamController.add((config, json));
+    if (!eventLoggerRunning) {
+      startEventLogger();
     }
-    logger.finer(
-      'Sending log to ${config.atSign} on ${config.topic}: $jsonEncoded',
-    );
-    final shrunkJson = Shrink.text(jsonEncoded);
-    String base2e15EncodedShrunkJson = Base2e15.encode(shrunkJson);
-    logger.finer(
-      'bytes: json: ${jsonEncoded.length},'
-      ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
-    );
-    await notify(
-      AtKey.fromString(
-        '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
-      )..metadata.namespaceAware = false,
-      base2e15EncodedShrunkJson,
-      maxTries: maxTries,
-      ttln: Duration(milliseconds: config.ttln),
-      waitForFinalDeliveryStatus: false,
-      checkForFinalDeliveryStatus: false,
-    );
+  }
+
+  void startEventLogger() async {
+    eventLoggerRunning = true;
+    await for (final tuple in eventStreamController.stream) {
+      final AtEventConfig config = tuple.$1;
+      final AtEvent json = tuple.$2;
+
+      String jsonEncoded;
+      try {
+        jsonEncoded = jsonEncode(json);
+      } catch (e) {
+        logger.severe('Could not jsonEncode $json');
+        continue;
+      }
+
+      try {
+        logger.finer(
+          'Sending log to ${config.atSign} on ${config.topic}: $jsonEncoded',
+        );
+        final shrunkJson = Shrink.text(jsonEncoded);
+        String base2e15EncodedShrunkJson = Base2e15.encode(shrunkJson);
+        logger.finer(
+          'bytes: json: ${jsonEncoded.length},'
+          ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
+        );
+        await notify(
+          AtKey.fromString(
+            '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
+          )..metadata.namespaceAware = false,
+          base2e15EncodedShrunkJson,
+          ttln: Duration(milliseconds: config.ttln),
+          waitForFinalDeliveryStatus: false,
+          checkForFinalDeliveryStatus: false,
+        );
+      } catch (e) {
+        logger.severe('Error while sending $jsonEncoded to $config');
+      }
+    }
   }
 }
-
-final random = Random();
 
 String _generateRandomString(int length) {
   const charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
   return List.generate(
     length,
-    (_) => charset[random.nextInt(charset.length)],
+    (_) => charset[Random().nextInt(charset.length)],
   ).join().toLowerCase();
 }

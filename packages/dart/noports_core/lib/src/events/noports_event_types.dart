@@ -1,7 +1,7 @@
 import 'package:at_commons/atsign.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-enum SessionLifecycle {
+enum SessionState {
   requested, // daemon receives request from client
   approved, // daemon approves request
   denied, // daemon denies request
@@ -30,9 +30,9 @@ abstract class SessionEvent {
     "relayAtsign": relayAtsign,
     "host": host,
     "port": port,
-    "state": SessionLifecycle.requested.name,
+    "state": SessionState.requested.name,
     "lifecycle": {
-      SessionLifecycle.requested.name: {
+      SessionState.requested.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
     },
@@ -44,9 +44,9 @@ abstract class SessionEvent {
     required Map<String, dynamic> authInfo,
   }) => {
     "sessionId": sessionId,
-    "state": SessionLifecycle.approved.name,
+    "state": SessionState.approved.name,
     "lifecycle": {
-      SessionLifecycle.approved.name: {
+      SessionState.approved.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
         "authInfo": authInfo,
       },
@@ -58,9 +58,9 @@ abstract class SessionEvent {
     required Map<String, dynamic> authInfo,
   }) => {
     "sessionId": sessionId,
-    "state": SessionLifecycle.denied.name,
+    "state": SessionState.denied.name,
     "lifecycle": {
-      SessionLifecycle.denied.name: {
+      SessionState.denied.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
         "authInfo": authInfo,
       },
@@ -69,9 +69,9 @@ abstract class SessionEvent {
 
   static Map<String, dynamic> daemonStarted({required String sessionId}) => {
     "sessionId": sessionId,
-    "state": SessionLifecycle.daemonStarted.name,
+    "state": SessionState.daemonStarted.name,
     "lifecycle": {
-      SessionLifecycle.daemonStarted.name: {
+      SessionState.daemonStarted.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
     },
@@ -79,9 +79,9 @@ abstract class SessionEvent {
 
   static Map<String, dynamic> clientStarted({required String sessionId}) => {
     "sessionId": sessionId,
-    "state": SessionLifecycle.clientStarted.name,
+    "state": SessionState.clientStarted.name,
     "lifecycle": {
-      SessionLifecycle.clientStarted.name: {
+      SessionState.clientStarted.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
     },
@@ -89,13 +89,15 @@ abstract class SessionEvent {
 
   static Map<String, dynamic> connected({
     required String sessionId,
+    required Stats stats,
   }) => {
     "sessionId": sessionId,
-    "state": SessionLifecycle.connected.name,
+    "state": SessionState.connected.name,
     "lifecycle": {
-      SessionLifecycle.connected.name: {
+      SessionState.connected.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
+      "stats": stats.toJson(),
     },
   };
 
@@ -104,12 +106,12 @@ abstract class SessionEvent {
     required Stats stats,
   }) => {
     "sessionId": sessionId,
-    "stats": stats.toJson(),
-    "state": SessionLifecycle.stillConnected.name,
+    "state": SessionState.stillConnected.name,
     "lifecycle": {
-      SessionLifecycle.stillConnected.name: {
+      SessionState.stillConnected.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
+      "stats": stats.toJson(),
     },
   };
 
@@ -118,12 +120,12 @@ abstract class SessionEvent {
     required Stats stats,
   }) => {
     "sessionId": sessionId,
-    "stats": stats.toJson(),
-    "state": SessionLifecycle.ended.name,
+    "state": SessionState.ended.name,
     "lifecycle": {
-      SessionLifecycle.ended.name: {
+      SessionState.ended.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
+      "stats": stats.toJson(),
     },
   };
 }

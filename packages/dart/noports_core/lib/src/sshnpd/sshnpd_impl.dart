@@ -778,8 +778,6 @@ class SshnpdImpl
         ttln: Duration(minutes: 1),
       );
     }
-
-    await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
   }
 
   /// request can be a [NptSessionRequest] or [SshnpSessionRequest]
@@ -922,6 +920,8 @@ class SshnpdImpl
         }),
         sessionId: req.sessionId,
       );
+
+      await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
     } catch (e) {
       logger.severe('startNpt failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
@@ -1009,6 +1009,17 @@ class SshnpdImpl
     String requested = '$localSshdHost:$localSshdPort';
     // Check if this *daemon* allows connections to the requested host / port
     if (!_permittedToOpen(permitOpen, req)) {
+      await _logEvent(
+        SessionEvent.denied(
+          sessionId: req.sessionId,
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'DAEMON denied',
+            permitOpen: permitOpen,
+          ).toJson(),
+        ),
+      );
+
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
@@ -1024,6 +1035,10 @@ class SshnpdImpl
 
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
+      await _logEvent(
+        SessionEvent.denied(sessionId: req.sessionId, authInfo: auth.toJson()),
+      );
+
       // Notify noports client that this session is NOT connected
       await _notify(
         atKey: _createResponseAtKey(
@@ -1036,6 +1051,14 @@ class SshnpdImpl
 
       return;
     }
+
+    await _logEvent(
+      SessionEvent.approved(
+        sessionId: req.sessionId,
+        message: 'Connection approved',
+        authInfo: auth.toJson(),
+      ),
+    );
 
     if (req.direct) {
       // direct ssh requested
@@ -1255,6 +1278,8 @@ class SshnpdImpl
         sessionId: req.sessionId,
       );
 
+      await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
+
       /// - start a timer to remove the ephemeral key from `authorized_keys`
       ///   after 15 seconds
       Timer(
@@ -1342,6 +1367,8 @@ class SshnpdImpl
           sessionId: sessionId,
         );
       } else {
+        await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
+
         /// Notify sshnp that the connection has been made
         await _notify(
           atKey: _createResponseAtKey(

@@ -7,7 +7,7 @@ class SessionInfo {
   final SocketConnector? connector;
   final Map<String, String> lookups = {};
 
-  bool hasHadConnections = false;
+  Stats? stats;
 
   final DateTime requestTime = DateTime.timestamp();
 

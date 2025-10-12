@@ -10,6 +10,7 @@ echo
 
 rm -rf build/sshnp build/sshnp.zip build/sshnp.tgz
 mkdir -p build/sshnp/web/admin
+mkdir -p build/sshnp/experimental
 
 dart pub get --enforce-lockfile || exit 1
 
@@ -32,7 +33,7 @@ wait
 echo "$(date) : Compilation complete"
 
 echo "Compiling experimental binaries"
-echo "Compiling experimental/event_listener.dart"; dart compile exe --verbosity error bin/experimental/event_listener.dart -o build/sshnp/event_listener &
+echo "Compiling experimental/npevents.dart"; dart compile exe --verbosity error bin/experimental/npevents.dart -o build/sshnp/experimental/npevents &
 
 wait
 echo "$(date) : Compilation complete"

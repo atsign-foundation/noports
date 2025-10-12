@@ -248,13 +248,16 @@ class SrvdImpl
         }
         sessionInfo.eventLoggingConfig = elc;
 
-        // Normally the first connection will happen before
-        // the relay has received the eventLoggingConfig, so
-        // we check here for that situation.
-        if (sessionInfo.hasHadConnections) {
+        // The first connection will usually already have happened before
+        // the relay receives the eventLoggingConfig, in which case we need
+        // to now send the "connected" event
+        if (sessionInfo.stats != null) {
           await logEvent(
             sessionInfo.eventLoggingConfig!,
-            SessionEvent.connected(sessionId: sessionId),
+            SessionEvent.connected(
+              sessionId: sessionId,
+              stats: sessionInfo.stats!,
+            ),
           );
         }
 
@@ -511,14 +514,21 @@ class SrvdImpl
     if (si == null) {
       return;
     }
-    if (si.hasHadConnections) {
+    // If we've already got stats then this isn't the first connection, and we
+    // only really care about the first connection in order to send the
+    // "connected" event.
+    if (si.stats != null) {
       return;
     }
-    si.hasHadConnections = true;
+    si.stats = msg.payload['stats'];
+
+    // If we already have received an eventLoggingConfig then let's send the
+    // "connected" event. If the eventLoggingConfig arrives later than the
+    // first connection, then the "connected" event is sent at that time.
     if (si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
-        SessionEvent.connected(sessionId: sessionId),
+        SessionEvent.connected(sessionId: sessionId, stats: si.stats!),
       );
     }
   }

@@ -237,6 +237,7 @@ class SinglePortWorker extends RelayWorker {
       (Connection c) => toMain.send(
         IIRequest.create('newConnection', {
           'sessionId': params.sessionId,
+          'stats': connector.stats,
         }),
       ),
     );
