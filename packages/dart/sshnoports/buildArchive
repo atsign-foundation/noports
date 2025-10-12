@@ -34,10 +34,15 @@ echo "$(date) : Compilation complete"
 
 echo "Compiling experimental binaries"
 echo "Compiling experimental/npevents.dart"; dart compile exe --verbosity error bin/experimental/npevents.dart -o build/sshnp/experimental/npevents &
-echo "Copying experimental/to.opensearch.sh"; cp bin/experimental/to.opensearch.sh build/sshnp/experimental
 
 wait
 echo "$(date) : Compilation complete"
+
+echo "$(date) : Copying bundles"
+cp -r bundles/core/* build/sshnp/
+cp -r bundles/experimental/* build/sshnp/experimental
+cp -r bundles/shell/* build/sshnp/
+cp LICENSE build/sshnp
 
 echo "Building admin API and webapp - BETA";
 pushd ../../../apps/admin/admin_api || exit 1
@@ -54,11 +59,6 @@ echo
 echo "$(date) : Build complete"
 
 popd
-
-echo "$(date) : Copying bundles"
-cp -r bundles/core/* build/sshnp/
-cp -r bundles/shell/* build/sshnp/
-cp LICENSE build/sshnp
 
 echo "$(date) : Copying webapp files - BETA"
 cp -r ../../../apps/admin/webapp/dist/* build/sshnp/web/admin/
