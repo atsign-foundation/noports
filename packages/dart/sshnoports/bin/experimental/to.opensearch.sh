@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TODO Replace this with a simple adapter written in Dart
+# Idea is to be able to run
+#     npevents --adapter OpenSearch|ElasticSearch|Splunk|GCP|etc
+
 sleep 2
 echo "State	Session"
 echo "=====	======="
