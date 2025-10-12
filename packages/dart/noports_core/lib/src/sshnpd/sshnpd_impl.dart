@@ -650,8 +650,9 @@ class SshnpdImpl
     await _logEvent(
       SessionEvent.requested(
         sessionId: req.sessionId,
-        atsignA: requestingAtsign,
-        atsignB: deviceAtsign,
+        clientAtsign: requestingAtsign,
+        daemonAtsign: deviceAtsign,
+        device: device,
         policyAtsign: policyManagerAtsign,
         relayAtsign: req.relayAtsign,
         host: req.requestedHost,
@@ -973,8 +974,9 @@ class SshnpdImpl
     await _logEvent(
       SessionEvent.requested(
         sessionId: req.sessionId,
-        atsignA: requestingAtsign,
-        atsignB: deviceAtsign,
+        clientAtsign: requestingAtsign,
+        daemonAtsign: deviceAtsign,
+        device: device,
         policyAtsign: policyManagerAtsign,
         relayAtsign: req.relayAtsign,
         host: localSshdHost,
@@ -1101,7 +1103,7 @@ class SshnpdImpl
       relayAuthMode: RelayAuthMode.payload,
       relayAuthAesKey: null,
       twinKeys: false,
-      relayAtsign: '',
+      relayAtsign: null,
     );
 
     String requested = '$localSshdHost:$localSshdPort';

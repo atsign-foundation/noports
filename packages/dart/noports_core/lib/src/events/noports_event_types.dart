@@ -15,8 +15,9 @@ enum SessionState {
 abstract class SessionEvent {
   static Map<String, dynamic> requested({
     required String sessionId,
-    required Atsign atsignA,
-    required Atsign atsignB,
+    required Atsign clientAtsign,
+    required Atsign daemonAtsign,
+    required String device,
     required Atsign? policyAtsign,
     required Atsign? relayAtsign,
     required String host,
@@ -24,8 +25,9 @@ abstract class SessionEvent {
   }) => {
     "sessionId": sessionId,
     "timestamp": DateTime.now().toUtc().toIso8601String(),
-    "atsignA": atsignA,
-    "atsignB": atsignB,
+    "clientAtsign": clientAtsign,
+    "daemonAtsign": daemonAtsign,
+    "device": device,
     "policyAtsign": policyAtsign,
     "relayAtsign": relayAtsign,
     "host": host,
