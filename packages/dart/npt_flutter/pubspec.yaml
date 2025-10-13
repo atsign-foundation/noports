@@ -53,7 +53,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   device_info_plus: ^11.3.3
   equatable: ^2.0.5
-  file_picker: ^8.1.2
+  file_picker: ^10.3.3
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.6
@@ -94,6 +94,7 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  file_picker: ^10.3.3
   intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1

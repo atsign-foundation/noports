@@ -17,7 +17,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
         horizontal: Sizes.p16,
         vertical: Sizes.p10,
       ),
-      width: MediaQuery.of(context).size.width * 0.8,
+      width: MediaQuery.of(context).size.width * 0.75,
       decoration: BoxDecoration(
         color: AppColor.primaryColorBackground,
         borderRadius: BorderRadius.circular(Sizes.p10),
@@ -44,7 +44,10 @@ class DemoProfileInfoWidget extends StatelessWidget {
             ),
           ),
           gapW16,
-          Text(strings.demoDescription),
+          Text(
+            strings.demoDescription,
+            style: const TextStyle(color: Colors.black),
+          ),
           TextButton(
             onPressed: () async {
               // Show a progress indicator before fetching the demo profile

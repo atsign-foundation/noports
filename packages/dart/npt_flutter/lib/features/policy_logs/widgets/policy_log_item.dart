@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/constants.dart';
 
 class PolicyLogItem extends StatefulWidget {
   final String timestamp;
@@ -33,6 +36,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
@@ -49,7 +53,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     child: Text(
                       widget.timestamp,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
+                        fontFamily: StringConst.monospace,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -88,7 +92,10 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     message: widget.type,
                     waitDuration: const Duration(milliseconds: 500),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _getTypeColor(widget.type),
                         borderRadius: BorderRadius.circular(12),
@@ -123,7 +130,9 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                 Expanded(
                   flex: 1,
                   child: Tooltip(
-                    message: widget.deviceGroup.isEmpty ? 'No device group' : widget.deviceGroup,
+                    message: widget.deviceGroup.isEmpty
+                        ? strings.deviceGroupNo
+                        : widget.deviceGroup,
                     waitDuration: const Duration(milliseconds: 500),
                     child: Text(
                       widget.deviceGroup.isEmpty ? '-' : widget.deviceGroup,
@@ -147,10 +156,13 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     ),
                   ),
                 ),
-                if (widget.type == 'policy request' && widget.policyPayload != null) ...[
+                if (widget.type == 'policy request' &&
+                    widget.policyPayload != null) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                    icon: Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    ),
                     onPressed: () {
                       setState(() {
                         _isExpanded = !_isExpanded;
@@ -162,25 +174,29 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
               ],
             ),
           ),
-          if (_isExpanded && widget.type == 'policy request' && widget.policyPayload != null)
+          if (_isExpanded &&
+              widget.type == 'policy request' &&
+              widget.policyPayload != null)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade300),
-                ),
+                border: Border(top: BorderSide(color: Colors.grey.shade300)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.code, size: 16, color: Colors.deepPurple),
+                      const Icon(
+                        Icons.code,
+                        size: 16,
+                        color: Colors.deepPurple,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'Policy Request Payload',
+                        strings.policyRequestPayload,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w300,
                           color: Colors.deepPurple,
@@ -190,15 +206,19 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                       IconButton(
                         icon: const Icon(Icons.copy, size: 16),
                         onPressed: () {
-                          Clipboard.setData(ClipboardData(text: widget.policyPayload!));
+                          Clipboard.setData(
+                            ClipboardData(text: widget.policyPayload!),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('JSON payload copied to clipboard'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text(
+                                strings.jsonPayloadCopiedToClipboard,
+                              ),
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         },
-                        tooltip: 'Copy JSON to clipboard',
+                        tooltip: strings.jsonCopyToClipboard,
                       ),
                     ],
                   ),
@@ -216,7 +236,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                       child: Text(
                         _formatJson(widget.policyPayload!),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
+                          fontFamily: StringConst.monospace,
                           fontSize: 12,
                         ),
                       ),

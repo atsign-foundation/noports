@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class Profile443Checkbox extends StatelessWidget {
@@ -8,6 +9,7 @@ class Profile443Checkbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocSelector<ProfileBloc, ProfileState, bool?>(
       selector: (ProfileState state) {
         if (state is ProfileLoadedState) return state.profile.only443;
@@ -25,9 +27,12 @@ class Profile443Checkbox extends StatelessWidget {
                   onChanged: (value) {
                     if (value == null) return;
                     var bloc = context.read<ProfileBloc>();
-                    bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(only443: value),
-                    ));
+                    bloc.add(
+                      ProfileEditEvent(
+                        profile: (bloc.state as ProfileLoadedState).profile
+                            .copyWith(only443: value),
+                      ),
+                    );
                   },
                 ),
                 gapW10,
@@ -36,17 +41,18 @@ class Profile443Checkbox extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Use port 443',
+                        strings.profilePort443,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       gapH4,
                       Text(
-                        'Forces the relay to use port 443 instead of an ephemeral port. '
-                        'Automatically enables ESCR relay authentication mode for security.',
+                        strings.profilePort443Description,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],

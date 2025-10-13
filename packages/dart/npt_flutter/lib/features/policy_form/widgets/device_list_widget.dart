@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../policy/models/policy.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../../util/form_validator.dart';
+import '../../policy/models/policy.dart';
 
 class DeviceListWidget extends StatefulWidget {
   final String label;
@@ -80,17 +82,18 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
 
   void _showTooltipModal() {
     if (widget.tooltip == null) return;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final strings = AppLocalizations.of(context)!;
         return AlertDialog(
           title: Text(widget.label),
           content: Text(widget.tooltip!),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(strings.ok),
             ),
           ],
         );
@@ -100,6 +103,7 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -107,10 +111,7 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             if (widget.tooltip != null) ...[
               const SizedBox(width: 8),
@@ -145,7 +146,7 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
           ],
         ),
         const SizedBox(height: 12),
-        
+
         if (_localDevices.isEmpty)
           Container(
             padding: const EdgeInsets.all(16),
@@ -154,10 +155,10 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
               borderRadius: BorderRadius.circular(4),
               color: Colors.grey[50],
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'No devices added yet',
-                style: TextStyle(
+                strings.devicesNotAdded,
+                style: const TextStyle(
                   color: Colors.grey,
                   fontStyle: FontStyle.italic,
                 ),
@@ -183,15 +184,15 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
                   title: Text(device.name),
                   subtitle: device.permitOpens.isNotEmpty
                       ? Text(
-                          'Permit Opens: ${device.permitOpens.join(', ')}',
+                          strings.permitOpens(device.permitOpens.join(', ')),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
                         )
-                      : const Text(
-                          'No permit opens configured',
-                          style: TextStyle(
+                      : Text(
+                          strings.permitOpensNotConfigured,
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
                             fontStyle: FontStyle.italic,
@@ -218,7 +219,7 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
               },
             ),
           ),
-        
+
         if (widget.isEditing) ...[
           const SizedBox(height: 12),
           SizedBox(
@@ -226,10 +227,8 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
             child: ElevatedButton.icon(
               onPressed: _addDevice,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Device'),
-              style: ElevatedButton.styleFrom(
-                alignment: Alignment.center,
-              ),
+              label: Text(strings.deviceAdd),
+              style: ElevatedButton.styleFrom(alignment: Alignment.center),
             ),
           ),
         ],
@@ -242,10 +241,7 @@ class _AddDeviceDialog extends StatefulWidget {
   final Device? device;
   final Function(Device) onAdd;
 
-  const _AddDeviceDialog({
-    this.device,
-    required this.onAdd,
-  });
+  const _AddDeviceDialog({this.device, required this.onAdd});
 
   @override
   State<_AddDeviceDialog> createState() => _AddDeviceDialogState();
@@ -273,18 +269,15 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
 
   void _addPermitOpen() {
     final value = _permitOpenController.text.trim();
-    
+
     final validationError = FormValidator.validateHostPortField(value);
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validationError),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
       );
       return;
     }
-    
+
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
         _permitOpens.add(value);
@@ -312,8 +305,11 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(widget.device == null ? 'Add Device' : 'Edit Device'),
+      title: Text(
+        widget.device == null ? strings.deviceAdd : strings.deviceEdit,
+      ),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 400,
@@ -323,19 +319,19 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Device Name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: strings.deviceName,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
-              
-              const Text(
-                'Permit Opens (host:port)',
-                style: TextStyle(fontWeight: FontWeight.w500),
+
+              Text(
+                strings.permitOpensHostPort,
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -350,12 +346,12 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _addPermitOpen,
-                    child: const Text('Add'),
+                    child: Text(strings.add),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              
+
               if (_permitOpens.isNotEmpty)
                 Container(
                   height: 150,
@@ -372,7 +368,10 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                         leading: const Icon(Icons.link, size: 16),
                         title: Text(permitOpen),
                         trailing: IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: Colors.red,
+                          ),
                           onPressed: () => _removePermitOpen(permitOpen),
                           iconSize: 16,
                         ),
@@ -387,12 +386,9 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(strings.cancel),
         ),
-        ElevatedButton(
-          onPressed: _save,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _save, child: Text(strings.save)),
       ],
     );
   }

@@ -2,7 +2,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
@@ -11,6 +10,7 @@ import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../localization/app_localizations.dart';
@@ -47,8 +47,8 @@ class CustomTextButton extends StatelessWidget {
   });
 
   const CustomTextButton.resetAtsign({
-    this.iconData = Icons.rotate_right,
-    this.type = CustomListTileType.resetAtsign,
+    this.iconData = Icons.delete_outline,
+    this.type = CustomListTileType.removeAtsign,
     super.key,
   });
   const CustomTextButton.signOut({
@@ -107,10 +107,10 @@ class CustomTextButton extends StatelessWidget {
           break;
         case CustomListTileType.backupYourKey:
           if (context.mounted) {
-            context.read<BackupKeyCubit>().backUpKeys();
+            context.read<BackupKeyCubit>().backUpKeys(popDialog: false);
           }
           break;
-        case CustomListTileType.resetAtsign:
+        case CustomListTileType.removeAtsign:
           final futurePreference = await AtClientMethods.loadAtClientPreference(
             rootDomain!,
           );
@@ -182,8 +182,8 @@ class CustomTextButton extends StatelessWidget {
         //   return strings.switchAtsign;
         case CustomListTileType.backupYourKey:
           return strings.backupYourKey;
-        case CustomListTileType.resetAtsign:
-          return strings.resetAtsign;
+        case CustomListTileType.removeAtsign:
+          return strings.removeAtsign;
         case CustomListTileType.feedback:
           return strings.feedback;
         case CustomListTileType.signOut:
@@ -191,7 +191,7 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
-    if (type == CustomListTileType.resetAtsign) {
+    if (type == CustomListTileType.removeAtsign) {
       return BlocBuilder<OnboardingCubit, AtsignInformation>(
         builder: (context, atsignInformation) {
           return Padding(
@@ -234,7 +234,7 @@ enum CustomListTileType {
   faq,
   privacyPolicy,
   backupYourKey,
-  resetAtsign,
+  removeAtsign,
   feedback,
   signOut,
 }

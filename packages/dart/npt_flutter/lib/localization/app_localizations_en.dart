@@ -18,16 +18,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activationStatusPreparing => 'Preparing for activation';
 
   @override
+  String get add => 'Add';
+
+  @override
   String get addNew => 'Add New';
 
   @override
   String get advanced => 'Advanced';
 
   @override
+  String get advancedSettings => 'Advanced Settings';
+
+  @override
   String get alertDialogTitle => 'Are you sure?';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, All Rights Reserved';
+  String get allRightsReserved => '© 2025 Atsign, All Rights Reserved';
 
   @override
   String get americas => 'Americas';
@@ -52,10 +58,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get atsignDialogTitle => 'AtSign';
 
   @override
+  String get atsignFrom => 'From atSign';
+
+  @override
+  String get atsignsUser => 'User atSigns';
+
+  @override
+  String get atsignsUserTooltip =>
+      'An atSign like \"@alice\" that will be connecting to other devices';
+
+  @override
+  String get atsignTo => 'To atSign';
+
+  @override
   String get atsignUncreated => 'Don\'t have an atSign?';
 
   @override
   String get authenticate => 'Authenticate';
+
+  @override
+  String get authenticator => 'Authenticator';
 
   @override
   String get authorisation => 'Authorisation';
@@ -98,6 +120,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connected => 'Connected';
 
   @override
+  String get connectionClosed => 'Connection closed, will retry...';
+
+  @override
+  String get connectionRetrying => 'Retrying connection (keep-alive)...';
+
+  @override
+  String get connections => 'Connections';
+
+  @override
+  String get connectionTimedOut => 'Connection timed out, will retry...';
+
+  @override
+  String get couldNotLoadPreviousState => 'Could not load previous state error';
+
+  @override
   String get custom => 'Custom';
 
   @override
@@ -125,6 +162,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demoTextButton => 'Try Now';
 
   @override
+  String get description => 'Description';
+
+  @override
+  String get deviceAdd => 'Add Device';
+
+  @override
   String get deviceAtsign => 'Device atSign';
 
   @override
@@ -132,10 +175,52 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is the atSign associated with your device.';
 
   @override
+  String get deviceAtsignDescriptionTwo =>
+      'An atSign like \"@bob_device\", that will be connected to. This is also known as the daemon or npd machine that is running the daemon process that will be receiving connection requests where connections will be established to this device.';
+
+  @override
+  String get deviceAtsigns => 'Device atSigns';
+
+  @override
+  String get deviceEdit => 'Edit Device';
+
+  @override
+  String get deviceGroup => 'Device Group';
+
+  @override
+  String get deviceGroupAdd => 'Add Device Group';
+
+  @override
+  String get deviceGroupEdit => 'Edit Device Group';
+
+  @override
+  String get deviceGroupNo => 'No Device Group';
+
+  @override
+  String get deviceGroups => 'Device Groups';
+
+  @override
+  String get deviceGroupsNotAdded => 'No device groups added yet';
+
+  @override
+  String get deviceGroupTooltip =>
+      'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports';
+
+  @override
   String get deviceName => 'Device Name';
 
   @override
   String get deviceNameDescription => 'This is the name of your remote device.';
+
+  @override
+  String get devices => 'Devices';
+
+  @override
+  String get devicesNotAdded => 'No devices added yet';
+
+  @override
+  String get devicesTooltip =>
+      'A device name string like \"default\" that is under a device atSign. A device atSign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user atSigns to this device atSign/device name pair.';
 
   @override
   String get disconnected => 'Disconnected';
@@ -231,6 +316,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorAuthenticationTimedOut => 'Authentication timed out.';
 
   @override
+  String errorDuringStartupWithDetails(Object errorMessage) {
+    return 'Error during startup: $errorMessage';
+  }
+
+  @override
   String get errorOtpRequestFailed =>
       'Failed to request an OTP, try resending, or contact support if the issue persists.';
 
@@ -248,6 +338,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorSwitchAtSignFailed =>
       'Failed to switch atSigns after activation.';
+
+  @override
+  String errorWithDetails(Object errorMessage) {
+    return 'Error: $errorMessage,';
+  }
 
   @override
   String get europe => 'Europe';
@@ -286,6 +381,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get getStarted => 'Get Started';
 
   @override
+  String get groupAdd => 'Add Group';
+
+  @override
+  String get groupName => 'Group Name';
+
+  @override
   String get import => 'Import';
 
   @override
@@ -301,6 +402,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get json => 'JSON';
 
   @override
+  String get jsonCopyToClipboard => 'Copy JSON to Clipboard';
+
+  @override
+  String get jsonPayloadCopiedToClipboard => 'JSON payload copied to clipboard';
+
+  @override
   String get keys => 'Upload atKeys';
 
   @override
@@ -310,22 +417,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading';
 
   @override
+  String get localHost => 'Local Host';
+
+  @override
+  String get localHostDescription =>
+      'The hostname or IP address to bind to on your local machine';
+
+  @override
   String get localPort => 'Local Port';
+
+  @override
+  String get localPortDescription =>
+      'The port you\'ll use on your local machine';
 
   @override
   String get logs => 'Logs';
 
   @override
+  String get logsClear => 'Clear Logs';
+
+  @override
+  String get logsNotAvailable =>
+      'No logs available yet.\nActivity will appear here when policy requests are made.';
+
+  @override
+  String get logsNotAvailableStartMonitoring =>
+      'No logs available.\nStart monitoring from the Policy Manager to see activity.';
+
+  @override
+  String get logsView => 'View Logs';
+
+  @override
+  String get logType => 'Log Type';
+
+  @override
+  String get manageAtsigns => 'Manage atSigns';
+
+  @override
   String get minimal => 'Simple';
 
   @override
+  String get monitoringActive => 'Monitoring Active';
+
+  @override
+  String get monitoringInactive => 'Monitoring Inactive';
+
+  @override
+  String get monitoringStart => 'Start Monitoring';
+
+  @override
+  String get monitoringStop => 'Stop Monitoring';
+
+  @override
   String get myNoPortsMsg => 'Retrieve yours in ';
+
+  @override
+  String get name => 'Name';
 
   @override
   String get next => 'Next';
 
   @override
   String get noAtsign => 'No atSign';
+
+  @override
+  String get noAtsignsAdded => 'No atSigns added yet';
+
+  @override
+  String get noDescription => 'No description';
 
   @override
   String get noEmailClientAvailable => 'No email client available';
@@ -335,6 +494,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
+
+  @override
+  String get nptStartupTimedout => 'Npt startup timed out';
+
+  @override
+  String get ok => 'OK';
 
   @override
   String get onboard => 'Onboard';
@@ -366,6 +531,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pasteProfileDescription => 'Paste the JSON/YAML content here';
+
+  @override
+  String permitOpens(Object permitOpens) {
+    return 'Permit Opens: $permitOpens';
+  }
+
+  @override
+  String get permitOpensHostPort => 'Permit Opens (host:port)';
+
+  @override
+  String get permitOpensNotConfigured => 'No permit opens configured';
+
+  @override
+  String get policy => 'Policy';
+
+  @override
+  String get policyLogs => 'Policy Logs';
+
+  @override
+  String get policyManager => 'Policy Manager';
+
+  @override
+  String get policyRequestPayload => 'Policy Request Payload';
 
   @override
   String get preview => 'Preview';
@@ -419,11 +607,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'How would you like to import a profile?';
 
   @override
+  String get profileKeepAlive => '🕺 Keep Alive';
+
+  @override
+  String get profileKeepAliveDescription =>
+      'Stay alive. If a session ends, create a new session and re-bind to the local port. Sessions can end due to being unused after a timeout or network issues.';
+
+  @override
   String get profileName => 'Profile Name';
 
   @override
   String get profileNameDescription =>
       'This will be the name of your configurations.';
+
+  @override
+  String get profilePort443 => 'Use Port 443';
+
+  @override
+  String get profilePort443Description =>
+      'Forces the relay to use port 443 instead of an ephemeral port. Automatically enables ESCR relay authentication mode for security.';
 
   @override
   String get profileRunningActionDeniedMessage =>
@@ -473,7 +675,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refresh => 'Refresh';
 
   @override
-  String get register => 'register';
+  String get register => 'Register';
 
   @override
   String get relay => 'Relay';
@@ -489,7 +691,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remoteHost => 'Remote Host';
 
   @override
+  String get remoteHostDescription =>
+      'The hostname or IP address of the service you are connecting to on the remote machine';
+
+  @override
   String get remotePort => 'Remote Port';
+
+  @override
+  String get remotePortDescription =>
+      'The port that will be used on the remote machine';
+
+  @override
+  String get removeAtsign => 'Remove atSign';
 
   @override
   String get requestExpired =>
@@ -502,13 +715,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resendPin => 'Resend Pin';
 
   @override
-  String get resetAtsign => 'Reset atSign';
+  String retryFailedWithDetails(Object errorMessage) {
+    return 'Retry failed: $errorMessage, will retry...';
+  }
+
+  @override
+  String get roleAddNew => 'Add New Role';
+
+  @override
+  String get roleCreatingFailed => 'Failed to create role';
+
+  @override
+  String roleCreatingFailedWithDetails(Object errorMessage) {
+    return 'Failed to create role: $errorMessage';
+  }
+
+  @override
+  String get roleDelete => 'Delete Role';
+
+  @override
+  String roleDeleteConfirmation(Object roleName) {
+    return 'Are you sure you want to delete the role \"$roleName\"? This action cannot be undone.';
+  }
+
+  @override
+  String get roleDeletedSuccessfully => 'Role deleted successfully!';
+
+  @override
+  String get roleDeletingFailed => 'Failed to delete role';
+
+  @override
+  String roleDeletingFailedWithDetails(Object errorMessage) {
+    return 'Failed to delete role: $errorMessage';
+  }
+
+  @override
+  String roleLoadingFailedWithDetails(Object errorMessage) {
+    return 'Failed to load role: $errorMessage';
+  }
+
+  @override
+  String get roleNotFound => 'No roles found';
+
+  @override
+  String get roleNotLoaded => 'No role loaded';
+
+  @override
+  String get roles => 'Roles';
+
+  @override
+  String get roleSaveFailed => 'Failed to save role';
+
+  @override
+  String roleSaveFailedWithDetails(Object errorMessage) {
+    return 'Failed to save role: $errorMessage';
+  }
+
+  @override
+  String get roleSelectToViewDetails => 'Select a role to view details';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return 'Failed to load roles: $errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => 'Refresh Roles';
+
+  @override
+  String get roleUpdatingFailed => 'Failed to update role';
+
+  @override
+  String roleUpdatingFailedWithDetails(Object errorMessage) {
+    return 'Failed to update role: $errorMessage';
+  }
 
   @override
   String get rootDomainDefault => 'Default (Prod)';
 
   @override
   String get rootDomainDemo => 'Demo (VE)';
+
+  @override
+  String get save => 'Save';
 
   @override
   String get saveAtKeys => 'Save atKeys';
@@ -542,13 +831,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serviceMapping => 'Service Mapping';
 
   @override
+  String get servicesAllowed => 'Allowed Services';
+
+  @override
   String get settings => 'Settings';
+
+  @override
+  String get settingsCouldNotFetch => 'Could not fetch settings';
 
   @override
   String get showWindow => 'Show Window';
 
   @override
   String get signout => 'Sign Out';
+
+  @override
+  String get socketconnectorClosedPrematurely =>
+      'Socketconnector Closed Prematurely';
 
   @override
   String get sshStyle => 'Advanced';
@@ -583,8 +882,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Note: Switching atSigns ends all connections.';
 
   @override
+  String get syncCompleted => 'Sync completed. All profiles loaded.';
+
+  @override
   String get syncInProgress =>
       'Sync in progress. Some profiles may still be loading.';
+
+  @override
+  String get timestamp => 'Timestamp';
 
   @override
   String get unknownError => 'An unknown error occurred';
@@ -616,7 +921,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validationErrorRelayField => 'Relay must be a valid atsign';
 
   @override
-  String get validationErrorRemoteHostField =>
+  String get validationErrorHostField =>
       'Field must be partially or fully qualified hostname or an IP address';
 
   @override
@@ -644,7 +949,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recommended)';
-
-  @override
-  String get policyManager => 'Policy Manager';
 }

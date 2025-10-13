@@ -88,14 +88,14 @@ class FormValidator {
     return null;
   }
 
-  static String? validateRemoteHostField(String? value) {
+  static String? validateHostField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     String valid =
         r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)$';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
     } else if (!value!.contains(RegExp(valid))) {
-      return strings.validationErrorRemoteHostField;
+      return strings.validationErrorHostField;
     }
     return null;
   }
@@ -113,39 +113,39 @@ class FormValidator {
 
   static String? validateHostPortField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
-    
+
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
     }
-    
+
     // Check if the value contains at least one colon
     if (!value!.contains(':')) {
       return 'Host:port format must contain at least one colon (:)';
     }
-    
+
     // Split by colon and validate parts
     final parts = value.split(':');
     if (parts.length < 2) {
       return 'Host:port format must contain at least one colon (:)';
     }
-    
+
     // Validate host part (first part)
     final host = parts[0];
     if (host.isEmpty) {
       return 'Host part cannot be empty';
     }
-    
+
     // Validate port part (last part)
     final portStr = parts.last;
     if (portStr.isEmpty) {
       return 'Port part cannot be empty';
     }
-    
+
     final port = int.tryParse(portStr);
     if (port == null || !(port >= 1 && port <= 65535)) {
       return 'Port must be a valid number between 1 and 65535';
     }
-    
+
     return null;
   }
 }

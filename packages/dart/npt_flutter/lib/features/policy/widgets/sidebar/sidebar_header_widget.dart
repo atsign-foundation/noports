@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/policy/cubit/status_light/policy_status_light_state.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 import '../../cubit/policy_cubit.dart';
 import '../../cubit/status_light/policy_status_light_cubit.dart';
@@ -11,6 +13,7 @@ class SidebarHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocProvider(
       create: (_) => PolicyStatusLightCubit(),
       child: BlocBuilder<PolicyStatusLightCubit, PolicyStatusLightState>(
@@ -18,26 +21,26 @@ class SidebarHeaderWidget extends StatelessWidget {
           final policyCubit = context.read<PolicyStatusLightCubit>();
           policyCubit.loadStatusLight();
           return Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(Sizes.p8),
             child: Row(
               children: [
                 Text(
-                  'Roles',
+                  strings.roles,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
                 const PolicyStatusLight(),
-                const SizedBox(width: 12),
+                gapW12,
                 IconButton(
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
                     // this is the refresh button
-                    context.read<PolicyCubit>().loadRoles();
+                    context.read<PolicyCubit>().loadRoles(strings);
                     context.read<PolicyStatusLightCubit>().forceHeartbeat();
                   },
-                  tooltip: 'Refresh roles',
+                  tooltip: strings.rolesRefresh,
                 ),
               ],
             ),

@@ -13,6 +13,7 @@ class ProfileProgressListener extends SyncProgressListener {
   @override
   void onSyncProgressEvent(SyncProgress syncProgress) async {
     final context = App.navState.currentContext!;
+    //unawaited to allow profile reload to occur without waiting for sync check to complete
     unawaited(context.read<SyncCubit>().checkSync());
     final profileListBlock = App.navState.currentContext!
         .read<ProfileListBloc>();

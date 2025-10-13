@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/policy.dart';
-
+import 'package:npt_flutter/localization/app_localizations.dart';
 class PolicyDialogs {
   PolicyDialogs._();
 
@@ -12,6 +12,7 @@ class PolicyDialogs {
     bool autofocus = false,
   }) async {
     String itemValue = '';
+    final strings = AppLocalizations.of(context)!;
 
     return showDialog<String>(
       context: context,
@@ -30,7 +31,7 @@ class PolicyDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text(strings.cancel),
             ),
             TextButton(
               onPressed: () {
@@ -38,7 +39,7 @@ class PolicyDialogs {
                   Navigator.pop(dialogContext, itemValue.trim());
                 }
               },
-              child: const Text('Add'),
+              child: Text(strings.add),
             ),
           ],
         );
