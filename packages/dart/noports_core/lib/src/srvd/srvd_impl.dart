@@ -495,10 +495,14 @@ class SrvdImpl
     final sessionId = msg.payload['sessionId'];
     logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
+    logger.info(
+      'sessionInfo:'
+      ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',
+    );
     if (si != null && si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
-        SessionEvent.ended(
+        SessionEvent.done(
           sessionId: sessionId,
           stats: msg.payload['stats'] as Stats,
         ),

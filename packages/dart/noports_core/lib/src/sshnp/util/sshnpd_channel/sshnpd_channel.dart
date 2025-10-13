@@ -139,7 +139,7 @@ abstract class SshnpdChannel
     if (eventLoggingConfig != null && sshnpdAck == SshnpdAck.acknowledged) {
       await logEvent(
         eventLoggingConfig!,
-        SessionEvent.clientStarted(sessionId: sessionId),
+        SessionEvent.clientConnecting(sessionId: sessionId),
       );
     }
 

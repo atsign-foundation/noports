@@ -5,11 +5,11 @@ enum SessionState {
   requested, // daemon receives request from client
   approved, // daemon approves request
   denied, // daemon denies request
-  daemonStarted, // daemon sends success response to client
-  clientStarted, // client receives approval from daemon
+  daemonConnecting, // after daemon sends success response to client
+  clientConnecting, // after client receives success response from daemon
   connected, // first connection of a socket pair by the relay for this session
   stillConnected, // may be sent by relay during long-running sessions
-  ended, // Sent by relay only if it had ever reached 'connected' state
+  done, // Sent by relay only if it had ever reached 'connected' state
 }
 
 abstract class SessionEvent {
@@ -69,21 +69,21 @@ abstract class SessionEvent {
     },
   };
 
-  static Map<String, dynamic> daemonStarted({required String sessionId}) => {
+  static Map<String, dynamic> daemonConnecting({required String sessionId}) => {
     "sessionId": sessionId,
-    "state": SessionState.daemonStarted.name,
+    "state": SessionState.daemonConnecting.name,
     "lifecycle": {
-      SessionState.daemonStarted.name: {
+      SessionState.daemonConnecting.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
     },
   };
 
-  static Map<String, dynamic> clientStarted({required String sessionId}) => {
+  static Map<String, dynamic> clientConnecting({required String sessionId}) => {
     "sessionId": sessionId,
-    "state": SessionState.clientStarted.name,
+    "state": SessionState.clientConnecting.name,
     "lifecycle": {
-      SessionState.clientStarted.name: {
+      SessionState.clientConnecting.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
     },
@@ -117,14 +117,14 @@ abstract class SessionEvent {
     },
   };
 
-  static Map<String, dynamic> ended({
+  static Map<String, dynamic> done({
     required String sessionId,
     required Stats stats,
   }) => {
     "sessionId": sessionId,
-    "state": SessionState.ended.name,
+    "state": SessionState.done.name,
     "lifecycle": {
-      SessionState.ended.name: {
+      SessionState.done.name: {
         "timestamp": DateTime.now().toUtc().toIso8601String(),
       },
       "stats": stats.toJson(),

@@ -312,86 +312,96 @@ class SshnpdImpl
   Future<void> clientRequestNotificationHandler(
     AtNotification notification,
   ) async {
-    String messageType = notification.key
-        .replaceAll('${notification.to}:', '')
-        .replaceAll('.$device.${DefaultArgs.namespace}${notification.from}', '')
-        // convert to lower case as the latest AtClient converts notification
-        // keys to lower case when received
-        .toLowerCase();
+    try {
+      String messageType = notification.key
+          .replaceAll('${notification.to}:', '')
+          .replaceAll(
+            '.$device.${DefaultArgs.namespace}${notification.from}',
+            '',
+          )
+          // convert to lower case as the latest AtClient converts notification
+          // keys to lower case when received
+          .toLowerCase();
 
-    NPAAuthCheckResponse auth = await authCheck(notification);
-    if (!auth.authorized) {
-      // TODO IF $someConditions apply then send a 'nice' error
-      // TODO message notification back to the requester
-      logger.shout(
-        'Notification ignored from ${notification.from}'
-        ' which is not authorized: ${auth.message}'
-        ' Notification value was ${notification.value}',
-      );
+      NPAAuthCheckResponse auth = await authCheck(notification);
+      if (!auth.authorized) {
+        // TODO IF $someConditions apply then send a 'nice' error
+        // TODO message notification back to the requester
+        logger.shout(
+          'Notification ignored from ${notification.from}'
+          ' which is not authorized: ${auth.message}'
+          ' Notification value was ${notification.value}',
+        );
 
-      return;
-    }
-
-    // For session-based requests, try to acquire mutex before processing
-    if (['ssh_request', 'npt_request', 'sshd'].contains(messageType)) {
-      bool mutexAcquired = await tryAcquireSessionMutex(
-        notification,
-        messageType,
-      );
-      if (!mutexAcquired) {
-        return; // Another sshnpd instance will handle this request
+        return;
       }
-    }
 
-    switch (messageType) {
-      case 'privatekey':
-        logger.info(
-          'Private Key received from ${notification.from} notification id : ${notification.id}',
+      // For session-based requests, try to acquire mutex before processing
+      if (['ssh_request', 'npt_request', 'sshd'].contains(messageType)) {
+        bool mutexAcquired = await tryAcquireSessionMutex(
+          notification,
+          messageType,
         );
-        _privateKey = notification.value!;
-        break;
+        if (!mutexAcquired) {
+          return; // Another sshnpd instance will handle this request
+        }
+      }
 
-      case 'sshpublickey':
-        await _handlePublicKeyNotification(notification);
-        break;
+      switch (messageType) {
+        case 'privatekey':
+          logger.info(
+            'Private Key received from ${notification.from} notification id : ${notification.id}',
+          );
+          _privateKey = notification.value!;
+          break;
 
-      case 'sshd':
-        logger.info(
-          'LEGACY $messageType request received from ${notification.from}'
-          ' ( ${notification.value} )',
-        );
-        _handleLegacySshRequestNotification(notification, auth);
-        break;
+        case 'sshpublickey':
+          await _handlePublicKeyNotification(notification);
+          break;
 
-      case 'ping':
-        logger.info(
-          '$messageType received from ${notification.from}'
-          ' ( ${notification.value} )',
-        );
-        _handlePingNotification(notification);
-        break;
+        case 'sshd':
+          logger.info(
+            'LEGACY $messageType request received from ${notification.from}'
+            ' ( ${notification.value} )',
+          );
+          _handleLegacySshRequestNotification(notification, auth);
+          break;
 
-      case 'ssh_request':
-        logger.info(
-          '$messageType received from ${notification.from}'
-          ' ( ${notification.value} )',
-        );
-        _handleSshRequestNotification(notification, auth);
-        break;
+        case 'ping':
+          logger.info(
+            '$messageType received from ${notification.from}'
+            ' ( ${notification.value} )',
+          );
+          _handlePingNotification(notification);
+          break;
 
-      case 'npt_request':
-        logger.info(
-          '$messageType received from ${notification.from}'
-          ' ( ${notification.value} )',
-        );
-        _handleNptRequestNotification(notification, auth);
-        break;
+        case 'ssh_request':
+          logger.info(
+            '$messageType received from ${notification.from}'
+            ' ( ${notification.value} )',
+          );
+          _handleSshRequestNotification(notification, auth);
+          break;
 
-      default:
-        logger.warning(
-          'unknown "$messageType" request received from ${notification.from}'
-          ' ( ${notification.value} )',
-        );
+        case 'npt_request':
+          logger.info(
+            '$messageType received from ${notification.from}'
+            ' ( ${notification.value} )',
+          );
+          _handleNptRequestNotification(notification, auth);
+          break;
+
+        default:
+          logger.warning(
+            'unknown "$messageType" request received from ${notification.from}'
+            ' ( ${notification.value} )',
+          );
+      }
+    } catch (e, st) {
+      logger.shout(
+        'Unexpected exception handling client request notification $notification',
+      );
+      logger.shout('Stack Trace:\n$st');
     }
   }
 
@@ -756,9 +766,19 @@ class SshnpdImpl
     // Start our side of the tunnel
     try {
       await startNpt(requestingAtsign: requestingAtsign, req: req);
-    } catch (_) {
-      // has already been handled inside startNpt
-      // we need to catch here in order to return at this point
+    } catch (e) {
+      logger.severe('startNpt failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
+        value:
+            'Failed to start up the daemon side of the relay socket tunnel : $e',
+        sessionId: req.sessionId,
+      );
+
       return;
     }
 
@@ -812,131 +832,114 @@ class SshnpdImpl
       'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}',
     );
 
-    try {
-      RelayAuthenticator? relayAuthenticator;
+    RelayAuthenticator? relayAuthenticator;
 
-      if (req.authenticateToRvd) {
-        switch (req.relayAuthMode) {
-          case RelayAuthMode.payload:
-            relayAuthenticator = RelayAuthenticatorLegacy(
-              signAndWrapAndJsonEncode(atClient, {
-                'sessionId': req.sessionId,
-                'clientNonce': req.clientNonce,
-                'rvdNonce': req.rvdNonce,
-              }),
-            );
-            break;
-          case RelayAuthMode.escr:
-            relayAuthenticator = RelayAuthenticatorESCR(
-              sessionId: req.sessionId,
-              relayAuthAesKey: req.relayAuthAesKey!,
-              publicSigningKeyUri: publicSigningKeyUri,
-              publicSigningKey: publicSigningKey,
-              privateSigningKey: privateSigningKey,
-              isSideA: false,
-            );
-            break;
-        }
-      }
-
-      AesKeyBundle? c2dBundle, d2cBundle;
-      if (req.encryptRvdTraffic) {
-        late EncryptionKeyType encKeyType;
-        try {
-          encKeyType = EncryptionKeyType.values.byName(
-            req.clientEphemeralPKType,
+    if (req.authenticateToRvd) {
+      switch (req.relayAuthMode) {
+        case RelayAuthMode.payload:
+          relayAuthenticator = RelayAuthenticatorLegacy(
+            signAndWrapAndJsonEncode(atClient, {
+              'sessionId': req.sessionId,
+              'clientNonce': req.clientNonce,
+              'rvdNonce': req.rvdNonce,
+            }),
           );
-        } catch (e) {
-          throw Exception(
-            'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
+          break;
+        case RelayAuthMode.escr:
+          relayAuthenticator = RelayAuthenticatorESCR(
+            sessionId: req.sessionId,
+            relayAuthAesKey: req.relayAuthAesKey!,
+            publicSigningKeyUri: publicSigningKeyUri,
+            publicSigningKey: publicSigningKey,
+            privateSigningKey: privateSigningKey,
+            isSideA: false,
           );
-        }
-
-        c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK);
-
-        if (req.twinKeys) {
-          logger.info('Session will use twinned keys');
-          d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
-        }
+          break;
       }
-      if (Platform.environment['SRV_INLINE'] == 'true') {
-        SocketConnector sc = await Srv.dart(
-          req.rvdHost,
-          req.rvdPort,
-          localPort: req.requestedPort,
-          bindLocalPort: false,
-          localHost: req.requestedHost,
-          relayAuthenticator: relayAuthenticator,
-          aesC2D: c2dBundle?.aesKey,
-          ivC2D: c2dBundle?.iv,
-          aesD2C: d2cBundle?.aesKey,
-          ivD2C: d2cBundle?.iv,
-          multi: true,
-          timeout: req.timeout,
-        ).run();
-        logger.info('Started rv INLINE - socket connector $sc');
-      } else {
-        // Connect to rendezvous point using background process.
-        // This program can then exit without causing an issue.
-        Process rv = await Srv.exec(
-          req.rvdHost,
-          req.rvdPort,
-          localPort: req.requestedPort,
-          bindLocalPort: false,
-          localHost: req.requestedHost,
-          relayAuthenticator: relayAuthenticator,
-          aesC2D: c2dBundle?.aesKey,
-          ivC2D: c2dBundle?.iv,
-          aesD2C: d2cBundle?.aesKey,
-          ivD2C: d2cBundle?.iv,
-          multi: true,
-          timeout: req.timeout,
-        ).run();
-        logger.info('Started rv - pid is ${rv.pid}');
-      }
-
-      /// - Send response message to the sshnp client which includes the
-      ///   ephemeral private key
-      String aesKeyC2DName, ivC2DName;
-      if (req.twinKeys) {
-        aesKeyC2DName = 'aesKeyC2D';
-        ivC2DName = 'ivC2D';
-      } else {
-        aesKeyC2DName = 'sessionAESKey';
-        ivC2DName = 'sessionIV';
-      }
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: req.sessionId,
-        ),
-        value: signAndWrapAndJsonEncode(atClient, {
-          'status': 'connected',
-          'sessionId': req.sessionId,
-          aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
-          ivC2DName: c2dBundle?.ivEncrypted,
-          'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
-          'ivD2C': d2cBundle?.ivEncrypted,
-          'eventLoggingConfig': elc?.toJson(),
-        }),
-        sessionId: req.sessionId,
-      );
-
-      await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
-    } catch (e) {
-      logger.severe('startNpt failed with unexpected error : $e');
-      // Notify sshnp that this session is NOT connected
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: req.sessionId,
-        ),
-        value:
-            'Failed to start up the daemon side of the relay socket tunnel : $e',
-        sessionId: req.sessionId,
-      );
-      rethrow;
     }
+
+    AesKeyBundle? c2dBundle, d2cBundle;
+    if (req.encryptRvdTraffic) {
+      late EncryptionKeyType encKeyType;
+      try {
+        encKeyType = EncryptionKeyType.values.byName(req.clientEphemeralPKType);
+      } catch (e) {
+        throw Exception(
+          'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
+        );
+      }
+
+      c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK);
+
+      if (req.twinKeys) {
+        logger.info('Session will use twinned keys');
+        d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
+      }
+    }
+    if (Platform.environment['SRV_INLINE'] == 'true') {
+      SocketConnector sc = await Srv.dart(
+        req.rvdHost,
+        req.rvdPort,
+        localPort: req.requestedPort,
+        bindLocalPort: false,
+        localHost: req.requestedHost,
+        relayAuthenticator: relayAuthenticator,
+        aesC2D: c2dBundle?.aesKey,
+        ivC2D: c2dBundle?.iv,
+        aesD2C: d2cBundle?.aesKey,
+        ivD2C: d2cBundle?.iv,
+        multi: true,
+        timeout: req.timeout,
+      ).run();
+      logger.info('Started rv INLINE - socket connector $sc');
+    } else {
+      // Connect to rendezvous point using background process.
+      // This program can then exit without causing an issue.
+      Process rv = await Srv.exec(
+        req.rvdHost,
+        req.rvdPort,
+        localPort: req.requestedPort,
+        bindLocalPort: false,
+        localHost: req.requestedHost,
+        relayAuthenticator: relayAuthenticator,
+        aesC2D: c2dBundle?.aesKey,
+        ivC2D: c2dBundle?.iv,
+        aesD2C: d2cBundle?.aesKey,
+        ivD2C: d2cBundle?.iv,
+        multi: true,
+        timeout: req.timeout,
+      ).run();
+      logger.info('Started rv - pid is ${rv.pid}');
+    }
+
+    /// - Send response message to the sshnp client which includes the
+    ///   ephemeral private key
+    String aesKeyC2DName, ivC2DName;
+    if (req.twinKeys) {
+      aesKeyC2DName = 'aesKeyC2D';
+      ivC2DName = 'ivC2D';
+    } else {
+      aesKeyC2DName = 'sessionAESKey';
+      ivC2DName = 'sessionIV';
+    }
+    await _notify(
+      atKey: _createResponseAtKey(
+        requestingAtsign: requestingAtsign,
+        sessionId: req.sessionId,
+      ),
+      value: signAndWrapAndJsonEncode(atClient, {
+        'status': 'connected',
+        'sessionId': req.sessionId,
+        aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
+        ivC2DName: c2dBundle?.ivEncrypted,
+        'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
+        'ivD2C': d2cBundle?.ivEncrypted,
+        'eventLoggingConfig': elc?.toJson(),
+      }),
+      sessionId: req.sessionId,
+    );
+
+    await _logEvent(SessionEvent.daemonConnecting(sessionId: req.sessionId));
   }
 
   /// If json['direct'] is true, bridge the rvd connection to this device's
@@ -1062,12 +1065,43 @@ class SshnpdImpl
       ),
     );
 
-    if (req.direct) {
-      // direct ssh requested
-      await startDirectSsh(requestingAtsign: requestingAtsign, req: req);
-    } else {
-      // reverse ssh requested
-      await startReverseSsh(requestingAtsign: requestingAtsign, req: req);
+    String which = req.direct ? 'startDirectSsh' : 'startReverseSsh';
+    try {
+      if (req.direct) {
+        // direct ssh requested
+        await startDirectSsh(requestingAtsign: requestingAtsign, req: req);
+      } else {
+        // reverse ssh requested
+        await startReverseSsh(requestingAtsign: requestingAtsign, req: req);
+      }
+    } catch (e) {
+      logger.severe('$which failed with unexpected error : $e');
+      // Notify sshnp that this session is NOT connected
+      await _notify(
+        atKey: _createResponseAtKey(
+          requestingAtsign: requestingAtsign,
+          sessionId: req.sessionId,
+        ),
+        value:
+            'Failed to start up the daemon side of the relay socket tunnel : $e',
+        sessionId: req.sessionId,
+      );
+
+      return;
+    }
+
+    if (req.relayAtsign != null && elc != null) {
+      final keyForRelay = AtKey.fromString(
+        '${req.relayAtsign}:logging.${req.sessionId}.sessions.${Srvd.namespace}$deviceAtsign',
+      )..metadata.namespaceAware = false;
+      logger.shout('Sending session logging config to relay : $keyForRelay');
+      await notify(
+        keyForRelay,
+        jsonEncode(elc!.toJson()),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
+      );
     }
   }
 
@@ -1161,146 +1195,132 @@ class SshnpdImpl
 
     authenticateToRvd ??= false;
     encryptRvdTraffic ??= false;
-    try {
-      RelayAuthenticator? relayAuthenticator;
-      if (authenticateToRvd) {
-        switch (req.relayAuthMode) {
-          case RelayAuthMode.payload:
-            relayAuthenticator = RelayAuthenticatorLegacy(
-              signAndWrapAndJsonEncode(atClient, {
-                'sessionId': req.sessionId,
-                'clientNonce': req.clientNonce,
-                'rvdNonce': req.rvdNonce,
-              }),
-            );
-            break;
-          case RelayAuthMode.escr:
-            relayAuthenticator = RelayAuthenticatorESCR(
-              sessionId: req.sessionId,
-              relayAuthAesKey: req.relayAuthAesKey!,
-              publicSigningKeyUri: publicSigningKeyUri,
-              publicSigningKey: publicSigningKey,
-              privateSigningKey: privateSigningKey,
-              isSideA: false,
-            );
-            break;
-        }
-      }
 
-      AesKeyBundle? c2dBundle, d2cBundle;
-      if (encryptRvdTraffic) {
-        if (req.clientEphemeralPK == null ||
-            req.clientEphemeralPKType == null) {
-          throw Exception(
-            'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided',
+    RelayAuthenticator? relayAuthenticator;
+    if (authenticateToRvd) {
+      switch (req.relayAuthMode) {
+        case RelayAuthMode.payload:
+          relayAuthenticator = RelayAuthenticatorLegacy(
+            signAndWrapAndJsonEncode(atClient, {
+              'sessionId': req.sessionId,
+              'clientNonce': req.clientNonce,
+              'rvdNonce': req.rvdNonce,
+            }),
           );
-        }
-        late EncryptionKeyType encKeyType;
-        try {
-          encKeyType = EncryptionKeyType.values.byName(
-            req.clientEphemeralPKType!,
+          break;
+        case RelayAuthMode.escr:
+          relayAuthenticator = RelayAuthenticatorESCR(
+            sessionId: req.sessionId,
+            relayAuthAesKey: req.relayAuthAesKey!,
+            publicSigningKeyUri: publicSigningKeyUri,
+            publicSigningKey: publicSigningKey,
+            privateSigningKey: privateSigningKey,
+            isSideA: false,
           );
-        } catch (e) {
-          throw Exception(
-            'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
-          );
-        }
-
-        c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
-
-        if (req.twinKeys) {
-          logger.info('Session will use twinned keys');
-          d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
-        }
+          break;
       }
-      // Connect to rendezvous point using background process.
-      // This program can then exit without causing an issue.
-      Process rv = await Srv.exec(
-        req.host,
-        req.port,
-        localPort: localSshdPort,
-        bindLocalPort: false,
-        relayAuthenticator: relayAuthenticator,
-        aesC2D: c2dBundle?.aesKey,
-        ivC2D: c2dBundle?.iv,
-        aesD2C: d2cBundle?.aesKey,
-        ivD2C: d2cBundle?.iv,
-        timeout: DefaultArgs.srvTimeout,
-      ).run();
-      logger.info('Started rv - pid is ${rv.pid}');
-
-      LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
-
-      /// Generate the ephemeral key pair which the client will use for the
-      /// initial tunnel ssh session
-      AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
-        algorithm: sshAlgorithm,
-        identifier: 'ephemeral_${req.sessionId}',
-      );
-
-      await keyUtil.authorizePublicKey(
-        sshPublicKey: tunnelKeyPair.publicKeyContents,
-        localSshdPort: localSshdPort,
-        sessionId: req.sessionId,
-        permissions: ephemeralPermissions,
-      );
-
-      /// Remove the ephemeral keypair from persistent storage
-      try {
-        await keyUtil.deleteKeyPair(identifier: tunnelKeyPair.identifier);
-      } catch (e) {
-        logger.shout('Failed to delete ephemeral keyPair: $e');
-      }
-
-      /// - Send response message to the sshnp client which includes the
-      ///   ephemeral private key
-      String aesKeyC2DName, ivC2DName;
-      if (req.twinKeys) {
-        aesKeyC2DName = 'aesKeyC2D';
-        ivC2DName = 'ivC2D';
-      } else {
-        aesKeyC2DName = 'sessionAESKey';
-        ivC2DName = 'sessionIV';
-      }
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: req.sessionId,
-        ),
-        value: signAndWrapAndJsonEncode(atClient, {
-          'status': 'connected',
-          'sessionId': req.sessionId,
-          'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
-          aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
-          ivC2DName: c2dBundle?.ivEncrypted,
-          'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
-          'ivD2C': d2cBundle?.ivEncrypted,
-          'eventLoggingConfig': elc?.toJson(),
-        }),
-        sessionId: req.sessionId,
-      );
-
-      await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
-
-      /// - start a timer to remove the ephemeral key from `authorized_keys`
-      ///   after 15 seconds
-      Timer(
-        const Duration(seconds: 15),
-        () => keyUtil.deauthorizePublicKey(req.sessionId),
-      );
-    } catch (e) {
-      logger.severe('startDirectSsh failed with unexpected error : $e');
-      // Notify sshnp that this session is NOT connected
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: req.sessionId,
-        ),
-        value:
-            'Failed to start up the daemon side of the relay socket tunnel : $e',
-        sessionId: req.sessionId,
-      );
     }
+
+    AesKeyBundle? c2dBundle, d2cBundle;
+    if (encryptRvdTraffic) {
+      if (req.clientEphemeralPK == null || req.clientEphemeralPKType == null) {
+        throw Exception(
+          'encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided',
+        );
+      }
+      late EncryptionKeyType encKeyType;
+      try {
+        encKeyType = EncryptionKeyType.values.byName(
+          req.clientEphemeralPKType!,
+        );
+      } catch (e) {
+        throw Exception(
+          'Unknown ephemeralPKType: ${req.clientEphemeralPKType}',
+        );
+      }
+
+      c2dBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
+
+      if (req.twinKeys) {
+        logger.info('Session will use twinned keys');
+        d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK!);
+      }
+    }
+    // Connect to rendezvous point using background process.
+    // This program can then exit without causing an issue.
+    Process rv = await Srv.exec(
+      req.host,
+      req.port,
+      localPort: localSshdPort,
+      bindLocalPort: false,
+      relayAuthenticator: relayAuthenticator,
+      aesC2D: c2dBundle?.aesKey,
+      ivC2D: c2dBundle?.iv,
+      aesD2C: d2cBundle?.aesKey,
+      ivD2C: d2cBundle?.iv,
+      timeout: DefaultArgs.srvTimeout,
+    ).run();
+    logger.info('Started rv - pid is ${rv.pid}');
+
+    LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
+
+    /// Generate the ephemeral key pair which the client will use for the
+    /// initial tunnel ssh session
+    AtSshKeyPair tunnelKeyPair = await keyUtil.generateKeyPair(
+      algorithm: sshAlgorithm,
+      identifier: 'ephemeral_${req.sessionId}',
+    );
+
+    await keyUtil.authorizePublicKey(
+      sshPublicKey: tunnelKeyPair.publicKeyContents,
+      localSshdPort: localSshdPort,
+      sessionId: req.sessionId,
+      permissions: ephemeralPermissions,
+    );
+
+    /// Remove the ephemeral keypair from persistent storage
+    try {
+      await keyUtil.deleteKeyPair(identifier: tunnelKeyPair.identifier);
+    } catch (e) {
+      logger.shout('Failed to delete ephemeral keyPair: $e');
+    }
+
+    /// - Send response message to the sshnp client which includes the
+    ///   ephemeral private key
+    String aesKeyC2DName, ivC2DName;
+    if (req.twinKeys) {
+      aesKeyC2DName = 'aesKeyC2D';
+      ivC2DName = 'ivC2D';
+    } else {
+      aesKeyC2DName = 'sessionAESKey';
+      ivC2DName = 'sessionIV';
+    }
+    await _notify(
+      atKey: _createResponseAtKey(
+        requestingAtsign: requestingAtsign,
+        sessionId: req.sessionId,
+      ),
+      value: signAndWrapAndJsonEncode(atClient, {
+        'status': 'connected',
+        'sessionId': req.sessionId,
+        'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
+        aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
+        ivC2DName: c2dBundle?.ivEncrypted,
+        'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
+        'ivD2C': d2cBundle?.ivEncrypted,
+        'eventLoggingConfig': elc?.toJson(),
+      }),
+      sessionId: req.sessionId,
+    );
+
+    await _logEvent(SessionEvent.daemonConnecting(sessionId: req.sessionId));
+
+    /// - start a timer to remove the ephemeral key from `authorized_keys`
+    ///   after 15 seconds
+    Timer(
+      const Duration(seconds: 15),
+      () => keyUtil.deauthorizePublicKey(req.sessionId),
+    );
   }
 
   Future<void> startReverseSsh({
@@ -1369,7 +1389,7 @@ class SshnpdImpl
           sessionId: sessionId,
         );
       } else {
-        await _logEvent(SessionEvent.daemonStarted(sessionId: req.sessionId));
+        await _logEvent(SessionEvent.daemonConnecting(sessionId: req.sessionId));
 
         /// Notify sshnp that the connection has been made
         await _notify(
