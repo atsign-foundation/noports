@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/logging/logging.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ExportLogsButton extends StatelessWidget {
   const ExportLogsButton({super.key});
@@ -28,7 +29,10 @@ class ExportLogsButton extends StatelessWidget {
         await f.writeAsString(list.join("\n"));
       },
       label: Text(strings.exportLogs),
-      icon: const Icon(Icons.download),
+      icon: PhosphorIcon(
+        PhosphorIcons.downloadSimple(PhosphorIconsStyle.bold),
+        size: 16,
+      ),
     );
   }
 }

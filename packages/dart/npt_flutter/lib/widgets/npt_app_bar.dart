@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/pages.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/util/constants.dart';
+import 'package:npt_flutter/widgets/switch_atsign_button.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -38,6 +40,7 @@ class _NptAppBarState extends State<NptAppBar> {
   @override
   Widget build(BuildContext context) {
     final atsign = context.watch<OnboardingCubit>().getAtSign();
+    final strings = AppLocalizations.of(context)!;
     return BlocBuilder<SubNavCubit, String>(
       builder: (context, state) {
         return AppBar(
@@ -57,45 +60,49 @@ class _NptAppBarState extends State<NptAppBar> {
                   children: [
                     Row(
                       children: [
-                        Image.asset(
-                          'assets/logo.png',
-                          width: 24,
-                          height: 24,
-                        ),
+                        Image.asset('assets/logo.png', width: 24, height: 24),
                         const SizedBox(width: 8),
                         RichText(
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: 'NoPorts',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                                text: StringConst.noPorts,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
                               ),
                               TextSpan(
-                                text: 'Desktop',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w300,
-                                  color: Colors.black87,
-                                ),
+                                text: StringConst.desktop,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.black87,
+                                    ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
                           ),
+                          decoration: _version.isNotEmpty
+                              ? BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(4),
+                                )
+                              : null,
                           child: Text(
-                            _version.isNotEmpty ? _version : 'v1.4.0',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.grey[600],
-                              fontSize: 10,
-                            ),
+                            _version.isNotEmpty ? _version : '',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontSize: 10,
+                                ),
                           ),
                         ),
                       ],
@@ -103,7 +110,7 @@ class _NptAppBarState extends State<NptAppBar> {
                   ],
                 ),
               ),
-              
+
               // Navigation tabs in center
               Expanded(
                 child: Center(
@@ -113,42 +120,50 @@ class _NptAppBarState extends State<NptAppBar> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _NavTab(
-                          label: 'Connections',
+                          label: strings.connections,
                           isActive: state == HomeRoutes.dashboard,
                           onTap: () {
                             if (state != HomeRoutes.dashboard) {
                               wrapperNav.currentState!.pushNamedAndRemoveUntil(
-                                HomeRoutes.dashboard, 
+                                HomeRoutes.dashboard,
                                 (route) => false,
                               );
                             }
                           },
                         ),
                         _NavTab(
-                          label: 'Policy',
+                          label: strings.policy,
                           isActive: state == HomeRoutes.policyManager,
                           onTap: () {
                             if (state != HomeRoutes.policyManager) {
-                              final PolicyPageArguments args = PolicyPageArguments(atsign);
-                              wrapperNav.currentState!.pushNamed(HomeRoutes.policyManager, arguments: args);
+                              final PolicyPageArguments args =
+                                  PolicyPageArguments(atsign);
+                              wrapperNav.currentState!.pushNamed(
+                                HomeRoutes.policyManager,
+                                arguments: args,
+                              );
                             }
                           },
                         ),
                         _NavTab(
-                          label: 'Authenticator',
+                          label: strings.authenticator,
                           isActive: state == HomeRoutes.authorisation,
                           onTap: () {
                             if (state != HomeRoutes.authorisation) {
-                              wrapperNav.currentState!.pushNamed(HomeRoutes.authorisation);
+                              wrapperNav.currentState!.pushNamed(
+                                HomeRoutes.authorisation,
+                              );
                             }
                           },
                         ),
                         _NavTab(
-                          label: 'Settings',
+                          label: strings.settings,
                           isActive: state == HomeRoutes.settings,
                           onTap: () {
                             if (state != HomeRoutes.settings) {
-                              wrapperNav.currentState!.pushNamed(HomeRoutes.settings);
+                              wrapperNav.currentState!.pushNamed(
+                                HomeRoutes.settings,
+                              );
                             }
                           },
                         ),
@@ -157,39 +172,9 @@ class _NptAppBarState extends State<NptAppBar> {
                   ),
                 ),
               ),
+              const SwitchAtsignButton(),
 
               // User section on right
-              Padding(
-                padding: const EdgeInsets.only(right: 24),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColor.primaryColor,
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/At.svg',
-                        width: 16,
-                        height: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        atsign.isNotEmpty ? atsign.replaceFirst('@', '') : 'user',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -225,13 +210,9 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _underlineAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _underlineAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -260,8 +241,8 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: widget.isActive 
-                    ? AppColor.primaryColor 
+                color: widget.isActive
+                    ? AppColor.primaryColor
                     : Colors.transparent,
                 width: 2,
               ),
@@ -272,13 +253,15 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
               Text(
                 widget.label,
                 style: TextStyle(
-                  color: widget.isActive 
-                      ? Colors.black87 
-                      : _isHovered 
-                          ? Colors.black87 
-                          : Colors.grey[600],
+                  color: widget.isActive
+                      ? Colors.black87
+                      : _isHovered
+                      ? Colors.black87
+                      : Colors.grey[600],
                   fontSize: 13,
-                  fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: widget.isActive
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                 ),
               ),
               if (!widget.isActive)
@@ -293,7 +276,9 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                         height: 2,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: AppColor.primaryColor.withValues(alpha: _underlineAnimation.value),
+                          color: AppColor.primaryColor.withValues(
+                            alpha: _underlineAnimation.value,
+                          ),
                         ),
                       );
                     },

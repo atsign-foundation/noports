@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 part 'profile.g.dart';
@@ -18,8 +19,12 @@ final class Profile extends Loggable with Favoritable {
   final String remoteHost;
   final int remotePort;
   final int localPort;
+  @JsonKey(defaultValue: StringConst.localhost)
+  final String localHost;
   final bool only443;
   final bool keepAlive;
+
+  // String get localHost => _localHost ?? StringConst.localhost;
 
   const Profile(
     this.uuid, {
@@ -27,9 +32,10 @@ final class Profile extends Loggable with Favoritable {
     this.relayAtsign,
     required this.sshnpdAtsign,
     required this.deviceName,
-    this.remoteHost = 'localhost',
+    this.remoteHost = StringConst.localhost,
     required this.remotePort,
     required this.localPort,
+    this.localHost = StringConst.localhost,
     this.only443 = false,
     this.keepAlive = false,
   });
@@ -43,6 +49,7 @@ final class Profile extends Loggable with Favoritable {
     String? remoteHost,
     int? remotePort,
     int? localPort,
+    String? localHost,
     bool? only443,
     bool? keepAlive,
   }) {
@@ -54,6 +61,7 @@ final class Profile extends Loggable with Favoritable {
       deviceName: deviceName ?? this.deviceName,
       remoteHost: remoteHost ?? this.remoteHost,
       remotePort: remotePort ?? this.remotePort,
+      localHost: localHost ?? this.localHost,
       localPort: localPort ?? this.localPort,
       only443: only443 ?? this.only443,
       keepAlive: keepAlive ?? this.keepAlive,
@@ -87,6 +95,7 @@ final class Profile extends Loggable with Favoritable {
     remoteHost,
     remotePort,
     localPort,
+    localHost,
     only443,
     keepAlive,
   ];
@@ -114,6 +123,7 @@ final class Profile extends Loggable with Favoritable {
       remotePort: remotePort,
       device: deviceName,
       localPort: localPort,
+      localHost: localHost,
       rootDomain: rootDomain,
       only443: only443,
       // When using 443, we must use ESCR relay auth mode

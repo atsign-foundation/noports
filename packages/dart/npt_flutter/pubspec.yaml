@@ -38,10 +38,10 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   adaptive_theme: ^3.6.0
-  at_auth: ^2.0.7
+  at_auth: ^2.4.0
   at_backupkey_flutter: ^4.0.16
   at_client_mobile: ^3.2.24
-  at_client: ^3.7.0
+  at_client: ^3.8.0
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_onboarding_flutter:
@@ -53,7 +53,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   device_info_plus: ^11.3.3
   equatable: ^2.0.5
-  file_picker: ^8.1.2
+  file_picker: ^10.3.3
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.6
@@ -94,6 +94,7 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  file_picker: ^10.3.3
   intl: 0.20.2
   device_info_plus: 11.3.3
   file: 7.0.1

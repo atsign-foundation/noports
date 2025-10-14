@@ -6,11 +6,13 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:npt_flutter/constants.dart';
 import 'package:npt_flutter/features/onboarding/widgets/enrollment_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+
+import '../../../app.dart';
 
 enum OnboardingStatus {
   preparing,
@@ -99,7 +101,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       case EnrollmentStatus.revoked:
         throw UnimplementedError();
       case EnrollmentStatus.expired:
-        log('Original request has expired. Submit again');
+        App.log('Original request has expired. Submit again'.loggable);
         setState(() {
           hasExpired = true;
           onboardingStatus = OnboardingStatus.otpRequired;
@@ -109,7 +111,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   Future<void> init() async {
     final sentEnrollRequest = await authService.getSentEnrollmentRequest();
-    log('Sent enroll request: ${sentEnrollRequest?.toJson()}');
+    App.log('Sent enroll request: ${sentEnrollRequest?.toJson()}'.loggable);
     if (sentEnrollRequest != null) {
       if (DateTime.now()
               .toUtc()
@@ -177,7 +179,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     // Device name cannot contain spaces or special characters
     final regExp = RegExp(r'[^a-zA-Z0-9]');
     final deviceName = (await getDeviceName()).replaceAll(regExp, '');
-    log('Device Name: $deviceName');
+    App.log('Device Name: $deviceName'.loggable);
 
     final enrollmentRequest = EnrollmentRequest(
       appName: 'NoPorts',
@@ -186,33 +188,34 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       namespaces: {Constants.namespace!: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
     );
 
-    log('About to enroll with $enrollmentRequest');
+    App.log('About to enroll with $enrollmentRequest'.loggable);
 
     try {
       final enrollResponse = await onboardingService.enroll(
         atsign,
         enrollmentRequest,
       );
-      log('Enroll response: $enrollResponse');
+      App.log('Enroll response: $enrollResponse'.loggable);
     } on AtException catch (e, st) {
-      log('AtException - Error enrolling: $e');
-      log(st.toString());
+      App.log('AtException - Error enrolling: $e'.loggable);
+      App.log(st.toString().loggable);
       if (mounted) {
         Navigator.of(context).pop(AtOnboardingResult.error(message: e.message));
       }
     } catch (e, st) {
-      log('Error enrolling: $e');
-      log(st.toString());
+      App.log('Error enrolling: $e'.loggable);
+      App.log(st.toString().loggable);
 
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
         // Doesn't seem like enroll throws an `AtException`.
         if (e.toString().contains('AT0011')) {
-          log('Invalid OTP');
+          App.log('Invalid OTP'.loggable);
           Navigator.of(
             context,
           ).pop(AtOnboardingResult.error(message: strings.invalidOtp));
         } else {
+          App.log('Unknown error during enrollment: $e'.loggable);
           Navigator.of(
             context,
           ).pop(AtOnboardingResult.error(message: strings.unknownError));
@@ -226,7 +229,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
     // Should only be one of approved or denied at this point.
     final finalStatus = await authService.getFinalEnrollmentStatus();
-    log('Final enrollment status: $finalStatus');
+    App.log('Final enrollment status: $finalStatus'.loggable);
 
     await _setStateOnStatus(finalStatus);
   }

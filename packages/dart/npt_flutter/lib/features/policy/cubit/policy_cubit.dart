@@ -1,7 +1,8 @@
-import '../../logging/models/loggable.dart';
-import '../../logging/models/logging_bloc.dart';
-import '../repositories/role_repository.dart';
+import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../models/policy.dart';
+import '../repositories/role_repository.dart';
 
 part 'policy_state.dart';
 
@@ -10,17 +11,25 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
 
   PolicyCubit(this._roleRepository) : super(const PolicyInitial());
 
-  Future<void> loadRoles() async {
-    emit(const PolicyLoading(operation: 'Loading roles'));
+  Future<void> loadRoles(AppLocalizations strings) async {
+    emit(const PolicyLoading(operation: 'loading roles'));
     try {
       final List<FetchedRole> roles = await _roleRepository.fetchRoles();
       emit(PolicyBrowsingRoles(roles: roles));
     } catch (e) {
-      emit(PolicyError('Failed to load roles: $e', operation: 'loadRoles'));
+      emit(
+        PolicyError(
+          strings.rolesLoadingFailedWithDetails(e.toString()),
+          operation: 'loadRoles',
+        ),
+      );
     }
   }
 
-  Future<void> updateExistingRole(FetchedRole role) async {
+  Future<void> updateExistingRole(
+    FetchedRole role,
+    AppLocalizations strings,
+  ) async {
     if (state is PolicyEditingRole) {
       final currentState = state as PolicyEditingRole;
       emit(const PolicyLoading(operation: 'Updating role'));
@@ -34,15 +43,12 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
           );
 
           emit(
-            PolicyViewingRole(
-              roles: updatedRoles,
-              selectedRole: updatedRole,
-            ),
+            PolicyViewingRole(roles: updatedRoles, selectedRole: updatedRole),
           );
         } else {
           emit(
             PolicyError(
-              'Failed to update role',
+              strings.roleUpdatingFailed,
               operation: 'updateRole',
               previousState: currentState,
             ),
@@ -51,7 +57,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       } catch (error) {
         emit(
           PolicyError(
-            'Failed to update role: $error',
+            strings.roleUpdatingFailedWithDetails(error.toString()),
             operation: 'updateRole',
             previousState: currentState,
           ),
@@ -60,7 +66,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  Future<void> deleteRole(String roleId) async {
+  Future<void> deleteRole(String roleId, AppLocalizations strings) async {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
 
@@ -74,7 +80,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         } else {
           emit(
             PolicyError(
-              'Failed to delete role',
+              strings.roleDeletingFailed,
               operation: 'deleteRole',
               previousState: currentState,
             ),
@@ -83,7 +89,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       } catch (error) {
         emit(
           PolicyError(
-            'Failed to delete role: $error',
+            strings.roleDeletingFailedWithDetails(error.toString()),
             operation: 'deleteRole',
             previousState: currentState,
           ),
@@ -123,10 +129,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
         orElse: () => currentState.roles.first,
       );
       emit(
-        PolicyEditingRole(
-          roles: currentState.roles,
-          selectedRole: roleToEdit,
-        ),
+        PolicyEditingRole(roles: currentState.roles, selectedRole: roleToEdit),
       );
     }
   }
@@ -134,11 +137,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
   void startCreatingRole() {
     if (state is PolicyLoaded) {
       final currentState = state as PolicyLoaded;
-      emit(
-        PolicyCreatingRole(
-          roles: currentState.roles,
-        ),
-      );
+      emit(PolicyCreatingRole(roles: currentState.roles));
     }
   }
 
@@ -178,7 +177,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
-  void recoverFromError() {
+  void recoverFromError(AppLocalizations strings) {
     if (state is PolicyError) {
       final errorState = state as PolicyError;
       final recoverableState = errorState.recoverableState;
@@ -186,7 +185,7 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
       if (recoverableState != null) {
         emit(recoverableState);
       } else {
-        loadRoles();
+        loadRoles(strings);
       }
     }
   }

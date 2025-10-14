@@ -5,6 +5,7 @@ import 'package:npt_flutter/app.dart';
 class Sizes {
   static const p10n = -10.0;
   static const p0 = 0.0;
+  static const p1 = 1.0;
   static const p2 = 2.0;
   // static const p3 = 3.0;
   static const p4 = 4.0;
@@ -73,9 +74,11 @@ class Sizes {
   static const p743 = 743.0;
   static const p853 = 853.0;
   static const p941 = 941.0;
+  static const p1000 = 1000.0;
   // The below size factors are constants that are used to determine the height or width based on the device size.
-  static const dashboardCardHeightFactor = 489 / 691;
+  static const dashboardCardHeightFactor = 489 / 600;
   static const dashboardCardWidthFactor = 941 / 1053;
+  static const dashboardCardEmptyWidthFactor = 853 / 450;
   static const profileFieldsWidthFactor = 136 / 1053;
   static const statusFieldsWidthFactor = 150 / 1053;
   static const statusFieldsWidthFactorMinimalView = 300 / 1053;
@@ -92,6 +95,7 @@ const gap0 = SizedBox();
 const gapW4 = SizedBox(width: Sizes.p4);
 const gapW8 = SizedBox(width: Sizes.p8);
 const gapW10 = SizedBox(width: Sizes.p10);
+const gapW12 = SizedBox(width: Sizes.p12);
 const gapW14 = SizedBox(width: Sizes.p14);
 const gapW16 = SizedBox(width: Sizes.p16);
 const gapW20 = SizedBox(width: Sizes.p20);
@@ -133,10 +137,10 @@ class SizeConfig {
 
   static final SizeConfig _instance = SizeConfig._();
 
-  static double setDashboardWidth() {
+  static double setDashboardWidth({double? widthFactor}) {
     final calculation =
         MediaQuery.of(App.navState.currentContext!).size.width *
-        Sizes.dashboardCardWidthFactor;
+        (widthFactor ?? Sizes.dashboardCardWidthFactor);
 
     if (calculation > 1351) {
       return 1351;
