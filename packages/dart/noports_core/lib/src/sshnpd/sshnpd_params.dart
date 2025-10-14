@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 
@@ -148,7 +147,7 @@ class SshnpdParams {
           ),
       permitOpen: permitOpen,
       clearCachedPKs: r['clear-cached-pks'],
-      passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : '');
+      passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : ''
     );
   }
 

@@ -107,7 +107,7 @@ void main(List<String> args) async {
         namespace: Srvd.namespace,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-          passPhrase: p.passPhrase
+        passPhrase: p.passPhrase
       ),
       usageCallback: (e, s) {
         printVersion();
@@ -116,8 +116,6 @@ void main(List<String> args) async {
       },
     );
   } on ArgumentError catch (_) {
-    exit(1);
-  } on AtException catch (_) {
     exit(1);
   }
 

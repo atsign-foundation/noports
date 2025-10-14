@@ -42,8 +42,6 @@ void main(List<String> args) async {
     );
   } on ArgumentError catch (_) {
     exit(1);
-  } on AtException catch (_) {
-    exit(1);
   }
 
   await runZonedGuarded(() async {

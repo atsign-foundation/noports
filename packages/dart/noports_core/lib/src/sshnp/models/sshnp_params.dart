@@ -388,8 +388,8 @@ class SshnpParams extends ClientParamsBase
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
       only443: partial.only443 ?? false,
+      passPhrase: partial.passPhrase,
     );
-        passPhrase: partial.passPhrase);
   }
 
   factory SshnpParams.fromConfigLines(String profileName, List<String> lines) {
@@ -558,8 +558,8 @@ class SshnpPartialParams {
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
     );
-        passPhrase: params2.passPhrase ?? params1.passPhrase);
   }
 
   factory SshnpPartialParams.fromFile(String fileName) {
@@ -627,10 +627,8 @@ class SshnpPartialParams {
             DefaultArgs.daemonPingTimeoutSeconds,
       ),
       only443: args[SshnpArg.only443Arg.name],
+      passPhrase: args[SshnpArg.passPhrase.name],
     );
-          seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
-              DefaultArgs.daemonPingTimeoutSeconds),
-        passPhrase: args[SshnpArg.passPhrase.name]);
   }
 
   /// Parses args from command line
