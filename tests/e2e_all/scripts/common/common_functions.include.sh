@@ -213,8 +213,14 @@ getVersionDescription() {
     *) desc="$type (?) " ;;
   esac
   case $version in
-    current) desc="${desc} (branch)" ;;
-    *) desc="${desc} v${version}" ;;
+    current) desc="${desc} (current)" ;;
+    *) 
+      if [ "$type" = "c" ]; then
+        desc="${desc} c${version}"
+      else
+        desc="${desc} v${version}"
+      fi
+      ;;
   esac
   echo "$desc"
 }
@@ -364,6 +370,22 @@ getPathToBinariesForTypeAndVersion() {
   esac
 }
 
+setUpTypeAndVersion() {
+  IFS=: read -r type version <<<"$1"
+  case "$type" in
+    d) # dart
+      setUpDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
+      ;;
+    c) # c
+      setUpCVersionersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
+      ;;
+    *)
+      logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
+      exit 1
+      ;;
+  esac
+}
+
 ### END OF GENERAL ###
 ### BEGIN DART ###
 
@@ -381,7 +403,7 @@ getDartReleaseBinDirForVersion() {
   echo "$testRootDir/releases/dart.$version/sshnp"
 }
 
-setupDartVersion() {
+setUpDartVersion() {
   version="$1"
 
   if test "$version" = "current"; then
@@ -510,14 +532,13 @@ getCCompilationOutputDir() {
   echo "$testRuntimeDir/binaries/c.branch"
 }
 
-setupCVersion() {
+setUpCVersionersion() {
   version="$1"
 
   if test "$version" = "current"; then
     buildCurrentCBinaries || exit $?
   else
-    logErrorAndExit "Versions other than 'current' are unimplemented for C"
-    # downloadDartBinaries "$version" || exit $?
+    downloadCBinaries "$version" || exit $?
   fi
 }
 
@@ -529,7 +550,7 @@ buildCurrentCBinaries() {
   binaryOutputDir=$(getCCompilationOutputDir)
   mkdir -p "$binaryOutputDir"
 
-  if [ "$recompile" = "true" ]; then
+  if [[ "$recompile" = "true" ]]; then
     cd "$binaryOutputDir" || exit 1
     rm -f activate_cli srv sshnpd srvd sshnp npt
   fi
@@ -574,20 +595,177 @@ buildCurrentCBinaries() {
   cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
 }
 
+getCReleaseDirForVersion() {
+  version="$1"
+  echo "$testRootDir/releases/c.$version"
+}
+
+downloadCBinaries() {
+  version="$1"
+
+  versionBinDir=$(getCReleaseDirForVersion "$version")
+  mkdir -p "$versionBinDir"
+  EXT="tar.gz"
+  downloadZipName="csshnpd-c$version.$EXT"
+  logInfo "    Getting binaries for C release $version"
+
+  if [ -f "$versionBinDir/$downloadZipName" ]; then
+    logInfo "        $versionBinDir/$downloadZipName has already been downloaded"
+  else
+    baseUrl="https://github.com/atsign-foundation/noports/releases/download"
+    downloadUrl="$baseUrl/c$version/$downloadZipName"
+    logInfo "        Downloading $downloadUrl to $versionBinDir/$downloadZipName"
+    curl -f -s -L -X GET "$downloadUrl" -o "$versionBinDir/$downloadZipName"
+    retCode=$?
+    if [ "$retCode" -ne 0 ]; then
+      logErrorAndExit "Failed to download $downloadUrl with curl exit status $retCode"
+    fi
+  fi
+
+  if [ ! -d "$versionBinDir/sshnp" ]; then
+    case "$EXT" in
+      zip)
+        unzip -qo "$versionBinDir/$downloadZipName" -d "$versionBinDir"
+        ;;
+      tgz | tar.gz)
+        tar -zxf "$versionBinDir/$downloadZipName" -C "$versionBinDir"
+        ;;
+      *)
+        logErrorAndExit "Unsupported archive extension: $EXT"
+        ;;
+    esac
+  fi
+
+  rm -f "${testRuntimeDir}/binaries/c.$version"
+  ln -s "$versionBinDir/sshnp" "${testRuntimeDir}/binaries/c.$version"
+}
+
 ### END C ###
 
-setup_type_and_version() {
-  IFS=: read -r type version <<<"$1"
-  case "$type" in
-    d) # dart
-      setupDartVersion "$version" || logErrorAndExit "Failed to set up binaries for dart version [$version]"
-      ;;
-    c) # c
-      setupCVersion "$version" || logErrorAndExit "Failed to set up binaries for c version [$version]"
-      ;;
-    *)
-      logErrorAndExit "This script doesn't know where to find NoPorts daemon binary for [$typeAndVersion]"
-      exit 1
-      ;;
-  esac
+### BEGIN build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
+
+getDockerDaemonImageName() {
+  type="$1" # e.g. "d" or "c"
+  version="$2" # e.g. "current" or "4.0.5"
+  if [ "$version" = "current" ]; then
+      echo "atsigncompany/noports_e2e_all_$type:current"
+  else
+      echo "atsigncompany/noports_e2e_all_$type:v$version"
+  fi
 }
+
+getBaseRuntimeImageName() {
+  echo "atsigncompany/noports_e2e_all_base_runtime:latest"
+}
+
+buildDockerDaemon() {
+  local type="$1"
+  local version="$2"
+  
+  if [ "$type" = "d" ]; then
+      language="dart"
+  elif [ "$type" = "c" ]; then
+      language="c"
+  else
+      logErrorAndReport "Error: Unknown type: $type"
+      return 1
+  fi
+
+  imageName=$(getDockerDaemonImageName "$type" "$version")
+  if [ "$version" = "current" ]; then
+      dockerfile="$dockerfilesDir/Dockerfile.$language.current"
+      tag="$imageName"
+      fBuildArg=""
+      fCache="--no-cache"
+  else
+      # assume "$version" is a release version like "4.0.5" or "5.2.0"
+      dockerfile="$dockerfilesDir/Dockerfile.$language.release"
+      tag="$imageName"
+      fBuildArg="--build-arg release=$version"
+      fCache=""
+  fi
+
+  logInfo "Building container for:      Type: $type, Version: $version"
+
+  local dockerBuildCommand="sudo docker build \
+      -f \"$dockerfile\" \
+      -t $tag \
+      --quiet \
+      $fCache \
+      $fBuildArg \
+      --target runtime \
+      ."
+  
+  logInfo "Executing Docker build command: $dockerBuildCommand"
+
+  local max_retries=3
+  local retry_count=0
+  local exitCode=1
+
+  while [ $exitCode -ne 0 ] && [ $retry_count -lt $max_retries ]; do
+    if [ $retry_count -gt 0 ]; then
+      logInfo "Retrying Docker build (attempt $((retry_count+1))/$max_retries)..."
+      sleep 1
+    fi
+    
+    eval "$dockerBuildCommand"
+    exitCode=$?
+    retry_count=$((retry_count+1))
+  done
+  
+  if [ $exitCode -ne 0 ]; then
+      logErrorAndReport "Error: Docker build failed with exit code $exitCode after $max_retries attempts"
+      return $exitCode
+  else
+      logInfo "Container $type $version built successfully"
+      return 0
+  fi
+}
+
+# usage: `waitUntilDockerDaemonStarted $logFile $timeout` 
+# - logFile is the path to the log file of the docker daemon
+# - timeout is optional, default is 60 seconds
+waitUntilDockerDaemonStarted() {
+  logFile="$1"
+  timeout="${2:-60}"
+
+  for i in $(seq 1 "$timeout"); do
+    if grep "monitor started" "$logFile" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  cat $logFile
+  
+  exit 1
+}
+
+# e.g. `runDockerDaemon "d" "4.0.5" "deviceName" "clientAtSign" "daemonAtSign" "log.txt" "-u -s"
+# e.g. `runDockerDaemon "c" "current" "deviceName" "clientAtSign" "daemonAtSign" "log.txt"`
+runDockerDaemon() {
+  local type="$1"
+  local version="$2"
+  local deviceName="$3"
+  local clientAt="$4"
+  local daemonAt="$5"
+  local daemonFlags="$6"
+
+  tag=$(getDockerDaemonImageName "$type" "$version")
+
+  logInfo "Starting container for: Type: $type, Version: $version, atDirectory: $atDirectoryHost Flags: $daemonFlags, Device name: $deviceName, Client atSign: $clientAt, Daemon atSign: $daemonAt"
+
+  containerName="e2e_all-$deviceName"
+  local dockerRunCommand="sudo docker run \
+    --rm \
+    -d \
+    --name \"$containerName\" \
+    -v \"$testRuntimeDir/keys/:/atsign/.atsign/keys/\" \
+    \"$tag\" \
+    /bin/bash -c \"sudo service ssh start && /usr/local/bin/sshnpd -a $daemonAt -m $clientAt -d $deviceName $daemonFlags --root-domain $atDirectoryHost -v\""
+
+  logInfo "Executing: $dockerRunCommand"
+  eval "$dockerRunCommand"
+}
+
+### END build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###

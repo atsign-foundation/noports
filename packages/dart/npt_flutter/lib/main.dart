@@ -10,9 +10,9 @@ Future<void> main() async {
   var windowOptions = const WindowOptions(
     title: "NoPorts Desktop",
     minimumSize: Constants.kWindowsMinWindowSize,
-    skipTaskbar: true,
+    skipTaskbar: false,
   );
-  windowManager.ensureInitialized();
-  windowManager.waitUntilReadyToShow(windowOptions);
+  await windowManager.ensureInitialized();
+  await windowManager.waitUntilReadyToShow(windowOptions);
   runApp(const App());
 }

@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/version.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:uuid/uuid.dart';
@@ -15,6 +18,7 @@ import 'sshnpd_channel_mocks.dart';
 void main() {
   group('SshnpdChannel', () {
     late MockAtClient mockAtClient;
+    late MockNotificationService mockNotificationService;
     late MockSshnpParams mockParams;
     late String sessionId;
     late String namespace;
@@ -43,10 +47,15 @@ void main() {
 
     setUp(() {
       mockAtClient = MockAtClient();
+      mockNotificationService = MockNotificationService();
+      when(
+        () => mockAtClient.notificationService,
+      ).thenReturn(mockNotificationService);
       mockParams = MockSshnpParams();
       when(() => mockParams.verbose).thenReturn(false);
       sessionId = Uuid().v4();
-      notificationStreamController = StreamController();
+
+      notificationStreamController = StreamController.broadcast();
       notifyStub = NotifyStub();
       subscribeStub = SubscribeStub();
       payloadStub = HandleSshnpdPayloadStub();
@@ -77,9 +86,11 @@ void main() {
     }); // test public API
 
     whenInitialization() {
+      when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
-      when(subscribeInvocation)
-          .thenAnswer((_) => notificationStreamController.stream);
+      when(
+        subscribeInvocation,
+      ).thenAnswer((_) => notificationStreamController.stream);
     }
 
     test('Initialization', () async {
@@ -100,6 +111,105 @@ void main() {
       ).called(1);
     }); // test Initialization
 
+    group('handlePingResponses', () {
+      late SshnpdChannel c;
+      pingTestParameterizedSetUp({required bool? daemonTwinKeys}) {
+        c = SshnpdDefaultChannel(
+          atClient: mockAtClient,
+          params: mockParams,
+          sessionId: 'abcde',
+          namespace: 'test',
+        );
+        when(() => mockParams.sshnpdAtSign).thenReturn('@device');
+        when(() => mockParams.clientAtSign).thenReturn('@client');
+
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((invocation) => notificationStreamController.stream);
+
+        Map<String, dynamic> pingResponse = {
+          'devicename': device,
+          'deviceGroupName': DefaultSshnpdArgs.deviceGroupName,
+          'version': packageVersion,
+          'corePackageVersion': packageVersion,
+          'supportedFeatures': {
+            DaemonFeature.srAuth.name: true,
+            DaemonFeature.srE2ee.name: true,
+            DaemonFeature.acceptsPublicKeys.name: false,
+            DaemonFeature.supportsPortChoice.name: true,
+            DaemonFeature.adjustableTimeout.name: true,
+            DaemonFeature.controlChannelHeartbeats.name: true,
+            DaemonFeature.supportsRamEscr.name: true,
+          },
+          'authModes': RelayAuthMode.values.map((c) => c.name).toList(),
+          'allowedServices': '*:*',
+          'npCpVersion': DaemonFeature.latestVersion.toString(),
+        };
+        switch (daemonTwinKeys) {
+          case true:
+            pingResponse['supportedFeatures']![DaemonFeature.twinKeys.name] =
+                true;
+            break;
+          case false:
+            pingResponse['supportedFeatures']![DaemonFeature.twinKeys.name] =
+                false;
+            break;
+          case null:
+            // don't add into the pingResponse at all
+            break;
+        }
+        registerFallbackValue(NotificationParams());
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            encryptValue: any(named: 'encryptValue'),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer((i) async {
+          notificationStreamController.add(
+            AtNotification(
+              '1',
+              'heartbeat.device_id',
+              '@device',
+              '@client',
+              DateTime.now().millisecondsSinceEpoch,
+              'update',
+              false,
+              value: jsonEncode(pingResponse),
+              operation: 'update',
+            ),
+          );
+          return NotificationResult();
+        });
+      }
+
+      test('twinKeys true if daemon says true', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: true);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, true);
+      });
+      test('twinKeys false if daemon says false', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: false);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, false);
+      });
+      test('twinKeys false if daemon says null', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: null);
+        await c.featureCheck([DaemonFeature.srE2ee]);
+        expect(c.twinKeys, false);
+      });
+    });
     group('handleSshnpdResponses', () {
       test('handleSshnpdResponses', () async {
         whenInitialization();
@@ -137,8 +247,9 @@ void main() {
       test('handleSshnpdResponses - acknowledged with errors', () async {
         whenInitialization();
         await expectLater(stubbedSshnpdChannel.initialize(), completes);
-        when(payloadInvocation)
-            .thenAnswer((_) async => SshnpdAck.acknowledgedWithErrors);
+        when(
+          payloadInvocation,
+        ).thenAnswer((_) async => SshnpdAck.acknowledgedWithErrors);
 
         Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse();
 
@@ -166,17 +277,21 @@ void main() {
         ).called(1);
 
         expect(
-            stubbedSshnpdChannel.sshnpdAck, SshnpdAck.acknowledgedWithErrors);
+          stubbedSshnpdChannel.sshnpdAck,
+          SshnpdAck.acknowledgedWithErrors,
+        );
       }); // test handleSshnpdResponses - acknowledged with errors
 
       test('handleSshnpdResponses - not acknowledged', () async {
         whenInitialization();
         await expectLater(stubbedSshnpdChannel.initialize(), completes);
-        when(payloadInvocation)
-            .thenAnswer((_) async => SshnpdAck.notAcknowledged);
+        when(
+          payloadInvocation,
+        ).thenAnswer((_) async => SshnpdAck.notAcknowledged);
 
-        Future<SshnpdAck> ack =
-            stubbedSshnpdChannel.waitForDaemonResponse(maxWaitMillis: 300);
+        Future<SshnpdAck> ack = stubbedSshnpdChannel.waitForDaemonResponse(
+          maxWaitMillis: 300,
+        );
 
         // manually add a notification to the stream
         final String notificationId = Uuid().v4();
@@ -210,8 +325,9 @@ void main() {
         when(() => mockParams.sendSshPublicKey).thenReturn(true);
         MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn(TestingKeyPair.public);
+        when(
+          () => identityKeyPair.publicKeyContents,
+        ).thenReturn(TestingKeyPair.public);
 
         when(() => mockParams.clientAtSign).thenReturn('@client');
         when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -219,15 +335,21 @@ void main() {
         when(
           () => notifyStub(
             any<AtKey>(
-                that: predicate((AtKey key) => key.key == 'sshpublickey')),
+              that: predicate((AtKey key) => key.key == 'sshpublickey'),
+            ),
             any(),
-            checkForFinalDeliveryStatus:
-                any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus:
-                any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             ttln: any(named: 'ttln'),
+            maxTries: any(named: 'maxTries'),
           ),
-        ).thenAnswer((_) async {});
+        ).thenAnswer((_) async {
+          return NotificationResult();
+        });
 
         verifyNever(notifyInvocation);
 
@@ -239,13 +361,17 @@ void main() {
         verify(
           () => notifyStub(
             any<AtKey>(
-                that: predicate((AtKey key) => key.key == 'sshpublickey')),
+              that: predicate((AtKey key) => key.key == 'sshpublickey'),
+            ),
             TestingKeyPair.public,
-            checkForFinalDeliveryStatus:
-                any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus:
-                any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             ttln: any(named: 'ttln'),
+            maxTries: any(named: 'maxTries'),
           ),
         ).called(1);
       }); // test sharePublicKeyIfRequired
@@ -254,8 +380,9 @@ void main() {
         when(() => mockParams.sendSshPublicKey).thenReturn(false);
         MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn(TestingKeyPair.public);
+        when(
+          () => identityKeyPair.publicKeyContents,
+        ).thenReturn(TestingKeyPair.public);
 
         verifyNever(notifyInvocation);
 
@@ -280,23 +407,26 @@ void main() {
         verifyNever(notifyInvocation);
       }); // test sharePublicKeyIfRequired - sendSshPublicKey = false
 
-      test('sharePublicKeyIfRequired - malformed public key contents',
-          () async {
-        when(() => mockParams.sendSshPublicKey).thenReturn(true);
-        MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
+      test(
+        'sharePublicKeyIfRequired - malformed public key contents',
+        () async {
+          when(() => mockParams.sendSshPublicKey).thenReturn(true);
+          MockAtSshKeyPair identityKeyPair = MockAtSshKeyPair();
 
-        when(() => identityKeyPair.publicKeyContents)
-            .thenReturn("I'm not an ssh public key!");
+          when(
+            () => identityKeyPair.publicKeyContents,
+          ).thenReturn("I'm not an ssh public key!");
 
-        verifyNever(notifyInvocation);
+          verifyNever(notifyInvocation);
 
-        await expectLater(
-          stubbedSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair),
-          throwsA(isA<SshnpError>()),
-        );
+          await expectLater(
+            stubbedSshnpdChannel.sharePublicKeyIfRequired(identityKeyPair),
+            throwsA(isA<SshnpError>()),
+          );
 
-        verifyNever(notifyInvocation);
-      }); // test sharePublicKeyIfRequired - malformed public key contents
+          verifyNever(notifyInvocation);
+        },
+      ); // test sharePublicKeyIfRequired - malformed public key contents
     }); // group sharePublicKeyIfRequired
 
     group('Username resolution', () {
@@ -337,15 +467,16 @@ void main() {
       }); // test resolveTunnelUsername - params.tunnelUsername override
 
       test(
-          'resolveTunnelUsername - params.tunnelUsername override, remoteUsername string',
-          () async {
-        when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername2');
-        Future<String?> tunnelUsername = stubbedSshnpdChannel
-            .resolveTunnelUsername(remoteUsername: 'remoteUsername');
+        'resolveTunnelUsername - params.tunnelUsername override, remoteUsername string',
+        () async {
+          when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername2');
+          Future<String?> tunnelUsername = stubbedSshnpdChannel
+              .resolveTunnelUsername(remoteUsername: 'remoteUsername');
 
-        await expectLater(tunnelUsername, completes);
-        expect(await tunnelUsername, 'myTunnelUsername2');
-      }); // test resolveTunnelUsername - params.tunnelUsername override, remoteUsername string
+          await expectLater(tunnelUsername, completes);
+          expect(await tunnelUsername, 'myTunnelUsername2');
+        },
+      ); // test resolveTunnelUsername - params.tunnelUsername override, remoteUsername string
 
       test('resolveTunnelUsername - params.tunnelUsername null', () async {
         when(() => mockParams.tunnelUsername).thenReturn(null);
@@ -365,6 +496,7 @@ void main() {
         expect(await tunnelUsername, null);
       }); // resolveTunnelUsername - both usernames null
     }); // group Username resolution
+
     group('Device List', () {
       // TODO
     }); // group Device List

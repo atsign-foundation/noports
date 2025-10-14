@@ -1,6 +1,12 @@
+---
+description: >-
+  Follow these two steps to install the NoPorts daemon so you can install your
+  own background service.
+---
+
 # Standalone Binaries
 
-### 1. Run the installer
+### Step 1. Run the installer
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -46,10 +52,10 @@ sudo ./install.sh sshnpd
 {% endtab %}
 {% endtabs %}
 
-## 2. Setup the installer
+### Step 2. Set up the installer
 
 You are on your own for setting up the background service to start sshnpd. See our other options if you need help setting this up.
 
-## 3. All Done!
+### Step 3. All Done!
 
-You can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, checkout our [usage guide](../../../usage/basic-usage-1/).
+You can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, check out our [usage guide](../../../usage/basic-usage-1/).

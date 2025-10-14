@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:path/path.dart' as path;
 import 'package:posix/posix.dart' show PosixException, chmod;
 
@@ -68,8 +69,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     required AtSshKeyPair keyPair,
     String? identifier,
   }) async {
-    var files =
-        _filesFromIdentifier(identifier: identifier ?? keyPair.identifier);
+    var files = _filesFromIdentifier(
+      identifier: identifier ?? keyPair.identifier,
+    );
     await Future.wait([
       files[0].create(recursive: true),
       files[1].create(recursive: true),
@@ -95,8 +97,10 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }
 
   @override
-  Future<AtSshKeyPair> getKeyPair(
-      {required String identifier, String? passphrase}) async {
+  Future<AtSshKeyPair> getKeyPair({
+    required String identifier,
+    String? passphrase,
+  }) async {
     if (_keyPairCache.containsKey((identifier))) {
       return _keyPairCache[(identifier)]!;
     }
@@ -114,13 +118,12 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }
 
   @override
-  Future<List<FileSystemEntity>> deleteKeyPair(
-      {required String identifier}) async {
+  Future<List<FileSystemEntity>> deleteKeyPair({
+    required String identifier,
+  }) async {
     var files = _filesFromIdentifier(identifier: identifier);
 
-    return Future.wait(files.map(
-      (f) => f.delete(),
-    )).catchError((e) => throw e);
+    return Future.wait(files.map((f) => f.delete())).catchError((e) => throw e);
   }
 
   @override
@@ -134,10 +137,16 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     String workingDirectory = directory ?? _defaultDirectory;
 
     await processRunner(
-      'ssh-keygen',
-      [..._sshKeygenArgMap[algorithm]!, '-f', identifier, '-q', '-N', ''],
-      workingDirectory: workingDirectory,
-    );
+        'ssh-keygen',
+        [
+          ..._sshKeygenArgMap[algorithm]!,
+          '-f',
+          identifier,
+          '-q',
+          '-N',
+          '',
+        ],
+        workingDirectory: workingDirectory);
 
     String pemText =
         await fs.file(path.join(workingDirectory, identifier)).readAsString();
@@ -159,8 +168,11 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }) async {
     // Check to see if the ssh public key is
     // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(
-        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+    if (!sshPublicKey.startsWith(
+      RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)',
+      ),
+    )) {
       throw ('$sshPublicKey does not look like a public key');
     }
 
@@ -194,8 +206,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
 
   Future<void> deauthorizePublicKey(String sessionId) async {
     try {
-      final File file =
-          fs.file(path.normalize('$sshHomeDirectory/authorized_keys'));
+      final File file = fs.file(
+        path.normalize('$sshHomeDirectory/authorized_keys'),
+      );
       // read into List of strings
       final List<String> lines = await file.readAsLines();
       // find the line we want to remove

@@ -31,8 +31,9 @@ void main() {
       when(() => stubbedSshnp.atClient).thenReturn(mockAtClient);
       when(() => stubbedSshnp.params).thenReturn(mockSshnpParams);
       when(() => stubbedSshnp.run()).thenAnswer((_) async => mySshnpResult);
-      when(() => stubbedSshnp.listDevices())
-          .thenAnswer((_) async => sshnpDeviceList);
+      when(
+        () => stubbedSshnp.listDevices(),
+      ).thenAnswer((_) async => sshnpDeviceList);
 
       expect(stubbedSshnp.atClient, mockAtClient);
       expect(stubbedSshnp.params, mockSshnpParams);

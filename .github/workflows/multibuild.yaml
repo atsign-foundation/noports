@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -57,6 +57,10 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+          - os: ubuntu-24.04-arm
+            output-name: sshnp-linux-arm64
+            ext: ""
+            bundle: "shell"
           - os: macos-13
             output-name: sshnp-macos-x64
             ext: ""
@@ -70,18 +74,21 @@ jobs:
             ext: ".exe"
             bundle: "windows"
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout multibuild branch
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: multibuild-${{github.run_number}}
-      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94 # v1.7.0
-      # create directories needed for build
-      - run: |
+      - name: Setup dart
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+      - name: Create directories
+        run: |
           mkdir sshnp
           mkdir tarball
-      - if: ${{ matrix.os != 'windows-latest' }}
+      - name: Create debug directory (Windows only)
+        if: ${{ matrix.os != 'windows-latest' }}
         run: mkdir sshnp/debug
-      # compile binaries
-      - run: |
+      - name: Compile binaries
+        run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
           dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
@@ -92,23 +99,23 @@ jobs:
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
-      - name: build admin API
+      - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
           dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
-      - if: ${{ matrix.os != 'windows-latest' }}
+      - name: Compile debug binaries (MacOS and Linux only)
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
           dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
-      # copy additional bundle items to build
-      - run: |
+      - name: Copy additional bundle items to build
+        run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
           cp LICENSE sshnp
-      # codesign for apple
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
-        name: Import certificates
+      - name: Codesign (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
           MACOS_CODESIGN_CERT_PASSWORD:
@@ -136,18 +143,20 @@ jobs:
             --timestamp \
             -v \
             sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
-      # zip the build
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Compress to zip (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run:
           ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Compress to tgz (Linux only)
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'  }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - if: ${{ matrix.os == 'windows-latest' }}
+      - name: Compress to zip (Windows Only)
+        if: ${{ matrix.os == 'windows-latest' }}
         run:
           Compress-Archive -Path sshnp -Destination tarball/${{
           matrix.output-name }}.zip
-      # notarize the build
-      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Notarize the build (MacOS only)
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
           MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
@@ -158,8 +167,8 @@ jobs:
             --team-id "$MACOS_TEAM_ID" \
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
-      # upload the build
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name:
             ${{ matrix.output-name
@@ -169,35 +178,37 @@ jobs:
 
   other_build:
     needs: verify_tags
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        # platform: [linux/arm/v7, linux/arm64, linux/riscv64]
-        platform: [linux/arm/v7, linux/arm64]
+        platform: [linux/arm/v7, linux/riscv64]
         include:
           - platform: linux/arm/v7
             output-name: sshnp-linux-arm
-          - platform: linux/arm64
-            output-name: sshnp-linux-arm64
-#          - platform: linux/riscv64
-#            output-name: sshnp-linux-riscv64
+          - platform: linux/riscv64
+            output-name: sshnp-linux-riscv64
     steps:
-      - if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout multibuild branch
+        if: ${{ ! inputs.main_build_only }}
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: multibuild-${{github.run_number}}
-      - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-      - if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
-      - if: ${{ ! inputs.main_build_only }}
+      - name: Setup QEMU
+        if: ${{ ! inputs.main_build_only }}
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - name: Setup Docker BuildX
+        if: ${{ ! inputs.main_build_only }}
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Run build inside of Docker
+        if: ${{ ! inputs.main_build_only }}
         run: |
           docker buildx build -t atsigncompany/sshnptarball -f ./tools/multibuild/Dockerfile.package \
           --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
-      - if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        if: ${{ ! inputs.main_build_only }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name:
             ${{ matrix.output-name
@@ -209,17 +220,15 @@ jobs:
     needs: verify_tags
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout multibuild branch
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: multibuild-${{github.run_number}}
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - name: Setup node-version
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: '20.17.0'
-      # setup required npm version
-      - run: |
-          npm install -g npm@10.8.2
-      # create directory needed for build
-      - name: build admin webapp
+          node-version: '24.2.0'
+      - name: Build admin webapp
         working-directory: ./apps/admin/webapp
         run: |
           mkdir -p sshnp/web/admin
@@ -228,8 +237,8 @@ jobs:
           npm run build
           cp -r dist/* sshnp/web/admin/
           tar -cvzf tarball/sshnp-web-admin-noarch.tgz sshnp
-      # upload the build
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - name: Upload the build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name:
             sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
@@ -244,7 +253,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -258,7 +267,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -271,8 +280,8 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.ps1
@@ -291,21 +300,21 @@ jobs:
       attestations: write
     steps:
       - name: Checkout pubspec.lock
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@a04e82ca42a0d9e6bdb57a2cb1a8978e96b4f45c # v0.3.0
+        uses: sbomify/github-action@8ea6f28cd562edee2665001cd4f17aaf7a283722 # v0.5.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
           LOCK_FILE: './packages/dart/sshnoports/pubspec.lock'
-          SBOM_VERSION: ${{github.ref_name}}
+          COMPONENT_VERSION: ${{github.ref_name}}
           OUTPUT_FILE: 'tarballs/noports_dart-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
@@ -335,7 +344,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
         with:
           subject-path: "tarballs/**"
 
@@ -345,7 +354,7 @@ jobs:
       actions: read # Needed for detection of GitHub Actions environment.
       id-token: write # Needed for provenance signing and ID
       contents: write # Needed for release uploads
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # 5a775b367a56d5bd118a224a811bba288150a563
     with:
       base64-subjects: "${{ needs.github-release.outputs.hashes }}"
       upload-assets: true
@@ -357,7 +366,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Delete workflow branch

@@ -22,8 +22,10 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
 
   @override
   AtSshKeyPair? get identityKeyPair => _identityKeyPair;
-  final _identityKeyPair =
-      AtSshKeyPair.fromPem(TestingKeyPair.private, identifier: 'testing');
+  final _identityKeyPair = AtSshKeyPair.fromPem(
+    TestingKeyPair.private,
+    identifier: 'testing',
+  );
 
   @override
   AtSshKeyUtil get keyUtil => throw UnimplementedError();

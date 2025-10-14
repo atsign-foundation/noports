@@ -18,8 +18,58 @@ jobs:
   cli_tags:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: ./.github/composite/verify_cli_tags
+  np_admin-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        with:
+          sdk: stable
+      - name: dart pub get enforce lockfile
+        working-directory: apps/admin/admin_api
+        run: dart pub get --enforce-lockfile
+      - name: dart analyze
+        working-directory: apps/admin/admin_api
+        run: dart analyze
+      - name: dart test
+        working-directory: apps/admin/admin_api
+        run: dart test
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@e92b5d07338d4f0ba0981dffed17c48976ca4730 # v2.2.3
+        with:
+          scan-args: |-
+            --lockfile=./apps/admin/admin_api/pubspec.lock
+
+  sshnoports-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        with:
+          sdk: stable
+      - name: dart pub get enforce lockfile
+        working-directory: packages/dart/sshnoports
+        run: dart pub get --enforce-lockfile
+      - name: dart analyze
+        working-directory: packages/dart/sshnoports
+        run: dart analyze
+      - name: dart test
+        working-directory: packages/dart/sshnoports
+        run: dart test
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@e92b5d07338d4f0ba0981dffed17c48976ca4730 # v2.2.3
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/sshnoports/pubspec.lock
+
   noports_core-unit_tests:
     runs-on: ubuntu-latest
     strategy:
@@ -27,17 +77,16 @@ jobs:
       matrix:
         dart-channel: [stable,beta]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94 # v1.7.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
         with:
           sdk: ${{ matrix.dart-channel}}
-      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
-        with:
-          go-version: "stable"
-          cache-dependency-path: tools/osv-scanner/go.sum
       - name: dart pub get
         working-directory: packages/dart/noports_core
         run: dart pub get
+      - name: dart run build_runner build
+        working-directory: packages/dart/noports_core
+        run: dart run build_runner build
       - name: dart analyze
         working-directory: packages/dart/noports_core
         run: dart analyze
@@ -48,9 +97,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        working-directory: packages/dart
-        run: |
-          go install github.com/google/osv-scanner/cmd/osv-scanner@6316373e47d7e3e4b4fd3630c4bbc10987738de6 # v1.4.3
-          osv-scanner --lockfile=./sshnoports/pubspec.lock
-          osv-scanner --lockfile=./sshnp_flutter/pubspec.lock
-          osv-scanner --lockfile=./noports_core/pubspec.lock
+        uses: google/osv-scanner-action/osv-scanner-action@e92b5d07338d4f0ba0981dffed17c48976ca4730 # v2.2.3
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/noports_core/pubspec.lock

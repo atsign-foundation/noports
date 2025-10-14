@@ -18,15 +18,21 @@ on:
     # The branches below must be a subset of the branches above
     branches: ["trunk"]
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: "25 19 * * 1"
 
-permissions:
+permissions: # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    # Runner size impacts CodeQL analysis time. To learn more, please see:
+    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
+    #   - https://gh.io/supported-runners-and-hardware-resources
+    #   - https://gh.io/using-larger-runners
+    # Consider using larger runners for possible analysis time improvements.
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
       contents: read
@@ -35,44 +41,56 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["python"]
-        # CodeQL supports [ $supported-codeql-languages ]
+        language: ["c-cpp", "javascript-typescript"]
+        # CodeQL supports [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
+        # Use only 'java-kotlin' to analyze code written in Java, Kotlin or both
+        # Use only 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
-        with:
-          egress-policy: audit
-
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/init@64d10c13136e1c5bce3e5fbde8d4906eeaafc885 # v3.30.6
         with:
           languages: ${{ matrix.language }}
           # If you wish to specify custom queries, you can do so here or in a config file.
           # By default, queries listed here will override any specified in a config file.
           # Prefix the list here with "+" to use these queries and those in the config file.
 
-      # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-      # If this step fails, then you should remove it and run the build manually (see below)
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+          # queries: security-extended,security-and-quality
 
-      # ℹ️ Command-line programs to run using the OS shell.
-      # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+      # Manual build steps from build_source_tests
 
-      #   If the Autobuild fails above, remove it and uncomment the following three lines.
-      #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
+      # Pin cmake to <4.0.0
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        with:
+          cmake-version: "3.31.6"
+      - name: Build C sshnpd
+        if: ${{ matrix.language == 'c-cpp' }}
+        run: |
+          cd packages/c/sshnpd
+          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args -Wno-error -pthread -lrt"
+          cmake --build build
 
-      # - run: |
-      #   echo "Run, Build Application using script"
-      #   ./location_of_script_within_repo/buildscript.sh
+      - name: Setup node
+        if: ${{ matrix.language == 'javascript-typescript' }}
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "24.2.0"
+      - name: Build the admin webapp
+        if: ${{ matrix.language == 'javascript-typescript' }}
+        working-directory: ./apps/admin/webapp
+        run: |
+          npm ci
+          npm run build
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/analyze@64d10c13136e1c5bce3e5fbde8d4906eeaafc885 # v3.30.6
         with:
           category: "/language:${{matrix.language}}"

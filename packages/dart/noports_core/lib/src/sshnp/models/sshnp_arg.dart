@@ -1,23 +1,12 @@
 import 'package:args/args.dart';
+
 import 'package:noports_core/utils.dart';
 
-enum ArgFormat {
-  option,
-  multiOption,
-  flag,
-}
+enum ArgFormat { option, multiOption, flag }
 
-enum ArgType {
-  string,
-  integer,
-}
+enum ArgType { string, integer }
 
-enum ParseWhen {
-  always,
-  commandLine,
-  configFile,
-  never,
-}
+enum ParseWhen { always, commandLine, configFile, never }
 
 const Map<ParserType, Set<ParseWhen>> _allowListMap = {
   ParserType.all: {
@@ -76,8 +65,11 @@ class SshnpArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
-  List<String> get aliasList =>
-      ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+  List<String> get aliasList => [
+    '--$name',
+    ...aliases?.map((e) => '--$e') ?? [],
+    '-$abbr',
+  ];
 
   factory SshnpArg.noArg() {
     return SshnpArg(name: '');
@@ -114,7 +106,7 @@ class SshnpArg {
     verboseArg,
     remoteUserNameArg,
     tunnelUserNameArg,
-    rootDomainArg,
+    rootServerArg,
     remoteSshdPortArg,
     idleTimeoutArg,
     sshAlgorithmArg,
@@ -123,9 +115,10 @@ class SshnpArg {
     listDevicesArg,
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
+    relayAuthModeArg,
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
-    passPhrase
+    only443Arg,
   ];
 
   @override
@@ -142,10 +135,7 @@ class SshnpArg {
     Iterable<String>? excludeList,
     int? usageLineLength,
   }) {
-    var parser = ArgParser(
-      usageLineLength: usageLineLength,
-      showAliasesInUsage: true,
-    );
+    var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen) ||
@@ -242,7 +232,8 @@ class SshnpArg {
   static const localPortArg = SshnpArg(
     name: 'local-port',
     abbr: 'l',
-    help: 'client-side local port for the ssh tunnel.'
+    help:
+        'client-side local port for the ssh tunnel.'
         ' If not supplied, we will ask the o/s for a spare port',
     defaultsTo: DefaultSshnpArgs.localPort,
     type: ArgType.integer,
@@ -293,12 +284,15 @@ class SshnpArg {
     abbr: 'U',
     help: 'username to use for the initial ssh tunnel',
   );
-  static const rootDomainArg = SshnpArg(
-    name: 'root-domain',
-    help: 'atDirectory domain',
+  static const rootServerArg = SshnpArg(
+    name: 'root-server',
+    help:
+        'atDirectory domain.'
+        ' Aliases (for backwards compatibility): --root-domain, --rootDomain',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
+    aliases: ['root-domain', 'rootDomain'],
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
@@ -327,7 +321,8 @@ class SshnpArg {
   );
   static const addForwardsToTunnelArg = SshnpArg(
     name: 'add-forwards-to-tunnel',
-    help: 'When true, any local forwarding directives provided in'
+    help:
+        'When true, any local forwarding directives provided in'
         '--local-ssh-options will be added to the initial tunnel ssh request',
     defaultsTo: DefaultArgs.addForwardsToTunnel,
     format: ArgFormat.flag,
@@ -342,7 +337,9 @@ class SshnpArg {
   );
   static const listDevicesArg = SshnpArg(
     name: 'list-devices',
-    help: 'List available devices',
+    help:
+        'List available devices.'
+        ' Alias: --ls',
     defaultsTo: DefaultSshnpArgs.listDevices,
     format: ArgFormat.flag,
     aliases: ['ls'],
@@ -352,7 +349,9 @@ class SshnpArg {
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client-to-rvd',
     aliases: ['ac'],
-    help: 'When false, client will not authenticate itself to rvd',
+    help:
+        'When false, client will not authenticate itself to rvd.'
+        ' Alias: --ac',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -360,7 +359,9 @@ class SshnpArg {
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device-to-rvd',
     aliases: ['ad'],
-    help: 'When false, device will not authenticate to the socket rendezvous',
+    help:
+        'When false, device will not authenticate itself to rvd.'
+        ' Alias: --ad',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -368,17 +369,33 @@ class SshnpArg {
   static const encryptRvdTrafficArg = SshnpArg(
     name: 'encrypt-rvd-traffic',
     aliases: ['et'],
-    help: 'When true, traffic via the socket rendezvous is encrypted,'
+    help:
+        'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
-        ' (e.g. an ssh session)',
+        ' (e.g. an ssh session).'
+        ' Alias: --et',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     mandatory: false,
   );
+  static const relayAuthModeArg = SshnpArg(
+    name: 'relay-auth-mode',
+    aliases: ['ram'],
+    help:
+        'The authentication mode to use. "escr" (encrypted signed challenge'
+        ' response) is strongest.'
+        ' Alias: --ram',
+    defaultsTo: 'payload',
+    allowed: ['payload', 'escr'],
+    // allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+    // defaultsTo: RelayAuthMode.payload.name,
+  );
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
     aliases: ['dpt'],
-    help: 'Seconds the client should wait for response after pinging a daemon',
+    help:
+        'Seconds the client should wait for response after pinging a daemon.'
+        ' Alias: --dpt',
     defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
     mandatory: false,
     format: ArgFormat.option,
@@ -392,5 +409,12 @@ class SshnpArg {
     mandatory: false,
     type: ArgType.string,
     parseWhen: ParseWhen.commandLine,
+  );
+  static const only443Arg = SshnpArg(
+    name: '443',
+    help: 'When true, will request ports (443, 443) from relay',
+    defaultsTo: false,
+    format: ArgFormat.flag,
+    mandatory: false,
   );
 }

@@ -1,31 +1,38 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:at_client/at_client.dart';
+import 'package:args/args.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
-import 'package:sshnoports/src/service_factories.dart';
 import 'package:sshnoports/src/version.dart';
 
 void main(List<String> args) async {
-  AtSignLogger.root_level = 'SHOUT';
+  AtSignLogger.root_level = 'SEVERE';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   late final Sshnpd sshnpd;
+
+  ArgResults r = SshnpdParams.parser.parse(args);
+  if (r.wasParsed('help')) {
+    printVersion();
+    stderr.writeln(SshnpdParams.parser.usage);
+    exit(0);
+  }
 
   try {
     sshnpd = await Sshnpd.fromCommandLineArgs(
       args,
       atClientGenerator: (SshnpdParams p) => createAtClientCli(
-          atsign: p.deviceAtsign,
-          atKeysFilePath: p.atKeysFilePath,
-          rootDomain: p.rootDomain,
-          storagePath: p.storagePath,
-          namespace: DefaultArgs.namespace,
-          atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-          passPhrase: p.passPhrase),
+        atsign: p.deviceAtsign,
+        atKeysFilePath: p.atKeysFilePath,
+        rootDomain: p.rootDomain,
+        storagePath: p.storagePath,
+        namespace: DefaultArgs.namespace,
+        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+        passPhrase: p.passPhrase
+      ),
       usageCallback: (e, s) {
         printVersion();
         stderr.writeln(SshnpdParams.parser.usage);

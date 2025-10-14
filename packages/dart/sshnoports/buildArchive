@@ -11,7 +11,7 @@ echo
 rm -rf build/sshnp build/sshnp.zip build/sshnp.tgz
 mkdir -p build/sshnp/web/admin
 
-dart pub get || exit 1
+dart pub get --enforce-lockfile || exit 1
 
 echo "Building core binaries"
 echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o build/sshnp/at_activate &
@@ -33,7 +33,7 @@ echo "$(date) : Compilation complete"
 
 echo "Building admin API and webapp - BETA";
 pushd ../../../apps/admin/admin_api || exit 1
-dart pub get || exit 1
+dart pub get --enforce-lockfile || exit 1
 echo "Compiling admin_api"; dart compile exe --verbosity error bin/np_admin.dart -o "${packageDir}/build/sshnp/np_admin" || exit 1
 wait
 cd ../webapp || exit 1

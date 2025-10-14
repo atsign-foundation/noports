@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
@@ -14,7 +15,6 @@ import 'package:uuid/uuid.dart';
 import '../common/features.dart';
 import '../common/mixins/async_completion.dart';
 import '../common/mixins/async_initialization.dart';
-import '../common/mixins/at_client_bindings.dart';
 import '../common/streaming_logging_handler.dart';
 import '../sshnp/impl/notification_request_message.dart';
 import '../sshnp/util/srvd_channel/srvd_channel.dart';
@@ -61,17 +61,12 @@ abstract interface class Npt {
     required AtClient atClient,
     Stream<String>? logStream,
   }) {
-    return _NptImpl(
-      params: params,
-      atClient: atClient,
-      logStream: logStream,
-    );
+    return _NptImpl(params: params, atClient: atClient, logStream: logStream);
   }
 
   static ArgParser createArgParser() {
     ArgParser parser = ArgParser(
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,
-      showAliasesInUsage: true,
     );
 
     return parser;
@@ -91,8 +86,9 @@ abstract class NptBase implements Npt {
   @override
   final String namespace;
 
-  static final StreamingLoggingHandler _slh =
-      StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
+  static final StreamingLoggingHandler _slh = StreamingLoggingHandler(
+    AtSignLogger.defaultLoggingHandler,
+  );
 
   final StreamController<String> _progressStreamController =
       StreamController<String>.broadcast();
@@ -113,12 +109,11 @@ abstract class NptBase implements Npt {
 
   final logger = AtSignLogger(' Npt ');
 
-  NptBase({
-    required this.params,
-    required this.atClient,
-    this.logStream,
-  })  : sessionId = Uuid().v4(),
-        namespace = '${params.device}.${DefaultArgs.namespace}' {
+  bool sendControlHeartbeats = false;
+
+  NptBase({required this.params, required this.atClient, this.logStream})
+    : sessionId = Uuid().v4(),
+      namespace = '${params.device}.${DefaultArgs.namespace}' {
     AtSignLogger.defaultLoggingHandler = _slh;
     logger.level = params.verbose ? 'info' : 'shout';
 
@@ -142,11 +137,7 @@ class _NptImpl extends NptBase
   @override
   Future get done => _completer.future;
 
-  _NptImpl({
-    required super.params,
-    required super.atClient,
-    super.logStream,
-  }) {
+  _NptImpl({required super.params, required super.atClient, super.logStream}) {
     _sshnpdChannel = SshnpdDefaultChannel(
       atClient: atClient,
       params: params,
@@ -190,11 +181,20 @@ class _NptImpl extends NptBase
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
+    if (sshnpdChannel.cachedPingResponse != null) {
+      _srvdChannel.cachedDaemonPublicSigningKeyUri =
+          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
+    }
+
     List<DaemonFeature> requiredFeatures = [
       DaemonFeature.srAuth,
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
+      DaemonFeature.controlChannelHeartbeats,
     ];
+    if (params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -202,8 +202,10 @@ class _NptImpl extends NptBase
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(requiredFeatures,
-            timeout: params.daemonPingTimeout);
+    featureCheckFuture = sshnpdChannel.featureCheck(
+      requiredFeatures,
+      timeout: params.daemonPingTimeout,
+    );
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -215,7 +217,18 @@ class _NptImpl extends NptBase
     sendProgress('Received daemon feature check response');
 
     await Future.delayed(Duration(milliseconds: 1));
-    for (final (DaemonFeature _, bool supported, String reason) in features) {
+    for (final (DaemonFeature feature, bool supported, String reason)
+        in features) {
+      if (feature == DaemonFeature.controlChannelHeartbeats) {
+        if (supported) {
+          sendProgress('Will send control channel heartbeats');
+          sendControlHeartbeats = true;
+        } else {
+          sendProgress('Will not send control channel heartbeats');
+          sendControlHeartbeats = false;
+        }
+        continue;
+      }
       if (!supported) {
         if (reason.contains('timed out')) {
           throw TimeoutException('Ping to NoPorts daemon timed out');
@@ -224,6 +237,7 @@ class _NptImpl extends NptBase
         }
       }
     }
+
     sendProgress('Required daemon features are supported');
 
     completeInitialization();
@@ -238,6 +252,9 @@ class _NptImpl extends NptBase
     var msg = 'Sending session request to the device daemon';
     logger.info(msg);
     sendProgress(msg);
+    if (sshnpdChannel.twinKeys) {
+      logger.info('Session will use twinned keys');
+    }
 
     /// Send an ssh request to sshnpd
     await notify(
@@ -248,21 +265,25 @@ class _NptImpl extends NptBase
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
       signAndWrapAndJsonEncode(
-          atClient,
-          NptSessionRequest(
-            sessionId: sessionId,
-            rvdHost: _srvdChannel.rvdHost,
-            rvdPort: _srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: _srvdChannel.clientNonce,
-            rvdNonce: _srvdChannel.rvdNonce!,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-            requestedPort: params.remotePort,
-            requestedHost: params.remoteHost,
-            timeout: params.timeout,
-          ).toJson()),
+        atClient,
+        NptSessionRequest(
+          sessionId: sessionId,
+          rvdHost: _srvdChannel.rvdHost,
+          rvdPort: _srvdChannel.daemonPort,
+          authenticateToRvd: params.authenticateDeviceToRvd,
+          relayAuthMode: params.relayAuthMode,
+          relayAuthAesKey: _srvdChannel.relayAuthAesKey,
+          clientNonce: _srvdChannel.clientNonce,
+          rvdNonce: _srvdChannel.rvdNonce!,
+          encryptRvdTraffic: params.encryptRvdTraffic,
+          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+          clientEphemeralPKType: params.sessionKPType.name,
+          requestedPort: params.remotePort,
+          requestedHost: params.remoteHost,
+          timeout: params.timeout,
+          twinKeys: sshnpdChannel.twinKeys,
+        ).toJson(),
+      ),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
@@ -275,22 +296,29 @@ class _NptImpl extends NptBase
       case SshnpdAck.acknowledged:
         sendProgress('Received response from the device daemon');
       case SshnpdAck.acknowledgedWithErrors:
-        throw SshnpError('Received error response from the device daemon');
+        throw SshnpError(
+          'Error response from device daemon:'
+          ' ${sshnpdChannel.errorReceived ?? ''}',
+        );
       case SshnpdAck.notAcknowledged:
         throw SshnpError('No response from the device daemon');
     }
 
     int localRvPort;
+
     if (params.localPort == 0) {
       sendProgress('Finding an available local port');
 
-      /// Find a port to use
-      final server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+      /// Find a port to use - params.localHost is now a resolved IP address
+      final bindAddress =
+          InternetAddress.tryParse(params.localHost!) ??
+          InternetAddress.loopbackIPv4; // Fallback if somehow not a valid IP
+
+      final server = await ServerSocket.bind(bindAddress, 0);
       localRvPort = server.port;
       await server.close();
     } else {
       sendProgress('Will use local port ${params.localPort}');
-
       localRvPort = params.localPort;
     }
 
@@ -310,11 +338,16 @@ class _NptImpl extends NptBase
 
       await _srvdChannel.runSrv(
         localRvPort: localRvPort,
-        sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-        sessionIVString: sshnpdChannel.sessionIVString,
+        aesC2D: sshnpdChannel.aesC2D,
+        ivC2D: sshnpdChannel.ivC2D,
+        aesD2C: sshnpdChannel.aesD2C,
+        ivD2C: sshnpdChannel.ivD2C,
         multi: true,
         detached: true,
         timeout: params.timeout,
+        controlChannelHeartbeat: sendControlHeartbeats
+            ? params.controlChannelHeartbeat
+            : null,
       );
       _completer.complete();
     }
@@ -328,22 +361,30 @@ class _NptImpl extends NptBase
     sendProgress('Creating connection to socket rendezvous');
     if (!params.inline) {
       logger.warning(
-          "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.");
+        "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+      );
     }
 
     SocketConnector sc = await _srvdChannel.runSrv(
       localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: true,
       detached: false,
       timeout: params.timeout,
+      controlChannelHeartbeat: sendControlHeartbeats
+          ? params.controlChannelHeartbeat
+          : null,
     );
 
-    unawaited(sc.done.then((_) {
-      logger.info('SocketConnector done');
-      _completer.complete();
-    }));
+    unawaited(
+      sc.done.then((_) {
+        logger.info('SocketConnector done');
+        _completer.complete();
+      }),
+    );
 
     return sc;
   }

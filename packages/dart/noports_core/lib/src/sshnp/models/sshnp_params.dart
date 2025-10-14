@@ -25,6 +25,8 @@ abstract interface class ClientParams {
 
   bool get authenticateDeviceToRvd;
 
+  RelayAuthMode get relayAuthMode;
+
   bool get encryptRvdTraffic;
 
   String? get atKeysFilePath;
@@ -43,6 +45,8 @@ abstract interface class ClientParams {
   int get localPort;
 
   Duration get daemonPingTimeout;
+
+  bool get only443;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -71,6 +75,9 @@ abstract class ClientParamsBase implements ClientParams {
   final bool authenticateDeviceToRvd;
 
   @override
+  final RelayAuthMode relayAuthMode;
+
+  @override
   final bool encryptRvdTraffic;
 
   @override
@@ -93,24 +100,45 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final Duration daemonPingTimeout;
 
+  @override
+  final bool only443;
+
   final String? passPhrase;
 
-  ClientParamsBase(
-      {required this.clientAtSign,
-      required this.sshnpdAtSign,
-      required this.srvdAtSign,
-      this.localPort = DefaultSshnpArgs.localPort,
-      this.device = DefaultSshnpArgs.device,
-      this.verbose = DefaultArgs.verbose,
-      this.atKeysFilePath,
-      this.rootDomain = DefaultArgs.rootDomain,
-      this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
-      this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-      this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-      this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
-      this.passPhrase}) {
+  ClientParamsBase({
+    required this.clientAtSign,
+    required this.sshnpdAtSign,
+    required this.srvdAtSign,
+    this.localPort = DefaultSshnpArgs.localPort,
+    this.device = DefaultSshnpArgs.device,
+    this.verbose = DefaultArgs.verbose,
+    this.atKeysFilePath,
+    this.rootDomain = DefaultArgs.rootDomain,
+    this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    required this.relayAuthMode,
+    this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    required this.only443,
+    this.passPhrase
+  }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
+    }
+    if (only443 && relayAuthMode != RelayAuthMode.escr) {
+      throw ArgumentError(
+        'You must use'
+        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
+      );
+    }
+    if (relayAuthMode == RelayAuthMode.escr &&
+        (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+      throw ArgumentError(
+        'Both client and device need to authenticate to the'
+        ' relay when using'
+        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"',
+      );
     }
   }
 }
@@ -139,24 +167,35 @@ class NptParams extends ClientParamsBase
   /// How long to keep the local port open if there have been no connections
   final Duration timeout;
 
-  NptParams(
-      {required super.clientAtSign,
-      required super.sshnpdAtSign,
-      required super.srvdAtSign,
-      required this.remoteHost,
-      required this.remotePort,
-      required super.device,
-      super.localPort = DefaultSshnpArgs.localPort,
-      super.verbose = DefaultArgs.verbose,
-      super.atKeysFilePath,
-      super.rootDomain = DefaultArgs.rootDomain,
-      super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
-      super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-      super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-      required this.inline,
-      super.daemonPingTimeout,
-      required this.timeout,
-      super.passPhrase}) {
+  /// Interval between heartbeats on the control channel.
+  final Duration? controlChannelHeartbeat;
+
+  /// Local IP address to bind to. If null, binds to localhost (127.0.0.1)
+  final String? localHost;
+
+  NptParams({
+    required super.clientAtSign,
+    required super.sshnpdAtSign,
+    required super.srvdAtSign,
+    required this.remoteHost,
+    required this.remotePort,
+    required super.device,
+    super.localPort = DefaultSshnpArgs.localPort,
+    super.verbose = DefaultArgs.verbose,
+    super.atKeysFilePath,
+    super.rootDomain = DefaultArgs.rootDomain,
+    super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = RelayAuthMode.payload,
+    super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    required this.inline,
+    super.daemonPingTimeout,
+    required this.timeout,
+    this.controlChannelHeartbeat,
+    this.localHost,
+    super.only443 = false,
+    super.passPhrase
+  }) {
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
@@ -208,31 +247,34 @@ class SshnpParams extends ClientParamsBase
   /// Operation flags
   final bool listDevices;
 
-  SshnpParams(
-      {required super.clientAtSign,
-      required super.sshnpdAtSign,
-      required super.srvdAtSign,
-      this.profileName,
-      super.device = DefaultSshnpArgs.device,
-      super.localPort = DefaultSshnpArgs.localPort,
-      this.identityFile,
-      this.identityPassphrase,
-      this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
-      this.localSshOptions = DefaultSshnpArgs.localSshOptions,
-      super.verbose = DefaultArgs.verbose,
-      this.remoteUsername,
-      this.tunnelUsername,
-      super.atKeysFilePath,
-      super.rootDomain = DefaultArgs.rootDomain,
-      this.listDevices = DefaultSshnpArgs.listDevices,
-      this.remoteSshdPort = DefaultArgs.remoteSshdPort,
-      this.idleTimeout = DefaultArgs.idleTimeout,
-      this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
-      super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
-      super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-      super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
-      super.daemonPingTimeout,
-      super.passPhrase});
+  SshnpParams({
+    required super.clientAtSign,
+    required super.sshnpdAtSign,
+    required super.srvdAtSign,
+    this.profileName,
+    super.device = DefaultSshnpArgs.device,
+    super.localPort = DefaultSshnpArgs.localPort,
+    this.identityFile,
+    this.identityPassphrase,
+    this.sendSshPublicKey = DefaultSshnpArgs.sendSshPublicKey,
+    this.localSshOptions = DefaultSshnpArgs.localSshOptions,
+    super.verbose = DefaultArgs.verbose,
+    this.remoteUsername,
+    this.tunnelUsername,
+    super.atKeysFilePath,
+    super.rootDomain = DefaultArgs.rootDomain,
+    this.listDevices = DefaultSshnpArgs.listDevices,
+    this.remoteSshdPort = DefaultArgs.remoteSshdPort,
+    this.idleTimeout = DefaultArgs.idleTimeout,
+    this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
+    super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
+    super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = RelayAuthMode.payload,
+    super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
+    super.daemonPingTimeout,
+    super.only443 = false,
+    super.passPhrase
+  });
 
   factory SshnpParams.empty() {
     return SshnpParams(
@@ -240,45 +282,49 @@ class SshnpParams extends ClientParamsBase
       clientAtSign: '',
       sshnpdAtSign: '',
       srvdAtSign: '',
+      only443: false,
     );
   }
 
   /// Merge an SshnpPartialParams objects into an SshnpParams
   /// Params in params2 take precedence over params1
-  factory SshnpParams.merge(SshnpParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpParams.merge(
+    SshnpParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpParams(
-        profileName: params2.profileName ?? params1.profileName,
-        clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
-        sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
-        srvdAtSign: params2.srvdAtSign ?? params1.srvdAtSign,
-        device: params2.device ?? params1.device,
-        localPort: params2.localPort ?? params1.localPort,
-        atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
-        identityFile: params2.identityFile ?? params1.identityFile,
-        identityPassphrase:
-            params2.identityPassphrase ?? params1.identityPassphrase,
-        sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
-        localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
-        remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
-        tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
-        verbose: params2.verbose ?? params1.verbose,
-        rootDomain: params2.rootDomain ?? params1.rootDomain,
-        listDevices: params2.listDevices ?? params1.listDevices,
-        remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
-        idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
-        addForwardsToTunnel:
-            params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
-        authenticateClientToRvd:
-            params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
-        authenticateDeviceToRvd:
-            params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
-        encryptRvdTraffic:
-            params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
-        daemonPingTimeout:
-            params2.daemonPingTimeout ?? params1.daemonPingTimeout,
-        passPhrase: params2.passPhrase ?? params1.passPhrase);
+      profileName: params2.profileName ?? params1.profileName,
+      clientAtSign: params2.clientAtSign ?? params1.clientAtSign,
+      sshnpdAtSign: params2.sshnpdAtSign ?? params1.sshnpdAtSign,
+      srvdAtSign: params2.srvdAtSign ?? params1.srvdAtSign,
+      device: params2.device ?? params1.device,
+      localPort: params2.localPort ?? params1.localPort,
+      atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      identityFile: params2.identityFile ?? params1.identityFile,
+      identityPassphrase:
+          params2.identityPassphrase ?? params1.identityPassphrase,
+      sendSshPublicKey: params2.sendSshPublicKey ?? params1.sendSshPublicKey,
+      localSshOptions: params2.localSshOptions ?? params1.localSshOptions,
+      remoteUsername: params2.remoteUsername ?? params1.remoteUsername,
+      tunnelUsername: params2.tunnelUsername ?? params1.tunnelUsername,
+      verbose: params2.verbose ?? params1.verbose,
+      rootDomain: params2.rootDomain ?? params1.rootDomain,
+      listDevices: params2.listDevices ?? params1.listDevices,
+      remoteSshdPort: params2.remoteSshdPort ?? params1.remoteSshdPort,
+      idleTimeout: params2.idleTimeout ?? params1.idleTimeout,
+      addForwardsToTunnel:
+          params2.addForwardsToTunnel ?? params1.addForwardsToTunnel,
+      authenticateClientToRvd:
+          params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
+      authenticateDeviceToRvd:
+          params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
+      encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
+      daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
+      passPhrase: params2.passPhrase ?? params1.passPhrase
+    );
   }
 
   factory SshnpParams.fromFile(String fileName) {
@@ -297,10 +343,12 @@ class SshnpParams extends ClientParamsBase
       // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
       partial.sshnpdAtSign ??
           (throw ArgumentError(
-              'Option to is mandatory, unless list-devices is passed.'));
+            'Option to is mandatory, unless list-devices is passed.',
+          ));
       partial.srvdAtSign ??
           (throw ArgumentError(
-              'srvdAtSign is mandatory, unless list-devices is passed.'));
+            'srvdAtSign is mandatory, unless list-devices is passed.',
+          ));
     }
 
     String device = partial.device ?? DefaultSshnpArgs.device;
@@ -328,20 +376,26 @@ class SshnpParams extends ClientParamsBase
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      authenticateClientToRvd: partial.authenticateClientToRvd ??
+      authenticateClientToRvd:
+          partial.authenticateClientToRvd ??
           DefaultArgs.authenticateClientToRvd,
-      authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
+      authenticateDeviceToRvd:
+          partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
+      relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
+      only443: partial.only443 ?? false,
+    );
         passPhrase: partial.passPhrase);
   }
 
   factory SshnpParams.fromConfigLines(String profileName, List<String> lines) {
     return SshnpParams.fromPartial(
-        SshnpPartialParams.fromConfigLines(profileName, lines));
+      SshnpPartialParams.fromConfigLines(profileName, lines),
+    );
   }
 
   List<String> toConfigLines({ParserType parserType = ParserType.configFile}) {
@@ -377,7 +431,7 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.remoteUserNameArg.name: remoteUsername,
       SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
-      SshnpArg.rootDomainArg.name: rootDomain,
+      SshnpArg.rootServerArg.name: rootDomain,
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
@@ -423,39 +477,44 @@ class SshnpPartialParams {
   final SupportedSshAlgorithm? sshAlgorithm;
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
+  final RelayAuthMode? relayAuthMode;
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
+  final bool? only443;
   final String? passPhrase;
 
   /// Operation flags
   final bool? listDevices;
 
-  SshnpPartialParams(
-      {this.profileName,
-      this.clientAtSign,
-      this.sshnpdAtSign,
-      this.srvdAtSign,
-      this.device,
-      this.localPort,
-      this.atKeysFilePath,
-      this.identityFile,
-      this.identityPassphrase,
-      this.sendSshPublicKey,
-      this.localSshOptions,
-      this.remoteUsername,
-      this.tunnelUsername,
-      this.verbose,
-      this.rootDomain,
-      this.listDevices,
-      this.remoteSshdPort,
-      this.idleTimeout,
-      this.addForwardsToTunnel,
-      this.sshAlgorithm,
-      this.authenticateClientToRvd,
-      this.authenticateDeviceToRvd,
-      this.encryptRvdTraffic,
-      this.daemonPingTimeout,
-      this.passPhrase});
+  SshnpPartialParams({
+    this.profileName,
+    this.clientAtSign,
+    this.sshnpdAtSign,
+    this.srvdAtSign,
+    this.device,
+    this.localPort,
+    this.atKeysFilePath,
+    this.identityFile,
+    this.identityPassphrase,
+    this.sendSshPublicKey,
+    this.localSshOptions,
+    this.remoteUsername,
+    this.tunnelUsername,
+    this.verbose,
+    this.rootDomain,
+    this.listDevices,
+    this.remoteSshdPort,
+    this.idleTimeout,
+    this.addForwardsToTunnel,
+    this.sshAlgorithm,
+    this.authenticateClientToRvd,
+    this.authenticateDeviceToRvd,
+    this.relayAuthMode,
+    this.encryptRvdTraffic,
+    this.daemonPingTimeout,
+    this.only443,
+    this.passPhrase
+  });
 
   factory SshnpPartialParams.empty() {
     return SshnpPartialParams();
@@ -463,8 +522,10 @@ class SshnpPartialParams {
 
   /// Merge two SshnpPartialParams objects together
   /// Params in params2 take precedence over params1
-  factory SshnpPartialParams.merge(SshnpPartialParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpPartialParams.merge(
+    SshnpPartialParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -493,20 +554,26 @@ class SshnpPartialParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
+    );
         passPhrase: params2.passPhrase ?? params1.passPhrase);
   }
 
   factory SshnpPartialParams.fromFile(String fileName) {
     var args = ConfigFileRepository.parseConfigFile(fileName);
-    args[SshnpArg.profileNameArg.name] =
-        ConfigFileRepository.toProfileName(fileName);
+    args[SshnpArg.profileNameArg.name] = ConfigFileRepository.toProfileName(
+      fileName,
+    );
     return SshnpPartialParams.fromArgMap(args);
   }
 
   factory SshnpPartialParams.fromConfigLines(
-      String profileName, List<String> lines) {
+    String profileName,
+    List<String> lines,
+  ) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
     args[SshnpArg.profileNameArg.name] = profileName;
     return SshnpPartialParams.fromArgMap(args);
@@ -538,7 +605,7 @@ class SshnpPartialParams {
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
       tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
-      rootDomain: args[SshnpArg.rootDomainArg.name],
+      rootDomain: args[SshnpArg.rootServerArg.name] ?? DefaultArgs.rootDomain,
       listDevices: args[SshnpArg.listDevicesArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
@@ -546,11 +613,21 @@ class SshnpPartialParams {
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(
-              args[SshnpArg.sshAlgorithmArg.name]),
+              args[SshnpArg.sshAlgorithmArg.name],
+            ),
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      relayAuthMode: args[SshnpArg.relayAuthModeArg.name] == null
+          ? null
+          : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
+        seconds:
+            args[SshnpArg.daemonPingTimeoutArg.name] ??
+            DefaultArgs.daemonPingTimeoutSeconds,
+      ),
+      only443: args[SshnpArg.only443Arg.name],
+    );
           seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
               DefaultArgs.daemonPingTimeoutSeconds),
         passPhrase: args[SshnpArg.passPhrase.name]);
@@ -558,8 +635,10 @@ class SshnpPartialParams {
 
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
-  factory SshnpPartialParams.fromArgList(List<String> args,
-      {ParserType parserType = ParserType.all}) {
+  factory SshnpPartialParams.fromArgList(
+    List<String> args, {
+    ParserType parserType = ParserType.all,
+  }) {
     var params = SshnpPartialParams.empty();
     var parser = SshnpArg.createArgParser(
       withDefaults: false,

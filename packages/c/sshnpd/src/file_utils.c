@@ -1,7 +1,6 @@
 #include "sshnpd/file_utils.h"
 #include <atlogger/atlogger.h>
 #include <errno.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -36,7 +35,7 @@ int authorize_ssh_public_key(authkeys_params *params) {
   size_t bufsize = 256;
   char *buf = malloc(bufsize * sizeof(char));
   if (buf == NULL) {
-    atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for buf\n", strerror(errno));
+    atlogger_log(tag, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for buf: %s\n", strerror(errno));
     ret = 1;
     goto exit;
   }

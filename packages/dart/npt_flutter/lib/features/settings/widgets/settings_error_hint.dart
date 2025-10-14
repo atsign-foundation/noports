@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 class SettingsErrorHint extends StatelessWidget {
-  const SettingsErrorHint({
-    super.key,
-  });
+  const SettingsErrorHint({super.key});
 
   // A widget which only renders when the settings failed to load
   // Note that the settings screen still gets drawn, as it uses some default values
@@ -17,11 +15,15 @@ class SettingsErrorHint extends StatelessWidget {
   // - Provide a dimiss / save button which saves the current settings as they are (also wiping the old settings)
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<SettingsBloc, SettingsState, bool>(selector: (state) {
-      return state is SettingsFailedLoad;
-    }, builder: (context, hasError) {
-      if (hasError) return Text(AppLocalizations.of(context)!.profileFailedLoaded);
-      return Container();
-    });
+    return BlocSelector<SettingsBloc, SettingsState, bool>(
+      selector: (state) {
+        return state is SettingsFailedLoad;
+      },
+      builder: (context, hasError) {
+        if (hasError)
+          return Text(AppLocalizations.of(context)!.profileFailedLoaded);
+        return Container();
+      },
+    );
   }
 }

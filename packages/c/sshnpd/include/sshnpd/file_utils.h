@@ -1,7 +1,6 @@
 #ifndef SSH_KEY_UTIL_H
 #define SSH_KEY_UTIL_H
 
-#include <pthread.h>
 #include <stdio.h>
 
 enum supported_key_prefix {

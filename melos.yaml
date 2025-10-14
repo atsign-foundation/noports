@@ -3,7 +3,8 @@ name: noports
 packages:
   - packages/dart/noports_core
   - packages/dart/sshnoports
-  - packages/dart/sshnp_flutter
+  - packages/dart/npt_flutter
+  - apps/admin/admin_api
 
 command:
   bootstrap:
@@ -14,4 +15,5 @@ command:
         --scope="noports_core" \
         --scope="sshnoports" \
         --scope="npt_flutter" \
+        --scope="admin_api" \
         -- "dart run build_runner build --delete-conflicting-outputs"

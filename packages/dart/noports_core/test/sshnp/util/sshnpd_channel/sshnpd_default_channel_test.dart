@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:file/memory.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
@@ -66,13 +67,15 @@ void main() {
     }); // test public API
 
     whenInitialization() {
+      when(() => mockParams.clientAtSign).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
       when(() => mockParams.authenticateDeviceToRvd).thenReturn(true);
       when(() => mockParams.authenticateClientToRvd).thenReturn(true);
       when(() => mockParams.encryptRvdTraffic).thenReturn(true);
       when(() => mockParams.sendSshPublicKey).thenReturn(false);
-      when(subscribeInvocation)
-          .thenAnswer((_) => notificationStreamController.stream);
+      when(
+        subscribeInvocation,
+      ).thenAnswer((_) => notificationStreamController.stream);
     }
 
     // Same test as on the base class
@@ -133,22 +136,23 @@ void main() {
       when(
         () => mockAtClient.get(
           any<AtKey>(
-            that: predicate(
-              (AtKey key) => key.key.contains('cached_pks'),
-            ),
+            that: predicate((AtKey key) => key.key.contains('cached_pks')),
           ),
         ),
       ).thenAnswer(
         (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,
       );
 
-      Future<SshnpdAck> ack =
-          stubbedSshnpdDefaultChannel.handleSshnpdPayload(notification);
+      Future<SshnpdAck> ack = stubbedSshnpdDefaultChannel.handleSshnpdPayload(
+        notification,
+      );
 
       await expectLater(ack, completes);
       expect(await ack, SshnpdAck.acknowledged);
-      expect(stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
-          TestingKeyPair.private);
+      expect(
+        stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
+        TestingKeyPair.private,
+      );
     }); // test handleSshnpdPayload - no public key cache
 
     test('handleSshnpdPayload - with in-memory public key cache', () async {
@@ -185,24 +189,29 @@ void main() {
         return;
       }
 
-      File cacheFile = fs.file(path.join(
-        homeDirPath,
-        '.atsign',
-        'sshnp',
-        'cached_pks',
-        mockParams.sshnpdAtSign.substring(1),
-      ));
+      File cacheFile = fs.file(
+        path.join(
+          homeDirPath,
+          '.atsign',
+          'sshnp',
+          'cached_pks',
+          mockParams.sshnpdAtSign.substring(1),
+        ),
+      );
 
       await cacheFile.create(recursive: true);
       await cacheFile.writeAsString(encryptionKeyPair.atPublicKey.publicKey);
 
-      Future<SshnpdAck> ack =
-          stubbedSshnpdDefaultChannel.handleSshnpdPayload(notification);
+      Future<SshnpdAck> ack = stubbedSshnpdDefaultChannel.handleSshnpdPayload(
+        notification,
+      );
 
       await expectLater(ack, completes);
       expect(await ack, SshnpdAck.acknowledged);
-      expect(stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
-          TestingKeyPair.private);
+      expect(
+        stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
+        TestingKeyPair.private,
+      );
     }); // test handleSshnpdPayload - with in-memory public key cache
 
     test('handleSshnpdPayload - bad signature', () async {
@@ -240,17 +249,16 @@ void main() {
       when(
         () => mockAtClient.get(
           any<AtKey>(
-            that: predicate(
-              (AtKey key) => key.key.contains('cached_pks'),
-            ),
+            that: predicate((AtKey key) => key.key.contains('cached_pks')),
           ),
         ),
       ).thenAnswer(
         (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,
       );
 
-      Future<SshnpdAck> ack =
-          stubbedSshnpdDefaultChannel.handleSshnpdPayload(notification);
+      Future<SshnpdAck> ack = stubbedSshnpdDefaultChannel.handleSshnpdPayload(
+        notification,
+      );
 
       await expectLater(ack, completes);
       expect(await ack, SshnpdAck.acknowledgedWithErrors);

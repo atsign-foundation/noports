@@ -6,6 +6,8 @@ class SshnpSessionRequest {
   final String host;
   final int port;
   final bool? authenticateToRvd;
+  final RelayAuthMode relayAuthMode;
+  final String? relayAuthAesKey;
   final String? clientNonce;
   final String? rvdNonce;
   final bool? encryptRvdTraffic;
@@ -14,6 +16,7 @@ class SshnpSessionRequest {
   final String? username;
   final int? remoteForwardPort;
   final String? privateKey;
+  final bool twinKeys;
 
   SshnpSessionRequest({
     required this.direct,
@@ -22,6 +25,8 @@ class SshnpSessionRequest {
     required this.port,
     // optional params
     this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
     this.clientNonce,
     this.rvdNonce,
     this.encryptRvdTraffic,
@@ -31,6 +36,7 @@ class SshnpSessionRequest {
     this.username,
     this.remoteForwardPort,
     this.privateKey,
+    required this.twinKeys,
   }) {
     // Assertions originally from Sshnpd
     // sessionId, host (of the rvd) and port (of the rvd) are required.
@@ -45,7 +51,10 @@ class SshnpSessionRequest {
     assertNullOrValidValue('encryptRvdTraffic', encryptRvdTraffic, bool);
     assertNullOrValidValue('clientEphemeralPK', clientEphemeralPK, String);
     assertNullOrValidValue(
-        'clientEphemeralPKType', clientEphemeralPKType, String);
+      'clientEphemeralPKType',
+      clientEphemeralPKType,
+      String,
+    );
 
     // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
     // also require a username (to ssh back to the client), a privateKey (for
@@ -65,11 +74,16 @@ class SshnpSessionRequest {
       host: json['host'],
       port: json['port'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
+      twinKeys: json['twinKeys'] ?? false,
     );
   }
 
@@ -80,11 +94,14 @@ class SshnpSessionRequest {
         'host': host,
         'port': port,
         'authenticateToRvd': authenticateToRvd,
+        'relayAuthMode': relayAuthMode.name,
+        'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,
         'encryptRvdTraffic': encryptRvdTraffic,
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
+        'twinKeys': twinKeys,
       };
 }
 
@@ -96,12 +113,15 @@ class NptSessionRequest {
   final String requestedHost;
   final int requestedPort;
   final bool authenticateToRvd;
+  final RelayAuthMode relayAuthMode;
+  final String? relayAuthAesKey;
   final String clientNonce;
   final String rvdNonce;
   final bool encryptRvdTraffic;
   final String clientEphemeralPK;
   final String clientEphemeralPKType;
   final Duration timeout;
+  final bool twinKeys;
 
   NptSessionRequest({
     required this.sessionId,
@@ -110,12 +130,15 @@ class NptSessionRequest {
     required this.requestedHost,
     required this.requestedPort,
     required this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
     required this.clientNonce,
     required this.rvdNonce,
     required this.encryptRvdTraffic,
     required this.clientEphemeralPK,
     required this.clientEphemeralPKType,
     required this.timeout,
+    required this.twinKeys,
   });
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
@@ -126,12 +149,17 @@ class NptSessionRequest {
       requestedHost: json['requestedHost'],
       requestedPort: json['requestedPort'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
       timeout: Duration(milliseconds: json['timeout'] ?? defaultTimeout),
+      twinKeys: json['twinKeys'] ?? false,
     );
   }
 
@@ -143,11 +171,14 @@ class NptSessionRequest {
         'requestedPort': requestedPort,
         'requestedHost': requestedHost,
         'authenticateToRvd': authenticateToRvd,
+        'relayAuthMode': relayAuthMode.name,
+        'relayAuthAesKey': relayAuthAesKey,
         'clientNonce': clientNonce,
         'rvdNonce': rvdNonce,
         'encryptRvdTraffic': encryptRvdTraffic,
         'clientEphemeralPK': clientEphemeralPK,
         'clientEphemeralPKType': clientEphemeralPKType,
         'timeout': timeout.inMilliseconds,
+        'twinKeys': twinKeys,
       };
 }

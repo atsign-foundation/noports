@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/logging/logging.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 class ExportLogsButton extends StatelessWidget {
   const ExportLogsButton({super.key});

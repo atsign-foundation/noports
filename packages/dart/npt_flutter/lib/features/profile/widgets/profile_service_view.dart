@@ -5,24 +5,33 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import '../../../styles/sizes.dart';
 
 class ProfileServiceView extends StatelessWidget {
-  const ProfileServiceView({super.key});
-
+  const ProfileServiceView({required this.width, super.key});
+  final double width;
   @override
   Widget build(BuildContext context) {
-    final deviceWidth = MediaQuery.of(context).size.width;
     return SizedBox(
-      width: deviceWidth * Sizes.profileFieldsWidthFactor,
+      width: width,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(selector: (state) {
-          if (state is! ProfileLoadedState) return null;
-          return (state.profile.localPort, state.profile.remoteHost, state.profile.remotePort);
-        }, builder: (BuildContext context, (int, String, int)? triple) {
-          if (triple == null) return gap0;
-          var (localPort, remoteHost, remotePort) = triple;
-          return Tooltip(
-              message: '$localPort:$remoteHost:$remotePort', child: Text('$localPort:$remoteHost:$remotePort'));
-        }),
+        child: BlocSelector<ProfileBloc, ProfileState, (int, String, int)?>(
+          selector: (state) {
+            if (state is! ProfileLoadedState) return null;
+            return (
+              state.profile.localPort,
+              state.profile.remoteHost,
+              state.profile.remotePort,
+            );
+          },
+          builder: (BuildContext context, (int, String, int)? triple) {
+            if (triple == null) return gap0;
+            var (localPort, remoteHost, remotePort) = triple;
+            return Tooltip(
+              verticalOffset: Sizes.p10n,
+              message: '$localPort:$remoteHost:$remotePort',
+              child: Text('$localPort:$remoteHost:$remotePort'),
+            );
+          },
+        ),
       ),
     );
   }

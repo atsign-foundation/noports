@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/admin.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 
 class PolicyServiceWithAtClient extends PolicyServiceInMem
     with AtClientBindings {
@@ -13,23 +13,19 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   @override
   final AtClient atClient;
 
-  PolicyServiceWithAtClient({
-    required this.atClient,
-  });
+  PolicyServiceWithAtClient({required this.atClient});
 
   @override
   Future<void> init() async {
     await super.init();
 
     atClient.notificationService
-        .subscribe(
-      regex: r'.*\.groups\.policy\.sshnp',
-      shouldDecrypt: true,
-    )
+        .subscribe(regex: r'.*\.groups\.policy\.sshnp', shouldDecrypt: true)
         .listen((AtNotification n) {
       String groupId = n.key.split(':')[1].split('.').first;
       logger.info(
-          'Received ${n.operation} notification for group ${n.key} - ID is $groupId');
+        'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
+      );
       if (n.operation == 'delete') {
         groups.remove(groupId);
       } else {
@@ -38,34 +34,35 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       }
     });
 
-    subscribe(
-      regex: r'.*\.logs\.policy\.sshnp',
-      shouldDecrypt: true,
-    ).listen((AtNotification n) {
+    subscribe(regex: r'.*\.logs\.policy\.sshnp', shouldDecrypt: true).listen((
+      AtNotification n,
+    ) {
       logger.shout(
-          'Received policy log notification from ${jsonDecode(n.value!)['daemon']}');
+        'Received policy log notification from ${jsonDecode(n.value!)['daemon']}',
+      );
       // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
       onPolicyLogEvent(n.value!);
     });
 
-    subscribe(
-      regex: r'.*\.devices\.policy\.sshnp',
-      shouldDecrypt: true,
-    ).listen((AtNotification n) {
-      logger.shout('Received device heartbeat from ${n.from}');
-      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
-      final v = jsonDecode(n.value!);
-      final e = {};
-      e['timestamp'] = n.epochMillis;
-      e['daemon'] = n.from;
-      e['payload'] = v;
-      onDaemonEvent(jsonEncode(e));
-    });
+    subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
+      (AtNotification n) {
+        logger.shout('Received device heartbeat from ${n.from}');
+        // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
+        final v = jsonDecode(n.value!);
+        final e = {};
+        e['timestamp'] = n.epochMillis;
+        e['daemon'] = n.from;
+        e['payload'] = v;
+        onDaemonEvent(jsonEncode(e));
+      },
+    );
 
     logger.shout('Loading groups via AtClient');
     // Fetch all the groups
     List<AtKey> groupKeys = await atClient.getAtKeys(
-        regex: '.*.groups.policy.sshnp', sharedBy: atClient.getCurrentAtSign());
+      regex: '.*.groups.policy.sshnp',
+      sharedBy: atClient.getCurrentAtSign(),
+    );
     for (final AtKey groupKey in groupKeys) {
       logger.shout('Loading group from atKey: $groupKey');
       final v = await atClient.get(
@@ -102,7 +99,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
         AtKey.fromString(
-            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+          '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
+        ),
         value: jsonEncode(group),
       ),
     );
@@ -123,7 +121,8 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
         AtKey.fromString(
-            '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}'),
+          '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
+        ),
         value: jsonEncode(group),
       ),
     );
@@ -204,12 +203,16 @@ class PolicyServiceInMem implements PolicyService {
   }
 
   @override
-  Future<List<dynamic>> getLogEvents(
-      {required int from, required int to}) async {
-    return List.from(logEvents.where((event) {
-      int ts = event['timestamp'];
-      return (ts >= from && ts <= to);
-    }));
+  Future<List<dynamic>> getLogEvents({
+    required int from,
+    required int to,
+  }) async {
+    return List.from(
+      logEvents.where((event) {
+        int ts = event['timestamp'];
+        return (ts >= from && ts <= to);
+      }),
+    );
   }
 
   @override

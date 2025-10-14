@@ -1,6 +1,6 @@
 #include "srv/params.h"
 #include "srv/srv.h"
-#include <atclient/cjson.h>
+#include <atclient/json.h>
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>

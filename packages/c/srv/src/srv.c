@@ -89,7 +89,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     }
   }
 
-  // Open a control socket of type B (non local host and port)
+  // Open a control channel of type B (non local host and port)
   // This socket will decrypt the messages comming from the other side
   // which provide the information to create new sockets
   side_t control_side;
@@ -133,7 +133,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   size_t len;
   while ((res = mbedtls_net_recv(&control_side.socket, buffer, 4096)) > 0) {
     if (res < 0) {
-      atlogger_log("srv - control (side b)", ERROR, "Error reading data: %d", len);
+      atlogger_log("srv - control (side b)", ERROR, "Error reading data: %zu", len);
       goto exit;
     } else {
       len = res;
@@ -187,7 +187,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
           goto exit;
         }
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
-                     "run_srv_daemon_side_multi\n Control socket received %s request - \n creating new socketToSocket "
+                     "run_srv_daemon_side_multi\n control channel received %s request - \n creating new socketToSocket "
                      "connection\n",
                      messagetype);
 
@@ -237,7 +237,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         pthread_detach(sts_thread);
 
       } else {
-        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control socket: %s\n", requests[i]);
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control channel: %s\n", requests[i]);
       }
     }
     // Clean buffer for next iteration and free previous requests
@@ -370,13 +370,14 @@ exit:
   return 0;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 int server_to_socket(const srv_params_t *params, const char *auth_string, chunked_transformer_t *encrypter,
                      chunked_transformer_t *decrypter) {
-  return 0;
+  (void)params;
+  (void)auth_string;
+  (void)encrypter;
+  (void)decrypter;
+  return 1;
 }
-#pragma clang diagnostic pop
 
 int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
                                    chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
@@ -388,8 +389,8 @@ int create_encrypter_and_decrypter(const char *session_aes_key_string, const cha
   size_t aes_key_len;
 
   // Decode the key
-  res = atchops_base64_decode((unsigned char *)session_aes_key_string, strlen(session_aes_key_string), aes_key,
-                              AES_256_KEY_BYTES, &aes_key_len);
+  res = atchops_base64_decode(session_aes_key_string, strlen(session_aes_key_string), aes_key, AES_256_KEY_BYTES,
+                              &aes_key_len);
 
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
     atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
@@ -415,8 +416,8 @@ int create_encrypter_and_decrypter(const char *session_aes_key_string, const cha
 
   // Decode the iv
   size_t iv_len;
-  res = atchops_base64_decode((unsigned char *)session_aes_iv_string, strlen(session_aes_iv_string),
-                              encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN, &iv_len);
+  res = atchops_base64_decode(session_aes_iv_string, strlen(session_aes_iv_string), encrypter->aes_ctr.nonce_counter,
+                              AES_BLOCK_LEN, &iv_len);
   if (res != 0 || iv_len != AES_BLOCK_LEN) {
     atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
     mbedtls_aes_free(&encrypter->aes_ctr.ctx);

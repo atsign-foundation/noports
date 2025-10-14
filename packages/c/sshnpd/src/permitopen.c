@@ -8,9 +8,19 @@ int parse_permitopen(char *input, char ***permitopen_hosts, uint16_t **permitope
                      bool is_logger_available) {
   const char *TAG = "parse_permitopen";
   int sep_count = 0;
+  int permitopen_start = 0;
   int permitopen_end = strlen(input);
 
-  for (int i = 0; i < permitopen_end; i++) {
+  // trim leading quotations
+  while (input[permitopen_start] == '"' || input[permitopen_start] == '\'') {
+    permitopen_start++;
+  }
+  // trim trailing quotations
+  while (input[permitopen_end - 1] == '"' || input[permitopen_end - 1] == '\'') {
+    permitopen_end--;
+  }
+
+  for (int i = permitopen_start; i < permitopen_end; i++) {
     if (input[i] == ':') {
       sep_count++;
       input[i] = '\0';
@@ -35,7 +45,7 @@ int parse_permitopen(char *input, char ***permitopen_hosts, uint16_t **permitope
     return 1;
   }
 
-  int pos = 0;
+  int pos = permitopen_start;
   for (int i = 0; i < sep_count; i++) {
     // Add the host to the host list
     (*permitopen_hosts)[i] = input + pos;

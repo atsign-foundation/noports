@@ -1,0 +1,12 @@
+file(
+  COPY "@CMAKE_BINARY_DIR@/_deps/cjson-src"
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/deps
+)
+file(
+  COPY "@CMAKE_BINARY_DIR@/_deps/mbedtls-src"
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/deps
+)
+file(
+  COPY "@CMAKE_BINARY_DIR@/_deps/atsdk-src"
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/deps
+)

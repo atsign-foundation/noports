@@ -1,12 +1,15 @@
 ---
+description: >-
+  In this guide, we demonstrate how to use the NoPorts Tunnel to bridge SFTP on
+  a remote machine to localhost:2222 so we can access it in an SFTP client
+  locally.
 icon: folder-closed
 ---
 
 # SFTP
 
-In this guide, we demonstrate how to use the NoPorts Tunnel to bridge SFTP on a remote machine to localhost:2222 so we can access it in an SFTP client locally.
+### Command Line
 
-\
 The command should look like:
 
 ```
@@ -23,6 +26,20 @@ Now you can connect to localhost:2222 in your favorite SFTP client.
 
 ### To learn more about NPT
 
-{% content-ref url="../usage/basic-usage/" %}
-[basic-usage](../usage/basic-usage/)
+{% content-ref url="../usage/basic-usage.md" %}
+[basic-usage.md](../usage/basic-usage.md)
 {% endcontent-ref %}
+
+### Desktop Application
+
+When using the NoPorts desktop application, your connection profile should look something like this:
+
+|                   |                    |
+| ----------------- | ------------------ |
+| **Profile Name**  | My SFTP Connection |
+| **Device atSign** | @alice\_device     |
+| **Device Name**   | my\_server         |
+| **Relay**         | @rv\_am            |
+| **Local Port**    | 2222               |
+| **Remote Host**   | localhost          |
+| **Remote Port**   | 22                 |

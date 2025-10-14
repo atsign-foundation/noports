@@ -3,19 +3,21 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-// atPlatform packages
-import 'package:at_utils/at_logger.dart';
 // other packages
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
+
+// atPlatform packages
+import 'package:at_utils/at_logger.dart';
+
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:sshnoports/src/create_at_client_cli.dart';
-import 'package:sshnoports/src/create_sshnp.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
+import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
-import 'package:sshnoports/src/service_factories.dart';
+import 'package:sshnoports/src/create_sshnp.dart';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -118,14 +120,14 @@ void main(List<String> args) async {
       // We will point storage to temp directory and let OS clean up
       if (Platform.isWindows) {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: Platform.environment['TEMP']!,
+          baseDir: Platform.environment['TEMP']!,
           atSign: params.clientAtSign,
           progName: '.sshnp',
           uniqueID: '${DateTime.now().millisecondsSinceEpoch}',
         ));
       } else {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: homeDirectory,
+          baseDir: homeDirectory,
           atSign: params.clientAtSign,
           progName: '.sshnp',
           uniqueID: '${DateTime.now().millisecondsSinceEpoch}',

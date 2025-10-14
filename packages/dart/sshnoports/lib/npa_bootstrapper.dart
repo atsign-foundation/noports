@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
-import 'package:sshnoports/src/service_factories.dart';
 
 Future<void> run(
   NPARequestHandler handler,
@@ -28,7 +28,7 @@ Future<void> run(
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
         storagePath: standardAtClientStoragePath(
-            homeDirectory: p.homeDirectory,
+            baseDir: p.homeDirectory,
             atSign: p.authorizerAtsign,
             progName: '.${DefaultArgs.namespace}',
             uniqueID: 'single'),

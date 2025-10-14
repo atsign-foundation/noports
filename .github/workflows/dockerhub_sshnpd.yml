@@ -1,10 +1,12 @@
 name: dockerhub_sshnpd
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - trunk
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
@@ -12,18 +14,38 @@ permissions: # added using https://github.com/step-security/secure-workflows
 jobs:
   docker:
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-24.04-arm, ubuntu-24.04]
+        name:
+          - sshnpd
+          - activate_sshnpd
+          - sshnp_sshnpd
+          - npt_sshnpd
+          - sshnpd-slim
+          - srvd
         include:
           - name: sshnpd
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile
           - name: activate_sshnpd
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.activate
+          - name: sshnp_sshnpd
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.sshnp
+          - name: npt_sshnpd
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.npt
           - name: sshnpd-slim
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.sshnpd-slim
-    runs-on: ubuntu-latest
+          - name: srvd
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.srvd
+          - os: ubuntu-24.04-arm
+            platforms: linux/arm64,linux/arm/v7
+          - os: ubuntu-24.04
+            platforms: linux/amd64
+            prefix: amd64-
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
         shell: bash
         if: startsWith(github.ref, 'refs/tags/v')
@@ -33,36 +55,91 @@ jobs:
           VER=${REF:11}
           sed -i "0,/version:/{s/version: \(.*\)/version: "${VER}"/}" pubspec.yaml
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: atsigncompany/${{ matrix.name }}
+          tags: |
+            # Default tag for pushes to trunk (dev_env)
+            type=raw,value=${{ matrix.prefix }}dev_env,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            # Decorated tag for pushes to trunk (dev_env-branch-gha)
+            type=raw,value=${{ matrix.prefix }}dev_env-${{ github.ref_name }}-gha${{ github.run_number }},enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            # Default tag for workflow_dispatch (dev_env)
+            type=raw,value=${{ matrix.prefix }}dev_env,enable=${{ github.event_name == 'workflow_dispatch' }}
+            # Decorated tag for workflow_dispatch (dev_env-branch-gha)
+            type=raw,value=${{ matrix.prefix }}dev_env-${{ github.ref_name }}-gha${{ github.run_number }},enable=${{ github.event_name == 'workflow_dispatch' }}
+            # Tag for tagged releases
+            type=raw,value=${{ matrix.prefix }}release,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # Also add the Git tag name itself for releases
+            type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Build and push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platforms }}
+          push: true
+          provenance: false
+          tags: ${{ steps.meta.outputs.tags }}
+
+  docker_combine:
+    needs: docker
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sshnpd
+          - name: activate_sshnpd
+          - name: sshnp_sshnpd
+          - name: npt_sshnpd
+          - name: sshnpd-slim
+          - name: srvd
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Login to Docker Hub
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       # Extract version for docker tag
       - name: Get version
-        run: echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
-      - name: Build and push
-        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6.10.0
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          push: true
-          provenance: false
-          tags: |
-            atsigncompany/${{ matrix.name }}:${{ env.VERSION }}
-            atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
-      # Promote to latest so long as this isn't a pre-release
-      - name: Tag latest
         run: |
-          RELEASE_JSON=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.VERSION }}")
-          PRERELEASE=$(echo "$RELEASE_JSON" | jq -r '.prerelease')
-          if [ $PRERELEASE == 'false' ]; then
-            docker buildx imagetools create -t \
-              atsigncompany/${{ matrix.name }}:latest \
-              atsigncompany/${{ matrix.name }}:release-${{ env.VERSION }}
+          if ${{ startsWith(github.ref, 'refs/tags/v') }}; then
+            # Tagged release
+            echo "TAG1=release" >> $GITHUB_ENV
+            echo "TAG2=release-${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            # Not a tagged release
+            echo "TAG1=dev_env" >> $GITHUB_ENV
+            echo "TAG2=dev_env-${{ github.ref_name }}-gha${{ github.run_number }}" >> $GITHUB_ENV
           fi
+      - name: Combine build images
+        id: docker_manifest_build
+        run: |
+          docker buildx imagetools create \
+            -t atsigncompany/${{ matrix.name }}:${{ env.TAG1 }} \
+            --append atsigncompany/${{ matrix.name }}:amd64-${{ env.TAG1 }}
+          docker buildx imagetools create \
+            -t atsigncompany/${{ matrix.name }}:${{ env.TAG2 }} \
+            --append atsigncompany/${{ matrix.name }}:amd64-${{ env.TAG2 }}
+      # Promote to canary
+      - name: Update canary tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
+          docker buildx imagetools create -t \
+            atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
+            atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}

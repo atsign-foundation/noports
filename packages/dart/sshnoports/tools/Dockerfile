@@ -1,7 +1,7 @@
 # Dockerfile
 # Build image for a containerized instance of sshnpd
 
-FROM dart:3.5.4@sha256:09330bd172355c74cdf60bc2794b0f69489afe0b325510e810090f9195282d2b AS buildimage
+FROM dart:3.9.4@sha256:8add685872d0d6e9b841ef85b4c42415ae55a5d32b3d7a9dd51f88605c90cce3 AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -17,7 +17,7 @@ RUN \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20241202-slim@sha256:eb37f58646a901dc7727cf448cae36daaefaba79de33b5058dab79aa4c04aefb
+FROM debian:stable-20250929-slim@sha256:d6743b7859c917a488ca39f4ab5e174011305f50b44ce32d3b9ea5d81b291b3b
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
@@ -28,7 +28,7 @@ COPY --from=buildimage /app/packages/dart/sshnoports/bundles/core/docker/.startu
 RUN \
   set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 traceroute vim ; \
+  apt-get install -y adduser openssh-server sudo iputils-ping iproute2 ncat telnet net-tools nmap iperf3 traceroute vim ; \
   addgroup --gid ${GROUP_ID} ${USER} ; \
   useradd --system --uid ${USER_ID} --gid ${GROUP_ID} --shell /bin/bash --home ${HOMEDIR} ${USER} ; \
   mkdir -p ${HOMEDIR}/.atsign/keys ; \
@@ -37,7 +37,7 @@ RUN \
   chown -R ${USER}:${USER} ${HOMEDIR} ; \
   chmod 600 ${HOMEDIR}/.ssh/authorized_keys ; \
   usermod -aG sudo ${USER} ; \
-  mkdir /run/sshd ; \
+  mkdir -p /run/sshd ; \
   chmod 755 /${USER}/.startup.sh
 
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/

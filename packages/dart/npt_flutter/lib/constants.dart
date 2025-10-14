@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart' show dotenv;
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 class Constants {
   static bool dotenvLoaded = false;
@@ -14,6 +14,7 @@ class Constants {
     }
   }
 
+  static String get favoriteKeyName => 'favorites';
   static String? get namespace => 'noports';
 
   static Future<String?> get appAPIKey async {
@@ -25,11 +26,17 @@ class Constants {
   static const icoIconDark = 'assets/noports-icon64-dark.ico';
   static const pngIconLight = 'assets/noports-icon64-light.png';
   static const icoIconLight = 'assets/noports-icon64-light.ico';
+  static const authenticatorMockup = 'assets/authenticator-mockup.png';
+  static const authenticatorApprovalMockup =
+      'assets/authenticator-approval-mockup.png';
 
   static Map<String, String> getRootDomains(BuildContext context) {
     AppLocalizations strings = AppLocalizations.of(context)!;
 
-    return {'root.atsign.org': strings.rootDomainDefault, 'vip.ve.atsign.zone': strings.rootDomainDemo};
+    return {
+      'root.atsign.org': strings.rootDomainDefault,
+      'vip.ve.atsign.zone': strings.rootDomainDemo,
+    };
   }
 
   static const kWindowsMinWindowSize = Size(1053, 691);

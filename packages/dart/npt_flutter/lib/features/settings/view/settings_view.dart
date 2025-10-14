@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/settings/widgets/advance_section.dart';
-import 'package:npt_flutter/features/settings/widgets/contact_list_tile.dart';
 import 'package:npt_flutter/features/settings/widgets/default_relay_section.dart';
 import 'package:npt_flutter/features/settings/widgets/language_section.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
+import 'package:npt_flutter/widgets/switch_atsign_button.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../styles/sizes.dart';
 import '../widgets/dashboard_section.dart';
@@ -18,7 +18,6 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
     final deviceSize = MediaQuery.of(context).size;
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
@@ -38,25 +37,49 @@ class SettingsView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CustomCard.settingsRail(
-                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // gapH30,
-                          CustomTextButton.discord(),
-                          CustomTextButton.email(),
-                          CustomTextButton.faq(),
-                          CustomTextButton.privacyPolicy(),
-                          CustomTextButton.feedback(),
-                          CustomTextButton.backUpYourKey(),
-                          CustomTextButton.signOut(),
-                          ContactListTile(),
-                        ],
+                      height:
+                          deviceSize.height * Sizes.settingsCardHeightFactor,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            gapH10,
+                            const SwitchAtsignButton(),
+                            const CustomTextButton.backUpYourKey(),
+                            const CustomTextButton.faq(),
+                            const CustomTextButton.email(),
+                            const CustomTextButton.discord(),
+                            const CustomTextButton.feedback(),
+                            const CustomTextButton.privacyPolicy(),
+                            // const CustomTextButton.switchAtsign(),
+                            const CustomTextButton.signOut(),
+                            gapH13,
+                            FutureBuilder(
+                              future: PackageInfo.fromPlatform(),
+                              builder: (_, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.done) {
+                                  return Center(
+                                    child: Text(
+                                      'v${snapshot.data?.version}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            gapH10,
+                          ],
+                        ),
                       ),
                     ),
                     CustomCard.settingsContent(
-                      height: deviceSize.height * Sizes.settingsCardHeightFactor,
+                      height:
+                          deviceSize.height * Sizes.settingsCardHeightFactor,
                       width: deviceSize.width * Sizes.settingsCardWidthFactor,
                       child: Padding(
                         padding: const EdgeInsets.only(
@@ -64,21 +87,21 @@ class SettingsView extends StatelessWidget {
                           right: Sizes.p33,
                           top: Sizes.p28,
                         ),
-                        child: ListView(children: const [
-                          SettingsErrorHint(),
-                          DefaultRelaySection(),
-                          gapH25,
-                          DashboardSection(),
-                          gapH25,
-                          AdvanceSection(),
-                          gapH25,
-                          LanguageSection(),
-                        ]),
+                        child: ListView(
+                          children: const [
+                            DefaultRelaySection(),
+                            gapH25,
+                            DashboardSection(),
+                            gapH25,
+                            AdvanceSection(),
+                            gapH25,
+                            LanguageSection(),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-                Text(strings.allRightsReserved)
               ],
             );
         }

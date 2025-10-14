@@ -78,7 +78,7 @@ void *srv_side_handle(void *side) {
     int res;
     while ((res = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
       if (res < 0) {
-        atlogger_log(tag, ERROR, "Error reading data: %d", len);
+        atlogger_log(tag, ERROR, "Error reading data: %zu", len);
         break;
       } else {
         len = res;
@@ -87,13 +87,13 @@ void *srv_side_handle(void *side) {
       if (s->transformer != NULL) {
         output = malloc(BUFFER_LEN * sizeof(unsigned char));
         if (output == NULL) {
-          atlogger_log(tag, ERROR, "Error allocating memory for output: %d", len);
+          atlogger_log(tag, ERROR, "Error allocating memory for output: %zu", len);
           break;
         }
         memset(output, 0, BUFFER_LEN * sizeof(unsigned char));
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
-          atlogger_log(tag, ERROR, "Error decrypting buffer and storing in output: %d", len);
+          atlogger_log(tag, ERROR, "Error decrypting buffer and storing in output: %zu", len);
           free(output);
           break;
         }

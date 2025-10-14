@@ -11,12 +11,15 @@ abstract class SrvGeneratorCaller<T> {
     int? localPort,
     bool? bindLocalPort,
     String? localHost,
-    String? rvdAuthString,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    RelayAuthenticator? relayAuthenticator,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   });
 }
 
@@ -26,14 +29,16 @@ class MockSrv<T> extends Mock implements Srv<T> {}
 
 /// Stubbed [SrvdChannel] which we are testing
 class StubbedSrvdChannel<T> extends SrvdChannel<T> {
-  final Future<void> Function(
+  final Future<NotificationResult> Function(
     AtKey,
     String, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
-  })? _notify;
-  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
+    int maxTries,
+  }) _notify;
+
+  final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})
       _subscribe;
 
   StubbedSrvdChannel({
@@ -41,32 +46,39 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     required super.params,
     required super.sessionId,
     required super.srvGenerator,
-    Future<void> Function(
+    required Future<NotificationResult> Function(
       AtKey,
       String, {
       required bool checkForFinalDeliveryStatus,
       required bool waitForFinalDeliveryStatus,
       required Duration ttln,
-    })? notify,
-    Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
-        subscribe,
+      int maxTries,
+    }) notify,
+    required Stream<AtNotification> Function({
+      String? regex,
+      bool shouldDecrypt,
+    }) subscribe,
   })  : _notify = notify,
         _subscribe = subscribe;
 
   @override
-  Future<void> notify(
+  Future<NotificationResult> notify(
     AtKey atKey,
     String value, {
     required bool checkForFinalDeliveryStatus,
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
+
+    /// maxTries must be a non-zero positive integer
+    int maxTries = 3,
   }) async {
-    return _notify?.call(
+    return _notify.call(
       atKey,
       value,
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       ttln: ttln,
+      maxTries: maxTries,
     );
   }
 
@@ -75,7 +87,6 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     String? regex,
     bool shouldDecrypt = false,
   }) {
-    return _subscribe?.call(regex: regex, shouldDecrypt: shouldDecrypt) ??
-        Stream.empty();
+    return _subscribe.call(regex: regex, shouldDecrypt: shouldDecrypt);
   }
 }

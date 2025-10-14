@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:noports_core/npt.dart';
+import 'package:noports_core/sshnp.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/util/uuid.dart';
@@ -18,6 +18,8 @@ final class Profile extends Loggable with Favoritable {
   final String remoteHost;
   final int remotePort;
   final int localPort;
+  final bool only443;
+  final bool keepAlive;
 
   const Profile(
     this.uuid, {
@@ -28,6 +30,8 @@ final class Profile extends Loggable with Favoritable {
     this.remoteHost = 'localhost',
     required this.remotePort,
     required this.localPort,
+    this.only443 = false,
+    this.keepAlive = false,
   });
 
   Profile copyWith({
@@ -39,6 +43,8 @@ final class Profile extends Loggable with Favoritable {
     String? remoteHost,
     int? remotePort,
     int? localPort,
+    bool? only443,
+    bool? keepAlive,
   }) {
     return Profile(
       uuid ?? this.uuid,
@@ -49,6 +55,8 @@ final class Profile extends Loggable with Favoritable {
       remoteHost: remoteHost ?? this.remoteHost,
       remotePort: remotePort ?? this.remotePort,
       localPort: localPort ?? this.localPort,
+      only443: only443 ?? this.only443,
+      keepAlive: keepAlive ?? this.keepAlive,
     );
   }
 
@@ -71,15 +79,17 @@ final class Profile extends Loggable with Favoritable {
 
   @override
   List<Object?> get props => [
-        uuid,
-        displayName,
-        relayAtsign,
-        sshnpdAtsign,
-        deviceName,
-        remoteHost,
-        remotePort,
-        localPort,
-      ];
+    uuid,
+    displayName,
+    relayAtsign,
+    sshnpdAtsign,
+    deviceName,
+    remoteHost,
+    remotePort,
+    localPort,
+    only443,
+    keepAlive,
+  ];
 
   @override
   bool get stringify => true;
@@ -91,7 +101,9 @@ final class Profile extends Loggable with Favoritable {
     bool overrideRelayWithFallback = false,
   }) {
     String srvdAtSign = fallbackRelayAtsign;
-    if (!overrideRelayWithFallback && relayAtsign != null && relayAtsign!.isNotEmpty) {
+    if (!overrideRelayWithFallback &&
+        relayAtsign != null &&
+        relayAtsign!.isNotEmpty) {
       srvdAtSign = relayAtsign!;
     }
     return NptParams(
@@ -103,11 +115,14 @@ final class Profile extends Loggable with Favoritable {
       device: deviceName,
       localPort: localPort,
       rootDomain: rootDomain,
+      only443: only443,
+      // When using 443, we must use ESCR relay auth mode
+      relayAuthMode: only443 ? RelayAuthMode.escr : RelayAuthMode.payload,
 
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings
       inline: true,
-      timeout: const Duration(days: 1),
+      timeout: keepAlive ? const Duration(hours: 24) : const Duration(hours: 1),
     );
   }
 

@@ -1,6 +1,6 @@
 ---
-icon: gear-complex-code
 description: NoPorts client `sshnp` additional configuration
+icon: gear-complex-code
 ---
 
 # Client Additional Configuration
@@ -42,7 +42,7 @@ The username to use for the initial ssh tunnel.
 
 Identity file to use for the ssh connection.
 
-#### --identity-passphrase
+### --identity-passphrase
 
 Passphrase for identity file.
 

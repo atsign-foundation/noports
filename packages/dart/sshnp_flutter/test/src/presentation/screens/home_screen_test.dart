@@ -19,7 +19,8 @@ void main() {
     (tester) async {
       final mockConfigListController = MockConfigListController();
       final r = HomeScreenRobot(tester);
-      await r.pumpHomeScreen(mockConfigListController: mockConfigListController);
+      await r.pumpHomeScreen(
+          mockConfigListController: mockConfigListController);
       r.findHomeCircularProgressIndictor();
     },
   );
@@ -28,7 +29,8 @@ void main() {
     (tester) async {
       final mockConfigListController = MockConfigListController();
       final r = HomeScreenRobot(tester);
-      await r.pumpHomeScreen(mockConfigListController: mockConfigListController);
+      await r.pumpHomeScreen(
+          mockConfigListController: mockConfigListController);
       // debugDumpApp();
       // r.findHomeErrorText();
       r.findHomeCircularProgressIndictor();
@@ -42,7 +44,8 @@ void main() {
     (tester) async {
       final mockConfigListController = MockConfigListController();
       final r = HomeScreenRobot(tester);
-      await r.pumpHomeScreen(mockConfigListController: mockConfigListController);
+      await r.pumpHomeScreen(
+          mockConfigListController: mockConfigListController);
       // debugDumpApp();
 
       r.findHomeCircularProgressIndictor();
@@ -56,7 +59,8 @@ void main() {
     (tester) async {
       final mockConfigListController = MockConfigListController();
       final r = HomeScreenRobot(tester);
-      await r.pumpHomeScreen(mockConfigListController: mockConfigListController);
+      await r.pumpHomeScreen(
+          mockConfigListController: mockConfigListController);
       // debugDumpApp();
 
       r.findHomeCircularProgressIndictor();

@@ -9,7 +9,8 @@
 # as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
-FROM dart:3.5.4@sha256:09330bd172355c74cdf60bc2794b0f69489afe0b325510e810090f9195282d2b  AS buildimage
+FROM dart:3.9.4@sha256:8add685872d0d6e9b841ef85b4c42415ae55a5d32b3d7a9dd51f88605c90cce3  AS buildimage
+ARG TARGETARCH
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV OPENSSH=tools/static-openssh
 ENV BINARYDIR=/usr/local/at
@@ -32,14 +33,14 @@ RUN \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
+  apt-get update && apt-get install -y adduser autoconf curl gcc make ; \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
   # build static openssh binaries
-  apt update && apt install -y curl gcc make autoconf ; \
   cd ${WORKDIR}/${OPENSSH} ; \
-  ./static-openssh.sh ; \
+  ARCH=${TARGETARCH} ./static-openssh.sh ; \
   cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
   cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
   chmod 755 ${BINARYDIR}/ssh-keygen ; \

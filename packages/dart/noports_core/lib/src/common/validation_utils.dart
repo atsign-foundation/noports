@@ -1,20 +1,26 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
-import 'package:noports_core/src/common/file_system_utils.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:path/path.dart' as path;
 
 const String sshnpDeviceNameRegex = r'[a-z0-9_][a-z0-9_\-]{1,35}';
-const String invalidDeviceNameMsg = 'Device name must be alphanumeric'
-    ' snake case, max length 36. First char must be _, a-z, or 0-9.';
-const String deviceNameFormatHelp = 'Alphanumeric snake case, max length 36.'
-    ' First char must be _, a-z, or 0-9.';
+const String invalidDeviceNameMsg =
+    'Device name must only contain alphanumeric characters, "-", or "_"'
+    'and may not start with "-". Maximum length of 36 characters.';
+const String deviceNameFormatHelp =
+    'Alphanumeric characters, "-" or "_" allowed, max length 36.'
+    ' First character cannot be "-".';
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
+
+bool isUnprintable(int codeUnit) {
+  return (codeUnit < 33 || codeUnit > 127);
+}
 
 /// Returns deviceName with uppercase latin replaced by lowercase, and
 /// whitespace replaced with underscores. Note that multiple consecutive
@@ -61,7 +67,8 @@ Future<bool> atSignIsActivated(final AtClient atClient, String atSign) async {
 void assertValidValue(String name, dynamic v, Type t) {
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
-        'Parameter $name should be a $t but is actually a ${v.runtimeType} with value $v');
+      'Parameter $name should be a $t but is actually a ${v.runtimeType} with value $v',
+    );
   }
 }
 
@@ -79,7 +86,8 @@ void assertValidMapValue(Map m, String k, Type t) {
   var v = m[k];
   if (v == null || v.runtimeType != t) {
     throw ArgumentError(
-        'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v');
+      'Parameter $k should be a $t but is actually a ${v.runtimeType} with value $v',
+    );
   }
 }
 
@@ -121,7 +129,10 @@ Future<void> verifyEnvelopeSignature(
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
   AtSigningVerificationInput input = AtSigningVerificationInput(
-      jsonEncode(payload), base64Decode(signature), pk)
+    jsonEncode(payload),
+    base64Decode(signature),
+    pk,
+  )
     ..signingMode = AtSigningMode.data
     ..signingAlgoType = signingAlgo
     ..hashingAlgoType = hashingAlgo;
@@ -132,7 +143,38 @@ Future<void> verifyEnvelopeSignature(
   logger.info('svr.result is ${svr.result}');
   if (svr.result != true) {
     throw AtSigningVerificationException(
-        'signature verification returned false using cached public key for $requestingAtsign $pk');
+      'signature verification returned false using cached public key for $requestingAtsign $pk',
+    );
+  }
+}
+
+/// Remove all PKs which this atSign has cached in filesystem or in
+/// atClient storage
+Future<void> clearLocallyCachedPKs({
+  required AtSignLogger logger,
+  FileSystem? fs,
+  AtClient? atClient,
+}) async {
+  if (fs != null) {
+    String dirName = path
+        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks')
+        .replaceAll('/', Platform.pathSeparator);
+    Directory d = fs.directory(dirName);
+    if (await d.exists()) {
+      logger.shout('Deleting $dirName');
+      await d.delete(recursive: true);
+    }
+  }
+
+  if (atClient != null) {
+    // find all `local:` keys which end with `.cached_pks.sshnp`
+    List<AtKey> keys = await atClient.getAtKeys(
+      regex: r'^local:.*\.cached_pks\.sshnp',
+    );
+    for (final key in keys) {
+      logger.shout('Deleting $key');
+      await atClient.delete(key);
+    }
   }
 }
 
@@ -176,8 +218,9 @@ Future<String?> _fetchFromLocalPKCache(
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String fn = path
-        .normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe');
+    String fn = path.normalize(
+      '${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe',
+    );
     File f = fs.file(fn);
     if (await f.exists()) {
       return (await f.readAsString()).trim();
@@ -187,8 +230,11 @@ Future<String?> _fetchFromLocalPKCache(
   } else {
     late final AtValue av;
     try {
-      av = await atClient.get(AtKey.fromString(
-          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'));
+      av = await atClient.get(
+        AtKey.fromString(
+          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+        ),
+      );
       return av.value;
     } on AtKeyNotFoundException catch (_) {
       return null;
@@ -204,8 +250,9 @@ Future<bool> _storeToLocalPKCache(
 }) async {
   String dontAtMe = atSign.substring(1);
   if (fs != null) {
-    String dirName =
-        path.normalize('${getHomeDirectory()}/.atsign/sshnp/cached_pks');
+    String dirName = path.normalize(
+      '${getHomeDirectory()}/.atsign/sshnp/cached_pks',
+    );
     String fileName = path.normalize('$dirName/$dontAtMe');
 
     File f = fs.file(fileName);
@@ -217,9 +264,11 @@ Future<bool> _storeToLocalPKCache(
     return true;
   } else {
     await atClient.put(
-        AtKey.fromString(
-            'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}'),
-        pk);
+      AtKey.fromString(
+        'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+      ),
+      pk,
+    );
     return true;
   }
 }

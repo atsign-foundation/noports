@@ -3,6 +3,8 @@ build*
 
 compile_commands.json
 
+just.env
+
+/logs/
 core
-valgrind-out.txt*
 Testing/

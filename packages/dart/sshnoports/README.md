@@ -4,13 +4,12 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
-# SSH! No ports
+# NoPorts CLI Binaries
 
-ssh no ports provides a way to ssh to a remote linux host/device without that
-device or the client having any open ports (not even 22) on external interfaces. All
-network connectivity is out bound and there is no need to know the IP
-address the device has been given. As long as the device and client has an IP address (public or private 1918),
-DNS and Internet access, you will be able to connect to it.
+This is the source code for the NoPorts Command Line Interface (CLI) binaries.
+See [the website](https://noports.com) for more information, or its companion
+[documentation site](https://docs.noports.com) for technical and usage
+information.
 
 ## Quick demo
 ![sshnp](https://github.com/atsign-foundation/noports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)

@@ -6,17 +6,44 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/sshnp_foundation.dart'
-    hide standardAtClientStoragePath;
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 
 late AtSignLogger logger;
+
 void main(List<String> args) async {
-  var p = await NPAParams.fromArgs(args);
+  try {
+    if (NPAParams.parser.parse(args)['help'] == true) {
+      print(NPAParams.parser.usage);
+      exit(0);
+    }
+  } on ArgumentError catch (e) {
+    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln(e.message);
+    exit(1);
+  } on FormatException catch (e) {
+    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln(e.message);
+    exit(1);
+  } catch (err) {
+    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln(err);
+    exit(1);
+  }
+
+  final NPAParams p;
+  try {
+    p = await NPAParams.fromArgs(args);
+  } catch (err) {
+    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln(err);
+    exit(1);
+  }
 
   // Check atKeyFile selected exists
   if (!await File(p.atKeysFilePath).exists()) {
-    throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+    stderr.writeln('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+    exit(2);
   }
 
   AtSignLogger.root_level = 'SHOUT';
@@ -26,21 +53,32 @@ void main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
   logger = AtSignLogger(' npp ');
-  AtClient atClient = await createAtClientCli(
-    atsign: p.authorizerAtsign,
-    atKeysFilePath: p.atKeysFilePath,
-    rootDomain: p.rootDomain,
-    atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-    namespace: DefaultArgs.namespace,
-    storagePath: standardAtClientStoragePath(
-        baseDir: p.homeDirectory,
-        atSign: p.authorizerAtsign,
-        progName: '.${DefaultArgs.namespace}',
-        uniqueID: 'single'),
-  );
+  final AtClient atClient;
+  try {
+    atClient = await createAtClientCli(
+      atsign: p.authorizerAtsign,
+      atKeysFilePath: p.atKeysFilePath,
+      rootDomain: p.rootDomain,
+      atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+      namespace: DefaultArgs.namespace,
+      storagePath: standardAtClientStoragePath(
+          baseDir: p.homeDirectory,
+          atSign: p.authorizerAtsign,
+          progName: '.${DefaultArgs.namespace}',
+          uniqueID: 'single'),
+    );
+  } catch (err) {
+    stderr.writeln(err);
+    exit(3);
+  }
 
   Handler handler = Handler(atClient);
-  await handler.init();
+  try {
+    await handler.init();
+  } catch (err) {
+    stderr.writeln(err);
+    exit(4);
+  }
 
   logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
   var sshnpa = NPAImpl(

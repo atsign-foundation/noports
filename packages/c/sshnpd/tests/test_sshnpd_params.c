@@ -10,6 +10,7 @@ int parse_params_test();
 int atsign_mandatory_test();
 int manager_policy_mandatory_test();
 int permit_open_parse_test();
+int device_lower_test();
 
 int main() {
   int ret = 0;
@@ -32,6 +33,10 @@ int main() {
   }
   if (permit_open_parse_test()) {
     printf("permit open parse test failed\n");
+    ret++;
+  }
+  if (device_lower_test()) {
+    printf("device_name upper to lower case test failed\n");
     ret++;
   }
 
@@ -262,5 +267,111 @@ int permit_open_parse_test() {
     ret = 1;
   }
 
+  char **permitopen_hosts6 = NULL;
+  uint16_t *permitopen_ports6 = NULL;
+  size_t permitopen_len6;
+  ret = parse_permitopen(strdup("\"localhost:22,foo.bar.com:3389\""), &permitopen_hosts6, &permitopen_ports6,
+                         &permitopen_len6, false);
+
+  if (ret != 0 || permitopen_len6 != 2 || strcmp(permitopen_hosts6[0], "localhost") != 0 ||
+      permitopen_ports6[0] != 22 || strcmp(permitopen_hosts6[1], "foo.bar.com") != 0 || permitopen_ports6[1] != 3389) {
+    ret = 1;
+  }
+
+  char **permitopen_hosts7 = NULL;
+  uint16_t *permitopen_ports7 = NULL;
+  size_t permitopen_len7;
+  ret = parse_permitopen(strdup("'localhost:22,foo.bar.com:3389'"), &permitopen_hosts7, &permitopen_ports7,
+                         &permitopen_len7, false);
+
+  if (ret != 0 || permitopen_len7 != 2 || strcmp(permitopen_hosts7[0], "localhost") != 0 ||
+      permitopen_ports7[0] != 22 || strcmp(permitopen_hosts7[1], "foo.bar.com") != 0 || permitopen_ports7[1] != 3389) {
+    ret = 1;
+  }
+
+  char **permitopen_hosts8 = NULL;
+  uint16_t *permitopen_ports8 = NULL;
+  size_t permitopen_len8;
+  ret = parse_permitopen(strdup("\"\"localhost:22,foo.bar.com:3389\"\""), &permitopen_hosts8, &permitopen_ports8,
+                         &permitopen_len8, false);
+
+  if (ret != 0 || permitopen_len8 != 2 || strcmp(permitopen_hosts8[0], "localhost") != 0 ||
+      permitopen_ports8[0] != 22 || strcmp(permitopen_hosts8[1], "foo.bar.com") != 0 || permitopen_ports8[1] != 3389) {
+    ret = 1;
+  }
+
+  char **permitopen_hosts9 = NULL;
+  uint16_t *permitopen_ports9 = NULL;
+  size_t permitopen_len9;
+  ret = parse_permitopen(strdup("\"'localhost:22,foo.bar.com:3399'\""), &permitopen_hosts9, &permitopen_ports9,
+                         &permitopen_len9, false);
+
+  if (ret != 0 || permitopen_len9 != 2 || strcmp(permitopen_hosts9[0], "localhost") != 0 ||
+      permitopen_ports9[0] != 22 || strcmp(permitopen_hosts9[1], "foo.bar.com") != 0 || permitopen_ports9[1] != 3399) {
+    ret = 1;
+  }
+  return 0;
+}
+
+int device_lower_test() {
+  int ret = 0;
+
+  sshnpd_params *params = malloc(sizeof(sshnpd_params));
+
+  const char *device_name_literal = "MY_DEVICEA-123Z";
+  size_t device_name_literal_len = strlen(device_name_literal);
+  char *device_name = malloc(sizeof(char) * (device_name_literal_len + 1));
+  if (device_name == NULL) {
+    return 1;
+  }
+  memcpy(device_name, device_name_literal, device_name_literal_len);
+  device_name[device_name_literal_len] = 0;
+
+  char *expected_device_name = "my_devicea-123z";
+  const char *argv[] = {
+      "sshnpd",
+      "-a",
+      "@atsign",
+      "-m",
+      "@manager",
+      "-d",
+      device_name,
+      "-s",
+      "-h",
+      "-v",
+      "--ssh-algorithm",
+      "ssh-rsa",
+      "--root-domain",
+      "vip.ve.atsign.zone",
+      "--local-sshd-port",
+      "6222",
+  };
+
+  apply_default_values_to_sshnpd_params(params);
+  ret = parse_sshnpd_params(params, 16, argv);
+  if (ret != 0) {
+    free(device_name);
+    free(params);
+    return 1;
+  }
+
+  size_t expected_device_len = strlen(expected_device_name);
+  size_t actual_device_len = strlen(params->device);
+
+  if (expected_device_len != actual_device_len) {
+    free(device_name);
+    free(params);
+    return 1;
+  }
+
+  size_t diff = strncmp(params->device, expected_device_name, expected_device_len);
+  if (diff != 0) {
+    free(device_name);
+    free(params);
+    return 1;
+  }
+
+  free(device_name);
+  free(params);
   return 0;
 }

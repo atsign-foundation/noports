@@ -9,73 +9,86 @@ import 'package:at_onboarding_flutter/src/utils/at_onboarding_app_constants.dart
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
+import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activate_atsign_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/apkam_choice_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
+import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/util/language.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
-Future<AtClientPreference> loadAtClientPreference(String rootDomain) async {
-  var dir = await getApplicationSupportDirectory();
-
-  return AtClientPreference()
-    ..rootDomain = rootDomain
-    ..namespace = Constants.namespace
-    ..hiveStoragePath = dir.path
-    ..commitLogPath = dir.path
-    ..isLocalStoreRequired = true;
-}
 
 class OnboardingButton extends StatefulWidget {
-  const OnboardingButton({
-    super.key,
-  });
+  const OnboardingButton({super.key});
 
   @override
   State<OnboardingButton> createState() => _OnboardingButtonState();
 }
 
-enum _OnboardingButtonStatus {
-  ready,
-  picking,
-  processingFile,
-}
+enum _OnboardingButtonStatus { ready, loading }
 
 class _OnboardingButtonState extends State<OnboardingButton> {
   _OnboardingButtonStatus buttonStatus = _OnboardingButtonStatus.ready;
 
-  // TODO: when an atSign is being onboarded
-  // make this button go into a loading state or show some visual indication
-  // for progress for the loading screen
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return switch (buttonStatus) {
-      _OnboardingButtonStatus.ready => ElevatedButton.icon(
-          onPressed: () async {
-            bool shouldOnboard = await selectAtsign();
-            if (shouldOnboard && context.mounted) {
-              var atsignInformation = context.read<OnboardingCubit>().state;
-              onboard(atsign: atsignInformation.atSign, rootDomain: atsignInformation.rootDomain);
+    return ElevatedButton.icon(
+      onPressed: () async {
+        switch (buttonStatus) {
+          case _OnboardingButtonStatus.ready:
+            try {
+              setState(() {
+                buttonStatus = _OnboardingButtonStatus.loading;
+              });
+              bool shouldOnboard = await selectAtsign();
+              if (shouldOnboard && context.mounted) {
+                var atsignInformation = context.read<OnboardingCubit>().state;
+                onboard(
+                  atsign: atsignInformation.atSign,
+                  rootDomain: atsignInformation.rootDomain,
+                );
+              }
+            } finally {
+              if (mounted) {
+                setState(() {
+                  buttonStatus = _OnboardingButtonStatus.ready;
+                });
+              }
             }
-          },
-          icon: PhosphorIcon(PhosphorIcons.arrowUpRight()),
-          label: Text(
-            strings.getStarted,
+          case _OnboardingButtonStatus.loading:
+          // Do nothing
+        }
+      },
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: switch (buttonStatus) {
+          _OnboardingButtonStatus.ready => PhosphorIcon(
+            key: const Key('getStartedIcon'),
+            PhosphorIcons.arrowUpRight(),
           ),
-          iconAlignment: IconAlignment.end,
-        ),
-      _OnboardingButtonStatus.picking => Text(strings.onboardingButtonStatusPicking),
-      _OnboardingButtonStatus.processingFile => Text(strings.onboardingButtonStatusProcessingFile),
-    };
+          _OnboardingButtonStatus.loading => const SizedBox(
+            key: Key('loading state'),
+            height: Sizes.p18,
+            width: Sizes.p18,
+            child: CircularProgressIndicator(strokeWidth: Sizes.p2),
+          ),
+        },
+      ),
+      label: Text(strings.getStarted),
+      iconAlignment: IconAlignment.end,
+    );
   }
 
   Future<bool> selectAtsign() async {
@@ -105,11 +118,18 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     return results ?? false;
   }
 
-  Future<void> onboard({required String atsign, required String rootDomain, bool isFromInitState = false}) async {
-    var atSigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
+  Future<void> onboard({
+    required String atsign,
+    required String rootDomain,
+    bool isFromInitState = false,
+  }) async {
+    var atSigns = await KeyChainManager.getInstance()
+        .getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
     var config = AtOnboardingConfig(
-      atClientPreference: await loadAtClientPreference(rootDomain),
+      atClientPreference: await AtClientMethods.loadAtClientPreference(
+        rootDomain,
+      ),
       rootEnvironment: RootEnvironment.Production,
       domain: rootDomain,
       appAPIKey: apiKey,
@@ -136,6 +156,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         await initializeContactsService(rootDomain: rootDomain);
+        AtClientManager.getInstance().atClient.syncService.addProgressListener(
+          ProfileProgressListener(),
+        );
+        AtClientManager.getInstance().atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!, rootDomain);
         final result = await saveAtsignInformation(
           AtsignInformation(
@@ -143,10 +167,15 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             rootDomain: rootDomain,
           ),
         );
-        log('atsign result is:$result');
+        final backupKeyCubit = App.navState.currentContext!
+            .read<BackupKeyCubit>();
+
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
+
+        App.log('atsign result is:$result'.loggable);
 
         if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+        Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
 
         break;
       case AtOnboardingResultStatus.error:
@@ -155,7 +184,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           SnackBar(
             backgroundColor: Colors.red,
             content: Text(
-              onboardingResult?.message ?? AppLocalizations.of(context)!.onboardingError,
+              onboardingResult?.message ??
+                  AppLocalizations.of(context)!.onboardingError,
             ),
           ),
         );
@@ -165,7 +195,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     }
   }
 
-  Future<AtOnboardingResult?> handleAtsignByStatus(String atsign, NoPortsOnboardingUtil util) async {
+  Future<AtOnboardingResult?> handleAtsignByStatus(
+    String atsign,
+    NoPortsOnboardingUtil util,
+  ) async {
     AtStatus status;
 
     try {
@@ -177,10 +210,15 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     }
     AtOnboardingResult? result;
     if (!mounted) return null;
-
-    switch (status.status()) {
+    var initialStatus = status.status();
+    switch (initialStatus) {
       // Automatically start activation with the already entered atSign
+      case AtSignStatus.unavailable:
       case AtSignStatus.teapot:
+        // When onboarding from teapot, set backup status to false (not atKeys not backed up)
+        App.navState.currentContext!.read<BackupKeyCubit>().setBackupKeyStatus(
+          false,
+        );
         final apiKey = await Constants.appAPIKey;
 
         if (apiKey == null) {
@@ -190,9 +228,14 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           break;
         }
         AtOnboardingConstants.setApiKey(apiKey);
-        AtOnboardingConstants.rootDomain = util.config.atClientPreference.rootDomain;
+        AtOnboardingConstants.rootDomain =
+            util.config.atClientPreference.rootDomain;
 
-        await AtOnboardingLocalizations.load(LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)).locale);
+        await AtOnboardingLocalizations.load(
+          LanguageUtil.getLanguageFromLocale(
+            Locale(Platform.localeName),
+          ).locale,
+        );
         if (!mounted) return null;
         Map<String, String> apis = {
           "root.atsign.org": "my.atsign.com",
@@ -213,34 +256,63 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             apiKey: apiKey,
             config: util.config,
             registrarUrl: regUrl,
+            onboardingUtil: util,
+            waitForTeapot: initialStatus != AtSignStatus.teapot,
           ),
         );
 
         if (result is AtOnboardingResult) {
           //Update primary atsign after onboard success
-          if (result.status == AtOnboardingResultStatus.success && result.atsign != null) {
+          if (result.status == AtOnboardingResultStatus.success &&
+              result.atsign != null) {
             var onboardingService = OnboardingService.getInstance();
-            bool res = await onboardingService.changePrimaryAtsign(atsign: result.atsign!);
+            bool res = await onboardingService.changePrimaryAtsign(
+              atsign: result.atsign!,
+            );
             if (!res) {
-              result = AtOnboardingResult.error(message: strings.errorSwitchAtSignFailed);
+              result = AtOnboardingResult.error(
+                message: strings.errorSwitchAtSignFailed,
+              );
             }
           }
         }
-      // TODO: finalize onboarding
       case AtSignStatus.activated:
-        // NOTE: for now this is hard coded to do atKey file upload
-        // Later on, we can add the APKAM flow, and will need to make some
-        // UX decisions about how the user picks which they want to do
-        Stream<FileUploadStatus> statusStream = util.uploadAtKeysFile(atsign);
-        result = await handleFileUploadStatusStream(statusStream, atsign);
+        log('Atsign is activated but not in keychain');
+        final flowChoice = await showDialog<APKAMFlow?>(
+          context: context,
+          routeSettings: const RouteSettings(name: 'APKAM choice'),
+          builder: (context) => const ApkamChoiceDialog(),
+        );
+        if (flowChoice == null) {
+          result = AtOnboardingResult.cancelled();
+          break;
+        }
+        // Wait for the modal to close
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (flowChoice == APKAMFlow.atKeys) {
+          final statusStream = util.uploadAtKeysFile(atsign);
+          result = await handleFileUploadStatusStream(statusStream, atsign);
+        } else {
+          final atClientPrefernce =
+              await AtClientMethods.loadAtClientPreference(
+                util.config.atClientPreference.rootDomain,
+              );
+          if (!mounted) return null;
+          result = await showDialog<AtOnboardingResult>(
+            context: context,
+            routeSettings: const RouteSettings(name: 'APKAM onboarding'),
+            builder: (context) => OnboardingApkamDialog(
+              atsign: atsign,
+              atClientPreference: atClientPrefernce,
+            ),
+          );
+          // When onboarding via APKAM or uploading atKeys, set backup status to true (atKeys don't need to be backed up)
+          App.navState.currentContext!
+              .read<BackupKeyCubit>()
+              .setBackupKeyStatus(true);
+        }
       case AtSignStatus.notFound:
-        result = AtOnboardingResult.error(
-          message: strings.errorAtSignNotExist,
-        );
-      case AtSignStatus.unavailable:
-        result = AtOnboardingResult.error(
-          message: strings.errorAtServerUnavailable,
-        );
+        result = AtOnboardingResult.error(message: strings.errorAtSignNotExist);
       case null: // This case should never happen, treat it as an error
       case AtSignStatus.error:
         result = AtOnboardingResult.error(
@@ -250,7 +322,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     return result;
   }
 
-  Future<AtOnboardingResult?> handleFileUploadStatusStream(Stream<FileUploadStatus> statusStream, String atsign) async {
+  Future<AtOnboardingResult?> handleFileUploadStatusStream(
+    Stream<FileUploadStatus> statusStream,
+    String atsign,
+  ) async {
     AtOnboardingResult? result;
     outer:
     await for (FileUploadStatus status in statusStream) {
@@ -294,12 +369,12 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           break outer;
         case FilePickingInProgress():
           setState(() {
-            buttonStatus = _OnboardingButtonStatus.picking;
+            buttonStatus = _OnboardingButtonStatus.loading;
           });
           break;
         case ProcessingAesKeyInProgress():
           setState(() {
-            buttonStatus = _OnboardingButtonStatus.processingFile;
+            buttonStatus = _OnboardingButtonStatus.loading;
           });
           break;
 

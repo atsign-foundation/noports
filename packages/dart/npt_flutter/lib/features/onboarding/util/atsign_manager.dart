@@ -12,10 +12,7 @@ class AtsignInformation extends Loggable {
 
   const AtsignInformation({required this.atSign, required this.rootDomain});
 
-  Map<String, String> toJson() => {
-        "atsign": atSign,
-        "root-domain": rootDomain,
-      };
+  Map<String, String> toJson() => {"atsign": atSign, "root-domain": rootDomain};
 
   static AtsignInformation? fromJson(Map json) {
     if (json["atsign"] is! String || json["root-domain"] is! String) {
@@ -59,7 +56,8 @@ Future<Map<String, AtsignInformation>> getAtsignEntries() async {
     atSignInfo = await _getAtsignInformationFromFile();
   } catch (e) {
     App.log(
-      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}".loggable,
+      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
+          .loggable,
     );
     return {};
   }
@@ -136,9 +134,7 @@ Future<File?> _getAtsignInformationFile() async {
     }
     return f;
   } catch (e) {
-    App.log(
-      "Failed to Get Atsign Information File : ${e.toString()}".loggable,
-    );
+    App.log("Failed to Get Atsign Information File : ${e.toString()}".loggable);
     return null;
   }
 }

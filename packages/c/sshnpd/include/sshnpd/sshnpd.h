@@ -14,8 +14,8 @@
 #define USERVAR "USER"
 #endif
 
-#define ROOT_HOST "root.atsign.org"
-#define ROOT_PORT 64
+#define DEFAULT_ROOT_HOST "root.atsign.org"
+#define DEFAULT_ROOT_PORT 64
 
 #define PUBLICKEY_PREFIX "public:publickey@"
 #define PUBLICKEY_PREFIX_LEN 17
@@ -29,6 +29,7 @@ enum notification_key {
   NK_PING,
   NK_SSH_REQUEST,
   NK_NPT_REQUEST,
+  NK_GRACEFUL_SHUTDOWN,
 };
 
 #define NOTIFICATION_KEYS_LEN 5

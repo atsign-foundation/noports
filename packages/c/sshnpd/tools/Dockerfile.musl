@@ -1,24 +1,23 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM alpine@sha256:1e42bbe2508154c9126d48c2b8a75420c3544343bf86fd041fb7527e017a4b4a AS build
+FROM alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1 AS build
 WORKDIR /sshnpd
 COPY . .
+ARG TARGETARCH
 RUN set -eux; \
-  apk add clang cmake coreutils git make; \
-  case "$(uname -m)" in \
-    aarch64) ARCH="arm64";; \
-    armv7l)  ARCH="arm";;\
-    riscv64) ARCH="riscv64";;\
-    x86_64)  ARCH="x64";;\
+  apk add clang cmake coreutils git make ninja python3; \
+  case "${TARGETARCH}" in \
+    amd64) ARCH="x64";;\
+    *) ARCH=${TARGETARCH};; \
   esac; \
   cd /sshnpd/sshnpd; \
-  cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang \
+  cmake -B build -G Ninja -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=clang \
     -DCMAKE_C_FLAGS="-Wno-error -pthread" -DCMAKE_EXE_LINKER_FLAGS="-static"; \
   cmake --build build; \
   mkdir /tarball; \
   cd build; \
-  tar -cvzf /tarball/sshnpd-linux-${ARCH}-musl.tgz sshnpd
+  tar -cvzf /tarball/sshnpd-linux-${ARCH}-musl.tgz sshnpd at_activate
 
 FROM scratch
 COPY --from=build /tarball/* /

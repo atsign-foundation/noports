@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/export.dart';
 import 'package:npt_flutter/widgets/multi_select_dialog.dart';
@@ -14,7 +14,11 @@ class ProfileSelectedExportButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return BlocSelector<ProfilesSelectedCubit, ProfilesSelectedState, Set<String>>(
+    return BlocSelector<
+      ProfilesSelectedCubit,
+      ProfilesSelectedState,
+      Set<String>
+    >(
       selector: (ProfilesSelectedState state) {
         return state.selected;
       },
@@ -24,18 +28,23 @@ class ProfileSelectedExportButton extends StatelessWidget {
         return ElevatedButton.icon(
           onPressed: () {
             var repo = context.read<ProfileRepository>();
-            var futureExportableProfileList =
-                repo.getProfiles(selected).then((profiles) => profiles.map((profile) => profile.toExportableJson()));
+            var futureExportableProfileList = repo
+                .getProfiles(selected)
+                .then(
+                  (profiles) =>
+                      profiles.map((profile) => profile.toExportableJson()),
+                );
             showDialog(
               context: context,
               builder: (BuildContext context) => MultiSelectDialog(
-                strings.profileExportSelectedMessage,
-                {
-                  'JSON': Export.getExportCallback(
+                title: strings.profileExportDialogTitle,
+                message: strings.profileExportSelectedMessage,
+                actions: {
+                  strings.json: Export.getExportCallback(
                     ExportableProfileFiletype.json,
                     futureExportableProfileList,
                   ),
-                  'YAML': Export.getExportCallback(
+                  strings.yamlRecommended: Export.getExportCallback(
                     ExportableProfileFiletype.yaml,
                     futureExportableProfileList,
                   ),

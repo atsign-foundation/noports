@@ -1,3 +1,37 @@
+# 6.8.1
+
+- build(deps): at_client -> 3.8.0, at_cli_commons -> 3.0.0
+
+# 6.8.0
+
+- feat: Enable npt clients to choose which local IP address to bind to, 
+  supporting both ipv4 and ipv6, and defaulting to `localhost` on ipv4/ipv6 
+  as per the host's preference
+
+# 6.7.0
+
+- build(deps): Remove dependency on fork of args package. Output alias info
+  explicitly via the option's or flag's help text.
+
+# 6.6.1
+- fix: better srvd exception handling
+
+# 6.6.0
+- feat: twin keys for control socket and data sockets
+- fix: enable daemons and policy service to use the same atSign
+
+# 6.5.0
+- feat: New ESCR (Encrypted Signed Challenge-Response) relay socket 
+  authentication
+- feat: Ability to have relay sessions where both sides are connecting to 
+  port 443
+- feat: Ability to send heartbeats over the npt control socket to let network
+  intermediaries know that it is active.
+# 6.4.0
+- feat: have srvd use ephemeral local storage for its AtClient by default
+- feat: have srvd listen for PublicKeyChanged events
+# 6.3.0
+- feat: enable multiple instances of relays for load balancing and resilience
 # 6.2.1
 - fix: multiple enhancements for stability of `npt` under heavy concurrent load
 # 6.2.0

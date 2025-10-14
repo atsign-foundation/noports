@@ -14,6 +14,7 @@ updates:
     directories:
       - "/packages/c/sshnpd/tools/"
       - "/packages/dart/sshnoports/tools/"
+      - "/tests/e2e_all/dockerfiles/"
       - "/tests/end2end_tests/image/"
       - "/tools/multibuild/"
     schedule:
@@ -26,18 +27,11 @@ updates:
     directories:
       - "/packages/dart/sshnoports/"
       - "/packages/dart/sshnp_flutter/"
+      - "/apps/admin/admin_api/"
     schedule:
       interval: "daily"
     groups:
       pub:
-        patterns:
-          - "*"
-  - package-ecosystem: "pip"
-    directory: "/packages/python/sshnpd/"
-    schedule:
-      interval: "daily"
-    groups:
-      pip:
         patterns:
           - "*"
   - package-ecosystem: 'npm'

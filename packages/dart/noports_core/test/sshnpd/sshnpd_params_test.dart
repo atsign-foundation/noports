@@ -4,12 +4,16 @@ import 'package:test/test.dart';
 
 void main() {
   group('test sshnpd params defaults', () {
-    test('require at least one of managers and policyManager options',
-        () async {
-      List<String> args = '-a @daemon'.split(' ');
-      await expectLater(() => SshnpdParams.fromArgs(args),
-          throwsA(TypeMatcher<ArgumentError>()));
-    });
+    test(
+      'require at least one of managers and policyManager options',
+      () async {
+        List<String> args = '-a @daemon'.split(' ');
+        await expectLater(
+          () => SshnpdParams.fromArgs(args),
+          throwsA(TypeMatcher<ArgumentError>()),
+        );
+      },
+    );
     test('just managers option supplied', () async {
       List<String> args = '-a @daemon -m @bob'.split(' ');
       final p = await SshnpdParams.fromArgs(args);

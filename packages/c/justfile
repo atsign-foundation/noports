@@ -1,0 +1,118 @@
+alias dev := build-dev
+alias strict := build-strict
+alias vald := valgrind-docker
+alias memd := memcheck-docker
+alias shutdown := graceful-shutdown
+
+set dotenv-filename := "just.env"
+set dotenv-load
+
+postfix := quote(os() + "-" + arch())
+dev_dir := quote(justfile_directory() / "build/dev-") + postfix
+strict_dir := quote(justfile_directory() / "build/strict-") + postfix
+
+# SETUP COMMANDS
+
+setup: configure-dev
+  [ -f "$PWD/compile_commands.json" ] && rm $PWD/compile_commands.json || true
+  ln -s {{dev_dir}}/compile_commands.json $PWD/
+
+clean:
+  rm -rf $PWD/build
+  rm $PWD/compile_commands.json
+
+# INSTALL COMMANDS
+
+install: build-dev
+  cmake --build {{dev_dir}} --target install
+
+test +ARGS='': build-dev
+  ctest --test-dir {{dev_dir}} {{ARGS}}
+
+# BUILD COMMANDS
+
+package-static:
+  cmake --workflow --preset package-static
+
+package-source:
+  cmake --workflow --preset package-source
+
+build-dev: configure-dev
+  cmake --build {{ dev_dir }}
+
+build-strict: configure-strict
+  cmake --build {{ strict_dir }}
+
+dev-docker +ARGS='':
+  docker run --rm --platform linux/amd64 \
+  --mount type=bind,src=$PWD,dst=/mnt/workdir \
+  --mount type=bind,src=$HOME/.atsign/keys,dst=/root/.atsign/keys \
+  atsigncompany/valgrind:latest \
+  just build-dev
+
+strict-docker +ARGS='':
+  docker run --rm --platform linux/amd64 \
+  --mount type=bind,src=$PWD,dst=/mnt/workdir \
+  --mount type=bind,src=$HOME/.atsign/keys,dst=/root/.atsign/keys \
+  atsigncompany/valgrind:latest \
+  just build-strict
+
+memcheck +ARGS='': build-dev
+  #!/usr/bin/env bash
+  file="valgrind-sshnpd-$(date +%s).log"
+  # child-silient-after-fork=yes: ignore session forks, we don't care
+  valgrind --log-file="logs/$file" \
+  --tool=memcheck \
+  --leak-check=full \
+  --show-leak-kinds=all \
+  --child-silent-after-fork=yes \
+  {{dev_dir}}/sshnpd/sshnpd -a $TO_ATSIGN -m $FROM_ATSIGN -d $DEVICE_NAME \
+  --permit-open "*:*" -v {{ARGS}}
+  echo "memcheck log saved to: $file"
+
+# CONTAINER COMMANDS
+
+graceful-shutdown:
+  {{dev_dir}}/graceful-shutdown-tool/graceful-shutdown-tool \
+    $FROM_ATSIGN $TO_ATSIGN $DEVICE_NAME
+
+memcheck-docker +ARGS='':
+  docker run --rm --platform linux/amd64 -ti \
+  --network=host \
+  --mount type=bind,src=$PWD,dst=/mnt/workdir \
+  --mount type=bind,src=$HOME/.atsign/keys,dst=/home/atsign/.atsign/keys \
+  atsigncompany/valgrind:latest  \
+  /bin/bash -c "mkdir -p /home/atsign/.ssh/; touch /home/atsign/.ssh/authorized_keys; just memcheck {{ARGS}}"
+
+valgrind-docker:
+  docker run --rm --platform linux/amd64 -ti \
+  --network=host \
+  --mount type=bind,src=$PWD,dst=/mnt/workdir \
+  --mount type=bind,src=$HOME/.atsign/keys,dst=/home/atsign/.atsign/keys \
+  atsigncompany/valgrind:latest  \
+  /bin/bash -c "/bin/bash --login"
+
+# CONFIGURE COMMANDS
+
+configure-dev:
+  cmake -B {{ dev_dir }} \
+    -S $PWD \
+    -G "$GENERATOR" \
+    --preset dev \
+    -DCMAKE_INSTALL_PREFIX="$HOME/.local/" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_C_COMPILER=$C_COMPILER \
+    -DCMAKE_C_FLAGS="-std=c99 -Wno-error -DATSDK_DEBUG_MODE" \
+    -DNOPORTS_GS_TOOL=ON \
+    -DNOPORTS_BUILD_TESTS=ON \
+    -DSSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION=ON
+
+configure-strict:
+  cmake -B {{ strict_dir }} \
+    -S $PWD \
+    -G "$GENERATOR" \
+    --preset dev \
+    -DCMAKE_INSTALL_PREFIX="$HOME/.local/" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_C_COMPILER=$C_COMPILER
+

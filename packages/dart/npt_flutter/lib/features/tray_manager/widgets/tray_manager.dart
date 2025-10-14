@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/language.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -23,7 +26,8 @@ class TrayManager extends StatefulWidget {
   State<TrayManager> createState() => _TrayManagerState();
 }
 
-class _TrayManagerState extends State<TrayManager> with TrayListener, WindowListener {
+class _TrayManagerState extends State<TrayManager>
+    with TrayListener, WindowListener {
   /// Must strongly type [context] here or Dart will infer the wrong type for
   /// the [.read()] extension which causes an error
   void reloadTray(BuildContext context, Loggable state) async {
@@ -36,7 +40,9 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
       case ProfilesRunningState _:
         cubit.reload(profilesRunningState: state);
       case SettingsLoadedState _:
-        var localizations = await AppLocalizations.delegate.load(state.settings.language.locale);
+        var localizations = await AppLocalizations.delegate.load(
+          state.settings.language.locale,
+        );
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
@@ -65,26 +71,23 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
           /// Reload the tray whenever one of the following states changes
           /// Note: this doesn't always result in a change to the tray, but we
           /// still have to check
-          BlocListener<FavoriteBloc, FavoritesState>(
-            listener: reloadTray,
-          ),
-          BlocListener<ProfileListBloc, ProfileListState>(
-            listener: reloadTray,
-          ),
+          BlocListener<FavoriteBloc, FavoritesState>(listener: reloadTray),
+          BlocListener<ProfileListBloc, ProfileListState>(listener: reloadTray),
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
             listener: reloadTray,
           ),
           BlocListener<SettingsBloc, SettingsState>(
-              listener: reloadTray,
-              // Only call listener when the language changes in settings
-              listenWhen: (prev, next) {
-                if (prev is SettingsLoadedState && next is SettingsLoadedState) {
-                  return prev.settings.language != next.settings.language;
-                }
-                // This may cause some extra reloading (very occasionally, settings shouldn't change often)
-                // but it should catch all of the edge cases
-                return prev is SettingsLoadedState || next is SettingsLoadedState;
-              }),
+            listener: reloadTray,
+            // Only call listener when the language changes in settings
+            listenWhen: (prev, next) {
+              if (prev is SettingsLoadedState && next is SettingsLoadedState) {
+                return prev.settings.language != next.settings.language;
+              }
+              // This may cause some extra reloading (very occasionally, settings shouldn't change often)
+              // but it should catch all of the edge cases
+              return prev is SettingsLoadedState || next is SettingsLoadedState;
+            },
+          ),
 
           /// Yeah I really hate this... an indefinite list of listeners
           /// but it's the only way to decouple the profiles from having to know
@@ -95,13 +98,15 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
           /// calls where we take the performance hit are:
           /// 1. In an asynchronous background task (who cares)
           /// 2. Worth it, compared to the potential maintenance costs
-          ...profiles.map((uuid) => BlocProvider<ProfileBloc>(
-                key: Key("TrayManager-$uuid"),
-                create: (context) => profileCacheCubit.getProfileBloc(uuid),
-                child: BlocListener<ProfileBloc, ProfileState>(
-                  listener: reloadTray,
-                ),
-              )),
+          ...profiles.map(
+            (uuid) => BlocProvider<ProfileBloc>(
+              key: Key("TrayManager-$uuid"),
+              create: (context) => profileCacheCubit.getProfileBloc(uuid),
+              child: BlocListener<ProfileBloc, ProfileState>(
+                listener: reloadTray,
+              ),
+            ),
+          ),
         ],
         child: widget.child,
       ),
@@ -113,7 +118,13 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
     windowManager.addListener(this);
     trayManager.addListener(this);
     super.initState();
-    windowManager.setPreventClose(true);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await windowManager.setPreventClose(true);
+      if (Platform.isMacOS) {
+        await windowManager.setVisibleOnAllWorkspaces(true);
+      }
+    });
+
     var dispatcher = SchedulerBinding.instance.platformDispatcher;
 
     // This callback is called every time the brightness changes.
@@ -143,6 +154,12 @@ class _TrayManagerState extends State<TrayManager> with TrayListener, WindowList
 
   @override
   void onWindowClose() async {
-    await windowManager.hide();
+    var onboardingCubit = App.navState.currentContext?.read<OnboardingCubit>();
+    if (onboardingCubit?.state.status == OnboardingStatus.onboarded) {
+      await windowManager.hide();
+    } else {
+      await windowManager.destroy();
+      exit(0);
+    }
   }
 }

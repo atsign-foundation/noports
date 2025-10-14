@@ -28,8 +28,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *permitopen = NULL;
   char *ephemeral_permissions = NULL;
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+// pragma GCC works for both gcc and clang
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
@@ -49,7 +50,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "client. (defaults to \"localhost:22,localhost:3389\")"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
       OPT_STRING(0, "ephemeral-permission", &ephemeral_permissions, "(Kept for compatibility)"),
-      OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
+      OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use. If a host but no port is specified (e.g. 'root.atsign.org'), the default port 64 will be appended (defaults to \"root.atsign.org:64\")"),
       OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
 
@@ -57,7 +58,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
       OPT_END(),
   };
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
   Argparse argparse;
   argparse_init(&argparse, options, NULL, 0);
@@ -178,5 +179,11 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   }
 
   // Repeat for permit-open
+  // Convert devicename to lower case
+  for (char *c = params->device; c[0] != '\0'; c++) {
+    if (*c >= 'A' && *c <= 'Z') {
+      *c += ('a' - 'A');
+    }
+  }
   return 0;
 }

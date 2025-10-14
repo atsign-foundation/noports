@@ -5,7 +5,7 @@ import 'dart:io';
 // other packages
 import 'package:args/args.dart';
 // atPlatform packages
-import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
@@ -92,7 +92,8 @@ void main(List<String> args) async {
         aliases: ['lp'],
         abbr: 'l',
         help: 'client-side local port for the socket tunnel.'
-            ' If not supplied, we will ask the o/s for a spare port',
+            ' If not supplied, we will ask the o/s for a spare port.'
+            ' Alias: --lp',
         defaultsTo: '0',
       );
       parser.addOption(
@@ -100,14 +101,30 @@ void main(List<String> args) async {
         abbr: 'p',
         aliases: ['rp'],
         mandatory: true,
-        help: 'The remote port required',
+        help: 'The remote port required.'
+            ' Alias: --rp',
       );
       parser.addOption(
         'remote-host',
         abbr: 'h',
         aliases: ['rh'],
         defaultsTo: 'localhost',
-        help: 'The remote host required',
+        help: 'The remote host required'
+            ' Alias: --rh',
+      );
+      parser.addOption(
+        'local-host',
+        aliases: ['lh'],
+        defaultsTo: 'localhost',
+        help:
+            'Local IP address to bind to, or comma-separated list with fallbacks.'
+            ' When specified, npt will act as a gateway by binding to the'
+            ' first available IP instead of the default localhost.'
+            ' If multiple IPs are provided, only the first valid one is used.'
+            ' Example: --local-host 192.168.1.100,10.0.0.50'
+            ' To bind to all interfaces, use 0 or 0.0.0.0'
+            ' Example: --local-host 0 or --local-host 0.0.0.0'
+            ' Alias: --lh',
       );
       parser.addOption(
         'key-file',
@@ -115,13 +132,16 @@ void main(List<String> args) async {
         mandatory: false,
         aliases: const ['keyFile'],
         help:
-            'Path to this client\'s atSign\'s keyFile, if not in ~/.atsign/keys/',
+            'Path to this client\'s atSign\'s keyFile, if not in ~/.atsign/keys/ '
+            ' Alias: --keyFile',
       );
       parser.addOption(
-        'root-domain',
+        'root-server',
+        aliases: const ['root-domain'],
         mandatory: false,
         defaultsTo: 'root.atsign.org',
-        help: 'atDirectory domain',
+        help: 'atDirectory domain.'
+            ' Alias (for backwards compatibility): --root-domain',
       );
       parser.addOption(
         'daemon-ping-timeout',
@@ -129,7 +149,8 @@ void main(List<String> args) async {
         mandatory: false,
         defaultsTo: DefaultArgs.daemonPingTimeoutSeconds.toString(),
         help: 'Seconds the client should wait for response'
-            ' after pinging a daemon',
+            ' after pinging a daemon.'
+            ' Alias: --dpt',
       );
       parser.addFlag(
         'per-session-storage',
@@ -140,7 +161,8 @@ void main(List<String> args) async {
             ' Defaults to true, enabling you to run multiple local clients'
             ' concurrently. However: if you wish to run just one client at a'
             ' time, then you will get a performance boost if you negate this'
-            ' flag.',
+            ' flag.'
+            ' Alias: --pss',
       );
       parser.addFlag(
         'verbose',
@@ -158,6 +180,22 @@ void main(List<String> args) async {
       );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
+
+      parser.addFlag(
+        'ipv4',
+        abbr: '4',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv4 addresses only',
+      );
+
+      parser.addFlag(
+        'ipv6',
+        abbr: '6',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv6 addresses only',
+      );
 
       parser.addFlag(
         'exit-when-connected',
@@ -201,12 +239,28 @@ void main(List<String> args) async {
             ' it has started its session.',
       );
 
+      parser.addOption(
+        'heartbeat',
+        abbr: 'H',
+        mandatory: false,
+        defaultsTo: '${DefaultArgs.controlChannelHeartbeatIntervalMins}m',
+        help: 'How frequently to send heartbeats on the connection\'s'
+            ' control channel. Heartbeats are an attempt to persuade zealous'
+            ' network intermediaries that the control channel shouldn\'t be'
+            ' closed due to lack of activity. Heartbeats will not be sent'
+            ' to older daemons which do not support them.'
+            ' Argument must be supplied in human readable'
+            ' form e.g. as follows: "30s" or "1h" or "1h,14m,30s"'
+            ' or "7d".',
+      );
+
       parser.addFlag(
         'encrypt-rvd-traffic',
         aliases: ['et'],
         help: 'When true, traffic via the socket rendezvous is encrypted,'
             ' in addition to whatever encryption the traffic already has'
-            ' (e.g. an ssh session)',
+            ' (e.g. an ssh session).'
+            ' Alias: --et',
         defaultsTo: DefaultArgs.encryptRvdTraffic,
         negatable: true,
       );
@@ -215,6 +269,21 @@ void main(List<String> args) async {
           abbr: 'P',
           mandatory: false,
           help: 'The pass phrase to access the password protected atKeys file');
+
+      parser.addOption(
+        'relay-auth-mode',
+        aliases: ['ram'],
+        help: 'The authentication mode to use. "ecr" is strongest.'
+            ' Alias: --ram',
+        allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+        defaultsTo: RelayAuthMode.payload.name,
+      );
+
+      parser.addFlag(
+        '443',
+        help: 'When true, asks the relay to use port 443 for this session',
+        defaultsTo: false,
+      );
 
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
@@ -239,7 +308,7 @@ void main(List<String> args) async {
       int remotePort = int.parse(parsedArgs['remote-port']);
       String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
-      String rootDomain = parsedArgs['root-domain'];
+      String rootDomain = parsedArgs['root-server'] ?? 'root.atsign.org';
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
@@ -280,14 +349,14 @@ void main(List<String> args) async {
       }
       if (Platform.isWindows) {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: Platform.environment['TEMP']!,
+          baseDir: Platform.environment['TEMP']!,
           atSign: clientAtSign,
           progName: '.npt',
           uniqueID: uniqueID,
         ));
       } else {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: homeDirectory,
+          baseDir: homeDirectory,
           atSign: clientAtSign,
           progName: '.npt',
           uniqueID: uniqueID,
@@ -304,7 +373,7 @@ void main(List<String> args) async {
         });
       }
 
-      cli.CLIBase cliBase = cli.CLIBase(
+      CLIBase cliBase = CLIBase(
           atSign: clientAtSign,
           atKeysFilePath: parsedArgs['key-file'],
           nameSpace: DefaultArgs.namespace,
@@ -330,6 +399,77 @@ void main(List<String> args) async {
             ' setting timeout to $keepAliveDefaultTimeoutHours hours');
         timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
+
+      // Determine address type from IPv4/IPv6 flags
+      InternetAddressType? addressType;
+      if (parsedArgs['ipv4'] && parsedArgs['ipv6']) {
+        stderr.writeln('Error: Cannot specify both --ipv4 and --ipv6 flags');
+        exitProgram(exitCode: 1);
+      } else if (parsedArgs['ipv4']) {
+        addressType = InternetAddressType.IPv4;
+      } else if (parsedArgs['ipv6']) {
+        addressType = InternetAddressType.IPv6;
+      }
+
+      // Parse and validate local host with address type filtering
+      final hostsString = parsedArgs['local-host'] as String;
+      final parsedHosts = HostValidator.parseHostsList(hostsString);
+
+      // Find the first host that can actually bind to the port
+      final localHost = await HostValidator.findBindableHost(
+          hostsString, localPort,
+          addressType: addressType);
+
+      String? resolvedLocalHost;
+      String?
+          originalLocalHost; // Keep track of the original hostname for display
+      if (localHost != null) {
+        originalLocalHost = localHost; // Store the original hostname
+        final resolvedAddress = await HostValidator.resolveHost(localHost,
+            addressType: addressType);
+        if (resolvedAddress != null) {
+          resolvedLocalHost = resolvedAddress.address;
+          if (!quiet) {
+            if (parsedHosts.length == 1) {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address})');
+            } else {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address}) (first bindable from: ${parsedHosts.join(', ')})');
+            }
+          }
+        }
+      }
+
+      // Validate that resolved IP matches the requested address type
+      if (resolvedLocalHost != null && addressType != null) {
+        final resolvedAddress = InternetAddress.tryParse(resolvedLocalHost);
+        if (resolvedAddress != null) {
+          if (addressType == InternetAddressType.IPv4 &&
+              resolvedAddress.type != InternetAddressType.IPv4) {
+            stderr.writeln(
+                'Error: --ipv4 flag specified but resolved to IPv6 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          } else if (addressType == InternetAddressType.IPv6 &&
+              resolvedAddress.type != InternetAddressType.IPv6) {
+            stderr.writeln(
+                'Error: --ipv6 flag specified but resolved to IPv4 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          }
+        }
+      }
+
+      if (localHost == null || resolvedLocalHost == null) {
+        final addressTypeStr = addressType == InternetAddressType.IPv4
+            ? ' (IPv4 only)'
+            : addressType == InternetAddressType.IPv6
+                ? ' (IPv6 only)'
+                : '';
+        stderr.writeln(
+            'Error: No bindable hosts found for port $localPort in: ${parsedHosts.join(', ')}$addressTypeStr');
+        exitProgram(exitCode: 1);
+      }
+
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -339,12 +479,17 @@ void main(List<String> args) async {
         device: device,
         localPort: localPort,
         verbose: verbose,
-        rootDomain: parsedArgs['root-domain'],
+        rootDomain: rootDomain,
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
         encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
+        relayAuthMode:
+            RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
         timeout: parseDuration(timeoutArg),
+        controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
+        localHost: resolvedLocalHost,
+        only443: parsedArgs['443'],
       );
 
       while (true) {
@@ -359,7 +504,13 @@ void main(List<String> args) async {
           final actualLocalPort = await npt.run();
           params.localPort = actualLocalPort;
 
-          logProgress('npt is listening on localhost:$actualLocalPort');
+          // Show detailed binding address with original hostname and resolved IP
+          String resolvedIP = params.localHost!; // This is now the resolved IP
+          String hostDisplay = originalLocalHost ??
+              resolvedIP; // Use original hostname if available
+
+          logProgress(
+              'npt is listening on $hostDisplay:$actualLocalPort ($resolvedIP:$actualLocalPort)');
 
           if (!inline) {
             stdout.writeln('$actualLocalPort');

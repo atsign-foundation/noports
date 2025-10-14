@@ -23,20 +23,33 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
+  static const RelayAuthMode relayAuthMode = RelayAuthMode.payload;
 
   /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
-  static const Duration daemonPingTimeoutDuration =
-      Duration(seconds: daemonPingTimeoutSeconds);
+  static const Duration daemonPingTimeoutDuration = Duration(
+    seconds: daemonPingTimeoutSeconds,
+  );
 
   /// How long a client should wait for response from a NoPorts relay
   static const int relayResponseTimeoutSeconds = 20;
-  static const Duration relayResponseTimeoutDuration =
-      Duration(seconds: relayResponseTimeoutSeconds);
+  static const Duration relayResponseTimeoutDuration = Duration(
+    seconds: relayResponseTimeoutSeconds,
+  );
 
   /// How long srv should stay running if SocketConnector has no connections
   static const int srvTimeoutInSeconds = 30;
   static const Duration srvTimeout = Duration(seconds: srvTimeoutInSeconds);
+
+  /// How frequently to send heartbeats over the control channel.
+  ///
+  /// Heartbeats are an attempt to persuade over-zealous network
+  /// intermediaries that the control channel shouldn't be closed due to lack
+  /// of activity.
+  static const int controlChannelHeartbeatIntervalMins = 30;
+  static const Duration controlChannelHeartbeatInterval = Duration(
+    minutes: controlChannelHeartbeatIntervalMins,
+  );
 }
 
 class DefaultSshnpArgs {

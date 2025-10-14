@@ -1,0 +1,83 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+	  <ProjectGuid>{FCF07AC8-119A-4DD0-A45D-3D765D138A85}</ProjectGuid>
+	  <Version>0.1.0.0</Version>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+	  <DebugType>embedded</DebugType>
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+	<PublishSingleFile>true</PublishSingleFile>
+	<PublishReadyToRun>true</PublishReadyToRun>
+	 <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+	<SelfContained>true</SelfContained>
+	  <TrimMode>copyused</TrimMode>
+	  <ApplicationIcon>Assets\noports-stacked-dark.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\at_activate.exe" />
+    <None Remove="Resources\npt.exe" />
+    <None Remove="Resources\srv.exe" />
+    <None Remove="Resources\sshnp.exe" />
+    <None Remove="Resources\sshnpd.exe" />
+    <None Remove="Resources\SshnpdService.exe" />
+  </ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Assets\noports-stacked-dark.ico">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Resource>
+	</ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\NoPortsDark.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <EmbeddedResource Include="Resources\at_activate.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\npt.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\srv.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\sshnp.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\sshnpd.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\SshnpdService.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Pages\Activate\AtsignApprove.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
