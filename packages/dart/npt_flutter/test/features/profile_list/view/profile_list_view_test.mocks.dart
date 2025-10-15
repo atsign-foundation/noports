@@ -491,9 +491,9 @@ class MockBackupKeyCubit extends _i1.Mock implements _i9.BackupKeyCubit {
   );
 
   @override
-  _i6.Future<void> backUpKeys() =>
+  _i6.Future<void> backUpKeys({bool? popDialog = true}) =>
       (super.noSuchMethod(
-            Invocation.method(#backUpKeys, []),
+            Invocation.method(#backUpKeys, [], {#popDialog: popDialog}),
             returnValue: _i6.Future<void>.value(),
             returnValueForMissingStub: _i6.Future<void>.value(),
           )

@@ -18,16 +18,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get activationStatusPreparing => '准备激活';
 
   @override
+  String get add => '添加';
+
+  @override
   String get addNew => '添加新项';
 
   @override
   String get advanced => '高级';
 
   @override
+  String get advancedSettings => '高级设置';
+
+  @override
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2025 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -51,10 +57,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get atsignDialogTitle => 'atSign';
 
   @override
+  String get atsignFrom => '来自 atSign';
+
+  @override
+  String get atsignsUser => '用户 atSign';
+
+  @override
+  String get atsignsUserTooltip => '一个 atSign，如“@alice”，它将连接到其他设备';
+
+  @override
+  String get atsignTo => '到 atSign';
+
+  @override
   String get atsignUncreated => '没有 atSign？';
 
   @override
   String get authenticate => '身份验证';
+
+  @override
+  String get authenticator => 'Authenticator';
 
   @override
   String get authorisation => '授权';
@@ -95,6 +116,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connected => '已连接';
 
   @override
+  String get connectionClosed => '连接已关闭，将重试...';
+
+  @override
+  String get connectionRetrying => '正在重试连接 (keep-alive)...';
+
+  @override
+  String get connections => '连接';
+
+  @override
+  String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get couldNotLoadPreviousState => '无法加载先前的状态错误';
+
+  @override
   String get custom => '自定义';
 
   @override
@@ -122,16 +158,63 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demoTextButton => '立即试用';
 
   @override
+  String get description => '描述';
+
+  @override
+  String get deviceAdd => '添加设备';
+
+  @override
   String get deviceAtsign => '设备 atSign';
 
   @override
   String get deviceAtsignDescription => '这是与您的设备关联的 atSign。';
 
   @override
+  String get deviceAtsignDescriptionTwo =>
+      '一个 atSign，如“@bob_device”，将被连接到。 这也称为正在运行守护程序进程的守护程序或 npd 机器，连接请求将发送到该守护程序进程，连接将建立到此设备。';
+
+  @override
+  String get deviceAtsigns => '设备 atSign';
+
+  @override
+  String get deviceEdit => '编辑设备';
+
+  @override
+  String get deviceGroup => '设备组';
+
+  @override
+  String get deviceGroupAdd => '添加设备组';
+
+  @override
+  String get deviceGroupEdit => '编辑设备组';
+
+  @override
+  String get deviceGroupNo => '无设备组';
+
+  @override
+  String get deviceGroups => '设备组';
+
+  @override
+  String get deviceGroupsNotAdded => '尚未添加设备组';
+
+  @override
+  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
+
+  @override
   String get deviceName => '设备名称';
 
   @override
   String get deviceNameDescription => '这是您的远程设备的名称。';
+
+  @override
+  String get devices => '设备';
+
+  @override
+  String get devicesNotAdded => '尚未添加设备';
+
+  @override
+  String get devicesTooltip =>
+      '设备 atSign 下的设备名称字符串，如“默认”。一个设备 atSign 可以有多个设备名称，设备名称有助于区分各个设备守护程序进程。 在此处添加设备名称将允许从用户 atSign 到此设备 atSign/设备名称对建立隧道。';
 
   @override
   String get disconnected => '已断开连接';
@@ -220,6 +303,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
+  String errorDuringStartupWithDetails(Object errorMessage) {
+    return '启动期间出错：$errorMessage';
+  }
+
+  @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
 
   @override
@@ -234,6 +322,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorSwitchAtSignFailed => '激活后切换 atSign 失败。';
+
+  @override
+  String errorWithDetails(Object errorMessage) {
+    return '错误：$errorMessage,';
+  }
 
   @override
   String get europe => '欧洲';
@@ -270,6 +363,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get getStarted => '开始使用';
 
   @override
+  String get groupAdd => '添加组';
+
+  @override
+  String get groupName => '组名';
+
+  @override
   String get import => '导入';
 
   @override
@@ -285,6 +384,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get json => 'JSON';
 
   @override
+  String get jsonCopyToClipboard => '将 JSON 复制到剪贴板';
+
+  @override
+  String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -294,22 +399,70 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loading => '加载中';
 
   @override
+  String get localHost => '本地主机';
+
+  @override
+  String get localHostDescription => '要绑定到本地机器的hostname或IP地址';
+
+  @override
   String get localPort => '本地端口';
+
+  @override
+  String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
   String get logs => '日志';
 
   @override
+  String get logsClear => '清除日志';
+
+  @override
+  String get logsNotAvailable => '尚无可用日志。\n当发出策略请求时，活动将显示在此处。';
+
+  @override
+  String get logsNotAvailableStartMonitoring => '没有可用的日志。\n从策略管理器启动监控以查看活动。';
+
+  @override
+  String get logsView => '查看日志';
+
+  @override
+  String get logType => '日志类型';
+
+  @override
+  String get manageAtsigns => '管理 atSign';
+
+  @override
   String get minimal => '简单';
 
   @override
+  String get monitoringActive => '监控活动';
+
+  @override
+  String get monitoringInactive => '监控不活动';
+
+  @override
+  String get monitoringStart => '开始监控';
+
+  @override
+  String get monitoringStop => '停止监控';
+
+  @override
   String get myNoPortsMsg => '在以下位置检索您的：';
+
+  @override
+  String get name => '名称';
 
   @override
   String get next => '下一步';
 
   @override
   String get noAtsign => '无 atSign';
+
+  @override
+  String get noAtsignsAdded => '尚未添加 atSign';
+
+  @override
+  String get noDescription => '无描述';
 
   @override
   String get noEmailClientAvailable => '没有可用的电子邮件客户端';
@@ -319,6 +472,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
+
+  @override
+  String get nptStartupTimedout => 'Npt 启动超时';
+
+  @override
+  String get ok => '确定';
 
   @override
   String get onboard => '引导';
@@ -349,6 +508,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
+
+  @override
+  String permitOpens(Object permitOpens) {
+    return '允许打开：$permitOpens';
+  }
+
+  @override
+  String get permitOpensHostPort => '允许打开 (host:port)';
+
+  @override
+  String get permitOpensNotConfigured => '未配置允许打开';
+
+  @override
+  String get policy => '策略';
+
+  @override
+  String get policyLogs => '策略日志';
+
+  @override
+  String get policyManager => '策略管理器';
+
+  @override
+  String get policyRequestPayload => '策略请求负载';
 
   @override
   String get preview => '预览';
@@ -397,10 +579,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileKeepAlive => '🕺 保持活动';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持活动。如果会话结束，则创建一个新的会话并重新绑定到本地端口。会话可能会因超时或网络问题而未被使用而结束。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
   String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
+  String get profilePort443 => '使用端口 443';
+
+  @override
+  String get profilePort443Description =>
+      '强制中继使用端口 443 而不是临时端口。 自动启用 ESCR 中继身份验证模式以提高安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -463,7 +659,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remoteHost => '远程主机';
 
   @override
+  String get remoteHostDescription => '您在远程机器上连接到的服务的hostname或IP地址';
+
+  @override
   String get remotePort => '远程端口';
+
+  @override
+  String get remotePortDescription => '将在远程机器上使用的端口';
+
+  @override
+  String get removeAtsign => '删除 atSign';
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -475,13 +680,89 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resendPin => '重新发送 Pin';
 
   @override
-  String get resetAtsign => '重置 atSign';
+  String retryFailedWithDetails(Object errorMessage) {
+    return '重试失败：$errorMessage，将重试...';
+  }
+
+  @override
+  String get roleAddNew => '添加新角色';
+
+  @override
+  String get roleCreatingFailed => '创建角色失败';
+
+  @override
+  String roleCreatingFailedWithDetails(Object errorMessage) {
+    return '创建角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleDelete => '删除角色';
+
+  @override
+  String roleDeleteConfirmation(Object roleName) {
+    return '您确定要删除角色“$roleName”吗？此操作无法撤消。';
+  }
+
+  @override
+  String get roleDeletedSuccessfully => '角色删除成功！';
+
+  @override
+  String get roleDeletingFailed => '删除角色失败';
+
+  @override
+  String roleDeletingFailedWithDetails(Object errorMessage) {
+    return '删除角色失败：$errorMessage';
+  }
+
+  @override
+  String roleLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleNotFound => '未找到角色';
+
+  @override
+  String get roleNotLoaded => '未加载角色';
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String get roleSaveFailed => '保存角色失败';
+
+  @override
+  String roleSaveFailedWithDetails(Object errorMessage) {
+    return '保存角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleSelectToViewDetails => '选择角色以查看详细信息';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '刷新角色';
+
+  @override
+  String get roleUpdatingFailed => '更新角色失败';
+
+  @override
+  String roleUpdatingFailedWithDetails(Object errorMessage) {
+    return '更新角色失败：$errorMessage';
+  }
 
   @override
   String get rootDomainDefault => '默认 (Prod)';
 
   @override
   String get rootDomainDemo => '演示 (VE)';
+
+  @override
+  String get save => '保存';
 
   @override
   String get saveAtKeys => '保存 atKeys';
@@ -514,13 +795,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serviceMapping => '服务映射';
 
   @override
+  String get servicesAllowed => '允许的服务';
+
+  @override
   String get settings => '设置';
+
+  @override
+  String get settingsCouldNotFetch => '无法获取设置';
 
   @override
   String get showWindow => '显示窗口';
 
   @override
   String get signout => '退出';
+
+  @override
+  String get socketconnectorClosedPrematurely => 'Socketconnector 提前关闭';
 
   @override
   String get sshStyle => '高级';
@@ -553,7 +843,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get syncCompleted => '同步完成。所有配置文件已加载。';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
+
+  @override
+  String get timestamp => '时间戳';
 
   @override
   String get unknownError => '发生了未知错误';
@@ -583,7 +879,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -608,9 +904,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
-
-  @override
-  String get policyManager => '策略管理器';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).
@@ -627,16 +920,22 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get activationStatusPreparing => '准备激活';
 
   @override
+  String get add => '添加';
+
+  @override
   String get addNew => '添加新项';
 
   @override
   String get advanced => '高级';
 
   @override
+  String get advancedSettings => '高级设置';
+
+  @override
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2025 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -660,10 +959,25 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get atsignDialogTitle => 'atSign';
 
   @override
+  String get atsignFrom => '来自 atSign';
+
+  @override
+  String get atsignsUser => '用户 atSign';
+
+  @override
+  String get atsignsUserTooltip => '一个 atSign，如“@alice”，它将连接到其他设备';
+
+  @override
+  String get atsignTo => '到 atSign';
+
+  @override
   String get atsignUncreated => '没有 atSign？';
 
   @override
   String get authenticate => '身份验证';
+
+  @override
+  String get authenticator => 'Authenticator';
 
   @override
   String get authorisation => '授权';
@@ -704,6 +1018,21 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get connected => '已连接';
 
   @override
+  String get connectionClosed => '连接已关闭，将重试...';
+
+  @override
+  String get connectionRetrying => '正在重试连接 (keep-alive)...';
+
+  @override
+  String get connections => '连接';
+
+  @override
+  String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get couldNotLoadPreviousState => '无法加载先前的状态错误';
+
+  @override
   String get custom => '自定义';
 
   @override
@@ -731,16 +1060,63 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get demoTextButton => '立即试用';
 
   @override
+  String get description => '描述';
+
+  @override
+  String get deviceAdd => '添加设备';
+
+  @override
   String get deviceAtsign => '设备 atSign';
 
   @override
   String get deviceAtsignDescription => '这是与您的设备关联的 atSign。';
 
   @override
+  String get deviceAtsignDescriptionTwo =>
+      '一个 atSign，如“@bob_device”，将被连接到。 这也称为正在运行守护程序进程的守护程序或 npd 机器，连接请求将发送到该守护程序进程，连接将建立到此设备。';
+
+  @override
+  String get deviceAtsigns => '设备 atSign';
+
+  @override
+  String get deviceEdit => '编辑设备';
+
+  @override
+  String get deviceGroup => '设备组';
+
+  @override
+  String get deviceGroupAdd => '添加设备组';
+
+  @override
+  String get deviceGroupEdit => '编辑设备组';
+
+  @override
+  String get deviceGroupNo => '无设备组';
+
+  @override
+  String get deviceGroups => '设备组';
+
+  @override
+  String get deviceGroupsNotAdded => '尚未添加设备组';
+
+  @override
+  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
+
+  @override
   String get deviceName => '设备名称';
 
   @override
   String get deviceNameDescription => '这是您的远程设备的名称。';
+
+  @override
+  String get devices => '设备';
+
+  @override
+  String get devicesNotAdded => '尚未添加设备';
+
+  @override
+  String get devicesTooltip =>
+      '设备 atSign 下的设备名称字符串，如“默认”。一个设备 atSign 可以有多个设备名称，设备名称有助于区分各个设备守护程序进程。 在此处添加设备名称将允许从用户 atSign 到此设备 atSign/设备名称对建立隧道。';
 
   @override
   String get disconnected => '已断开连接';
@@ -829,6 +1205,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
+  String errorDuringStartupWithDetails(Object errorMessage) {
+    return '启动期间出错：$errorMessage';
+  }
+
+  @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
 
   @override
@@ -843,6 +1224,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get errorSwitchAtSignFailed => '激活后切换 atSign 失败。';
+
+  @override
+  String errorWithDetails(Object errorMessage) {
+    return '错误：$errorMessage,';
+  }
 
   @override
   String get europe => '欧洲';
@@ -879,6 +1265,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get getStarted => '开始使用';
 
   @override
+  String get groupAdd => '添加组';
+
+  @override
+  String get groupName => '组名';
+
+  @override
   String get import => '导入';
 
   @override
@@ -894,6 +1286,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get json => 'JSON';
 
   @override
+  String get jsonCopyToClipboard => '将 JSON 复制到剪贴板';
+
+  @override
+  String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -903,22 +1301,70 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get loading => '加载中';
 
   @override
+  String get localHost => '本地主机';
+
+  @override
+  String get localHostDescription => '要绑定到本地机器的hostname或IP地址';
+
+  @override
   String get localPort => '本地端口';
+
+  @override
+  String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
   String get logs => '日志';
 
   @override
+  String get logsClear => '清除日志';
+
+  @override
+  String get logsNotAvailable => '尚无可用日志。\n当发出策略请求时，活动将显示在此处。';
+
+  @override
+  String get logsNotAvailableStartMonitoring => '没有可用的日志。\n从策略管理器启动监控以查看活动。';
+
+  @override
+  String get logsView => '查看日志';
+
+  @override
+  String get logType => '日志类型';
+
+  @override
+  String get manageAtsigns => '管理 atSign';
+
+  @override
   String get minimal => '简单';
 
   @override
+  String get monitoringActive => '监控活动';
+
+  @override
+  String get monitoringInactive => '监控不活动';
+
+  @override
+  String get monitoringStart => '开始监控';
+
+  @override
+  String get monitoringStop => '停止监控';
+
+  @override
   String get myNoPortsMsg => '在以下位置检索您的：';
+
+  @override
+  String get name => '名称';
 
   @override
   String get next => '下一步';
 
   @override
   String get noAtsign => '无 atSign';
+
+  @override
+  String get noAtsignsAdded => '尚未添加 atSign';
+
+  @override
+  String get noDescription => '无描述';
 
   @override
   String get noEmailClientAvailable => '没有可用的电子邮件客户端';
@@ -928,6 +1374,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get noPorts => 'NoPorts';
+
+  @override
+  String get nptStartupTimedout => 'Npt 启动超时';
+
+  @override
+  String get ok => '确定';
 
   @override
   String get onboard => '引导';
@@ -958,6 +1410,29 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get pasteProfileDescription => '在此处粘贴 JSON/YAML 内容';
+
+  @override
+  String permitOpens(Object permitOpens) {
+    return '允许打开：$permitOpens';
+  }
+
+  @override
+  String get permitOpensHostPort => '允许打开 (host:port)';
+
+  @override
+  String get permitOpensNotConfigured => '未配置允许打开';
+
+  @override
+  String get policy => '策略';
+
+  @override
+  String get policyLogs => '策略日志';
+
+  @override
+  String get policyManager => '策略管理器';
+
+  @override
+  String get policyRequestPayload => '策略请求负载';
 
   @override
   String get preview => '预览';
@@ -1006,10 +1481,24 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何导入配置文件？';
 
   @override
+  String get profileKeepAlive => '🕺 保持活动';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持活动。如果会话结束，则创建一个新的会话并重新绑定到本地端口。会话可能会因超时或网络问题而未被使用而结束。';
+
+  @override
   String get profileName => '配置文件名称';
 
   @override
   String get profileNameDescription => '这将是您的配置的名称。';
+
+  @override
+  String get profilePort443 => '使用端口 443';
+
+  @override
+  String get profilePort443Description =>
+      '强制中继使用端口 443 而不是临时端口。 自动启用 ESCR 中继身份验证模式以提高安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '配置文件运行时无法执行此操作。';
@@ -1072,7 +1561,16 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get remoteHost => '远程主机';
 
   @override
+  String get remoteHostDescription => '您在远程机器上连接到的服务的hostname或IP地址';
+
+  @override
   String get remotePort => '远程端口';
+
+  @override
+  String get remotePortDescription => '将在远程机器上使用的端口';
+
+  @override
+  String get removeAtsign => '删除 atSign';
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -1084,13 +1582,89 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get resendPin => '重新发送 Pin';
 
   @override
-  String get resetAtsign => '重置 atSign';
+  String retryFailedWithDetails(Object errorMessage) {
+    return '重试失败：$errorMessage，将重试...';
+  }
+
+  @override
+  String get roleAddNew => '添加新角色';
+
+  @override
+  String get roleCreatingFailed => '创建角色失败';
+
+  @override
+  String roleCreatingFailedWithDetails(Object errorMessage) {
+    return '创建角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleDelete => '删除角色';
+
+  @override
+  String roleDeleteConfirmation(Object roleName) {
+    return '您确定要删除角色“$roleName”吗？此操作无法撤消。';
+  }
+
+  @override
+  String get roleDeletedSuccessfully => '角色删除成功！';
+
+  @override
+  String get roleDeletingFailed => '删除角色失败';
+
+  @override
+  String roleDeletingFailedWithDetails(Object errorMessage) {
+    return '删除角色失败：$errorMessage';
+  }
+
+  @override
+  String roleLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleNotFound => '未找到角色';
+
+  @override
+  String get roleNotLoaded => '未加载角色';
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String get roleSaveFailed => '保存角色失败';
+
+  @override
+  String roleSaveFailedWithDetails(Object errorMessage) {
+    return '保存角色失败：$errorMessage';
+  }
+
+  @override
+  String get roleSelectToViewDetails => '选择角色以查看详细信息';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '刷新角色';
+
+  @override
+  String get roleUpdatingFailed => '更新角色失败';
+
+  @override
+  String roleUpdatingFailedWithDetails(Object errorMessage) {
+    return '更新角色失败：$errorMessage';
+  }
 
   @override
   String get rootDomainDefault => '默认 (Prod)';
 
   @override
   String get rootDomainDemo => '演示 (VE)';
+
+  @override
+  String get save => '保存';
 
   @override
   String get saveAtKeys => '保存 atKeys';
@@ -1123,13 +1697,22 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get serviceMapping => '服务映射';
 
   @override
+  String get servicesAllowed => '允许的服务';
+
+  @override
   String get settings => '设置';
+
+  @override
+  String get settingsCouldNotFetch => '无法获取设置';
 
   @override
   String get showWindow => '显示窗口';
 
   @override
   String get signout => '退出';
+
+  @override
+  String get socketconnectorClosedPrematurely => 'Socketconnector 提前关闭';
 
   @override
   String get sshStyle => '高级';
@@ -1162,7 +1745,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get switchAtSignNote => '注意：切换 atSign 将结束所有连接。';
 
   @override
+  String get syncCompleted => '同步完成。所有配置文件已加载。';
+
+  @override
   String get syncInProgress => '同步进行中。某些配置文件可能仍在加载。';
+
+  @override
+  String get timestamp => '时间戳';
 
   @override
   String get unknownError => '发生了未知错误';
@@ -1192,7 +1781,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -1217,9 +1806,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
-
-  @override
-  String get policyManager => '策略管理器';
 }
 
 /// The translations for Chinese, as used in Hong Kong, using the Han script (`zh_Hant_HK`).
@@ -1236,16 +1822,22 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get activationStatusPreparing => '準備啟動';
 
   @override
+  String get add => '新增';
+
+  @override
   String get addNew => '新增項目';
 
   @override
   String get advanced => '進階';
 
   @override
+  String get advancedSettings => '進階設定';
+
+  @override
   String get alertDialogTitle => '您確定嗎？';
 
   @override
-  String get allRightsReserved => '@ 2025 Atsign，保留所有權利';
+  String get allRightsReserved => '© 2025 Atsign，保留所有權利';
 
   @override
   String get americas => '美洲';
@@ -1269,10 +1861,25 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get atsignDialogTitle => 'atSign';
 
   @override
+  String get atsignFrom => '來自 atSign';
+
+  @override
+  String get atsignsUser => '使用者 atSign';
+
+  @override
+  String get atsignsUserTooltip => '類似「@alice」的 atSign，將連線至其他裝置';
+
+  @override
+  String get atsignTo => '至 atSign';
+
+  @override
   String get atsignUncreated => '沒有 atSign？';
 
   @override
   String get authenticate => '驗證';
+
+  @override
+  String get authenticator => 'Authenticator';
 
   @override
   String get authorisation => '授權';
@@ -1313,6 +1920,21 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get connected => '已連線';
 
   @override
+  String get connectionClosed => '連線已關閉，將重試...';
+
+  @override
+  String get connectionRetrying => '正在重試連線 (保持運作)...';
+
+  @override
+  String get connections => '連線';
+
+  @override
+  String get connectionTimedOut => '連線逾時，將重試...';
+
+  @override
+  String get couldNotLoadPreviousState => '無法載入先前狀態錯誤';
+
+  @override
   String get custom => '自訂';
 
   @override
@@ -1340,16 +1962,64 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get demoTextButton => '立即試用';
 
   @override
+  String get description => '描述';
+
+  @override
+  String get deviceAdd => '新增裝置';
+
+  @override
   String get deviceAtsign => '裝置 atSign';
 
   @override
   String get deviceAtsignDescription => '這是與您的裝置相關聯的 atSign。';
 
   @override
+  String get deviceAtsignDescriptionTwo =>
+      '類似「@bob_device」的 atSign，將連線至。這也稱為正在執行守護程序程序的守護程序或 npd 機器，連接要求將傳送至該守護程序程序，並於其中建立連線到此裝置。';
+
+  @override
+  String get deviceAtsigns => '裝置 atSign';
+
+  @override
+  String get deviceEdit => '編輯裝置';
+
+  @override
+  String get deviceGroup => '裝置群組';
+
+  @override
+  String get deviceGroupAdd => '新增裝置群組';
+
+  @override
+  String get deviceGroupEdit => '編輯裝置群組';
+
+  @override
+  String get deviceGroupNo => '無裝置群組';
+
+  @override
+  String get deviceGroups => '裝置群組';
+
+  @override
+  String get deviceGroupsNotAdded => '尚未新增裝置群組';
+
+  @override
+  String get deviceGroupTooltip =>
+      '指定 --dg 選項的守護程序程序並使用字串，將允許從使用者連線至指定的 host:port';
+
+  @override
   String get deviceName => '裝置名稱';
 
   @override
   String get deviceNameDescription => '這是您遠端裝置的名稱。';
+
+  @override
+  String get devices => '裝置';
+
+  @override
+  String get devicesNotAdded => '尚未新增裝置';
+
+  @override
+  String get devicesTooltip =>
+      '類似「default」的裝置名稱字串，位於裝置 atSign 之下。裝置 atSign 可有多個裝置名稱，裝置名稱有助於區分個別裝置守護程序程序。在此新增裝置名稱，將允許從使用者 atSign 建立至此裝置 atSign/裝置名稱配對的通道。';
 
   @override
   String get disconnected => '已斷線';
@@ -1437,6 +2107,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身分驗證逾時。';
 
   @override
+  String errorDuringStartupWithDetails(Object errorMessage) {
+    return '啟動期間發生錯誤：$errorMessage';
+  }
+
+  @override
   String get errorOtpRequestFailed => '要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。';
 
   @override
@@ -1451,6 +2126,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get errorSwitchAtSignFailed => '啟動後切換 atSign 失敗。';
+
+  @override
+  String errorWithDetails(Object errorMessage) {
+    return '錯誤：$errorMessage,';
+  }
 
   @override
   String get europe => '歐洲';
@@ -1487,6 +2167,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get getStarted => '開始使用';
 
   @override
+  String get groupAdd => '新增群組';
+
+  @override
+  String get groupName => '群組名稱';
+
+  @override
   String get import => '匯入';
 
   @override
@@ -1502,6 +2188,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get json => 'JSON';
 
   @override
+  String get jsonCopyToClipboard => '將 JSON 複製到剪貼簿';
+
+  @override
+  String get jsonPayloadCopiedToClipboard => 'JSON 承載已複製到剪貼簿';
+
+  @override
   String get keys => '上傳 atKeys';
 
   @override
@@ -1511,22 +2203,70 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get loading => '載入中';
 
   @override
+  String get localHost => '本機主機';
+
+  @override
+  String get localHostDescription => '要繫結至本機機器的 host name 或 IP 位址';
+
+  @override
   String get localPort => '本地連接埠';
+
+  @override
+  String get localPortDescription => '您將在本機機器上使用的連接埠';
 
   @override
   String get logs => '日誌';
 
   @override
+  String get logsClear => '清除日誌';
+
+  @override
+  String get logsNotAvailable => '目前沒有日誌可用。\n當提出政策要求時，活動將顯示在此。';
+
+  @override
+  String get logsNotAvailableStartMonitoring => '沒有可用的日誌。\n從政策管理員啟動監控以查看活動。';
+
+  @override
+  String get logsView => '檢視日誌';
+
+  @override
+  String get logType => '日誌類型';
+
+  @override
+  String get manageAtsigns => '管理 atSign';
+
+  @override
   String get minimal => '簡易';
 
   @override
+  String get monitoringActive => '監控中';
+
+  @override
+  String get monitoringInactive => '監控已停用';
+
+  @override
+  String get monitoringStart => '開始監控';
+
+  @override
+  String get monitoringStop => '停止監控';
+
+  @override
   String get myNoPortsMsg => '在以下位置檢索您的：';
+
+  @override
+  String get name => '名稱';
 
   @override
   String get next => '下一步';
 
   @override
   String get noAtsign => '無 atSign';
+
+  @override
+  String get noAtsignsAdded => '尚未新增 atSign';
+
+  @override
+  String get noDescription => '無描述';
 
   @override
   String get noEmailClientAvailable => '沒有可用的電子郵件用戶端';
@@ -1536,6 +2276,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get noPorts => 'NoPorts';
+
+  @override
+  String get nptStartupTimedout => 'Npt 啟動逾時';
+
+  @override
+  String get ok => '確定';
 
   @override
   String get onboard => '引導';
@@ -1566,6 +2312,29 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get pasteProfileDescription => '在此處貼上 JSON/YAML 內容';
+
+  @override
+  String permitOpens(Object permitOpens) {
+    return '允許開啟：$permitOpens';
+  }
+
+  @override
+  String get permitOpensHostPort => '允許開啟 (host:port)';
+
+  @override
+  String get permitOpensNotConfigured => '未設定允許開啟';
+
+  @override
+  String get policy => '政策';
+
+  @override
+  String get policyLogs => '政策日誌';
+
+  @override
+  String get policyManager => '政策管理員';
+
+  @override
+  String get policyRequestPayload => '政策要求承載';
 
   @override
   String get preview => '預覽';
@@ -1613,10 +2382,24 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileImportSelectedMessage => '您想如何匯入設定檔？';
 
   @override
+  String get profileKeepAlive => '🕺 保持運作';
+
+  @override
+  String get profileKeepAliveDescription =>
+      '保持運作。如果工作階段結束，請建立新的工作階段並重新繫結至本機連接埠。工作階段可能會因為逾時或網路問題而未使用而結束。';
+
+  @override
   String get profileName => '設定檔名稱';
 
   @override
   String get profileNameDescription => '這將是您的設定的名稱。';
+
+  @override
+  String get profilePort443 => '使用連接埠 443';
+
+  @override
+  String get profilePort443Description =>
+      '強制中繼使用連接埠 443，而非臨時連接埠。自動啟用 ESCR 中繼驗證模式以確保安全性。';
 
   @override
   String get profileRunningActionDeniedMessage => '設定檔執行時無法執行此操作。';
@@ -1679,7 +2462,16 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get remoteHost => '遠端主機';
 
   @override
+  String get remoteHostDescription => '您連線至遠端機器上服務的主機名稱或 IP 位址';
+
+  @override
   String get remotePort => '遠端連接埠';
+
+  @override
+  String get remotePortDescription => '將在遠端機器上使用的連接埠';
+
+  @override
+  String get removeAtsign => '移除 atSign';
 
   @override
   String get requestExpired => '原始請求已過期。請再次提交';
@@ -1691,13 +2483,89 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get resendPin => '重新傳送 Pin';
 
   @override
-  String get resetAtsign => '重設 atSign';
+  String retryFailedWithDetails(Object errorMessage) {
+    return '重試失敗：$errorMessage，將重試...';
+  }
+
+  @override
+  String get roleAddNew => '新增角色';
+
+  @override
+  String get roleCreatingFailed => '建立角色失敗';
+
+  @override
+  String roleCreatingFailedWithDetails(Object errorMessage) {
+    return '建立角色失敗：$errorMessage';
+  }
+
+  @override
+  String get roleDelete => '刪除角色';
+
+  @override
+  String roleDeleteConfirmation(Object roleName) {
+    return '您確定要刪除角色「$roleName」嗎？此動作無法復原。';
+  }
+
+  @override
+  String get roleDeletedSuccessfully => '角色已成功刪除！';
+
+  @override
+  String get roleDeletingFailed => '刪除角色失敗';
+
+  @override
+  String roleDeletingFailedWithDetails(Object errorMessage) {
+    return '刪除角色失敗：$errorMessage';
+  }
+
+  @override
+  String roleLoadingFailedWithDetails(Object errorMessage) {
+    return '載入角色失敗：$errorMessage';
+  }
+
+  @override
+  String get roleNotFound => '找不到角色';
+
+  @override
+  String get roleNotLoaded => '未載入角色';
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String get roleSaveFailed => '儲存角色失敗';
+
+  @override
+  String roleSaveFailedWithDetails(Object errorMessage) {
+    return '儲存角色失敗：$errorMessage';
+  }
+
+  @override
+  String get roleSelectToViewDetails => '選取角色以檢視詳細資訊';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '載入角色失敗：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '重新整理角色';
+
+  @override
+  String get roleUpdatingFailed => '更新角色失敗';
+
+  @override
+  String roleUpdatingFailedWithDetails(Object errorMessage) {
+    return '更新角色失敗：$errorMessage';
+  }
 
   @override
   String get rootDomainDefault => '預設 (Prod)';
 
   @override
   String get rootDomainDemo => '示範 (VE)';
+
+  @override
+  String get save => '儲存';
 
   @override
   String get saveAtKeys => '儲存 atKeys';
@@ -1730,13 +2598,22 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get serviceMapping => '服務對應';
 
   @override
+  String get servicesAllowed => '允許的服務';
+
+  @override
   String get settings => '設定';
+
+  @override
+  String get settingsCouldNotFetch => '無法提取設定';
 
   @override
   String get showWindow => '顯示視窗';
 
   @override
   String get signout => '登出';
+
+  @override
+  String get socketconnectorClosedPrematurely => 'Socketconnector 提前關閉';
 
   @override
   String get sshStyle => '進階';
@@ -1769,7 +2646,13 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get switchAtSignNote => '注意：切換 atSign 將結束所有連線。';
 
   @override
+  String get syncCompleted => '同步完成。所有設定檔已載入。';
+
+  @override
   String get syncInProgress => '同步進行中。某些設定檔可能仍在載入。';
+
+  @override
+  String get timestamp => '時間戳記';
 
   @override
   String get unknownError => '發生未知錯誤';
@@ -1799,7 +2682,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';
 
   @override
-  String get validationErrorRemoteHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
+  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
 
   @override
   String get validationErrorRemotePortField => '數字必須介於 1 和 65535 之間';
@@ -1824,7 +2707,4 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get yamlRecommended => 'YAML (推薦)';
-
-  @override
-  String get policyManager => '政策管理員';
 }

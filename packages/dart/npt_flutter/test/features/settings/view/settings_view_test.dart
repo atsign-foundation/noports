@@ -16,8 +16,6 @@ import 'package:npt_flutter/util/language.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
-import 'package:npt_flutter/widgets/switch_atsign_button.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import 'settings_view_test.mocks.dart';
 
@@ -134,11 +132,8 @@ void main() {
         );
         await tester.pump();
 
-        // Should show switch AtSign button
-        expect(find.byType(SwitchAtsignButton), findsOneWidget);
-
         // Should show custom text buttons
-        expect(find.byType(CustomTextButton), findsNWidgets(7));
+        expect(find.byType(CustomTextButton), findsNWidgets(6));
       });
 
       testWidgets('should display settings content sections', (
@@ -166,18 +161,6 @@ void main() {
           const Offset(0, -100), // Drag up to reveal LanguageSection
         );
         expect(find.byType(LanguageSection), findsOneWidget);
-      });
-
-      testWidgets('should display version information', (
-        WidgetTester tester,
-      ) async {
-        await tester.pumpWidget(
-          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
-        );
-        await tester.pump();
-
-        // Should show FutureBuilder for version info
-        expect(find.byType(FutureBuilder<PackageInfo>), findsOneWidget);
       });
 
       testWidgets('should have proper widget hierarchy', (

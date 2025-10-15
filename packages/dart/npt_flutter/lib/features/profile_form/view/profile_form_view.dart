@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
+import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -63,31 +64,48 @@ class ProfileFormView extends StatelessWidget {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  ProfileLocalPortSelector(),
+                                  Expanded(child: ProfileLocalPortSelector()),
+                                  // Spacer(),
                                   gapW103,
-                                  ProfileRemoteHostTextField(),
+                                  Expanded(child: ProfileLocalHostTextField()),
+
+                                  // gapW103,
+                                ],
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: Sizes.p50,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Expanded(child: ProfileRemotePortSelector()),
                                   gapW103,
-                                  ProfileRemotePortSelector(),
+                                  // Spacer(),
+                                  Expanded(child: ProfileRemoteHostTextField()),
                                 ],
                               ),
                             ),
                             gapH20,
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: Sizes.p50),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Sizes.p50,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Advanced Settings',
-                                    style: TextStyle(
+                                    strings.advancedSettings,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   gapH10,
-                                  Profile443Checkbox(),
+                                  const Profile443Checkbox(),
                                   gapH10,
-                                  ProfileKeepAliveCheckbox(),
+                                  const ProfileKeepAliveCheckbox(),
                                 ],
                               ),
                             ),

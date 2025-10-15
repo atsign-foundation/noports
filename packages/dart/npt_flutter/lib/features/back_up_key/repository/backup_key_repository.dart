@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/util/constants.dart';
 
 class BackUpKeyRepository {
   bool _fromJson(Map<String, dynamic> json) => json['status'];

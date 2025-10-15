@@ -1,3 +1,5 @@
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../logging/models/loggable.dart';
 import '../../logging/models/logging_bloc.dart';
 import '../../policy/models/policy.dart';
@@ -21,7 +23,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   }
 
   /// Used when editing an existing role
-  Future<void> initializeFormExisting(String roleId) async {
+  Future<void> initializeFormExisting(
+    String roleId,
+    AppLocalizations strings,
+  ) async {
     final backupState = state;
     emit(const PolicyFormLoading(operation: 'Loading existing role'));
     try {
@@ -39,7 +44,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
       if (isClosed) return;
       emit(
         PolicyFormError(
-          message: 'Failed to load role: $error',
+          message: strings.roleLoadingFailedWithDetails(error.toString()),
           previousState: backupState,
         ),
       );
@@ -50,10 +55,9 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   void initializeWithRole(RoleInProgress role, {bool isEditing = false}) {
     if (role is FetchedRole) {
       if (isEditing) {
-        emit(PolicyFormEditingExistingRole(
-          currentRole: role,
-          originalRole: role,
-        ));
+        emit(
+          PolicyFormEditingExistingRole(currentRole: role, originalRole: role),
+        );
       } else {
         emit(PolicyFormViewingRole(currentRole: role));
       }
@@ -87,25 +91,23 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     if (state is PolicyFormEditingExistingRole) {
       final PolicyFormEditingExistingRole currentState =
           state as PolicyFormEditingExistingRole;
-      emit(
-        currentState.copyWith(
-          currentRole: currentState.originalRole
-        ),
-      );
+      emit(currentState.copyWith(currentRole: currentState.originalRole));
     } else if (state is PolicyFormEditingNewRole) {
       final RoleInProgress emptyRole = RoleInProgress.empty();
       emit(PolicyFormEditingNewRole(roleInProgress: emptyRole));
     }
   }
 
-  Future<void> saveRole() async {
+  Future<void> saveRole(AppLocalizations strings) async {
     if (state is PolicyFormEditingExistingRole) {
       final currentState = state as PolicyFormEditingExistingRole;
       emit(currentState.copyWith(isSaving: true));
 
       try {
-        final success = await _roleRepository.updateExistingRole(currentState.currentRole);
-        
+        final success = await _roleRepository.updateExistingRole(
+          currentState.currentRole,
+        );
+
         if (isClosed) return;
 
         if (success) {
@@ -117,7 +119,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
           if (!isClosed) {
             emit(
               PolicyFormError(
-                message: 'Failed to save role',
+                message: strings.roleSaveFailed,
                 previousState: currentState.copyWith(isSaving: false),
               ),
             );
@@ -127,19 +129,21 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to save role: $error',
+              message: strings.roleSaveFailedWithDetails(error.toString()),
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
         }
       }
-    } else if( state is PolicyFormEditingNewRole) {
+    } else if (state is PolicyFormEditingNewRole) {
       final currentState = state as PolicyFormEditingNewRole;
       emit(currentState.copyWith(isSaving: true));
 
       try {
-        final success = await _roleRepository.putNewRole(currentState.roleInProgress);
-        
+        final success = await _roleRepository.putNewRole(
+          currentState.roleInProgress,
+        );
+
         if (isClosed) return;
 
         if (success) {
@@ -151,7 +155,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
           if (!isClosed) {
             emit(
               PolicyFormError(
-                message: 'Failed to create role',
+                message: strings.roleCreatingFailed,
                 previousState: currentState.copyWith(isSaving: false),
               ),
             );
@@ -161,7 +165,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to create role: $error',
+              message: strings.roleCreatingFailedWithDetails(error.toString()),
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
@@ -170,7 +174,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  Future<void> deleteCurrentRole() async {
+  Future<void> deleteCurrentRole(AppLocalizations strings) async {
     if (state is PolicyFormEditingExistingRole) {
       final currentState = state as PolicyFormEditingExistingRole;
       final roleId = currentState.currentRole.id;
@@ -179,7 +183,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
 
       try {
         final success = await _roleRepository.deleteRole(roleId);
-        
+
         // Check if cubit is still active after async operation
         if (isClosed) return;
 
@@ -192,7 +196,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
           if (!isClosed) {
             emit(
               PolicyFormError(
-                message: 'Failed to delete role',
+                message: strings.roleDeletingFailed,
                 previousState: currentState.copyWith(isSaving: false),
               ),
             );
@@ -202,7 +206,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (!isClosed) {
           emit(
             PolicyFormError(
-              message: 'Failed to delete role: $error',
+              message: strings.roleDeletingFailedWithDetails(error.toString()),
               previousState: currentState.copyWith(isSaving: false),
             ),
           );
@@ -211,10 +215,13 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  void recoverFromError() {
+  void recoverFromError(AppLocalizations strings) {
     if (state is PolicyFormError) {
       final errorState = state as PolicyFormError;
-      emit(errorState.previousState ?? const PolicyFormError(message: 'Could not load previous state error'));
+      emit(
+        errorState.previousState ??
+            PolicyFormError(message: strings.couldNotLoadPreviousState),
+      );
     }
   }
 
@@ -260,5 +267,4 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
       updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
     }
   }
-
 }
