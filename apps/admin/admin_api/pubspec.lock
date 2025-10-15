@@ -741,10 +741,10 @@ packages:
     dependency: transitive
     description:
       name: socket_connector
-      sha256: "893d5968b5e8cadb454ecbe99fca91db8c2d36c046b63bb8041ccf33d2a4fd8e"
+      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.0"
+    version: "2.4.1"
   source_gen:
     dependency: transitive
     description:

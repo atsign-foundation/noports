@@ -716,11 +716,10 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "2.4.1"
-      resolved-ref: a01c8d8dedffaeab1a72ad1de165978d0b73dd7d
-      url: "https://github.com/atsign-foundation/socket_connector"
-    source: git
+      name: socket_connector
+      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
+      url: "https://pub.dev"
+    source: hosted
     version: "2.4.1"
   source_map_stack_trace:
     dependency: transitive

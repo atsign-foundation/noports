@@ -24,17 +24,13 @@ dependencies:
   openssh_ed25519: ^1.1.0
   path: ^1.9.0
   posix: ^6.0.1
-  socket_connector: ^2.4.0
+  socket_connector: ^2.4.1
   uuid: ^4.0.0
   mutex: ^3.1.0
   json_annotation: ^4.9.0
   version: ^3.0.2
 
 dependency_overrides:
-  socket_connector:
-    git:
-      url: https://github.com/atsign-foundation/socket_connector
-      ref: 2.4.1
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
