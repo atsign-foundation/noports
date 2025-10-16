@@ -709,10 +709,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: "091c83fb214f6ff48dbf38f6e011e148d996cce05487303c5e8a0cd72369b0e2"
+      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.3"
+    version: "2.4.1"
   source_map_stack_trace:
     dependency: transitive
     description:
