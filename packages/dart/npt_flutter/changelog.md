@@ -1,3 +1,7 @@
+## 1.6.1+20
+
+- **FIX**: Fixed a bug where policy status light timestamping was out of sync
+
 ## 1.6.0+19
 
 - **FEAT**: New policy page for policy management and policy logs viewing
@@ -12,6 +16,8 @@
 - **FIX**: Added export logs to the top right of the onboarding/start screen.
 - **FIX**: Renamed "Reset atSign" to "Remove atSign and move it from the bottom right to the top right of the onboarding/start screen.
 - **FIX**: Replaced simple and advance preview image from the settings screen.
+- **FEAT**: New keep alive checkbox that keeps connection alive
+- **FEAT**: Policy status light that indicates whether the policy server is alive or not
 
 ## 1.5.0+18
 
