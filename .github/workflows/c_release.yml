@@ -131,7 +131,7 @@ jobs:
             output-name: sshnpd-linux-riscv64-musl
             dockerfile: Dockerfile.musl
     ## 20240806: Clang and CMake that we use aren't packaged for
-    ## armv7 or riscv64 (also no Debian 10 for RISC-V)
+    ## armv7 or riscv64 (also no Debian 11 for RISC-V)
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
