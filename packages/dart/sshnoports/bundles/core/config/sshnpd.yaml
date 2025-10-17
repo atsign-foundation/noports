@@ -1,0 +1,99 @@
+# Main service's atSign authentication information
+atsign:
+  # The atsign to run the service as 
+  # Examples:
+  # `atsign: '@foobar_np'`
+  # `atsign: foobar_np`
+  # Don't do the following:
+  # `atsign: @foobar_np`
+  # The '@' symbol is a special character in yaml.
+  # TODO: MANDATORY SETTING
+  atsign: 
+
+  # The path to the .atKeys file for the atsign, only needed if not
+  # located at the default path.
+  # The default value is dependent on the home directory and the atsign.
+  # Default for the 'atsign' example above:
+  # `keys: ~/.atsign/keys/@foobar_np_key.atKeys`
+  keys: 
+
+  # The root configuration for the atPlatform
+  # Examples:
+  # `root: root.atsign.org` (The default)
+  # `root: proxy:proxy0001.atsign.org:443` (Atsign's proxy for root.atsign.org)
+  # `root: my.enterprise.root:64` (When hosting your own atSigns)
+  # `root: proxy:my.enterprise.proxy:443` (When hosting your own atSigns with a proxy)
+  root: 
+
+# Configuration of access over NoPorts
+# TODO: At least one atSign must be listed under managers or policy
+access:
+  # A single atSign which serves as the policy manager. You must also run a policy
+  # service as that atSign to answer requests.
+  # Example: `policy: foobar03_np`
+  policy:
+
+  # A list of atsigns which serve as "managers" and have direct access to this device
+  # Only permit open permission apply to managers, policy is ignored for managers
+  # Example:
+  # ```
+  # managers:
+  #   - foobar01_np
+  #   - foobar02_np
+  # ```
+  managers:
+
+  # A list of host:port pairs which are allowed to be accessed on this device.
+  # Use policy for finite control by user.
+  # Use "*:*" to represent all host and all ports.
+  # If permit open is left empty, the default value is "localhost:22" and "localhost:3389" for ssh and rdp
+  permitopen:
+    - localhost:22
+
+# Additional device configuration
+device:
+  # Set a different device name for your NoPorts daemon
+  # Defaults to:
+  # `name: default`
+  name:
+
+  # Set a device group name. This setting is used for fleet management.
+  # Ask an Atsign team member about this setting if you plan to deploy a fleet.
+  group: 
+
+# Settings for how sshnp interacts with the NoPorts daemon
+ssh:
+  # Automatically add ssh public keys to the authorized_keys file
+  # This will add public keys to the authorized_keys file of the user sshnpd is running as
+  # This option should only be turned on if only ONE person will be accessing this machine
+  # This feature is for consumers and not recommended to be enabled in an enterprise setting
+  add-publickeys: false
+
+  # ssh-client can be set to `openssh` to use an external (openssh compatible) ssh binary on path (recommended)
+  # if you don't have an external ssh binary, then `dart` may be used to use the builtin ssh client.
+  ssh-client: openssh
+
+  # The port which sshnpd should expect to find the sshd bound to (on the internal interface)
+  sshd-port: 22
+
+  # Permissions for public keys added using the add-publickeys feature
+  # See the AUTHORIZED KEYS FILE FORMAT section in man sshd.
+  # This takes a list of options which will be prefixed to the line before the key
+  publickey-permissions:
+
+
+# Additional runtime settings for the service
+runtime:
+  # NoPorts caches some data for performance, use this
+  # to specify a different directory for the cache.
+  storage-path: 
+
+  # If you reset your one of your NoPorts atSigns
+  # Setting this to true will reset the cache so that
+  # NoPorts will pickup the atSign's new public key
+  clear-cached-pks: false
+
+  # Enable verbose logging, it's highly recommended that
+  # you leave this turned on.
+  verbose: true
+

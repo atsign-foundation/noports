@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -13,13 +12,6 @@ void main(List<String> args) async {
   AtSignLogger.root_level = 'SEVERE';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   late final Sshnpd sshnpd;
-
-  ArgResults r = SshnpdParams.parser.parse(args);
-  if (r.wasParsed('help')) {
-    printVersion();
-    stderr.writeln(SshnpdParams.parser.usage);
-    exit(0);
-  }
 
   try {
     sshnpd = await Sshnpd.fromCommandLineArgs(
@@ -34,8 +26,13 @@ void main(List<String> args) async {
       ),
       usageCallback: (e, s) {
         printVersion();
-        stderr.writeln(SshnpdParams.parser.usage);
+        stderr.writeln(SshnpdOption.usage);
         stderr.writeln('\n$e');
+      },
+      helpCallback: () {
+        printVersion();
+        stderr.writeln(SshnpdOption.usage);
+        exit(0);
       },
       version: packageVersion,
     );
@@ -43,13 +40,16 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  await runZonedGuarded(() async {
-    await sshnpd.init();
-    await sshnpd.run();
-  }, (Object error, StackTrace stackTrace) async {
-    stderr.writeln('Error: ${error.toString()}');
-    stderr.writeln('Stack Trace: ${stackTrace.toString()}');
-    await stderr.flush().timeout(Duration(milliseconds: 100));
-    exit(1);
-  });
+  await runZonedGuarded(
+    () async {
+      await sshnpd.init();
+      await sshnpd.run();
+    },
+    (Object error, StackTrace stackTrace) async {
+      stderr.writeln('Error: ${error.toString()}');
+      stderr.writeln('Stack Trace: ${stackTrace.toString()}');
+      await stderr.flush().timeout(Duration(milliseconds: 100));
+      exit(1);
+    },
+  );
 }
