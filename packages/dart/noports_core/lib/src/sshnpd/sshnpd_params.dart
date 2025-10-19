@@ -13,6 +13,7 @@ class SshnpdParams {
   final List<String> managerAtsigns;
   final String? policyManagerAtsign;
   final String atKeysFilePath;
+  final String passPhrase;
   final String deviceAtsign;
   final bool verbose;
   final bool makeDeviceInfoVisible;
@@ -27,7 +28,6 @@ class SshnpdParams {
   final String storagePath;
   final String permitOpen;
   final bool clearCachedPKs;
-  final String passPhrase;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -39,6 +39,7 @@ class SshnpdParams {
     required this.managerAtsigns,
     required this.policyManagerAtsign,
     required this.atKeysFilePath,
+    required this.passPhrase,
     required this.deviceAtsign,
     required this.verbose,
     required this.makeDeviceInfoVisible,
@@ -53,7 +54,6 @@ class SshnpdParams {
     required this.storagePath,
     required this.permitOpen,
     required this.clearCachedPKs,
-    required this.passPhrase,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -125,6 +125,7 @@ class SshnpdParams {
       atKeysFilePath:
           r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
+      passPhrase: r['pass-phrase'],
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
       makeDeviceInfoVisible: makeDeviceInfoVisible,
@@ -147,7 +148,6 @@ class SshnpdParams {
           ),
       permitOpen: permitOpen,
       clearCachedPKs: r['clear-cached-pks'],
-      passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : ''
     );
   }
 
@@ -165,6 +165,16 @@ class SshnpdParams {
       help:
           'Sending atSign\'s keyFile if not in ~/.atsign/keys/'
           '  Alias: --keyFile',
+    );
+
+    parser.addOption(
+      'pass-phrase',
+      aliases: ['passPhrase'],
+      abbr: 'P',
+      mandatory: false,
+      defaultsTo: '',
+      help: 'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+      hide: true
     );
 
     parser.addOption(
@@ -334,11 +344,6 @@ class SshnpdParams {
     );
 
     parser.addFlag('help', help: 'Show usage');
-
-    parser.addOption('passPhrase',
-        abbr: 'P',
-        mandatory: false,
-        help: 'To password protect the AtKeys file');
 
     return parser;
   }

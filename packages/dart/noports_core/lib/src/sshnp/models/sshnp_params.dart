@@ -31,6 +31,8 @@ abstract interface class ClientParams {
 
   String? get atKeysFilePath;
 
+  String? get passPhrase;
+
   /// An encryption keypair which should only ever reside in memory.
   /// The public key is provided in requests to the daemon, and is
   /// used by daemons to encrypt symmetric encryption keys intended for
@@ -84,6 +86,9 @@ abstract class ClientParamsBase implements ClientParams {
   final String? atKeysFilePath;
 
   @override
+  final String? passPhrase;
+
+  @override
   int localPort;
 
   @override
@@ -103,8 +108,6 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final bool only443;
 
-  final String? passPhrase;
-
   ClientParamsBase({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -113,6 +116,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.device = DefaultSshnpArgs.device,
     this.verbose = DefaultArgs.verbose,
     this.atKeysFilePath,
+    this.passPhrase,
     this.rootDomain = DefaultArgs.rootDomain,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
@@ -120,7 +124,6 @@ abstract class ClientParamsBase implements ClientParams {
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
     required this.only443,
-    this.passPhrase
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -183,6 +186,7 @@ class NptParams extends ClientParamsBase
     super.localPort = DefaultSshnpArgs.localPort,
     super.verbose = DefaultArgs.verbose,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
@@ -194,7 +198,6 @@ class NptParams extends ClientParamsBase
     this.controlChannelHeartbeat,
     this.localHost,
     super.only443 = false,
-    super.passPhrase
   }) {
     try {
       AtUtils.fixAtSign(clientAtSign);
@@ -262,6 +265,7 @@ class SshnpParams extends ClientParamsBase
     this.remoteUsername,
     this.tunnelUsername,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
@@ -273,7 +277,6 @@ class SshnpParams extends ClientParamsBase
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
     super.only443 = false,
-    super.passPhrase
   });
 
   factory SshnpParams.empty() {
@@ -301,6 +304,7 @@ class SshnpParams extends ClientParamsBase
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -323,7 +327,6 @@ class SshnpParams extends ClientParamsBase
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
-      passPhrase: params2.passPhrase ?? params1.passPhrase
     );
   }
 
@@ -370,6 +373,7 @@ class SshnpParams extends ClientParamsBase
       remoteUsername: partial.remoteUsername,
       tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      passPhrase: partial.passPhrase,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
@@ -388,7 +392,6 @@ class SshnpParams extends ClientParamsBase
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
       only443: partial.only443 ?? false,
-      passPhrase: partial.passPhrase,
     );
   }
 
@@ -424,6 +427,7 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.deviceArg.name: device,
       SshnpArg.localPortArg.name: localPort,
       SshnpArg.keyFileArg.name: atKeysFilePath,
+      SshnpArg.passPhraseArg.name: passPhrase,
       SshnpArg.identityFileArg.name: identityFile,
       SshnpArg.identityPassphraseArg.name: identityPassphrase,
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
@@ -438,7 +442,6 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
-      SshnpArg.passPhrase.name: passPhrase
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -463,6 +466,7 @@ class SshnpPartialParams {
   final String? device;
   final int? localPort;
   final String? atKeysFilePath;
+  final String? passPhrase;
   final String? identityFile;
   final String? identityPassphrase;
   final bool? sendSshPublicKey;
@@ -481,7 +485,6 @@ class SshnpPartialParams {
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
   final bool? only443;
-  final String? passPhrase;
 
   /// Operation flags
   final bool? listDevices;
@@ -494,6 +497,7 @@ class SshnpPartialParams {
     this.device,
     this.localPort,
     this.atKeysFilePath,
+    this.passPhrase,
     this.identityFile,
     this.identityPassphrase,
     this.sendSshPublicKey,
@@ -513,7 +517,6 @@ class SshnpPartialParams {
     this.encryptRvdTraffic,
     this.daemonPingTimeout,
     this.only443,
-    this.passPhrase
   });
 
   factory SshnpPartialParams.empty() {
@@ -535,6 +538,7 @@ class SshnpPartialParams {
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -558,7 +562,6 @@ class SshnpPartialParams {
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
-      passPhrase: params2.passPhrase ?? params1.passPhrase,
     );
   }
 
@@ -596,6 +599,7 @@ class SshnpPartialParams {
       device: args[SshnpArg.deviceArg.name],
       localPort: args[SshnpArg.localPortArg.name],
       atKeysFilePath: args[SshnpArg.keyFileArg.name],
+      passPhrase: args[SshnpArg.passPhraseArg.name],
       identityFile: args[SshnpArg.identityFileArg.name],
       identityPassphrase: args[SshnpArg.identityPassphraseArg.name],
       sendSshPublicKey: args[SshnpArg.sendSshPublicKeyArg.name],
@@ -627,7 +631,6 @@ class SshnpPartialParams {
             DefaultArgs.daemonPingTimeoutSeconds,
       ),
       only443: args[SshnpArg.only443Arg.name],
-      passPhrase: args[SshnpArg.passPhrase.name],
     );
   }
 

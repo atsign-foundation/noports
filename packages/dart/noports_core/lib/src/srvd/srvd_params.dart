@@ -8,6 +8,7 @@ class SrvdParams {
   final String atSign;
   final String homeDirectory;
   final String atKeysFilePath;
+  final String passPhrase;
   final String managerAtsign;
   final String ipAddress;
   final bool verbose;
@@ -22,7 +23,6 @@ class SrvdParams {
   /// The actual port to bind to - for example in a docker env you may wish
   /// to forward port 443 on the host to some local port in the container
   final int localBindPort443;
-  final String passPhrase;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -31,6 +31,7 @@ class SrvdParams {
     required this.atSign,
     required this.homeDirectory,
     required this.atKeysFilePath,
+    required this.passPhrase,
     required this.managerAtsign,
     required this.ipAddress,
     required this.verbose,
@@ -40,7 +41,6 @@ class SrvdParams {
     required this.bind443,
     required this.localBindPort443,
     required this.debug,
-    required this.passPhrase
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -60,6 +60,7 @@ class SrvdParams {
       homeDirectory: homeDirectory,
       atKeysFilePath:
           r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign),
+      passPhrase: r['pass-phrase'],
       managerAtsign: r['manager'],
       ipAddress: r['ip'],
       verbose: r['verbose'],
@@ -71,7 +72,6 @@ class SrvdParams {
           ? 443
           : int.parse(r['443-bind-port']),
       debug: r['debug'],
-      passPhrase: (r['passPhrase'] != null) ? r['passPhrase'] : '',
     );
   }
 
@@ -89,6 +89,16 @@ class SrvdParams {
       help:
           'atSign\'s atKeys file if not in ~/.atsign/keys/'
           '  Alias: --keyFile',
+    );
+    parser.addOption(
+      'pass-phrase',
+      aliases: const ['passPhrase'],
+      abbr: 'P',
+      help:
+      'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+      mandatory: false,
+      defaultsTo: '',
+      hide: true
     );
     parser.addOption(
       'atsign',
@@ -170,10 +180,6 @@ class SrvdParams {
       negatable: false,
       help: 'Print usage',
     );
-    parser.addOption('passPhrase',
-        abbr: 'P',
-        mandatory: false,
-        help: 'Password to encrypt/decrypt the atKeys file');
     return parser;
   }
 }

@@ -93,6 +93,7 @@ class SshnpArg {
     profileNameArg,
     helpArg,
     keyFileArg,
+    passPhraseArg,
     fromArg,
     toArg,
     deviceArg,
@@ -199,6 +200,14 @@ class SshnpArg {
     abbr: 'k',
     help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
     parseWhen: ParseWhen.commandLine,
+  );
+  static const passPhraseArg = SshnpArg(
+    name: 'pass-phrase',
+    aliases: ['passPhrase'],
+    abbr: 'P',
+    help: 'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+    mandatory: false,
+    defaultsTo: '',
   );
   static const fromArg = SshnpArg(
     name: 'from',
@@ -400,14 +409,6 @@ class SshnpArg {
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
-    parseWhen: ParseWhen.commandLine,
-  );
-  static const passPhrase = SshnpArg(
-    name: 'passPhrase',
-    abbr: 'P',
-    help: 'The pass phrase to encrypt/decrypt the atKeys file content',
-    mandatory: false,
-    type: ArgType.string,
     parseWhen: ParseWhen.commandLine,
   );
   static const only443Arg = SshnpArg(
