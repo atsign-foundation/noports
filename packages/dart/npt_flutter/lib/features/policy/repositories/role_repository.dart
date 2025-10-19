@@ -21,7 +21,7 @@ class RoleRepository {
     }
     final String regex = 'groups\\.policy\\.sshnp$currentAtSign';
 
-    final List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex);
+    final List<String> groupAtKeyStrs = await atClient.getKeys(regex: regex, useRemoteAtServer: true);
     final List<AtKey> groupAtKeys = groupAtKeyStrs
         .map((key) => AtKey.fromString(key))
         .toList();

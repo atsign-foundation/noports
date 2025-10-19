@@ -84,15 +84,14 @@ final class PolicyStatusLightCubit
 
       final Duration interval = Duration(seconds: intervalObject);
 
-      final DateTime nowUtc = DateTime.now().toUtc();
+      final DateTime nowUtc = DateTime.timestamp().toUtc();
       final DateTime heartbeatUtc = timestamp.toUtc();
       final Duration delta = nowUtc.difference(heartbeatUtc);
 
-      bool isFresh = false;
-      if (!delta.isNegative) {
-        // e.g. if interval is 60 seconds, then heartbeat is fresh if last heartbeat was within the last 60 seconds
-        isFresh = delta <= interval;
-      }
+      // e.g. if interval is 60 seconds, then heartbeat is fresh if last heartbeat was within the last 60 seconds
+      bool isFresh = !delta.isNegative && delta <= interval;
+
+      logger.info('Heartbeat check: nowUtc=$nowUtc, heartbeatUtc=$heartbeatUtc, delta=$delta, interval=$interval, isFresh=$isFresh');
 
       final LightState lightState = isFresh ? LightState.green : LightState.red;
       final String message = _buildMessage(delta, heartbeatUtc);

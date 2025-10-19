@@ -213,7 +213,7 @@ class Handler implements NPARequestHandler {
 }
 
 Future<bool> _updateHeartbeatKey(final AtClient atClient) async {
-  final timestamp = DateTime.now();
+  final timestamp = DateTime.timestamp().toUtc();
   final atKey = AtKey()
         ..key = 'heartbeat'
         ..sharedBy = atClient.getCurrentAtSign()
