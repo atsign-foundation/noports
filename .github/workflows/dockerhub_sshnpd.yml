@@ -113,6 +113,9 @@ jobs:
   docker_combine:
     needs: docker
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write # for creating OIDC tokens for signing.
     strategy:
       fail-fast: false
       matrix:
