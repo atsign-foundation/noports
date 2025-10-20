@@ -43,6 +43,13 @@ jobs:
           docker buildx imagetools create -t \
             atsigncompany/${{ github.event.inputs.image }}:prod-wd-gha${{ github.run_number }} \
             atsigncompany/${{ github.event.inputs.image }}:canary
+          LATEST="atsigncompany/${{ github.event.inputs.image }}:latest"
+          LATEST_DIGEST=$(docker buildx imagetools inspect ${LATEST} \
+            --format "{{json .Manifest}}" | jq -r .digest)
+          IMAGES="${LATEST}@${LATEST_DIGEST}"
+          IMAGES+=" atsigncompany/${{ github.event.inputs.image }}:prod@${LATEST_DIGEST}"
+          IMAGES+=" atsigncompany/${{ github.event.inputs.image }}:prod-wd-gha${{ github.run_number }}@${LATEST_DIGEST}"
+          cosign sign --yes ${IMAGES}
 
   multi:
     if: ${{ github.event_name == 'push' }}
@@ -75,3 +82,10 @@ jobs:
           docker buildx imagetools create -t \
             atsigncompany/${{ matrix.name }}:prod-${{ github.ref_name }} \
             atsigncompany/${{ matrix.name }}:canary
+          LATEST="atsigncompany/${{ matrix.name }}:latest"
+          LATEST_DIGEST=$(docker buildx imagetools inspect ${LATEST} \
+            --format "{{json .Manifest}}" | jq -r .digest)
+          IMAGES="${LATEST}@${LATEST_DIGEST}"
+          IMAGES+=" atsigncompany/${{ matrix.name }}:prod@${LATEST_DIGEST}"
+          IMAGES+=" atsigncompany/${{ matrix.name }}:prod-${{ github.ref_name }}@${LATEST_DIGEST}"
+          cosign sign --yes ${IMAGES}
