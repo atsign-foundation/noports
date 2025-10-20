@@ -5,6 +5,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
+import 'package:at_utils/at_utils.dart';
 
 class SshnpdParams {
   final String device;
@@ -64,7 +65,7 @@ class SshnpdParams {
     // Arg check
     ArgResults r = parser.parse(args);
 
-    String deviceAtsign = r['atsign'];
+    String deviceAtsign = AtUtils.fixAtSign(r['atsign']);
 
     if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
       throw ArgumentError(
