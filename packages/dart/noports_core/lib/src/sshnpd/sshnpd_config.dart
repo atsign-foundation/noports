@@ -19,8 +19,7 @@ File _defaultConfigFilePath() {
       final programData = Platform.environment['ProgramData'];
       return File("$programData/NoPorts/sshnpd.yaml");
     case "macos":
-      // TODO
-      return File("/NoPorts/sshnpd.yaml");
+      return File("/Library/Application Support/NoPorts/sshnpd.yaml");
     default:
       return File("/etc/noports/sshnpd.yaml");
   }
