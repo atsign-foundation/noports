@@ -11,13 +11,14 @@ import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import '../../profile/bloc/profile_bloc_test.mocks.dart' as profile_mocks;
 import 'profile_list_bloc_test.mocks.dart';
 
-@GenerateMocks([FavoriteBloc, BuildContext])
+@GenerateMocks([FavoriteBloc, BuildContext, ProfileCacheCubit])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ProfileListBloc Tests', () {
     late ProfileListBloc profileListBloc;
     late profile_mocks.MockProfileRepository mockRepository;
+    late ProfileCacheCubit mockProfileCacheCubit = MockProfileCacheCubit();
     late MockFavoriteBloc mockFavoriteBloc;
     late MockBuildContext mockContext;
 
@@ -60,7 +61,8 @@ void main() {
       mockRepository = profile_mocks.MockProfileRepository();
       mockFavoriteBloc = MockFavoriteBloc();
       mockContext = MockBuildContext();
-      profileListBloc = ProfileListBloc(mockRepository);
+
+      profileListBloc = ProfileListBloc(mockRepository, mockProfileCacheCubit);
     });
 
     tearDown(() {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
@@ -10,11 +11,14 @@ part 'profile_list_state.dart';
 
 class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
   final ProfileRepository _repo;
-  ProfileListBloc(this._repo) : super(const ProfileListInitial()) {
+  final ProfileCacheCubit _profileCacheCubit;
+  ProfileListBloc(this._repo, this._profileCacheCubit)
+    : super(const ProfileListInitial()) {
     on<ProfileListLoadEvent>(_onLoad);
     on<ProfileListUpdateEvent>(_onUpdate);
     on<ProfileListDeleteEvent>(_onDelete);
     on<ProfileListAddEvent>(_onAdd);
+    on<ProfileListSortEvent>(_onSort);
   }
 
   void clearAll() => emit(const ProfileListInitial());
@@ -96,5 +100,136 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     }
 
     emit(ProfileListLoaded(profiles: profiles));
+  }
+
+  Future<void> _onSort(
+    ProfileListSortEvent event,
+    Emitter<ProfileListState> emit,
+  ) async {
+    App.log('Sort event received: column=${event.sortColumn}'.loggable);
+    // Don't allow sorts unless listed is loaded - this reduces the number of edge cases significantly
+    if (state is! ProfileListLoaded) {
+      App.log('Cannot sort - state is not ProfileListLoaded'.loggable);
+      return;
+    }
+    var currentState = state as ProfileListLoaded;
+    App.log(
+      'Current sort: column=${currentState.sortColumn}, order=${currentState.sortOrder}'
+          .loggable,
+    );
+    // Toggle sort order if clicking same column
+    final newSortOrder =
+        currentState.sortColumn == event.sortColumn &&
+            currentState.sortOrder == SortOrder.ascending
+        ? SortOrder.descending
+        : SortOrder.ascending;
+
+    App.log(
+      'New sort: column=${event.sortColumn}, order=$newSortOrder'.loggable,
+    );
+
+    // Sort the profile by the selected column
+    final sortedProfiles = await _sortProfiles(
+      currentState.profiles,
+      event.sortColumn,
+      newSortOrder,
+    );
+
+    App.log('Sorted ${sortedProfiles.length} profiles'.loggable);
+    emit(
+      currentState.copyWith(
+        profiles: sortedProfiles,
+        sortColumn: event.sortColumn,
+        sortOrder: newSortOrder,
+      ),
+    );
+  }
+
+  // Helper function to sort profiles based on column and order
+  Future<List<String>> _sortProfiles(
+    Iterable<String> profileUuids,
+    SortColumn sortColumn,
+    SortOrder sortOrder,
+  ) async {
+    if (sortColumn == SortColumn.none) {
+      App.log('No sorting applied (SortColumn.none)'.loggable);
+      return profileUuids.toList();
+    }
+
+    // Get actual profile data for sorting
+    final profileDataList = await Future.wait(
+      profileUuids.map((uuid) async {
+        final profileBloc = _profileCacheCubit.getProfileBloc(uuid);
+        final profileState = profileBloc.state;
+
+        if (profileState is ProfileLoadedState) {
+          App.log('Got profile $uuid for sorting'.loggable);
+          return (
+            uuid: uuid,
+            profile: profileState.profile,
+            state: profileState,
+          );
+        } else {
+          App.log(
+            'Failed to get profile $uuid for sorting: ${profileState.runtimeType}'
+                .loggable,
+          );
+          return (uuid: uuid, profile: null, state: profileState);
+        }
+      }),
+    );
+
+    // Sort based on column
+    profileDataList.sort((a, b) {
+      if (a.profile == null || b.profile == null) return 0;
+
+      int comparison = 0;
+
+      switch (sortColumn) {
+        case SortColumn.profileName:
+          comparison = a.profile!.displayName.compareTo(b.profile!.displayName);
+          break;
+        case SortColumn.deviceName:
+          comparison = a.profile!.deviceName.compareTo(b.profile!.deviceName);
+          break;
+        case SortColumn.serviceMapping:
+          final aComparator =
+              '${a.profile!.localPort}:${a.profile!.remoteHost}:${a.profile!.remotePort}';
+          final bComparator =
+              '${b.profile!.localPort}:${b.profile!.remoteHost}:${b.profile!.remotePort}';
+          comparison = aComparator.compareTo(bComparator);
+          break;
+        case SortColumn.status:
+          log(
+            'Comparing status: ${_getStatusPriority(a.state)} ${a.state.runtimeType} vs ${_getStatusPriority(b.state)} ${b.state.runtimeType}',
+          );
+          comparison = _getStatusPriority(
+            a.state,
+          ).compareTo(_getStatusPriority(b.state));
+          break;
+        case SortColumn.none:
+          comparison = 0;
+          break;
+      }
+
+      return sortOrder == SortOrder.ascending ? comparison : -comparison;
+    });
+
+    return profileDataList.map((e) => e.uuid).toList();
+  }
+
+  /// helper method to assign priority to each state for meaningful sorting
+  int _getStatusPriority(ProfileState state) {
+    return switch (state) {
+      ProfileStarted _ => 0,
+      ProfileStarting _ => 1,
+      ProfileLoaded _ => 2,
+      ProfileFailedSave _ => 2,
+      ProfileStopping _ => 3,
+      ProfileFailedStart _ => 4,
+      ProfileFailedLoad _ => 5,
+      ProfileLoading _ => 6,
+      ProfileInitial _ => 7,
+    };
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -70,7 +68,6 @@ class _ProfileListViewState extends State<ProfileListView> {
 
                       final profiles = state.profiles.toList();
                       final isFullProfile = profiles.isNotEmpty;
-                      log('profile: isFullProfile: $isFullProfile');
 
                       return Stack(
                         children: [

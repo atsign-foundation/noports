@@ -1,3 +1,7 @@
+## 1.6.2+21
+
+- **FEAT**: Connections can be sorted by Profile Name, Device Name, Service Mapping and Status.
+
 ## 1.6.1+20
 
 - **FIX**: Fixed a bug where policy status light timestamping was out of sync

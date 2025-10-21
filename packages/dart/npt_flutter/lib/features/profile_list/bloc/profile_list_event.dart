@@ -56,3 +56,17 @@ final class ProfileListAddEvent extends ProfileListEvent {
     return 'ProfileListAddEvent(toAdd: $toAdd)';
   }
 }
+
+final class ProfileListSortEvent extends ProfileListEvent {
+  final SortColumn sortColumn;
+
+  const ProfileListSortEvent({required this.sortColumn});
+
+  @override
+  List<Object> get props => [sortColumn];
+
+  @override
+  String toString() {
+    return 'ProfileListSortEvent(sortColumn: $sortColumn)';
+  }
+}
