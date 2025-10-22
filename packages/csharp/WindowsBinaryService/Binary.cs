@@ -35,24 +35,25 @@ namespace WindowsBinaryService
                     var errorChannel = Channel.CreateUnbounded<string>();
 
                     // Background tasks to process channels
-                    var outputTask = ProcessChannelAsync(outputChannel.Reader, "OUTPUT", cancellationToken);
-                    var errorTask = ProcessChannelAsync(errorChannel.Reader, "ERROR", cancellationToken);
 
-                    async Task ProcessChannelAsync(ChannelReader<string> reader, string type, CancellationToken ct)
+
+                    //lowkey only the stderr channel matters ngl (idk why sshnp doesnt pipe any stdout)
+                    var outputTask = ProcessChannelAsync(outputChannel.Reader, cancellationToken);
+                    var errorTask = ProcessChannelAsync(errorChannel.Reader, cancellationToken);
+
+                    async Task ProcessChannelAsync(ChannelReader<string> reader, CancellationToken ct)
                     {
                         var chunk = new StringBuilder();
                         var lastFlush = DateTime.UtcNow;
-                        const int maxChunkSize = 1024;
 
                         await foreach (var line in reader.ReadAllAsync(ct))
                         {
                             chunk.AppendLine(line);
 
                             // Flush if chunk is large enough or enough time has passed
-                            if (chunk.Length >= maxChunkSize ||
-                                DateTime.UtcNow - lastFlush > TimeSpan.FromMilliseconds(500))
+                            if (DateTime.UtcNow - lastFlush > TimeSpan.FromMilliseconds(5000))
                             {
-                                _logger.LogCritical($"{type}:\n {chunk}");
+                                _logger.LogWarning($"{chunk}");
                                 chunk.Clear();
                                 lastFlush = DateTime.UtcNow;
                             }
@@ -61,7 +62,7 @@ namespace WindowsBinaryService
                         // Final flush
                         if (chunk.Length > 0)
                         {
-                            _logger.LogCritical($"FINAL {type}:\n{chunk}");
+                            _logger.LogError($"sshnpd process closing, final log: {chunk}");
                         }
                     }
 

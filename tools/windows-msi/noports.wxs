@@ -19,60 +19,55 @@
     <Feature Id="ServiceFeature" Title="NoPorts Service" Level="2" 
             Description="Install NoPorts as a Windows service (sshnpd)">
       <ComponentGroupRef Id="sshnpdComponents" />
+      <ComponentGroupRef Id="sshnpdConfig" />
     </Feature>
 
     <!-- Directory structure -->
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="INSTALLFOLDER" Name="NoPorts">
-      </Directory>
+      <Directory Id="INSTALLFOLDER" Name="NoPorts"/>
     </StandardDirectory>
-    
+
+    <StandardDirectory Id="CommonAppDataFolder">
+      <Directory Id="APPDATADIR" Name="NoPorts"/>
+    </StandardDirectory>
     <!-- Files to install -->
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-      <Component Id="sshnpd">
+      <Component Id="sshnpd" Guid="*">
         <File Id="sshnpdfile" Source="bin\sshnpd.exe" 
-              Name="sshnpd.exe" />
+              Name="sshnpd.exe" KeyPath="yes" />
       </Component>
 
-      <Component Id="sshnp">
+      <Component Id="sshnp" Guid="*">
         <File Id="sshnpfile" Source="bin\sshnp.exe" 
-              Name="sshnp.exe" />
+              Name="sshnp.exe" KeyPath="yes" />
       </Component> 
 
-      <Component Id="at_activate">
+      <Component Id="at_activate" Guid="*">
         <File Id="at_activatefile" Source="bin\at_activate.exe" 
-              Name="at_activate.exe" />
+              Name="at_activate.exe" KeyPath="yes" />
       </Component>
 
-      <Component Id="np_admin">
-        <File Id="np_adminfile" Source="bin\np_admin.exe" 
-              Name="np_admin.exe" />
-      </Component>
-
-      <Component Id="npa_file">
-        <File Id="npa_files" Source="bin\npa_file.exe" 
-              Name="npa_file.exe" />
-      </Component>
-
-      <Component Id="npp_atserver">
+      <Component Id="npp_atserver" Guid="*">
         <File Id="npp_atserverfile" Source="bin\npp_atserver.exe" 
-              Name="npp_atserver.exe" />
+              Name="npp_atserver.exe" KeyPath="yes" />
       </Component>
 
-      <Component Id="npp_file">
+      <Component Id="npp_file" Guid="*">
         <File Id="npp_files" Source="bin\npp_file.exe" 
-              Name="npp_file.exe" />
+              Name="npp_file.exe" KeyPath="yes" />
       </Component>
 
-      <Component Id="npt">
+      <Component Id="npt" Guid="*">
         <File Id="nptfile" Source="bin\npt.exe" 
-              Name="npt.exe" />
+              Name="npt.exe" KeyPath="yes" />
       </Component>
 
-      <Component Id="srv">
+      <Component Id="srv" Guid="*">
         <File Id="srvfile" Source="bin\srv.exe" 
-              Name="srv.exe" />
+              Name="srv.exe" KeyPath="yes" />
       </Component>
+
+     
 
       <!-- Environment PATH -->
       <Component Id="UpdatePath" Guid="d7a87a7f-1bcc-4eba-b089-6c2ab0e0f0bd">
@@ -107,16 +102,16 @@
                              Stop="both"
                              Remove="uninstall"
                              Wait="yes" />
-
-        <util:ServiceConfig ServiceName="[SERVICE_NAME]"
-                            FirstFailureActionType="restart"
-                            SecondFailureActionType="restart"
-                            ThirdFailureActionType="restart"
-                            RestartServiceDelayInSeconds="60"
-                            ResetPeriodInDays="1" />
-
       </Component>
     </ComponentGroup>
+
+    <ComponentGroup Id="sshnpdConfig" Directory="APPDATADIR">
+      <Component Id="sshnpd_config" Guid="*">
+        <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
+              Name="sshnpd.yaml" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
     <ui:WixUI Id="WixUI_FeatureTree" />    
   </Package>
