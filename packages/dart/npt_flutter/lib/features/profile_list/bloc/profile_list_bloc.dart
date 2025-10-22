@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
@@ -142,12 +141,15 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     );
   }
 
+  // Helper Functions below this line
+
   // Helper function to sort profiles based on column and order
   Future<List<String>> _sortProfiles(
     SortColumn sortColumn,
     SortOrder sortOrder,
   ) async {
-    var profileBlocList = _profileCacheCubit.state.profileBlocs.values.toList();
+    final profileBlocList = _profileCacheCubit.state.profileBlocs.values
+        .toList();
     if (sortColumn == SortColumn.none) {
       App.log('No sorting applied (SortColumn.none)'.loggable);
       return profileBlocList.map((e) => e.uuid).toList();
@@ -181,9 +183,11 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       switch (sortColumn) {
         case SortColumn.profileName:
           comparison = a.profile!.displayName.compareTo(b.profile!.displayName);
+          App.log('Connections sorted by profile name'.loggable);
           break;
         case SortColumn.deviceName:
           comparison = a.profile!.deviceName.compareTo(b.profile!.deviceName);
+          App.log('Connections sorted by device name'.loggable);
           break;
         case SortColumn.serviceMapping:
           final aComparator =
@@ -191,16 +195,16 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
           final bComparator =
               '${b.profile!.localPort}:${b.profile!.remoteHost}:${b.profile!.remotePort}';
           comparison = aComparator.compareTo(bComparator);
+          App.log('Connections sorted by service mapping'.loggable);
           break;
         case SortColumn.status:
-          log(
-            'Comparing status: ${_getStatusPriority(a.state)} ${a.state.runtimeType} vs ${_getStatusPriority(b.state)} ${b.state.runtimeType}',
-          );
           comparison = _getStatusPriority(
             a.state,
           ).compareTo(_getStatusPriority(b.state));
+          App.log('Connections sorted by status'.loggable);
           break;
         case SortColumn.none:
+          App.log('No sorting applied (SortColumn.none)'.loggable);
           comparison = 0;
           break;
       }
