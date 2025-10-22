@@ -1,6 +1,6 @@
 # Main service's atSign authentication information
 atsign:
-  # The atsign to run the service as 
+  # The atsign to run the service as
   # Examples:
   # `atsign: '@foobar_np'`
   # `atsign: foobar_np`
@@ -42,6 +42,7 @@ access:
   #   - foobar02_np
   # ```
   managers:
+    # - your_atsign_here
 
   # A list of host:port pairs which are allowed to be accessed on this device.
   # Use policy for finite control by user.
@@ -49,13 +50,14 @@ access:
   # If permit open is left empty, the default value is "localhost:22" and "localhost:3389" for ssh and rdp
   permitopen:
     - localhost:22
+    - localhost:3389
 
 # Additional device configuration
 device:
   # Set a different device name for your NoPorts daemon
   # Defaults to:
   # `name: default`
-  name:
+  name: 
 
   # Set a device group name. This setting is used for fleet management.
   # Ask an Atsign team member about this setting if you plan to deploy a fleet.
