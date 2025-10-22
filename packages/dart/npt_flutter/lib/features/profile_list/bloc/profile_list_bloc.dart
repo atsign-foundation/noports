@@ -130,7 +130,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
     // Sort the profile by the selected column
     final sortedProfiles = await _sortProfiles(
-      currentState.profiles,
+      // currentState.profiles,
       event.sortColumn,
       newSortOrder,
     );
@@ -147,37 +147,34 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
   // Helper function to sort profiles based on column and order
   Future<List<String>> _sortProfiles(
-    Iterable<String> profileUuids,
+    // Iterable<String> profileUuids,
     SortColumn sortColumn,
     SortOrder sortOrder,
   ) async {
+    var profileBlocList = _profileCacheCubit.state.profileBlocs.values.toList();
     if (sortColumn == SortColumn.none) {
       App.log('No sorting applied (SortColumn.none)'.loggable);
-      return profileUuids.toList();
+      return profileBlocList.map((e) => e.uuid).toList();
     }
 
-    // Get actual profile data for sorting
-    final profileDataList = await Future.wait(
-      profileUuids.map((uuid) async {
-        final profileBloc = _profileCacheCubit.getProfileBloc(uuid);
-        final profileState = profileBloc.state;
+    final profileDataList = profileBlocList.map((profileBloc) {
+      final profileState = profileBloc.state;
 
-        if (profileState is ProfileLoadedState) {
-          App.log('Got profile $uuid for sorting'.loggable);
-          return (
-            uuid: uuid,
-            profile: profileState.profile,
-            state: profileState,
-          );
-        } else {
-          App.log(
-            'Failed to get profile $uuid for sorting: ${profileState.runtimeType}'
-                .loggable,
-          );
-          return (uuid: uuid, profile: null, state: profileState);
-        }
-      }),
-    );
+      if (profileState is ProfileLoadedState) {
+        App.log('Got profile ${profileState.uuid} for sorting'.loggable);
+        return (
+          uuid: profileState.uuid,
+          profile: profileState.profile,
+          state: profileState,
+        );
+      } else {
+        App.log(
+          'Failed to get profile ${profileState.uuid} for sorting: ${profileState.runtimeType}'
+              .loggable,
+        );
+        return (uuid: profileState.uuid, profile: null, state: profileState);
+      }
+    }).toList();
 
     // Sort based on column
     profileDataList.sort((a, b) {
@@ -221,15 +218,15 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
   /// helper method to assign priority to each state for meaningful sorting
   int _getStatusPriority(ProfileState state) {
     return switch (state) {
-      ProfileStarted _ => 0,
+      ProfileFailedLoad _ => 0,
+      ProfileFailedStart _ => 0,
+      ProfileFailedSave _ => 0,
+      ProfileStarted _ => 1,
       ProfileStarting _ => 1,
-      ProfileLoaded _ => 2,
-      ProfileFailedSave _ => 2,
-      ProfileStopping _ => 3,
-      ProfileFailedStart _ => 4,
-      ProfileFailedLoad _ => 5,
-      ProfileLoading _ => 6,
-      ProfileInitial _ => 7,
+      ProfileStopping _ => 2,
+      ProfileLoaded _ => 3,
+      ProfileLoading _ => 4,
+      ProfileInitial _ => 5,
     };
   }
 }
