@@ -71,7 +71,7 @@ class SshnpdParams {
     }
 
     if (c.errors.isNotEmpty) {
-      throw c.errors.first;
+      throw ArgumentError(c.errors.first);
     }
 
     String deviceAtsign = c.value(SshnpdOption.atsign).toAtsign();

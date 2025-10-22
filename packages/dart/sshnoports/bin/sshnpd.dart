@@ -38,6 +38,9 @@ void main(List<String> args) async {
     );
   } on ArgumentError catch (_) {
     exit(1);
+  } catch (e, s) {
+    print("Unknown Error, please contact support: $e\n$s");
+    exit(1);
   }
 
   await runZonedGuarded(
