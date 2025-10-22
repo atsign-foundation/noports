@@ -43,9 +43,16 @@ jobs:
             platforms: linux/amd64
             prefix: amd64-
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write # for creating OIDC tokens for signing.
+    outputs:
+      digest: ${{ steps.docker_build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
       - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
         shell: bash
         if: startsWith(github.ref, 'refs/tags/v')
@@ -82,18 +89,33 @@ jobs:
             # Also add the Git tag name itself for releases
             type=raw,value=${{ matrix.prefix }}release-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
       - name: Build and push
+        id: docker_build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          platforms: ${{ matrix.platforms }}
           push: true
-          provenance: false
+          sbom: true
+          provenance: version=v1,mode=max
           tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ matrix.platforms }}
+      - name: Sign the images with GitHub OIDC Token
+        env:
+          DIGEST: ${{ steps.docker_build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          cosign sign --yes ${images}
 
   docker_combine:
     needs: docker
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write # for creating OIDC tokens for signing.
     strategy:
       fail-fast: false
       matrix:
@@ -105,6 +127,8 @@ jobs:
           - name: sshnpd-slim
           - name: srvd
     steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - name: Login to Docker Hub
@@ -133,8 +157,20 @@ jobs:
           docker buildx imagetools create \
             -t atsigncompany/${{ matrix.name }}:${{ env.TAG2 }} \
             --append atsigncompany/${{ matrix.name }}:amd64-${{ env.TAG2 }}
+      - name: Save digest to file and sign combined manifests
+        id: save_digest
+        run: |
+          IMAGE="atsigncompany/${{ matrix.name }}:${{ env.TAG1 }}"
+          IMAGE_DIGEST=$(docker buildx imagetools inspect ${IMAGE} \
+            --format "{{json .Manifest}}" | jq -r .digest)
+          # Create a JSON object for the image and digest
+          echo "{\"name\": \"${IMAGE}\", \"digest\": \"${IMAGE_DIGEST}\"}" \
+            > ${{ matrix.name }}_digest.json
+          IMAGES="${IMAGE}@${IMAGE_DIGEST}"
+          IMAGES+=" atsigncompany/${{ matrix.name }}:${{ env.TAG2 }}@${IMAGE_DIGEST}"
+          cosign sign --yes ${IMAGES}
       # Promote to canary
-      - name: Update canary tag
+      - name: Update and sign canary tag
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           docker buildx imagetools create -t \
@@ -143,3 +179,9 @@ jobs:
           docker buildx imagetools create -t \
             atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }} \
             atsigncompany/${{ matrix.name }}:release-${{ github.ref_name }}
+          CANARY="atsigncompany/${{ matrix.name }}:canary"
+          CANARY_DIGEST=$(docker buildx imagetools inspect ${CANARY} \
+            --format "{{json .Manifest}}" | jq -r .digest)
+          IMAGES="${CANARY}@${CANARY_DIGEST}"
+          IMAGES+=" atsigncompany/${{ matrix.name }}:canary-${{ github.ref_name }}@${CANARY_DIGEST}"
+          cosign sign --yes ${IMAGES}
