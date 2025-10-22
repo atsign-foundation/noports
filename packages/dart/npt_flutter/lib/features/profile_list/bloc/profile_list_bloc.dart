@@ -102,6 +102,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     emit(ProfileListLoaded(profiles: profiles));
   }
 
+  /// Handles sorting of the profile list.
   Future<void> _onSort(
     ProfileListSortEvent event,
     Emitter<ProfileListState> emit,
@@ -129,11 +130,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     );
 
     // Sort the profile by the selected column
-    final sortedProfiles = await _sortProfiles(
-      // currentState.profiles,
-      event.sortColumn,
-      newSortOrder,
-    );
+    final sortedProfiles = await _sortProfiles(event.sortColumn, newSortOrder);
 
     App.log('Sorted ${sortedProfiles.length} profiles'.loggable);
     emit(
@@ -147,7 +144,6 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
   // Helper function to sort profiles based on column and order
   Future<List<String>> _sortProfiles(
-    // Iterable<String> profileUuids,
     SortColumn sortColumn,
     SortOrder sortOrder,
   ) async {
