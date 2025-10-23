@@ -150,10 +150,6 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
   ) async {
     final profileBlocList = _profileCacheCubit.state.profileBlocs.values
         .toList();
-    if (sortColumn == SortColumn.none) {
-      App.log('No sorting applied (SortColumn.none)'.loggable);
-      return profileBlocList.map((e) => e.uuid).toList();
-    }
 
     final profileDataList = profileBlocList.map((profileBloc) {
       final profileState = profileBloc.state;
@@ -202,10 +198,6 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
             a.state,
           ).compareTo(_getStatusPriority(b.state));
           App.log('Connections sorted by status'.loggable);
-          break;
-        case SortColumn.none:
-          App.log('No sorting applied (SortColumn.none)'.loggable);
-          comparison = 0;
           break;
       }
 
