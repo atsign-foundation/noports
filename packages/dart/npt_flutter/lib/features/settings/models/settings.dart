@@ -28,12 +28,17 @@ class Settings extends Loggable {
 
   final Language language;
 
+  /// Whether to pin favorite profiles to the top of the profile list
+  @JsonKey(defaultValue: true)
+  final bool pinFavorites;
+
   const Settings({
     required this.relayAtsign,
     required this.overrideRelay,
     required this.viewLayout,
     this.darkMode = false,
     required this.language,
+    this.pinFavorites = true,
   });
 
   Settings copyWith({
@@ -42,6 +47,7 @@ class Settings extends Loggable {
     PreferredViewLayout? viewLayout,
     bool? darkMode,
     Language? language,
+    bool? pinFavorites,
   }) {
     return Settings(
       relayAtsign: (relayAtsign == null || relayAtsign.isEmpty)
@@ -51,6 +57,7 @@ class Settings extends Loggable {
       viewLayout: viewLayout ?? this.viewLayout,
       darkMode: darkMode ?? this.darkMode,
       language: language ?? this.language,
+      pinFavorites: pinFavorites ?? this.pinFavorites,
     );
   }
 
@@ -67,13 +74,14 @@ class Settings extends Loggable {
     viewLayout,
     darkMode,
     language,
+    pinFavorites,
   ];
 
   @override
   String toString() {
     return 'Settings with relay:$relayAtsign, '
         'overrideRelay: $overrideRelay, view: $viewLayout, '
-        'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}';
+        'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}, pinFavorites: $pinFavorites';
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/settings/bloc/settings_bloc.dart';
 
 part 'profile_list_event.dart';
 part 'profile_list_state.dart';
@@ -170,55 +171,106 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       }
     }).toList();
 
-    // Sort based on column
-    profileDataList.sort((a, b) {
-      if (a.profile == null || b.profile == null) return 0;
+    // Get favorites to pin
+    final context = App.navState.currentContext;
+    final settingsBloc = context?.read<SettingsBloc>();
+    final shouldPinFavorites = settingsBloc?.state is SettingsLoaded
+        ? (settingsBloc!.state as SettingsLoaded).settings.pinFavorites
+        : false;
 
-      int comparison = 0;
-
-      switch (sortColumn) {
-        case SortColumn.profileName:
-          comparison = a.profile!.displayName.compareTo(b.profile!.displayName);
-          App.log('Connections sorted by profile name'.loggable);
-          break;
-        case SortColumn.deviceName:
-          comparison = a.profile!.deviceName.compareTo(b.profile!.deviceName);
-          App.log('Connections sorted by device name'.loggable);
-          break;
-        case SortColumn.serviceMapping:
-          final aComparator =
-              '${a.profile!.localPort}:${a.profile!.remoteHost}:${a.profile!.remotePort}';
-          final bComparator =
-              '${b.profile!.localPort}:${b.profile!.remoteHost}:${b.profile!.remotePort}';
-          comparison = aComparator.compareTo(bComparator);
-          App.log('Connections sorted by service mapping'.loggable);
-          break;
-        case SortColumn.status:
-          comparison = _getStatusPriority(
-            a.state,
-          ).compareTo(_getStatusPriority(b.state));
-          App.log('Connections sorted by status'.loggable);
-          break;
+    if (shouldPinFavorites) {
+      // get favorite uuids
+      final favoriteBloc = context?.read<FavoriteBloc>();
+      final favoriteUuids = <String>{};
+      if (favoriteBloc?.state is FavoritesLoaded) {
+        for (var favorite
+            in (favoriteBloc!.state as FavoritesLoaded).favorites) {
+          favoriteUuids.addAll(favorite.profileIds);
+        }
       }
+      // Separate and Sort favorites and non-favorites
+      final favorites = profileDataList
+          .where(
+            (data) => data.profile != null && favoriteUuids.contains(data.uuid),
+          )
+          .toList();
+      _sortProfileDataList(favorites, sortColumn, sortOrder);
+      final nonFavorites = profileDataList
+          .where(
+            (data) =>
+                data.profile != null && !favoriteUuids.contains(data.uuid),
+          )
+          .toList();
+      _sortProfileDataList(nonFavorites, sortColumn, sortOrder);
 
-      return sortOrder == SortOrder.ascending ? comparison : -comparison;
-    });
-
-    return profileDataList.map((e) => e.uuid).toList();
+      return [
+        ...favorites.map((e) => e.uuid),
+        ...nonFavorites.map((e) => e.uuid),
+      ];
+    } else {
+      _sortProfileDataList(profileDataList, sortColumn, sortOrder);
+      return profileDataList.map((e) => e.uuid).toList();
+    }
   }
+}
 
-  /// helper method to assign priority to each state for meaningful sorting
-  int _getStatusPriority(ProfileState state) {
-    return switch (state) {
-      ProfileFailedLoad _ => 0,
-      ProfileFailedStart _ => 0,
-      ProfileFailedSave _ => 0,
-      ProfileStarted _ => 1,
-      ProfileStarting _ => 1,
-      ProfileStopping _ => 2,
-      ProfileLoaded _ => 3,
-      ProfileLoading _ => 4,
-      ProfileInitial _ => 5,
-    };
-  }
+void _sortProfileDataList(
+  List<({Profile? profile, ProfileState state, String uuid})> profileDataList,
+  SortColumn sortColumn,
+  SortOrder sortOrder,
+) {
+  // Sort based on column
+  profileDataList.sort((a, b) {
+    if (a.profile == null || b.profile == null) return 0;
+
+    int comparison = 0;
+
+    switch (sortColumn) {
+      case SortColumn.profileName:
+        comparison = a.profile!.displayName.toLowerCase().compareTo(
+          b.profile!.displayName.toLowerCase(),
+        );
+        App.log('Connections sorted by profile name'.loggable);
+        break;
+      case SortColumn.deviceName:
+        comparison = a.profile!.deviceName.toLowerCase().compareTo(
+          b.profile!.deviceName.toLowerCase(),
+        );
+        App.log('Connections sorted by device name'.loggable);
+        break;
+      case SortColumn.serviceMapping:
+        final aComparator =
+            '${a.profile!.localPort}:${a.profile!.remoteHost}:${a.profile!.remotePort}'
+                .toLowerCase();
+        final bComparator =
+            '${b.profile!.localPort}:${b.profile!.remoteHost}:${b.profile!.remotePort}'
+                .toLowerCase();
+        comparison = aComparator.compareTo(bComparator);
+        App.log('Connections sorted by service mapping'.loggable);
+        break;
+      case SortColumn.status:
+        comparison = _getStatusPriority(
+          a.state,
+        ).compareTo(_getStatusPriority(b.state));
+        App.log('Connections sorted by status'.loggable);
+        break;
+    }
+
+    return sortOrder == SortOrder.ascending ? comparison : -comparison;
+  });
+}
+
+/// helper method to assign priority to each state for meaningful sorting
+int _getStatusPriority(ProfileState state) {
+  return switch (state) {
+    ProfileFailedLoad _ => 0,
+    ProfileFailedStart _ => 0,
+    ProfileFailedSave _ => 0,
+    ProfileStarted _ => 1,
+    ProfileStarting _ => 1,
+    ProfileStopping _ => 2,
+    ProfileLoaded _ => 3,
+    ProfileLoading _ => 4,
+    ProfileInitial _ => 5,
+  };
 }

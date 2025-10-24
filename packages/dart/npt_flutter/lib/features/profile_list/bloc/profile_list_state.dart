@@ -1,6 +1,6 @@
 part of 'profile_list_bloc.dart';
 
-enum SortColumn { profileName, deviceName, serviceMapping, status, none }
+enum SortColumn { profileName, deviceName, serviceMapping, status }
 
 enum SortOrder { ascending, descending }
 
@@ -33,30 +33,34 @@ final class ProfileListLoaded extends ProfileListState {
   final Iterable<String> profiles;
   final SortColumn sortColumn;
   final SortOrder sortOrder;
+  // final String searchQuery;
   const ProfileListLoaded({
     required this.profiles,
-    this.sortColumn = SortColumn.none,
+    this.sortColumn = SortColumn.profileName,
     this.sortOrder = SortOrder.ascending,
+    // this.searchQuery = '',
   });
 
   ProfileListLoaded copyWith({
     Iterable<String>? profiles,
     SortColumn? sortColumn,
     SortOrder? sortOrder,
+    String? searchQuery,
   }) {
     return ProfileListLoaded(
       profiles: profiles ?? this.profiles,
       sortColumn: sortColumn ?? this.sortColumn,
       sortOrder: sortOrder ?? this.sortOrder,
+      // searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
   @override
-  List<Object> get props => [profiles, sortColumn, sortOrder];
+  List<Object> get props => [profiles, sortColumn, sortOrder]; //, searchQuery];
 
   @override
   String toString() {
-    return 'ProfileListLoaded(profiles: $profiles, sortColumn: $sortColumn, sortOrder: $sortOrder)';
+    return 'ProfileListLoaded(profiles: $profiles, sortColumn: $sortColumn, sortOrder: $sortOrder, searchQuery:'; //$searchQuery)';
   }
 }
 

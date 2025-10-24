@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/profile/view/pin_favorites_switch.dart';
 import 'package:npt_flutter/features/profile/widgets/profile_header_column.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
@@ -82,6 +83,8 @@ class ProfileHeaderView extends StatelessWidget {
                                 width:
                                     SizeConfig.setProfileFieldWidthMinimalView(),
                               ),
+                              gapW10,
+                              const PinFavoritesSwitch(),
                             ],
                           ),
                         ),
@@ -128,6 +131,8 @@ class ProfileHeaderView extends StatelessWidget {
                                   statusField: true,
                                 ),
                               ),
+                              gapW10,
+                              const PinFavoritesSwitch(),
                             ],
                           ),
                         ),
