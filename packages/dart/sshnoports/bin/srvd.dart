@@ -103,6 +103,7 @@ void main(List<String> args) async {
         storagePath: storageDir.path,
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
+        passPhrase: p.passPhrase,
         namespace: Srvd.namespace,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),

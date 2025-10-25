@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 Future<AtClient> createAtClientCli({
   required String atsign,
   required String atKeysFilePath,
+  String? passPhrase = '',
   required AtServiceFactory atServiceFactory,
   required String storagePath,
   required String namespace,
@@ -26,6 +27,7 @@ Future<AtClient> createAtClientCli({
     ..commitLogPath = path.normalize('$storagePath/commitLog')
     ..fetchOfflineNotifications = false
     ..atKeysFilePath = atKeysFilePath
+    ..passPhrase = passPhrase
     ..rootDomain = domain
     ..rootPort = port;
 

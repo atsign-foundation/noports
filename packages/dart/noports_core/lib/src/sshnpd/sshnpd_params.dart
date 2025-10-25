@@ -5,6 +5,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
+import 'package:at_utils/at_utils.dart';
 
 class SshnpdParams {
   final String device;
@@ -13,6 +14,7 @@ class SshnpdParams {
   final List<String> managerAtsigns;
   final String? policyManagerAtsign;
   final String atKeysFilePath;
+  final String passPhrase;
   final String deviceAtsign;
   final bool verbose;
   final bool makeDeviceInfoVisible;
@@ -38,6 +40,7 @@ class SshnpdParams {
     required this.managerAtsigns,
     required this.policyManagerAtsign,
     required this.atKeysFilePath,
+    required this.passPhrase,
     required this.deviceAtsign,
     required this.verbose,
     required this.makeDeviceInfoVisible,
@@ -62,7 +65,7 @@ class SshnpdParams {
     // Arg check
     ArgResults r = parser.parse(args);
 
-    String deviceAtsign = r['atsign'];
+    String deviceAtsign = AtUtils.fixAtSign(r['atsign']);
 
     if (!r.wasParsed('managers') && !r.wasParsed('policy-manager')) {
       throw ArgumentError(
@@ -123,6 +126,7 @@ class SshnpdParams {
       atKeysFilePath:
           r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
+      passPhrase: r['pass-phrase'],
       deviceAtsign: deviceAtsign,
       verbose: r['verbose'],
       makeDeviceInfoVisible: makeDeviceInfoVisible,
@@ -162,6 +166,16 @@ class SshnpdParams {
       help:
           'Sending atSign\'s keyFile if not in ~/.atsign/keys/'
           '  Alias: --keyFile',
+    );
+
+    parser.addOption(
+      'pass-phrase',
+      aliases: ['passPhrase'],
+      abbr: 'P',
+      mandatory: false,
+      defaultsTo: '',
+      help: 'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+      hide: true
     );
 
     parser.addOption(
