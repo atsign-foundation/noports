@@ -13,35 +13,35 @@ class SidebarActionButtonsWidget extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          child: SizedBox(
-            height: 48,
-            width: double.infinity,
-            child: BlocBuilder<PolicyCubit, PolicyState>(
-              builder: (context, state) {
-                final isLogsView = state is PolicyViewingLogs;
-                return OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<PolicyCubit>().showLogs();
-                  },
-                  icon: const Icon(Icons.list_alt),
-                  label: Text(strings.logsView),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isLogsView
-                        ? Colors.white
-                        : AppColor.primaryColor,
-                    backgroundColor: isLogsView ? AppColor.primaryColor : null,
-                    side: const BorderSide(color: AppColor.primaryColor),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        //   child: SizedBox(
+        //     height: 48,
+        //     width: double.infinity,
+        //     child: BlocBuilder<PolicyCubit, PolicyState>(
+        //       builder: (context, state) {
+        //         final isLogsView = state is PolicyViewingLogs;
+        //         return OutlinedButton.icon(
+        //           onPressed: () {
+        //             context.read<PolicyCubit>().showLogs();
+        //           },
+        //           icon: const Icon(Icons.list_alt),
+        //           label: Text(strings.logsView),
+        //           style: OutlinedButton.styleFrom(
+        //             foregroundColor: isLogsView
+        //                 ? Colors.white
+        //                 : AppColor.primaryColor,
+        //             backgroundColor: isLogsView ? AppColor.primaryColor : null,
+        //             side: const BorderSide(color: AppColor.primaryColor),
+        //             shape: const RoundedRectangleBorder(
+        //               borderRadius: BorderRadius.zero,
+        //             ),
+        //           ),
+        //         );
+        //       },
+        //     ),
+        //   ),
+        // ),
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
