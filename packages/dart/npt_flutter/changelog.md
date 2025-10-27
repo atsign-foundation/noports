@@ -1,3 +1,7 @@
+## 1.6.2+21
+
+- **CHORE**: Temporarily Removed the policy status light and policy view logs button.
+
 ## 1.6.1+20
 
 - **FIX**: Fixed a bug where policy status light timestamping was out of sync
