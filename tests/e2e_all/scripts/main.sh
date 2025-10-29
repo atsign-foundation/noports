@@ -17,7 +17,7 @@
 
 function usageAndExit {
   echo "Usage:"
-  echo "  $scriptName @client_atsign @daemon_atsign @socket_rendezvous_atsign \\"
+  echo "  $scriptName @client_atsign @daemon_atsign @relay_atsign @policy_atsign @events_atsign \\"
   echo "     [-r <atDirectory (aka root) host>] \\"
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
@@ -78,6 +78,8 @@ fi
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
+unset policyAtSign
+unset eventsAtSign
 
 if (($# < 3)); then
   usageAndExit
@@ -88,21 +90,37 @@ if test "${clientAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid clientAtSign $clientAtSign"
   usageAndExit
 fi
-daemonAtSign="$2"
+shift
+
+daemonAtSign="$1"
 if test "${daemonAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid daemonAtSign $daemonAtSign"
   usageAndExit
 fi
-srvAtSign="$3"
+shift
+
+srvAtSign="$1"
 if test "${srvAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid srvAtSign $srvAtSign"
   usageAndExit
 fi
+shift
 
-export clientAtSign daemonAtSign srvAtSign
+policyAtSign="$1"
+if test "${policyAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid policyAtSign policyAtSign"
+  usageAndExit
+fi
 shift
+
+eventsAtSign="$1"
+if test "${eventsAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid eventsAtSign eventsAtSign"
+  usageAndExit
+fi
 shift
-shift
+
+export clientAtSign daemonAtSign srvAtSign policyAtSign eventsAtSign
 
 commitId="$(git rev-parse --short HEAD)"
 export commitId

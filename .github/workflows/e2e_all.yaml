@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @8052simple @829snowshoeing @rv_eu -p
+          tests/e2e_all/scripts/main.sh @8052simple @829snowshoeing @rv_eu @8incanteater @8incanteater -p
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
