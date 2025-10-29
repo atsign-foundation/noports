@@ -37,7 +37,10 @@ jobs:
           mkdir -p ~/.atsign/keys/
           echo "${{ secrets.ATKEYS_8INCANTEATER }}" > ~/.atsign/keys/@8incanteater_key.atKeys
           cat ~/.atsign/keys/@8incanteater_key.atKeys
+          echo
           echo "${{ secrets.ATKEYS_NPE2E_CLIENT }}" > ~/.atsign/keys/@npe2e_client_key.atKeys
+          cat ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo
           echo "${{ secrets.ATKEYS_NPE2E_DAEMON }}" > ~/.atsign/keys/@npe2e_daemon_key.atKeys
           echo "${{ secrets.ATKEYS_NPE2E_POLICY }}" > ~/.atsign/keys/@npe2e_policy_key.atKeys
           echo "${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}" > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
