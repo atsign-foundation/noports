@@ -16,7 +16,8 @@ RUN set -eux ; \
     dart compile exe bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
     dart compile exe bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
     dart compile exe bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
-    dart compile exe bin/srvd.dart -o ${OUTPUT_DIR}/srvd
+    dart compile exe bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
+    dart compile exe bin/npevents.dart -o ${OUTPUT_DIR}/npevents
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:2bde068fac5128741a8035a6d7eacf88816398ed3adcd8da6ccb5ed319adbc2d AS runtime
 

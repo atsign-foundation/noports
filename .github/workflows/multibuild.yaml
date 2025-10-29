@@ -143,7 +143,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin,npevents}
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run:
