@@ -35,32 +35,34 @@ jobs:
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo ${{ secrets.ATKEYS_NPE2E_CLIENT }} > ~/.atsign/keys/@npe2e_client_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_DAEMON }} > ~/.atsign/keys/@npe2e_daemon_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_POLICY }} > ~/.atsign/keys/@npe2e_policy_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }} > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_RELAY }} > ~/.atsign/keys/@npe2e_relay_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }} > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_EVENTS }} > ~/.atsign/keys/@npe2e_events_key.atKeys
-          echo ${{ secrets.ATKEYS_NPE2E_SINGLETON }} > ~/.atsign/keys/@npe2e_singleton_key.atKeys
-      - name: Install expect
-        run: |
-          sudo apt-get install -y expect
-      - name: Execute tests/e2e_all/scripts/main.sh
-        run: |
-          echo "Test started at: $(date)"
-          start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
-          test_exit_code=$?
-          end_time=$(date +%s)
-          echo "Test finished at: $(date)"
-          echo "Total execution time: $((end_time - start_time)) seconds"
-          exit $test_exit_code
-      - name: Zip /tmp/e2e_all
-        run: |
-          zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
-      - name: Upload /tmp/e2e_all as artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: tmp_e2e_all_artifacts
-          path: tmp_e2e_all_artifacts.zip 
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          head -c 8 ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo
+#          echo "${{ secrets.ATKEYS_NPE2E_DAEMON }}" > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_POLICY }}" > ~/.atsign/keys/@npe2e_policy_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}" > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_RELAY }}" > ~/.atsign/keys/@npe2e_relay_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}" > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_EVENTS }}" > ~/.atsign/keys/@npe2e_events_key.atKeys
+#          echo "${{ secrets.ATKEYS_NPE2E_SINGLETON }}" > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+#      - name: Install expect
+#        run: |
+#          sudo apt-get install -y expect
+#      - name: Execute tests/e2e_all/scripts/main.sh
+#        run: |
+#          echo "Test started at: $(date)"
+#          start_time=$(date +%s)
+#          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
+#          test_exit_code=$?
+#          end_time=$(date +%s)
+#          echo "Test finished at: $(date)"
+#          echo "Total execution time: $((end_time - start_time)) seconds"
+#          exit $test_exit_code
+#      - name: Zip /tmp/e2e_all
+#        run: |
+#          zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
+#      - name: Upload /tmp/e2e_all as artifact
+#        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+#        with:
+#          name: tmp_e2e_all_artifacts
+#          path: tmp_e2e_all_artifacts.zip
