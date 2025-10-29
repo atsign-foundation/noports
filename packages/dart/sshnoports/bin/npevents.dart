@@ -15,6 +15,9 @@ import 'package:noports_core/sshnp_foundation.dart';
 // local packages
 import 'package:sshnoports/src/print_version.dart';
 
+/// Minimal implementation of a NoPorts session events listener.
+///
+/// Listens for NoPorts session events, writes to stdout
 void main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 

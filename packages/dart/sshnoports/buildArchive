@@ -10,7 +10,6 @@ echo
 
 rm -rf build/sshnp build/sshnp.zip build/sshnp.tgz
 mkdir -p build/sshnp/web/admin
-mkdir -p build/sshnp/experimental
 
 dart pub get --enforce-lockfile || exit 1
 
@@ -21,6 +20,8 @@ echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o b
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &
 echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o build/sshnp/sshnp &
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
+echo "Compiling npevents"; dart compile exe --verbosity error bin/npevents.dart -o build/sshnp/npevents &
+
 
 wait
 echo "$(date) : Compilation complete"
@@ -32,15 +33,11 @@ echo "Compiling npp_atserver (DEMO)"; dart compile exe --verbosity error bin/npp
 wait
 echo "$(date) : Compilation complete"
 
-echo "Compiling experimental binaries"
-echo "Compiling experimental/npevents.dart"; dart compile exe --verbosity error bin/experimental/npevents.dart -o build/sshnp/experimental/npevents &
-
 wait
 echo "$(date) : Compilation complete"
 
 echo "$(date) : Copying bundles"
 cp -r bundles/core/* build/sshnp/
-cp -r bundles/experimental/* build/sshnp/experimental
 cp -r bundles/shell/* build/sshnp/
 cp LICENSE build/sshnp
 

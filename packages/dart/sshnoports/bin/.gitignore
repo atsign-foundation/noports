@@ -4,6 +4,5 @@
 !*.dart
 !*.yaml
 !.gitignore
-!experimental
-!experimental/*
-!experimental/opensearch/*
+!demo
+!demo/*

@@ -83,7 +83,6 @@ jobs:
       - name: Create directories
         run: |
           mkdir sshnp
-          mkdir sshnp/experimental
           mkdir tarball
       - name: Create debug directory (Windows only)
         if: ${{ matrix.os != 'windows-latest' }}
@@ -100,7 +99,7 @@ jobs:
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
-          dart compile exe bin/experimental/npevents.dart -v -o sshnp/experimental/npevents${{ matrix.ext }}
+          dart compile exe bin/npevents.dart -v -o sshnp/npevents${{ matrix.ext }}
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
@@ -114,7 +113,6 @@ jobs:
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
-          cp -r bundles/experimental/* sshnp/experimental/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
           cp LICENSE sshnp
       - name: Codesign (MacOS only)
