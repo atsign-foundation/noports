@@ -119,13 +119,14 @@ jobs:
         working-directory: ./packages/csharp/WindowsBinaryService
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
-          mv bin/Release/net*/win-x64/native/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+          mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
       - name: Codesign Windows Binaries (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
         run: |
-          for file in {sshnpd,at_activate,sshnp,npp_atserver,npp_file,npt,srv,sshnpdService,np_admin}.exe; do
-            ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "$file"
+          files="sshnpd at_activate sshnp npp_atserver npp_file npt srv sshnpdService np_admin"
+          for file in $files; do
+            ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "$file.exe"
           done
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
