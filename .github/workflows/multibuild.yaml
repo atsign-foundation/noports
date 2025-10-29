@@ -124,16 +124,20 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
         run: |
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnpd.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"at_activate.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnp.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npp_atserver.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npp_file.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npa_file.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npt.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"srv.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnpdService.exe\""
-          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"np_admin.exe\""
+          source ../../../../tools/codesign_windows.sh
+          sign_file "sshnpd.exe"
+          sign_file "at_activate.exe"
+          sign_file "sshnp.exe"
+          sign_file "npp_atserver.exe"
+          sign_file "npp_file.exe"
+          sign_file "npa_file.exe"
+          sign_file "npt.exe"
+          sign_file "srv.exe"
+          sign_file "sshnpdService.exe"
+          sign_file "np_admin.exe"
+        env:
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
