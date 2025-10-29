@@ -124,16 +124,16 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
         run: |
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "sshnpd.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "at_activate.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "sshnp.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "npp_atserver.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "npp_file.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "npa_file.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "npt.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "srv.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "sshnpdService.exe"
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} "np_admin.exe"
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnpd.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"at_activate.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnp.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npp_atserver.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npp_file.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npa_file.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"npt.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"srv.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"sshnpdService.exe\""
+          eval "\"${{ secrets.WINDOWS_SIGNTOOL_PATH }}\" sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} \"np_admin.exe\""
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
