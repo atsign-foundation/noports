@@ -40,8 +40,32 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       emit(const ProfileListFailedLoad());
       return;
     }
-
     emit(ProfileListLoaded(profiles: profiles));
+
+    // Create ProfileBlocs
+    final profileBlocs = <ProfileBloc>[];
+    for (final uuid in profiles) {
+      final bloc = _profileCacheCubit.getProfileBloc(uuid);
+      profileBlocs.add(bloc);
+    }
+
+    // Wait for all ProfileBlocs to load their data
+    await Future.wait(
+      profileBlocs.map((bloc) async {
+        // Wait until the bloc is in a loaded state
+        await bloc.stream.firstWhere(
+          (state) => state is ProfileLoadedState || state is ProfileFailedLoad,
+          orElse: () => bloc.state,
+        );
+      }),
+    );
+
+    add(
+      const ProfileListSortEvent(
+        sortColumn: SortColumn.profileName,
+        inverseSortOrder: false,
+      ),
+    );
   }
 
   Future<void> _onUpdate(
@@ -118,12 +142,15 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       'Current sort: column=${currentState.sortColumn}, order=${currentState.sortOrder}'
           .loggable,
     );
+    var newSortOrder = currentState.sortOrder;
     // Toggle sort order if clicking same column
-    final newSortOrder =
-        currentState.sortColumn == event.sortColumn &&
-            currentState.sortOrder == SortOrder.ascending
-        ? SortOrder.descending
-        : SortOrder.ascending;
+    if (event.inverseSortOrder) {
+      newSortOrder =
+          currentState.sortColumn == event.sortColumn &&
+              currentState.sortOrder == SortOrder.ascending
+          ? SortOrder.descending
+          : SortOrder.ascending;
+    }
 
     App.log(
       'New sort: column=${event.sortColumn}, order=$newSortOrder'.loggable,
@@ -177,6 +204,8 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     final shouldPinFavorites = settingsBloc?.state is SettingsLoaded
         ? (settingsBloc!.state as SettingsLoaded).settings.pinFavorites
         : false;
+
+    App.log('Should pin favorites: $shouldPinFavorites'.loggable);
 
     if (shouldPinFavorites) {
       // get favorite uuids

@@ -1,6 +1,7 @@
-## 1.6.2+21
+## 1.7.0+22
 
 - **FEAT**: Connections can be sorted by Profile Name, Device Name, Service Mapping and Status.
+- **FEAT**: Favorite Connections can be pinned to the top of the connections list.
 
 ## 1.6.1+20
 
