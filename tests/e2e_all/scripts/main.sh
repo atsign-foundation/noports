@@ -17,7 +17,7 @@
 
 function usageAndExit {
   echo "Usage:"
-  echo "  $scriptName @client_atsign @daemon_atsign @relay_atsign @policy_atsign @events_atsign \\"
+  echo "  $scriptName @client_atsign @daemon_atsign @relay_atsign @relay_latest_atsign @policy_atsign @policy_latest_atsign @events_atsign \\"
   echo "     [-r <atDirectory (aka root) host>] \\"
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
@@ -78,7 +78,9 @@ fi
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
+unset srvLatestAtSign
 unset policyAtSign
+unset policyLatestAtSign
 unset eventsAtSign
 
 if (($# < 3)); then
@@ -106,21 +108,35 @@ if test "${srvAtSign:0:1}" != "@"; then
 fi
 shift
 
+srvLatestAtSign="$1"
+if test "${srvLatestAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid srvLatestAtSign $srvLatestAtSign"
+  usageAndExit
+fi
+shift
+
 policyAtSign="$1"
 if test "${policyAtSign:0:1}" != "@"; then
-  logErrorAndReport "invalid policyAtSign policyAtSign"
+  logErrorAndReport "invalid policyAtSign $policyAtSign"
+  usageAndExit
+fi
+shift
+
+policyLatestAtSign="$1"
+if test "${policyLatestAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid policyLatestAtSign $policyLatestAtSign"
   usageAndExit
 fi
 shift
 
 eventsAtSign="$1"
 if test "${eventsAtSign:0:1}" != "@"; then
-  logErrorAndReport "invalid eventsAtSign eventsAtSign"
+  logErrorAndReport "invalid eventsAtSign $eventsAtSign"
   usageAndExit
 fi
 shift
 
-export clientAtSign daemonAtSign srvAtSign policyAtSign eventsAtSign
+export clientAtSign daemonAtSign srvAtSign srvLatestAtSign policyAtSign policyLatestAtSign eventsAtSign
 
 commitId="$(git rev-parse --short HEAD)"
 export commitId
@@ -185,16 +201,23 @@ export testRuntimeDir
 "$testScriptsDir/common/cleanup_tmp_files.sh" -s
 
 logInfo "  --> will execute setup_binaries, start_daemons and run_tests with "
-logInfo "    testRootDir:      $testRootDir"
-logInfo "    testRuntimeDir:   $testRuntimeDir"
-logInfo "    testScriptsDir:   $testScriptsDir"
-logInfo "    recompile:        $recompile"
-logInfo "    parallelization:  $allowParallelization"
-logInfo "    atDirectoryHost:  $atDirectoryHost"
-logInfo "    daemonVersions:   $daemonVersions"
-logInfo "    clientVersions:   $clientVersions"
-logInfo "    commitId:         $commitId"
-logInfo "    testsToRun:       $(tr "\n" ";" <<<"$testsToRun")"
+logInfo "    clientAtSign:       $clientAtSign"
+logInfo "    daemonAtSign:       $daemonAtSign"
+logInfo "    relayAtSign:        $srvAtSign"
+logInfo "    relayLatestAtSign:  $srvLatestAtSign"
+logInfo "    policyAtSign:       $policyAtSign"
+logInfo "    policyLatestAtSign: $policyLatestAtSign"
+logInfo "    eventsAtSign:       $eventsAtSign"
+logInfo "    testRootDir:        $testRootDir"
+logInfo "    testRuntimeDir:     $testRuntimeDir"
+logInfo "    testScriptsDir:     $testScriptsDir"
+logInfo "    recompile:          $recompile"
+logInfo "    parallelization:    $allowParallelization"
+logInfo "    atDirectoryHost:    $atDirectoryHost"
+logInfo "    daemonVersions:     $daemonVersions"
+logInfo "    clientVersions:     $clientVersions"
+logInfo "    commitId:           $commitId"
+logInfo "    testsToRun:         $(tr "\n" ";" <<<"$testsToRun")"
 
 echo
 logInfo "Calling common/build_docker_daemons.sh"
@@ -238,7 +261,7 @@ logInfo "Calling common/stop_daemons.sh"
 
 if [ "${allowParallelization}" = "true" ]; then
   logInfo "Waiting for setup_binaries.sh to finish"
-  wait $setupBinariesPidParallel
+  wait "$setupBinariesPidParallel"
   retCode=$?
   if [ "$retCode" -ne 0 ]; then
     logErrorAndReport "setup_binaries.sh failed with exit code $retCode"
@@ -253,10 +276,10 @@ logInfo "Calling common/apkam_setup.sh"
 
 if [ "${allowParallelization}" = "true" ]; then
   logInfo "Waiting for build_docker_daemons.sh to finish"
-  wait $buildDockerDaemonPidParallel
+  wait "$buildDockerDaemonPidParallel"
   retCode=$?
   if [ "$retCode" -ne 0 ]; then
-    logErrorAndReport "build_docker_daemons.sh failed with exit code $?"
+    logErrorAndReport "build_docker_daemons.sh failed with exit code $retCode"
     exit $retCode
   fi
   logInfo "build_docker_daemons.sh finished with exit code $?"
