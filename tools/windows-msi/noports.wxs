@@ -19,7 +19,6 @@
     <Feature Id="ServiceFeature" Title="NoPorts Service" Level="2" 
             Description="Install NoPorts as a Windows service (sshnpd)">
       <ComponentGroupRef Id="sshnpdComponents" />
-      <ComponentGroupRef Id="sshnpdConfig" />
     </Feature>
 
     <!-- Directory structure -->
@@ -67,7 +66,10 @@
               Name="srv.exe" KeyPath="yes" />
       </Component>
 
-     
+     <Component Id="sshnpd_config" Guid="*">
+        <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
+              Name="sshnpd.yaml" KeyPath="yes" />
+      </Component>
 
       <!-- Environment PATH -->
       <Component Id="UpdatePath" Guid="d7a87a7f-1bcc-4eba-b089-6c2ab0e0f0bd">
@@ -102,13 +104,6 @@
                              Stop="both"
                              Remove="uninstall"
                              Wait="yes" />
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="sshnpdConfig" Directory="APPDATADIR">
-      <Component Id="sshnpd_config" Guid="*">
-        <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
-              Name="sshnpd.yaml" KeyPath="yes" />
       </Component>
     </ComponentGroup>
 
