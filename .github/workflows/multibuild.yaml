@@ -50,6 +50,7 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
+        shell: bash
     strategy:
       matrix:
         include:
@@ -148,7 +149,8 @@ jobs:
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext -arch x64 -o build/NoPorts.msi noports.wxs
           # Sign the generated MSI
-          ${{ secrets.WINDOWS_SIGNTOOL_PATH }} sign ${{ secrets.WINDOWS_SIGNTOOL_ARGS }} build/NoPorts.msi
+          source ../codesign_windows.sh
+          sign_file "NoPorts.msi"
           cp build/NoPorts.msi ../packages/dart/sshnoports/sshnp/
       - name: Copy additional bundle items to build
         run: |
