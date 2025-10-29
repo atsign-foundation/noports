@@ -265,6 +265,11 @@ void main(List<String> args) async {
         negatable: true,
       );
 
+      parser.addOption('passPhrase',
+          abbr: 'P',
+          mandatory: false,
+          help: 'The pass phrase to access the password protected atKeys file');
+
       parser.addOption(
         'relay-auth-mode',
         aliases: ['ram'],
@@ -376,7 +381,8 @@ void main(List<String> args) async {
           homeDir: getHomeDirectory(),
           storageDir: storageDir?.path,
           verbose: parsedArgs['verbose'],
-          syncDisabled: true);
+          syncDisabled: true,
+          passPhrase: parsedArgs['passPhrase']);
 
       await cliBase.init();
 

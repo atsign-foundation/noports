@@ -27,6 +27,7 @@ void main(List<String> args) async {
       atClientGenerator: (SshnpdParams p) => createAtClientCli(
         atsign: p.deviceAtsign,
         atKeysFilePath: p.atKeysFilePath,
+        passPhrase: p.passPhrase,
         rootDomain: p.rootDomain,
         storagePath: p.storagePath,
         namespace: DefaultArgs.namespace,
