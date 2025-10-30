@@ -29,6 +29,12 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
 
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_client
+      ref: st/at_rpc_mutex_flag
+
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.26.3
