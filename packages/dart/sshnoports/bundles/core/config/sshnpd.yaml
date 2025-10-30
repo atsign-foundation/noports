@@ -4,9 +4,8 @@ atsign:
   # Examples:
   # `atsign: '@foobar_np'`
   # `atsign: foobar_np`
-  # Don't do the following:
+  # Don't do the following, as the '@' symbol is a special character in yaml:
   # `atsign: @foobar_np`
-  # The '@' symbol is a special character in yaml.
   # TODO: MANDATORY SETTING
   atsign: 
 
@@ -53,7 +52,9 @@ access:
   # A list of host:port pairs which are allowed to be accessed on this device.
   # Use policy for finite control by user.
   # Use "*:*" to represent all host and all ports.
-  # If permit open is left empty, the default value is "localhost:22" and "localhost:3389" for ssh and rdp
+  # If permit open is left empty then the default value will be:
+  # When policy is empty: "localhost:22" (ssh) and "localhost:3389" (rdp)
+  # When policy is non-empty: "*:*" (defer to policy for restriction)
   permitopen:
     - localhost:22
     - localhost:3389
@@ -92,8 +93,9 @@ ssh:
 
 # Additional runtime settings for the service
 runtime:
-  # NoPorts caches some data for performance, use this
-  # to specify a different directory for the cache.
+  # Unnecessary unless you are running multiple sshnpd under the same user, with
+  # the same atSign on the same host. This will allow you to change the local
+  # storage cache used from its default location.
   storage-path: 
 
   # If you reset your one of your NoPorts atSigns
