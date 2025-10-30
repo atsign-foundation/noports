@@ -124,6 +124,8 @@ jobs:
       - name: Codesign Windows Binaries (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
         run: |
           source ../../../../tools/codesign_windows.sh
           sign_file "sshnpd.exe"
@@ -136,12 +138,11 @@ jobs:
           sign_file "srv.exe"
           sign_file "sshnpdService.exe"
           sign_file "np_admin.exe"
-        env:
-          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
-          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
         run: |
           dotnet tool install --global wix
           mkdir bin
