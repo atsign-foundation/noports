@@ -133,7 +133,7 @@ class SshnpdParams {
       atKeysFilePath:
           c.optionalValue(SshnpdOption.keyfile) ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
-      passPhrase: r['pass-phrase'],
+      passPhrase: c.optionalValue(SshnpdOption.passPhrase) ?? "",
       deviceAtsign: deviceAtsign,
       verbose: c.value(SshnpdOption.verbose),
       makeDeviceInfoVisible: makeDeviceInfoVisible,

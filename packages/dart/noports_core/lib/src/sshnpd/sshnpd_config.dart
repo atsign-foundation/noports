@@ -54,6 +54,20 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
 
+  passPhrase(
+    StringOption(
+      argName: 'pass-phrase',
+      configKey: '/atsign/passphrase',
+      argAliases: ['passPhrase'],
+      argAbbrev: 'P',
+      mandatory: false,
+      defaultsTo: '',
+      helpText:
+          'Pass phrase to encrypt/decrypt the password protected atKeys file',
+      hide: true,
+    ),
+  ),
+
   atsign(
     StringOption(
       argName: 'atsign',

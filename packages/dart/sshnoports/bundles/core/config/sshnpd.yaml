@@ -17,6 +17,12 @@ atsign:
   # `keys: ~/.atsign/keys/@foobar_np_key.atKeys`
   keys: 
 
+  # The passpharase for the atKeys files ("keys" field above) if the file has
+  # been protected with a passphrase.
+  # Example:
+  # `passphrase: 'my-pass-phrase'`
+  passphrase:
+
   # The root configuration for the atPlatform
   # Examples:
   # `root: root.atsign.org` (The default)
