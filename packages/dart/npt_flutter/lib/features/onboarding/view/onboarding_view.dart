@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:npt_flutter/features/logging/logging.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -46,10 +47,17 @@ class OnboardingView extends StatelessWidget {
           ),
         ),
         const Align(
-          alignment: Alignment.bottomRight,
+          alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.only(bottom: Sizes.p44, right: Sizes.p44),
+            padding: EdgeInsets.only(top: Sizes.p44, right: 120),
             child: CustomTextButton.resetAtsign(),
+          ),
+        ),
+        const Align(
+          alignment: Alignment.topRight,
+          child: Padding(
+            padding: EdgeInsets.only(top: Sizes.p44, right: 20),
+            child: ExportLogsButton(),
           ),
         ),
         FutureBuilder(

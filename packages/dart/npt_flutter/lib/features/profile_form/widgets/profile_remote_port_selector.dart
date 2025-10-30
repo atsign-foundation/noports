@@ -16,6 +16,11 @@ class ProfileRemotePortSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.remotePort),
+        gapH4,
+        Text(
+          strings.remotePortDescription,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         gapH14,
         BlocSelector<ProfileBloc, ProfileState, int?>(
           selector: (ProfileState state) {
@@ -26,6 +31,7 @@ class ProfileRemotePortSelector extends StatelessWidget {
             if (state == null) return gap0;
             return SizedBox(
               height: Sizes.p100,
+              width: Sizes.p300,
               child: TextFormField(
                 initialValue: state.toString(),
                 autovalidateMode: AutovalidateMode.onUserInteraction,

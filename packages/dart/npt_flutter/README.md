@@ -35,7 +35,7 @@ NoPorts Desktop is a Flutter application that provides secure SSH connections wi
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/atsign-foundation/sshnoports.git
+   git clone https://github.com/atsign-foundation/noports.git
    cd sshnoports/packages/dart/npt_flutter
    ```
 

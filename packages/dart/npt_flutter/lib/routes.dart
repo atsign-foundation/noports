@@ -27,12 +27,12 @@ class HomeRoutes {
     // The parent navigator initially pushes '/' as the route so needs to be handled.
     // Even though it then instantly pushes the Dashboard page.
     '/': (_) => const SizedBox.shrink(),
-    dashboard: (_) => const DashboardPage(),
+    dashboard: (_) => const ConnectionsPage(),
     settings: (_) => const SettingsPage(),
     authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
-    policyManager: (_) => const PolicyPage()
+    policyManager: (_) => const PolicyPage(),
   };
 }
 
@@ -55,7 +55,7 @@ String routeName(String route) {
     case 'Policy-manager':
       return strings.policyManager;
     case 'Manage-atsign':
-      return 'Manage atSigns';
+      return strings.manageAtsigns;
     default:
   }
   return capitalized;

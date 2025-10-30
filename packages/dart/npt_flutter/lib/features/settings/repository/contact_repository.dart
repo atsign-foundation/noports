@@ -7,7 +7,7 @@ import 'package:at_contact/at_contact.dart';
 import 'package:at_contacts_flutter/services/contact_service.dart';
 import 'package:at_utils/at_utils.dart';
 
-import '../../../constants.dart';
+import '../../../util/constants.dart';
 
 /// A singleton that makes all the network calls to the @platform.
 class ContactsService {

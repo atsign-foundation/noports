@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class ProfileKeepAliveCheckbox extends StatelessWidget {
@@ -8,6 +9,7 @@ class ProfileKeepAliveCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return BlocSelector<ProfileBloc, ProfileState, bool?>(
       selector: (ProfileState state) {
         if (state is ProfileLoadedState) return state.profile.keepAlive;
@@ -25,9 +27,12 @@ class ProfileKeepAliveCheckbox extends StatelessWidget {
                   onChanged: (value) {
                     if (value == null) return;
                     var bloc = context.read<ProfileBloc>();
-                    bloc.add(ProfileEditEvent(
-                      profile: (bloc.state as ProfileLoadedState).profile.copyWith(keepAlive: value),
-                    ));
+                    bloc.add(
+                      ProfileEditEvent(
+                        profile: (bloc.state as ProfileLoadedState).profile
+                            .copyWith(keepAlive: value),
+                      ),
+                    );
                   },
                 ),
                 gapW10,
@@ -36,18 +41,18 @@ class ProfileKeepAliveCheckbox extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '🕺 Keep Alive',
+                        strings.profileKeepAlive,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       gapH4,
                       Text(
-                        'Stay alive. If a session ends, create a new session and '
-                        're-bind to the local port. Sessions can end due to being unused after '
-                        'a timeout or network issues.',
+                        strings.profileKeepAliveDescription,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],

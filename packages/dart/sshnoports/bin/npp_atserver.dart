@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
@@ -119,6 +120,23 @@ void main(List<String> args) async {
     logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
   });
 
+  // start updating the heartbeat atkey periodically
+  Timer.periodic(const Duration(seconds: 60), (_) async {
+    await _updateHeartbeatKey(atClient); // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
+  });
+
+  // start listening for force heartbeats from the same atSign
+  logger.shout('Starting AtRpc Server to listen for forced heartbeats...');
+  AtRpc(
+    atClient: atClient,
+    baseNameSpace: 'sshnp',
+    domainNameSpace: 'npp_atserver_heartbeat',
+    callbacks: _HeartbeatHelper(atClient: atClient),
+    allowList: {atClient.getCurrentAtSign()!}.toSet(),
+    isServer: true,
+    isClient: false,
+  ).start();
+
   await sshnpa.run();
 }
 
@@ -191,5 +209,73 @@ class Handler implements NPARequestHandler {
         permitOpen: [],
       );
     }
+  }
+}
+
+Future<bool> _updateHeartbeatKey(final AtClient atClient) async {
+  final timestamp = DateTime.timestamp().toUtc();
+  final atKey = AtKey()
+        ..key = 'heartbeat'
+        ..sharedBy = atClient.getCurrentAtSign()
+        ..namespace = DefaultArgs.namespace // sshnp
+      ;
+
+  final objData = {
+    'timestamp': timestamp.toIso8601String(),
+    'interval': 60, // seconds
+  };
+
+  try {
+    final bool success = await atClient.put(atKey, jsonEncode(objData),
+        putRequestOptions: PutRequestOptions()
+          ..shouldEncrypt = true
+          ..useRemoteAtServer = true);
+
+    logger.info(
+        'Put timestamp key `${atKey.toString()}`: $timestamp, success: $success');
+    return success;
+  } catch (e) {
+    logger.severe('Failed to write heartbeat timestamp: $e');
+    return false;
+  }
+}
+
+class _HeartbeatHelper implements AtRpcCallbacks {
+  late AtClient atClient;
+
+  _HeartbeatHelper({required this.atClient});
+
+  @override
+  Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
+
+    logger.shout('Received heartbeat. Updating heartbeat key...');
+    // someone is trying to force a heartbeat on us
+    if (fromAtSign != atClient.getCurrentAtSign()) {
+      return AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.error,
+          payload: {
+            'success': false,
+            'message':
+                'You currently cannot force heartbeat as another atSign other than the policy atSign itself.'
+          },
+          message:
+              'You currently cannot force heartbeat as another atSign other than the policy atSign itself.');
+    }
+
+    // great, now we're the current atSign
+    final bool success = await _updateHeartbeatKey(atClient);
+    logger.shout('Sending AtRpcResp...');
+    return AtRpcResp(
+        reqId: request.reqId,
+        respType: AtRpcRespType.success,
+        payload: {'success': success},
+        message: 'Successfully forced heartbeat.');
+  }
+
+  @override
+  Future<void> handleResponse(AtRpcResp response) async {
+    throw UnimplementedError(
+        ':('); // we are only receiving messages, not sending messages.
   }
 }

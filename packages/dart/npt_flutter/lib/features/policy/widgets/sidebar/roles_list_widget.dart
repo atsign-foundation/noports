@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../cubit/policy_cubit.dart';
-import '../../models/policy.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+
 import '../../../../styles/app_color.dart';
 import '../../../../styles/sizes.dart';
+import '../../cubit/policy_cubit.dart';
+import '../../models/policy.dart';
 import 'role_list_item_widget.dart';
 
 class RolesListWidget extends StatelessWidget {
@@ -12,6 +14,7 @@ class RolesListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     if (state is PolicyLoading) {
       return const Center(child: CircularProgressIndicator());
     } else if (state is PolicyError) {
@@ -22,7 +25,7 @@ class RolesListWidget extends StatelessWidget {
             const Icon(Icons.error, color: AppColor.errorColor),
             gapH8,
             Text(
-              'Error: ${(state as PolicyError).message}',
+              strings.errorWithDetails((state as PolicyError).message),
               style: const TextStyle(color: AppColor.errorColor),
               textAlign: TextAlign.center,
             ),
@@ -37,16 +40,17 @@ class RolesListWidget extends StatelessWidget {
   }
 
   Widget _buildLoadedRolesList(List<FetchedRole> roles, BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     if (roles.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group, size: 48, color: AppColor.onSurfaceColor),
-            SizedBox(height: Sizes.p16),
+            const Icon(Icons.group, size: 48, color: AppColor.onSurfaceColor),
+            const SizedBox(height: Sizes.p16),
             Text(
-              'No roles found',
-              style: TextStyle(color: AppColor.onSurfaceColor),
+              strings.roleNotFound,
+              style: const TextStyle(color: AppColor.onSurfaceColor),
             ),
           ],
         ),

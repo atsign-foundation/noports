@@ -41,3 +41,14 @@ class Constants {
 
   static const kWindowsMinWindowSize = Size(1053, 691);
 }
+
+/// Constants for string that does not need to be localized.
+class StringConst {
+  static const String ampersand = '@';
+  static const String atsignClient = 'atsign_client';
+  static const String managementPortal = 'Management Portal';
+  static const String monospace = 'monospace';
+  static const String noPorts = 'NoPorts';
+  static const String desktop = 'Desktop';
+  static const String localhost = 'localhost';
+}

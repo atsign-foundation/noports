@@ -1,9 +1,27 @@
+## 1.6.2+21
+
+- **CHORE**: Temporarily Removed the policy status light and policy view logs button.
+
+## 1.6.1+20
+
+- **FIX**: Fixed a bug where policy status light timestamping was out of sync
+
 ## 1.6.0+19
 
 - **FEAT**: New policy page for policy management and policy logs viewing
 - **FEAT**: New app bar
-- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work)
+- **FEAT**: New 443 checkbox in dashboard connections profile management which: 1. enables `--443` and 2. inherently forces use of relay ESCR auth mode (so that 443 mode can work).
 - **TEST**: Unit and integration tests added.
+- **FIX**: Localization added for unlocalized strings.
+- **FIX**: Updated onboarding widget to reflect management portal website UI.
+- **FIX**: Updated connection screen screen empty profile state UI.
+- **FIX**: Moved version number, switch atSign and Sign Out button from settings page to the appbar.
+- **FEAT**: Updated Profiles to set localHost property.
+- **FIX**: Added export logs to the top right of the onboarding/start screen.
+- **FIX**: Renamed "Reset atSign" to "Remove atSign and move it from the bottom right to the top right of the onboarding/start screen.
+- **FIX**: Replaced simple and advance preview image from the settings screen.
+- **FEAT**: New keep alive checkbox that keeps connection alive
+- **FEAT**: Policy status light that indicates whether the policy server is alive or not
 
 ## 1.5.0+18
 

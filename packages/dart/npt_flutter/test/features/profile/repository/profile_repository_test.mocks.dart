@@ -289,6 +289,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
     String? sharedBy,
     String? sharedWith,
     bool? showHiddenKeys = false,
+    bool? useRemoteAtServer = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getAtKeys, [], {
@@ -296,6 +297,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               #sharedBy: sharedBy,
               #sharedWith: sharedWith,
               #showHiddenKeys: showHiddenKeys,
+              #useRemoteAtServer: useRemoteAtServer,
             }),
             returnValue: _i6.Future<List<_i2.AtKey>>.value(<_i2.AtKey>[]),
           )
@@ -307,6 +309,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
     String? sharedBy,
     String? sharedWith,
     bool? showHiddenKeys = false,
+    bool? useRemoteAtServer = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getKeys, [], {
@@ -314,6 +317,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               #sharedBy: sharedBy,
               #sharedWith: sharedWith,
               #showHiddenKeys: showHiddenKeys,
+              #useRemoteAtServer: useRemoteAtServer,
             }),
             returnValue: _i6.Future<List<String>>.value(<String>[]),
           )

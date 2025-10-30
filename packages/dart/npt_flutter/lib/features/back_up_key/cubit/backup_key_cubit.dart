@@ -44,8 +44,8 @@ class BackupKeyCubit extends Cubit<bool> {
   /// It also updates the backup key status in the cubit.
   /// If the backup is successful, it shows a success message.
   /// If the backup fails, it shows an error message.
-  /// It also pops the dialog if the backup is successful.
-  Future<void> backUpKeys() async {
+  /// It also pops the dialog if the backup is successful & [popDialog] is true.
+  Future<void> backUpKeys({bool popDialog = true}) async {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
     var atsign = context.read<OnboardingCubit>().getAtSign();
@@ -65,8 +65,13 @@ class BackupKeyCubit extends Cubit<bool> {
         await putBackupKeyStatus(result);
         CustomSnackBar.success(content: strings.fileSaved);
         if (!context.mounted) return;
-        Navigator.of(context).pop();
-      } else {}
+        if (popDialog) Navigator.of(context).pop();
+      } else {
+        CustomSnackBar.error(
+          content: strings.errorAtKeySaveFailed('${atsign}_key.atKeys'),
+          duration: const Duration(seconds: 10),
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       CustomSnackBar.error(

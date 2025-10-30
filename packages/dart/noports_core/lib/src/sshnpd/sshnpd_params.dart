@@ -13,6 +13,7 @@ class SshnpdParams {
   final List<String> managerAtsigns;
   final String? policyManagerAtsign;
   final String atKeysFilePath;
+  final String passPhrase;
   final String deviceAtsign;
   final bool verbose;
   final bool makeDeviceInfoVisible;
@@ -35,6 +36,7 @@ class SshnpdParams {
     required this.managerAtsigns,
     required this.policyManagerAtsign,
     required this.atKeysFilePath,
+    required this.passPhrase,
     required this.deviceAtsign,
     required this.verbose,
     required this.makeDeviceInfoVisible,
@@ -131,6 +133,7 @@ class SshnpdParams {
       atKeysFilePath:
           c.optionalValue(SshnpdOption.keyfile) ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
+      passPhrase: r['pass-phrase'],
       deviceAtsign: deviceAtsign,
       verbose: c.value(SshnpdOption.verbose),
       makeDeviceInfoVisible: makeDeviceInfoVisible,

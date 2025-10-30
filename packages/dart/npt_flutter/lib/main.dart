@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:npt_flutter/constants.dart';
+import 'package:npt_flutter/util/constants.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';

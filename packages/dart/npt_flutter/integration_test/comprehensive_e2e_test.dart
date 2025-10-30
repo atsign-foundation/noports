@@ -8,7 +8,7 @@ import 'package:npt_flutter/features/profile_form/widgets/profile_display_name_t
 import 'package:npt_flutter/features/profile_form/widgets/profile_remote_host_text_field.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_remote_port_selector.dart';
 import 'package:npt_flutter/main.dart' as app;
-import 'package:npt_flutter/pages/dashboard_page.dart';
+import 'package:npt_flutter/pages/connections_page.dart';
 import 'package:npt_flutter/pages/profile_form_page.dart';
 import 'package:npt_flutter/pages/settings_page.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
@@ -79,7 +79,7 @@ void main() {
         );
 
         // Verify dashboard components
-        expect(find.byType(DashboardPage), findsOneWidget);
+        expect(find.byType(ConnectionsPage), findsOneWidget);
         expect(find.byType(ProfileListView), findsOneWidget);
         expect(find.byType(ProfileView), findsAtLeastNWidgets(1));
         tester.printToConsole('✓ Dashboard components verified');
@@ -113,7 +113,7 @@ void main() {
         tester.printToConsole('=== Phase 7: Profile Operations Testing ===');
 
         // Return to dashboard for profile operations testing
-        await _navigateToPage(tester, 'Dashboard', DashboardPage);
+        await _navigateToPage(tester, 'Dashboard', ConnectionsPage);
         await _testProfileOperations(tester);
 
         // === PHASE 8: ERROR RESILIENCE & STRESS TESTING ===
@@ -167,13 +167,13 @@ void main() {
         }
 
         // Navigate away without saving
-        await _navigateToPage(tester, 'Dashboard', DashboardPage);
+        await _navigateToPage(tester, 'Dashboard', ConnectionsPage);
 
         // Navigate back to settings
         await _navigateToPage(tester, 'Settings', SettingsPage);
 
         // Return to dashboard
-        await _navigateToPage(tester, 'Dashboard', DashboardPage);
+        await _navigateToPage(tester, 'Dashboard', ConnectionsPage);
 
         // App should still be stable
         expect(tester.takeException(), isNull);
@@ -292,7 +292,7 @@ Future<void> _saveProfile(WidgetTester tester) async {
 Future<void> _testAppNavigation(WidgetTester tester) async {
   final navigationTests = [
     {'name': 'Settings', 'type': SettingsPage},
-    {'name': 'Dashboard', 'type': DashboardPage},
+    {'name': 'Dashboard', 'type': ConnectionsPage},
   ];
 
   for (final nav in navigationTests) {
