@@ -11,7 +11,7 @@ This is an engineering guide, not a definitive solution, as every production env
 
 ### Other considerations
 
-Each atSign has a reasonable maximum of 25 devices that it can manage, so keep that in mind as you use this script to roll out devices. By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
+By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
 
 * Lowercase Alphanumeric max 15 Characters Snake Case before version 5.0.3
 * Case insensitive Alphanumeric max 36 Chars Snake Case from version 5.0.3 onwards.
