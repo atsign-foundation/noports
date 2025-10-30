@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
+          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf:64
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
