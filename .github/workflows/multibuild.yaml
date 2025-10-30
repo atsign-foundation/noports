@@ -126,6 +126,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/sshnp
         env:
           WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           source ../../../../tools/codesign_windows.sh
           sign_file "sshnpd.exe"
@@ -143,6 +144,7 @@ jobs:
         working-directory: ./tools/windows-msi
         env:
           WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           dotnet tool install --global wix
           mkdir bin

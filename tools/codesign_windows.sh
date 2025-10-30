@@ -8,5 +8,5 @@
 # This file should be sourced into GitHub actions
 
 sign_file() {
-  eval "signtool.exe sign $WINDOWS_SIGNTOOL_ARGS \"$1\""
+  eval "\"$WINDOWS_SIGNTOOL_PATH\" sign $WINDOWS_SIGNTOOL_ARGS \"$1\""
 }
