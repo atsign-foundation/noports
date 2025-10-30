@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using WindowsBinaryService;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -12,9 +13,13 @@ builder.Services.AddWindowsService(options =>
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(); // optional: keep console logs when running interactively
 #pragma warning disable CA1416 // Validate platform compatibility
+if (!EventLog.SourceExists("NoPorts"))
+{
+    EventLog.CreateEventSource("NoPorts", ServiceConfig.Name);
+}
 builder.Logging.AddEventLog(eventLogSettings =>
 {
-    eventLogSettings.LogName = "NoPorts";
+    eventLogSettings.LogName = ServiceConfig.Name;
     eventLogSettings.SourceName = "NoPorts";
     eventLogSettings.Filter = (category, logLevel) => logLevel >= LogLevel.Information;
 });
