@@ -155,7 +155,7 @@ jobs:
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext -arch x64 -o build/NoPorts.msi noports.wxs
           # Sign the generated MSI
           source ../codesign_windows.sh
-          sign_file "NoPorts.msi"
+          sign_file "build/NoPorts.msi"
           cp build/NoPorts.msi ../packages/dart/sshnoports/sshnp/
       - name: Copy additional bundle items to build
         run: |
