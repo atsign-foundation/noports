@@ -147,6 +147,8 @@ jobs:
           WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           dotnet tool install --global wix
+          wix extension add -g WixToolset.Util.wixext
+          wix extension add -g WixToolset.UI.wixext
           mkdir bin
           cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,sshnp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
