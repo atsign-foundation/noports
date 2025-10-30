@@ -200,10 +200,8 @@ jobs:
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - name: Compress to zip (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
-        shell: pwsh
         run:
-          Compress-Archive -Path sshnp -Destination tarball/${{
-          matrix.output-name }}.zip
+          powershell -c 'Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip'
       - name: Notarize the build (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         env:
