@@ -156,7 +156,7 @@ jobs:
           # Sign the generated MSI
           source ../codesign_windows.sh
           sign_file "build/NoPorts.msi"
-          cp build/NoPorts.msi ../packages/dart/sshnoports/sshnp/
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/sshnp/
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
