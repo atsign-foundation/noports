@@ -85,8 +85,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/at_client"
-      ref: "st/at_rpc_mutex"
-      resolved-ref: "949c0bb1c9910eccedaf8b1529856684273c88d7"
+      ref: "st/at_rpc_mutex_flag"
+      resolved-ref: "83cc55c732405bff85a7d914bc466c35e593ccd8"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
     version: "3.8.0"
