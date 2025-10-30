@@ -437,14 +437,11 @@ jobs:
     needs: [github-release, cleanup]
     runs-on: ubuntu-latest
     steps:
-      - name: Suppressed Chat
-        run: |
-          echo "suppressed chat failure revert this after"
-      # - name: Google Chat Notification
-      #   uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
-      #   with:
-      #     name:
-      #       SSH no ports binaries build by GitHub Action ${{ github.run_number
-      #       }}
-      #     url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
-      #     status: failure
+      - name: Google Chat Notification
+        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        with:
+          name:
+            SSH no ports binaries build by GitHub Action ${{ github.run_number
+            }}
+          url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+          status: failure
