@@ -13,15 +13,6 @@ builder.Services.AddWindowsService(options =>
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(); // optional: keep console logs when running interactively
 #pragma warning disable CA1416 // Validate platform compatibility
-if (!EventLog.SourceExists("NoPorts"))
-{
-    EventLog.CreateEventSource("NoPorts", ServiceConfig.Name);
-}
-// The source can exist without the log existing.....?
-if (!EventLog.Exists(ServiceConfig.Name))
-{
-    EventLog.CreateEventSource("NoPorts", ServiceConfig.Name);
-}
 builder.Logging.AddEventLog(eventLogSettings =>
 {
     eventLogSettings.LogName = ServiceConfig.Name;

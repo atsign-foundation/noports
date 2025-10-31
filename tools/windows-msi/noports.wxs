@@ -66,15 +66,23 @@
               Name="srv.exe" KeyPath="yes" />
       </Component>
 
-     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR">
+     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR" Permanent="yes">
         <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
-              Name="sshnpd.yaml" KeyPath="yes" />
+              Name="sshnpd.yaml" KeyPath="yes" NeverOverwrite="yes"/>
       </Component>
 
       <!-- Environment PATH -->
       <Component Id="UpdatePath" Guid="d7a87a7f-1bcc-4eba-b089-6c2ab0e0f0bd">
         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" 
                      Permanent="no" Part="last" Action="set" System="no" />
+      </Component>
+      <Component Id="EventLogComponent" Guid="EVENTLOG-GUID-HERE">
+            <util:EventSource Name="NoPorts"
+                            Log="Application"
+                            EventMessageFile="[#ServiceExecutable]"
+                            SupportsErrors="yes"
+                            SupportsInformationals="yes"
+                            SupportsWarnings="yes" />
       </Component>
     </ComponentGroup>
 
