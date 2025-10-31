@@ -5,6 +5,7 @@
   <Package Name="NoPorts" Language="1033" Version="1.0.0.0" 
            Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
+
     
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" /> 
@@ -66,7 +67,7 @@
               Name="srv.exe" KeyPath="yes" />
       </Component>
 
-     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR">
+     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR" Permanent="yes" NeverOverwrite="yes">
         <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
               Name="sshnpd.yaml" KeyPath="yes" />
       </Component>
