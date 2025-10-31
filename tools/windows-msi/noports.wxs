@@ -66,7 +66,7 @@
               Name="srv.exe" KeyPath="yes" />
       </Component>
 
-     <Component Id="sshnpd_config" Guid="*">
+     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR">
         <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
               Name="sshnpd.yaml" KeyPath="yes" />
       </Component>
@@ -100,7 +100,7 @@
                              Account="NT AUTHORITY\LocalService"/> 
         <ServiceControl Id="StartNoPortsService"
                              Name="[SERVICE_NAME]"
-                             Start="install"
+                             Start="no"
                              Stop="both"
                              Remove="uninstall"
                              Wait="yes" />
