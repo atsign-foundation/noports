@@ -66,7 +66,7 @@
               Name="srv.exe" KeyPath="yes" />
       </Component>
 
-     <Component Id="sshnpd_config" Guid="*" Directory="APPDATADIR">
+     <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR">
         <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
               Name="sshnpd.yaml" KeyPath="yes" />
       </Component>
