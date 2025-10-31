@@ -94,6 +94,7 @@ abstract class Sshnpd {
     AtClient? atClient,
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    void Function()? helpCallback,
     required String version,
   }) async {
     return SshnpdImpl.fromCommandLineArgs(
@@ -101,6 +102,7 @@ abstract class Sshnpd {
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      helpCallback: helpCallback,
       version: version,
     );
   }
