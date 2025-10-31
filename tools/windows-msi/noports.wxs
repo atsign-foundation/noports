@@ -100,7 +100,7 @@
                              Account="NT AUTHORITY\LocalService"/> 
         <ServiceControl Id="StartNoPortsService"
                              Name="[SERVICE_NAME]"
-                             Start="install"
+                             Start="no"
                              Stop="both"
                              Remove="uninstall"
                              Wait="yes" />
