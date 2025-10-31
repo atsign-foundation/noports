@@ -17,6 +17,11 @@ if (!EventLog.SourceExists("NoPorts"))
 {
     EventLog.CreateEventSource("NoPorts", ServiceConfig.Name);
 }
+// The source can exist without the log existing.....?
+if (!EventLog.Exists(ServiceConfig.Name))
+{
+    EventLog.CreateEventSource("NoPorts", ServiceConfig.Name);
+}
 builder.Logging.AddEventLog(eventLogSettings =>
 {
     eventLogSettings.LogName = ServiceConfig.Name;
