@@ -277,10 +277,10 @@ packages:
     dependency: "direct main"
     description:
       name: config
-      sha256: a25062b12993f0a45b34cdbde1808ec6ff3ab1c4c53f6b940c9e9f3fb5dcfad2
+      sha256: a4ca96d4bc3c44c1ec35976dbadf1a60635519d74688413485d2f808b2185a6e
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.8.3"
   convert:
     dependency: transitive
     description:
