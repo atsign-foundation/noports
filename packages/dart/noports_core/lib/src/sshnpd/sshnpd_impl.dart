@@ -158,12 +158,16 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     AtClient? atClient,
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    void Function()? helpCallback,
     required String version,
   }) async {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(args);
+        p = await SshnpdParams.fromArgs(
+          args,
+          helpCallback: helpCallback,
+        );
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
