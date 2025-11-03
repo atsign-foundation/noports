@@ -4,13 +4,16 @@ namespace WindowsBinaryService
     {
 #if SRVD
         public const string Binary = "srvd.exe";
-        public const string Name = "NoPorts Relay";
+        public const string DisplayName = "NoPorts Relay";
+        public const string Name = "NoPortsRelay";
 #elif SSHNPD
         public const string Binary = "sshnpd.exe";
-        public const string Name = "NoPorts Daemon";
+        public const string DisplayName = "NoPorts Daemon";
+        public const string Name = "NoPortsDaemon";
 #else
         public const string Binary = "sshnpd.exe";
-        public const string Name = "NoPorts Daemon";
+        public const string DisplayName = "NoPorts Daemon";
+        public const string Name = "NoPortsDaemon";
 #endif
     }
 

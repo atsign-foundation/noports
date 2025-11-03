@@ -7,6 +7,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWindowsService(options =>
 {
     options.ServiceName = ServiceConfig.Name;
+    options.DisplayName = ServiceConfig.DisplayName;
 });
 
 // Configure logging to use EventLog (and Console for development)
