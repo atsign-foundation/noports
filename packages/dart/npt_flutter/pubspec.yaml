@@ -111,9 +111,11 @@ dependency_overrides:
       ref: at_onboarding_flutter_layers
       path: packages/at_onboarding_flutter
   at_client_mobile:
+    # the ref below is the latest fully tested commit on the apkam-flutter
+    # branch in the at_client_sdk repo
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: desktopbug
+      ref: 4e7701af851be6a7c45ef2cecbf4048c80814261
       path: packages/at_client_mobile
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

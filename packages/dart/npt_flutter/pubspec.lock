@@ -109,8 +109,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/at_client_mobile"
-      ref: desktopbug
-      resolved-ref: d6beef0581c9951e90e543bdc23b7172d0665860
+      ref: "4e7701af851be6a7c45ef2cecbf4048c80814261"
+      resolved-ref: "4e7701af851be6a7c45ef2cecbf4048c80814261"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
     version: "3.2.24"
@@ -395,6 +395,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  config:
+    dependency: transitive
+    description:
+      name: config
+      sha256: a4ca96d4bc3c44c1ec35976dbadf1a60635519d74688413485d2f808b2185a6e
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.3"
   console:
     dependency: transitive
     description:
@@ -1222,6 +1230,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  rfc_6901:
+    dependency: transitive
+    description:
+      name: rfc_6901
+      sha256: "6a43b1858dca2febaf93e15639aa6b0c49ccdfd7647775f15a499f872b018154"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   screen_retriever:
     dependency: transitive
     description:
