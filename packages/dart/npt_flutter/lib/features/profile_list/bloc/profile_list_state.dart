@@ -33,12 +33,12 @@ final class ProfileListLoaded extends ProfileListState {
   final Iterable<String> profiles;
   final SortColumn sortColumn;
   final SortOrder sortOrder;
-  // final String searchQuery;
+  final String searchQuery;
   const ProfileListLoaded({
     required this.profiles,
     this.sortColumn = SortColumn.profileName,
     this.sortOrder = SortOrder.ascending,
-    // this.searchQuery = '',
+    this.searchQuery = '',
   });
 
   ProfileListLoaded copyWith({
@@ -56,11 +56,11 @@ final class ProfileListLoaded extends ProfileListState {
   }
 
   @override
-  List<Object> get props => [profiles, sortColumn, sortOrder]; //, searchQuery];
+  List<Object> get props => [profiles, sortColumn, sortOrder, searchQuery];
 
   @override
   String toString() {
-    return 'ProfileListLoaded(profiles: $profiles, sortColumn: $sortColumn, sortOrder: $sortOrder, searchQuery:'; //$searchQuery)';
+    return 'ProfileListLoaded(profiles: $profiles, sortColumn: $sortColumn, sortOrder: $sortOrder, searchQuery: $searchQuery)';
   }
 }
 

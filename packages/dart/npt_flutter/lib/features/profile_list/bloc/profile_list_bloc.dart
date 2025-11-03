@@ -19,6 +19,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     on<ProfileListDeleteEvent>(_onDelete);
     on<ProfileListAddEvent>(_onAdd);
     on<ProfileListSortEvent>(_onSort);
+    on<ProfileListSearchEvent>(_onSearch);
   }
 
   void clearAll() => emit(const ProfileListInitial());
@@ -167,6 +168,13 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
         sortOrder: newSortOrder,
       ),
     );
+  }
+
+  Future<void> _onSearch(
+    ProfileListSearchEvent event,
+    Emitter<ProfileListState> emit,
+  ) async {
+    //TODO: Implement search functionality
   }
 
   // Helper Functions below this line

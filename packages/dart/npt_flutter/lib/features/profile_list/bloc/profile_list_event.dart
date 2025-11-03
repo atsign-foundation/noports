@@ -79,3 +79,17 @@ final class ProfileListSortEvent extends ProfileListEvent {
     return 'ProfileListSortEvent(sortColumn: $sortColumn, inverseSortOrder: $inverseSortOrder)';
   }
 }
+
+final class ProfileListSearchEvent extends ProfileListEvent {
+  final String query;
+
+  const ProfileListSearchEvent({required this.query});
+
+  @override
+  List<Object> get props => [query];
+
+  @override
+  String toString() {
+    return 'ProfileListSearchEvent(query: $query)';
+  }
+}
