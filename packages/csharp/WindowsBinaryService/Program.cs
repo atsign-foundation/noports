@@ -1,3 +1,6 @@
+// Entrypoint for the project
+// Registers the service and Event logger
+
 using System.Diagnostics;
 using WindowsBinaryService;
 

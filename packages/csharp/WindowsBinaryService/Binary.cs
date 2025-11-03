@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿// Wrapper for a binary
+// Runs the provided binary as a subprocess
+
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Channels;
 

@@ -1,3 +1,6 @@
+// The Windows BackgroundService interface
+// This starts up the appropriate dart binary
+
 namespace WindowsBinaryService
 {
     public static class ServiceConfig
