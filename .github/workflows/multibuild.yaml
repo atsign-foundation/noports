@@ -50,6 +50,7 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
+        shell: bash
     strategy:
       matrix:
         include:
@@ -57,22 +58,27 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+            platform: "linux"
           - os: ubuntu-24.04-arm
             output-name: sshnp-linux-arm64
             ext: ""
             bundle: "shell"
-          - os: macos-13
+            platform: "linux"
+          - os: macos-15-intel
             output-name: sshnp-macos-x64
             ext: ""
             bundle: "shell"
-          - os: macos-14
+            platform: "macos"
+          - os: macos-latest
             output-name: sshnp-macos-arm64
             ext: ""
             bundle: "shell"
-          - os: windows-latest
+            platform: "macos"
+          - os: windows-signer
             output-name: sshnp-windows-x64
             ext: ".exe"
             bundle: "windows"
+            platform: "windows"
     steps:
       - name: Checkout multibuild branch
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -84,10 +90,10 @@ jobs:
         run: |
           mkdir sshnp
           mkdir tarball
-      - name: Create debug directory (Windows only)
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Create debug directory (Non-Windows)
+        if: ${{ matrix.platform != 'windows' }}
         run: mkdir sshnp/debug
-      - name: Compile binaries
+      - name: Compile core binaries
         run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
@@ -104,18 +110,61 @@ jobs:
         run: |
           dart pub get --enforce-lockfile
           dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
-      - name: Compile debug binaries (MacOS and Linux only)
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Compile debug binaries (Non-Windows)
+        if: ${{ matrix.platform != 'windows' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
           dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
+      - name: Build Windows Services (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/csharp/WindowsBinaryService
+        run: |
+          dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
+          mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Codesign Windows Binaries (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/dart/sshnoports/sshnp
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          source ../../../../tools/codesign_windows.sh
+          sign_file "sshnpd.exe"
+          sign_file "at_activate.exe"
+          sign_file "sshnp.exe"
+          sign_file "npp_atserver.exe"
+          sign_file "npp_file.exe"
+          sign_file "npa_file.exe"
+          sign_file "npt.exe"
+          sign_file "srv.exe"
+          sign_file "sshnpdService.exe"
+          sign_file "np_admin.exe"
+      - name: Build and Sign Windows Installer (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./tools/windows-msi
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          dotnet tool install --global wix
+          wix extension add -g WixToolset.Util.wixext
+          wix extension add -g WixToolset.UI.wixext
+          mkdir bin
+          cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,sshnp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
+          cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
+          wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
+              -arch x64 -o build/NoPorts.msi noports.wxs
+          # Sign the generated MSI
+          source ../codesign_windows.sh
+          sign_file "build/NoPorts.msi"
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/sshnp/
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
           cp LICENSE sshnp
-      - name: Codesign (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Codesign MacOS Bundle (MacOS only)
+        if: ${{ matrix.platform == 'macos' }}
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
           MACOS_CODESIGN_CERT_PASSWORD:
@@ -144,19 +193,18 @@ jobs:
             -v \
             sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
       - name: Compress to zip (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        if: ${{ matrix.platform == 'macos' }}
         run:
           ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
       - name: Compress to tgz (Linux only)
-        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'  }}
+        if: ${{ matrix.platform == 'linux' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - name: Compress to zip (Windows Only)
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.platform == 'windows' }}
         run:
-          Compress-Archive -Path sshnp -Destination tarball/${{
-          matrix.output-name }}.zip
+          powershell -c 'Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip'
       - name: Notarize the build (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        if: ${{ matrix.platform == 'macos' }}
         env:
           MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
