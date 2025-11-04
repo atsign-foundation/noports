@@ -130,8 +130,9 @@ class FormValidator {
     }
 
     // Validate host part (first part)
-    final host = parts[0];
-    // Allow wildcard for host, otherwise validate it's not empty
+    final host = parts.first;
+    
+    // Check if empty
     if (host.isEmpty) {
       return 'Host part cannot be empty';
     }
@@ -141,6 +142,7 @@ class FormValidator {
     if (portStr.isEmpty) {
       return 'Port part cannot be empty';
     }
+
     // Allow wildcard for port, otherwise validate it's a valid port number
     if (portStr != '*') {
       final port = int.tryParse(portStr);
