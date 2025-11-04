@@ -1,3 +1,7 @@
+## 1.6.4+23
+
+- FIX: policy permit open host and port form validation
+
 ## 1.6.3+22
 
 - **FIX**: atSigns are no longer removed from the keychain after an enrollment occurs on windows devices.
