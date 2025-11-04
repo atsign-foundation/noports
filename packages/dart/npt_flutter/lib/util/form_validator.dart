@@ -112,10 +112,8 @@ class FormValidator {
   }
 
   static String? validateHostPortField(String? value) {
-    final strings = AppLocalizations.of(App.navState.currentContext!)!;
-
     if (value?.isEmpty ?? true) {
-      return strings.validationErrorEmptyField;
+      return 'This field is required';
     }
 
     // Check if the value contains at least one colon
