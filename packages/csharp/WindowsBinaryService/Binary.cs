@@ -7,123 +7,136 @@ using System.Threading.Channels;
 
 namespace WindowsBinaryService
 {
-    internal class Binary
-    {
-        private readonly string _path;
-        private Process? _process;
-        private ILogger _logger;
-        public Binary(string path, ILogger logger)
-        {
-            _path = path;
-            _logger = logger;
-        }
+	internal class Binary
+	{
+		private ProcessStartInfo startInfo;
+		private ILogger logger;
+		private Channel<string> logChannel;
+		private bool shouldClose = false;
+		private Task logDebouncer;
 
-        public async Task RunBinary(CancellationToken cancellationToken)
-        {
-            // Use ProcessStartInfo class
-            ProcessStartInfo startInfo = new();
-            startInfo.CreateNoWindow = false;
-            startInfo.UseShellExecute = false;
-            startInfo.FileName = _path;
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
+		private Process? process;
 
-            try
-            {
-                _process = Process.Start(startInfo)!;
-                using (_process)
-                {
-                    var outputChannel = Channel.CreateUnbounded<string>();
-                    var errorChannel = Channel.CreateUnbounded<string>();
+		public Binary(string path, ILogger logger)
+		{
+			this.logger = logger;
+			startInfo = new ProcessStartInfo
+			{
+				CreateNoWindow = true,
+				UseShellExecute = false,
+				FileName = path,
+				Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1)),
+				WindowStyle = ProcessWindowStyle.Hidden,
+				RedirectStandardError = true,
+				RedirectStandardOutput = true,
+			};
+			logChannel = Channel.CreateUnbounded<string>();
+			logDebouncer = Task.Run(() => LogDebouncer());
+		}
 
-                    // Background tasks to process channels
+		public async Task Run(CancellationToken ct)
+		{
+			try
+			{
+				process = Process.Start(startInfo);
+				if (process == null)
+				{
+					logger.LogCritical($"Host failed to start the {ServiceConfig.Binary} process.\nCheck your installation or contact support.");
+					return;
+				}
+				process.OutputDataReceived += CreateLogHandler();
+				process.ErrorDataReceived += CreateLogHandler();
 
+				process.BeginOutputReadLine();
+				process.BeginErrorReadLine();
 
-                    //lowkey only the stderr channel matters ngl (idk why sshnp doesnt pipe any stdout)
-                    var outputTask = ProcessChannelAsync(outputChannel.Reader, cancellationToken);
-                    var errorTask = ProcessChannelAsync(errorChannel.Reader, cancellationToken);
+				await process.WaitForExitAsync(ct);
+			}
+			catch (Exception ex) when (ex is not TaskCanceledException)
+			{
+				logger.LogCritical(ex.Message);
+			}
+			finally
+			{
+				await Stop();
+				process = null;
+			}
+		}
 
-                    async Task ProcessChannelAsync(ChannelReader<string> reader, CancellationToken ct)
-                    {
-                        var chunk = new StringBuilder();
-                        var lastFlush = DateTime.UtcNow;
+		public async Task Stop()
+		{
+			if (process != null && !process.HasExited)
+			{
+				process.Kill();
+			}
+			logChannel.Writer.TryComplete();
+			shouldClose = true;
+			await logDebouncer;
+		}
 
-                        await foreach (var line in reader.ReadAllAsync(ct))
-                        {
-                            chunk.AppendLine(line);
+		private DataReceivedEventHandler CreateLogHandler()
+		{
+			return (object sender, DataReceivedEventArgs ev) =>
+			{
+				if (!string.IsNullOrEmpty(ev.Data))
+				{
+					logChannel.Writer.TryWrite(ev.Data);
+				}
+			};
+		}
 
-                            // Flush if chunk is large enough or enough time has passed
-                            if (DateTime.UtcNow - lastFlush > TimeSpan.FromMilliseconds(5000))
-                            {
-                                _logger.LogWarning($"{chunk}");
-                                chunk.Clear();
-                                lastFlush = DateTime.UtcNow;
-                            }
-                        }
+		// Debounces logs by grouping based on time.
+		private void LogDebouncer()
+		{
+			// How much time must elapse between reads before a flush is allowed to happen
+			var minReadTimeSpan = TimeSpan.FromMilliseconds(500); 
+			// How much time between flushes before we force flush
+			var maxFlushTimeSpan = TimeSpan.FromMilliseconds(5000);
+			bool didReadLine;
+			var logBuffer = new StringBuilder();
+			var r = logChannel.Reader;
+			var lastFlushTime = DateTime.UtcNow;
+			var lastReadTime = DateTime.UtcNow;
 
-                        // Final flush
-                        if (chunk.Length > 0)
-                        {
-                            _logger.LogError($"sshnpd process closing, final log: {chunk}");
-                        }
-                    }
+			do
+			{
+				// Read until the following conditions are met:
+				// - We have read logs into the buffer AND either of the two are true:
+				//   - maxFlushTimeSpan has passed
+				//   - there was nothing to read during the last attempt
+				do 
 
-                    _process.OutputDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            outputChannel.Writer.TryWrite(e.Data);
-                        }
-                    };
+				{ 
+					didReadLine = r.TryRead(out var line);
+					if (didReadLine)
+					{
+						logBuffer.AppendLine(line);
+						lastReadTime = DateTime.UtcNow;
+					} else if (logBuffer.Length == 0)
+					{
+						lastFlushTime = DateTime.UtcNow;
+					}
 
-                    _process.ErrorDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            errorChannel.Writer.TryWrite(e.Data);
-                        }
-                    };
+					// Force a flush if we've exceeded the maxFlushTimeSpan
+					if (logBuffer.Length > 0 && DateTime.UtcNow - lastFlushTime > maxFlushTimeSpan) break;
+					if (shouldClose && r.Count == 0)
+					{
+						if (logBuffer.Length == 0) return;
+						break;
+					}
+				}
+				while (
+					logBuffer.Length == 0 || // Don't flush if there's nothing in the buffer 
+					didReadLine ||           // We just read a line so keep trying to read
+					DateTime.UtcNow - lastReadTime < minReadTimeSpan  // min read time hasn't elapsed
+				);
 
-                    // Optionally, start reading output/error here if needed:
-                    _process.BeginOutputReadLine();
-                    _process.BeginErrorReadLine();
+				logger.LogWarning($"{logBuffer}");
+				logBuffer.Clear();
+				lastFlushTime = DateTime.UtcNow;
+				lastReadTime = DateTime.UtcNow;
+			} while (!shouldClose || r.Count > 0);
+		}
+	}
 
-                    // Wait for process to exit
-                    await _process.WaitForExitAsync(cancellationToken);
-
-                    // Complete the channels to finish the background tasks
-                    outputChannel.Writer.Complete();
-                    errorChannel.Writer.Complete();
-
-                    await Task.WhenAll(outputTask, errorTask);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception starting process: {ex.Message}");
-                throw;
-            }
-        }
-
-        public void Stop()
-        {
-            if (_process != null && !_process.HasExited)
-            {
-                _process.Kill();
-            }
-        }
-
-        public async Task WaitForExit()
-        {
-            if (_process != null && !_process.HasExited)
-            {
-                try
-                {
-                    await _process.WaitForExitAsync();
-                }
-                catch { } // Ignore exceptions on closing the process (cancellationToken might dispose of _process before this is called)
-            }
-        }
-    }
 }

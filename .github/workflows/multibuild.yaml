@@ -152,7 +152,8 @@ jobs:
           mkdir bin
           cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,sshnp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
-          wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext -arch x64 -o build/NoPorts.msi noports.wxs
+          wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
+              -arch x64 -o build/NoPorts.msi noports.wxs
           # Sign the generated MSI
           source ../codesign_windows.sh
           sign_file "build/NoPorts.msi"
