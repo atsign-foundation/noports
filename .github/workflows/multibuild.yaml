@@ -64,12 +64,12 @@ jobs:
             ext: ""
             bundle: "shell"
             platform: "linux"
-          - os: macos-13
+          - os: macos-15-intel
             output-name: sshnp-macos-x64
             ext: ""
             bundle: "shell"
             platform: "macos"
-          - os: macos-14
+          - os: macos-latest
             output-name: sshnp-macos-arm64
             ext: ""
             bundle: "shell"
