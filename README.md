@@ -4,7 +4,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://securityscorecards.dev/viewer/?uri=github.com/atsign-foundation/noports&sort_by=check-score&sort_direction=desc)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8102/badge)](https://www.bestpractices.dev/projects/8102)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
-[![sbomified](https://sbomify.com/assets/images/logo/badge.svg)](https://app.sbomify.com/component/-93khk8pUi)
+[![sbomified](https://sbomify.com/assets/images/logo/badge.svg)](https://app.sbomify.com/public/product/h4kKfn8vMA/)
 
 # noports
 
