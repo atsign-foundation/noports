@@ -16,7 +16,7 @@ Complete these steps **on the machine you are connecting to (Windows)**
 
 ### <mark style="color:orange;">Step 6:</mark> Download and run the Installer
 
-Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). \<TO BE FILLED IN LATER>
+Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-windows-x64.zip). \<TO BE FILLED IN LATER>
 
 Ensure both Core Tools & Daemon Service are being installed.
 
@@ -153,7 +153,7 @@ After setting up the machine you're connecting from, you'll configure the machin
 
 ### <mark style="color:orange;">Step 4:</mark> Download and run the Installer
 
-Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). \<TO BE FILLED IN LATER>
+Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-windows-x64.zip). \<TO BE FILLED IN LATER>
 
 Ensure both Core Tools & Daemon Service are being installed.
 
