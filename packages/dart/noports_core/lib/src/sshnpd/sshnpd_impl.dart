@@ -1632,8 +1632,8 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   final Map<String, int> authCheckCache = {};
   final Map<int, Completer<NPAAuthCheckResponse>> completerMap = {};
 
-  // ignore: experimental_member_use
   _NPAAuthChecker(this.sshnpd) {
+    // ignore: experimental_member_use
     rpc = AtRpc(
       atClient: sshnpd.atClient,
       baseNameSpace: DefaultArgs.namespace,
