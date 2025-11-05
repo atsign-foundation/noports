@@ -19,6 +19,7 @@
     * [Windows to macOS](installation/connecting-from-windows/windows-to-macos.md)
     * [Windows to Linux](installation/connecting-from-windows/windows-to-linux.md)
     * [Windows to Windows](installation/connecting-from-windows/windows-to-windows.md)
+    * [Windows to Windows Legacy](installation/connecting-from-windows/windows-to-windows-1.md)
   * [MacOS Installation Guides](installation/macos/README.md)
     * [MacOS Desktop Client Installation](installation/macos/desktop.md)
     * [MacOS CLI Client Installation](installation/macos/cli-client.md)

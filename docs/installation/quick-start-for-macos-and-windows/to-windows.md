@@ -6,7 +6,7 @@ icon: windows
 
 This guide provides instructions for connecting from the NoPorts desktop application, to a machine running Windows.
 
-### Step 6 and Step 7
+### Step 6 to Step 8
 
 Complete these steps **on the machine you are connecting to (Windows)**
 
@@ -16,29 +16,61 @@ Complete these steps **on the machine you are connecting to (Windows)**
 
 ### <mark style="color:orange;">Step 6:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). \<TO BE FILLED IN LATER>
 
-Install the Device Software
+Ensure both Core Tools & Daemon Service are being installed.
 
-6.1: Click **Device Install**.
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
-
-6.2: Enter both of your atSigns into the associated fields, then enter the device name, and click **Next**. You will need to enter this device name in **Step 10**.
-
-<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.17.31 PM.png" alt=""><figcaption></figcaption></figure>
-
-6.3: (Optional) If you wish to add additional arguments to pass, enter them and then click **Next.**
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
-
-6.4: Wait for the installation to complete, then click **Next.**
+<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
 ### <mark style="color:orange;">Step 7:</mark> Initiate atSign authorization request
 
-You will see the following screen. Enter the **one-time passcode generated in Step 5** on the machine you are connecting from (macOS). Then click **Generate** and move onto **Step 8**.
+Run the following command to make an authorization request.&#x20;
 
-<figure><img src="../../.gitbook/assets/Screenshot 2025-10-01 at 8.25.05 PM.png" alt=""><figcaption></figcaption></figure>
+{% hint style="warning" %}
+Be sure to replace the following values:
+
+`@<REPLACE>_np` with your **device atSign**,
+
+&#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
+
+`@<REPLACE>_np_key` with your **device atSign**,&#x20;
+
+`<DEVICE_NAME>` with the name of the machine you are on
+{% endhint %}
+
+<pre class="language-bash"><code class="lang-bash">.\at_activate enroll -a "@&#x3C;REPLACE>_np" \
+<strong>  -s &#x3C;PASSCODE> \
+</strong><strong>  -p noports \
+</strong><strong>  -k C:\Users\&#x3C;USER>\.atsign\keys\@&#x3C;REPLACE>_np_key.atKeys \
+</strong><strong>  -d &#x3C;DEVICE_NAME> \
+</strong><strong>  -n "sshnp:rw,sshrvd:rw"
+</strong></code></pre>
+
+Once you see this text, you're ready to continue to the next step.
+
+
+
+```
+Submitting enrollment request 
+Enrollment ID: ---------------------
+Waiting for approval; will check every 10 seconds
+```
+
+### <mark style="color:orange;">Step 8:</mark> Setup Service Config
+
+The service config lives in C:\Program Data\NoPorts\sshnpd.yaml, you can open it in notepad with this command:
+
+```
+notepad C:\ProgramData\NoPorts\sshnpd.yaml
+```
+
+Ensure you provide the following fields to your service config:
+
+* atsign
+* keys
+* manager
+
+Examples on how to fill in the fields are inside the config file.
 
 </details>
 
@@ -58,8 +90,7 @@ With both machines now configured, the final steps bring us back to the machine 
 ### <mark style="color:orange;">Step 9:</mark> Switch back to your client atSign (@example01\_np)
 
 1. Click **Back**, and then click on the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
-
-2) Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
+2. Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
 
 ### <mark style="color:orange;">Step 10:</mark> Create a Connection Profile
 
@@ -112,7 +143,7 @@ Click on the **key icon** in the top right corner and then click on **OTP.** You
 
 </details>
 
-### Step 4 and Step 5&#x20;
+### Step 4 to Step 6&#x20;
 
 After setting up the machine you're connecting from, you'll configure the machine you're connecting to.
 
@@ -122,29 +153,61 @@ After setting up the machine you're connecting from, you'll configure the machin
 
 ### <mark style="color:orange;">Step 4:</mark> Download and run the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). \<TO BE FILLED IN LATER>
 
-Install the Device Software
+Ensure both Core Tools & Daemon Service are being installed.
 
-4.1: Click **Device Install**.
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
-
-4.2: Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in S**tep 7**.
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
-
-4.3: (Optional) If you wish to add additional arguments to pass to sshnpd, enter them, and then click **Next.**
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
-
-4.4: Wait for the installation to complete, then click **Next.**
+<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
 ### <mark style="color:orange;">Step 5:</mark> Initiate atSign authorization request
 
-You will see the following screen. Enter the **one-time passcode generated in Step 3** on the machine you are connecting from. Then click **Generate** and move on to **Step 6**.
+Run the following command to make an authorization request.&#x20;
 
-<figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
+{% hint style="warning" %}
+Be sure to replace the following values:
+
+`@<REPLACE>_np` with your **device atSign**,
+
+&#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
+
+`@<REPLACE>_np_key` with your **device atSign**,&#x20;
+
+`<DEVICE_NAME>` with the name of the machine you are on
+{% endhint %}
+
+<pre class="language-bash"><code class="lang-bash">at_activate.exe enroll -a "@&#x3C;REPLACE>_np" \
+<strong>  -s &#x3C;PASSCODE> \
+</strong><strong>  -p noports \
+</strong><strong>  -k C:\Users\&#x3C;USER>\.atsign\keys\@&#x3C;REPLACE>_np_key.atKeys \
+</strong><strong>  -d &#x3C;DEVICE_NAME> \
+</strong><strong>  -n "sshnp:rw,sshrvd:rw"
+</strong></code></pre>
+
+Once you see this text, you're ready to continue to the next step.
+
+
+
+```
+Submitting enrollment request 
+Enrollment ID: ---------------------
+Waiting for approval; will check every 10 seconds
+```
+
+### <mark style="color:orange;">Step 6:</mark> Setup Service Config
+
+The service config lives in C:\Program Data\NoPorts\sshnpd.yaml, you can open it in notepad with this command:
+
+```
+notepad C:\ProgramData\NoPorts\sshnpd.yaml
+```
+
+Ensure you provide the following fields to your service config:
+
+* atsign
+* keys
+* manager
+
+Examples on how to fill in the fields are inside the config file.
 
 </details>
 
@@ -164,8 +227,7 @@ With both machines now configured, the final steps bring us back to the machine 
 ### <mark style="color:orange;">Step 7:</mark> Switch back to your client atSign
 
 1. Click **Back**, and then click on the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
-
-2) Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
+2. Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
 
 ### <mark style="color:orange;">Step 8:</mark> Create a Connection Profile
 
