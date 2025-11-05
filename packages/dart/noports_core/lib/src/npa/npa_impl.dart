@@ -91,6 +91,7 @@ class NPAImpl with AtClientBindings implements NPA {
 
   @override
   Future<void> run() async {
+    // ignore: experimental_member_use
     AtRpc rpc = AtRpc(
       atClient: atClient,
       baseNameSpace: DefaultArgs.namespace,
