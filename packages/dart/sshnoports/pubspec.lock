@@ -84,20 +84,19 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: "st/at_rpc_mutex_flag"
-      resolved-ref: "83cc55c732405bff85a7d914bc466c35e593ccd8"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "3.8.0"
+      name: at_client
+      sha256: "6f3597a886549bc0c3d76e7196bc10ba3c6539007d92b748222b5d0b4083e31c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.9.1"
   at_commons:
     dependency: "direct main"
     description:
       name: at_commons
-      sha256: "4c9cafd32e1520fbdde8836ee5bb09616fc5e20accbc3191dc38d3632fc99a4c"
+      sha256: bd6ba59a7b23fd04d2fcda30be14c314cd8635ad3e0f5b1e917825563f0bcddd
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.1"
+    version: "5.6.2"
   at_lookup:
     dependency: transitive
     description:
@@ -278,10 +277,10 @@ packages:
     dependency: "direct main"
     description:
       name: config
-      sha256: a25062b12993f0a45b34cdbde1808ec6ff3ab1c4c53f6b940c9e9f3fb5dcfad2
+      sha256: a4ca96d4bc3c44c1ec35976dbadf1a60635519d74688413485d2f808b2185a6e
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.8.3"
   convert:
     dependency: transitive
     description:
