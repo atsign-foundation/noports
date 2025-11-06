@@ -94,6 +94,12 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  at_server_status:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      ref: gkc/at-server-status-with-proxy
+      path: packages/at_server_status
+
   file_picker: ^10.3.3
   intl: 0.20.2
   device_info_plus: 11.3.3
