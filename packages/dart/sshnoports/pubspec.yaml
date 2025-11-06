@@ -10,7 +10,7 @@ dependencies:
   noports_core:
     path: "../noports_core"
   at_onboarding_cli: ^1.14.0
-  at_commons: ^5.6.1
+  at_commons: ^5.6.2
   at_cli_commons: ^3.0.1
   at_client: ^3.9.1
   args: 2.7.0
