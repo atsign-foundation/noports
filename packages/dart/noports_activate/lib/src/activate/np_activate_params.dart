@@ -1,7 +1,7 @@
 import 'package:at_commons/at_commons.dart';
 import 'package:noports_activate/src/noports_activate_cli.dart';
 import 'package:noports_activate/src/activate/noports_activate_utils.dart';
-import 'package:noports_activate/src/activate/np_activate.dart';
+import 'package:noports_activate/src/activate/np_activate_impl.dart';
 
 class NPActivateParams {
   NPActivateType? command;
