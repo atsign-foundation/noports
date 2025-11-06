@@ -38,7 +38,7 @@ Be sure to replace the following values:
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">.\at_activate enroll -a "@&#x3C;REPLACE>_np" \
+<pre class="language-bash"><code class="lang-bash">at_activate.exe enroll -a "@&#x3C;REPLACE>_np" \
 <strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
 </strong><strong>  -k C:\Users\&#x3C;USER>\.atsign\keys\@&#x3C;REPLACE>_np_key.atKeys \
