@@ -50,7 +50,3 @@ at_activate.exe approve -a "@<REPLACE>_np" --arx NoPorts --drx <REPLACE_NAME>
 That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
 </details>
-
-### Connecting more machines to your device atSign
-
-To connect more machines to your device atSign, repeat **Steps 4 through 7**.

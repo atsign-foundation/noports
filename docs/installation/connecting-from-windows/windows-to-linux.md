@@ -98,7 +98,3 @@ Waiting for approval; will check every 10 seconds
 With both machines now configured, the final steps bring us back to the machine initiating the connection.
 
 {% include "../../.gitbook/includes/5.13-windows-msi-activate.md" %}
-
-### Connecting more machines to your device atSign
-
-To connect more machines to your device atSign, repeat **Steps 4 through 7**.
