@@ -8,22 +8,14 @@ components of the NoPorts suite.
 ### Installation
 
 The `sshnpd.service` file should be placed in `/etc/systemd/system` (as root).
-
-The `sshnpd.service` unit `override.conf` can be modified by running:
+The `sshnpd.yaml` config file should be placed in `/etc/noports/` (as root).
 
 ```sh
-sudo systemctl edit sshnpd
+sudo nano /etc/noports/sshnpd.yaml
 ```
 
-It should be edited to use the appropriate host and client atSigns, (The
-boilerplate uses @device_atsign @manager_atsign) as well as the devicename.
-Also change the username and make sure that username running sshnpd has the
-.atkeys file in place at '~/.atsign/keys'.
-
-Run the following command to view full usage information of the sshnpd binary:
-```sh
-/usr/local/bin/sshnpd
-```
+The file is self documenting, and TODO comments are placed where mandatory
+configuration needs to be made.
 
 ### Usage
 

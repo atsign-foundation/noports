@@ -57,27 +57,22 @@ jobs:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
             ext: ""
-            bundle: "shell"
             platform: "linux"
           - os: ubuntu-24.04-arm
             output-name: sshnp-linux-arm64
             ext: ""
-            bundle: "shell"
             platform: "linux"
           - os: macos-15-intel
             output-name: sshnp-macos-x64
             ext: ""
-            bundle: "shell"
             platform: "macos"
           - os: macos-latest
             output-name: sshnp-macos-arm64
             ext: ""
-            bundle: "shell"
             platform: "macos"
           - os: windows-signer
             output-name: sshnp-windows-x64
             ext: ".exe"
-            bundle: "windows"
             platform: "windows"
     steps:
       - name: Checkout multibuild branch
@@ -159,11 +154,20 @@ jobs:
           source ../codesign_windows.sh
           sign_file "build/NoPorts.msi"
           cp build/NoPorts.msi ../../packages/dart/sshnoports/sshnp/
-      - name: Copy additional bundle items to build
+      - name: Copy windows bundle items to build
+        if: ${{ matrix.platform == 'windows' }}
         run: |
-          cp -r bundles/core/* sshnp/
-          cp -r bundles/${{ matrix.bundle }}/* sshnp/
-          cp LICENSE sshnp
+          cp -r LICENSE bundles/core/* sshnp/
+      - name: Copy launchd to build
+        if: ${{ matrix.platform == 'macos' }}
+        run: |
+          cp -r LICENSE bundles/core/* bundles/shell/* sshnp/
+          cp -r bundles/launchd sshnp/launchd
+      - name: Copy systemd to build
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          cp -r LICENSE bundles/core/* bundles/shell/* sshnp/
+          cp -r bundles/systemd sshnp/systemd
       - name: Codesign MacOS Bundle (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         env:

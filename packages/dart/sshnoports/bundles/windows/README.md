@@ -1,4 +1,4 @@
-# SSH No Ports Windows
+# NoPorts Windows
 
 ## Installation
 You can open the NoPorts.msi installer in File Explorer,
@@ -31,29 +31,20 @@ When installing a device, ensure you are installing the NoPorts daemon service f
     -d <DEVICE_NAME> `
     -n "sshnp:rw,sshrvd:rw"
     ```
+
 2. Edit the service config
-    
-    The service config is located at `%PROGRAMDATA%\NoPorts\sshnpd.yaml`
-    
-    Make sure to open this as administrator or else you won't be able to save the file.
+   The service config is located at `%PROGRAMDATA%\NoPorts\sshnpd.yaml`. Make
+   sure to open this as administrator or else you won't be able to save the file.
+   Ensure you provide the following fields to your service config:
 
-    Ensure you provide the following fields to your service config:
-
-    - atsign
-
-        - atsign: example02_np
-
-        - atsign: '@example02_np'
-
-    - keys (windows path)
-
-        - keys: C:\Users\alice\.atsign\keys\@example02_np_key.atKeys
-
-    - manager 
-
-        - manager: example01_np
-
-        - manager: '@example01_np'
+- atsign
+  - atsign: example02_np
+  - atsign: '@example02_np'
+- keys (windows path)
+  - keys: C:\Users\alice\.atsign\keys\@example02_np_key.atKeys
+- manager
+  - manager: example01_np
+  - manager: '@example01_np'
 
 3. Finally, start your service!
 

@@ -3,9 +3,11 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.1.0"
-sshnp_version="5.8.0"
-repo_url="https://github.com/atsign-foundation/sshnoports"
+sshnp_version="5.13.0"
+repo_url="https://github.com/atsign-foundation/noports"
 # END METADATA
+
+# TODO UPDATE THIS
 
 # N.B. Other than the variable definitions, and the call to the main function,
 # nothing else should be writen outside the main function to avoid side effects

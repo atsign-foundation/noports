@@ -1,0 +1,32 @@
+# NoPorts is now configured via its own config file.
+# The file is located at /etc/noports/sshnpd.yaml
+#
+# If you aren't comfortable editing files over the command line, then we
+# recommend using nano: sudo nano /etc/noports/sshnpd.yaml
+#
+# This service is entirely managed by systemd.
+# If you don't know how to interact with systemd services, then please read the
+# manpage: `man systemctl`
+#
+# At the very least, you will need to understand the following commands:
+# - enable
+# - disable
+# - start
+# - stop
+# - restart
+# - status
+
+[Unit]
+Description=NoPorts Daemon
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+KillMode=process
+
+ExecStart=/usr/local/bin/sshnpd
