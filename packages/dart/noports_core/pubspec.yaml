@@ -40,7 +40,7 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
       path: packages/at_client
-      ref: st/at_rpc_mutex_flag
+      ref: st/rpc_mutex_bugfix
 
 dev_dependencies:
   build_runner: ^2.4.12
