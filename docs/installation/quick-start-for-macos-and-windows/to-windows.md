@@ -48,17 +48,23 @@ Be sure to replace the following values:
 
 Once you see this text, you're ready to continue to the next step.
 
-
-
 ```
 Submitting enrollment request 
 Enrollment ID: ---------------------
 Waiting for approval; will check every 10 seconds
 ```
 
+{% hint style="info" %}
+If you encounter a handshake exception, it usually means your root certificates are outdated. To refresh them, run the following command with administrator privileges:<kbd>Install-Script -Name UpdateRootCertificates</kbd>
+{% endhint %}
+
 ### <mark style="color:orange;">Step 8:</mark> Setup Service Config
 
 The service config lives in C:\Program Data\NoPorts\sshnpd.yaml, you can open it in notepad with this command:
+
+{% hint style="danger" %}
+Make sure you run notepad/terminal as administrator or else you won't be able to save your changes!
+{% endhint %}
 
 ```
 notepad C:\ProgramData\NoPorts\sshnpd.yaml
@@ -66,9 +72,14 @@ notepad C:\ProgramData\NoPorts\sshnpd.yaml
 
 Ensure you provide the following fields to your service config:
 
-* atsign
-* keys
-* manager
+* **atsign**
+  * `atsign: example02_np`
+  * `atsign: '@example02_np'`
+* **keys (windows path)**
+  * `keys: C:\Users\alice\.atsign\keys\@example02_np_key.atKeys`
+* **manager**
+  * `manager: example01_np`
+  * `manager: '@example01_np'`
 
 Examples on how to fill in the fields are inside the config file.
 
