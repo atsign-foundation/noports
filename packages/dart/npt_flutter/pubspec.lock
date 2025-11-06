@@ -198,12 +198,11 @@ packages:
   at_server_status:
     dependency: "direct main"
     description:
-      path: "packages/at_server_status"
-      ref: "gkc/at-server-status-with-proxy"
-      resolved-ref: a4aa48d3549de23b1e24d39df432714667d62736
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "1.1.0"
+      name: at_server_status
+      sha256: bbce2d6226b5a381a5462ba99afc6e6d677043263a4eb659a731d0f51465bc54
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   at_sync_ui_flutter:
     dependency: transitive
     description:
