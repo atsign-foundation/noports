@@ -1,5 +1,5 @@
 ## 1.7.0+24
-- 
+
 - FEAT: App now supports use of atDirectories other than root.atsign.org
 - FEAT: App now supports use of atServer proxy services
 - FIX: When policy rules are updated in the app, they are now picked up by 
