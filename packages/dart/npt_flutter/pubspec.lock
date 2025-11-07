@@ -175,10 +175,10 @@ packages:
     description:
       path: "packages/at_onboarding_flutter"
       ref: at_onboarding_flutter_layers
-      resolved-ref: "1e244eb5f522d31d9d0eb3c67990d7d6bd612446"
+      resolved-ref: f7f022a2d4b145f4d8b35c07f5a5cb2085551d86
       url: "https://github.com/atsign-foundation/at_widgets"
     source: git
-    version: "6.1.10"
+    version: "6.1.10+20251107"
   at_persistence_secondary_server:
     dependency: transitive
     description:
