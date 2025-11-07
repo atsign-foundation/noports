@@ -59,8 +59,8 @@ class RoleRepository {
     return roles;
   }
 
-  Future<bool> putNewRole(final RoleInProgress roleInProgress) async {
-    
+  Future<String?> putNewRole(final RoleInProgress roleInProgress) async {
+
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
@@ -68,7 +68,7 @@ class RoleRepository {
       App.log(
         '[ERROR] updateExistingRole: Current atSign is null'.loggable,
       );
-      return false;
+      return null;
     }
 
     // ensure currentAtSign starts with '@'
@@ -112,10 +112,10 @@ class RoleRepository {
           );
         }
       }
-      return success;
+      return success ? newId.toString() : null;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
-      return false;
+      return null;
     }
 
   }

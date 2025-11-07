@@ -26,6 +26,25 @@ class PolicyCubit extends LoggingCubit<PolicyState> {
     }
   }
 
+  Future<void> reloadAndSelectRole(String roleId, AppLocalizations strings) async {
+    emit(const PolicyLoading(operation: 'reloading roles'));
+    try {
+      final List<FetchedRole> roles = await _roleRepository.fetchRoles();
+      final selectedRole = roles.firstWhere(
+        (role) => role.id == roleId,
+        orElse: () => roles.isNotEmpty ? roles.first : throw Exception('No roles found'),
+      );
+      emit(PolicyViewingRole(roles: roles, selectedRole: selectedRole));
+    } catch (e) {
+      emit(
+        PolicyError(
+          strings.rolesLoadingFailedWithDetails(e.toString()),
+          operation: 'reloadAndSelectRole',
+        ),
+      );
+    }
+  }
+
   Future<void> updateExistingRole(
     FetchedRole role,
     AppLocalizations strings,
