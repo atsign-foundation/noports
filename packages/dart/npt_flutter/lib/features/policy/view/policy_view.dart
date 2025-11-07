@@ -152,14 +152,14 @@ class PolicyContent extends StatelessWidget {
       create: (context) {
         final cubit = PolicyFormCubit(
           context.read<RoleRepository>(),
-          onSuccess: (message) {
+          onSuccess: (message, roleId) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),
                 backgroundColor: AppColor.primaryColor,
               ),
             );
-            context.read<PolicyCubit>().cancelEditing();
+            context.read<PolicyCubit>().reloadAndSelectRole(roleId, strings);
           },
           onDeleted: () {
             ScaffoldMessenger.of(context).showSnackBar(
