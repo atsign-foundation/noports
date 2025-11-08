@@ -1627,13 +1627,11 @@ abstract interface class AuthChecker {
 
 class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
   final Sshnpd sshnpd;
-  // ignore: experimental_member_use
   late final AtRpc rpc;
   final Map<String, int> authCheckCache = {};
   final Map<int, Completer<NPAAuthCheckResponse>> completerMap = {};
 
   _NPAAuthChecker(this.sshnpd) {
-    // ignore: experimental_member_use
     rpc = AtRpc(
       atClient: sshnpd.atClient,
       baseNameSpace: DefaultArgs.namespace,
