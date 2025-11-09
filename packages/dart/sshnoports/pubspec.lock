@@ -584,7 +584,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.8.1"
+    version: "6.9.0"
   openssh_ed25519:
     dependency: transitive
     description:
