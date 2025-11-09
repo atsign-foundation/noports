@@ -1,6 +1,7 @@
 # 6.9.0
 
 - feat: add support for config file to sshnpd
+- feat: add support for password-protected atKeys to sshnp, npt, sshnpd, srvd
 - fix: normalize atSign before constructing defaultAtKeysFilePath
 
 # 6.8.1
