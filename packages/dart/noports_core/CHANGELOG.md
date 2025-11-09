@@ -1,3 +1,7 @@
+# 6.10.0
+
+- feat: enable redundancy support for Policy Services
+
 # 6.9.0
 
 - feat: add support for config file to sshnpd
