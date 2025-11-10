@@ -1,0 +1,6 @@
+.venv
+.python-version
+__pycache__/
+*.pyc
+bin/*
+interop_spike.egg-info/

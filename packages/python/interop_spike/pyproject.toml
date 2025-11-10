@@ -1,0 +1,17 @@
+[project]
+name = "interop-spike"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.13.0.2",
+    "setuptools>=80.9.0",
+    "uvicorn>=0.30.0",
+]
+
+[build-system]
+requires = [
+  "setuptools >= 40.9.0",
+]
+build-backend = "setuptools.build_meta"

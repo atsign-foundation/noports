@@ -4,5 +4,6 @@
         "sshnp",
         "sshnpd"
     ],
-    "dotnet.defaultSolution": "disable"
+    "dotnet.defaultSolution": "disable",
+    "python.analysis.autoImportCompletions": true
 }
