@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" >
-  <Package Name="NoPorts" Language="1033" Version="5.13.0.0" 
+  <Package Name="NoPorts" Language="1033" Version="5.13.1.0" 
            Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -29,7 +29,6 @@
     <!-- Use the Feature Tree UI -->
     <ui:WixUI Id="WixUI_FeatureTree" />
   </Package>
-
   <!-- Core product component group -->
   <Fragment>
     <!-- Files to install -->
@@ -76,7 +75,6 @@
       </Component>
     </ComponentGroup>
   </Fragment>
-
   <!-- Sshnpd service component group -->
   <Fragment>
     <Property Id="SERVICE_NAME" Value="sshnpd" />
@@ -106,18 +104,5 @@
                           EventMessageFile="[#sshnpdServiceExeFile]"/>
       </Component>
     </ComponentGroup>
-  </Fragment>
-
-  <Fragment>
-    <CustomAction Id="RunCertUpdaterScript"
-      Property="powershell.exe"
-      ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]certupdater.ps1&quot;"
-      Execute="deferred"
-      Return="check"
-      Impersonate="no"
-    />
-    <InstallExecuteSequence>
-      <Custom Action="RunCertUpdaterScript" After="InstallFiles">NOT Installed</Custom>
-    </InstallExecuteSequence>
   </Fragment>
 </Wix>
