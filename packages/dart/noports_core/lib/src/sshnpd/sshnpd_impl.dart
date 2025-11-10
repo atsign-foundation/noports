@@ -84,6 +84,12 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   @override
   final String version;
 
+  Future<void> Function(AtNotification)? notificationInterceptor;
+
+  late final bool inline;
+
+  final bool verifyRequestSignatures;
+
   /// State variables used by [_notificationHandler]
   String _privateKey = '';
 
@@ -114,7 +120,10 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     required this.version,
     required this.permitOpen,
     this.authChecker,
+    bool? inline,
+    this.verifyRequestSignatures = true,
   }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
+    this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -164,10 +173,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(
-          args,
-          helpCallback: helpCallback,
-        );
+        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
@@ -304,6 +310,17 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
 
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
+    try {
+      if (notificationInterceptor != null) {
+        await notificationInterceptor!(notification);
+      }
+    } catch (e) {
+      logger.shout(
+        'Notification pre-processing failed with $e\n'
+        'Notification: $notification',
+      );
+      return;
+    }
     NPAAuthCheckResponse auth = await authCheck(notification);
     if (!auth.authorized) {
       // TODO IF $someConditions apply then send a 'nice' error
@@ -464,20 +481,20 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         ..useRemoteAtServer = true;
 
       await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
-      logger.shout(
+      logger.info(
         '😎 Will handle $notificationKey request from ${notification.from}'
         '; acquired mutex $mutexKey',
       );
       return true;
     } catch (err) {
       if (err.toString().toLowerCase().contains('immutable')) {
-        logger.shout(
+        logger.info(
           '🤷‍♂️ Will not handle $notificationKey request from ${notification.from}'
           '; did not acquire session mutex (another sshnpd instance will handle this)',
         );
         return false;
       } else {
-        logger.shout('Unexpected error acquiring session mutex: $err');
+        logger.info('Unexpected error acquiring session mutex: $err');
         return true; // Proceed anyway to maintain functionality
       }
     }
@@ -610,27 +627,31 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       return;
     }
 
-    try {
-      await verifyEnvelopeSignature(
-        atClient,
-        requestingAtsign,
-        logger,
-        envelope,
-      );
-    } catch (e) {
-      logger.shout('Failed to verify signature of msg from $requestingAtsign');
-      logger.shout('Exception: $e');
-      logger.shout('Notification value: ${notification.value}');
+    if (verifyRequestSignatures) {
+      try {
+        await verifyEnvelopeSignature(
+          atClient,
+          requestingAtsign,
+          logger,
+          envelope,
+        );
+      } catch (e) {
+        logger.shout(
+          'Failed to verify signature of msg from $requestingAtsign',
+        );
+        logger.shout('Exception: $e');
+        logger.shout('Notification value: ${notification.value}');
 
-      // Notify noports client that this session is NOT connected
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
+        // Notify noports client that this session is NOT connected
+        await _notify(
+          atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign,
+            sessionId: req.sessionId,
+          ),
+          value: 'Signature not verified: $e',
           sessionId: req.sessionId,
-        ),
-        value: 'Signature not verified: $e',
-        sessionId: req.sessionId,
-      );
+        );
+      }
 
       return;
     }
@@ -748,7 +769,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
           d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
         }
       }
-      if (Platform.environment['SRV_INLINE'] == 'true') {
+      if (inline) {
         SocketConnector sc = await Srv.dart(
           req.rvdHost,
           req.rvdPort,
@@ -857,18 +878,22 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       return;
     }
 
-    try {
-      await verifyEnvelopeSignature(
-        atClient,
-        requestingAtsign,
-        logger,
-        envelope,
-      );
-    } catch (e) {
-      logger.shout('Failed to verify signature of msg from $requestingAtsign');
-      logger.shout('Exception: $e');
-      logger.shout('Notification value: ${notification.value}');
-      return;
+    if (verifyRequestSignatures) {
+      try {
+        await verifyEnvelopeSignature(
+          atClient,
+          requestingAtsign,
+          logger,
+          envelope,
+        );
+      } catch (e) {
+        logger.shout(
+          'Failed to verify signature of msg from $requestingAtsign',
+        );
+        logger.shout('Exception: $e');
+        logger.shout('Notification value: ${notification.value}');
+        return;
+      }
     }
 
     String requested = '$localSshdHost:$localSshdPort';
