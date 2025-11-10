@@ -57,5 +57,6 @@ When using the NoPorts desktop application, your connection profile should look 
 | **Device Name**   | my\_server        |
 | **Relay**         | @rv\_am           |
 | **Local Port**    | 9000              |
-| **Remote Host**   | localhost         |
+| **Local Host**    | localhost         |
+| **Remote Host**   |                   |
 | **Remote Port**   | 445               |

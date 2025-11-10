@@ -93,31 +93,32 @@ With both machines now configured, the final steps bring us back to the machine 
 
 <summary>On the machine you are connecting from</summary>
 
-### <mark style="color:orange;">Step 9:</mark> Approve the atSign authorization request
+### <mark style="color:orange;">Step 8:</mark> Approve the atSign authorization request
 
 1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
 2. After a few seconds, the request will also show as approved on the machine you are connecting to.
 
-### <mark style="color:orange;">Step 10:</mark> Switch back to your client atSign (@example01\_np)
+### <mark style="color:orange;">Step 9:</mark> Switch back to your client atSign (@example01\_np)
 
-1. Click **Back**, and then click on the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
-2. Click **Get Started** and select your **client atSign** from the drop down menu, and then click **Next**.
+1. Click on **your atSign** in the top right corner of the screen. This will open a list of atSigns that are currently signed into the app.
+2. Select your **client atSign** in order to switch to it.
 
-### <mark style="color:orange;">Step 11:</mark> Create a Connection Profile
+### <mark style="color:orange;">Step 10:</mark> Create a Connection Profile
 
-1. Click **Add New**, to create a new profile.
+1. If you aren't already on the Connections tab, click on **Connections** at the top of the Screen. Then click **Add New**, to create a new profile.
 2. Enter the following information into the profile then click **Submit**.
    1. Profile Name - The name that will be displayed in the profile list.
    2. Device atSign - Your device atSign (eg example02\_np).
    3. Device Name - The name of your remote device.
    4. Relay - Select the relay sever closest to you for optimum speed.
    5. Local Port - The port you will use on your local machine.
-   6. Remote Host - The hostname or IP address of the machine you are connecting to.
-   7. Remote Port - The port that will be used on the remote machine.
+   6. Local Host - The hostname or IP address to bind to on your local machine.
+   7. Remote Host - The hostname or IP address of the machine you are connecting to.
+   8. Remote Port - The port that will be used on the remote machine.
 
 For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
-### <mark style="color:orange;">Step 12:</mark> Establish a connection
+### <mark style="color:orange;">Step 11:</mark> Establish a connection
 
 Click the **Connect Icon ▶️** to establish a connection with your remote device. If the connection is successful, you will see green. If you see red, hover over the icon to see reason for failure.
 

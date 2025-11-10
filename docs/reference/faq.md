@@ -251,40 +251,6 @@ You can use NoPorts Tunnel for RDP. [This guide](../use-cases/rdp.md) demonstrat
 
 </details>
 
-### The NoPorts Desktop Application
-
-<details>
-
-<summary>What should I enter when creating a profile in the NoPorts desktop application?</summary>
-
-A profile in NoPorts is a collection of saved settings that lets you quickly connect to your remote device. When setting one up, you’ll need to provide a few details—here are some examples of what you might enter:
-
-### **RDP Example**
-
-|                   |                   |
-| ----------------- | ----------------- |
-| **Profile Name**  | My RDP Connection |
-| **Device atSign** | @alice\_device    |
-| **Device Name**   | my\_server        |
-| **Relay**         | @rv\_am           |
-| **Local Port**    | 33389             |
-| **Remote Host**   | localhost         |
-| **Remote Port**   | 3389              |
-
-### **SFTP Example**
-
-|                   |                    |
-| ----------------- | ------------------ |
-| **Profile Name**  | My SFTP Connection |
-| **Device atSign** | @alice\_device     |
-| **Device Name**   | my\_server         |
-| **Relay**         | @rv\_am            |
-| **Local Port**    | 2222               |
-| **Remote Host**   | localhost          |
-| **Remote Port**   | 22                 |
-
-</details>
-
 ### Did we miss something?
 
 If you have a question that needs answering, please do one of the following:

@@ -62,7 +62,7 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 Both the atSigns are activated on the machine you are connecting from. Later, you’ll grant your remote machine access to the keys stored on this machine.
 {% endhint %}
 
-1. You'll need to switch atSigns. To sign out from the client atSign, click the **Settings** icon in the top right corner of the screen, then select **Sign Out**.
+1. You'll need to switch atSigns. To sign out from the client atSign, click on **your atSign** at the top right of the screen, then select **Sign Out**.
 2. Click **Get Started** and enter your **device atSign** into the text field (e.g., @example02\_np). Leave the root domain as is, and then click **Next**.
 3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
 
@@ -75,7 +75,7 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 
 ### <mark style="color:orange;">Step 5.3:</mark> Generate a device atSign authorization passcode
 
-Click on the **key icon** in the top right corner and then click on **OTP.** You will use this 4 character code in **Step 7**.
+Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 4 character code in **Step 7**.
 
 ### <mark style="color:orange;">Step 5.4:</mark> Switch to the machine you are connecting to
 
@@ -85,11 +85,9 @@ Please select the operating system running on the machine you are connecting to 
 {% endtab %}
 
 {% tab title="Set up a test connection to our hidden page " %}
-1. Download the[ NoPorts test connection profile. ](https://drive.google.com/file/d/1qb0YrpRaGstLSBKoLJ4wwVUIMO5zCaMq/view)This is a json file containing connection details for a test profile we have created.
-2. Return to the NoPorts app **Dashboard**.
-3. Click **Import** and select the test connection profile that you just downloaded.
-4. Click the **Connect Icon ▶️** to establish a connection.
-5. Open a web browser and navigate to`http://localhost:8080`.
+1. On the Connections tab, you'll see a banner saying "Demo. Click here to load the test profile." Click **Try Now.**
+2. Once the profile has been added to your list, click the **Connect Icon ▶️** to establish a connection.
+3. Open a web browser and navigate to`http://localhost:8080`.
 
 Congratulations! You're connected to a hidden webpage via NoPorts!&#x20;
 {% endtab %}

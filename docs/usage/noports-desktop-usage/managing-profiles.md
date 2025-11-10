@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Managing Profiles
 
 * Explain local port conflicts well
