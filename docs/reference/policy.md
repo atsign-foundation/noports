@@ -10,4 +10,6 @@ icon: users-rectangle
 
 <figure><img src="../.gitbook/assets/NoPorts Policy Diagrams.png" alt=""><figcaption><p>High level overview of the NoPorts architecture</p></figcaption></figure>
 
+Learn how to install it at [Policy Service Installation](../installation/policy-service-installation.md).
+
 The NoPorts Policy Service is currently in alpha status. [Schedule a call](https://calendly.com/noports/installation-help) with one of our engineers to become an alpha tester.

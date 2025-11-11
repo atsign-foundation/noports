@@ -22,7 +22,7 @@ Before you begin the installation, please ensure the following steps are complet
 
 <summary>Steps to be completed on the Admin/Client Machine</summary>
 
-### Step 1: Activate your policy atSign
+### Step 1: Activate your policy atSign (in NoPorts Desktop)
 
 1\) If you were already signed in with another atSign, click on Settings and then Sign Out.
 
@@ -51,16 +51,27 @@ Location:  [https://github.com/atsign-foundation/noports/releases](https://githu
 Open a terminal, and from your home directory run the following command to download the file and save it as `sshnpd.tgz`.&#x20;
 
 ```bash
-curl -L -o sshnpd.tgz <YOUR URL>
+curl -L -o sshnp.tgz <YOUR URL>
 ```
 
 Example:&#x20;
 
 ```bash
-curl -L -o sshnpd.tgz https://github.com/atsign-foundation/noports/releases/download/v5.9.2/sshnp-linux-x64.tgz
+curl -L -o sshnp.tgz https://github.com/atsign-foundation/noports/releases/download/v5.13.0/sshnp-linux-x64.tgz
 ```
 
 Once this is done, extract the contents of the file to your home directory.
+
+```bash
+tar -xvzf sshnp.tgz
+cd sshnp
+```
+
+After extraction, copy the `npp_atserver` and `at_activate` binary to `~/.local/bin` (whichever you prefer and whichever is on your PATH)
+
+```bash
+sudo cp ./npp_atserver ./at_activate ~/.local/bin
+```
 
 ### Step 4: Initiate an atSign authorization request
 
@@ -120,7 +131,7 @@ Waiting for approval; will check every 10 seconds
 Run `npp_atserver`, with the previously activated policy atSign.&#x20;
 
 ```bash
-./npp_atserver -a @<YOUR POLICY ATSIGN>
+~/.local/bin/npp_atserver -a @<YOUR POLICY ATSIGN>
 ```
 
 This should display output that looks similar to this
@@ -141,12 +152,28 @@ SHOUT|2025-04-16 19:12:52.294012| npp |Daemon atSigns: {}
 
 ### Step 7: Restart the NoPorts Daemon
 
-Edit `/etc/systemd/system/sshnpd.service.d/override.conf` and add `-p @policy` to the additional arguments environment variable.
+Edit `/etc/systemd/system/sshnpd.service.d/override.conf` and add your policy atSign to the `delegate_policy` environment variable.
+
+```bash
+Environment=delegate_policy="@policy_atsign_123"
+```
 
 Then run the following command to restart the daemon.
 
 ```bash
 sudo systemctl daemon reload && sudo systemctl restart sshnpd.service
+```
+
+Ensure the daemon is running
+
+```bash
+journalctl -u sshnpd.service -f
+```
+
+Your sshnpd process should now be sending heartbeats to the policy service. You should see a log similar to below after waiting 5 minutes.
+
+```bash
+Nov 10 23:54:17 atsign sshnpd[124155]: INFO|2025-11-10 23:54:17.310764| sshnpd |Sending heartbeat to policy service @tastelessbanana
 ```
 
 </details>
