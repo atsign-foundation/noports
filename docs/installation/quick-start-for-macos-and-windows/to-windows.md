@@ -33,16 +33,18 @@ Be sure to replace the following values:
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
 
+`<USER>` with your **Windows username**,&#x20;
+
 `@<REPLACE>_np_key` with your **device atSign**,&#x20;
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">at_activate.exe enroll -a "@&#x3C;REPLACE>_np" \
-<strong>  -s &#x3C;PASSCODE> \
-</strong><strong>  -p noports \
-</strong><strong>  -k C:\Users\&#x3C;USER>\.atsign\keys\@&#x3C;REPLACE>_np_key.atKeys \
-</strong><strong>  -d &#x3C;DEVICE_NAME> \
+<pre class="language-bash"><code class="lang-bash">at_activate.exe enroll -a "@&#x3C;REPLACE>_np" `
+<strong>  -s &#x3C;PASSCODE> `
+</strong><strong>  -p noports `
+</strong><strong>  -k C:\Users\&#x3C;USER>\.atsign\keys\@&#x3C;REPLACE>_np_key.atKeys `
+</strong><strong>  -d &#x3C;DEVICE_NAME> `
 </strong><strong>  -n "sshnp:rw,sshrvd:rw"
 </strong></code></pre>
 
