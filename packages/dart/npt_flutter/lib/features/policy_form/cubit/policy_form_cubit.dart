@@ -9,7 +9,7 @@ part 'policy_form_state.dart';
 
 class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
   final RoleRepository _roleRepository;
-  final void Function(String message)? onSuccess;
+  final void Function(String message, String roleId)? onSuccess;
   final void Function()? onDeleted;
 
   PolicyFormCubit(this._roleRepository, {this.onSuccess, this.onDeleted})
@@ -111,7 +111,7 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (isClosed) return;
 
         if (success) {
-          onSuccess?.call('Role saved successfully');
+          onSuccess?.call('Role saved successfully', currentState.currentRole.id);
           if (!isClosed) {
             emit(const PolicyFormLoading());
           }
@@ -140,14 +140,14 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
       emit(currentState.copyWith(isSaving: true));
 
       try {
-        final success = await _roleRepository.putNewRole(
+        final newRoleId = await _roleRepository.putNewRole(
           currentState.roleInProgress,
         );
 
         if (isClosed) return;
 
-        if (success) {
-          onSuccess?.call('Role created successfully');
+        if (newRoleId != null) {
+          onSuccess?.call('Role created successfully', newRoleId);
           if (!isClosed) {
             emit(const PolicyFormLoading());
           }

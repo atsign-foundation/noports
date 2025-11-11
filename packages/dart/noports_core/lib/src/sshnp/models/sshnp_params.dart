@@ -31,6 +31,8 @@ abstract interface class ClientParams {
 
   String? get atKeysFilePath;
 
+  String? get passPhrase;
+
   /// An encryption keypair which should only ever reside in memory.
   /// The public key is provided in requests to the daemon, and is
   /// used by daemons to encrypt symmetric encryption keys intended for
@@ -84,6 +86,9 @@ abstract class ClientParamsBase implements ClientParams {
   final String? atKeysFilePath;
 
   @override
+  final String? passPhrase;
+
+  @override
   int localPort;
 
   @override
@@ -111,6 +116,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.device = DefaultSshnpArgs.device,
     this.verbose = DefaultArgs.verbose,
     this.atKeysFilePath,
+    this.passPhrase,
     this.rootDomain = DefaultArgs.rootDomain,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
@@ -180,6 +186,7 @@ class NptParams extends ClientParamsBase
     super.localPort = DefaultSshnpArgs.localPort,
     super.verbose = DefaultArgs.verbose,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
@@ -258,6 +265,7 @@ class SshnpParams extends ClientParamsBase
     this.remoteUsername,
     this.tunnelUsername,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
@@ -296,6 +304,7 @@ class SshnpParams extends ClientParamsBase
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -364,6 +373,7 @@ class SshnpParams extends ClientParamsBase
       remoteUsername: partial.remoteUsername,
       tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      passPhrase: partial.passPhrase,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
@@ -417,6 +427,7 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.deviceArg.name: device,
       SshnpArg.localPortArg.name: localPort,
       SshnpArg.keyFileArg.name: atKeysFilePath,
+      SshnpArg.passPhraseArg.name: passPhrase,
       SshnpArg.identityFileArg.name: identityFile,
       SshnpArg.identityPassphraseArg.name: identityPassphrase,
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
@@ -455,6 +466,7 @@ class SshnpPartialParams {
   final String? device;
   final int? localPort;
   final String? atKeysFilePath;
+  final String? passPhrase;
   final String? identityFile;
   final String? identityPassphrase;
   final bool? sendSshPublicKey;
@@ -485,6 +497,7 @@ class SshnpPartialParams {
     this.device,
     this.localPort,
     this.atKeysFilePath,
+    this.passPhrase,
     this.identityFile,
     this.identityPassphrase,
     this.sendSshPublicKey,
@@ -525,6 +538,7 @@ class SshnpPartialParams {
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -585,6 +599,7 @@ class SshnpPartialParams {
       device: args[SshnpArg.deviceArg.name],
       localPort: args[SshnpArg.localPortArg.name],
       atKeysFilePath: args[SshnpArg.keyFileArg.name],
+      passPhrase: args[SshnpArg.passPhraseArg.name],
       identityFile: args[SshnpArg.identityFileArg.name],
       identityPassphrase: args[SshnpArg.identityPassphraseArg.name],
       sendSshPublicKey: args[SshnpArg.sendSshPublicKeyArg.name],

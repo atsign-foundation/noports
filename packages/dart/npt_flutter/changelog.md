@@ -1,7 +1,28 @@
-## 1.7.0+22
+## 1.8.0+25
 
 - **FEAT**: Connections can be sorted by Profile Name, Device Name, Service Mapping and Status.
 - **FEAT**: Favorite Connections can be pinned to the top of the connections list.
+
+## 1.7.0+24
+
+- FEAT: App now supports use of atDirectories other than root.atsign.org
+- FEAT: App now supports use of atServer proxy services
+- FIX: When policy rules are updated in the app, they are now picked up by
+  the policy service in near-real-time
+- FIX: Policy info being displayed on the policy view is now auto-refreshed
+  after an edit has been saved.
+
+## 1.6.4+23
+
+- FIX: policy permit open host and port form validation
+
+## 1.6.3+22
+
+- **FIX**: atSigns are no longer removed from the keychain after an enrollment occurs on windows devices.
+
+## 1.6.2+21
+
+- **CHORE**: Temporarily Removed the policy status light and policy view logs button.
 
 ## 1.6.1+20
 
