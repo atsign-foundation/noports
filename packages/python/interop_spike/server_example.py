@@ -3,24 +3,30 @@ from interop_spike.models import NPServerArgs
 from fastmcp import FastMCP
 import asyncio
 
-mcp = FastMCP("My MCP Server")
+mcp = FastMCP("MCP")
 
 
 @mcp.tool
 def greet(name: str) -> str:
     return f"Hello, {name}!"
     
+@mcp.tool
+def ungreet(name: str) -> str:
+    return f"Bye bye, {name}"
+
+@mcp.tool
+def joke() -> str:
+    return "Why don't scientists trust atoms? Because they make up everything!"
+
 async def main():
-    # Provide all required NPServerArgs fields, including policy.
     args = NPServerArgs(
         atsign="@chess69",
         manager_atsign="@bagel69",
         device_name="mcp_spike",
+        permit_open="localhost:8001"
     )
     app = mcp.http_app()
-    # serve() blocks; no server handle is returned.
-    await serve(app, 8000, args)
-    # If you need post-server logic, refactor serve() to run uvicorn in a background task.
+    await serve(app, 8001, args)
 
 if __name__ == "__main__":
     asyncio.run(main())

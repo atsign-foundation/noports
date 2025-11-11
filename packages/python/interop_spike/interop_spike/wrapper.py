@@ -11,10 +11,9 @@ from .models import BinaryName, NPClientArgs, NPServerArgs
 
 mcp = FastMCP()
 
-async def connect(args: NPClientArgs) -> Client:
+async def connect(args: NPClientArgs) -> None:
     """Start a local NPT client process and return a FastMCP Client bound to the local port."""
     await run_async(BinaryName.NPT.value, str(args))
-    return Client(f"localhost:{args.local_port}")
     
 async def serve(app: StarletteWithLifespan, port: int, args: NPServerArgs):
     """Run the SSHNPD server binary and serve the FastMCP HTTP app with uvicorn.
@@ -25,12 +24,16 @@ async def serve(app: StarletteWithLifespan, port: int, args: NPServerArgs):
     """
     # Start SSHNPD first (non-blocking subprocess) then run HTTP server.
     await run_async(BinaryName.SSHNPD.value, str(args))
-    uvicorn.run(
+    config = uvicorn.Config(
         app,
         host="localhost",
         port=port,
         log_level="info",
     )
+    server = uvicorn.Server(config)
+    
+    # Serve using the async serve method (not run())
+    await server.serve()
 
 async def run_async(executable: str, args: str) -> None:
     """Spawn an executable as an asynchronous subprocess without waiting for completion."""

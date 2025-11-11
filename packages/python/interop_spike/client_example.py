@@ -1,8 +1,7 @@
-from .models import NPClientArgs, AtsignRvd
-from .wrapper import connect
+from interop_spike.models import NPClientArgs, AtsignRvd
+from interop_spike.wrapper import connect
+from fastmcp import Client
 import asyncio
-
-
     
 async def main():
     args = NPClientArgs(
@@ -11,14 +10,27 @@ async def main():
         device_name="mcp_spike",
         srvd=AtsignRvd.AMERICAS,
         local_port=9000,
-        remote_host="localhost",
-        remote_port=8000
+        remote_port=8001
     )
+    await connect(args)
+    await asyncio.sleep(5)
 
-    async with connect(args) as client:
+    async with Client("http://localhost:9000/mcp") as client:
         await client.ping()
         response = await client.call_tool("greet", {"name": "World"})
         print(response)
+        while True:
+            tool_call = input("")
+            if tool_call == "bye":
+                break
+            else:
+                response = await client.call_tool(tool_call)
+                print(response)
+        response = await client.call_tool("ungreet", {"name": "Xavier"})
+        print(response)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception:
+        print()
