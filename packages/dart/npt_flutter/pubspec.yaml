@@ -16,13 +16,13 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.6.2+21
+version: 1.8.0+25
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.6.1.0
+  msix_version: 1.8.0.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
@@ -48,7 +48,7 @@ dependencies:
     git:
       url: https://github.com/atsign-foundation/at_widgets.git
       path: packages/at_onboarding_flutter
-  at_server_status: ^1.0.5
+  at_server_status: ^1.1.1
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
   device_info_plus: ^11.3.3
@@ -111,9 +111,11 @@ dependency_overrides:
       ref: at_onboarding_flutter_layers
       path: packages/at_onboarding_flutter
   at_client_mobile:
+    # the ref below is the latest fully tested commit on the apkam-flutter
+    # branch in the at_client_sdk repo
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: 2ecfe7208c0a5520be21c99007c8d365dabb001a
+      ref: 4e7701af851be6a7c45ef2cecbf4048c80814261
       path: packages/at_client_mobile
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

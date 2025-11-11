@@ -87,7 +87,7 @@ jobs:
         name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: ${{ matrix.output-name }}_${{ matrix.compiler
             }}-${{  github.ref_name
@@ -136,7 +136,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: c_release-${{github.run_number}}
-      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - name: Build tarballs in Docker
         run: |
@@ -146,7 +146,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - name: Upload tarballs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: ${{
             matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
@@ -170,7 +170,7 @@ jobs:
         working-directory: ./packages/c
         run: |
           cmake --workflow --preset package-source
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
@@ -195,7 +195,7 @@ jobs:
             packages/c/conan.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: tarballs/
       - name: Move packages for signing
@@ -210,7 +210,7 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@8ea6f28cd562edee2665001cd4f17aaf7a283722 # v0.5.0
+        uses: sbomify/github-action@c34242c23d6df06a646c680abb1793fb334621bf # v0.6
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'

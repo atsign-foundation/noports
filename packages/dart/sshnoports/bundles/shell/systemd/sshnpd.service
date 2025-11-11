@@ -9,6 +9,7 @@ WantedBy=multi-user.target
 Type=simple
 Restart=always
 RestartSec=3
+KillMode=process
 
 # The line below runs the sshnpd service, with the options set in
 # /etc/systemd/system/sshnpd.d/override.conf.

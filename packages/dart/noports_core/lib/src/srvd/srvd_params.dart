@@ -8,6 +8,7 @@ class SrvdParams {
   final String atSign;
   final String homeDirectory;
   final String atKeysFilePath;
+  final String passPhrase;
   final String managerAtsign;
   final String ipAddress;
   final bool verbose;
@@ -30,6 +31,7 @@ class SrvdParams {
     required this.atSign,
     required this.homeDirectory,
     required this.atKeysFilePath,
+    required this.passPhrase,
     required this.managerAtsign,
     required this.ipAddress,
     required this.verbose,
@@ -58,6 +60,7 @@ class SrvdParams {
       homeDirectory: homeDirectory,
       atKeysFilePath:
           r['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign),
+      passPhrase: r['pass-phrase'],
       managerAtsign: r['manager'],
       ipAddress: r['ip'],
       verbose: r['verbose'],
@@ -86,6 +89,16 @@ class SrvdParams {
       help:
           'atSign\'s atKeys file if not in ~/.atsign/keys/'
           '  Alias: --keyFile',
+    );
+    parser.addOption(
+      'pass-phrase',
+      aliases: const ['passPhrase'],
+      abbr: 'P',
+      help:
+      'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+      mandatory: false,
+      defaultsTo: '',
+      hide: true
     );
     parser.addOption(
       'atsign',

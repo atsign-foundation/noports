@@ -150,6 +150,7 @@ void main(List<String> args) async {
           atsign: params.clientAtSign,
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
+          passPhrase: params.passPhrase,
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
           namespace: DefaultArgs.namespace,

@@ -1,6 +1,6 @@
 # Dockerfile.srvd
 # Build image for a containerized call of the srvd and srv binaries 
-FROM dart:3.9.4@sha256:e7a8237a545f9b01d5d0b171c07bef6c9e935d72ae63464a53cc2ac908ca55c2 AS buildimage
+FROM dart:3.9.4@sha256:9db24325a8df958f4aa64e0880d8254ba304602c1d85ecee326b2c576883cc3a AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
 SHELL ["/bin/bash", "-c"]
@@ -16,7 +16,7 @@ RUN \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20251020-slim@sha256:a771c85b2287eae7ce8fe0a4c2637d575c5d991555ae680c187c5572153648d9
+FROM debian:stable-20251103-slim@sha256:e0249870a90044494c01e74fbfc8b77ab14e6f47cece844d1e1737f7828a7e1e
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at

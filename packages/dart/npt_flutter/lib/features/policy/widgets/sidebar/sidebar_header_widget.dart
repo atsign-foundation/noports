@@ -6,7 +6,6 @@ import 'package:npt_flutter/styles/sizes.dart';
 
 import '../../cubit/policy_cubit.dart';
 import '../../cubit/status_light/policy_status_light_cubit.dart';
-import 'policy_status_light.dart';
 
 class SidebarHeaderWidget extends StatelessWidget {
   const SidebarHeaderWidget({super.key});
@@ -31,7 +30,7 @@ class SidebarHeaderWidget extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const PolicyStatusLight(),
+                // const PolicyStatusLight(),
                 gapW12,
                 IconButton(
                   icon: const Icon(Icons.refresh),

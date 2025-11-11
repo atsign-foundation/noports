@@ -50,6 +50,7 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
+        shell: bash
     strategy:
       matrix:
         include:
@@ -57,22 +58,27 @@ jobs:
             output-name: sshnp-linux-x64
             ext: ""
             bundle: "shell"
+            platform: "linux"
           - os: ubuntu-24.04-arm
             output-name: sshnp-linux-arm64
             ext: ""
             bundle: "shell"
-          - os: macos-13
+            platform: "linux"
+          - os: macos-15-intel
             output-name: sshnp-macos-x64
             ext: ""
             bundle: "shell"
-          - os: macos-14
+            platform: "macos"
+          - os: macos-latest
             output-name: sshnp-macos-arm64
             ext: ""
             bundle: "shell"
-          - os: windows-latest
+            platform: "macos"
+          - os: windows-signer
             output-name: sshnp-windows-x64
             ext: ".exe"
             bundle: "windows"
+            platform: "windows"
     steps:
       - name: Checkout multibuild branch
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -84,10 +90,10 @@ jobs:
         run: |
           mkdir sshnp
           mkdir tarball
-      - name: Create debug directory (Windows only)
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Create debug directory (Non-Windows)
+        if: ${{ matrix.platform != 'windows' }}
         run: mkdir sshnp/debug
-      - name: Compile binaries
+      - name: Compile core binaries
         run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
@@ -104,18 +110,61 @@ jobs:
         run: |
           dart pub get --enforce-lockfile
           dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
-      - name: Compile debug binaries (MacOS and Linux only)
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Compile debug binaries (Non-Windows)
+        if: ${{ matrix.platform != 'windows' }}
         run: |
           dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
           dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
+      - name: Build Windows Services (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/csharp/WindowsBinaryService
+        run: |
+          dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
+          mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Codesign Windows Binaries (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/dart/sshnoports/sshnp
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          source ../../../../tools/codesign_windows.sh
+          sign_file "sshnpd.exe"
+          sign_file "at_activate.exe"
+          sign_file "sshnp.exe"
+          sign_file "npp_atserver.exe"
+          sign_file "npp_file.exe"
+          sign_file "npa_file.exe"
+          sign_file "npt.exe"
+          sign_file "srv.exe"
+          sign_file "sshnpdService.exe"
+          sign_file "np_admin.exe"
+      - name: Build and Sign Windows Installer (Windows Only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./tools/windows-msi
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          dotnet tool install --global wix
+          wix extension add -g WixToolset.Util.wixext
+          wix extension add -g WixToolset.UI.wixext
+          mkdir bin
+          cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,sshnp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
+          cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
+          wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
+              -arch x64 -o build/NoPorts.msi noports.wxs
+          # Sign the generated MSI
+          source ../codesign_windows.sh
+          sign_file "build/NoPorts.msi"
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/sshnp/
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
           cp -r bundles/${{ matrix.bundle }}/* sshnp/
           cp LICENSE sshnp
-      - name: Codesign (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+      - name: Codesign MacOS Bundle (MacOS only)
+        if: ${{ matrix.platform == 'macos' }}
         env:
           MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
           MACOS_CODESIGN_CERT_PASSWORD:
@@ -144,19 +193,18 @@ jobs:
             -v \
             sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
       - name: Compress to zip (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        if: ${{ matrix.platform == 'macos' }}
         run:
           ditto -c -k --keepParent sshnp tarball/${{ matrix.output-name }}.zip
       - name: Compress to tgz (Linux only)
-        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'  }}
+        if: ${{ matrix.platform == 'linux' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
       - name: Compress to zip (Windows Only)
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.platform == 'windows' }}
         run:
-          Compress-Archive -Path sshnp -Destination tarball/${{
-          matrix.output-name }}.zip
+          powershell -c 'Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip'
       - name: Notarize the build (MacOS only)
-        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        if: ${{ matrix.platform == 'macos' }}
         env:
           MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
@@ -168,7 +216,7 @@ jobs:
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
       - name: Upload the build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name:
             ${{ matrix.output-name
@@ -195,7 +243,7 @@ jobs:
           ref: multibuild-${{github.run_number}}
       - name: Setup QEMU
         if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
       - name: Setup Docker BuildX
         if: ${{ ! inputs.main_build_only }}
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
@@ -208,7 +256,7 @@ jobs:
           tar -xvf bins.tar -C tarballs
       - name: Upload the build
         if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name:
             ${{ matrix.output-name
@@ -238,7 +286,7 @@ jobs:
           cp -r dist/* sshnp/web/admin/
           tar -cvzf tarball/sshnp-web-admin-noarch.tgz sshnp
       - name: Upload the build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name:
             sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
@@ -267,7 +315,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -281,7 +329,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.ps1
@@ -305,11 +353,11 @@ jobs:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@8ea6f28cd562edee2665001cd4f17aaf7a283722 # v0.5.0
+        uses: sbomify/github-action@c34242c23d6df06a646c680abb1793fb334621bf # v0.6
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'

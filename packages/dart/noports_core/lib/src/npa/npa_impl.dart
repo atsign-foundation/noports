@@ -100,6 +100,7 @@ class NPAImpl with AtClientBindings implements NPA {
       allowAll: true,
       isClient: false,
       isServer: true,
+      enableRequestMutex: true
     );
 
     rpc.start();
