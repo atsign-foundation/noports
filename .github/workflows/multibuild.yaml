@@ -321,20 +321,6 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
 
-  universal_ps1:
-    if: startsWith(github.ref, 'refs/tags/v')
-    defaults:
-      run:
-        working-directory: ./packages/dart/sshnoports/bundles
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./packages/dart/sshnoports/bundles/universal.ps1
-          if-no-files-found: error
-
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
