@@ -4,14 +4,30 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
 
+/// Handles activation of atSign accounts via CRAM authentication or APKAM enrollment
 sealed class NPActivate {
+  /// Entry point for the activate command
   Future<int> wrappedMain(List<String> args);
 
+  /// Authenticates an existing atSign using CRAM credentials
+  ///
+  /// Requires [params.cram] to be set
+  ///
+  /// Returns: true if authentication succeeds
+  /// Throws: [ArgumentError] if cram credentials are missing
   Future<bool> cramAuthenticate(NoportsParams params);
 
+  /// Enrolls a new device using APKAM enrollment
+  ///
+  /// Requires [params.otp] and [params.deviceName] to be set.
+  /// Optionally uses [params.atKeysFilePath] if provided.
+  ///
+  /// Returns: [AtEnrollmentResponse] containing enrollment status and details
+  /// Throws: [ArgumentError] if otp is missing
   Future<AtEnrollmentResponse> enroll(NoportsParams params);
 }
 
+/// Determines the type of activation: CRAM or APKAM enrollment
 enum NPActivateType { cram, enroll }
 
 class NPActivateImpl implements NPActivate {
@@ -59,6 +75,12 @@ class NPActivateImpl implements NPActivate {
         atKeysFile: atKeys);
   }
 
+  /// Validates that required parameters are present for the given activation [type]
+  ///
+  /// For CRAM: requires [params.cram]
+  /// For ENROLL: requires [params.otp]
+  ///
+  /// Throws: [ArgumentError] if required parameters are missing
   void validateArgs(NoportsParams params, NPActivateType type) {
     switch (type) {
       case NPActivateType.cram:

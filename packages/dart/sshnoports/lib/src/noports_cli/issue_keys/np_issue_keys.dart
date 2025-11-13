@@ -8,6 +8,7 @@ import 'package:sshnoports/src/noports_cli/util/constants.dart';
 import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
 
 sealed class NPIssueKeys {
+  /// Entry point for the issue-keys command
   Future<int> wrappedMain(List<String> args);
 
   static final baseEnrollCommand = '<atsign>:enroll:otp:<otp>';
@@ -18,6 +19,7 @@ class NPIssueKeysImpl implements NPIssueKeys {
   AtClient? atClient;
   EnrollmentService? _enrollmentService;
 
+  /// Initializes the AtClient and EnrollmentService for the given [atsign]
   Future<void> init(String atsign) async {
     atClient = await createAtClient(atSign: atsign);
     _enrollmentService = DefaultAtServiceFactory().enrollmentService(atClient!);
@@ -60,6 +62,12 @@ class NPIssueKeysImpl implements NPIssueKeys {
     return 0;
   }
 
+  /// Generates an activation string from the provided [params]
+  ///
+  /// Combines atsign, otp, and optional deviceName and atKeysFilePath
+  /// into a format compatible with 'noports activate' command.
+  ///
+  /// Returns: activation string in format `<atsign>:enroll:otp:<otp>[:name:<deviceName>[:keyfile:<path>]]`
   String _generateEnrollCommand(NoportsParams params) {
     StringBuffer cbuf = StringBuffer(NPIssueKeys.baseEnrollCommand
         .replaceFirst('<atsign>', params.atsign)
@@ -75,6 +83,12 @@ class NPIssueKeysImpl implements NPIssueKeys {
     return cbuf.toString();
   }
 
+  /// Approves the first pending enrollment request with inferred noports parameters
+  ///
+  /// Creates an ApprovedRequestDecision and submits it to the enrollment service.
+  ///
+  /// Throws: [AtEnrollmentException] if enrollment approval fails
+  /// Returns: [AtEnrollmentResponse] containing the enrollment status
   Future<AtEnrollmentResponse> _approveFirstPendingEnrollment(
       NoportsParams params) async {
     Enrollment enrollment = await _awaitAndFetchEnrollmentRequest(params);
@@ -93,6 +107,13 @@ class NPIssueKeysImpl implements NPIssueKeys {
     return response;
   }
 
+  /// Waits for and fetches the first pending enrollment request matching [params]
+  ///
+  /// Polls the enrollment service at regular intervals until an enrollment request
+  /// is found with matching deviceName, appName, and namespace.
+  ///
+  /// Throws: [AtEnrollmentException] if enrollmentId is missing from the response
+  /// Returns: The first pending [Enrollment] that matches the criteria
   Future<Enrollment> _awaitAndFetchEnrollmentRequest(
       NoportsParams params) async {
     writeInfoMessage('Waiting for enrollment request - '
