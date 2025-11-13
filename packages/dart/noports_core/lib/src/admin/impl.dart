@@ -22,17 +22,17 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     atClient.notificationService
         .subscribe(regex: r'.*\.groups\.policy\.sshnp', shouldDecrypt: true)
         .listen((AtNotification n) {
-      String groupId = n.key.split(':')[1].split('.').first;
-      logger.info(
-        'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
-      );
-      if (n.operation == 'delete') {
-        groups.remove(groupId);
-      } else {
-        UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
-        groups[groupId] = g;
-      }
-    });
+          String groupId = n.key.split(':')[1].split('.').first;
+          logger.info(
+            'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
+          );
+          if (n.operation == 'delete') {
+            groups.remove(groupId);
+          } else {
+            UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
+            groups[groupId] = g;
+          }
+        });
 
     subscribe(regex: r'.*\.logs\.policy\.sshnp', shouldDecrypt: true).listen((
       AtNotification n,
@@ -118,13 +118,12 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       jsonEncode(group),
       putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
     );
+    AtKey notifKey = AtKey.fromString(
+      '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
+    );
+    logger.info('[INFO] updateUserGroup: Sending notification $notifKey');
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(
-        AtKey.fromString(
-          '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
-        ),
-        value: jsonEncode(group),
-      ),
+      NotificationParams.forUpdate(notifKey, value: jsonEncode(group)),
     );
     groups[group.id!] = group;
   }
@@ -185,8 +184,8 @@ class PolicyServiceInMem implements PolicyService {
       'type': 'PolicyCheck',
       'daemon': pe['daemon'],
       'deviceName': pe['payload']['request']['payload']['daemonDeviceName'],
-      'deviceGroupName': pe['payload']['request']['payload']
-          ['daemonDeviceGroupName'],
+      'deviceGroupName':
+          pe['payload']['request']['payload']['daemonDeviceGroupName'],
       'user': pe['payload']['request']['payload']['clientAtsign'],
       'authorized': pe['payload']['response']['payload']['authorized'],
       'message': pe['payload']['response']['payload']['message'],

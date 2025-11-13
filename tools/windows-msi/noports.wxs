@@ -1,113 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
-  <Package Name="NoPorts" Language="1033" Version="1.0.0.0" 
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" >
+  <Package Name="NoPorts" Language="1033" Version="5.13.1.0" 
            Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
-    
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-    <MediaTemplate EmbedCab="yes" /> 
-
-      <!-- Main Feature - Core Tools (always installed) -->
+    <MediaTemplate EmbedCab="yes" />
+    <!-- Main Feature - Core Tools (always installed) -->
     <Feature Id="CoreTools" Title="NoPorts Core Tools" Level="1" 
             Description="Core NoPorts command-line tools">
       <ComponentGroupRef Id="ProductComponents" />
     </Feature>
-
     <!-- Optional Feature - Service (default off) -->
-    <Feature Id="ServiceFeature" Title="NoPorts Service" Level="2" 
-            Description="Install NoPorts as a Windows service (sshnpd)">
+    <Feature Id="ServiceFeature" Title="NoPorts Daemon Service" Level="1" 
+            Description="Install NoPorts Daemon as a Windows service (sshnpd)">
       <ComponentGroupRef Id="sshnpdComponents" />
     </Feature>
-
     <!-- Directory structure -->
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="NoPorts"/>
     </StandardDirectory>
-
     <StandardDirectory Id="CommonAppDataFolder">
       <Directory Id="APPDATADIR" Name="NoPorts"/>
     </StandardDirectory>
+    <!-- License File -->
+    <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
+    <!-- Use the Feature Tree UI -->
+    <ui:WixUI Id="WixUI_FeatureTree" />
+  </Package>
+  <!-- Core product component group -->
+  <Fragment>
     <!-- Files to install -->
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="sshnpd" Guid="*">
         <File Id="sshnpdfile" Source="bin\sshnpd.exe" 
               Name="sshnpd.exe" KeyPath="yes" />
       </Component>
-
       <Component Id="sshnp" Guid="*">
         <File Id="sshnpfile" Source="bin\sshnp.exe" 
               Name="sshnp.exe" KeyPath="yes" />
-      </Component> 
-
+      </Component>
       <Component Id="at_activate" Guid="*">
         <File Id="at_activatefile" Source="bin\at_activate.exe" 
               Name="at_activate.exe" KeyPath="yes" />
       </Component>
-
       <Component Id="npp_atserver" Guid="*">
         <File Id="npp_atserverfile" Source="bin\npp_atserver.exe" 
               Name="npp_atserver.exe" KeyPath="yes" />
       </Component>
-
       <Component Id="npp_file" Guid="*">
         <File Id="npp_files" Source="bin\npp_file.exe" 
               Name="npp_file.exe" KeyPath="yes" />
       </Component>
-
       <Component Id="npt" Guid="*">
         <File Id="nptfile" Source="bin\npt.exe" 
               Name="npt.exe" KeyPath="yes" />
       </Component>
-
       <Component Id="srv" Guid="*">
         <File Id="srvfile" Source="bin\srv.exe" 
               Name="srv.exe" KeyPath="yes" />
       </Component>
-
-     <Component Id="sshnpd_config" Guid="*">
+      <Component Id="sshnpd_config" Guid="2812ad14-207e-4ab1-983b-92a65eb201a2" Directory="APPDATADIR" Permanent="yes" NeverOverwrite="yes">
         <File Id="sshnpd_configfile" Source="bin\sshnpd.yaml" 
               Name="sshnpd.yaml" KeyPath="yes" />
       </Component>
-
       <!-- Environment PATH -->
       <Component Id="UpdatePath" Guid="d7a87a7f-1bcc-4eba-b089-6c2ab0e0f0bd">
         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" 
                      Permanent="no" Part="last" Action="set" System="no" />
       </Component>
-    </ComponentGroup>
-
-    <!-- sshnpd Service installation -->
-
-    <!-- Properties to store user input with default values -->
-    <Property Id="SERVICE_NAME" Value="sshnpd" />
-    <Property Id="SERVICE_DISPLAYNAME" Value="NoPorts daemon" />
-    <Property Id="SERVICE_DESCRIPTION" Value="NoPorts daemon service" />
-
-    <ComponentGroup Id="sshnpdComponents" Directory="INSTALLFOLDER">
-      <Component Id="NoPortsServiceComponent" Guid="4a632555-ba94-42f4-806b-389ba1752cda">
-      <File Id="NoPortsServiceExeFile" Source="bin\sshnpdService.exe" 
-              Name="sshnpdService.exe" KeyPath="yes" />
-        <ServiceInstall Id="NoPortsServiceInstaller"
-                             Type="ownProcess"
-                             Name="[SERVICE_NAME]"
-                             DisplayName="[SERVICE_DISPLAYNAME]"
-                             Description="[SERVICE_DESCRIPTION]"
-                             Start="auto"
-                             ErrorControl="normal"
-                             Vital="yes"
-                             Account="NT AUTHORITY\LocalService"/> 
-        <ServiceControl Id="StartNoPortsService"
-                             Name="[SERVICE_NAME]"
-                             Start="install"
-                             Stop="both"
-                             Remove="uninstall"
-                             Wait="yes" />
+      <Component Id="CertUpdaterScript" Guid="*">
+        <File Id="certupdaterfile" Source="certupdater.ps1" Name="certupdater.ps1" />
       </Component>
     </ComponentGroup>
-
-    <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
-    <ui:WixUI Id="WixUI_FeatureTree" />    
-  </Package>
+  </Fragment>
+  <!-- Sshnpd service component group -->
+  <Fragment>
+    <Property Id="SERVICE_NAME" Value="sshnpd" />
+    <Property Id="SERVICE_DISPLAYNAME" Value="NoPorts Daemon" />
+    <Property Id="SERVICE_DESCRIPTION" Value="NoPorts Daemon Service (sshnpd)" />
+    <ComponentGroup Id="sshnpdComponents" Directory="INSTALLFOLDER">
+      <Component Id="sshnpdServiceComponent" Guid="*">
+        <File Id="sshnpdServiceExeFile" Source="bin\sshnpdService.exe" 
+              Name="sshnpdService.exe" KeyPath="yes" />
+        <ServiceInstall Id="sshnpdServiceInstaller"
+                        Type="ownProcess"
+                        Name="[SERVICE_NAME]"
+                        DisplayName="[SERVICE_DISPLAYNAME]"
+                        Description="[SERVICE_DESCRIPTION]"
+                        Start="auto"
+                        ErrorControl="normal"
+                        Vital="yes"
+                        Account="LocalSystem"/>
+        <ServiceControl Id="sshnpdServiceStart"
+                        Name="[SERVICE_NAME]"
+                        Start="no"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+        <util:EventSource Name="[SERVICE_DISPLAYNAME]"
+                          Log="Application"
+                          EventMessageFile="[#sshnpdServiceExeFile]"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
 </Wix>
