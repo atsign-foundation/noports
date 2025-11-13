@@ -84,11 +84,12 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: "17f92dc153308b7a0809aa52d311d2f85965bfdd94678f4718a6502cbf34e4e3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.8.0"
+      path: "packages/at_client"
+      ref: "st/expose_enrollment_service"
+      resolved-ref: "23c331feaf1f414228976d56e6411c47238ff0e0"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.9.3"
   at_commons:
     dependency: "direct main"
     description:
@@ -108,11 +109,12 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      name: at_onboarding_cli
-      sha256: "22583911a5c36062cb0ff06e86ea4703ab4db67950fd5a03c2387eeb77850c04"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.14.0"
+      path: "packages/at_onboarding_cli"
+      ref: "st/expose_enrollment_service"
+      resolved-ref: "2d34c9bcd3b1b3e5b9da2642e1f4cac93a42091a"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "1.14.2"
   at_persistence_secondary_server:
     dependency: transitive
     description:

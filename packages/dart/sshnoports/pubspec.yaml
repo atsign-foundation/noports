@@ -28,6 +28,16 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_client
+      ref: st/expose_enrollment_service
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_onboarding_cli
+      ref: st/expose_enrollment_service
 
 dev_dependencies:
   lints: ^6.0.0
