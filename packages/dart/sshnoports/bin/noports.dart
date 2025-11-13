@@ -11,6 +11,7 @@ enum NoportsCommand {
   issueKeys('issue-keys');
 
   final String commandName;
+
   const NoportsCommand(this.commandName);
 
   static NoportsCommand fromString(String value) {

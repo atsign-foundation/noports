@@ -1,6 +1,11 @@
-import 'dart:io';
 import 'dart:core';
+import 'dart:io';
 
+import 'package:at_auth/at_auth.dart'
+    show
+        AtEnrollmentResponse,
+        ApprovedRequestDecisionBuilder,
+        EnrollmentRequestDecision;
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';

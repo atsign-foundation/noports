@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "2.13.0"
   at_auth:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_auth
       sha256: f1187ada26053b4a724fa169aa599aec8d88d9454dbfdad5700f4db3f2e41d35
@@ -84,12 +84,11 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: "st/expose_enrollment_service"
-      resolved-ref: "23c331feaf1f414228976d56e6411c47238ff0e0"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "3.9.3"
+      name: at_client
+      sha256: "5259886a09507a439be08bbaa79a360ecd936ac1baa2ae58b72c90357cdb4785"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.9.2"
   at_commons:
     dependency: "direct main"
     description:
