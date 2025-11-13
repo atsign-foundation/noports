@@ -62,7 +62,7 @@ void main(List<String> args) async {
       rootDomain: p.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: DefaultArgs.namespace,
-      storagePath: standardAtClientStoragePath(
+      storagePath: p.storagePath ?? standardAtClientStoragePath(
           baseDir: p.homeDirectory,
           atSign: p.authorizerAtsign,
           progName: '.${DefaultArgs.namespace}',
