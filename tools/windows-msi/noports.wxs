@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" >
-  <Package Name="NoPorts" Language="1033" Version="1.0.0.0" 
+  <Package Name="NoPorts" Language="1033" Version="5.13.1.0" 
            Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -29,6 +29,7 @@
     <!-- Use the Feature Tree UI -->
     <ui:WixUI Id="WixUI_FeatureTree" />
   </Package>
+  <!-- Core product component group -->
   <Fragment>
     <!-- Files to install -->
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
@@ -69,7 +70,13 @@
         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" 
                      Permanent="no" Part="last" Action="set" System="no" />
       </Component>
+      <Component Id="CertUpdaterScript" Guid="*">
+        <File Id="certupdaterfile" Source="certupdater.ps1" Name="certupdater.ps1" />
+      </Component>
     </ComponentGroup>
+  </Fragment>
+  <!-- Sshnpd service component group -->
+  <Fragment>
     <Property Id="SERVICE_NAME" Value="sshnpd" />
     <Property Id="SERVICE_DISPLAYNAME" Value="NoPorts Daemon" />
     <Property Id="SERVICE_DESCRIPTION" Value="NoPorts Daemon Service (sshnpd)" />
