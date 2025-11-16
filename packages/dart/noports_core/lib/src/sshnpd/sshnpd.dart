@@ -85,6 +85,21 @@ abstract class Sshnpd {
   /// The version of whatever program is using this library.
   abstract final String version;
 
+  /// Pre-process the received notification
+  abstract final Future<void> Function(AtNotification)? notifPreProcessor;
+
+  /// If true, srv processes will execute within the sshnpd process.
+  /// If false, they will be forked as separate processes.
+  /// If not explicitly set, then it will be set to true if `SRV_ONLINE=true`
+  /// is in the environment.
+  abstract final bool inline;
+
+  /// If true, signatures of requests will be verified against cached public
+  /// keys. If false, they will not. By default, this is set to true if a
+  /// policy service is being used, and false otherwise.
+  abstract final bool verifyRequestSignatures;
+
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,

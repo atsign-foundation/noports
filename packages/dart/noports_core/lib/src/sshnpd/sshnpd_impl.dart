@@ -84,11 +84,14 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   @override
   final String version;
 
-  Future<void> Function(AtNotification)? notificationInterceptor;
+  @override
+  final Future<void> Function(AtNotification)? notifPreProcessor;
 
+  @override
   late final bool inline;
 
-  final bool verifyRequestSignatures;
+  @override
+  late final bool verifyRequestSignatures;
 
   /// State variables used by [_notificationHandler]
   String _privateKey = '';
@@ -121,9 +124,12 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     required this.permitOpen,
     this.authChecker,
     bool? inline,
-    this.verifyRequestSignatures = true,
+    this.notifPreProcessor,
+    bool? verifyRequestSignatures,
   }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
+    this.verifyRequestSignatures =
+        verifyRequestSignatures ?? policyManagerAtsign != null;
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -169,6 +175,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     required String version,
+    Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     try {
       SshnpdParams p;
@@ -211,6 +218,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         deviceGroup: p.deviceGroup,
         version: version,
         permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
+        verifyRequestSignatures: p.policyManagerAtsign != null ? true : false,
+        notifPreProcessor: notifPreProcessor,
       );
 
       if (p.verbose) {
@@ -311,8 +320,8 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   /// Notification handler for sshnpd
   void _notificationHandler(AtNotification notification) async {
     try {
-      if (notificationInterceptor != null) {
-        await notificationInterceptor!(notification);
+      if (notifPreProcessor != null) {
+        await notifPreProcessor!(notification);
       }
     } catch (e) {
       logger.shout(
