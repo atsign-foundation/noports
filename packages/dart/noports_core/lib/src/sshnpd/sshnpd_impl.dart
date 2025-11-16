@@ -91,7 +91,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
   late final bool inline;
 
   @override
-  late final bool verifyRequestSignatures;
+  late final bool strict;
 
   /// State variables used by [_notificationHandler]
   String _privateKey = '';
@@ -125,11 +125,9 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
     this.authChecker,
     bool? inline,
     this.notifPreProcessor,
-    bool? verifyRequestSignatures,
+    required this.strict,
   }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
-    this.verifyRequestSignatures =
-        verifyRequestSignatures ?? policyManagerAtsign != null;
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -218,7 +216,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         deviceGroup: p.deviceGroup,
         version: version,
         permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
-        verifyRequestSignatures: p.policyManagerAtsign != null ? true : false,
+        strict: p.strict,
         notifPreProcessor: notifPreProcessor,
       );
 
@@ -636,7 +634,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       return;
     }
 
-    if (verifyRequestSignatures) {
+    if (strict) {
       bool verified = await verifyRequestSignature(
         requestingAtsign,
         req.sessionId,
@@ -869,7 +867,7 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
       return;
     }
 
-    if (verifyRequestSignatures) {
+    if (strict) {
       bool verified = await verifyRequestSignature(
         requestingAtsign,
         req.sessionId,

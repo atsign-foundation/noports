@@ -97,7 +97,7 @@ abstract class Sshnpd {
   /// If true, signatures of requests will be verified against cached public
   /// keys. If false, they will not. By default, this is set to true if a
   /// policy service is being used, and false otherwise.
-  abstract final bool verifyRequestSignatures;
+  abstract final bool strict;
 
 
   static Future<Sshnpd> fromCommandLineArgs(
@@ -107,6 +107,7 @@ abstract class Sshnpd {
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     required String version,
+    Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     return SshnpdImpl.fromCommandLineArgs(
       args,
@@ -115,6 +116,7 @@ abstract class Sshnpd {
       usageCallback: usageCallback,
       helpCallback: helpCallback,
       version: version,
+      notifPreProcessor: notifPreProcessor,
     );
   }
 
