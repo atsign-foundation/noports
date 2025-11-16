@@ -54,6 +54,26 @@ void main() {
       SshnpdParams p = await SshnpdParams.fromArgs(args);
       expect(p.permitOpen, po);
     });
+    test('test strict mode default true when using policy service', () async {
+      List<String> args = '-a @daemon -p @policy'.split(' ');
+      final p = await SshnpdParams.fromArgs(args);
+      expect(p.strict, true);
+    });
+    test('test strict mode explicitly false when would default to true', () async {
+      List<String> args = '-a @daemon -p @policy --no-strict'.split(' ');
+      final p = await SshnpdParams.fromArgs(args);
+      expect(p.strict, false);
+    });
+    test('test strict mode default false when not using policy service', () async {
+      List<String> args = '-a @daemon -m @bob'.split(' ');
+      final p = await SshnpdParams.fromArgs(args);
+      expect(p.strict, false);
+    });
+    test('test strict mode explicitly true when would default to false', () async {
+      List<String> args = '-a @daemon -m @manager --strict'.split(' ');
+      final p = await SshnpdParams.fromArgs(args);
+      expect(p.strict, true);
+    });
     // TODO add unit tests for other mildly complicated options
     // device
     // storage-path
