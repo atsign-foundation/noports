@@ -160,7 +160,8 @@ class SshnpdParams {
           ),
       permitOpen: permitOpen,
       clearCachedPKs: c.value(SshnpdOption.clearCachedPks),
-      strict: c.value(SshnpdOption.strict) ?? policyManagerAtsign != null,
+      strict:
+          c.optionalValue(SshnpdOption.strict) ?? policyManagerAtsign != null,
     );
   }
 }
