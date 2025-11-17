@@ -46,6 +46,7 @@ void main() {
         deviceGroup: 'default',
         version: '1.0.0',
         permitOpen: ['*:*'],
+        strict: false,
       );
 
       // Set up common mock behaviors
