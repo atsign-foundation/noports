@@ -108,12 +108,11 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_onboarding_cli"
-      ref: "st/expose_enrollment_service"
-      resolved-ref: "2d34c9bcd3b1b3e5b9da2642e1f4cac93a42091a"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "1.14.2"
+      name: at_onboarding_cli
+      sha256: "1d44901cf534050834a70452bcf1b700253491016d9608c7dbfb1817ea2e3f80"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.14.1"
   at_persistence_secondary_server:
     dependency: transitive
     description:
