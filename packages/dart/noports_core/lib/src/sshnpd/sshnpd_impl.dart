@@ -417,13 +417,6 @@ class SshnpdImpl with AtClientBindings, ApkamSigning implements Sshnpd {
         permitOpen: ['*:*'],
       );
     }
-    if (policyManagerAtsign == client) {
-      return NPAAuthCheckResponse(
-        authorized: true,
-        message: '$client is the policy manager',
-        permitOpen: ['*:*'],
-      );
-    }
 
     if (authChecker != null) {
       late NPAAuthCheckResponse resp;
