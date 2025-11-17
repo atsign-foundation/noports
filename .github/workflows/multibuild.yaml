@@ -299,37 +299,10 @@ jobs:
           path: ./apps/admin/webapp/tarball
           if-no-files-found: error
 
-  universal_sh:
-    if: startsWith(github.ref, 'refs/tags/v')
-    defaults:
-      run:
-        working-directory: ./packages/dart/sshnoports/bundles
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - run: |
-          write_metadata() {
-            start_line="# SCRIPT METADATA"
-            end_line="# END METADATA"
-            file=$1
-            variable=$2
-            value=$3
-            # since this is linux only, sed -i is safe without a file ext.
-            sed -i "/$start_line/,/$end_line/s|$variable=\".*\"|$variable=\"$value\"|g" "$file"
-          }
-          REF=${{ github.ref }}
-          TAG=${REF:11}
-          write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./packages/dart/sshnoports/bundles/universal.sh
-          if-no-files-found: error
-
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, other_build, web_build, universal_sh]
+    needs: [main_build, other_build, web_build]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -366,6 +339,40 @@ jobs:
           mv */*.zip .
           rm -Rf -- */
       - name: Generate SHA256 checksums
+        working-directory: tarballs
+        run: sha256sum * > checksums.txt
+      - name: Update SHA256 checksums in universal.sh
+        working-directory: tarballs
+        run: |
+          macos_arm64_sha="$(cat checksums.txt | grep 'sshnp-macos-arm64\.zip' |
+                            cut -d' ' -f1)"
+          macos_x64_sha="$(cat checksums.txt | grep 'sshnp-macos-x64\.zip' |
+                            cut -d' ' -f1)"
+          linux_x64_sha="$(cat checksums.txt | grep 'sshnp-linux-x64\.tgz' |
+                            cut -d' ' -f1)"
+          linux_arm64_sha="$(cat checksums.txt | grep 'sshnp-linux-arm64\.tgz' |
+                            cut -d' ' -f1)"
+          linux_arm_sha="$(cat checksums.txt | grep 'sshnp-linux-arm\.tgz' |
+                            cut -d' ' -f1)"
+          linux_riscv64_sha="$(cat checksums.txt | grep 'sshnp-linux-riscv64\.tgz' |
+                            cut -d' ' -f1)"
+          REF=${{ github.ref }}
+          sed -i ../packages/dart/sshnoports/bundles/universal.sh \
+            -e "1,10s/\(macos_arm64_sha='\).*'/\1$macos_arm64_sha'/" \
+            -e "1,10s/\(macos_x64_sha='\).*'/\1$macos_x64_sha'/" \
+            -e "1,10s/\(linux_arm64_sha='\).*'/\1$linux_arm64_sha'/" \
+            -e "1,10s/\(linux_x64_sha='\).*'/\1$linux_x64_sha'/" \
+            -e "1,10s/\(linux_arm_sha='\).*'/\1$linux_arm_sha'/" \
+            -e "1,10s/\(linux_riscv64_sha='\).*'/\1$linux_riscv64_sha'/" \
+            -e "1,10s/\(version='\).*'/\1${REF:11}'/"
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./packages/dart/sshnoports/bundles/universal.sh
+          if-no-files-found: error
+
+        # Regenerate step is necessary since we just updated universal.sh
+      - name: Regenerate SHA256 checksums
         working-directory: tarballs
         run: sha256sum * > checksums.txt
       - name: Upload artifacts to GitHub Release
@@ -407,19 +414,38 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: multibuild-${{github.run_number}}
       - run: |
           # Extract each checksums from the release
           echo "${{ needs.github-release.outputs.hashes }}" |
             base64 -d -w0 >checksums.txt
-          linux_x64_sha="$(cat checksums.txt | grep 'sshnp-linux-x64\.tgz' |
-                            cut -d' ' -f1)"
-          linux_arm_sha="$(cat checksums.txt | grep 'sshnp-linux-arm64\.tgz' |
-                            cut -d' ' -f1)"
-          macos_arm_sha="$(cat checksums.txt | grep 'sshnp-macos-arm64\.zip' |
+          macos_arm64_sha="$(cat checksums.txt | grep 'sshnp-macos-arm64\.zip' |
                             cut -d' ' -f1)"
           macos_x64_sha="$(cat checksums.txt | grep 'sshnp-macos-x64\.zip' |
                             cut -d' ' -f1)"
+          linux_x64_sha="$(cat checksums.txt | grep 'sshnp-linux-x64\.tgz' |
+                            cut -d' ' -f1)"
+          linux_arm64_sha="$(cat checksums.txt | grep 'sshnp-linux-arm64\.tgz' |
+                            cut -d' ' -f1)"
+          linux_arm_sha="$(cat checksums.txt | grep 'sshnp-linux-arm\.tgz' |
+                            cut -d' ' -f1)"
+          linux_riscv64_sha="$(cat checksums.txt | grep 'sshnp-linux-riscv64\.tgz' |
+                            cut -d' ' -f1)"
+          rm checksums.txt
 
+      - name: Update version and shas in homebrew cask
+        run: |
+          REF=${{ github.ref }}
+          sed -i manifests/brew/noports.rb \
+            -e "1,10s/\(macos_arm64_sha\s\?=\s\?'\).*'/\1$macos_arm64_sha'/" \
+            -e "1,10s/\(macos_x64_sha\s\?=\s\?'\).*'/\1$macos_x64_sha'/" \
+            -e "1,10s/\(linux_arm64_sha\s\?=\s\?'\).*'/\1$linux_arm64_sha'/" \
+            -e "1,10s/\(linux_x64_sha\s\?=\s\?'\).*'/\1$linux_x64_sha'/" \
+            -e "1,10s/\(version\s\?'\).*'/\1${REF:11}'/"
+
+      - name: Commit updates
+        run: |
           # Commit any changes made
           if [ "$(git status --porcelain)" ]; then
             git add .
@@ -450,6 +476,11 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
+          ref: multibuild-${{github.run_number}}
+          sparse-checkout: manifests/brew/noports.rb
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
           repository: 'atsign-foundation/homebrew-tap'
       - name: Create action branch
         run: |
@@ -470,14 +501,6 @@ jobs:
                             cut -d' ' -f1)"
           macos_x64_sha="$(cat checksums.txt | grep 'sshnp-macos-x64\.zip' |
                             cut -d' ' -f1)"
-          # Update the checksums and version tag in the noports cask
-          REF=${{ github.ref }}
-          sed -i Casks/noports.rb \
-            -e "1,10s/\(macos_arm_sha\s\?=\s\?'\).*'/\1$macos_arm_sha'/" \
-            -e "1,10s/\(macos_x64_sha\s\?=\s\?'\).*'/\1$macos_x64_sha'/" \
-            -e "1,10s/\(linux_arm_sha\s\?=\s\?'\).*'/\1$linux_arm_sha'/" \
-            -e "1,10s/\(linux_x64_sha\s\?=\s\?'\).*'/\1$linux_x64_sha'/" \
-            -e "1,10s/\(version\s\?'\).*'/\1${REF:11}'/"
 
           # Raise a PR if changes were made
           if [ "$(git status --porcelain)" ]; then

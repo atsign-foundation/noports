@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck disable=SC2034
 # Version specific information
-version="v5.13.0"
+version='v5.13.0'
 macos_arm64_sha='83ca40f17c7bfc0d873f810e41b1cd8ab9fc290ac38a3ef38ecd11f396742df6'
 macos_x64_sha='69500b83cce4fa460569dae0e2e5a1ad225d2454a421c823b22379acbcdae223'
 linux_arm64_sha='896f1d23d96d8de71853f6e2b24e33c4e8c4837bab0c9560932abc5cc7741f7a'
