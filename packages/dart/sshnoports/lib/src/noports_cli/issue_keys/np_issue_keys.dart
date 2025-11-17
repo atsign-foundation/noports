@@ -44,7 +44,6 @@ class NPIssueKeysImpl implements NPIssueKeys {
     writeWarning('atkeys: \'${params.atKeysFilePath}\'');
     final atClient = await createAtClientCli(
         atsign: params.atsign,
-        atKeysFilePath: params.atKeysFilePath,
         atServiceFactory: _factory,
         namespace: defaultCurrentNamespace,
         storagePath: standardAtClientStoragePath(
