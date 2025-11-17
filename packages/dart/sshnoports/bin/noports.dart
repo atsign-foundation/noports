@@ -37,6 +37,7 @@ Future<void> main(List<String> args) async {
     printUsage();
     exit(1);
   }
+
   final command = NoportsCommand.fromString(args[0]);
   if (args.length == 1) {
     writeError('You must supply an argument string');
@@ -63,8 +64,6 @@ Future<void> main(List<String> args) async {
   } catch (e) {
     /// ToDo: parse exception message to remove unnecessary Exception prefixes
     writeError(e.toString());
-    stderr.writeln();
-    printUsage();
     stderr.writeln();
     stderr.writeln('Please try again or contact support@atsign.com');
     stderr.writeln();

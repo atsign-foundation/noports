@@ -61,6 +61,7 @@ class NPActivateImpl implements NPActivate {
 
   @override
   Future<AtEnrollmentResponse> enroll(NoportsParams params) async {
+    validateArgs(params, NPActivateType.enroll);
     AtOnboardingService onboardingService = AtOnboardingServiceImpl(
       params.atsign,
       AtOnboardingPreference(),

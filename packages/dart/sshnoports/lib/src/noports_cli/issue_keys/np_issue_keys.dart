@@ -6,8 +6,20 @@ import 'package:at_auth/at_auth.dart'
         AtEnrollmentResponse,
         ApprovedRequestDecisionBuilder,
         EnrollmentRequestDecision;
-import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client/at_client.dart'
+    show
+        EnrollmentService,
+        Enrollment,
+        EnrollmentListRequestParam,
+        DefaultAtServiceFactory,
+        EnrollmentStatus,
+        AtEnrollmentException,
+        AtServiceFactory;
+import 'package:at_commons/at_commons.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart'
+    show requestEnrollmentOtp;
+import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
 import 'package:sshnoports/src/noports_cli/util/constants.dart';
 import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
@@ -21,37 +33,33 @@ sealed class NPIssueKeys {
 }
 
 class NPIssueKeysImpl implements NPIssueKeys {
-  AtClient? atClient;
+  final AtServiceFactory _factory = DefaultAtServiceFactory();
   EnrollmentService? _enrollmentService;
-
-  /// Initializes the AtClient and EnrollmentService for the given [atsign]
-  Future<void> init(String atsign) async {
-    atClient = await createAtClient(atSign: atsign);
-    _enrollmentService = DefaultAtServiceFactory().enrollmentService(atClient!);
-  }
 
   @override
   Future<int> wrappedMain(List<String> args) async {
     NoportsParams params = NoportsParams.fromArgs(args);
-    await init(params.atsign);
+    // fetch atKeys filePath from user (can be null)
+    params.atKeysFilePath = _promptUser('atKeys filepath (target location): ');
+    writeWarning('atkeys: \'${params.atKeysFilePath}\'');
+    final atClient = await createAtClientCli(
+        atsign: params.atsign,
+        atKeysFilePath: params.atKeysFilePath,
+        atServiceFactory: _factory,
+        namespace: defaultCurrentNamespace,
+        storagePath: standardAtClientStoragePath(
+            baseDir: getHomeDirectory()!,
+            atSign: params.atsign,
+            progName: defaultCurrentNamespace));
 
-    params.otp = await requestEnrollmentOtp(atClient!);
+    _enrollmentService = DefaultAtServiceFactory().enrollmentService(atClient);
 
-    stdout.write('\ndeviceName: ');
-    params.deviceName = stdin.readLineSync();
-    if (params.deviceName == null || params.deviceName == '') {
-      // create deviceName if missing, appending the OTP for uniqueness
-      params.deviceName = '${NPIssueKeys.defaultDeviceNamePrefix}${params.otp}';
-      writeWarning('Missing deviceName, using ${params.deviceName}');
-    }
-    stdout.writeln();
+    // fetch enrollment OTP using at_client instance
+    params.otp = await requestEnrollmentOtp(atClient);
 
-    stdout.write('atKeys filepath (target location): ');
-    params.atKeysFilePath = stdin.readLineSync();
-    if (params.atKeysFilePath == null || params.atKeysFilePath == '') {
-      writeWarning('Missing keyfile, using default');
-    }
-    stdout.writeln();
+    //fetch deviceName from user (defaults to: noports_<otp>)
+    params.deviceName = _promptUser('deviceName: ') ??
+        '${NPIssueKeys.defaultDeviceNamePrefix}${params.otp}';
 
     String command = _generateEnrollCommand(params);
     writeInfoMessage('Copy the string below \t\'noports activate <string>\'\n'
@@ -67,6 +75,14 @@ class NPIssueKeysImpl implements NPIssueKeys {
     return 0;
   }
 
+  String? _promptUser(String prompt) {
+    stdout.write(prompt);
+    String? input = stdin.readLineSync();
+    if (input == null) writeWarning('Missing input, using default');
+    // ensure output is either user input or null
+    return (input == null || input.isEmpty) ? null : input;
+  }
+
   /// Generates an activation string from the provided [params]
   ///
   /// Combines atsign, otp, and optional deviceName and atKeysFilePath
@@ -74,18 +90,19 @@ class NPIssueKeysImpl implements NPIssueKeys {
   ///
   /// Returns: activation string in format `<atsign>:enroll:otp:<otp>[:name:<deviceName>[:keyfile:<path>]]`
   String _generateEnrollCommand(NoportsParams params) {
-    StringBuffer cbuf = StringBuffer(NPIssueKeys.baseEnrollCommand
+    StringBuffer cbuf = StringBuffer();
+    cbuf.append(NPIssueKeys.baseEnrollCommand
         .replaceFirst('<atsign>', params.atsign)
         .replaceFirst('<otp>', params.otp!));
 
     // write optional args if available
-    cbuf.write('[:name:${params.deviceName}');
+    cbuf.append('[:name:${params.deviceName}');
     if (!(params.atKeysFilePath == null || params.atKeysFilePath == '')) {
-      cbuf.write(':keyfile:${params.atKeysFilePath}');
+      cbuf.append(':keyfile:${params.atKeysFilePath}');
     }
-    cbuf.write(']');
+    cbuf.append(']');
 
-    return cbuf.toString();
+    return cbuf.message!;
   }
 
   /// Approves the first pending enrollment request with inferred noports parameters

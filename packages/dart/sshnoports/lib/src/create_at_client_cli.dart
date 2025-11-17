@@ -5,7 +5,7 @@ import 'package:path/path.dart' as path;
 
 Future<AtClient> createAtClientCli({
   required String atsign,
-  required String atKeysFilePath,
+  String? atKeysFilePath,
   String? passPhrase = '',
   required AtServiceFactory atServiceFactory,
   required String storagePath,

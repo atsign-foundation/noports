@@ -8,12 +8,8 @@ class NoportsParams {
   String? otp;
   String? atKeysFilePath;
   String? deviceName;
-  String appName = 'noports';
-  Map<String, String> namespaces = {
-    "sshnp": "rw",
-    "sshrvd": "rw",
-    "noports": "rw",
-  };
+  String appName = defaultAppName;
+  Map<String, String> namespaces = defaultEnrollmentNamespaces;
 
   NoportsParams({
     required this.atsign,
@@ -24,61 +20,49 @@ class NoportsParams {
   });
 
   factory NoportsParams.fromArgs(List<String> args) {
-    String authString = args[1];
-
-    final atsign = _parseAtsign(authString);
-    final atKeysFilePath = _parseKeyfilePath(authString);
-    final cram = _parseCram(authString);
-    final otp = _parseOtp(authString);
-    final deviceName = _parseDeviceName(authString);
+    String authStr = args[1];
 
     return NoportsParams(
-        atsign: atsign,
-        atKeysFilePath: atKeysFilePath,
-        cram: cram,
-        otp: otp,
-        deviceName: deviceName);
+        atsign: _parseAtsign(authStr),
+        atKeysFilePath: _parseKeyfilePath(authStr),
+        cram: _parseCram(authStr),
+        otp: _parseOtp(authStr),
+        deviceName: _parseDeviceName(authStr));
   }
 
-  static String _parseAtsign(String rawInput) {
-    // RegExpMatch? match;
-    // switch (activateCommand) {
-    //   case NPActivateType.cram:
-    //     match = RegExp(cramRegex).firstMatch(rawInput);
-    //     break;
-    //   case NPActivateType.enroll:
-    //     match = RegExp(enrollRegex).firstMatch(rawInput);
-    //     break;
-    // }
-    //
-    // final atsign = match?.namedGroup(RegexGroupNames.atsign);
-    // if (atsign == null) {
-    //   throw ArgumentError('Could not parse atsign from: $rawInput');
-    // }
-    String atsign = rawInput.split(':').first;
+  static String _parseAtsign(String authStr, {String? regex}) {
+    if (regex != null) {
+      RegExpMatch? match = RegExp(regex).firstMatch(authStr);
+
+      final atsign = match?.namedGroup(RegexGroupNames.atsign);
+      if (atsign == null) {
+        throw ArgumentError('Could not parse atsign from: $authStr');
+      }
+    }
+    String atsign = authStr.split(':').first;
     return atsign;
   }
 
-  static String? _parseCram(String rawInput) {
-    final match = RegExp(cramRegex).firstMatch(rawInput);
+  static String? _parseCram(String authStr) {
+    final match = RegExp(cramRegex).firstMatch(authStr);
     final cram = match?.namedGroup(RegexGroupNames.cram);
     return cram;
   }
 
-  static String? _parseOtp(String rawInput) {
-    final match = RegExp(enrollRegex).firstMatch(rawInput);
+  static String? _parseOtp(String authStr) {
+    final match = RegExp(enrollRegex).firstMatch(authStr);
     final otp = match?.namedGroup(RegexGroupNames.otp);
     return otp;
   }
 
-  static String? _parseKeyfilePath(String rawInput) {
-    final match = RegExp(enrollRegex).firstMatch(rawInput);
+  static String? _parseKeyfilePath(String authStr) {
+    final match = RegExp(enrollRegex).firstMatch(authStr);
     final keyfilePath = match?.namedGroup(RegexGroupNames.keyfilePath);
     return keyfilePath;
   }
 
-  static String? _parseDeviceName(String rawInput) {
-    final match = RegExp(enrollRegex).firstMatch(rawInput);
+  static String? _parseDeviceName(String authStr) {
+    final match = RegExp(enrollRegex).firstMatch(authStr);
     final deviceName = match?.namedGroup(RegexGroupNames.device);
     return deviceName;
   }
