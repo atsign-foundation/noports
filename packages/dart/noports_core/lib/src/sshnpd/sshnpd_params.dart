@@ -28,6 +28,7 @@ class SshnpdParams {
   final String storagePath;
   final String permitOpen;
   final bool clearCachedPKs;
+  final bool strict;
 
   SshnpdParams({
     required this.device,
@@ -51,6 +52,7 @@ class SshnpdParams {
     required this.storagePath,
     required this.permitOpen,
     required this.clearCachedPKs,
+    required this.strict,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -122,14 +124,15 @@ class SshnpdParams {
         ?.map((m) => m.toAtsign())
         .toList();
 
+    final Atsign? policyManagerAtsign = c
+        .optionalValue(SshnpdOption.policyManager)
+        ?.toAtsign();
     return SshnpdParams(
       device: device,
       username: getUserName(throwIfNull: true)!,
       homeDirectory: homeDirectory,
       managerAtsigns: managers ?? [],
-      policyManagerAtsign: c
-          .optionalValue(SshnpdOption.policyManager)
-          ?.toAtsign(),
+      policyManagerAtsign: policyManagerAtsign,
       atKeysFilePath:
           c.optionalValue(SshnpdOption.keyfile) ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
@@ -157,6 +160,8 @@ class SshnpdParams {
           ),
       permitOpen: permitOpen,
       clearCachedPKs: c.value(SshnpdOption.clearCachedPks),
+      strict:
+          c.optionalValue(SshnpdOption.strict) ?? policyManagerAtsign != null,
     );
   }
 }
