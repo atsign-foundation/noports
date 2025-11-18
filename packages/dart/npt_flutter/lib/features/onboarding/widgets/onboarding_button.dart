@@ -301,6 +301,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           result = await showDialog<AtOnboardingResult>(
             context: context,
             routeSettings: const RouteSettings(name: 'APKAM onboarding'),
+            barrierDismissible: false,
             builder: (context) => OnboardingApkamDialog(
               atsign: atsign,
               atClientPreference: atClientPrefernce,

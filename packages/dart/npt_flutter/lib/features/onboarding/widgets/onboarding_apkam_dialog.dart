@@ -234,6 +234,27 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await _setStateOnStatus(finalStatus);
   }
 
+  Widget getPopButton(String strings) {
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        textStyle: const TextStyle(fontSize: Sizes.p18),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Sizes.p32,
+          vertical: Sizes.p20,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Sizes.p8),
+        ),
+      ),
+      onPressed: onboardingStatus != OnboardingStatus.pendingApproval
+          ? () {
+              Navigator.of(context).pop();
+            }
+          : null,
+      child: Text(strings),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -347,6 +368,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                               );
                             },
                           ),
+                          gapH8,
+                          getPopButton(strings.back),
                         ],
                       ),
                     ),
@@ -429,28 +452,40 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
             ],
           ),
-          OnboardingStatus.success => Row(
-            key: const Key('success'),
-            mainAxisSize: MainAxisSize.min,
+          OnboardingStatus.success => Column(
             children: [
-              const Icon(Icons.check, color: Colors.green, size: Sizes.p32),
-              gapW4,
-              Text(
-                strings.enrollApproved,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                key: const Key('success'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check, color: Colors.green, size: Sizes.p32),
+                  gapW4,
+                  Text(
+                    strings.enrollApproved,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
               ),
+              gapW8,
+              getPopButton(strings.done),
             ],
           ),
-          OnboardingStatus.denied => Row(
-            key: const Key('denied'),
-            mainAxisSize: MainAxisSize.min,
+          OnboardingStatus.denied => Column(
             children: [
-              const Icon(Icons.close, color: Colors.red, size: Sizes.p32),
-              gapW4,
-              Text(
-                strings.enrollDenied,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                key: const Key('denied'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.close, color: Colors.red, size: Sizes.p32),
+                  gapW4,
+                  Text(
+                    strings.enrollDenied,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
               ),
+              gapW8,
+              getPopButton(strings.done),
             ],
           ),
         },
