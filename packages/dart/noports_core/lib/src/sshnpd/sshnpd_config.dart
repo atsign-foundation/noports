@@ -303,6 +303,21 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
 
+  strict(
+    FlagOption(
+      argName: 'strict',
+      configKey: '/runtime/strict',
+      helpText: 'Explicitly set strict request verification. By default,'
+          ' strict mode is only enabled when using a policy service. NOTE: If'
+          ' strict mode is enabled when you are not using a policy service'
+          ' then, if a requesting atSign\'s public key has changed since a'
+          ' previous request was handled, the request will be rejected.',
+      hide: false,
+      defaultsTo: null,
+      group: runtimeGroup,
+    ),
+  ),
+
   verbose(
     FlagOption(
       argName: 'verbose',

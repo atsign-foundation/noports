@@ -89,6 +89,15 @@ class SshnpdImpl
   @override
   final String version;
 
+  @override
+  final Future<void> Function(AtNotification)? notifPreProcessor;
+
+  @override
+  late final bool inline;
+
+  @override
+  late final bool strict;
+
   /// State variables used by [clientRequestNotificationHandler]
   String _privateKey = '';
 
@@ -122,7 +131,11 @@ class SshnpdImpl
     required this.version,
     required this.permitOpen,
     this.authChecker,
+    bool? inline,
+    this.notifPreProcessor,
+    required this.strict,
   }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
+    this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
@@ -168,14 +181,12 @@ class SshnpdImpl
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     required String version,
+    Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(
-          args,
-          helpCallback: helpCallback,
-        );
+        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
@@ -213,6 +224,8 @@ class SshnpdImpl
         deviceGroup: p.deviceGroup,
         version: version,
         permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
+        strict: p.strict,
+        notifPreProcessor: notifPreProcessor,
       );
 
       if (p.verbose) {
@@ -314,17 +327,29 @@ class SshnpdImpl
 
   /// Notification handler for requests from clients
   Future<void> clientRequestNotificationHandler(
-    AtNotification notification,
-  ) async {
+      AtNotification notification,
+      ) async {
     try {
+      try {
+        if (notifPreProcessor != null) {
+          await notifPreProcessor!(notification);
+        }
+      } catch (e) {
+        logger.shout(
+          'Notification pre-processing failed with $e\n'
+              'Notification: $notification',
+        );
+        return;
+      }
+
       String messageType = notification.key
           .replaceAll('${notification.to}:', '')
           .replaceAll(
-            '.$device.${DefaultArgs.namespace}${notification.from}',
-            '',
-          )
-          // convert to lower case as the latest AtClient converts notification
-          // keys to lower case when received
+        '.$device.${DefaultArgs.namespace}${notification.from}',
+        '',
+      )
+      // convert to lower case as the latest AtClient converts notification
+      // keys to lower case when received
           .toLowerCase();
 
       NPAAuthCheckResponse auth = await authCheck(notification);
@@ -502,20 +527,20 @@ class SshnpdImpl
         ..useRemoteAtServer = true;
 
       await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
-      logger.shout(
+      logger.info(
         '😎 Will handle $notificationKey request from ${notification.from}'
         '; acquired mutex $mutexKey',
       );
       return true;
     } catch (err) {
       if (err.toString().toLowerCase().contains('immutable')) {
-        logger.shout(
+        logger.info(
           '🤷‍♂️ Will not handle $notificationKey request from ${notification.from}'
           '; did not acquire session mutex (another sshnpd instance will handle this)',
         );
         return false;
       } else {
-        logger.shout('Unexpected error acquiring session mutex: $err');
+        logger.info('Unexpected error acquiring session mutex: $err');
         return true; // Proceed anyway to maintain functionality
       }
     }
@@ -674,41 +699,15 @@ class SshnpdImpl
       ),
     );
 
-    try {
-      await verifyEnvelopeSignature(
-        atClient,
+    if (strict) {
+      bool verified = await verifyRequestSignature(
         requestingAtsign,
-        logger,
+        req.sessionId,
         envelope,
       );
-    } catch (e) {
-      await _logEvent(
-        SessionEvent.denied(
-          sessionId: req.sessionId,
-          authInfo: NPAAuthCheckResponse(
-            authorized: false,
-            message:
-                'Failed to verify signature of msg from $requestingAtsign : $e',
-            permitOpen: [],
-          ).toJson(),
-        ),
-      );
-
-      logger.shout('Failed to verify signature of msg from $requestingAtsign');
-      logger.shout('Exception: $e');
-      logger.shout('Notification value: ${notification.value}');
-
-      // Notify noports client that this session is NOT connected
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: req.sessionId,
-        ),
-        value: 'Signature not verified: $e',
-        sessionId: req.sessionId,
-      );
-
-      return;
+      if (!verified) {
+        return;
+      }
     }
 
     String requested = '${req.requestedHost}:${req.requestedPort}';
@@ -880,7 +879,7 @@ class SshnpdImpl
         d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
       }
     }
-    if (Platform.environment['SRV_INLINE'] == 'true') {
+      if (inline) {
       SocketConnector sc = await Srv.dart(
         req.rvdHost,
         req.rvdPort,
@@ -978,6 +977,7 @@ class SshnpdImpl
       );
       return;
     }
+
     await _logEvent(
       SessionEvent.requested(
         sessionId: req.sessionId,
@@ -990,29 +990,16 @@ class SshnpdImpl
         port: localSshdPort,
       ),
     );
-    try {
-      await verifyEnvelopeSignature(
-        atClient,
+
+    if (strict) {
+      bool verified = await verifyRequestSignature(
         requestingAtsign,
-        logger,
+        req.sessionId,
         envelope,
       );
-    } catch (e) {
-      await _logEvent(
-        SessionEvent.denied(
-          sessionId: req.sessionId,
-          authInfo: NPAAuthCheckResponse(
-            authorized: false,
-            message:
-                'Failed to verify signature of msg from $requestingAtsign : $e',
-            permitOpen: [],
-          ).toJson(),
-        ),
-      );
-      logger.shout('Failed to verify signature of msg from $requestingAtsign');
-      logger.shout('Exception: $e');
-      logger.shout('Notification value: ${notification.value}');
-      return;
+      if (!verified) {
+        return;
+      }
     }
 
     String requested = '$localSshdHost:$localSshdPort';
@@ -1862,6 +1849,44 @@ class SshnpdImpl
       value: jsonEncode(pingResponse),
       ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
     );
+  }
+}
+
+  Future<bool> verifyRequestSignature(
+    Atsign requestingAtsign,
+    String sessionId,
+    Map envelope,
+  ) async {
+    try {
+      await verifyEnvelopeSignature(
+        atClient,
+        requestingAtsign,
+        logger,
+        envelope,
+      );
+    } catch (e) {
+      logger.shout('Failed to verify signature of msg from $requestingAtsign');
+      logger.shout('Exception: $e');
+      logger.shout('Notification value: $envelope');
+
+      try {
+        // Notify noports client that this session is NOT connected
+        await _notify(
+          atKey: _createResponseAtKey(
+            requestingAtsign: requestingAtsign,
+            sessionId: sessionId,
+          ),
+          value:
+              'Signature not verified: Likely that the client atSign\'s'
+              ' public key has changed: $e',
+          sessionId: sessionId,
+        );
+      } catch (e) {
+        logger.shout('Failed to send nack notification to client: $e');
+      }
+      return false;
+    }
+    return true;
   }
 }
 

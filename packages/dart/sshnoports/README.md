@@ -169,12 +169,39 @@ by cron using:
 The systemd directory contains an example unit file with its own
 [README](systemd/README.md).
 
+## SLSA
+
+Since the v5.13.0 release, the Docker images created from this repo as part
+of a release have SLSA Build Level 3 attestations.
+
+These can be verified using the
+[slsa-verifier](https://github.com/slsa-framework/slsa-verifier) tool e.g.:
+
+```sh
+IMAGE="atsigncompany/srvd"
+SHA=$(docker buildx imagetools inspect ${IMAGE}:prod \
+  --format "{{json .Manifest}}" | jq -r .digest)
+slsa-verifier verify-image ${IMAGE}@${SHA} --source-uri \
+  github.com/atsign-foundation/noports
+```
+
+## Docker image signing
+
+This repo is the source for a number of Docker images, and they're signed
+during the build process so that you can verify their authenticity using
+[cosign](https://github.com/sigstore/cosign):
+
+```sh
+cosign verify atsigncompany/srvd:prod \
+--certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+--certificate-identity-regexp='^https://github.com/atsign-foundation/noports/.+'
+```
+
 ## Maintainers
 
 Created by Atsign 
 
 Thoughts/bugs/contributions via PR all very welcome!
-
 
 Original code by [@cconstab](https://github.com/cconstab)
 

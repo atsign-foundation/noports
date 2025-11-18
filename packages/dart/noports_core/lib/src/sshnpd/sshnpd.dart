@@ -89,6 +89,21 @@ abstract class Sshnpd {
   /// Sent by the policy atSign when using policy service
   abstract AtEventConfig? elc;
 
+  /// Pre-process the received notification
+  abstract final Future<void> Function(AtNotification)? notifPreProcessor;
+
+  /// If true, srv processes will execute within the sshnpd process.
+  /// If false, they will be forked as separate processes.
+  /// If not explicitly set, then it will be set to true if `SRV_ONLINE=true`
+  /// is in the environment.
+  abstract final bool inline;
+
+  /// If true, signatures of requests will be verified against cached public
+  /// keys. If false, they will not. By default, this is set to true if a
+  /// policy service is being used, and false otherwise.
+  abstract final bool strict;
+
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,
@@ -96,6 +111,7 @@ abstract class Sshnpd {
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     required String version,
+    Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     return SshnpdImpl.fromCommandLineArgs(
       args,
@@ -104,6 +120,7 @@ abstract class Sshnpd {
       usageCallback: usageCallback,
       helpCallback: helpCallback,
       version: version,
+      notifPreProcessor: notifPreProcessor,
     );
   }
 

@@ -59,8 +59,8 @@ class RoleRepository {
     return roles;
   }
 
-  Future<bool> putNewRole(final RoleInProgress roleInProgress) async {
-    
+  Future<String?> putNewRole(final RoleInProgress roleInProgress) async {
+
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
 
@@ -68,7 +68,7 @@ class RoleRepository {
       App.log(
         '[ERROR] updateExistingRole: Current atSign is null'.loggable,
       );
-      return false;
+      return null;
     }
 
     // ensure currentAtSign starts with '@'
@@ -94,9 +94,14 @@ class RoleRepository {
 
       if (success) {
         try {
+          AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
+          notifKey.metadata.namespaceAware = false;
+          App.log(
+              '[INFO] putNewRole: Sending UPDATE notification $notifKey'
+                  .loggable);
           await atClient.notificationService.notify(
             NotificationParams.forUpdate(
-              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              notifKey,
               value: jsonEncode(newRole),
             ),
           );
@@ -107,10 +112,10 @@ class RoleRepository {
           );
         }
       }
-      return success;
+      return success ? newId.toString() : null;
     } catch (e) {
       App.log('[ERROR] updateExistingRole: Failed to update role: $e'.loggable);
-      return false;
+      return null;
     }
 
   }
@@ -151,9 +156,14 @@ class RoleRepository {
 
       if (success) {
         try {
+          AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
+          notifKey.metadata.namespaceAware = false;
+          App.log(
+              '[INFO] updateExistingRole: Sending UPDATE notification $notifKey'
+                  .loggable);
           await atClient.notificationService.notify(
             NotificationParams.forUpdate(
-              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              notifKey,
               value: jsonEncode(role),
             ),
           );
@@ -202,9 +212,14 @@ class RoleRepository {
       );
       if (success) {
         try {
+          AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
+          notifKey.metadata.namespaceAware = false;
+          App.log(
+              '[INFO] deleteRole: Sending DELETE notification $notifKey'
+                  .loggable);
           await atClient.notificationService.notify(
             NotificationParams.forDelete(
-              AtKey.fromString('$currentAtSign:$atKeyStr'),
+              notifKey,
             ),
           );
         } catch (notifyError) {

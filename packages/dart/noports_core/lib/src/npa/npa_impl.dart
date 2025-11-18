@@ -149,6 +149,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
       allowAll: true,
       isClient: false,
       isServer: true,
+      enableRequestMutex: true
     );
 
     _policyInfoRpcServer.start();

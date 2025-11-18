@@ -118,13 +118,12 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       jsonEncode(group),
       putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
     );
+    AtKey notifKey = AtKey.fromString(
+      '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
+    );
+    logger.info('[INFO] updateUserGroup: Sending notification $notifKey');
     await atClient.notificationService.notify(
-      NotificationParams.forUpdate(
-        AtKey.fromString(
-          '${atClient.getCurrentAtSign()}:${_groupAtKey(group.id!)}',
-        ),
-        value: jsonEncode(group),
-      ),
+      NotificationParams.forUpdate(notifKey, value: jsonEncode(group)),
     );
     groups[group.id!] = group;
   }
