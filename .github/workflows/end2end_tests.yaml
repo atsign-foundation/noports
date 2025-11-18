@@ -61,7 +61,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
 
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -221,7 +221,7 @@ jobs:
           echo "np: ${{ matrix.np }}"
           echo "npd: ${{ matrix.npd }}"
 
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
@@ -360,7 +360,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Setup Devicename
         # First two guarantee a unique # per workflow call
