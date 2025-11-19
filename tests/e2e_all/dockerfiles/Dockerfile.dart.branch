@@ -24,7 +24,7 @@ RUN set -eux ; \
     dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
     dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:c2e11522d1eeda0af661773c6c040a589ae8c61d2c868ea270d40883d3528296 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:9c99106001d85837e4d8b4c478ce1a05600da81e91b77dcabff6d8e011ffe337 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
