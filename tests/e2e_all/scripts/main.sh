@@ -48,8 +48,8 @@ atDirectoryPort=64
 testsToRun="all"
 
 # defaultDaemonVersions="c:current"
-defaultDaemonVersions="d:current c:current d:5.9.4 d:5.11.2 d:5.12.1"
-defaultClientVersions="d:current d:5.9.4 d:5.11.2 d:5.12.1"
+defaultDaemonVersions="d:current c:current d:5.9.4 d:5.11.2 d:5.13.0"
+defaultClientVersions="d:current d:5.9.4 d:5.11.2 d:5.13.0"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions

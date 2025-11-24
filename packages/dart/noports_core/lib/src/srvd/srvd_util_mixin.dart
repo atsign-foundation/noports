@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -140,7 +141,29 @@ mixin SrvdUtilMixin {
       only443: json['only443'] ?? false,
       multipleAcksOk: json['multipleAcksOk'] ?? false,
       preFetch: List<String>.from(json['preFetch'] ?? []),
+      sendJsonResponse: json['sendJsonResponse'] ?? false,
     );
+  }
+
+  String createResponseValue(
+    String ipAddress,
+    int portA,
+    int portB,
+    SrvdSessionParams sessionParams,
+  ) {
+    if (sessionParams.sendJsonResponse) {
+      return jsonEncode(
+        RelayResponse(
+          address: ipAddress,
+          portA: portA,
+          portB: portB,
+          rvdNonce: sessionParams.rvdNonce,
+          supportsEventLogging: true,
+        ),
+      );
+    } else {
+      return '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
+    }
   }
 
   Future<String?> _fetchPublicKey(String atSign) async {

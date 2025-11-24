@@ -11,9 +11,9 @@ class SessionInfo {
 
   final DateTime requestTime = DateTime.timestamp();
 
-  String get atSignA => params.atSignA!;
+  String get atSignA => params.atSignA;
 
-  String get atSignB => params.atSignB!;
+  String get atSignB => params.atSignB;
 
   AtEventConfig? eventLoggingConfig;
 

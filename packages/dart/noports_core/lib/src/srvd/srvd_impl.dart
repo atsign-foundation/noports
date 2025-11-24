@@ -417,19 +417,24 @@ class SrvdImpl
       ..namespace = Srvd.namespace
       ..metadata = metaData;
 
-    String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
+    String responseVal = createResponseValue(
+      ipAddress,
+      portA,
+      portB,
+      sessionParams,
+    );
 
     logger.shout(
       'Sending response data'
       ' for requested session ${sessionParams.sessionId} :'
-      ' [$data]',
+      ' [$responseVal]',
     );
 
     try {
       await atClient.notificationService.notify(
         NotificationParams.forUpdate(
           atKey,
-          value: data,
+          value: responseVal,
           notificationExpiry: Duration(minutes: 1),
         ),
         waitForFinalDeliveryStatus: false,

@@ -98,7 +98,7 @@ mixin AtEventListener on AtClientBindings {
       String base2e15EncodedShrunkJson = n.value!;
       Uint8List shrunkJson = Base2e15.decode(base2e15EncodedShrunkJson);
       String jsonEncoded = Restore.text(shrunkJson);
-      logger.finer(
+      logger.info(
         'bytes: json: ${jsonEncoded.length},'
         ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
       );
@@ -167,7 +167,7 @@ mixin AtEventLogger on AtClientBindings {
         );
         final shrunkJson = Shrink.text(jsonEncoded);
         String base2e15EncodedShrunkJson = Base2e15.encode(shrunkJson);
-        logger.finer(
+        logger.info(
           'bytes: json: ${jsonEncoded.length},'
           ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
         );

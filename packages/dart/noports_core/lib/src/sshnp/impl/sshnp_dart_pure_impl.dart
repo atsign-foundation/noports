@@ -145,6 +145,28 @@ class SshnpDartPureImpl extends SshnpCore
 
   @visibleForTesting
   Future<void> sendSshRequestToSshnpd() async {
+    final sessionRequest = SshnpSessionRequest(
+      direct: true,
+      sessionId: sessionId,
+      host: srvdChannel.rvdHost,
+      port: srvdChannel.daemonPort,
+      authenticateToRvd: params.authenticateDeviceToRvd,
+      relayAuthMode: params.relayAuthMode,
+      relayAuthAesKey: srvdChannel.relayAuthAesKey,
+      clientNonce: srvdChannel.clientNonce,
+      rvdNonce: srvdChannel.rvdNonce,
+      encryptRvdTraffic: params.encryptRvdTraffic,
+      clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+      clientEphemeralPKType: params.sessionKPType.name,
+      twinKeys: sshnpdChannel.twinKeys,
+      relayAtsign: srvdChannel.supportsEventLogging ? params.srvdAtSign : null,
+    );
+    final notifyPayload = signAndWrapAndJsonEncode(
+      atClient,
+      sessionRequest.toJson(),
+    );
+    logger.info('Sending: $notifyPayload');
+
     await notify(
       AtKey()
         ..key = 'ssh_request'
@@ -152,25 +174,7 @@ class SshnpDartPureImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-        atClient,
-        SshnpSessionRequest(
-          direct: true,
-          sessionId: sessionId,
-          host: srvdChannel.rvdHost,
-          port: srvdChannel.daemonPort,
-          authenticateToRvd: params.authenticateDeviceToRvd,
-          relayAuthMode: params.relayAuthMode,
-          relayAuthAesKey: srvdChannel.relayAuthAesKey,
-          clientNonce: srvdChannel.clientNonce,
-          rvdNonce: srvdChannel.rvdNonce,
-          encryptRvdTraffic: params.encryptRvdTraffic,
-          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-          clientEphemeralPKType: params.sessionKPType.name,
-          twinKeys: sshnpdChannel.twinKeys,
-          relayAtsign: params.srvdAtSign,
-        ).toJson(),
-      ),
+      notifyPayload,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),

@@ -127,9 +127,9 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
       authVerifierA = RelayAuthVerifierLegacy(
         pkAtSignA,
         jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce!,
-        params.atSignA!,
-        params.atSignA!,
+        params.rvdNonce,
+        params.atSignA,
+        params.atSignA,
         params.sessionId,
       );
     }
@@ -155,9 +155,9 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
       authVerifierB = RelayAuthVerifierLegacy(
         pkAtSignB,
         jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce!,
-        params.atSignB!,
-        params.atSignB!,
+        params.rvdNonce,
+        params.atSignB,
+        params.atSignB,
         params.sessionId,
       );
     }

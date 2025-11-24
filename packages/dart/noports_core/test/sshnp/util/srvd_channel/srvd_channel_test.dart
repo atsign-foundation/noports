@@ -426,7 +426,15 @@ void main() {
           ),
         ),
       );
-      expect(srvdDartBindPortChannel.rvdNonce, isNull);
+      expect(
+            () => srvdDartBindPortChannel.rvdNonce,
+        throwsA(
+          predicate(
+                (dynamic e) =>
+            e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
       expect(srvdDartBindPortChannel.fetched, false);
     });
 
