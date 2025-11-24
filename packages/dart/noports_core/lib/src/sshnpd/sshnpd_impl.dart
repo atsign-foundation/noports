@@ -454,15 +454,6 @@ class SshnpdImpl
         permitOpen: ['*:*'],
       );
     }
-    if (policyManagerAtsign == clientAtsign) {
-      return NPAAuthCheckResponse(
-        authorized: true,
-        message:
-            'Approved without policy check;'
-            ' client atSign $clientAtsign is policy manager for this daemon',
-        permitOpen: ['*:*'],
-      );
-    }
 
     if (authChecker != null) {
       late NPAAuthCheckResponse resp;
@@ -1850,7 +1841,6 @@ class SshnpdImpl
       ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
     );
   }
-}
 
   Future<bool> verifyRequestSignature(
     Atsign requestingAtsign,
