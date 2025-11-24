@@ -1,10 +1,14 @@
+## 1.8.0+25
+
+- FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
+
 ## 1.7.0+24
 
 - FEAT: App now supports use of atDirectories other than root.atsign.org
 - FEAT: App now supports use of atServer proxy services
-- FIX: When policy rules are updated in the app, they are now picked up by 
+- FIX: When policy rules are updated in the app, they are now picked up by
   the policy service in near-real-time
-- FIX: Policy info being displayed on the policy view is now auto-refreshed 
+- FIX: Policy info being displayed on the policy view is now auto-refreshed
   after an edit has been saved.
 
 ## 1.6.4+23
