@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
-import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class ProfileLocalHostTextField extends StatelessWidget {
@@ -22,16 +21,14 @@ class ProfileLocalHostTextField extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         gapH14,
-        BlocSelector<ProfileBloc, ProfileState, String>(
+        BlocSelector<ProfileBloc, ProfileState, String?>(
           selector: (ProfileState state) {
             if (state is ProfileLoadedState) return state.profile.localHost;
-            return StringConst.localhost;
-          },
-          builder: (BuildContext context, String state) {
-            // If state is null, it is set to the default value of 'localhost'.
-            // This prevents the TextFormField from being empty initially for profile created before localHost was field was added.
 
-            // state ??= StringConst.localhost;
+            return null;
+          },
+          builder: (BuildContext context, String? state) {
+            if (state == null) return gap0;
             return SizedBox(
               height: Sizes.p100,
               width: Sizes.p300,
