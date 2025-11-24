@@ -1,6 +1,6 @@
 ## 1.8.0+25
 
-- FEAT: App no supports IPv6 and IPv4 numeric entries for local and remote host.
+- FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
 
 ## 1.7.0+24
 
