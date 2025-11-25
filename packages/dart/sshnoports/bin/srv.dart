@@ -51,6 +51,10 @@ Future<void> main(List<String> args) async {
       help: 'The relay auth mode, if required.',
       allowed: RelayAuthMode.values.map((c) => c.name).toList(),
     )
+    ..addFlag('help',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Show usage info')
     ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
@@ -60,6 +64,14 @@ Future<void> main(List<String> args) async {
         negatable: false,
         help: 'Set this flag when we want multiple connections via the rvd');
 
+  void printUsage() {
+    printVersion();
+    stderr.writeln(parser.usage);
+    stderr.writeln('Note: srv is not intended to be directly executed'
+        ' by NoPorts users; srv processes are spawned by the daemon or'
+        ' client programs as required.');
+  }
+
   await runZonedGuarded(() async {
     final SocketConnector sc;
     try {
@@ -68,6 +80,11 @@ Future<void> main(List<String> args) async {
         parsed = parser.parse(args);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
+      }
+
+      if (parsed.wasParsed('help')) {
+        printUsage();
+        exit(0);
       }
 
       final String streamingHost = parsed['host'];
@@ -186,10 +203,8 @@ Future<void> main(List<String> args) async {
         controlChannelHeartbeat: heartbeat,
       ).run();
     } on ArgumentError catch (e) {
-      printVersion();
-      stderr.writeln(parser.usage);
-      stderr.writeln('\n$e');
-
+      printUsage();
+      stderr.writeln('\n$e\n');
       // We will leave the log file in /tmp since we are exiting abnormally
       exit(1);
     }

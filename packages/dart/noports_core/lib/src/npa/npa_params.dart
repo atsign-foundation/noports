@@ -11,6 +11,7 @@ class NPAParams {
   final bool verbose;
   final String rootDomain;
   final String homeDirectory;
+  final String? storagePath;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -21,6 +22,7 @@ class NPAParams {
     required this.verbose,
     required this.rootDomain,
     required this.homeDirectory,
+    this.storagePath,
   });
 
   static Future<NPAParams> fromArgs(List<String> args) async {
@@ -33,11 +35,13 @@ class NPAParams {
     return NPAParams(
       authorizerAtsign: authorizerAtsign,
       daemonAtsigns: r['daemon-atsigns'].toString().split(',').toSet(),
-      atKeysFilePath: r['key-file'] ??
+      atKeysFilePath:
+          r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, authorizerAtsign),
       verbose: r['verbose'],
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
+      storagePath: r['storage-path']
     );
   }
 
@@ -83,6 +87,15 @@ class NPAParams {
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
       hide: true,
+    );
+
+    parser.addOption(
+      'storage-path',
+      abbr: 's',
+      mandatory: false,
+      help: 'Path to atsign storage directory. Defaults to "~/.atsign/storage/<atSign>/shhnp/single/". '
+          'Running multiple CLI atClient programs with the same storage path is not supported. '
+          'An alternate storage directory can be passed through this argument when running multiple instances.',
     );
 
     return parser;

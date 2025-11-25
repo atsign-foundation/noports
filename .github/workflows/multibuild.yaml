@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -81,7 +81,7 @@ jobs:
             platform: "windows"
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
@@ -238,7 +238,7 @@ jobs:
     steps:
       - name: Checkout multibuild branch
         if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup QEMU
@@ -269,7 +269,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup node-version
@@ -301,7 +301,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -321,24 +321,10 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
 
-  universal_ps1:
-    if: startsWith(github.ref, 'refs/tags/v')
-    defaults:
-      run:
-        working-directory: ./packages/dart/sshnoports/bundles
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: universal.ps1-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./packages/dart/sshnoports/bundles/universal.ps1
-          if-no-files-found: error
-
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, other_build, web_build, universal_sh, universal_ps1]
+    needs: [main_build, other_build, web_build, universal_sh]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -348,7 +334,7 @@ jobs:
       attestations: write
     steps:
       - name: Checkout pubspec.lock
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
@@ -371,7 +357,6 @@ jobs:
         run: |
           cd tarballs
           mv */*.sh .
-          mv */*.ps1 .
           mv */*.tgz .
           mv */*.zip .
           rm -Rf -- */
@@ -414,7 +399,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Delete workflow branch

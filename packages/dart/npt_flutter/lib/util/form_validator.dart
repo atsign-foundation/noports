@@ -1,5 +1,7 @@
 // This file contains the form validation logic for the app. It is used to validate the input fields in the app.
 
+import 'dart:io';
+
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
@@ -92,9 +94,11 @@ class FormValidator {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     String valid =
         r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)$';
+
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (!value!.contains(RegExp(valid))) {
+    } else if (!value!.contains(RegExp(valid)) &&
+        InternetAddress.tryParse(value) == null) {
       return strings.validationErrorHostField;
     }
     return null;

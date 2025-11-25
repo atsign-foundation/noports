@@ -18,12 +18,12 @@ jobs:
   cli_tags:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: ./.github/composite/verify_cli_tags
   np_admin-unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
         with:
           sdk: stable
@@ -40,7 +40,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        uses: google/osv-scanner-action/osv-scanner-action@9bb69575e74019c2ad085a1860787043adf47ccb # v2.2.4
+        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2 # v2.3.0
         with:
           scan-args: |-
             --lockfile=./apps/admin/admin_api/pubspec.lock
@@ -48,7 +48,7 @@ jobs:
   sshnoports-unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
         with:
           sdk: stable
@@ -65,7 +65,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        uses: google/osv-scanner-action/osv-scanner-action@9bb69575e74019c2ad085a1860787043adf47ccb # v2.2.4
+        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2 # v2.3.0
         with:
           scan-args: |-
             --lockfile=./packages/dart/sshnoports/pubspec.lock
@@ -77,7 +77,7 @@ jobs:
       matrix:
         dart-channel: [stable,beta]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
         with:
           sdk: ${{ matrix.dart-channel}}
@@ -97,7 +97,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        uses: google/osv-scanner-action/osv-scanner-action@9bb69575e74019c2ad085a1860787043adf47ccb # v2.2.4
+        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2 # v2.3.0
         with:
           scan-args: |-
             --lockfile=./packages/dart/noports_core/pubspec.lock
