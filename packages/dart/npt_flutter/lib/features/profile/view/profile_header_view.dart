@@ -66,22 +66,26 @@ class ProfileHeaderView extends StatelessWidget {
                             children: [
                               const ProfileSelectAllBox(),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.profileName,
-                                column: SortColumn.profileName,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width:
-                                    SizeConfig.setProfileFieldWidthMinimalView(),
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.profileName,
+                                  column: SortColumn.profileName,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width:
+                                      SizeConfig.setProfileFieldWidthMinimalView(),
+                                ),
                               ),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.status,
-                                column: SortColumn.status,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width:
-                                    SizeConfig.setProfileFieldWidthMinimalView(),
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.status,
+                                  column: SortColumn.status,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width:
+                                      SizeConfig.setProfileFieldWidthMinimalView(),
+                                ),
                               ),
                               gapW10,
                               const PinFavoritesSwitch(),
