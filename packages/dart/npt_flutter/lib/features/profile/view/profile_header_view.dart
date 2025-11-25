@@ -102,37 +102,45 @@ class ProfileHeaderView extends StatelessWidget {
                             children: [
                               const ProfileSelectAllBox(),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.profileName,
-                                column: SortColumn.profileName,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width: width,
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.profileName,
+                                  column: SortColumn.profileName,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width: width,
+                                ),
                               ),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.deviceName,
-                                column: SortColumn.deviceName,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width: width,
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.deviceName,
+                                  column: SortColumn.deviceName,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width: width,
+                                ),
                               ),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.serviceMapping,
-                                column: SortColumn.serviceMapping,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width: width + Sizes.p25, // Extra for icon,
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.serviceMapping,
+                                  column: SortColumn.serviceMapping,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width: width + Sizes.p25, // Extra for icon,
+                                ),
                               ),
                               gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.status,
-                                column: SortColumn.status,
-                                currentSortColumn: state.sortColumn,
-                                sortOrder: state.sortOrder,
-                                width: SizeConfig.setProfileFieldWidth(
-                                  statusField: true,
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.status,
+                                  column: SortColumn.status,
+                                  currentSortColumn: state.sortColumn,
+                                  sortOrder: state.sortOrder,
+                                  width: SizeConfig.setProfileFieldWidth(
+                                    statusField: true,
+                                  ),
                                 ),
                               ),
                               gapW10,
