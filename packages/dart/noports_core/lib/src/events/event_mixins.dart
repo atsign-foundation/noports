@@ -94,7 +94,13 @@ mixin AtEventListener on AtClientBindings {
       if (n.value == null) {
         continue;
       }
-      yield AtEventEnvelope.fromJson(jsonDecode(n.value!)).payload;
+      try {
+        yield AtEventEnvelope
+            .fromJson(jsonDecode(n.value!))
+            .payload;
+      } catch (e) {
+        logger.shout('Failed to unmarshal event: $e');
+      }
     }
   }
 }
@@ -168,7 +174,7 @@ mixin AtEventLogger on AtClientBindings {
           AtKey.fromString(
             '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
           )..metadata.namespaceAware = false,
-          envelope.encodedCompressed,
+          jsonEncode(envelope.toJson()),
           ttln: Duration(milliseconds: config.ttln),
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false,

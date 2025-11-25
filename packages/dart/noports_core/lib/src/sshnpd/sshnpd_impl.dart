@@ -709,7 +709,7 @@ class SshnpdImpl
           sessionId: req.sessionId,
           authInfo: NPAAuthCheckResponse(
             authorized: false,
-            message: 'DAEMON denied',
+            message: 'DAEMON denied request',
             permitOpen: permitOpen,
           ).toJson(),
         ),
@@ -732,7 +732,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-        SessionEvent.denied(sessionId: req.sessionId, authInfo: auth.toJson()),
+          SessionEvent.denied(
+            sessionId: req.sessionId,
+            authInfo: NPAAuthCheckResponse(
+              authorized: false,
+              message: 'POLICY denied request',
+              permitOpen: auth.permitOpen,
+            ).toJson(),
+          )
       );
 
       // Notify noports client that this session is NOT connected
@@ -1001,7 +1008,7 @@ class SshnpdImpl
           sessionId: req.sessionId,
           authInfo: NPAAuthCheckResponse(
             authorized: false,
-            message: 'DAEMON denied',
+            message: 'DAEMON denied request',
             permitOpen: permitOpen,
           ).toJson(),
         ),
@@ -1023,7 +1030,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-        SessionEvent.denied(sessionId: req.sessionId, authInfo: auth.toJson()),
+          SessionEvent.denied(
+            sessionId: req.sessionId,
+            authInfo: NPAAuthCheckResponse(
+              authorized: false,
+              message: 'POLICY denied request',
+              permitOpen: auth.permitOpen,
+            ).toJson(),
+          )
       );
 
       // Notify noports client that this session is NOT connected
