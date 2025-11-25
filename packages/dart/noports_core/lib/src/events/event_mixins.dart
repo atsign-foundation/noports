@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:at_base2e15/at_base2e15.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
-import 'package:shrink/core/core.dart';
+import 'package:archive/archive.dart';
 
 final GetRequestOptions _gro = GetRequestOptions()..useRemoteAtServer = true;
 final PutRequestOptions _pro = PutRequestOptions()..useRemoteAtServer = true;
@@ -95,24 +94,16 @@ mixin AtEventListener on AtClientBindings {
       if (n.value == null) {
         continue;
       }
-      String base2e15EncodedShrunkJson = n.value!;
-      Uint8List shrunkJson = Base2e15.decode(base2e15EncodedShrunkJson);
-      String jsonEncoded = Restore.text(shrunkJson);
-      logger.info(
-        'bytes: json: ${jsonEncoded.length},'
-        ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
-      );
-      yield jsonEncoded;
+      yield AtEventEnvelope.fromJson(jsonDecode(n.value!)).payload;
     }
   }
 }
 
-typedef AtEvent = Map<String, dynamic>;
 mixin AtEventLogger on AtClientBindings {
   Atsign get myAtsign => atClient.getCurrentAtSign()!;
 
-  final StreamController<(AtEventConfig, AtEvent)> eventStreamController =
-      StreamController<(AtEventConfig, AtEvent)>();
+  final StreamController<(AtEventConfig, AtEventEnvelope)>
+  eventStreamController = StreamController<(AtEventConfig, AtEventEnvelope)>();
   bool eventLoggerRunning = false;
 
   static Future<AtEventConfig> staticGetEventLoggingConfig({
@@ -140,8 +131,20 @@ mixin AtEventLogger on AtClientBindings {
     );
   }
 
-  Future<void> logEvent(AtEventConfig config, AtEvent json) async {
-    eventStreamController.add((config, json));
+  Future<void> logEvent(
+    AtEventConfig config,
+      Map<String, dynamic> json, {
+    CompressionScheme compressionScheme = CompressionScheme.zlib,
+    EncodingScheme encodingScheme = EncodingScheme.base2e15,
+  }) async {
+    eventStreamController.add((
+      config,
+      AtEventEnvelope(
+        payload: jsonEncode(json),
+        compressionScheme: compressionScheme,
+        encodingScheme: encodingScheme,
+      ),
+    ));
     if (!eventLoggerRunning) {
       startEventLogger();
     }
@@ -151,37 +154,27 @@ mixin AtEventLogger on AtClientBindings {
     eventLoggerRunning = true;
     await for (final tuple in eventStreamController.stream) {
       final AtEventConfig config = tuple.$1;
-      final AtEvent json = tuple.$2;
-
-      String jsonEncoded;
-      try {
-        jsonEncoded = jsonEncode(json);
-      } catch (e) {
-        logger.severe('Could not jsonEncode $json');
-        continue;
-      }
+      final AtEventEnvelope envelope = tuple.$2;
 
       try {
         logger.finer(
-          'Sending log to ${config.atSign} on ${config.topic}: $jsonEncoded',
+          'Sending log to ${config.atSign} on ${config.topic}: ${envelope.payload}',
         );
-        final shrunkJson = Shrink.text(jsonEncoded);
-        String base2e15EncodedShrunkJson = Base2e15.encode(shrunkJson);
         logger.info(
-          'bytes: json: ${jsonEncoded.length},'
-          ' base2e15EncodedShrunkJson: ${base2e15EncodedShrunkJson.length}',
+          'bytes: json: ${envelope.payload.length},'
+          ' compressed and encoded: ${envelope.encodedCompressed.length}',
         );
         await notify(
           AtKey.fromString(
             '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
           )..metadata.namespaceAware = false,
-          base2e15EncodedShrunkJson,
+          envelope.encodedCompressed,
           ttln: Duration(milliseconds: config.ttln),
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false,
         );
       } catch (e) {
-        logger.severe('Error while sending $jsonEncoded to $config');
+        logger.severe('Error while sending ${envelope.payload} to $config');
       }
     }
   }
@@ -194,3 +187,125 @@ String _generateRandomString(int length) {
     (_) => charset[Random().nextInt(charset.length)],
   ).join().toLowerCase();
 }
+
+class AtEventEnvelope {
+  static final ZLibEncoder zlibEncoder = ZLibEncoder();
+  static final ZLibDecoder zlibDecoder = ZLibDecoder();
+  final String payload;
+  final CompressionScheme compressionScheme;
+  final EncodingScheme encodingScheme;
+
+  AtEventEnvelope({
+    required this.payload,
+    required this.compressionScheme,
+    required this.encodingScheme,
+  });
+
+  Map<String, dynamic> get atEventPayload => jsonDecode(payload);
+
+  List<int>? _compressed;
+
+  List<int> get compressed {
+    if (_compressed != null) {
+      return _compressed!;
+    }
+    switch (compressionScheme) {
+      case CompressionScheme.zlib:
+        return _compressed = zlibEncoder.encodeBytes(payload.codeUnits);
+      case CompressionScheme.none:
+        return _compressed = payload.codeUnits;
+    }
+  }
+
+  String? _encodedCompressed;
+
+  String get encodedCompressed {
+    if (_encodedCompressed != null) {
+      return _encodedCompressed!;
+    }
+    switch (encodingScheme) {
+      case EncodingScheme.base2e15:
+        return _encodedCompressed = Base2e15.encode(compressed);
+      case EncodingScheme.base64:
+        return _encodedCompressed = base64Encode(compressed);
+    }
+  }
+
+  static List<int> decode({
+    required String encodedCompressedPayload,
+    required String encodingSchemeName,
+  }) {
+    final EncodingScheme encodingScheme;
+    try {
+      encodingScheme = EncodingScheme.values.byName(encodingSchemeName);
+    } catch (e) {
+      throw UnimplementedError(
+        'Cannot decode - unknown encodingScheme "$encodingSchemeName"',
+      );
+    }
+    switch (encodingScheme) {
+      case EncodingScheme.base2e15:
+        return Base2e15.decode(encodedCompressedPayload);
+      case EncodingScheme.base64:
+        return base64Decode(encodedCompressedPayload);
+    }
+  }
+
+  static String decompress({
+    required List<int> compressedPayload,
+    required String compressionSchemeName,
+  }) {
+    final CompressionScheme compressionScheme;
+    try {
+      compressionScheme = CompressionScheme.values.byName(
+        compressionSchemeName,
+      );
+    } catch (e) {
+      throw UnimplementedError(
+        'Unknown compressionScheme "$compressionSchemeName"',
+      );
+    }
+    switch (compressionScheme) {
+      case CompressionScheme.zlib:
+        return String.fromCharCodes(zlibDecoder.decodeBytes(compressedPayload));
+      case CompressionScheme.none:
+        return String.fromCharCodes(compressedPayload);
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+    'cs': compressionScheme.name,
+    'es': encodingScheme.name,
+    'ecp': encodedCompressed,
+  };
+
+  factory AtEventEnvelope.fromJson(Map<String, dynamic> json) {
+    String stringFromJson(String k) {
+      try {
+        return json[k] as String;
+      } catch (e) {
+        throw ArgumentError('Invalid event payload value for $k');
+      }
+    }
+
+    final String compressionSchemeName = stringFromJson('cs');
+    final String encodingSchemeName = stringFromJson('es');
+    final String encodedCompressedPayload = stringFromJson('ecp');
+
+    return AtEventEnvelope(
+      payload: decompress(
+        compressedPayload: decode(
+          encodedCompressedPayload: encodedCompressedPayload,
+          encodingSchemeName: encodingSchemeName,
+        ),
+        compressionSchemeName: compressionSchemeName,
+      ),
+      compressionScheme: CompressionScheme.values.byName(compressionSchemeName),
+      encodingScheme: EncodingScheme.values.byName(encodingSchemeName),
+    );
+  }
+}
+
+enum CompressionScheme { none, zlib }
+
+enum EncodingScheme { base64, base2e15 }
