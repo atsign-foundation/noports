@@ -158,7 +158,11 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     );
 
     // Sort the profile by the selected column
-    final sortedProfiles = await _sortProfiles(event.sortColumn, newSortOrder);
+    final sortedProfiles = await _sortProfiles(
+      currentState.profiles,
+      event.sortColumn,
+      newSortOrder,
+    );
 
     App.log('Sorted ${sortedProfiles.length} profiles'.loggable);
     emit(
@@ -181,10 +185,12 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
 
   // Helper function to sort profiles based on column and order
   Future<List<String>> _sortProfiles(
+    Iterable<String> uuids,
     SortColumn sortColumn,
     SortOrder sortOrder,
   ) async {
-    final profileBlocList = _profileCacheCubit.state.profileBlocs.values
+    final profileBlocList = uuids
+        .map((uuid) => _profileCacheCubit.getProfileBloc(uuid))
         .toList();
 
     final profileDataList = profileBlocList.map((profileBloc) {
