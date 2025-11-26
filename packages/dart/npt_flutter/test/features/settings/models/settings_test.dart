@@ -245,11 +245,8 @@ void main() {
         expect(
           props[5],
           true,
-        ); // pinFavorites default is true, but not set in constructor above so it takes default? No wait, it's not set in constructor call in test so it uses default.
-        // Wait, let me check the test setup again.
-        // const settings = Settings(..., pinFavorites is not passed);
-        // In Settings constructor: this.pinFavorites = true
-        // So yes, it should be true.
+        ); // In Settings constructor: this.pinFavorites = true
+        // So props[5] should be true by default.
       });
     });
 
