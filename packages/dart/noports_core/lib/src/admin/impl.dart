@@ -37,7 +37,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     subscribe(regex: r'.*\.logs\.policy\.sshnp', shouldDecrypt: true).listen((
       AtNotification n,
     ) {
-      logger.shout(
+      logger.info(
         'Received policy log notification from ${jsonDecode(n.value!)['daemon']}',
       );
       // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
@@ -46,7 +46,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
 
     subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
       (AtNotification n) {
-        logger.shout('Received device heartbeat from ${n.from}');
+        logger.info('Received device heartbeat from ${n.from}');
         // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
         final v = jsonDecode(n.value!);
         final e = {};
@@ -57,20 +57,20 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       },
     );
 
-    logger.shout('Loading groups via AtClient');
+    logger.info('Loading groups via AtClient');
     // Fetch all the groups
     List<AtKey> groupKeys = await atClient.getAtKeys(
       regex: '.*.groups.policy.sshnp',
       sharedBy: atClient.getCurrentAtSign(),
     );
     for (final AtKey groupKey in groupKeys) {
-      logger.shout('Loading group from atKey: $groupKey');
+      logger.info('Loading group from atKey: $groupKey');
       final v = await atClient.get(
         groupKey,
         getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
       );
       UserGroup g = UserGroup.fromJson(jsonDecode(v.value));
-      logger.shout('Loaded $groupKey - group name is (${g.name})');
+      logger.info('Loaded $groupKey - group name is (${g.name})');
       groups[g.id!] = g;
     }
     logger.shout('Load complete');
@@ -257,14 +257,5 @@ class PolicyServiceInMem implements PolicyService {
       }
     }
     return l;
-  }
-
-  @override
-  Set<String> get daemonAtSigns {
-    final Set<String> s = {};
-    for (final g in groups.values) {
-      s.addAll(g.daemonAtSigns);
-    }
-    return s;
   }
 }

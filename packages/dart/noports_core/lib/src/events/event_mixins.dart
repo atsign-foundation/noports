@@ -95,9 +95,7 @@ mixin AtEventListener on AtClientBindings {
         continue;
       }
       try {
-        yield AtEventEnvelope
-            .fromJson(jsonDecode(n.value!))
-            .payload;
+        yield AtEventEnvelope.fromJson(jsonDecode(n.value!)).payload;
       } catch (e) {
         logger.shout('Failed to unmarshal event: $e');
       }
@@ -112,8 +110,10 @@ mixin AtEventLogger on AtClientBindings {
   eventStreamController = StreamController<(AtEventConfig, AtEventEnvelope)>();
   bool eventLoggerRunning = false;
 
-  static Future<AtEventConfig> staticGetEventLoggingConfig({
-    required AtClient atClient,
+  /// [atSign] `@alice` and [namespace] `events.logging.sshnp` and our atSign
+  /// being `@bob` will result in the config being fetched from
+  /// `@bob:config.events.logging.sshnp@alice`
+  Future<AtEventConfig> getEventLoggingConfig({
     required Atsign atSign,
     required String namespace,
   }) async {
@@ -123,23 +123,9 @@ mixin AtEventLogger on AtClientBindings {
     return AtEventConfig.fromJson(jsonDecode(v.value));
   }
 
-  /// [atSign] `@alice` and [namespace] `events.logging.sshnp` and our atSign
-  /// being `@bob` will result in the config being fetched from
-  /// `@bob:config.events.logging.sshnp@alice`
-  Future<AtEventConfig> getEventLoggingConfig({
-    required Atsign atSign,
-    required String namespace,
-  }) async {
-    return await staticGetEventLoggingConfig(
-      atClient: atClient,
-      atSign: atSign,
-      namespace: namespace,
-    );
-  }
-
   Future<void> logEvent(
     AtEventConfig config,
-      Map<String, dynamic> json, {
+    Map<String, dynamic> json, {
     CompressionScheme compressionScheme = CompressionScheme.zlib,
     EncodingScheme encodingScheme = EncodingScheme.base2e15,
   }) async {

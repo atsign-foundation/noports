@@ -26,20 +26,19 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   String get policyAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  final Set<String> daemonAtsigns;
+  final Atsign? eventLoggingAtsign;
+
+  late final AtEventConfig? elc;
 
   @override
   final NPARequestHandler handler;
-
-  final AtEventConfig? elc;
 
   NPAImpl({
     // final fields
     required this.atClient,
     required this.homeDirectory,
-    required this.daemonAtsigns,
     required this.handler,
-    required this.elc,
+    required this.eventLoggingAtsign,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -51,7 +50,6 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
     AtClient? atClient,
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
-    Set<String>? daemonAtsigns,
   }) async {
     try {
       var p = await NPAParams.fromArgs(args);
@@ -72,20 +70,11 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
 
       atClient ??= await atClientGenerator!(p);
 
-      AtEventConfig? elc;
-      if (p.eventLoggingAtsign != null) {
-        elc = await AtEventLogger.staticGetEventLoggingConfig(
-          atClient: atClient,
-          atSign: p.eventLoggingAtsign!,
-          namespace: DefaultArgs.eventLoggingNamespace,
-        );
-      }
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
-        daemonAtsigns: daemonAtsigns ?? p.daemonAtsigns,
         handler: handler,
-        elc: elc,
+        eventLoggingAtsign: p.eventLoggingAtsign,
       );
 
       if (p.verbose) {
@@ -101,8 +90,19 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
 
   @override
   Future<void> run() async {
+    if (eventLoggingAtsign != null) {
+      elc = await getEventLoggingConfig(
+        atSign: eventLoggingAtsign!,
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      logger.shout(
+        'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
+      );
+    }
+
     _startPolicyInfoRpcServer();
 
+    /// When we get a ping from a daemon we will send back our config
     subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
       (AtNotification n) async {
         final v = jsonDecode(n.value!);
@@ -145,11 +145,11 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
         atClient: atClient,
         elc: elc,
       ),
-      allowList: daemonAtsigns,
+      allowList: {},
       allowAll: true,
       isClient: false,
       isServer: true,
-      enableRequestMutex: true
+      enableRequestMutex: true,
     );
 
     _policyInfoRpcServer.start();

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/admin.dart';
@@ -63,11 +62,12 @@ void main(List<String> args) async {
       rootDomain: p.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: DefaultArgs.namespace,
-      storagePath: p.storagePath ?? standardAtClientStoragePath(
-          baseDir: p.homeDirectory,
-          atSign: p.policyAtsign,
-          progName: '.${DefaultArgs.namespace}',
-          uniqueID: 'single'),
+      storagePath: p.storagePath ??
+          standardAtClientStoragePath(
+              baseDir: p.homeDirectory,
+              atSign: p.policyAtsign,
+              progName: '.${DefaultArgs.namespace}',
+              uniqueID: 'single'),
     );
   } catch (err) {
     stderr.writeln(err);
@@ -82,58 +82,16 @@ void main(List<String> args) async {
     exit(4);
   }
 
-  logger.shout('Daemon atSigns: ${handler.daemonAtSigns}');
-
-  AtEventConfig? elc;
-
-  if (p.eventLoggingAtsign != null) {
-    elc = await AtEventLogger.staticGetEventLoggingConfig(
-      atClient: atClient,
-      atSign: p.eventLoggingAtsign!,
-      namespace: DefaultArgs.eventLoggingNamespace,
-    );
-    logger.shout(
-        'Fetched AtEventLogger config $elc from ${p.eventLoggingAtsign}');
-  }
-
   var sshnpa = NPAImpl(
     atClient: atClient,
     homeDirectory: p.homeDirectory,
-    daemonAtsigns: handler.daemonAtSigns,
     handler: handler,
-    elc: elc,
+    eventLoggingAtsign: p.eventLoggingAtsign,
   );
 
   if (p.verbose) {
     sshnpa.logger.logger.level = Level.INFO;
   }
-
-  Set<String> notifiedDaemonAtSigns = {};
-
-  atClient.notificationService
-      .subscribe(
-    regex: r'.*\.devices\.policy\.sshnp',
-    shouldDecrypt: true,
-  )
-      .listen((AtNotification n) {
-    notifiedDaemonAtSigns.add(n.from);
-    sshnpa.daemonAtsigns.clear();
-    sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
-    sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
-    logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
-  });
-
-  atClient.notificationService
-      .subscribe(
-    regex: r'.*\.groups\.policy\.sshnp',
-    shouldDecrypt: true,
-  )
-      .listen((AtNotification n) {
-    sshnpa.daemonAtsigns.clear();
-    sshnpa.daemonAtsigns.addAll(handler.api.daemonAtSigns);
-    sshnpa.daemonAtsigns.addAll(notifiedDaemonAtSigns);
-    logger.info('daemonAtSigns is now ${sshnpa.daemonAtsigns}');
-  });
 
   // start updating the heartbeat atkey periodically
   Timer.periodic(const Duration(seconds: 60), (_) async {
@@ -167,8 +125,6 @@ class Handler implements NPARequestHandler {
   Future<void> init() async {
     await api.init();
   }
-
-  Set<String> get daemonAtSigns => api.daemonAtSigns;
 
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(

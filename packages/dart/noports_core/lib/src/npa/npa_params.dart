@@ -6,7 +6,6 @@ import 'package:at_client/at_client.dart';
 
 class NPAParams {
   final String policyAtsign;
-  final Set<String> daemonAtsigns;
   final String atKeysFilePath;
   final bool verbose;
   final String rootDomain;
@@ -19,7 +18,6 @@ class NPAParams {
 
   NPAParams({
     required this.policyAtsign,
-    required this.daemonAtsigns,
     required this.atKeysFilePath,
     required this.verbose,
     required this.rootDomain,
@@ -37,7 +35,6 @@ class NPAParams {
 
     return NPAParams(
       policyAtsign: policyAtsign,
-      daemonAtsigns: r['daemon-atsigns'].toString().split(',').toSet(),
       atKeysFilePath:
           r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, policyAtsign),
@@ -69,7 +66,7 @@ class NPAParams {
       help: 'atSign of a noports logging service.',
     );
 
-    // This is basically obsolete, thus is now hidden.
+    // This is obsolete, thus is now hidden.
     // For closed networks, it is best to set an allow list on the policy
     // atSign's atServer using the `config` verb.
     parser.addOption(

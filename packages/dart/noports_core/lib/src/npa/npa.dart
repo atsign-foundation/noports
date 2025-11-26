@@ -29,9 +29,10 @@ abstract class NPA {
   abstract final String homeDirectory;
 
   /// Policy service's atSign
-  String get policyAtsign;
+  Atsign get policyAtsign;
 
-  Set<String> get daemonAtsigns;
+  /// atSign to which we will send noports session logging events
+  Atsign? get eventLoggingAtsign;
 
   NPARequestHandler get handler;
 
@@ -41,7 +42,6 @@ abstract class NPA {
     AtClient? atClient,
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
-    Set<String>? daemonAtsigns,
   }) async {
     return NPAImpl.fromCommandLineArgs(
       args,
@@ -49,7 +49,6 @@ abstract class NPA {
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
-      daemonAtsigns: daemonAtsigns,
     );
   }
 
