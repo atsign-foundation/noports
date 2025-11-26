@@ -165,11 +165,11 @@ void main() {
           () => mockSshnpdChannel.callInitialization(),
           () => mockSshnpdChannel.resolveRemoteUsername(),
           () => mockSshnpdChannel.resolveTunnelUsername(
-                remoteUsername: 'myRemoteUsername',
-              ),
+            remoteUsername: 'myRemoteUsername',
+          ),
           () => mockSshnpdChannel.sharePublicKeyIfRequired(
-                sshnpCore.identityKeyPair,
-              ),
+            sshnpCore.identityKeyPair,
+          ),
           () => mockSrvdChannel.callInitialization(),
           () => stubbedCompleteInitialization(),
         ]);
@@ -279,15 +279,16 @@ void main() {
       Future.delayed(Duration(milliseconds: 500), () {
         streamController.add(
           AtNotification(
-            '123',
-            '@alice:heartbeat.active.sshnp@alice_device',
-            '@alice_device',
-            '@alice',
-            DateTime.now().millisecondsSinceEpoch,
-            'key',
-            false,
-          )..value =
-              '{"devicename":"active","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}',
+              '123',
+              '@alice:heartbeat.active.sshnp@alice_device',
+              '@alice_device',
+              '@alice',
+              DateTime.now().millisecondsSinceEpoch,
+              'key',
+              false,
+            )
+            ..value =
+                '{"devicename":"active","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}',
         );
       });
       when(

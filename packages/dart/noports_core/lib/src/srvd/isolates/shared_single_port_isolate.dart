@@ -8,21 +8,10 @@ import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
+import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
-
-class SessionInfo {
-  final SrvdSessionParams params;
-  final SocketConnector connector;
-  final Map<String, String> lookups = {};
-
-  String get atSignA => params.atSignA!;
-
-  String get atSignB => params.atSignB!;
-
-  SessionInfo(this.params, this.connector);
-}
 
 /// - Binds to the required port (in [run])
 /// - [startSession] handles requests from the main isolate to start sessions
@@ -140,8 +129,9 @@ class SinglePortWorker extends RelayWorker {
 
       bool authenticated;
       Stream<Uint8List>? verifiedSocketStream;
-      (authenticated, verifiedSocketStream) =
-          await rav.verifySocketAuth(socket).timeout(Duration(seconds: 10));
+      (authenticated, verifiedSocketStream) = await rav
+          .verifySocketAuth(socket)
+          .timeout(Duration(seconds: 10));
       if (authenticated) {
         logger.info(
           'Authenticated socket connection verified'
@@ -178,7 +168,7 @@ class SinglePortWorker extends RelayWorker {
       side.stream = verifiedSocketStream!;
 
       unawaited(
-        si.connector.handleSingleConnection(side).catchError((err) {
+        si.connector!.handleSingleConnection(side).catchError((err) {
           side.socket.destroy();
         }),
       );
@@ -243,14 +233,31 @@ class SinglePortWorker extends RelayWorker {
       logTraffic: logTraffic,
       logger: ioSinkForLogger(sessionLogger),
     );
+    connector.connectionStream.listen(
+      (Connection c) => toMain.send(
+        IIRequest.create('newConnection', {
+          'sessionId': params.sessionId,
+          'stats': connector.stats,
+        }),
+      ),
+    );
 
-    sessions[params.sessionId] = SessionInfo(params, connector);
+    sessions[params.sessionId] = SessionInfo(
+      params: params,
+      connector: connector,
+    );
 
     // When the session ends, we want to clean it up
     unawaited(
       connector.done.whenComplete(() {
         logger.shout('sc.done for ${params.sessionId}');
         sessions.remove(params.sessionId);
+        toMain.send(
+          IIRequest.create('sessionComplete', {
+            'sessionId': params.sessionId,
+            'stats': connector.stats,
+          }),
+        );
       }),
     );
   }

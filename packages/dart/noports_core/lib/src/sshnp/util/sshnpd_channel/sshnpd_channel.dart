@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
@@ -27,7 +29,8 @@ enum SshnpdAck {
 /// This is the generic class which represents the channel between the client
 /// and the daemon. It is responsible for sending the request to the daemon and
 /// receiving the response from the daemon.
-abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
+abstract class SshnpdChannel
+    with AsyncInitialization, AtClientBindings, AtEventLogger {
   @override
   final logger = AtSignLogger(' SshnpdChannel ');
   @override
@@ -36,6 +39,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   final SshnpdChannelParams params;
   final String sessionId;
   final String namespace;
+
+  AtEventConfig? eventLoggingConfig;
 
   // * Volatile fields set at runtime
 
@@ -49,7 +54,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   /// The keystore key we are going to use to cache ping responses in local
   /// storage.
   /// local:cached.ping.bob.device_name.sshnp@alice
-  String get locallyCachedPingResponseKey => 'local:'
+  String get locallyCachedPingResponseKey =>
+      'local:'
       'cached.ping.${params.sshnpdAtSign.substring(1)}.${params.device}.${DefaultArgs.namespace}'
       '${params.clientAtSign}';
   Map<String, dynamic>? cachedPingResponse;
@@ -80,8 +86,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       cachedPingResponse = jsonDecode(
         (await atClient.get(
           AtKey.fromString(locallyCachedPingResponseKey),
-        ))
-            .value,
+        )).value,
       );
     } on AtKeyNotFoundException catch (_) {
       // AtKeyNotFoundException is fine
@@ -128,7 +133,15 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     try {
       await acked.future.timeout(timeout);
     } on TimeoutException catch (_) {}
+
     logger.info('sshnpdAck: $sshnpdAck');
+
+    if (eventLoggingConfig != null && sshnpdAck == SshnpdAck.acknowledged) {
+      await logEvent(
+        eventLoggingConfig!,
+        SessionEvent.clientConnecting(sessionId: sessionId),
+      );
+    }
 
     // Might be nicer to return a Future<SshnpdAck, String>
     // with the String being the failure reason (if any)
@@ -198,8 +211,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
         "Device is hidden or doesn't exist.\n"
         "Hint: If the device is set to hidden, use -u to specify the login username.",
       );
-    }))
-        .value;
+    })).value;
   }
 
   /// Resolve the username to use in the initial ssh tunnel
@@ -217,7 +229,7 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
   }
 
   Future<List<(DaemonFeature feature, bool supported, String reason)>>
-      featureCheck(
+  featureCheck(
     List<DaemonFeature> featuresToCheck, {
     Duration timeout = DefaultArgs.daemonPingTimeoutDuration,
   }) async {
@@ -243,11 +255,11 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     // then we will assume that "acceptsPublicKeys" is true
     final Map<String, dynamic> daemonFeatures =
         pingResponse!['supportedFeatures'] ??
-            {DaemonFeature.acceptsPublicKeys.name: true};
+        {DaemonFeature.acceptsPublicKeys.name: true};
 
     // set twinKeys (late variable, thus important it gets set here)
-    twinKeys = (pingResponse!['supportedFeatures']
-            ?[DaemonFeature.twinKeys.name] ==
+    twinKeys =
+        (pingResponse!['supportedFeatures']?[DaemonFeature.twinKeys.name] ==
         true);
     return featuresToCheck
         .map(
@@ -266,7 +278,8 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
     Completer<Map<String, dynamic>> completer = Completer();
 
     subscribe(
-      regex: 'heartbeat'
+      regex:
+          'heartbeat'
           '.${params.device}'
           '.${DefaultArgs.namespace}',
       shouldDecrypt: true,
@@ -378,14 +391,14 @@ abstract class SshnpdChannel with AsyncInitialization, AtClientBindings {
       bool shouldContinue = false;
       var atValue = await atClient
           .get(
-        entryKey,
-        getRequestOptions: GetRequestOptions()..bypassCache = true,
-      )
+            entryKey,
+            getRequestOptions: GetRequestOptions()..bypassCache = true,
+          )
           .catchError((_) {
-        // Probably a cached key which should have been deleted
-        shouldContinue = true;
-        return AtValue();
-      });
+            // Probably a cached key which should have been deleted
+            shouldContinue = true;
+            return AtValue();
+          });
 
       if (shouldContinue) {
         continue;

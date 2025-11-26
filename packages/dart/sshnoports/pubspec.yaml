@@ -25,6 +25,7 @@ dependencies:
   at_auth: ^2.4.0
 
 dependency_overrides:
+  archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

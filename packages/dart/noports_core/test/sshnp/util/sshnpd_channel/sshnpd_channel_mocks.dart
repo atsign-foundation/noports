@@ -17,11 +17,12 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
     int maxTries,
-  }) _notify;
+  })
+  _notify;
   final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})
-      _subscribe;
+  _subscribe;
   final Future<SshnpdAck> Function(AtNotification notification)?
-      _handleSshnpdPayload;
+  _handleSshnpdPayload;
 
   StubbedSshnpdChannel({
     required super.atClient,
@@ -35,16 +36,18 @@ class StubbedSshnpdChannel extends SshnpdChannel {
       required bool waitForFinalDeliveryStatus,
       required Duration ttln,
       int maxTries,
-    }) notify,
+    })
+    notify,
     required Stream<AtNotification> Function({
       String? regex,
       bool shouldDecrypt,
-    }) subscribe,
+    })
+    subscribe,
     Future<SshnpdAck> Function(AtNotification notification)?
-        handleSshnpdPayload,
-  })  : _notify = notify,
-        _subscribe = subscribe,
-        _handleSshnpdPayload = handleSshnpdPayload;
+    handleSshnpdPayload,
+  }) : _notify = notify,
+       _subscribe = subscribe,
+       _handleSshnpdPayload = handleSshnpdPayload;
 
   @override
   Future<SshnpdAck> handleSshnpdPayload(AtNotification notification) async {
@@ -84,7 +87,7 @@ class MockRemoteSecondary extends Mock implements RemoteSecondary {}
 
 class StubbedSshnpdDefaultChannel extends SshnpdDefaultChannel {
   final Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
-      _subscribe;
+  _subscribe;
 
   StubbedSshnpdDefaultChannel({
     required super.atClient,
@@ -92,7 +95,7 @@ class StubbedSshnpdDefaultChannel extends SshnpdDefaultChannel {
     required super.sessionId,
     required super.namespace,
     Stream<AtNotification> Function({String? regex, bool shouldDecrypt})?
-        subscribe,
+    subscribe,
   }) : _subscribe = subscribe;
 
   @override

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/events.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -97,8 +98,9 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         aesC2D = atChops
             .decryptString(aesKeyC2DEncrypted, params.sessionKPType)
             .result;
-        ivC2D =
-            atChops.decryptString(ivC2DEncrypted, params.sessionKPType).result;
+        ivC2D = atChops
+            .decryptString(ivC2DEncrypted, params.sessionKPType)
+            .result;
       }
 
       String? aesKeyD2CEncrypted = daemonResponse['aesKeyD2C'];
@@ -112,8 +114,14 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         aesD2C = atChops
             .decryptString(aesKeyD2CEncrypted, params.sessionKPType)
             .result;
-        ivD2C =
-            atChops.decryptString(ivD2CEncrypted, params.sessionKPType).result;
+        ivD2C = atChops
+            .decryptString(ivD2CEncrypted, params.sessionKPType)
+            .result;
+      }
+
+      final elcJson = daemonResponse['eventLoggingConfig'];
+      if (elcJson != null) {
+        eventLoggingConfig = AtEventConfig.fromJson(elcJson);
       }
 
       return SshnpdAck.acknowledged;
