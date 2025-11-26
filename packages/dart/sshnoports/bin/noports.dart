@@ -3,20 +3,21 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate.dart';
 import 'package:sshnoports/src/noports_cli/issue_keys/np_issue_keys.dart';
+import 'package:sshnoports/src/noports_cli/util/cli_logging_handler.dart';
 import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
 import 'package:sshnoports/src/noports_cli/util/usage_messages.dart';
 
-enum NoportsCommand {
+enum NoPortsCommand {
   activate('activate'),
   issueKeys('issue-keys');
 
   final String commandName;
 
-  const NoportsCommand(this.commandName);
+  const NoPortsCommand(this.commandName);
 
-  static NoportsCommand fromString(String value) {
+  static NoPortsCommand fromString(String value) {
     try {
-      return NoportsCommand.values
+      return NoPortsCommand.values
           .firstWhere((cmd) => cmd.commandName == value);
     } catch (e) {
       throw ArgumentError('Invalid command: $value');
@@ -24,65 +25,57 @@ enum NoportsCommand {
   }
 }
 
-final NPActivate npActivate = NPActivateImpl();
-final NPIssueKeys issueKeys = NPIssueKeysImpl();
+AtSignLogger logger =
+    AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler());
 
 Future<void> main(List<String> args) async {
-  AtSignLogger.root_level = 'SEVERE';
+  AtSignLogger.root_level = 'severe';
+  logger.level = 'info';
   displayBanner();
   int exc = 0;
 
   if (args.isEmpty) {
-    writeError('You must supply a command');
+    logger.shout('You must supply a command');
     printUsage();
     exit(1);
   }
 
-  final command = NoportsCommand.fromString(args[0]);
-  if (args.length == 1) {
-    writeError('You must supply an argument string');
-    printUsage(command: command);
-    exit(1);
-  }
+  final command = NoPortsCommand.fromString(args[0]);
 
   try {
     switch (command) {
-      case NoportsCommand.activate:
-        exc = await NPActivateImpl().wrappedMain(args);
+      case NoPortsCommand.activate:
+        // sublist(1) ensures the first element is not propagated further
+        NPActivate activate = NPActivate.create(args.sublist(1));
+        exc = await activate.wrappedMain();
         break;
-      case NoportsCommand.issueKeys:
-        exc = await NPIssueKeysImpl().wrappedMain(args);
+      case NoPortsCommand.issueKeys:
+        NPIssueKeys issueKeys = await NPIssueKeys.create(args.sublist(1));
+        exc = await issueKeys.wrappedMain();
         break;
     }
   } on ArgumentError catch (e) {
-    stderr.writeln();
-    writeError(e.toString());
-    stderr.writeln();
+    logger.shout(e.toString());
     printUsage(command: command);
-    stderr.writeln();
     exit(2);
   } catch (e) {
-    /// ToDo: parse exception message to remove unnecessary Exception prefixes
-    writeError(e.toString());
-    stderr.writeln();
-    stderr.writeln('Please try again or contact support@atsign.com');
-    stderr.writeln();
+    logger.shout(e.toString());
     exit(2);
   }
   exit(exc);
 }
 
-void printUsage({NoportsCommand? command}) {
+void printUsage({NoPortsCommand? command}) {
   if (command == null) {
-    stdout.writeln(UsageMessages.mainMenu);
+    logger.shout(UsageMessages.mainMenu);
     return;
   }
   switch (command) {
-    case NoportsCommand.activate:
-      stdout.writeln(UsageMessages.activateMenu);
+    case NoPortsCommand.activate:
+      logger.shout(UsageMessages.activateMenu);
       break;
-    case NoportsCommand.issueKeys:
-      stdout.writeln(UsageMessages.issueKeys);
+    case NoPortsCommand.issueKeys:
+      logger.shout(UsageMessages.issueKeys);
       break;
   }
 }

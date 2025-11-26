@@ -2,12 +2,51 @@ import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
+import 'package:sshnoports/src/noports_cli/util/cli_logging_handler.dart';
+
+/// Determines the type of activation: CRAM or APKAM enrollment
+enum NPActivateType { cram, enroll }
 
 /// Handles activation of atSign accounts via CRAM authentication or APKAM enrollment
-sealed class NPActivate {
+class NPActivate {
+  final AtOnboardingService _onboardingService;
+  final NPActivateParams _params;
+  final NPActivateType _activateType;
+
+  final AtSignLogger logger =
+      AtSignLogger('NPActivate', loggingHandler: CLILoggingHandler())
+        ..level = 'info';
+
+  NPActivate._(this._onboardingService, this._activateType, this._params);
+
+  factory NPActivate.create(List<String> args) {
+    if (args.isEmpty) {
+      throw ArgumentError('You must supply an argument string');
+    }
+    NPActivateParams params = NPActivateParams.fromArgs(args);
+    NPActivateType activateType = _parseAuthType(args.first);
+
+    AtOnboardingPreference preference = AtOnboardingPreference()
+      ..cramSecret = params.cram;
+    AtOnboardingService service =
+        AtOnboardingServiceImpl(params.atsign, preference);
+
+    return NPActivate._(service, activateType, params);
+  }
+
   /// Entry point for the activate command
-  Future<int> wrappedMain(List<String> args);
+  Future<int> wrappedMain() async {
+    switch (_activateType) {
+      case NPActivateType.cram:
+        await cramAuthenticate(_params);
+        break;
+      case NPActivateType.enroll:
+        await enroll(_params);
+    }
+    return 0;
+  }
 
   /// Authenticates an existing atSign using CRAM credentials
   ///
@@ -15,7 +54,13 @@ sealed class NPActivate {
   ///
   /// Returns: true if authentication succeeds
   /// Throws: [ArgumentError] if cram credentials are missing
-  Future<bool> cramAuthenticate(NoportsParams params);
+  Future<bool> cramAuthenticate(NPActivateParams params) async {
+    validateArgs(params, NPActivateType.cram);
+    logger.info('Activating atsign: ${params.atsign}');
+    bool status = await _onboardingService.onboard();
+    status ? logger.info('Activated.') : logger.shout('Activation Failed');
+    return status;
+  }
 
   /// Enrolls a new device using APKAM enrollment
   ///
@@ -24,54 +69,17 @@ sealed class NPActivate {
   ///
   /// Returns: [AtEnrollmentResponse] containing enrollment status and details
   /// Throws: [ArgumentError] if otp is missing
-  Future<AtEnrollmentResponse> enroll(NoportsParams params);
-}
-
-/// Determines the type of activation: CRAM or APKAM enrollment
-enum NPActivateType { cram, enroll }
-
-class NPActivateImpl implements NPActivate {
-  @override
-  Future<int> wrappedMain(List<String> args) async {
-    NoportsParams params = NoportsParams.fromArgs(args);
-    NPActivateType activateType = _parseAuthType(args[1]);
-
-    switch (activateType) {
-      case NPActivateType.cram:
-        await cramAuthenticate(params);
-        break;
-      case NPActivateType.enroll:
-        await enroll(params);
-    }
-    return 0;
-  }
-
-  @override
-  Future<bool> cramAuthenticate(NoportsParams params) async {
-    validateArgs(params, NPActivateType.cram);
-    AtOnboardingPreference atOnboardingPreference = AtOnboardingPreference()
-      ..cramSecret = params.cram;
-    AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      params.atsign,
-      atOnboardingPreference,
-    );
-
-    return await onboardingService.onboard();
-  }
-
-  @override
-  Future<AtEnrollmentResponse> enroll(NoportsParams params) async {
+  Future<AtEnrollmentResponse> enroll(NPActivateParams params) async {
     validateArgs(params, NPActivateType.enroll);
-    AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      params.atsign,
-      AtOnboardingPreference(),
-    );
 
     File? atKeys;
     if (params.atKeysFilePath != null) {
       atKeys = File(params.atKeysFilePath!);
     }
-    return await onboardingService.enroll(
+
+    logger
+        .info('Creating new enrollment with deviceName: ${params.deviceName}');
+    return await _onboardingService.enroll(
         params.appName, params.deviceName!, params.otp!, params.namespaces,
         atKeysFile: atKeys);
   }
@@ -82,7 +90,7 @@ class NPActivateImpl implements NPActivate {
   /// For ENROLL: requires [params.otp]
   ///
   /// Throws: [ArgumentError] if required parameters are missing
-  void validateArgs(NoportsParams params, NPActivateType type) {
+  void validateArgs(NPActivateParams params, NPActivateType type) {
     switch (type) {
       case NPActivateType.cram:
         if (params.cram == null) {
@@ -106,6 +114,6 @@ class NPActivateImpl implements NPActivate {
     } else if (cmd.contains('enroll')) {
       return NPActivateType.enroll;
     }
-    throw ArgumentError('Invalid command: $cmd');
+    throw ArgumentError('Invalid argument string: $cmd');
   }
 }
