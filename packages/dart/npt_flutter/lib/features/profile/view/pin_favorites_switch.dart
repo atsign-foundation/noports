@@ -12,25 +12,21 @@ class PinFavoritesSwitch extends StatelessWidget {
     return BlocListener<SettingsBloc, SettingsState>(
       // ONLY listen when pinFavorites changes
       listenWhen: (previous, current) {
-        if (previous is SettingsLoaded && current is SettingsLoaded) {
-          return previous.settings.pinFavorites !=
-              current.settings.pinFavorites;
-        }
-        return false;
+        return previous is SettingsLoaded &&
+            current is SettingsLoaded &&
+            previous.settings.pinFavorites != current.settings.pinFavorites;
       },
       // Trigger a sort event AFTER settings have updated
       listener: (context, state) {
         final profileListBloc = context.read<ProfileListBloc>();
+        if (profileListBloc.state is! ProfileListLoaded) return;
 
-        if (profileListBloc.state is ProfileListLoaded) {
-          profileListBloc.add(
-            ProfileListSortEvent(
-              sortColumn:
-                  (profileListBloc.state as ProfileListLoaded).sortColumn,
-              inverseSortOrder: false,
-            ),
-          );
-        }
+        profileListBloc.add(
+          ProfileListSortEvent(
+            sortColumn: (profileListBloc.state as ProfileListLoaded).sortColumn,
+            inverseSortOrder: false,
+          ),
+        );
       },
       child: BlocSelector<SettingsBloc, SettingsState, bool>(
         selector: (state) {
