@@ -1,5 +1,6 @@
 class TestingKeyPair {
-  static const public = 'ssh-ed25519 '
+  static const public =
+      'ssh-ed25519 '
       'AAAAC3NzaC1lZDI1NTE5AAAAIGoKAULs01V4Lqwdyz+IZLXkSfI+6HBJmFoAzCpRvoda '
       'for-testing-do-not-use';
 

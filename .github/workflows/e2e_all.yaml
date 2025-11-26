@@ -35,19 +35,22 @@ jobs:
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > ~/.atsign/keys/@8incanteater_key.atKeys
-          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > ~/.atsign/keys/@8485wealthy51_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > ~/.atsign/keys/@8052simple_key.atKeys
-          echo "${{ secrets.ATKEYS_829SNOWSHOEING }}" > ~/.atsign/keys/@829snowshoeing_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
       - name: Install expect
         run: |
-          sudo apt-get update
           sudo apt-get install -y expect
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @8052simple @829snowshoeing @rv_eu -p
+          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"

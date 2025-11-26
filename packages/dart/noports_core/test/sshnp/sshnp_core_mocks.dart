@@ -11,8 +11,8 @@ class StubbedSshnp extends SshnpCore with StubbedAsyncInitializationMixin {
     required super.params,
     SshnpdChannel? sshnpdChannel,
     SrvdChannel? srvdChannel,
-  })  : _sshnpdChannel = sshnpdChannel,
-        _srvdChannel = srvdChannel;
+  }) : _sshnpdChannel = sshnpdChannel,
+       _srvdChannel = srvdChannel;
 
   @override
   Future<void> initialize() async {

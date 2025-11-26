@@ -4,3 +4,5 @@
 !*.dart
 !*.yaml
 !.gitignore
+!demo
+!demo/*

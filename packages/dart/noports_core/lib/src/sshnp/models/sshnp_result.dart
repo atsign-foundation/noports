@@ -73,10 +73,10 @@ class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {
     this.privateKeyFileName,
     Bean? connectionBean,
   }) : sshOptions = [
-          if (shouldIncludePrivateKey(privateKeyFileName))
-            ...optionsWithPrivateKey,
-          ...(localSshOptions ?? []),
-        ] {
+         if (shouldIncludePrivateKey(privateKeyFileName))
+           ...optionsWithPrivateKey,
+         ...(localSshOptions ?? []),
+       ] {
     this.connectionBean = connectionBean;
   }
 
@@ -84,15 +84,15 @@ class SshnpCommand<Bean> extends SshnpSuccess with SshnpConnectionBean<Bean> {
       privateKeyFileName != null && privateKeyFileName.isNotEmpty;
 
   List<String> get args => [
-        '-p $localPort',
-        ...sshOptions,
-        if (remoteUsername != null) '$remoteUsername@$host',
-        if (remoteUsername == null) host,
-        if (shouldIncludePrivateKey(privateKeyFileName)) ...[
-          '-i',
-          '$privateKeyFileName',
-        ],
-      ];
+    '-p $localPort',
+    ...sshOptions,
+    if (remoteUsername != null) '$remoteUsername@$host',
+    if (remoteUsername == null) host,
+    if (shouldIncludePrivateKey(privateKeyFileName)) ...[
+      '-i',
+      '$privateKeyFileName',
+    ],
+  ];
 
   @override
   String toString() {
