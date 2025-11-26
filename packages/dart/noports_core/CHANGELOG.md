@@ -1,3 +1,7 @@
+# 6.11.0
+
+- fix: ENABLE_SNOOP build environment variable was not being passed correctly in srvd
+
 # 6.10.0
 
 - feat: enable redundancy support for Policy Services
