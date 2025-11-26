@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/types.dart';
@@ -84,6 +85,9 @@ abstract class Sshnpd {
 
   /// The version of whatever program is using this library.
   abstract final String version;
+
+  /// Sent by the policy atSign when using policy service
+  abstract AtEventConfig? elc;
 
   /// Pre-process the received notification
   abstract final Future<void> Function(AtNotification)? notifPreProcessor;

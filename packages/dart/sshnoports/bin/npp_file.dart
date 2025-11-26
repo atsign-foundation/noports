@@ -20,7 +20,6 @@ void main(List<String> args) async {
   await bootstrapper.run(
     policy,
     args,
-    daemonAtsigns: policy.daemonAtsigns,
   );
 }
 
@@ -81,20 +80,9 @@ void main(List<String> args) async {
 class FileBasedPolicy implements NPARequestHandler {
   YamlMap yaml;
 
-  final Set<String> _daemonAtSigns = {};
   final Map<String, Map> _userAtSigns = {};
 
   FileBasedPolicy(this.yaml) {
-    // Get the full list of daemonAtSigns which this policy service will listen to
-    for (String userGroupName in yaml['userGroups'].keys ?? []) {
-      for (String daemonAtSign in yaml['userGroups'][userGroupName]
-              ['permissions']['daemonAtSigns'] ??
-          []) {
-        _daemonAtSigns.add(daemonAtSign);
-      }
-    }
-    print(_daemonAtSigns);
-
     // Create a map of userAtSign->daemonAtSign->deviceNames/deviceGroupNames->[PermitOpens]
     for (String userGroupName in yaml['userGroups'].keys ?? []) {
       final group = yaml['userGroups'][userGroupName];
@@ -157,8 +145,6 @@ class FileBasedPolicy implements NPARequestHandler {
       }
     }
   }
-
-  Set<String> get daemonAtsigns => _daemonAtSigns;
 
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(

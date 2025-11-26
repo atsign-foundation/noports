@@ -16,7 +16,7 @@ abstract class NPARequestHandler {
 /// - Checks if the clientAtSign is currently authorized to access
 ///   the sshnpd atSign and device
 /// - Responds accordingly
-abstract class NPA implements AtRpcCallbacks {
+abstract class NPA {
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with SSHNPDs
@@ -28,11 +28,11 @@ abstract class NPA implements AtRpcCallbacks {
   /// The home directory on this host
   abstract final String homeDirectory;
 
-  String get authorizerAtsign;
+  /// Policy service's atSign
+  Atsign get policyAtsign;
 
-  String get loggingAtsign;
-
-  Set<String> get daemonAtsigns;
+  /// atSign to which we will send noports session logging events
+  Atsign? get eventLoggingAtsign;
 
   NPARequestHandler get handler;
 
@@ -42,7 +42,6 @@ abstract class NPA implements AtRpcCallbacks {
     AtClient? atClient,
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
-    Set<String>? daemonAtsigns,
   }) async {
     return NPAImpl.fromCommandLineArgs(
       args,
@@ -50,7 +49,6 @@ abstract class NPA implements AtRpcCallbacks {
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
-      daemonAtsigns: daemonAtsigns,
     );
   }
 

@@ -134,7 +134,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     String abbreviated = response;
     if (response.length > 40) {
-      abbreviated = '${response.substring(0, 40)}'
+      abbreviated =
+          '${response.substring(0, 40)}'
           '...[${response.length - 40} chars]';
     }
 
@@ -296,15 +297,16 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
 
-    AtSigningVerificationInput input = AtSigningVerificationInput(
-      jsonEncode(signedPayload),
-      base64Decode(envelope['s']),
-      publicSigningKey,
-    )
-      ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-      ..signingMode = AtSigningMode.data
-      ..signingAlgoType = signingAlgo
-      ..hashingAlgoType = hashingAlgo;
+    AtSigningVerificationInput input =
+        AtSigningVerificationInput(
+            jsonEncode(signedPayload),
+            base64Decode(envelope['s']),
+            publicSigningKey,
+          )
+          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+          ..signingMode = AtSigningMode.data
+          ..signingAlgoType = signingAlgo
+          ..hashingAlgoType = hashingAlgo;
 
     AtSigningResult atSigningResult = atChops.verify(input);
     bool verified = atSigningResult.result == true;
@@ -607,15 +609,16 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                 return;
               }
 
-              AtSigningVerificationInput input = AtSigningVerificationInput(
-                dataToVerify,
-                base64Decode(envelope['signature']),
-                publicKey,
-              )
-                ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-                ..signingMode = AtSigningMode.data
-                ..signingAlgoType = signingAlgo
-                ..hashingAlgoType = hashingAlgo;
+              AtSigningVerificationInput input =
+                  AtSigningVerificationInput(
+                      dataToVerify,
+                      base64Decode(envelope['signature']),
+                      publicKey,
+                    )
+                    ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+                    ..signingMode = AtSigningMode.data
+                    ..signingAlgoType = signingAlgo
+                    ..hashingAlgoType = hashingAlgo;
 
               AtChopsKeys atChopsKeys = AtChopsKeys();
               AtChops atChops = AtChopsImpl(atChopsKeys);
