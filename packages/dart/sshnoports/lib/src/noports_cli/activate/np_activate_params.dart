@@ -1,7 +1,7 @@
 import 'package:sshnoports/src/noports_cli/util/constants.dart';
 import 'package:sshnoports/src/noports_cli/util/regex.dart';
 
-class NoportsParams {
+class NPActivateParams {
   late String atsign;
 
   String? cram;
@@ -11,7 +11,7 @@ class NoportsParams {
   String appName = defaultAppName;
   Map<String, String> namespaces = defaultEnrollmentNamespaces;
 
-  NoportsParams({
+  NPActivateParams({
     required this.atsign,
     this.cram,
     this.atKeysFilePath,
@@ -19,15 +19,25 @@ class NoportsParams {
     this.deviceName,
   });
 
-  factory NoportsParams.fromArgs(List<String> args) {
-    String authStr = args[1];
+  factory NPActivateParams.fromArgs(List<String> args) {
+    String authStr = args.first;
 
-    return NoportsParams(
+    return NPActivateParams(
         atsign: _parseAtsign(authStr),
         atKeysFilePath: _parseKeyfilePath(authStr),
         cram: _parseCram(authStr),
         otp: _parseOtp(authStr),
         deviceName: _parseDeviceName(authStr));
+  }
+
+  factory NPActivateParams.fromJson(Map<String, dynamic> json) {
+    return NPActivateParams(
+        atsign: json['atsign'],
+        cram: json['cram'],
+        otp: json['otp'],
+        atKeysFilePath: json['atKeysFilePath'],
+        deviceName: json['deviceName']);
+    // does NOT parse appName and namespaces as they are default
   }
 
   static String _parseAtsign(String authStr, {String? regex}) {
@@ -65,5 +75,15 @@ class NoportsParams {
     final match = RegExp(enrollRegex).firstMatch(authStr);
     final deviceName = match?.namedGroup(RegexGroupNames.device);
     return deviceName;
+  }
+
+  Map<String, String?> toJson() {
+    return {
+      'atsign': atsign,
+      'cram': cram,
+      'otp': otp,
+      'atKeysFilePath': atKeysFilePath,
+      'deviceName': deviceName
+    };
   }
 }
