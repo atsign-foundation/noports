@@ -1,6 +1,8 @@
 # 6.11.0
 
-- fix: ENABLE_SNOOP build environment variable was not being passed correctly in srvd
+- fix: ENABLE_SNOOP build environment variable was not being passed 
+  correctly in srvd
+- feat: NoPorts session logging core implementation.
 
 # 6.10.0
 
