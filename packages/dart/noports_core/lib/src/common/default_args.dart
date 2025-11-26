@@ -50,6 +50,9 @@ class DefaultArgs {
   static const Duration controlChannelHeartbeatInterval = Duration(
     minutes: controlChannelHeartbeatIntervalMins,
   );
+
+  /// namespace for event logging
+  static const String eventLoggingNamespace = 'events.logging.sshnp';
 }
 
 class DefaultSshnpArgs {

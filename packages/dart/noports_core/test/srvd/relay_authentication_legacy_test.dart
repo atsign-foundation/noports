@@ -175,14 +175,15 @@ bool verifySignature(AtChops atChops, String requestingAtsign, Map envelope) {
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey;
-  AtSigningVerificationInput input = AtSigningVerificationInput(
-    jsonEncode(payload),
-    base64Decode(signature),
-    pk,
-  )
-    ..signingMode = AtSigningMode.data
-    ..signingAlgoType = signingAlgo
-    ..hashingAlgoType = hashingAlgo;
+  AtSigningVerificationInput input =
+      AtSigningVerificationInput(
+          jsonEncode(payload),
+          base64Decode(signature),
+          pk,
+        )
+        ..signingMode = AtSigningMode.data
+        ..signingAlgoType = signingAlgo
+        ..hashingAlgoType = hashingAlgo;
 
   AtSigningResult svr = atChops.verify(input);
   return svr.result;

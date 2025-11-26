@@ -28,6 +28,8 @@ abstract interface class Srvd {
   @visibleForTesting
   abstract bool initialized;
 
+  bool wellFormedRequest(AtNotification n, {bool throwIfFalse = false});
+
   static Future<Srvd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,

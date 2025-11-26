@@ -40,8 +40,6 @@ abstract interface class PolicyService {
   /// Get the list of groups of which this user is a member.
   Future<List<UserGroup>> getGroupsForUser(String atSign);
 
-  Set<String> get daemonAtSigns;
-
   factory PolicyService.withAtClient({required AtClient atClient}) {
     return PolicyServiceWithAtClient(atClient: atClient);
   }

@@ -27,13 +27,13 @@ packages:
     source: hosted
     version: "9.0.0"
   archive:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: archive
-      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
+      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.1"
+    version: "4.0.7"
   args:
     dependency: "direct main"
     description:
@@ -749,10 +749,10 @@ packages:
     dependency: transitive
     description:
       name: socket_connector
-      sha256: "091c83fb214f6ff48dbf38f6e011e148d996cce05487303c5e8a0cd72369b0e2"
+      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.3"
+    version: "2.4.1"
   source_gen:
     dependency: transitive
     description:
@@ -962,4 +962,4 @@ packages:
     source: hosted
     version: "0.2.4"
 sdks:
-  dart: ">=3.8.0 <4.0.0"
+  dart: ">=3.9.0 <4.0.0"
