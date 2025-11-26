@@ -6,8 +6,6 @@ class RegexGroupNames {
   static final keyfilePath = 'keyfile_path';
 }
 
-final int enrollmentCheckInterval = 3000;
-
 final defaultAppName = 'noports';
 final defaultCurrentNamespace = 'noports';
 final defaultEnrollmentNamespaces = {
