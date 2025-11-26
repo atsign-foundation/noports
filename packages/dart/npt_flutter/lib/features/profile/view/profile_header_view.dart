@@ -66,7 +66,7 @@ class ProfileHeaderView extends StatelessWidget {
                             children: [
                               const ProfileSelectAllBox(),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.profileName,
                                   column: SortColumn.profileName,
@@ -77,7 +77,7 @@ class ProfileHeaderView extends StatelessWidget {
                                 ),
                               ),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.status,
                                   column: SortColumn.status,
@@ -102,7 +102,7 @@ class ProfileHeaderView extends StatelessWidget {
                             children: [
                               const ProfileSelectAllBox(),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.profileName,
                                   column: SortColumn.profileName,
@@ -112,7 +112,7 @@ class ProfileHeaderView extends StatelessWidget {
                                 ),
                               ),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.deviceName,
                                   column: SortColumn.deviceName,
@@ -122,7 +122,7 @@ class ProfileHeaderView extends StatelessWidget {
                                 ),
                               ),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.serviceMapping,
                                   column: SortColumn.serviceMapping,
@@ -132,7 +132,7 @@ class ProfileHeaderView extends StatelessWidget {
                                 ),
                               ),
                               gapW10,
-                              Expanded(
+                              Flexible(
                                 child: ProfileHeaderColumn(
                                   title: strings.status,
                                   column: SortColumn.status,

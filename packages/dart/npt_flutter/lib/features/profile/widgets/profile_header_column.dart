@@ -37,10 +37,12 @@ class ProfileHeaderColumn extends StatelessWidget {
         },
         child: Row(
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            Flexible(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
             gapW4,
