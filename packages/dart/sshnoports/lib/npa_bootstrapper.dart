@@ -9,9 +9,8 @@ import 'package:sshnoports/src/print_version.dart';
 
 Future<void> run(
   NPARequestHandler handler,
-  List<String> commandLineArgs, {
-  Set<String>? daemonAtsigns,
-}) async {
+  List<String> commandLineArgs,
+) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   late final NPA sshnpa;
@@ -20,16 +19,15 @@ Future<void> run(
     sshnpa = await NPA.fromCommandLineArgs(
       commandLineArgs,
       handler: handler,
-      daemonAtsigns: daemonAtsigns,
       atClientGenerator: (NPAParams p) => createAtClientCli(
-        atsign: p.authorizerAtsign,
+        atsign: p.policyAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
         storagePath: standardAtClientStoragePath(
             baseDir: p.homeDirectory,
-            atSign: p.authorizerAtsign,
+            atSign: p.policyAtsign,
             progName: '.${DefaultArgs.namespace}',
             uniqueID: 'single'),
       ),

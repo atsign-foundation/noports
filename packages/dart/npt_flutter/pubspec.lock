@@ -26,13 +26,13 @@ packages:
     source: hosted
     version: "7.7.1"
   archive:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: archive
-      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
+      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.1"
+    version: "4.0.7"
   args:
     dependency: transitive
     description:
@@ -101,10 +101,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "6f3597a886549bc0c3d76e7196bc10ba3c6539007d92b748222b5d0b4083e31c"
+      sha256: "5259886a09507a439be08bbaa79a360ecd936ac1baa2ae58b72c90357cdb4785"
       url: "https://pub.dev"
     source: hosted
-    version: "3.9.1"
+    version: "3.9.2"
   at_client_mobile:
     dependency: "direct main"
     description:

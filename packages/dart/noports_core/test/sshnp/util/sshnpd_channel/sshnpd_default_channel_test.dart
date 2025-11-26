@@ -30,9 +30,9 @@ void main() {
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
     subscribeInvocation() => subscribeStub(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
+      regex: any(named: 'regex'),
+      shouldDecrypt: any(named: 'shouldDecrypt'),
+    );
     String device = 'myDevice';
 
     setUp(() {

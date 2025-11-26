@@ -105,6 +105,7 @@ jobs:
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
+          dart compile exe bin/npevents.dart -v -o sshnp/npevents${{ matrix.ext }}
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
@@ -191,7 +192,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin,npevents}
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         run:

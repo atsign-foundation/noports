@@ -19,6 +19,7 @@ dependencies:
     path: ../../../packages/dart/noports_core
 
 dependency_overrides:
+  archive: ^4.0.7
   alfred:
     git:
       ref: cc-directory-4-windows
