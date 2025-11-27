@@ -2,31 +2,33 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
 import 'package:at_auth/at_auth.dart'
     show
-    AtEnrollmentResponse,
-    ApprovedRequestDecisionBuilder,
-    EnrollmentRequestDecision;
+        AtEnrollmentResponse,
+        ApprovedRequestDecisionBuilder,
+        EnrollmentRequestDecision;
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart'
     show
-    EnrollmentService,
-    Enrollment,
-    EnrollmentListRequestParam,
-    DefaultAtServiceFactory,
-    EnrollmentStatus,
-    AtEnrollmentException,
-    AtClient;
+        EnrollmentService,
+        Enrollment,
+        EnrollmentListRequestParam,
+        DefaultAtServiceFactory,
+        EnrollmentStatus,
+        AtEnrollmentException,
+        AtClient;
 import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:path/path.dart' as p;
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
 import 'package:sshnoports/src/noports_cli/util/constants.dart';
 
 import '../util/cli_logging_handler.dart';
+import '../util/np_utils.dart';
+import '../util/usage_messages.dart';
 
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
@@ -38,60 +40,47 @@ class NPIssueKeys {
   static const _baseEnrollCommand = '<atsign>:enroll:otp:<otp>';
   static const _defaultDeviceNamePrefix = 'noports_';
   static const _otpExpiry = 3600; // in seconds (1 hour)
+  static const otpExpiryString = '${_otpExpiry}s';
   static const _enrollmentCheckInterval = 3; // in seconds
   static const _maxRetries = _otpExpiry / _enrollmentCheckInterval;
   static final _stateFilePath =
-  p.join(Directory.current.path, 'noports.issue-keys.state');
+      p.join(Directory.current.path, 'noports.issue-keys.state');
+  static final _stateFile = File(_stateFilePath);
 
-  final EnrollmentService _enrollmentService;
-  final AtClient _atClient;
+  late final EnrollmentService _enrollmentService;
+  late final AtClient _atClient;
   final NPActivateParams _params;
 
   final AtSignLogger logger =
-  AtSignLogger('NPIssueKeys', loggingHandler: CLILoggingHandler())
-    ..level = 'info';
+      AtSignLogger('NPIssueKeys', loggingHandler: CLILoggingHandler())
+        ..level = 'info';
 
-  NPIssueKeys._(this._enrollmentService, this._atClient, this._params);
+  NPIssueKeys._(this._params);
 
   /// Creates and initializes an instance.
   ///
   /// Attempts to resume from a state file if present, otherwise parses
   /// command-line arguments. Establishes connection to atServer and
   /// initializes the enrollment service.
-  static Future<NPIssueKeys> create(List<String> args) async {
+  factory NPIssueKeys.fromArgs(List<String> args) {
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
     }
 
     NPActivateParams? params;
-
     // Resume from state file if present
-    final stateFile = File(_stateFilePath);
-    if (stateFile.existsSync()) {
-      final content = stateFile.readAsStringSync();
+    if (_stateFile.existsSync()) {
+      final content = _stateFile.readAsStringSync();
       params = NPActivateParams.fromJson(jsonDecode(content));
       stderr.writeln('Found state file. Resuming...\n');
     }
 
     params ??= NPActivateParams.fromArgs(args);
 
-    stderr.write(chalk.blue('Connecting...\t'));
-    final atClient = await createAtClientCli(
-      atsign: params.atsign,
-      atServiceFactory: DefaultAtServiceFactory(),
-      namespace: defaultCurrentNamespace,
-      storagePath: standardAtClientStoragePath(
-        baseDir: getHomeDirectory()!,
-        atSign: params.atsign,
-        progName: defaultCurrentNamespace,
-      ),
-    );
-    stderr.writeln(chalk.green('Connected\n'));
-
-    final service = DefaultAtServiceFactory().enrollmentService(atClient);
-
-    return NPIssueKeys._(service, atClient, params);
+    return NPIssueKeys._(params);
   }
+
+  // File get stateFile => File(_stateFilePath);
 
   /// Entry point for the `issue-keys` command.
   ///
@@ -100,49 +89,53 @@ class NPIssueKeys {
   ///
   /// Returns: 0 on success, 1 on failure
   Future<int> wrappedMain() async {
-    // Prompt for missing parameters
-    _params.atKeysFilePath ??=
-        _promptUser('atKeys file path (target location): ');
+    if (_params.showHelp) {
+      stderr.writeln(UsageMessages.issueKeysHelp);
+      return 0;
+    }
 
-    // Generate enrollment OTP
-    final otpExpiryString = '${_otpExpiry}s';
+    await _initAtClient();
     _params.otp ??=
-    await requestEnrollmentOtp(_atClient, otpExpiry: otpExpiryString);
-
-    _params.deviceName ??= _promptUser('deviceName: ') ??
-        '$_defaultDeviceNamePrefix${_params.otp}';
-
+        await requestEnrollmentOtp(_atClient, otpExpiry: otpExpiryString);
+    await _promptForMissingParams();
     await _createStateFile(_params);
+    _displayActivationCommand();
 
-    // Display enrollment command for user
-    final activationStr = _generateEnrollCommand(_params);
-    logger.info(
-      'Copy the string below and run `noports activate <string>`:\n'
-          '\n\tNoPorts Desktop:\n\t$activationStr\n'
-          '\n\tNoPorts CLI:\n\tnoports activate \'$activationStr\'\n',
-    );
-
-    // Wait for and approve enrollment
     try {
-      final enrollment = await _waitForMatchingEnrollment(_params);
-      final response = await _approveFirstPendingEnrollment(enrollment);
-
-      if (response.enrollStatus != EnrollmentStatus.approved) {
-        throw AtEnrollmentException('Failed to approve enrollment.\nStatus: $response');
-      }
-
-      logger.info('Enrollment approved: ${response.enrollmentId}\n');
-    } catch (e) {
-      rethrow;
+      await _waitForAndApproveEnrollment();
     } finally {
-      // Clean up state file after success
-      final f = File(_stateFilePath);
-      if (f.existsSync()) f.deleteSync();
+      if (_stateFile.existsSync()) _stateFile.deleteSync(); // Cleanup stateFile
     }
     return 0;
   }
 
-  /// Writes the state file using atomic write to avoid corruption.
+  Future<void> _initAtClient() async {
+    stderr.write(chalk.blue('Connecting...\t'));
+    _atClient = await createAtClientCli(
+      atsign: _params.atsign,
+      atServiceFactory: DefaultAtServiceFactory(),
+      namespace: defaultCurrentNamespace,
+      storagePath: standardAtClientStoragePath(
+        baseDir: getHomeDirectory()!,
+        atSign: _params.atsign,
+        progName: defaultCurrentNamespace,
+      ),
+    );
+    stderr.writeln(chalk.green('Connected\n'));
+
+    _enrollmentService = DefaultAtServiceFactory().enrollmentService(_atClient);
+  }
+
+  Future<void> _promptForMissingParams() async {
+    _params.atKeysFilePath ??= promptUser('atKeys file path (target location)');
+
+    _params.deviceName ??=
+        promptUser('deviceName') ?? '$_defaultDeviceNamePrefix${_params.otp}';
+  }
+
+  /// Writes the state file that store the [NPActivateParams]
+  ///
+  /// State file is used to resume the
   Future<void> _createStateFile(NPActivateParams params) async {
     final stateFile = File(_stateFilePath);
     if (stateFile.existsSync()) return;
@@ -155,7 +148,16 @@ class NPIssueKeys {
     await sink.flush();
     await sink.close();
 
-    logger.finer('Successfully wrote state file: $_stateFilePath');
+    logger.finer('Successfully created state file: $_stateFilePath');
+  }
+
+  void _displayActivationCommand() {
+    final activationStr = _generateEnrollCommand(_params);
+    logger.info(
+      'Copy the string below and run `noports activate <string>`:\n'
+      '\n\tNoPorts Desktop:\n\t$activationStr\n'
+      '\n\tNoPorts CLI:\n\tnoports activate \'$activationStr\'\n',
+    );
   }
 
   /// Builds the activation command string.
@@ -181,10 +183,21 @@ class NPIssueKeys {
     return buffer.toString();
   }
 
-  /// Approves the given enrollment request.
-  Future<AtEnrollmentResponse> _approveFirstPendingEnrollment(
-      Enrollment enrollment,
-      ) async {
+  Future<void> _waitForAndApproveEnrollment() async {
+    final enrollment = await _waitForMatchingEnrollment(_params);
+    final response = await _approveEnrollment(enrollment);
+
+    if (response.enrollStatus != EnrollmentStatus.approved) {
+      throw AtEnrollmentException(
+          'Failed to approve enrollment.\nStatus: $response');
+    }
+
+    logger.info('Enrollment approved: ${response.enrollmentId}\n');
+  }
+
+  Future<AtEnrollmentResponse> _approveEnrollment(
+    Enrollment enrollment,
+  ) async {
     logger.info('Approving enrollment...');
 
     final decisionBuilder = ApprovedRequestDecisionBuilder(
@@ -206,7 +219,7 @@ class NPIssueKeys {
   Future<Enrollment> _waitForMatchingEnrollment(NPActivateParams params) async {
     logger.info(
       'Waiting for enrollment request '
-          '(retry every ${_enrollmentCheckInterval}s)...',
+      '(retry every ${_enrollmentCheckInterval}s)...',
     );
 
     final req = EnrollmentListRequestParam()
@@ -217,7 +230,7 @@ class NPIssueKeys {
 
     logger.info('Listening...');
 
-    for (int retryCount = 0; retryCount < _maxRetries; retryCount++) {
+    for (int attempt = 0; attempt < _maxRetries; attempt++) {
       final results = await _enrollmentService.fetchEnrollmentRequests(
         enrollmentListParams: req,
       );
@@ -233,21 +246,6 @@ class NPIssueKeys {
       return e;
     }
 
-    throw AtEnrollmentException('OTP expired. Re-run the command');
-  }
-
-  /// Prompts the user for input via stdin.
-  ///
-  /// Returns: trimmed string or null if input is empty
-  String? _promptUser(String prompt) {
-    stderr.write(prompt);
-    final input = stdin.readLineSync();
-
-    if (input == null || input.trim().isEmpty) {
-      logger.warning('No input provided; using default\n');
-      return null;
-    }
-
-    return input.trim();
+    throw AtEnrollmentException('OTP expired. Please re-run the command');
   }
 }

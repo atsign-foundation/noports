@@ -24,10 +24,13 @@ class CLILoggingHandler implements LoggingHandler {
         return chalk.yellow('WARN');
       case Level.SEVERE:
       case Level.SHOUT:
-        return chalk.red('ERR');
+        return chalk.red('ERROR');
       case Level.INFO:
-      default:
         return chalk.blueBright('INFO');
+      case Level.FINER:
+      case Level.FINEST:
+      default:
+        return chalk.gray('FINER');
     }
   }
 }

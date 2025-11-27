@@ -1,32 +1,55 @@
+import 'package:chalkdart/chalk.dart';
+
 class UsageMessages {
   static final mainMenu = '''
-  Usage: noports <command> <argument_string>
   
-  Available Commands:
-    activate      Initialize your @sign with Noports
-    issue-keys    Generates an enroll command and auto-approves it for you 
-  ''';
+${chalk.bold('Usage:')} noports ${chalk.cyan('<command>')} [options]
 
-  static final activateMenu = '''Command: activate
-    
-  Available Subcommands:
-    cram          Activate using CRAM authentication
-    enroll        Generates an activation string and auto-approves the corresponding enrollment request
-    
-  Usage:
-    noports activate <@atsign>:cram:<cram_secret>
-    noports activate <@atsign>:enroll:otp:<otp>[:name:<device_name>:keyfile:<keyfile_path>]
+${chalk.bold('Commands:')}
+  ${chalk.cyan('activate')}      Activate your atsign (new user onboarding)
+  ${chalk.cyan('issue-keys')}    Create a new enrollment
+
+Run 'noports ${chalk.cyan('<command>')} --help' for more information
 ''';
 
-  static final issueKeys = '''
-  Command: issue-keys
+  static final activateHelp = '''
   
-  Description:
+${chalk.bold('Usage:')} noports activate ${chalk.cyan('<activation_string>')}
 
-  Generates a copy-pastable activation string, then listens for an enrollment request
-  matching the appName and deviceName in that string, approving it as soon as it arrives.
+${chalk.bold('Activation Methods:')}
+  CRAM:       ${chalk.gray('@alice:cram:<secret>')}
+  Enrollment: ${chalk.gray('@alice:enroll:otp:<code>[:name:<device>:keyfile:<path>]')}
+
+${chalk.bold('Examples:')}
+  noports activate '@alice:cram:a1b2c3d4e5f6'
+  noports activate '@alice:enroll:otp:XYZ789'
+  noports activate '@alice:enroll:otp:XYZ789:name:laptop:keyfile:~/.atsign/keys'
+
+${chalk.bold('Notes:')}
+  • Activation String can be generated using the issue-keys command
+  • CRAM provides full account access
+  • Enrollment requires approval from authenticated device (see: issue-keys)
+''';
+
+  static final issueKeysHelp = '''
   
-  Usage:
-    noports issue-keys <atsign>
-  ''';
+${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('<@atsign>')}
+
+${chalk.bold('Description:')}
+  Generates enrollment OTP for new device. Waits for and automatically
+  approves matching enrollment request.
+
+${chalk.bold('Workflow:')}
+  1. Run 'noports issue-keys @alice' on authenticated device
+  2. Copy activation string to new device
+  3. Run 'noports activate <string>' on new device
+  4. Enrollment auto-approved
+
+${chalk.bold('Example:')}
+  noports issue-keys @alice
+
+${chalk.bold('Notes:')}
+  • OTP expires in 1 hour
+  • Resumable if interrupted
+''';
 }

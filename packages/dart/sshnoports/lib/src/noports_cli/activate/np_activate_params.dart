@@ -1,4 +1,6 @@
+import 'package:at_utils/at_utils.dart';
 import 'package:sshnoports/src/noports_cli/util/constants.dart';
+import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
 import 'package:sshnoports/src/noports_cli/util/regex.dart';
 
 class NPActivateParams {
@@ -10,6 +12,7 @@ class NPActivateParams {
   String? deviceName;
   String appName = defaultAppName;
   Map<String, String> namespaces = defaultEnrollmentNamespaces;
+  bool showHelp;
 
   NPActivateParams({
     required this.atsign,
@@ -17,6 +20,7 @@ class NPActivateParams {
     this.atKeysFilePath,
     this.otp,
     this.deviceName,
+    this.showHelp = false,
   });
 
   factory NPActivateParams.fromArgs(List<String> args) {
@@ -27,7 +31,8 @@ class NPActivateParams {
         atKeysFilePath: _parseKeyfilePath(authStr),
         cram: _parseCram(authStr),
         otp: _parseOtp(authStr),
-        deviceName: _parseDeviceName(authStr));
+        deviceName: _parseDeviceName(authStr),
+        showHelp: hasHelpFlag(args));
   }
 
   factory NPActivateParams.fromJson(Map<String, dynamic> json) {
@@ -50,7 +55,7 @@ class NPActivateParams {
       }
     }
     String atsign = authStr.split(':').first;
-    return atsign;
+    return AtUtils.fixAtSign(atsign);
   }
 
   static String? _parseCram(String authStr) {
