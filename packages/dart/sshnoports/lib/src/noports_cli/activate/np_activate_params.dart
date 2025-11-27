@@ -32,7 +32,7 @@ class NPActivateParams {
         cram: _parseCram(authStr),
         otp: _parseOtp(authStr),
         deviceName: _parseDeviceName(authStr),
-        showHelp: hasHelpFlag(args));
+        showHelp: isHelpFlag(args[0]));
   }
 
   factory NPActivateParams.fromJson(Map<String, dynamic> json) {
@@ -42,7 +42,7 @@ class NPActivateParams {
         otp: json['otp'],
         atKeysFilePath: json['atKeysFilePath'],
         deviceName: json['deviceName']);
-    // does NOT parse appName and namespaces as they are default
+    // does NOT parse appName and namespaces as they only use default values
   }
 
   static String _parseAtsign(String authStr, {String? regex}) {

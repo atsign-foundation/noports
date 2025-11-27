@@ -33,7 +33,7 @@ Future<void> main(List<String> args) async {
         ..level = 'info';
 
   // Check for help flag
-  if (args.isEmpty || hasHelpFlag(args)) {
+  if (args.isEmpty || isHelpFlag(args[0])) {
     printUsage();
     exit(0);
   }

@@ -36,8 +36,8 @@ ${chalk.bold('Notes:')}
 ${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('<@atsign>')}
 
 ${chalk.bold('Description:')}
-  Generates enrollment OTP for new device. Waits for and automatically
-  approves matching enrollment request.
+  Generates an enrollment OTP constructs the activation_string with available parameters. 
+  Waits for and automatically approves matching enrollment request.
 
 ${chalk.bold('Workflow:')}
   1. Run 'noports issue-keys @alice' on authenticated device

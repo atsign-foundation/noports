@@ -10,9 +10,9 @@ void displayBanner() {
   print('${chalk.bold('╚════════════════════════════════════╝')}\n');
 }
 
-bool hasHelpFlag(List<String> args) {
+bool isHelpFlag(String arg) {
   const helpFlags = {'--help', '-h', 'help'};
-  return args.any((value) => helpFlags.contains(value));
+  return helpFlags.contains(arg);
 }
 
 String? promptUser(String prompt) {
