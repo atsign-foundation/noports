@@ -90,7 +90,7 @@ class CustomSnackBar {
               child: Text.rich(
                 TextSpan(
                   text: '${strings.info}: ',
-                  style: const TextStyle(),
+                  style: const TextStyle(color: AppColor.onSurfaceColor),
                   children: [TextSpan(text: content, style: style)],
                 ),
               ),
