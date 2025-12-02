@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
@@ -6,7 +7,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
-import 'package:noports_core/src/sshnp/util/srvd_channel/notification_request_message.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp.dart';
@@ -43,39 +44,31 @@ abstract class SrvdChannel<T>
 
   bool fetched = false;
 
-  late String _rvdHost;
-  late int _rvdPortA;
-  late int _rvdPortB;
+  late RelayResponse _relayResponse;
 
-  String get rvdHost {
+  RelayResponse get relayResponse {
     if (fetched) {
-      return _rvdHost;
+      return _relayResponse;
     } else {
       throw SshnpError('Not yet fetched from srvd');
     }
   }
+
+  /// The relay's address (ip address or fqdn)
+  String get rvdHost => relayResponse.address;
 
   /// This is the port which the sshnp **daemon** will connect to
-  int get daemonPort {
-    if (fetched) {
-      return _rvdPortB;
-    } else {
-      throw SshnpError('Not yet fetched from srvd');
-    }
-  }
+  int get daemonPort => relayResponse.portB;
 
   /// This is the port which the sshnp **client** will connect to
-  int get clientPort {
-    if (fetched) {
-      return _rvdPortA;
-    } else {
-      throw SshnpError('Not yet fetched from srvd');
-    }
-  }
+  int get clientPort => relayResponse.portA;
+
+  String get rvdNonce => relayResponse.rvdNonce;
+
+  bool get supportsEventLogging => relayResponse.supportsEventLogging;
 
   // * Volatile fields set at runtime
 
-  String? rvdNonce;
   String? aesKeyC2D;
   String? ivC2D;
   String? aesKeyD2C;
@@ -210,22 +203,30 @@ abstract class SrvdChannel<T>
       if (notification.key.contains('nack.$sessionId')) {
         logger.warning('Got NACK response from relay: ${notification.key}');
         srvdNackMessage = notification.value.toString();
-        srvdAck = SrvdAck.acknowledgedWithErrors;
 
+        srvdAck = SrvdAck.acknowledgedWithErrors;
         acked.complete();
 
         return;
       }
-      String ipPorts = notification.value.toString();
-      logger.info('Received from srvd: $ipPorts');
-      List results = ipPorts.split(',');
-      _rvdHost = results[0];
-      _rvdPortA = int.parse(results[1]);
-      _rvdPortB = int.parse(results[2]);
-      if (results.length >= 4) {
-        rvdNonce = results[3];
+
+      String notifVal = notification.value.toString();
+      logger.info('Received from srvd: $notifVal');
+      if (notifVal.startsWith('{')) {
+        _relayResponse = RelayResponse.fromJson(jsonDecode(notifVal));
+      } else {
+        // legacy response format
+        List results = notifVal.split(',');
+        _relayResponse = RelayResponse(
+          address: results[0],
+          portA: int.parse(results[1]),
+          portB: int.parse(results[2]),
+          rvdNonce: results[3],
+          supportsEventLogging: false,
+        );
       }
 
+      srvdAck = SrvdAck.acknowledged;
       fetched = true;
       acked.complete();
 
@@ -235,67 +236,50 @@ abstract class SrvdChannel<T>
         ' rvdNonce: $rvdNonce',
       );
       logger.info('Daemon will connect to: $rvdHost:$daemonPort');
-      srvdAck = SrvdAck.acknowledged;
     });
     logger.info('Started listening for srvd response');
 
     late AtKey rvdRequestKey;
     late String rvdRequestValue;
 
-    if (params.authenticateClientToRvd || params.authenticateDeviceToRvd) {
-      rvdRequestKey = AtKey()
-        ..key = '${params.device}.request_ports.${Srvd.namespace}'
-        ..sharedBy = params
-            .clientAtSign // shared by us
-        ..sharedWith = params
-            .srvdAtSign // shared with the srvd host
-        ..metadata = (Metadata()
-          // as we are sending a notification to the srvd namespace,
-          // we don't want to append our namespace
-          ..namespaceAware = false
-          ..ttl = 10000);
+    rvdRequestKey = AtKey()
+      ..key = '${params.device}.request_ports.${Srvd.namespace}'
+      ..sharedBy = params
+          .clientAtSign // shared by us
+      ..sharedWith = params
+          .srvdAtSign // shared with the srvd host
+      ..metadata = (Metadata()
+        // as we are sending a notification to the srvd namespace,
+        // we don't want to append our namespace
+        ..namespaceAware = false
+        ..ttl = 10000);
 
-      List<String> preFetch = [];
+    List<String> preFetch = [];
 
-      // Currently prefetch is only needed if auth mode is ESCR
-      if (params.relayAuthMode == RelayAuthMode.escr) {
-        preFetch.add(publicSigningKeyUri);
-        if (cachedDaemonPublicSigningKeyUri != null) {
-          preFetch.add(cachedDaemonPublicSigningKeyUri!);
-        }
+    // Currently prefetch is only needed if auth mode is ESCR
+    if (params.relayAuthMode == RelayAuthMode.escr) {
+      preFetch.add(publicSigningKeyUri);
+      if (cachedDaemonPublicSigningKeyUri != null) {
+        preFetch.add(cachedDaemonPublicSigningKeyUri!);
       }
-
-      var message = SocketRendezvousRequestMessage(
-        sessionId: sessionId,
-        atSignA: params.clientAtSign,
-        atSignB: params.sshnpdAtSign,
-        authenticateSocketA: params.authenticateClientToRvd,
-        authenticateSocketB: params.authenticateDeviceToRvd,
-        clientNonce: clientNonce,
-        relayAuthMode: params.relayAuthMode,
-        relayAuthAesKey: relayAuthAesKey,
-        only443: params.only443,
-        multipleAcksOk: true,
-        preFetch: preFetch,
-      );
-
-      rvdRequestValue = message.toString();
-    } else {
-      // send a legacy message since no new rvd features are being used
-      rvdRequestKey = AtKey()
-        ..key = '${params.device}.${Srvd.namespace}'
-        ..sharedBy = params
-            .clientAtSign // shared by us
-        ..sharedWith = params
-            .srvdAtSign // shared with the srvd host
-        ..metadata = (Metadata()
-          // as we are sending a notification to the srvd namespace,
-          // we don't want to append our namespace
-          ..namespaceAware = false
-          ..ttl = 10000);
-
-      rvdRequestValue = sessionId;
     }
+
+    var message = RelayRequest(
+      sessionId: sessionId,
+      atSignA: params.clientAtSign,
+      atSignB: params.sshnpdAtSign,
+      authenticateSocketA: params.authenticateClientToRvd,
+      authenticateSocketB: params.authenticateDeviceToRvd,
+      clientNonce: clientNonce,
+      relayAuthMode: params.relayAuthMode,
+      relayAuthAesKey: relayAuthAesKey,
+      only443: params.only443,
+      multipleAcksOk: true,
+      preFetch: preFetch,
+      sendJsonResponse: true,
+    );
+
+    rvdRequestValue = jsonEncode(message.toJson());
 
     logger.info(
       'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue',

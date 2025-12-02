@@ -33,6 +33,14 @@ if [ -z "$srvAtSign" ] ; then
   echo -e "    ${RED}check_env: srvAtSign is not set${NC}" && exit 1
 fi
 
+if [ -z "$policyAtSign" ] ; then
+  echo -e "    ${RED}check_env: policyAtSign is not set${NC}" && exit 1
+fi
+
+if [ -z "$eventsAtSign" ] ; then
+  echo -e "    ${RED}check_env: eventsAtSign is not set${NC}" && exit 1
+fi
+
 if [ -z "$commitId" ] ; then
   echo -e "    ${RED}check_env: commitId is not set${NC}" && exit 1
 fi

@@ -107,11 +107,11 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     };
 
     if (params.authenticateSocketA) {
-      String? pkAtSignA = params.publicKeyA ??
+      String? pkAtSignA =
+          params.publicKeyA ??
           (await rpcToMain(
             IIRequest.create('lookup', 'public:publickey${params.atSignA}'),
-          ))
-              .payload;
+          )).payload;
       if (pkAtSignA == null) {
         logger.shout(
           'Cannot spawn socket connector.'
@@ -127,19 +127,19 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
       authVerifierA = RelayAuthVerifierLegacy(
         pkAtSignA,
         jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce!,
-        params.atSignA!,
-        params.atSignA!,
+        params.rvdNonce,
+        params.atSignA,
+        params.atSignA,
         params.sessionId,
       );
     }
 
     if (params.authenticateSocketB) {
-      String? pkAtSignB = params.publicKeyB ??
+      String? pkAtSignB =
+          params.publicKeyB ??
           (await rpcToMain(
             IIRequest.create('lookup', 'public:publickey${params.atSignB}'),
-          ))
-              .payload;
+          )).payload;
       if (pkAtSignB == null) {
         logger.shout(
           'Cannot spawn socket connector.'
@@ -155,9 +155,9 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
       authVerifierB = RelayAuthVerifierLegacy(
         pkAtSignB,
         jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce!,
-        params.atSignB!,
-        params.atSignB!,
+        params.rvdNonce,
+        params.atSignB,
+        params.atSignB,
         params.sessionId,
       );
     }

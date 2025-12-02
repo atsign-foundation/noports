@@ -218,7 +218,7 @@
 </script>
 
 <div class="row" style="color: {statusColor}; text-align: center">
-    <h2>{status}</h2>
+    <h2>{status}&nbsp;</h2>
 </div>
 
 <div class="row">

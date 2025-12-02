@@ -24,6 +24,7 @@ dependencies:
   config: ^0.8.3
 
 dependency_overrides:
+  archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

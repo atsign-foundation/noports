@@ -1,5 +1,7 @@
 import 'dart:io';
 
+/// Useful for testing raw throughput "direct" vs "via a NoPorts tunnel"
+///
 /// Simple server program which binds to port args[0] and then,
 /// for each new socket connection
 /// - listens for a request to send data (see demo_socket_client.dart)

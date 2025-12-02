@@ -97,9 +97,9 @@ abstract class SshnpCore
   String get privateSigningKey;
 
   SshnpCore({required this.atClient, required this.params, this.logStream})
-      : sessionId = Uuid().v4(),
-        namespace = '${params.device}.${DefaultArgs.namespace}',
-        localPort = params.localPort {
+    : sessionId = Uuid().v4(),
+      namespace = '${params.device}.${DefaultArgs.namespace}',
+      localPort = params.localPort {
     logger.level = params.verbose ? 'info' : 'shout';
 
     /// Set the namespace to the device's namespace
@@ -139,7 +139,7 @@ abstract class SshnpCore
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
-        featureCheckFuture = sshnpdChannel.featureCheck(
+    featureCheckFuture = sshnpdChannel.featureCheck(
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
@@ -189,6 +189,5 @@ abstract class SshnpCore
   @override
   Future<SshnpDeviceList> listDevices({
     Duration waitDuration = Sshnp.defaultListDevicesWaitTime,
-  }) =>
-      sshnpdChannel.listDevices(waitDuration: waitDuration);
+  }) => sshnpdChannel.listDevices(waitDuration: waitDuration);
 }

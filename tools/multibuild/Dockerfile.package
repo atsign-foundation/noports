@@ -23,6 +23,7 @@ RUN set -eux; \
   dart compile exe bin/srv.dart -v -o /sshnp/srv; \
   dart compile exe bin/srvd.dart -v -o /sshnp/srvd; \
   dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o /sshnp/debug/srvd; \
+  dart compile exe bin/npevents.dart -v -o /sshnp/npevents; \
   cp -r bundles/core/* /sshnp/; \
   cp -r bundles/shell/* /sshnp/; \
   cp LICENSE /sshnp/;
