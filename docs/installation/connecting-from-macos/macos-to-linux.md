@@ -207,7 +207,7 @@ Be sure to replace the following values:
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate approve -a @<REPLACE>_np --arx NoPorts --drx <DEVICE_NAME>
+~/.local/bin/at_activate approve -a @<REPLACE>_np --arx noports --drx <DEVICE_NAME>
 ```
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
