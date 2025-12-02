@@ -178,7 +178,7 @@ Once the interactions above have completed
           * $device\_host:22 <===>
             * device sshd program
 
-![](../developer-notes/AtsignDataPlane.png)
+![](../.gitbook/assets/AtsignDataPlane.png)
 
 ## Further Details
 
