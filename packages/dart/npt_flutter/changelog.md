@@ -1,8 +1,9 @@
 ## 1.8.0+25
 
--FIX: Local port and Remote port are aligned correctly
+-FIX: Local port and Remote port are aligned correctly.
 -FIX: Info SnackBar prefix text now visible.
 -FIX: No Error SnackBar is shown when user cancels backing up their key.
+-FIX: Policy Screen layout update for better spacing.
 
 ## 1.7.0+24
 

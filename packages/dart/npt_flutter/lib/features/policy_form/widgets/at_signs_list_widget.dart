@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 class AtSignsListWidget extends StatefulWidget {
   final String label;
@@ -8,6 +9,7 @@ class AtSignsListWidget extends StatefulWidget {
   final Function(List<String>) onChanged;
   final String? helperText;
   final String? tooltip;
+  final int maxVisibleItems;
 
   const AtSignsListWidget({
     super.key,
@@ -17,6 +19,7 @@ class AtSignsListWidget extends StatefulWidget {
     required this.onChanged,
     this.helperText,
     this.tooltip,
+    this.maxVisibleItems = 5,
   });
 
   @override
@@ -27,6 +30,15 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
   late TextEditingController _addController;
   late List<String> _localAtSigns;
   bool _isHovering = false;
+  static const double _itemHeight = Sizes.p42;
+
+  double get _listHeight {
+    final itemCount = _localAtSigns.length;
+    final heightForItems = itemCount <= widget.maxVisibleItems
+        ? itemCount * _itemHeight
+        : widget.maxVisibleItems * _itemHeight;
+    return heightForItems;
+  }
 
   @override
   void initState() {
@@ -157,13 +169,14 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           )
         else
           Container(
+            height: _listHeight,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
               borderRadius: BorderRadius.circular(4),
             ),
             child: ListView.separated(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               itemCount: _localAtSigns.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {

@@ -173,6 +173,7 @@ class FormContent extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          spacing: Sizes.p40,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
@@ -186,7 +187,7 @@ class FormContent extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: Sizes.p16),
+
                             Expanded(
                               child: RoleDescriptionField(
                                 role: currentRole,
@@ -200,10 +201,22 @@ class FormContent extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: Sizes.p24),
+                        gapH40,
                         Row(
+                          spacing: Sizes.p40,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Expanded(
+                              child: UserAtSignsField(
+                                role: currentRole,
+                                isEditing: isEditing,
+                                onChanged: (value) {
+                                  context
+                                      .read<PolicyFormCubit>()
+                                      .updateUserAtSigns(value);
+                                },
+                              ),
+                            ),
                             Expanded(
                               child: DaemonAtSignsField(
                                 role: currentRole,
@@ -215,7 +228,13 @@ class FormContent extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: Sizes.p16),
+                          ],
+                        ),
+                        gapH40,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: Sizes.p40,
+                          children: [
                             Expanded(
                               child: DeviceListWidget(
                                 label: strings.devices,
@@ -229,7 +248,7 @@ class FormContent extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: Sizes.p16),
+
                             Expanded(
                               child: DeviceGroupListWidget(
                                 label: strings.deviceGroups,
@@ -240,23 +259,6 @@ class FormContent extends StatelessWidget {
                                   context
                                       .read<PolicyFormCubit>()
                                       .updateDeviceGroups(value);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Sizes.p24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: UserAtSignsField(
-                                role: currentRole,
-                                isEditing: isEditing,
-                                onChanged: (value) {
-                                  context
-                                      .read<PolicyFormCubit>()
-                                      .updateUserAtSigns(value);
                                 },
                               ),
                             ),
