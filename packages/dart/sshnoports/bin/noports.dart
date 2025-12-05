@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/activate.dart';
 import 'package:noports_core/utils.dart' show CLILoggingHandler;
+
 enum NoPortsCommand {
   activate('activate'),
   issueKeys('issue-keys');

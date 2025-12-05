@@ -1,9 +1,7 @@
 /// Regular expressions for parsing noports command arguments.
 class ActivateRegex {
   // CRAM authentication: <atsign>:cram:<secret>
-  static final cram = RegExp(
-    r'^(?<atsign>[^:]+):cram:(?<secret>.+)$',
-  );
+  static final cram = RegExp(r'^(?<atsign>[^:]+):cram:(?<secret>.+)$');
 
   // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>:keyfile:<path>]
   static final enroll = RegExp(

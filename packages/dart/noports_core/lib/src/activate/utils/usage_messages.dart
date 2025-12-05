@@ -1,7 +1,8 @@
 import 'package:chalkdart/chalk.dart';
 
 class UsageMessages {
-  static final mainMenu = '''
+  static final mainMenu =
+      '''
   
 ${chalk.bold('Usage:')} noports ${chalk.cyan('<command>')} [options]
 
@@ -12,7 +13,8 @@ ${chalk.bold('Commands:')}
 Run 'noports ${chalk.cyan('<command>')} --help' for more information
 ''';
 
-  static final activateHelp = '''
+  static final activateHelp =
+      '''
   
 ${chalk.bold('Usage:')} noports activate ${chalk.cyan('<activation_string>')}
 
@@ -31,7 +33,8 @@ ${chalk.bold('Notes:')}
   • Enrollment requires approval from authenticated device (see: issue-keys)
 ''';
 
-  static final issueKeysHelp = '''
+  static final issueKeysHelp =
+      '''
   
 ${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('<@atsign>')}
 
