@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "2.13.0"
   at_auth:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_auth
       sha256: f1187ada26053b4a724fa169aa599aec8d88d9454dbfdad5700f4db3f2e41d35
@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "1d44901cf534050834a70452bcf1b700253491016d9608c7dbfb1817ea2e3f80"
+      sha256: "9e8317662dffb447e5dd41e82d5825eea0d44460e01c106570902224a97abd44"
       url: "https://pub.dev"
     source: hosted
-    version: "1.14.1"
+    version: "1.14.2"
   at_persistence_secondary_server:
     dependency: transitive
     description:

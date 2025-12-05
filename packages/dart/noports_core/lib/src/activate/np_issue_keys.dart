@@ -20,10 +20,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
-import 'package:noports_core/src/activate/np_activate_params.dart';
-import 'package:noports_core/src/activate/utils/console.dart';
-import 'package:noports_core/src/activate/utils/constants.dart';
-import 'package:noports_core/src/activate/utils/usage_messages.dart';
+import 'package:noports_core/activate.dart';
 import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as p;
 

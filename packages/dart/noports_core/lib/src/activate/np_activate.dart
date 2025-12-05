@@ -4,8 +4,7 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/src/activate/np_activate_params.dart';
-import 'package:noports_core/src/activate/utils/usage_messages.dart';
+import 'package:noports_core/activate.dart';
 import 'package:noports_core/utils.dart';
 
 enum NPActivateType {

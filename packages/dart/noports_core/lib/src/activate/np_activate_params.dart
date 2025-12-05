@@ -1,7 +1,5 @@
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/src/activate/utils/console.dart';
-import 'package:noports_core/src/activate/utils/constants.dart';
-import 'package:noports_core/src/activate/utils/regex.dart';
+import 'package:noports_core/activate.dart';
 
 class NPActivateParams {
   late String atsign;
