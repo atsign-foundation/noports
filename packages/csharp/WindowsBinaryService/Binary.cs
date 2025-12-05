@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace WindowsBinaryService
 {
@@ -86,7 +87,7 @@ namespace WindowsBinaryService
 		}
 
 		// Debounces logs by grouping based on time.
-		private void LogDebouncer()
+		private async Task LogDebouncer()
 		{
 			// How much time must elapse between reads before a flush is allowed to happen
 			var minReadTimeSpan = TimeSpan.FromMilliseconds(500); 
@@ -104,7 +105,15 @@ namespace WindowsBinaryService
 				// - We have read logs into the buffer AND either of the two are true:
 				//   - maxFlushTimeSpan has passed
 				//   - there was nothing to read during the last attempt
-				do 
+
+				if(!await r.WaitToReadAsync())
+				{
+                    logger.LogWarning($"{logBuffer}");
+                    logBuffer.Clear();
+					break;
+                }
+
+                do 
 
 				{ 
 					didReadLine = r.TryRead(out var line);
