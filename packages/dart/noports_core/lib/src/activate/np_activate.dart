@@ -4,10 +4,9 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
-import 'package:sshnoports/src/noports_cli/util/cli_logging_handler.dart';
-
-import '../util/usage_messages.dart';
+import 'package:noports_core/src/activate/np_activate_params.dart';
+import 'package:noports_core/src/activate/utils/usage_messages.dart';
+import 'package:noports_core/utils.dart';
 
 enum NPActivateType {
   cram,
@@ -28,9 +27,10 @@ class NPActivate {
   final NPActivateParams _params;
   final NPActivateType _activateType;
 
-  final AtSignLogger logger =
-      AtSignLogger('NPActivate', loggingHandler: CLILoggingHandler())
-        ..level = 'info';
+  final AtSignLogger logger = AtSignLogger(
+    'NPActivate',
+    loggingHandler: CLILoggingHandler(),
+  )..level = 'info';
 
   NPActivate._(this._onboardingService, this._activateType, this._params);
 
@@ -44,8 +44,10 @@ class NPActivate {
 
     AtOnboardingPreference preference = AtOnboardingPreference()
       ..cramSecret = params.cram;
-    AtOnboardingService service =
-        AtOnboardingServiceImpl(params.atsign, preference);
+    AtOnboardingService service = AtOnboardingServiceImpl(
+      params.atsign,
+      preference,
+    );
 
     return NPActivate._(service, activateType, params);
   }
@@ -95,14 +97,19 @@ class NPActivate {
   Future<int> enroll(NPActivateParams params) async {
     validateArgs(params, NPActivateType.enroll);
 
-    logger
-        .info('Creating new enrollment with deviceName: ${params.deviceName}');
+    logger.info(
+      'Creating new enrollment with deviceName: ${params.deviceName}',
+    );
 
     AtEnrollmentResponse response = await _onboardingService.enroll(
-        params.appName, params.deviceName!, params.otp!, params.namespaces,
-        atKeysFile: params.atKeysFilePath != null
-            ? File(params.atKeysFilePath!)
-            : null);
+      params.appName,
+      params.deviceName!,
+      params.otp!,
+      params.namespaces,
+      atKeysFile: params.atKeysFilePath != null
+          ? File(params.atKeysFilePath!)
+          : null,
+    );
 
     return response.enrollStatus == EnrollmentStatus.approved ? 0 : 1;
   }
@@ -117,16 +124,12 @@ class NPActivate {
     switch (type) {
       case NPActivateType.cram:
         if (params.cram == null) {
-          throw ArgumentError(
-            'Cannot perform CRAM auth without secret',
-          );
+          throw ArgumentError('Cannot perform CRAM auth without secret');
         }
         break;
       case NPActivateType.enroll:
         if (params.otp == null) {
-          throw ArgumentError(
-            'Cannot create enrollment without otp',
-          );
+          throw ArgumentError('Cannot create enrollment without otp');
         }
     }
   }

@@ -1,12 +1,8 @@
 import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
-import 'package:sshnoports/src/noports_cli/activate/np_activate.dart';
-import 'package:sshnoports/src/noports_cli/issue_keys/np_issue_keys.dart';
-import 'package:sshnoports/src/noports_cli/util/cli_logging_handler.dart';
-import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
-import 'package:sshnoports/src/noports_cli/util/usage_messages.dart';
-
+import 'package:noports_core/activate.dart';
+import 'package:noports_core/utils.dart' show CLILoggingHandler;
 enum NoPortsCommand {
   activate('activate'),
   issueKeys('issue-keys');

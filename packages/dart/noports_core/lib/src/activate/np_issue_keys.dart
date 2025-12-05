@@ -18,17 +18,16 @@ import 'package:at_client/at_client.dart'
         AtEnrollmentException,
         AtClient;
 import 'package:at_onboarding_cli/at_onboarding_cli.dart'
-    show requestEnrollmentOtp;
+    show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:noports_core/src/activate/utils/console.dart';
+import 'package:noports_core/src/activate/utils/usage_messages.dart';
+import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as p;
-import 'package:sshnoports/src/create_at_client_cli.dart';
-import 'package:sshnoports/src/noports_cli/activate/np_activate_params.dart';
-import 'package:sshnoports/src/noports_cli/util/constants.dart';
 
-import '../util/cli_logging_handler.dart';
-import '../util/np_utils.dart';
-import '../util/usage_messages.dart';
+import 'package:noports_core/src/activate/np_activate_params.dart';
+import 'package:noports_core/src/activate/utils/constants.dart';
 
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
@@ -43,17 +42,20 @@ class NPIssueKeys {
   static const otpExpiryString = '${_otpExpiry}s';
   static const _enrollmentCheckInterval = 3; // in seconds
   static const _maxRetries = _otpExpiry / _enrollmentCheckInterval;
-  static final _stateFilePath =
-      p.join(Directory.current.path, 'noports.issue-keys.state');
+  static final _stateFilePath = p.join(
+    Directory.current.path,
+    'noports.issue-keys.state',
+  );
   static final _stateFile = File(_stateFilePath);
 
   late final EnrollmentService _enrollmentService;
   late final AtClient _atClient;
   final NPActivateParams _params;
 
-  final AtSignLogger logger =
-      AtSignLogger('NPIssueKeys', loggingHandler: CLILoggingHandler())
-        ..level = 'info';
+  final AtSignLogger logger = AtSignLogger(
+    'NPIssueKeys',
+    loggingHandler: CLILoggingHandler(),
+  )..level = 'info';
 
   NPIssueKeys._(this._params);
 
@@ -95,8 +97,10 @@ class NPIssueKeys {
     }
 
     await _initAtClient();
-    _params.otp ??=
-        await requestEnrollmentOtp(_atClient, otpExpiry: otpExpiryString);
+    _params.otp ??= await requestEnrollmentOtp(
+      _atClient,
+      otpExpiry: otpExpiryString,
+    );
     await _promptForMissingParams();
     await _createStateFile(_params);
     _displayActivationCommand();
@@ -111,16 +115,20 @@ class NPIssueKeys {
 
   Future<void> _initAtClient() async {
     stderr.write(chalk.blue('Connecting...\t'));
-    _atClient = await createAtClientCli(
-      atsign: _params.atsign,
-      atServiceFactory: DefaultAtServiceFactory(),
-      namespace: defaultCurrentNamespace,
-      storagePath: standardAtClientStoragePath(
-        baseDir: getHomeDirectory()!,
-        atSign: _params.atsign,
-        progName: defaultCurrentNamespace,
-      ),
+    _atClient = await createAtClient(
+      atSign: _params.atsign,
+      atKeysFilePath: _params.atKeysFilePath,
     );
+    // _atClient = await createAtClientCli(
+    //   atsign: _params.atsign,
+    //   atServiceFactory: DefaultAtServiceFactory(),
+    //   namespace: defaultCurrentNamespace,
+    //   storagePath: standardAtClientStoragePath(
+    //     baseDir: getHomeDirectory()!,
+    //     atSign: _params.atsign,
+    //     progName: defaultCurrentNamespace,
+    //   ),
+    // );
     stderr.writeln(chalk.green('Connected\n'));
 
     _enrollmentService = DefaultAtServiceFactory().enrollmentService(_atClient);
@@ -189,15 +197,14 @@ class NPIssueKeys {
 
     if (response.enrollStatus != EnrollmentStatus.approved) {
       throw AtEnrollmentException(
-          'Failed to approve enrollment.\nStatus: $response');
+        'Failed to approve enrollment.\nStatus: $response',
+      );
     }
 
     logger.info('Enrollment approved: ${response.enrollmentId}\n');
   }
 
-  Future<AtEnrollmentResponse> _approveEnrollment(
-    Enrollment enrollment,
-  ) async {
+  Future<AtEnrollmentResponse> _approveEnrollment(Enrollment enrollment) async {
     logger.info('Approving enrollment...');
 
     final decisionBuilder = ApprovedRequestDecisionBuilder(

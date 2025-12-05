@@ -1,7 +1,7 @@
 import 'package:at_utils/at_utils.dart';
-import 'package:sshnoports/src/noports_cli/util/constants.dart';
-import 'package:sshnoports/src/noports_cli/util/np_utils.dart';
-import 'package:sshnoports/src/noports_cli/util/regex.dart';
+import 'package:noports_core/src/activate/utils/constants.dart';
+import 'package:noports_core/src/activate/utils/console.dart';
+import 'package:noports_core/src/activate/utils/regex.dart';
 
 class NPActivateParams {
   late String atsign;
@@ -49,7 +49,7 @@ class NPActivateParams {
     if (regex != null) {
       RegExpMatch? match = RegExp(regex).firstMatch(authStr);
 
-      final atsign = match?.namedGroup(RegexGroupNames.atsign);
+      final atsign = match?.namedGroup(ActivateRegexGroups.atsign);
       if (atsign == null) {
         throw ArgumentError('Could not parse atsign from: $authStr');
       }
@@ -59,26 +59,26 @@ class NPActivateParams {
   }
 
   static String? _parseCram(String authStr) {
-    final match = RegExp(cramRegex).firstMatch(authStr);
-    final cram = match?.namedGroup(RegexGroupNames.cram);
+    final match = ActivateRegex.cram.firstMatch(authStr);
+    final cram = match?.namedGroup(ActivateRegexGroups.cram);
     return cram;
   }
 
   static String? _parseOtp(String authStr) {
-    final match = RegExp(enrollRegex).firstMatch(authStr);
-    final otp = match?.namedGroup(RegexGroupNames.otp);
+    final match = ActivateRegex.enroll.firstMatch(authStr);
+    final otp = match?.namedGroup(ActivateRegexGroups.otp);
     return otp;
   }
 
   static String? _parseKeyfilePath(String authStr) {
-    final match = RegExp(enrollRegex).firstMatch(authStr);
-    final keyfilePath = match?.namedGroup(RegexGroupNames.keyfilePath);
+    final match = ActivateRegex.enroll.firstMatch(authStr);
+    final keyfilePath = match?.namedGroup(ActivateRegexGroups.keyfilePath);
     return keyfilePath;
   }
 
   static String? _parseDeviceName(String authStr) {
-    final match = RegExp(enrollRegex).firstMatch(authStr);
-    final deviceName = match?.namedGroup(RegexGroupNames.device);
+    final match = ActivateRegex.enroll.firstMatch(authStr);
+    final deviceName = match?.namedGroup(ActivateRegexGroups.deviceName);
     return deviceName;
   }
 
