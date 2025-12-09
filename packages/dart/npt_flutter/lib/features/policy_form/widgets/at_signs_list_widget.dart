@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class AtSignsListWidget extends StatefulWidget {
@@ -113,10 +114,13 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: Sizes.p16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             if (widget.tooltip != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: Sizes.p8),
               MouseRegion(
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
@@ -125,21 +129,23 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(Sizes.p12),
                       boxShadow: _isHovering
                           ? [
                               BoxShadow(
-                                color: Colors.blue.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 2,
+                                color: AppColor.primaryColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: Sizes.p8,
+                                spreadRadius: Sizes.p2,
                               ),
                             ]
                           : null,
                     ),
                     child: Icon(
                       Icons.help_outline,
-                      size: 16,
-                      color: _isHovering ? Colors.blue : Colors.grey,
+                      size: Sizes.p16,
+                      color: _isHovering ? AppColor.primaryColor : Colors.grey,
                     ),
                   ),
                 ),
@@ -147,14 +153,14 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Sizes.p12),
 
         if (_localAtSigns.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(Sizes.p16),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
               color: Colors.grey[50],
             ),
             child: Center(
@@ -172,18 +178,19 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
             height: _listHeight,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: _localAtSigns.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
+              separatorBuilder: (context, index) =>
+                  const Divider(height: Sizes.p1, color: AppColor.dividerColor),
               itemBuilder: (context, index) {
                 final atSign = _localAtSigns[index];
                 return ListTile(
                   dense: true,
-                  leading: const Icon(Icons.person, size: 20),
+                  leading: const Icon(Icons.person, size: Sizes.p20),
                   title: Text(atSign),
                   trailing: widget.isEditing
                       ? IconButton(
@@ -192,7 +199,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                             color: Colors.red,
                           ),
                           onPressed: () => _removeAtSign(atSign),
-                          iconSize: 20,
+                          iconSize: Sizes.p20,
                         )
                       : null,
                 );
@@ -201,7 +208,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           ),
 
         if (widget.isEditing) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: Sizes.p12),
           Row(
             children: [
               Expanded(
@@ -210,20 +217,20 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                      horizontal: Sizes.p12,
+                      vertical: Sizes.p8,
                     ),
                   ),
                   onChanged: (_) => setState(() {}),
                   onFieldSubmitted: (_) => _addAtSign(),
                 ),
               ),
-              const SizedBox(width: 8),
+              gapW8,
               ElevatedButton.icon(
                 onPressed: _addController.text.trim().isEmpty
                     ? null
                     : _addAtSign,
-                icon: const Icon(Icons.add, size: 18),
+                icon: const Icon(Icons.add, size: Sizes.p18),
                 label: Text(strings.add),
               ),
             ],

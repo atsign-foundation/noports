@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 import '../../../util/form_validator.dart';
 import '../../policy/models/policy.dart';
@@ -111,10 +113,13 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: Sizes.p16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             if (widget.tooltip != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: Sizes.p8),
               MouseRegion(
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
@@ -123,21 +128,23 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(Sizes.p12),
                       boxShadow: _isHovering
                           ? [
                               BoxShadow(
-                                color: Colors.blue.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 2,
+                                color: AppColor.primaryColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: Sizes.p8,
+                                spreadRadius: Sizes.p2,
                               ),
                             ]
                           : null,
                     ),
                     child: Icon(
                       Icons.help_outline,
-                      size: 16,
-                      color: _isHovering ? Colors.blue : Colors.grey,
+                      size: Sizes.p16,
+                      color: _isHovering ? AppColor.primaryColor : Colors.grey,
                     ),
                   ),
                 ),
@@ -145,14 +152,14 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Sizes.p12),
 
         if (_localDevices.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(Sizes.p16),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
               color: Colors.grey[50],
             ),
             child: Center(
@@ -169,31 +176,32 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
           Container(
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _localDevices.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
+              separatorBuilder: (context, index) =>
+                  const Divider(height: Sizes.p1),
               itemBuilder: (context, index) {
                 final device = _localDevices[index];
                 return ListTile(
                   dense: false,
-                  leading: const Icon(Icons.devices, size: 24),
+                  leading: const Icon(Icons.devices, size: Sizes.p24),
                   title: Text(device.name),
                   subtitle: device.permitOpens.isNotEmpty
                       ? Text(
                           strings.permitOpens(device.permitOpens.join(', ')),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: Sizes.p12,
                             color: Colors.grey[600],
                           ),
                         )
                       : Text(
                           strings.permitOpensNotConfigured,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: Sizes.p12,
                             color: Colors.grey,
                             fontStyle: FontStyle.italic,
                           ),
@@ -203,14 +211,14 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              icon: const Icon(Icons.edit, color: Colors.black),
                               onPressed: () => _editDevice(index),
-                              iconSize: 20,
+                              iconSize: Sizes.p20,
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => _removeDevice(index),
-                              iconSize: 20,
+                              iconSize: Sizes.p20,
                             ),
                           ],
                         )
@@ -221,12 +229,12 @@ class _DeviceListWidgetState extends State<DeviceListWidget> {
           ),
 
         if (widget.isEditing) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: Sizes.p12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _addDevice,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(Icons.add, size: Sizes.p18),
               label: Text(strings.deviceAdd),
               style: ElevatedButton.styleFrom(alignment: Alignment.center),
             ),
@@ -312,7 +320,7 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
       ),
       content: SingleChildScrollView(
         child: SizedBox(
-          width: 400,
+          width: Sizes.p400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,13 +332,13 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Sizes.p16),
 
               Text(
                 strings.permitOpensHostPort,
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Sizes.p8),
 
               Row(
                 children: [
@@ -343,21 +351,21 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                       onSubmitted: (_) => _addPermitOpen(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: Sizes.p8),
                   ElevatedButton(
                     onPressed: _addPermitOpen,
                     child: Text(strings.add),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Sizes.p8),
 
               if (_permitOpens.isNotEmpty)
                 Container(
                   height: 150,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(Sizes.p4),
                   ),
                   child: ListView.builder(
                     itemCount: _permitOpens.length,
@@ -365,7 +373,7 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                       final permitOpen = _permitOpens[index];
                       return ListTile(
                         dense: true,
-                        leading: const Icon(Icons.link, size: 16),
+                        leading: const Icon(Icons.link, size: Sizes.p16),
                         title: Text(permitOpen),
                         trailing: IconButton(
                           icon: const Icon(
@@ -373,7 +381,7 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                             color: Colors.red,
                           ),
                           onPressed: () => _removePermitOpen(permitOpen),
-                          iconSize: 16,
+                          iconSize: Sizes.p16,
                         ),
                       );
                     },

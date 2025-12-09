@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 import '../../../util/form_validator.dart';
 import '../../policy/models/policy.dart';
@@ -110,10 +112,13 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           children: [
             Text(
               widget.label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: Sizes.p16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             if (widget.tooltip != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: Sizes.p8),
               MouseRegion(
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
@@ -122,21 +127,23 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(Sizes.p12),
                       boxShadow: _isHovering
                           ? [
                               BoxShadow(
-                                color: Colors.blue.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 2,
+                                color: AppColor.primaryColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: Sizes.p8,
+                                spreadRadius: Sizes.p2,
                               ),
                             ]
                           : null,
                     ),
                     child: Icon(
                       Icons.help_outline,
-                      size: 16,
-                      color: _isHovering ? Colors.blue : Colors.grey,
+                      size: Sizes.p16,
+                      color: _isHovering ? AppColor.primaryColor : Colors.grey,
                     ),
                   ),
                 ),
@@ -144,14 +151,14 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Sizes.p12),
 
         if (_localDeviceGroups.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(Sizes.p16),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
               color: Colors.grey[50],
             ),
             child: Center(
@@ -168,13 +175,14 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           Container(
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(Sizes.p4),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _localDeviceGroups.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
+              separatorBuilder: (context, index) =>
+                  const Divider(height: Sizes.p1),
               itemBuilder: (context, index) {
                 final deviceGroup = _localDeviceGroups[index];
                 return ListTile(
@@ -204,7 +212,7 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              icon: const Icon(Icons.edit, color: Colors.black),
                               onPressed: () => _editDeviceGroup(index),
                               iconSize: 20,
                             ),
@@ -222,12 +230,12 @@ class _DeviceGroupListWidgetState extends State<DeviceGroupListWidget> {
           ),
 
         if (widget.isEditing) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: Sizes.p12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _addDeviceGroup,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(Icons.add, size: Sizes.p18),
               label: Text(strings.groupAdd),
               style: ElevatedButton.styleFrom(alignment: Alignment.center),
             ),
@@ -317,7 +325,7 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
       ),
       content: SingleChildScrollView(
         child: SizedBox(
-          width: 400,
+          width: Sizes.p400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,13 +337,13 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Sizes.p16),
 
               Text(
                 strings.permitOpensHostPort,
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Sizes.p8),
 
               Row(
                 children: [
@@ -348,21 +356,21 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                       onSubmitted: (_) => _addPermitOpen(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: Sizes.p8),
                   ElevatedButton(
                     onPressed: _addPermitOpen,
                     child: Text(strings.add),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Sizes.p8),
 
               if (_permitOpens.isNotEmpty)
                 Container(
-                  height: 150,
+                  height: Sizes.p150,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(Sizes.p4),
                   ),
                   child: ListView.builder(
                     itemCount: _permitOpens.length,
@@ -370,7 +378,7 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                       final permitOpen = _permitOpens[index];
                       return ListTile(
                         dense: true,
-                        leading: const Icon(Icons.link, size: 16),
+                        leading: const Icon(Icons.link, size: Sizes.p16),
                         title: Text(permitOpen),
                         trailing: IconButton(
                           icon: const Icon(
@@ -378,7 +386,7 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                             color: Colors.red,
                           ),
                           onPressed: () => _removePermitOpen(permitOpen),
-                          iconSize: 16,
+                          iconSize: Sizes.p16,
                         ),
                       );
                     },

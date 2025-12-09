@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
@@ -35,7 +36,8 @@ class FormContent extends StatelessWidget {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(strings.cancel),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
+              icon: PhosphorIcon(PhosphorIcons.trash()),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 formCubit.deleteCurrentRole(strings);
@@ -44,7 +46,7 @@ class FormContent extends StatelessWidget {
                 backgroundColor: AppColor.errorColor,
                 foregroundColor: Colors.white,
               ),
-              child: Text(strings.delete),
+              label: Text(strings.delete),
             ),
           ],
         );
@@ -84,41 +86,18 @@ class FormContent extends StatelessWidget {
           final canDelete = formState.canDelete;
 
           return Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(Sizes.p8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.only(right: Sizes.p8),
                   child: Row(
                     children: [
                       const Spacer(),
                       if (isEditing) ...[
-                        if (canDelete) ...[
-                          ElevatedButton(
-                            onPressed: () =>
-                                _showDeleteConfirmation(context, currentRole),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColor.errorColor,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(strings.delete),
-                          ),
-                          const SizedBox(width: Sizes.p8),
-                        ],
-                        TextButton(
-                          onPressed: isSaving
-                              ? null
-                              : () {
-                                  context
-                                      .read<PolicyFormCubit>()
-                                      .cancelEditing();
-                                  context.read<PolicyCubit>().cancelEditing();
-                                },
-                          child: Text(strings.cancel),
-                        ),
-                        const SizedBox(width: Sizes.p8),
-                        ElevatedButton(
+                        ElevatedButton.icon(
+                          icon: PhosphorIcon(PhosphorIcons.floppyDiskBack()),
                           onPressed: isSaving
                               ? null
                               : () {
@@ -130,12 +109,12 @@ class FormContent extends StatelessWidget {
                             backgroundColor: AppColor.primaryColor,
                             foregroundColor: Colors.white,
                           ),
-                          child: isSaving
+                          label: isSaving
                               ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
+                                  width: Sizes.p16,
+                                  height: Sizes.p16,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: Sizes.p2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                       Colors.white,
                                     ),
@@ -143,9 +122,37 @@ class FormContent extends StatelessWidget {
                                 )
                               : Text(strings.save),
                         ),
+                        gapW8,
+                        TextButton.icon(
+                          icon: PhosphorIcon(PhosphorIcons.prohibit()),
+                          onPressed: isSaving
+                              ? null
+                              : () {
+                                  context
+                                      .read<PolicyFormCubit>()
+                                      .cancelEditing();
+                                  context.read<PolicyCubit>().cancelEditing();
+                                },
+                          label: Text(strings.cancel),
+                        ),
+                        gapW38,
+                        if (canDelete) ...[
+                          ElevatedButton.icon(
+                            icon: PhosphorIcon(PhosphorIcons.trash()),
+                            onPressed: () =>
+                                _showDeleteConfirmation(context, currentRole),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.errorColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            label: Text(strings.delete),
+                          ),
+                          const SizedBox(width: Sizes.p8),
+                        ],
                       ] else ...[
                         if (currentRole is FetchedRole)
-                          ElevatedButton(
+                          ElevatedButton.icon(
+                            icon: PhosphorIcon(PhosphorIcons.pencil()),
                             onPressed: () {
                               final roleId = currentRole.id;
                               context.read<PolicyCubit>().startEditingRole(
@@ -155,11 +162,11 @@ class FormContent extends StatelessWidget {
                                   .read<PolicyFormCubit>()
                                   .initializeFormExisting(roleId, strings);
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColor.primaryColor,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(strings.edit),
+                            // style: ElevatedButton.styleFrom(
+                            //   backgroundColor: AppColor.primaryColor,
+                            //   foregroundColor: Colors.white,
+                            // ),
+                            label: Text(strings.edit),
                           ),
                       ],
                     ],

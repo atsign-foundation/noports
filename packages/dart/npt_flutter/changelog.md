@@ -4,6 +4,7 @@
 -FIX: Info SnackBar prefix text now visible.
 -FIX: No Error SnackBar is shown when user cancels backing up their key.
 -FIX: Policy Screen layout update for better spacing.
+-FIX: Standardize widget styles and improve layout consistency across policy forms.
 
 ## 1.7.0+24
 
