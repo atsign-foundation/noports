@@ -1,4 +1,4 @@
-FROM debian:stable-20251117-slim@sha256:7cb087f19bcc175b96fbe4c2aef42ed00733a659581a80f6ebccfd8fe3185a3d AS buildimage
+FROM debian:stable-20251208-slim@sha256:1c25564b03942d874bf6a2b71f2062b71af8bc1475aa873c523e6f7c8fa29e60 AS buildimage
 
 ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
 ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
@@ -29,7 +29,7 @@ RUN apt-get update && \
     cd sshnp && \
     mv -f at_activate install.sh np_admin npp_atserver npp_file npt srv srvd sshnp sshnpd npevents ${OUTPUT_DIR} || true
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:b705c9ba1bb36d2860a1abc78df5fe63d7aed5dac87beaa8ecf1a1314da3b2e1 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:bd4c2117696effa3a0a07f7ecc293c13d3321aba5d78e3307c4b537f33140f0c AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
