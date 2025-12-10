@@ -197,7 +197,9 @@ class SshnpdImpl
       }
 
       AtSignLogger.root_level = 'SEVERE';
-      if (p.verbose) {
+      if (p.debug) {
+        AtSignLogger.root_level = 'FINEST';
+      } else if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
 
@@ -228,7 +230,10 @@ class SshnpdImpl
         notifPreProcessor: notifPreProcessor,
       );
 
-      if (p.verbose) {
+      if (p.debug) {
+        sshnpd.logger.logger.level = Level.FINEST;
+      }
+      else if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
       }
 
