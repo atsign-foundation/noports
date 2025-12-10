@@ -324,7 +324,17 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       configKey: '/runtime/verbose',
       argAbbrev: 'v',
       defaultsTo: false,
-      helpText: 'More logging',
+      helpText: 'More logging (INFO and above)',
+      group: runtimeGroup,
+    ),
+  ),
+
+  debug(
+    FlagOption(
+      argName: 'debug',
+      configKey: '/runtime/debug',
+      defaultsTo: false,
+      helpText: 'All logging (FINEST and above)',
       group: runtimeGroup,
     ),
   ),
