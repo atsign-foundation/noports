@@ -42,7 +42,7 @@ Be sure to replace the following values:
 {% endhint %}
 
 ```bash
-at_activate.exe approve -a "@<REPLACE>_np" --arx NoPorts --drx <REPLACE_NAME>
+at_activate.exe approve -a "@<REPLACE>_np" --arx noports --drx <REPLACE_NAME>
 ```
 
 ### <mark style="color:orange;">Step 9:</mark> Use NoPorts!
