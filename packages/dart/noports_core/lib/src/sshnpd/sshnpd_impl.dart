@@ -309,11 +309,12 @@ class SshnpdImpl
 
   void startHeartbeat() {
     bool lastHeartbeatOk = true;
-    Timer.periodic(Duration(seconds: 15), (timer) async {
+    Timer.periodic(Duration(seconds: 90), (timer) async {
       String? resp;
       try {
         resp = await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
           'noop:0\n',
+          auth: true,
         );
       } catch (_) {}
       if (resp == null || !resp.startsWith('data:ok')) {
