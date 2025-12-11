@@ -26,7 +26,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   String get policyAtsign => atClient.getCurrentAtSign()!;
 
   @override
-  late final Atsign? eventLoggingAtsign;
+  final Atsign? eventLoggingAtsign;
 
   AtEventConfig? elc;
 
