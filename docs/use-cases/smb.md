@@ -8,6 +8,15 @@ icon: folder-tree
 
 # SMB
 
+### Prerequisites
+
+Before continuing, make sure that the following steps have been completed:
+
+* NoPorts has been installed on both machines.
+* Your NoPorts atSigns are activated, and the associated keys are saved locally.
+
+If you haven’t completed these steps, follow the appropriate installation guide on the [Installation Instructions](../installation/) page, then return here once finished.
+
 ### Command Line
 
 The command should look like:
