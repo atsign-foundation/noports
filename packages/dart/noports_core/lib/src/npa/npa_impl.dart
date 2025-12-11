@@ -28,7 +28,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   @override
   final Atsign? eventLoggingAtsign;
 
-  late final AtEventConfig? elc;
+  AtEventConfig? elc;
 
   @override
   final NPARequestHandler handler;
@@ -38,7 +38,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
     required this.atClient,
     required this.homeDirectory,
     required this.handler,
-    required this.eventLoggingAtsign,
+    this.eventLoggingAtsign,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
