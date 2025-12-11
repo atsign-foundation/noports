@@ -1,3 +1,7 @@
+# 6.10.1
+
+fix: remove late from `AtEventConfig? elc` in NPAImpl
+
 # 6.10.0
 
 - feat: enable redundancy support for Policy Services
