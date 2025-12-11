@@ -259,6 +259,7 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
   late TextEditingController _nameController;
   late TextEditingController _permitOpenController;
   late List<String> _permitOpens;
+  final _deviceFormKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -276,15 +277,17 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
   }
 
   void _addPermitOpen() {
+    if (!_deviceFormKey.currentState!.validate()) return;
+
     final value = _permitOpenController.text.trim();
 
-    final validationError = FormValidator.validateHostPortField(value);
-    if (validationError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
-      );
-      return;
-    }
+    // final validationError = FormValidator.validateHostPortField(value);
+    // if (validationError != null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text(validationError), backgroundColor: Colors.red),
+    //   );
+    //   return;
+    // }
 
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
@@ -321,73 +324,90 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
       content: SingleChildScrollView(
         child: SizedBox(
           width: Sizes.p400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: strings.deviceName,
-                  border: const OutlineInputBorder(),
+          child: Form(
+            key: _deviceFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: Sizes.p90,
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: strings.deviceName,
+                      border: const OutlineInputBorder(),
+                      errorMaxLines: 2,
+                    ),
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: FormValidator.validateRequiredField,
+                  ),
                 ),
-              ),
-              const SizedBox(height: Sizes.p16),
+                const SizedBox(height: Sizes.p16),
 
-              Text(
-                strings.permitOpensHostPort,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: Sizes.p8),
+                Text(
+                  strings.permitOpensHostPort,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: Sizes.p8),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _permitOpenController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: Sizes.p90,
+                        child: TextFormField(
+                          controller: _permitOpenController,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            errorMaxLines: 2,
+                          ),
+                          autovalidateMode: _permitOpens.isEmpty
+                              ? AutovalidateMode.onUserInteraction
+                              : AutovalidateMode.disabled,
+                          validator: FormValidator.validateHostPortField,
+                          // onSubmitted: (_) => _addPermitOpen(),
+                        ),
                       ),
-                      onSubmitted: (_) => _addPermitOpen(),
+                    ),
+                    gapW8,
+                    ElevatedButton(
+                      onPressed: _addPermitOpen,
+                      child: Text(strings.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Sizes.p8),
+
+                if (_permitOpens.isNotEmpty)
+                  Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(Sizes.p4),
+                    ),
+                    child: ListView.builder(
+                      itemCount: _permitOpens.length,
+                      itemBuilder: (context, index) {
+                        final permitOpen = _permitOpens[index];
+                        return ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.link, size: Sizes.p16),
+                          title: Text(permitOpen),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => _removePermitOpen(permitOpen),
+                            iconSize: Sizes.p16,
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(width: Sizes.p8),
-                  ElevatedButton(
-                    onPressed: _addPermitOpen,
-                    child: Text(strings.add),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Sizes.p8),
-
-              if (_permitOpens.isNotEmpty)
-                Container(
-                  height: 150,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(Sizes.p4),
-                  ),
-                  child: ListView.builder(
-                    itemCount: _permitOpens.length,
-                    itemBuilder: (context, index) {
-                      final permitOpen = _permitOpens[index];
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.link, size: Sizes.p16),
-                        title: Text(permitOpen),
-                        trailing: IconButton(
-                          icon: const Icon(
-                            Icons.remove_circle_outline,
-                            color: Colors.red,
-                          ),
-                          onPressed: () => _removePermitOpen(permitOpen),
-                          iconSize: Sizes.p16,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -396,7 +416,10 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(strings.cancel),
         ),
-        ElevatedButton(onPressed: _save, child: Text(strings.save)),
+        ElevatedButton(
+          onPressed: _permitOpens.isNotEmpty ? _save : null,
+          child: Text(strings.save),
+        ),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/form_validator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../styles/app_color.dart';
@@ -15,9 +16,14 @@ import 'role_description_field.dart';
 import 'role_name_field.dart';
 import 'user_at_signs_field.dart';
 
-class FormContent extends StatelessWidget {
+class FormContent extends StatefulWidget {
   const FormContent({super.key});
 
+  @override
+  State<FormContent> createState() => _FormContentState();
+}
+
+class _FormContentState extends State<FormContent> {
   void _showDeleteConfirmation(
     BuildContext context,
     RoleInProgress currentRole,
@@ -54,6 +60,7 @@ class FormContent extends StatelessWidget {
     );
   }
 
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -101,6 +108,7 @@ class FormContent extends StatelessWidget {
                           onPressed: isSaving
                               ? null
                               : () {
+                                  if (!formKey.currentState!.validate()) return;
                                   context.read<PolicyFormCubit>().saveRole(
                                     strings,
                                   );
@@ -179,34 +187,39 @@ class FormContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          spacing: Sizes.p40,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: RoleNameField(
-                                role: currentRole,
-                                isEditing: isEditing,
-                                onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateName(
-                                    value,
-                                  );
-                                },
+                        Form(
+                          key: formKey,
+                          child: Row(
+                            spacing: Sizes.p40,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: RoleNameField(
+                                  role: currentRole,
+                                  isEditing: isEditing,
+                                  onChanged: (value) {
+                                    context.read<PolicyFormCubit>().updateName(
+                                      value,
+                                    );
+                                  },
+                                  validator:
+                                      FormValidator.validateRequiredField,
+                                ),
                               ),
-                            ),
 
-                            Expanded(
-                              child: RoleDescriptionField(
-                                role: currentRole,
-                                isEditing: isEditing,
-                                onChanged: (value) {
-                                  context
-                                      .read<PolicyFormCubit>()
-                                      .updateDescription(value);
-                                },
+                              Expanded(
+                                child: RoleDescriptionField(
+                                  role: currentRole,
+                                  isEditing: isEditing,
+                                  onChanged: (value) {
+                                    context
+                                        .read<PolicyFormCubit>()
+                                        .updateDescription(value);
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         gapH40,
                         Row(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/form_validator.dart';
 
 class AtSignsListWidget extends StatefulWidget {
   final String label;
@@ -153,7 +154,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
             ],
           ],
         ),
-        const SizedBox(height: Sizes.p12),
+        gapH12,
 
         if (_localAtSigns.isEmpty)
           Container(
@@ -208,7 +209,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
           ),
 
         if (widget.isEditing) ...[
-          const SizedBox(height: Sizes.p12),
+          gapH12,
           Row(
             children: [
               Expanded(
@@ -222,7 +223,9 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                     ),
                   ),
                   onChanged: (_) => setState(() {}),
+                  validator: FormValidator.validateOptionalAtsignField,
                   onFieldSubmitted: (_) => _addAtSign(),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
               ),
               gapW8,

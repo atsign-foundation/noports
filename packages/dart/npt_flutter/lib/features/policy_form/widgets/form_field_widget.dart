@@ -8,6 +8,7 @@ class FormFieldWidget extends StatelessWidget {
   final String? helperText;
   final int? maxLines;
   final void Function(String)? onChanged;
+  final String? Function(String?)? validator;
 
   const FormFieldWidget({
     super.key,
@@ -17,6 +18,7 @@ class FormFieldWidget extends StatelessWidget {
     this.helperText,
     this.maxLines = 1,
     this.onChanged,
+    this.validator,
   });
 
   @override
@@ -36,6 +38,8 @@ class FormFieldWidget extends StatelessWidget {
             enabled: enabled,
             maxLines: maxLines,
             onChanged: onChanged,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: validator,
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
