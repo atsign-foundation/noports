@@ -281,14 +281,6 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
 
     final value = _permitOpenController.text.trim();
 
-    // final validationError = FormValidator.validateHostPortField(value);
-    // if (validationError != null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text(validationError), backgroundColor: Colors.red),
-    //   );
-    //   return;
-    // }
-
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
         _permitOpens.add(value);
@@ -366,7 +358,6 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                               ? AutovalidateMode.onUserInteraction
                               : AutovalidateMode.disabled,
                           validator: FormValidator.validateHostPortField,
-                          // onSubmitted: (_) => _addPermitOpen(),
                         ),
                       ),
                     ),

@@ -368,7 +368,6 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
                             border: OutlineInputBorder(),
                             errorMaxLines: 2,
                           ),
-                          // onSubmitted: (_) => _addPermitOpen(),
                           autovalidateMode: _permitOpens.isEmpty
                               ? AutovalidateMode.onUserInteraction
                               : AutovalidateMode.disabled,
