@@ -284,14 +284,6 @@ class _AddDeviceGroupDialogState extends State<_AddDeviceGroupDialog> {
     if (!_deviceGroupFormKey.currentState!.validate()) return;
     final value = _permitOpenController.text.trim();
 
-    // final validationError = FormValidator.validateHostPortField(value);
-    // if (validationError != null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text(validationError), backgroundColor: Colors.red),
-    //   );
-    //   return;
-    // }
-
     if (value.isNotEmpty && !_permitOpens.contains(value)) {
       setState(() {
         _permitOpens.add(value);

@@ -170,10 +170,6 @@ class _FormContentState extends State<FormContent> {
                                   .read<PolicyFormCubit>()
                                   .initializeFormExisting(roleId, strings);
                             },
-                            // style: ElevatedButton.styleFrom(
-                            //   backgroundColor: AppColor.primaryColor,
-                            //   foregroundColor: Colors.white,
-                            // ),
                             label: Text(strings.edit),
                           ),
                       ],
