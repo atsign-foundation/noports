@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -67,7 +67,7 @@ jobs:
             compiler: "clang"
             flags: "-Wno-error -pthread"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: c_release-${{github.run_number}}
 
@@ -87,7 +87,7 @@ jobs:
         name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ matrix.output-name }}_${{ matrix.compiler
             }}-${{  github.ref_name
@@ -133,7 +133,7 @@ jobs:
     ## 20240806: Clang and CMake that we use aren't packaged for
     ## armv7 or riscv64 (also no Debian 11 for RISC-V)
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: c_release-${{github.run_number}}
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -146,7 +146,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - name: Upload tarballs
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{
             matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
@@ -158,7 +158,7 @@ jobs:
     name: Generate source tarball
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: c_release-${{github.run_number}}
         # Pin cmake to <4.0.0
@@ -170,7 +170,7 @@ jobs:
         working-directory: ./packages/c
         run: |
           cmake --workflow --preset package-source
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
@@ -189,13 +189,13 @@ jobs:
       attestations: write
     steps:
       - name: Get lockfile
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           sparse-checkout: |
             packages/c/conan.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: tarballs/
       - name: Move packages for signing

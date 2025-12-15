@@ -54,7 +54,29 @@ class SshnpOpensshLocalImpl extends SshnpCore
     logger.info(msg);
     sendProgress(msg);
 
-    /// Send an ssh request to sshnpd
+    final sessionRequest = SshnpSessionRequest(
+      direct: true,
+      sessionId: sessionId,
+      host: srvdChannel.rvdHost,
+      port: srvdChannel.daemonPort,
+      authenticateToRvd: params.authenticateDeviceToRvd,
+      relayAuthMode: params.relayAuthMode,
+      relayAuthAesKey: srvdChannel.relayAuthAesKey,
+      clientNonce: srvdChannel.clientNonce,
+      rvdNonce: srvdChannel.rvdNonce,
+      encryptRvdTraffic: params.encryptRvdTraffic,
+      clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+      clientEphemeralPKType: params.sessionKPType.name,
+      twinKeys: sshnpdChannel.twinKeys,
+      relayAtsign: srvdChannel.supportsEventLogging ? params.srvdAtSign : null,
+    );
+
+    final notifyPayload = signAndWrapAndJsonEncode(
+      atClient,
+      sessionRequest.toJson(),
+    );
+    logger.info('Sending: $notifyPayload');
+
     await notify(
       AtKey()
         ..key = 'ssh_request'
@@ -62,24 +84,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-        atClient,
-        SshnpSessionRequest(
-          direct: true,
-          sessionId: sessionId,
-          host: srvdChannel.rvdHost,
-          port: srvdChannel.daemonPort,
-          authenticateToRvd: params.authenticateDeviceToRvd,
-          relayAuthMode: params.relayAuthMode,
-          relayAuthAesKey: srvdChannel.relayAuthAesKey,
-          clientNonce: srvdChannel.clientNonce,
-          rvdNonce: srvdChannel.rvdNonce,
-          encryptRvdTraffic: params.encryptRvdTraffic,
-          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-          clientEphemeralPKType: params.sessionKPType.name,
-          twinKeys: sshnpdChannel.twinKeys,
-        ).toJson(),
-      ),
+      notifyPayload,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
@@ -169,8 +174,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
       localPort: localPort,
       host: 'localhost',
       remoteUsername: remoteUsername,
-      localSshOptions:
-          (params.addForwardsToTunnel) ? null : params.localSshOptions,
+      localSshOptions: (params.addForwardsToTunnel)
+          ? null
+          : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );
