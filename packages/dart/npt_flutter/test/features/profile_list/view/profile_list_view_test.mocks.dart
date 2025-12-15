@@ -16,7 +16,7 @@ import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart'
 import 'package:npt_flutter/features/profile/profile.dart' as _i2;
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart' as _i8;
 import 'package:npt_flutter/features/profile_list/profile_list.dart' as _i4;
-import 'package:npt_flutter/features/settings/settings.dart' as _i10;
+import 'package:npt_flutter/features/settings/bloc/settings_bloc.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values

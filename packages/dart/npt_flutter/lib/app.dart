@@ -7,7 +7,6 @@ import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
 import 'package:npt_flutter/features/features.dart';
-import 'package:npt_flutter/features/policy/repositories/role_repository.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
@@ -44,9 +43,7 @@ class App extends StatelessWidget {
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
         ),
-        RepositoryProvider<RoleRepository>(
-          create: (_) => RoleRepository(),
-        ),
+        RepositoryProvider<RoleRepository>(create: (_) => RoleRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -69,17 +66,20 @@ class App extends StatelessWidget {
             create: (ctx) => SettingsBloc(ctx.read<SettingsRepository>()),
           ),
 
-          /// - A list of all the uuids for profiles which have been found in persistence
-          ///   - This list is ALL of the profiles which are loaded in the app for the onboarded atSign
-          ///     Note that multiple client atSigns have not been considered as part of the current implementation
-          BlocProvider<ProfileListBloc>(
-            create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
-          ),
-
           /// A cubit which caches [ProfileBloc] by uuid so they can be shared
           /// between the dashboard and the system tray
           BlocProvider<ProfileCacheCubit>(
             create: (ctx) => ProfileCacheCubit(ctx.read<ProfileRepository>()),
+          ),
+
+          /// - A list of all the uuids for profiles which have been found in persistence
+          ///   - This list is ALL of the profiles which are loaded in the app for the onboarded atSign
+          ///     Note that multiple client atSigns have not been considered as part of the current implementation
+          BlocProvider<ProfileListBloc>(
+            create: (ctx) => ProfileListBloc(
+              ctx.read<ProfileRepository>(),
+              ctx.read<ProfileCacheCubit>(),
+            ),
           ),
 
           /// [ProfilesSelectedCubit] reads from [ProfileListBloc], and must be under it

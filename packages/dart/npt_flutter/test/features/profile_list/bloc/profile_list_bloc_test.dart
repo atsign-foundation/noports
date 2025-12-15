@@ -9,15 +9,17 @@ import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 
 // Import existing mocks
 import '../../profile/bloc/profile_bloc_test.mocks.dart' as profile_mocks;
+import '../../profile/view/profile_view_test.mocks.dart' as profile_view_mocks;
 import 'profile_list_bloc_test.mocks.dart';
 
-@GenerateMocks([FavoriteBloc, BuildContext])
+@GenerateMocks([FavoriteBloc, BuildContext, ProfileCacheCubit])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ProfileListBloc Tests', () {
     late ProfileListBloc profileListBloc;
     late profile_mocks.MockProfileRepository mockRepository;
+    late ProfileCacheCubit mockProfileCacheCubit = MockProfileCacheCubit();
     late MockFavoriteBloc mockFavoriteBloc;
     late MockBuildContext mockContext;
 
@@ -60,7 +62,41 @@ void main() {
       mockRepository = profile_mocks.MockProfileRepository();
       mockFavoriteBloc = MockFavoriteBloc();
       mockContext = MockBuildContext();
-      profileListBloc = ProfileListBloc(mockRepository);
+      mockProfileCacheCubit = MockProfileCacheCubit();
+
+      // Build a map of profile blocs to include in the state
+      final profileBlocsMap = <String, ProfileBloc>{};
+
+      // Setup stub for getProfileBloc to return a mock ProfileBloc
+      // Set up a stub for each test UUID
+      for (final uuid in [testUuid1, testUuid2, testUuid3]) {
+        final mockProfileBloc = profile_view_mocks.MockProfileBloc();
+
+        // Provide dummy values for ProfileBloc getters
+        provideDummy<ProfileState>(ProfileInitial(uuid));
+        provideDummy<Stream<ProfileState>>(const Stream.empty());
+
+        // Setup the mock ProfileBloc to have Loaded state by default so it doesn't block in _onLoad
+        when(
+          mockProfileBloc.state,
+        ).thenReturn(ProfileLoaded(uuid, profile: testProfile1));
+        when(mockProfileBloc.stream).thenAnswer(
+          (_) => Stream.value(ProfileLoaded(uuid, profile: testProfile1)),
+        );
+
+        when(
+          mockProfileCacheCubit.getProfileBloc(uuid),
+        ).thenReturn(mockProfileBloc);
+
+        // Add to the map
+        profileBlocsMap[uuid] = mockProfileBloc;
+      }
+
+      // Now set the state with the profile blocs map
+      when(
+        mockProfileCacheCubit.state,
+      ).thenReturn(ProfileCacheState(profileBlocsMap));
+      profileListBloc = ProfileListBloc(mockRepository, mockProfileCacheCubit);
     });
 
     tearDown(() {
@@ -128,6 +164,10 @@ void main() {
           when(
             mockRepository.getProfileUuids(),
           ).thenAnswer((_) async => <String>[]);
+          // Reset the ProfileCacheCubit state to empty so sort doesn't find any profiles
+          when(
+            mockProfileCacheCubit.state,
+          ).thenReturn(const ProfileCacheState({}));
           return profileListBloc;
         },
         act: (bloc) => bloc.add(const ProfileListLoadEvent()),

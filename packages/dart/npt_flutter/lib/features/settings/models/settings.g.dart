@@ -12,6 +12,7 @@ Settings _$SettingsFromJson(Map<String, dynamic> json) => Settings(
   viewLayout: $enumDecode(_$PreferredViewLayoutEnumMap, json['viewLayout']),
   darkMode: json['darkMode'] as bool? ?? false,
   language: $enumDecode(_$LanguageEnumMap, json['language']),
+  pinFavorites: json['pinFavorites'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$SettingsToJson(Settings instance) => <String, dynamic>{
@@ -20,6 +21,7 @@ Map<String, dynamic> _$SettingsToJson(Settings instance) => <String, dynamic>{
   'viewLayout': _$PreferredViewLayoutEnumMap[instance.viewLayout]!,
   'darkMode': instance.darkMode,
   'language': _$LanguageEnumMap[instance.language]!,
+  'pinFavorites': instance.pinFavorites,
 };
 
 const _$PreferredViewLayoutEnumMap = {

@@ -3,15 +3,16 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
 import 'package:flutter/foundation.dart' as _i3;
 import 'package:flutter/src/widgets/framework.dart' as _i2;
-import 'package:flutter/src/widgets/notification_listener.dart' as _i8;
-import 'package:flutter_bloc/flutter_bloc.dart' as _i7;
+import 'package:flutter/src/widgets/notification_listener.dart' as _i9;
+import 'package:flutter_bloc/flutter_bloc.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:npt_flutter/features/favorite/favorite.dart' as _i4;
+import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:npt_flutter/features/favorite/favorite.dart' as _i5;
+import 'package:npt_flutter/features/profile/profile.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -58,32 +59,43 @@ class _FakeDiagnosticsNode_2 extends _i1.SmartFake
   }) => super.toString();
 }
 
+class _FakeProfileCacheState_3 extends _i1.SmartFake
+    implements _i4.ProfileCacheState {
+  _FakeProfileCacheState_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeProfileBloc_4 extends _i1.SmartFake implements _i4.ProfileBloc {
+  _FakeProfileBloc_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [FavoriteBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFavoriteBloc extends _i1.Mock implements _i4.FavoriteBloc {
+class MockFavoriteBloc extends _i1.Mock implements _i5.FavoriteBloc {
   MockFavoriteBloc() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.FavoritesState get state =>
+  _i5.FavoritesState get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _i5.dummyValue<_i4.FavoritesState>(
+            returnValue: _i6.dummyValue<_i5.FavoritesState>(
               this,
               Invocation.getter(#state),
             ),
           )
-          as _i4.FavoritesState);
+          as _i5.FavoritesState);
 
   @override
-  _i6.Stream<_i4.FavoritesState> get stream =>
+  _i7.Stream<_i5.FavoritesState> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i6.Stream<_i4.FavoritesState>.empty(),
+            returnValue: _i7.Stream<_i5.FavoritesState>.empty(),
           )
-          as _i6.Stream<_i4.FavoritesState>);
+          as _i7.Stream<_i5.FavoritesState>);
 
   @override
   bool get isClosed =>
@@ -97,27 +109,27 @@ class MockFavoriteBloc extends _i1.Mock implements _i4.FavoriteBloc {
   );
 
   @override
-  void onEvent(_i4.FavoriteEvent? event) => super.noSuchMethod(
+  void onEvent(_i5.FavoriteEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void emit(_i4.FavoritesState? state) => super.noSuchMethod(
+  void emit(_i5.FavoritesState? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void add(_i4.FavoriteEvent? event) => super.noSuchMethod(
+  void add(_i5.FavoriteEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void on<E extends _i4.FavoriteEvent>(
-    _i7.EventHandler<E, _i4.FavoritesState>? handler, {
-    _i7.EventTransformer<E>? transformer,
+  void on<E extends _i5.FavoriteEvent>(
+    _i8.EventHandler<E, _i5.FavoritesState>? handler, {
+    _i8.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
     returnValueForMissingStub: null,
@@ -125,23 +137,23 @@ class MockFavoriteBloc extends _i1.Mock implements _i4.FavoriteBloc {
 
   @override
   void onTransition(
-    _i7.Transition<_i4.FavoriteEvent, _i4.FavoritesState>? transition,
+    _i8.Transition<_i5.FavoriteEvent, _i5.FavoritesState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
   );
 
   @override
-  _i6.Future<void> close() =>
+  _i7.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  void onChange(_i7.Change<_i4.FavoritesState>? change) => super.noSuchMethod(
+  void onChange(_i8.Change<_i5.FavoritesState>? change) => super.noSuchMethod(
     Invocation.method(#onChange, [change]),
     returnValueForMissingStub: null,
   );
@@ -224,7 +236,7 @@ class MockBuildContext extends _i1.Mock implements _i2.BuildContext {
   );
 
   @override
-  void dispatchNotification(_i8.Notification? notification) =>
+  void dispatchNotification(_i9.Notification? notification) =>
       super.noSuchMethod(
         Invocation.method(#dispatchNotification, [notification]),
         returnValueForMissingStub: null,
@@ -280,4 +292,88 @@ class MockBuildContext extends _i1.Mock implements _i2.BuildContext {
             ),
           )
           as _i3.DiagnosticsNode);
+}
+
+/// A class which mocks [ProfileCacheCubit].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockProfileCacheCubit extends _i1.Mock implements _i4.ProfileCacheCubit {
+  MockProfileCacheCubit() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.ProfileCacheState get state =>
+      (super.noSuchMethod(
+            Invocation.getter(#state),
+            returnValue: _FakeProfileCacheState_3(
+              this,
+              Invocation.getter(#state),
+            ),
+          )
+          as _i4.ProfileCacheState);
+
+  @override
+  _i7.Stream<_i4.ProfileCacheState> get stream =>
+      (super.noSuchMethod(
+            Invocation.getter(#stream),
+            returnValue: _i7.Stream<_i4.ProfileCacheState>.empty(),
+          )
+          as _i7.Stream<_i4.ProfileCacheState>);
+
+  @override
+  bool get isClosed =>
+      (super.noSuchMethod(Invocation.getter(#isClosed), returnValue: false)
+          as bool);
+
+  @override
+  _i4.ProfileBloc getProfileBloc(String? uuid) =>
+      (super.noSuchMethod(
+            Invocation.method(#getProfileBloc, [uuid]),
+            returnValue: _FakeProfileBloc_4(
+              this,
+              Invocation.method(#getProfileBloc, [uuid]),
+            ),
+          )
+          as _i4.ProfileBloc);
+
+  @override
+  void clear() => super.noSuchMethod(
+    Invocation.method(#clear, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void emit(_i4.ProfileCacheState? state) => super.noSuchMethod(
+    Invocation.method(#emit, [state]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onChange(_i8.Change<_i4.ProfileCacheState>? change) =>
+      super.noSuchMethod(
+        Invocation.method(#onChange, [change]),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void addError(Object? error, [StackTrace? stackTrace]) => super.noSuchMethod(
+    Invocation.method(#addError, [error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onError(Object? error, StackTrace? stackTrace) => super.noSuchMethod(
+    Invocation.method(#onError, [error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i7.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
 }

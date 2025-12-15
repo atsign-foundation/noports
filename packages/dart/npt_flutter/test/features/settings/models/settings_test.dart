@@ -236,12 +236,17 @@ void main() {
 
         final props = settings.props;
 
-        expect(props, hasLength(5));
+        expect(props, hasLength(6));
         expect(props[0], '@rv_am');
         expect(props[1], true);
         expect(props[2], PreferredViewLayout.sshStyle);
         expect(props[3], true);
         expect(props[4], Language.spanish);
+        expect(
+          props[5],
+          true,
+        ); // In Settings constructor: this.pinFavorites = true
+        // So props[5] should be true by default.
       });
     });
 

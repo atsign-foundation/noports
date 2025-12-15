@@ -56,3 +56,40 @@ final class ProfileListAddEvent extends ProfileListEvent {
     return 'ProfileListAddEvent(toAdd: $toAdd)';
   }
 }
+
+final class ProfileListSortEvent extends ProfileListEvent {
+  /// The column to be sorted
+  final SortColumn sortColumn;
+
+  /// Whether to inverse the current sort order
+  /// If true, ascending becomes descending and vice versa
+  /// When the user taps the column header this should be set to true when this [ProfileListSortEvent] is added
+  final bool inverseSortOrder;
+
+  const ProfileListSortEvent({
+    required this.sortColumn,
+    this.inverseSortOrder = true,
+  });
+
+  @override
+  List<Object> get props => [sortColumn, inverseSortOrder];
+
+  @override
+  String toString() {
+    return 'ProfileListSortEvent(sortColumn: $sortColumn, inverseSortOrder: $inverseSortOrder)';
+  }
+}
+
+final class ProfileListSearchEvent extends ProfileListEvent {
+  final String query;
+
+  const ProfileListSearchEvent({required this.query});
+
+  @override
+  List<Object> get props => [query];
+
+  @override
+  String toString() {
+    return 'ProfileListSearchEvent(query: $query)';
+  }
+}

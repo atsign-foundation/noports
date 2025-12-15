@@ -37,10 +37,11 @@ void main() {
         // Verify onboarding UI elements are present
         expect(find.byType(OnboardingButton), findsOneWidget);
         expect(
-          find.widgetWithText(CustomTextButton, 'Reset atSign'),
+          find.widgetWithText(CustomTextButton, 'Remove atSign'),
           findsOneWidget,
         );
-        expect(find.textContaining('v'), findsOneWidget); // Version display
+        expect(find.byType(ExportLogsButton), findsOneWidget);
+        expect(find.textContaining('v1'), findsOneWidget); // Version display
         tester.printToConsole('✓ Onboarding interface elements verified');
 
         // === PHASE 2: ONBOARDING FLOW ===

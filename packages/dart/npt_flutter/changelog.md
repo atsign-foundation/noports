@@ -1,6 +1,8 @@
 ## 1.8.0+25
 
-- FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
+- **FEAT**: Connections can be sorted by Profile Name, Device Name, Service Mapping and Status.
+- **FEAT**: Favorite Connections can be pinned to the top of the connections list.
+- **FEAT**: App now supports IPv6 and IPv4 numeric entries for local and remote host.
 
 ## 1.7.0+24
 
