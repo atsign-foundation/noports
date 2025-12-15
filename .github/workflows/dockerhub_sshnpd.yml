@@ -170,7 +170,7 @@ jobs:
           IMAGES+=" atsigncompany/${{ matrix.name }}:${{ env.TAG2 }}@${IMAGE_DIGEST}"
           cosign sign --yes ${IMAGES}
       - name: Upload image digest file
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: digests-${{ matrix.name }}
           path: ./${{ matrix.name }}_digest.json
@@ -200,7 +200,7 @@ jobs:
       slsa_matrix: ${{ steps.create_matrix.outputs.matrix_json }}
     steps:
       - name: Download all-image-digests artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: digests-*
           path: ./digests
