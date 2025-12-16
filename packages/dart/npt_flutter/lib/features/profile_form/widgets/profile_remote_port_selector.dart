@@ -18,7 +18,7 @@ class ProfileRemotePortSelector extends StatelessWidget {
         Text(strings.remotePort),
         gapH4,
         Text(
-          strings.remotePortDescription,
+          '${strings.remotePortDescription}\n', // Extra newline for spacing consistency with remote host field.
           style: Theme.of(context).textTheme.bodySmall,
         ),
         gapH14,

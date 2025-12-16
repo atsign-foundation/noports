@@ -31,14 +31,15 @@ class RoleListItemWidget extends StatelessWidget {
             width: double.infinity,
             child: Card(
               margin: EdgeInsets.zero,
-              color: isSelected
-                  ? AppColor.primaryColor.withValues(alpha: 0.1)
-                  : Colors.white,
+
               elevation: isSelected ? 2 : 1,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero,
+                borderRadius: BorderRadius.circular(Sizes.p8),
                 side: isSelected
-                    ? const BorderSide(color: AppColor.primaryColor, width: 2)
+                    ? BorderSide(
+                        color: AppColor.primaryColor.withValues(alpha: 1),
+                        width: 4,
+                      )
                     : BorderSide.none,
               ),
               child: ListTile(

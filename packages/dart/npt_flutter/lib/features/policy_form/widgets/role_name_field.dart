@@ -8,12 +8,14 @@ class RoleNameField extends StatefulWidget {
   final RoleInProgress role;
   final bool isEditing;
   final Function(String) onChanged;
+  final String? Function(String?)? validator;
 
   const RoleNameField({
     super.key,
     required this.role,
     required this.isEditing,
     required this.onChanged,
+    this.validator,
   });
 
   @override
@@ -52,6 +54,7 @@ class _RoleNameFieldState extends State<RoleNameField> {
       controller: _controller,
       enabled: widget.isEditing,
       onChanged: widget.onChanged,
+      validator: widget.validator,
     );
   }
 }
