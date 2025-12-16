@@ -51,11 +51,6 @@ class IssueKeys {
 
   IssueKeys._(this._params);
 
-  /// Creates and initializes an instance.
-  ///
-  /// Attempts to resume from a state file if present, otherwise parses
-  /// command-line arguments. Establishes connection to atServer and
-  /// initializes the enrollment service.
   factory IssueKeys.fromArgs(List<String> args) {
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
@@ -150,6 +145,7 @@ class IssueKeys {
     }
 
     logger.info('Enrollment approved: ${response.enrollmentId}\n');
+    return;
   }
 
   Future<AtEnrollmentResponse> _approveEnrollment(Enrollment enrollment) async {
@@ -194,10 +190,8 @@ class IssueKeys {
         );
         continue;
       }
-
       return e;
     }
-
     throw AtEnrollmentException('OTP expired. Please re-run the command');
   }
 

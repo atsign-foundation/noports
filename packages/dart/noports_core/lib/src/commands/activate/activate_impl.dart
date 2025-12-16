@@ -80,7 +80,6 @@ class Activate {
     if (_params.otp == null) {
       throw ArgumentError('Cannot create enrollment without otp');
     }
-
     logger.info(
       'Creating new enrollment with deviceName: ${_params.deviceName}',
     );

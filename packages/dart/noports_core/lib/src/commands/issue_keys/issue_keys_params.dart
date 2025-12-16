@@ -8,8 +8,6 @@ class IssueKeysParams {
   final String? atKeysFilePath;
   final String? passPhrase;
   String? device;
-
-  // for internal use
   String? otp;
 
   static final ArgParser argParser = _createArgParser();

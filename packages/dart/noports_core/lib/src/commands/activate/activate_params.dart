@@ -65,7 +65,7 @@ class ActivateParams {
       throw ArgumentError('atsign is required in activation string');
     }
 
-    // parse from arg parser
+    // parse from arg parser results
     final keyfile = results['keyfile'] as String?;
 
     return ActivateParams(
