@@ -43,6 +43,14 @@ class PortPairWorker extends RelayWorker {
     logger.info('Waiting for connector to close');
     await connector!.done;
 
+    logger.info('Sending sessionComplete to main isolate');
+    toMain.send(
+      IIRequest.create('sessionComplete', {
+        'sessionId': srvdSessionParams.sessionId,
+        'stats': connector!.stats,
+      }),
+    );
+
     logger.shout(
       'Finished session ${srvdSessionParams.sessionId}'
       ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}'
@@ -85,6 +93,15 @@ class PortPairWorker extends RelayWorker {
       socketAuthVerifierB: authVerifierB?.verifySocketAuth,
     );
 
+    connector!.connectionStream.listen(
+      (Connection c) => toMain.send(
+        IIRequest.create('newConnection', {
+          'sessionId': srvdSessionParams.sessionId,
+          'stats': connector!.stats,
+        }),
+      ),
+    );
+
     /// Connector created, so complete the sessionStarted future
     sessionStarted.complete();
 
@@ -104,6 +121,7 @@ class PortPairWorker extends RelayWorker {
 
   Map<String, dynamic> lookups = {};
   Random random = Random();
+
   @override
   Future<String> lookup(String sessionId, String atKey) async {
     if (lookups.containsKey(atKey)) {

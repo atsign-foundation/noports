@@ -50,7 +50,7 @@ jobs:
       digest: ${{ steps.docker_build.outputs.digest }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
       - name: Ensure pubspec.yaml matches git ref (if current git ref is a version tag)
@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: atsigncompany/${{ matrix.name }}
           tags: |
@@ -170,7 +170,7 @@ jobs:
           IMAGES+=" atsigncompany/${{ matrix.name }}:${{ env.TAG2 }}@${IMAGE_DIGEST}"
           cosign sign --yes ${IMAGES}
       - name: Upload image digest file
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: digests-${{ matrix.name }}
           path: ./${{ matrix.name }}_digest.json
@@ -200,7 +200,7 @@ jobs:
       slsa_matrix: ${{ steps.create_matrix.outputs.matrix_json }}
     steps:
       - name: Download all-image-digests artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: digests-*
           path: ./digests

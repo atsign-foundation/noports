@@ -1,4 +1,4 @@
-FROM atsigncompany/cbuildimage:CMake-3.31.9@sha256:31ae812f3f93d2aa70ea32d187b7118b95daf8f2c548c4b86b413f0258f958a6 AS buildimage
+FROM atsigncompany/cbuildimage:CMake-3.31.10@sha256:457a7ad97082c42fa659a3353a36a3ccee940b38456e8d614a4f77705e694d22 AS buildimage
 
 ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
 ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
@@ -35,7 +35,7 @@ RUN set -eux ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv ;
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:c2e11522d1eeda0af661773c6c040a589ae8c61d2c868ea270d40883d3528296 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:a47e3227e9a4e8bb4d730cbebeea8d8b1604e274f3ab89d6024d072e21d7a594 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}

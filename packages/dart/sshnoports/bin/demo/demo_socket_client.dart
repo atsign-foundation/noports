@@ -1,9 +1,11 @@
 import 'dart:io';
 
+/// Useful for testing raw throughput "direct" vs "via a NoPorts tunnel"
+///
 /// - simple client which talks to a demo_socket_server
 /// - sends a request for N kBytes of data to be sent to us
 /// - listens for the data and writes a message at the end
-/// saying how much it received vs expected
+///   saying how much it received vs expected
 void main(List<String> args) async {
   // connect to socket on localhost, port args[0]
   int port = int.parse(args[0]);

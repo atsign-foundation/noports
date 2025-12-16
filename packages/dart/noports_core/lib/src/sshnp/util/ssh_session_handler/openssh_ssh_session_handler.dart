@@ -20,7 +20,8 @@ mixin OpensshSshSessionHandler on SshnpCore
     Process? process;
     // If we are starting an initial tunnel, it should be to the local srv,
     // so it is safe to assume that localRvPort is non-null
-    String argsString = '$tunnelUsername@localhost'
+    String argsString =
+        '$tunnelUsername@localhost'
         ' -p ${localRvPort!}'
         ' -i $ephemeralKeyPairIdentifier'
         ' -L $localPort:localhost:${params.remoteSshdPort}'

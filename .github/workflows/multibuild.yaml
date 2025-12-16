@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -81,7 +81,7 @@ jobs:
             platform: "windows"
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
@@ -105,6 +105,7 @@ jobs:
           dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
+          dart compile exe bin/npevents.dart -v -o sshnp/npevents${{ matrix.ext }}
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
@@ -191,7 +192,7 @@ jobs:
             --prefix "com.atsign." \
             --timestamp \
             -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin}
+            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin,npevents}
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         run:
@@ -216,7 +217,7 @@ jobs:
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
       - name: Upload the build
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name:
             ${{ matrix.output-name
@@ -238,7 +239,7 @@ jobs:
     steps:
       - name: Checkout multibuild branch
         if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup QEMU
@@ -256,7 +257,7 @@ jobs:
           tar -xvf bins.tar -C tarballs
       - name: Upload the build
         if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name:
             ${{ matrix.output-name
@@ -269,11 +270,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup node-version
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: '24.2.0'
       - name: Build admin webapp
@@ -286,7 +287,7 @@ jobs:
           cp -r dist/* sshnp/web/admin/
           tar -cvzf tarball/sshnp-web-admin-noarch.tgz sshnp
       - name: Upload the build
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name:
             sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
@@ -301,7 +302,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -315,7 +316,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -334,12 +335,12 @@ jobs:
       attestations: write
     steps:
       - name: Checkout pubspec.lock
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: tarballs/
       - name: Generate SBOM
@@ -399,7 +400,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: multibuild-${{github.run_number}}
       - name: Delete workflow branch

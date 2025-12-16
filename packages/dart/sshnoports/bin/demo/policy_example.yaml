@@ -1,0 +1,85 @@
+# - Client atSigns request access to a $deviceName at some $daemonAtSign for $someReason
+# - Daemons run with a deviceName and a deviceGroup
+# - Daemons send the daemonAtsign, clientAtSign, deviceName and deviceGroup to policy service
+#   in order to find out what the policy decision is.
+#
+# The policy service needs to check if the clientAtsign is
+# 1. permitted to talk to this daemonAtsign
+# and
+# 2a. permitted to talk to this daemon's deviceName
+# or
+# 2b. permitted to talk to this daemon's deviceGroupName
+#
+# The value at 2a or 2b should be a list of permitOpens (hostMask:portMask)
+# In order to reduce the amount of duplication of rules, we will do some
+# normalization. However, we will not fully normalize, as we want to balance
+# reduced duplication / increased efficiency with readability of the yaml.
+#
+# With that in mind, we will have (1) user groups, and (2) permission sets
+#
+# User groups have:
+# - a name
+# - a list of userAtSigns
+# - and then, a list of permission sets
+# Each permission set has
+# - a list of one or more daemonAtSigns
+# - a list of deviceNames, each with
+#   - a name
+#   - a list of PermitOpen rules
+# - a list of deviceGroupNames, each with
+#   - a name
+#   - a list of PermitOpen rules
+#
+userGroups:
+  "api_users":
+    userAtSigns:
+      - "@xavierchanth"
+      - "@asparagussquare"
+      - "@cconstab"
+      - "@garycasey"
+      - "@colin"
+    permissions:
+      daemonAtSigns:
+        - "@baboonblue18"
+        - "@apricoteventual"
+      deviceNames:
+        "mbp":
+          - "localhost:3000"
+  "rdp_users":
+    userAtSigns:
+      - "@asparagussquare"
+      - "@cconstab"
+      - "@garycasey"
+      - "@colin"
+    permissions:
+      daemonAtSigns:
+        - "@baboonblue18"
+        - "@apricoteventual"
+      deviceNames:
+      deviceGroupNames:
+        "gary_home":
+          - "*:3389"
+  "ssh_users":
+    userAtSigns:
+      - "@garycasey"
+      - "@colin"
+    permissions:
+      daemonAtSigns:
+        - "@baboonblue18"
+        - "@apricoteventual"
+      deviceGroupNames:
+        "gary_home":
+          - "*:22"
+  "mbp_admins":
+    userAtSigns:
+      - "@garycasey"
+    permissions:
+      daemonAtSigns:
+        - "@baboonblue18"
+        - "@apricoteventual"
+      deviceNames:
+        "mbp":
+          - "*.*"
+      deviceGroupNames:
+        "gary_home":
+          - "*:22"

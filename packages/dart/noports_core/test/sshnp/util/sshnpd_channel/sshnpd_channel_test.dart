@@ -31,17 +31,16 @@ void main() {
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
     notifyInvocation() => notifyStub(
-          any(),
-          any(),
-          checkForFinalDeliveryStatus:
-              any(named: 'checkForFinalDeliveryStatus'),
-          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
-          ttln: any(named: 'ttln'),
-        );
+      any(),
+      any(),
+      checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+      waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+      ttln: any(named: 'ttln'),
+    );
     subscribeInvocation() => subscribeStub(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
+      regex: any(named: 'regex'),
+      shouldDecrypt: any(named: 'shouldDecrypt'),
+    );
     payloadInvocation() => payloadStub(any());
     String device = 'myDevice';
 
@@ -432,8 +431,8 @@ void main() {
     group('Username resolution', () {
       test('resolveRemoteUsername - params.remoteUsername override', () async {
         when(() => mockParams.remoteUsername).thenReturn('myRemoteUsername');
-        Future<String?> remoteUsername =
-            stubbedSshnpdChannel.resolveRemoteUsername();
+        Future<String?> remoteUsername = stubbedSshnpdChannel
+            .resolveRemoteUsername();
         await expectLater(remoteUsername, completes);
         expect(await remoteUsername, 'myRemoteUsername');
       }); // test resolveRemoteUsername
@@ -451,16 +450,16 @@ void main() {
           ),
         ).thenAnswer((i) async => AtValue()..value = 'mySharedUsername');
 
-        Future<String?> remoteUsername =
-            stubbedSshnpdChannel.resolveRemoteUsername();
+        Future<String?> remoteUsername = stubbedSshnpdChannel
+            .resolveRemoteUsername();
         await expectLater(remoteUsername, completes);
         expect(await remoteUsername, 'mySharedUsername');
       }); // test resolveRemoteUsername
 
       test('resolveTunnelUsername - params.tunnelUsername override', () async {
         when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername');
-        Future<String?> tunnelUsername =
-            stubbedSshnpdChannel.resolveTunnelUsername(remoteUsername: null);
+        Future<String?> tunnelUsername = stubbedSshnpdChannel
+            .resolveTunnelUsername(remoteUsername: null);
 
         await expectLater(tunnelUsername, completes);
         expect(await tunnelUsername, 'myTunnelUsername');
@@ -489,8 +488,8 @@ void main() {
 
       test('resolveTunnelUsername - both usernames null', () async {
         when(() => mockParams.tunnelUsername).thenReturn(null);
-        Future<String?> tunnelUsername =
-            stubbedSshnpdChannel.resolveTunnelUsername(remoteUsername: null);
+        Future<String?> tunnelUsername = stubbedSshnpdChannel
+            .resolveTunnelUsername(remoteUsername: null);
 
         await expectLater(tunnelUsername, completes);
         expect(await tunnelUsername, null);
@@ -540,19 +539,19 @@ void main() {
       verifyInOrder([
         () => mockAtClient.getRemoteSecondary(),
         () => remoteSecondary.executeVerb(
-              any<VerbBuilder>(
-                that: allOf(
-                  isA<ScanVerbBuilder>(),
-                  predicate(
-                    (ScanVerbBuilder builder) =>
-                        builder.sharedWith == sharedWith &&
-                        builder.sharedBy == sharedBy &&
-                        builder.regex == regex &&
-                        builder.showHiddenKeys == showHiddenKeys,
-                  ),
-                ),
+          any<VerbBuilder>(
+            that: allOf(
+              isA<ScanVerbBuilder>(),
+              predicate(
+                (ScanVerbBuilder builder) =>
+                    builder.sharedWith == sharedWith &&
+                    builder.sharedBy == sharedBy &&
+                    builder.regex == regex &&
+                    builder.showHiddenKeys == showHiddenKeys,
               ),
             ),
+          ),
+        ),
       ]);
 
       await expectLater(result, completes);

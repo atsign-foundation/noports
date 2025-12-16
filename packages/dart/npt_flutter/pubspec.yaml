@@ -16,13 +16,13 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.7.1+25
+version: 1.8.0+25
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.7.1.0
+  msix_version: 1.8.0.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
@@ -73,7 +73,7 @@ dependencies:
   path_provider: ^2.1.4
   phosphor_flutter: ^2.1.0
   pin_code_fields: ^8.0.1
-  socket_connector: ^2.3.3
+  socket_connector: ^2.4.1
   toml: ^0.16.0
   tray_manager: ^0.5.1
   url_launcher: ^6.3.0
@@ -94,6 +94,7 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  archive: ^4.0.7
   file_picker: ^10.3.3
   intl: 0.20.2
   device_info_plus: 11.3.3

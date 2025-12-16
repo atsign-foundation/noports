@@ -28,26 +28,29 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup dart
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
       - name: Set stuff up 
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo "${{ secrets.ATKEYS_8INCANTEATER }}" > ~/.atsign/keys/@8incanteater_key.atKeys
-          echo "${{ secrets.ATKEYS_8485WEALTHY51 }}" > ~/.atsign/keys/@8485wealthy51_key.atKeys
-          echo "${{ secrets.ATKEYS_8052SIMPLE }}" > ~/.atsign/keys/@8052simple_key.atKeys
-          echo "${{ secrets.ATKEYS_829SNOWSHOEING }}" > ~/.atsign/keys/@829snowshoeing_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
       - name: Install expect
         run: |
-          sudo apt-get update
           sudo apt-get install -y expect
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @8052simple @829snowshoeing @rv_eu -p
+          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
@@ -57,7 +60,7 @@ jobs:
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
       - name: Upload /tmp/e2e_all as artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip 

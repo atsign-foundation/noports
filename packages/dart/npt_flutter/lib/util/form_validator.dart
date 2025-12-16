@@ -1,5 +1,7 @@
 // This file contains the form validation logic for the app. It is used to validate the input fields in the app.
 
+import 'dart:io';
+
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
@@ -12,34 +14,33 @@ class FormValidator {
     return null;
   }
 
+  /// Validates an atSign field that is required.
   static String? validateRequiredAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
+
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (!value!.startsWith('@') || value.length < 2) {
+    }
+    // Can starts with '@' and contains only valid atSign characters
+    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
       return strings.validationErrorAtsignField;
     }
-    validateRequiredField(value);
+
     return null;
   }
 
+  /// Validates an atSign field that is optional.
   static String? validateOptionalAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
-    if (!value!.startsWith('@')) {
-      return strings.validationErrorAtsignField;
-    }
 
-    return null;
-  }
-
-  static String? validateEmptyAtsignField(String? value) {
-    final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
       return null;
-    } else if (!value!.startsWith('@')) {
+    }
+    // Can start with '@' and contains only valid atSign characters
+    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
       return strings.validationErrorAtsignField;
     }
-    validateRequiredField(value);
+
     return null;
   }
 
@@ -92,9 +93,11 @@ class FormValidator {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     String valid =
         r'^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)$';
+
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (!value!.contains(RegExp(valid))) {
+    } else if (!value!.contains(RegExp(valid)) &&
+        InternetAddress.tryParse(value) == null) {
       return strings.validationErrorHostField;
     }
     return null;
