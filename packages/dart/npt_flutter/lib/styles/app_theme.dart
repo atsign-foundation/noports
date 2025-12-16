@@ -50,7 +50,7 @@ class AppTheme {
         surfaceTint: Colors.transparent,
       ),
       appBarTheme: const AppBarTheme(
-        color: AppColor.surfaceColor,
+        backgroundColor: AppColor.surfaceColor,
         foregroundColor: Colors.black,
         surfaceTintColor: Colors.transparent,
       ),
@@ -100,6 +100,7 @@ class AppTheme {
       inputDecorationTheme: const InputDecorationTheme().copyWith(
         fillColor: const Color(0xFFF4F4F4),
         filled: true,
+        hoverColor: Colors.transparent,
         constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),
         enabledBorder: const OutlineInputBorder(
           borderSide: BorderSide(
@@ -111,7 +112,7 @@ class AppTheme {
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(
             color: AppColor.textFieldBorderColor,
-            width: Sizes.p2,
+            width: Sizes.p4,
           ),
           borderRadius: BorderRadius.all(Radius.circular(Sizes.p10)),
         ),
@@ -123,17 +124,11 @@ class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(Sizes.p10)),
         ),
         errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(
-            color: AppColor.textFieldBorderColor,
-            width: Sizes.p2,
-          ),
+          borderSide: BorderSide(color: AppColor.errorColor, width: Sizes.p2),
           borderRadius: BorderRadius.all(Radius.circular(Sizes.p10)),
         ),
         focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(
-            color: AppColor.textFieldBorderColor,
-            width: Sizes.p2,
-          ),
+          borderSide: BorderSide(color: AppColor.errorColor, width: Sizes.p2),
           borderRadius: BorderRadius.all(Radius.circular(Sizes.p10)),
         ),
       ),

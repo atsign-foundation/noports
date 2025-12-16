@@ -62,22 +62,21 @@ class BackupKeyCubit extends Cubit<bool> {
         fileName: '${atsign}_key.atKeys',
       );
       if (result) {
+        // File saved Successfully
         await putBackupKeyStatus(result);
         CustomSnackBar.success(content: strings.fileSaved);
+        App.log('backUpKeys: Backup successful'.loggable);
         if (!context.mounted) return;
         if (popDialog) Navigator.of(context).pop();
       } else {
-        CustomSnackBar.error(
-          content: strings.errorAtKeySaveFailed('${atsign}_key.atKeys'),
-          duration: const Duration(seconds: 10),
-        );
+        // User Cancelled - do nothing
+        App.log('Backup cancelled by user'.loggable);
       }
     } catch (e) {
+      // Error during file write
       if (!context.mounted) return;
-      CustomSnackBar.error(
-        content: strings.errorAtKeySaveFailed(e.toString()),
-        duration: const Duration(seconds: 10),
-      );
+      App.log('[ERROR] backUpKeys() failed: $e'.loggable);
+      CustomSnackBar.error(content: strings.errorAtKeySaveFailed(e.toString()));
     }
   }
 }
