@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/activate.dart';
+import 'package:noports_core/commands.dart';
 import 'package:noports_core/utils.dart' show CLILoggingHandler;
 
 enum NoPortsCommand {
@@ -49,11 +49,11 @@ Future<void> main(List<String> args) async {
   try {
     switch (command) {
       case NoPortsCommand.activate:
-        NPActivate activate = NPActivate.fromArgs(args.sublist(1));
+        Activate activate = Activate.fromArgs(args.sublist(1));
         exitCode = await activate.wrappedMain();
         break;
       case NoPortsCommand.issueKeys:
-        NPIssueKeys issueKeys = NPIssueKeys.fromArgs(args.sublist(1));
+        IssueKeys issueKeys = IssueKeys.fromArgs(args.sublist(1));
         exitCode = await issueKeys.wrappedMain();
         break;
     }

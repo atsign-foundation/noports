@@ -9,9 +9,6 @@ class ActivateRegex {
     r'(?:\[:name:(?<device_name>[^:\]]+))?'
     r'(?::?keyfile:(?<keyfile_path>[^\]]+))?\]?$',
   );
-
-  // Issue keys: <atsign>
-  static final issueKeys = RegExp(r'^(?<atsign>@?[\w]+)$');
 }
 
 /// Named capture groups used in noports command regexes.
