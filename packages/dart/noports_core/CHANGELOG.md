@@ -1,3 +1,15 @@
+# 6.10.2
+
+- fix: Require authenticated connection when sshnpd is sending its periodic 
+  "am I alive" heartbeat. This forces issuing of a `from:` request, which in 
+  turn means that a connection via a proxy service is made successfully. 
+  Also, reduce frequency of this heartbeat from every 15 seconds to every 90 
+  seconds.
+
+# 6.10.1
+
+fix: remove late from `AtEventConfig? elc` in NPAImpl
+
 # 6.10.0
 
 - feat: enable redundancy support for Policy Services

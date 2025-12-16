@@ -28,7 +28,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   @override
   final Atsign? eventLoggingAtsign;
 
-  late final AtEventConfig? elc;
+  AtEventConfig? elc;
 
   @override
   final NPARequestHandler handler;

@@ -197,7 +197,9 @@ class SshnpdImpl
       }
 
       AtSignLogger.root_level = 'SEVERE';
-      if (p.verbose) {
+      if (p.debug) {
+        AtSignLogger.root_level = 'FINEST';
+      } else if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
 
@@ -228,7 +230,10 @@ class SshnpdImpl
         notifPreProcessor: notifPreProcessor,
       );
 
-      if (p.verbose) {
+      if (p.debug) {
+        sshnpd.logger.logger.level = Level.FINEST;
+      }
+      else if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
       }
 
@@ -304,11 +309,12 @@ class SshnpdImpl
 
   void startHeartbeat() {
     bool lastHeartbeatOk = true;
-    Timer.periodic(Duration(seconds: 15), (timer) async {
+    Timer.periodic(Duration(seconds: 90), (timer) async {
       String? resp;
       try {
         resp = await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
           'noop:0\n',
+          auth: true,
         );
       } catch (_) {}
       if (resp == null || !resp.startsWith('data:ok')) {
