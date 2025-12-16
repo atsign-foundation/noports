@@ -1,12 +1,11 @@
-import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart'
     show
-        AtEnrollmentResponse,
         ApprovedRequestDecisionBuilder,
-        EnrollmentRequestDecision;
+        EnrollmentRequestDecision,
+        AtEnrollmentResponse;
 import 'package:at_client/at_client.dart'
     show
         EnrollmentService,
@@ -20,69 +19,59 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
-import 'package:noports_core/activate.dart';
+
+import 'package:noports_core/commands.dart';
+import 'package:noports_core/src/commands/issue_keys/issue_keys_parser.dart';
+import 'package:noports_core/src/commands/utils/constants.dart';
 import 'package:noports_core/utils.dart';
-import 'package:path/path.dart' as p;
 
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
-/// This class manages the enrollment flow:
+/// Manages the enrollment flow:
 /// 1. Generates an OTP and enrollment command
 /// 2. Waits for the enrollment request from the new device
 /// 3. Approves the enrollment request
-class NPIssueKeys {
+class IssueKeys {
   static const _baseEnrollCommand = '<atsign>:enroll:otp:<otp>';
   static const _defaultDeviceNamePrefix = 'noports_';
-  static const _otpExpiry = 3600; // in seconds (1 hour)
-  static const otpExpiryString = '${_otpExpiry}s';
-  static const _enrollmentCheckInterval = 3; // in seconds
-  static const _maxRetries = _otpExpiry / _enrollmentCheckInterval;
-  static final _stateFilePath = p.join(
-    Directory.current.path,
-    'noports.issue-keys.state',
-  );
-  static final _stateFile = File(_stateFilePath);
+  static const _otpExpirySeconds = 3600; // 1 hour
+  static const otpExpiryString = '${_otpExpirySeconds}s';
+  static const _enrollmentCheckIntervalSeconds = 3;
+  static const _maxRetries =
+      _otpExpirySeconds / _enrollmentCheckIntervalSeconds;
 
   late final EnrollmentService _enrollmentService;
   late final AtClient _atClient;
-  final NPActivateParams _params;
+
+  final IssueKeysParams _params;
 
   final AtSignLogger logger = AtSignLogger(
-    'NPIssueKeys',
+    'IssueKeys',
     loggingHandler: CLILoggingHandler(),
   )..level = 'info';
 
-  NPIssueKeys._(this._params);
+  IssueKeys._(this._params);
 
   /// Creates and initializes an instance.
   ///
   /// Attempts to resume from a state file if present, otherwise parses
   /// command-line arguments. Establishes connection to atServer and
   /// initializes the enrollment service.
-  factory NPIssueKeys.fromArgs(List<String> args) {
+  factory IssueKeys.fromArgs(List<String> args) {
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
     }
-
-    NPActivateParams? params;
-    // Resume from state file if present
-    if (_stateFile.existsSync()) {
-      final content = _stateFile.readAsStringSync();
-      params = NPActivateParams.fromJson(jsonDecode(content));
-      stderr.writeln('Found state file. Resuming...\n');
-    }
-
-    params ??= NPActivateParams.fromArgs(args);
-
-    return NPIssueKeys._(params);
+    return IssueKeys._(IssueKeysParams.fromArgs(args));
   }
-
-  // File get stateFile => File(_stateFilePath);
 
   /// Entry point for the `issue-keys` command.
   ///
-  /// Orchestrates the complete enrollment flow: prompts for missing parameters,
-  /// generates OTP, waits for enrollment request, and approves it.
+  /// Orchestrates the complete enrollment flow:
+  /// 1. Initialize AtClient connection
+  /// 2. Generate OTP if not provided
+  /// 3. Set default device name
+  /// 4. Display activation command for user
+  /// 5. Wait for and approve the enrollment request
   ///
   /// Returns: 0 on success, 1 on failure
   Future<int> wrappedMain() async {
@@ -92,19 +81,18 @@ class NPIssueKeys {
     }
 
     await _initAtClient();
-    _params.otp ??= await requestEnrollmentOtp(
-      _atClient,
-      otpExpiry: otpExpiryString,
-    );
-    await _promptForMissingParams();
-    await _createStateFile(_params);
-    _displayActivationCommand();
 
-    try {
-      await _waitForAndApproveEnrollment();
-    } finally {
-      if (_stateFile.existsSync()) _stateFile.deleteSync(); // Cleanup stateFile
+    // Check for existing pending enrollment
+    final existingEnrollment = await _fetchEnrollment();
+    if (existingEnrollment != null) {
+      await _approveEnrollment(existingEnrollment);
+      return 0;
     }
+
+    await _ensureOtpAndDeviceName();
+    _displayActivationCommand();
+    await _waitForAndApproveEnrollment();
+
     return 0;
   }
 
@@ -119,33 +107,21 @@ class NPIssueKeys {
     _enrollmentService = DefaultAtServiceFactory().enrollmentService(_atClient);
   }
 
-  Future<void> _promptForMissingParams() async {
-    _params.atKeysFilePath ??= promptUser('atKeys file path (target location)');
-
-    _params.deviceName ??=
-        promptUser('deviceName') ?? '$_defaultDeviceNamePrefix${_params.otp}';
-  }
-
-  /// Writes the state file that store the [NPActivateParams]
+  /// Ensures OTP and device name are populated.
   ///
-  /// State file is used to resume the
-  Future<void> _createStateFile(NPActivateParams params) async {
-    final stateFile = File(_stateFilePath);
-    if (stateFile.existsSync()) return;
+  /// Requests OTP from server.
+  /// Uses default device name(noports_<otp>) if not provided.
+  Future<void> _ensureOtpAndDeviceName() async {
+    _params.otp = await requestEnrollmentOtp(
+      _atClient,
+      otpExpiry: otpExpiryString,
+    );
 
-    final jsonString = jsonEncode(params.toJson());
-    stateFile.createSync();
-
-    final sink = stateFile.openWrite();
-    sink.write(jsonString);
-    await sink.flush();
-    await sink.close();
-
-    logger.finer('Successfully created state file: $_stateFilePath');
+    _params.device ??= '$_defaultDeviceNamePrefix${_params.otp}';
   }
 
   void _displayActivationCommand() {
-    final activationStr = _generateEnrollCommand(_params);
+    final activationStr = _generateEnrollCommand();
     logger.info(
       'Copy the string below and run `noports activate <string>`:\n'
       '\n\tNoPorts Desktop:\n\t$activationStr\n'
@@ -156,28 +132,21 @@ class NPIssueKeys {
   /// Builds the activation command string.
   ///
   /// Format: `<atsign>:enroll:otp:<otp>[:name:<deviceName>:keyfile:<path>]`
-  String _generateEnrollCommand(NPActivateParams params) {
+  String _generateEnrollCommand() {
     final buffer = StringBuffer();
 
     buffer.write(
       _baseEnrollCommand
-          .replaceFirst('<atsign>', params.atsign)
-          .replaceFirst('<otp>', params.otp!),
+          .replaceFirst('<atsign>', _params.atsign)
+          .replaceFirst('<otp>', _params.otp!),
     );
-
-    // Append optional parameters
-    buffer.write('[:name:${params.deviceName}');
-    final keyFile = params.atKeysFilePath;
-    if (keyFile?.isNotEmpty == true) {
-      buffer.write(':keyfile:$keyFile');
-    }
-    buffer.write(']');
+    buffer.write('[:name:${_params.device}]'); // Optional parameter(s)
 
     return buffer.toString();
   }
 
   Future<void> _waitForAndApproveEnrollment() async {
-    final enrollment = await _waitForMatchingEnrollment(_params);
+    final enrollment = await _waitForMatchingEnrollment();
     final response = await _approveEnrollment(enrollment);
 
     if (response.enrollStatus != EnrollmentStatus.approved) {
@@ -204,18 +173,18 @@ class NPIssueKeys {
 
   /// Polls until a matching pending enrollment request is found.
   ///
-  /// Checks every [_enrollmentCheckInterval] seconds for up to [_maxRetries]
+  /// Checks every [_enrollmentCheckIntervalSeconds] seconds for up to [_maxRetries]
   /// attempts before timing out.
   ///
   /// Throws: [AtEnrollmentException] if OTP expires before enrollment found
-  Future<Enrollment> _waitForMatchingEnrollment(NPActivateParams params) async {
+  Future<Enrollment> _waitForMatchingEnrollment() async {
     logger.info(
       'Waiting for enrollment request '
-      '(retry every ${_enrollmentCheckInterval}s)...',
+      '(retry every ${_enrollmentCheckIntervalSeconds}s)...',
     );
 
-    final req = EnrollmentListRequestParam()
-      ..deviceName = params.deviceName
+    final rp = EnrollmentListRequestParam()
+      ..deviceName = _params.device
       ..appName = defaultAppName
       ..namespace = defaultEnrollmentNamespaces.toString()
       ..enrollmentListFilter = [EnrollmentStatus.pending];
@@ -223,21 +192,40 @@ class NPIssueKeys {
     logger.info('Listening...');
 
     for (int attempt = 0; attempt < _maxRetries; attempt++) {
-      final results = await _enrollmentService.fetchEnrollmentRequests(
-        enrollmentListParams: req,
-      );
+      Enrollment? e = await _fetchEnrollment(requestParam: rp);
 
-      if (results.isEmpty) {
-        await Future.delayed(Duration(seconds: _enrollmentCheckInterval));
+      if (e == null) {
+        await Future.delayed(
+          Duration(seconds: _enrollmentCheckIntervalSeconds),
+        );
         continue;
       }
 
-      final e = results.first;
-      logger.finer('Found matching enrollments: $results');
-      logger.info('Enrollment found with id: ${e.enrollmentId}');
       return e;
     }
 
     throw AtEnrollmentException('OTP expired. Please re-run the command');
+  }
+
+  Future<Enrollment?> _fetchEnrollment({
+    EnrollmentListRequestParam? requestParam,
+  }) async {
+    requestParam ??= EnrollmentListRequestParam()
+      ..deviceName = _params.device
+      ..appName = defaultAppName
+      ..namespace = defaultEnrollmentNamespaces.toString()
+      ..enrollmentListFilter = [EnrollmentStatus.pending];
+
+    final results = await _enrollmentService.fetchEnrollmentRequests(
+      enrollmentListParams: requestParam,
+    );
+    logger.finer('Found matching enrollments: ${results.toString()}');
+
+    if (results.isNotEmpty) {
+      logger.info('Enrollment found with id: ${results.first.enrollmentId}');
+      return results.first;
+    }
+
+    return null;
   }
 }
