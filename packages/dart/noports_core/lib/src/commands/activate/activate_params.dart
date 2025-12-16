@@ -1,7 +1,6 @@
 import 'package:args/args.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:noports_core/commands.dart';
 
 import 'package:noports_core/src/commands/utils/constants.dart';
 import 'package:noports_core/src/commands/utils/regex.dart';
@@ -27,7 +26,6 @@ class ActivateParams {
   final String? cramSecret;
   final String? otp;
   final String? deviceName;
-  final bool showHelp;
 
   String? atKeysFilePath;
   String appName = defaultAppName;
@@ -43,18 +41,13 @@ class ActivateParams {
     this.otp,
     this.deviceName,
     this.atKeysFilePath,
-    this.showHelp = false,
   });
 
   factory ActivateParams.fromArgs(List<String> args) {
     final results = parser.parse(args);
 
     if (results.wasParsed('help')) {
-      return ActivateParams(
-        atsign: '@help',
-        type: ActivateType.cram,
-        showHelp: true,
-      );
+      throw HelpRequestedException();
     }
 
     if (results.rest.isEmpty) {
@@ -82,7 +75,6 @@ class ActivateParams {
       otp: _parseOtp(activationString),
       deviceName: _parseDeviceName(activationString),
       atKeysFilePath: keyfile,
-      showHelp: false,
     );
   }
 

@@ -14,10 +14,8 @@ class Activate {
 
   final AtOnboardingService _onboardingService;
 
-  final AtSignLogger logger = AtSignLogger(
-    'NPActivate',
-    loggingHandler: CLILoggingHandler(),
-  )..level = 'info';
+  final logger = AtSignLogger('Activate', loggingHandler: CLILoggingHandler())
+    ..level = 'info';
 
   Activate._(this._onboardingService, this._params);
 
@@ -31,18 +29,16 @@ class Activate {
     final preference = AtOnboardingPreference()
       ..cramSecret = params.cramSecret
       ..atKeysFilePath = params.atKeysFilePath;
-    AtOnboardingService service = AtOnboardingServiceImpl(params.atsign, preference);
+    AtOnboardingService service = AtOnboardingServiceImpl(
+      params.atsign,
+      preference,
+    );
 
     return Activate._(service, params);
   }
 
   /// Entry point for the activate command
   Future<int> wrappedMain() async {
-    if (_params.showHelp) {
-      stderr.writeln(UsageMessages.activateHelp);
-      return 0;
-    }
-
     switch (_params.type) {
       case ActivateType.cram:
         return await cramAuthenticate();
@@ -55,7 +51,7 @@ class Activate {
   ///
   /// Requires [_params.cramSecret] to be set
   ///
-  /// Returns: 0 if authentication succeeds
+  /// Returns: 0 if authentication succeeds, 1 in case of failure
   /// Throws: [ArgumentError] if cram credentials are missing
   Future<int> cramAuthenticate() async {
     if (_params.cramSecret == null) {
@@ -119,8 +115,7 @@ class Activate {
   ///
   ///
   /// TODO: Replace [AtOnboardingServiceImpl] after ensuring that
-  /// [AtOnboardingService] provides a standard way to check for existing keys
-  /// files or throws a specific exception when keys files are missing.
+  /// [AtOnboardingService] throws a specific exception when keyFile exists at defaultPath
   Future<void> _validateAndPrepareKeysFile() async {
     final String? keysFilePath;
 
@@ -134,7 +129,7 @@ class Activate {
       keysFilePath = _params.atKeysFilePath;
     }
 
-    if (keysFilePath == null && !File(keysFilePath!).existsSync()) {
+    if (keysFilePath != null && !File(keysFilePath).existsSync()) {
       return;
     }
 

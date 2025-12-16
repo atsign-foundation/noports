@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:noports_core/commands.dart';
 
 class IssueKeysParams {
   final String atsign;
   final String? atKeysFilePath;
   final String? passPhrase;
   String? device;
-  bool showHelp;
 
   // for internal use
   String? otp;
@@ -19,14 +19,13 @@ class IssueKeysParams {
     this.device,
     this.atKeysFilePath,
     this.passPhrase,
-    this.showHelp = false,
   });
 
   static IssueKeysParams fromArgs(List<String> args) {
     ArgResults r = argParser.parse(args);
 
     if (r.wasParsed('help')) {
-      return IssueKeysParams(atsign: '', showHelp: true);
+      throw HelpRequestedException();
     }
 
     return IssueKeysParams(

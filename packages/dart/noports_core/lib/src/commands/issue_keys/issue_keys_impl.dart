@@ -20,8 +20,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart'
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
 
-import 'package:noports_core/commands.dart';
-import 'package:noports_core/src/commands/issue_keys/issue_keys_parser.dart';
+import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:noports_core/src/commands/utils/constants.dart';
 import 'package:noports_core/utils.dart';
 
@@ -75,11 +74,6 @@ class IssueKeys {
   ///
   /// Returns: 0 on success, 1 on failure
   Future<int> wrappedMain() async {
-    if (_params.showHelp) {
-      stderr.writeln(UsageMessages.issueKeysHelp);
-      return 0;
-    }
-
     await _initAtClient();
 
     // Check for existing pending enrollment

@@ -57,6 +57,9 @@ Future<void> main(List<String> args) async {
         exitCode = await issueKeys.wrappedMain();
         break;
     }
+  } on HelpRequestedException {
+    printUsage(command: command);
+    exit(0);
   } on ArgumentError catch (e) {
     logger.shout(e.message);
     printUsage(command: command);

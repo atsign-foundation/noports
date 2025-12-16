@@ -1,5 +1,5 @@
 import 'package:chalkdart/chalk.dart';
-import 'package:noports_core/src/commands/issue_keys/issue_keys_parser.dart';
+import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 
 class UsageMessages {
   static final mainMenu =
