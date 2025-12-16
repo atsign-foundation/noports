@@ -65,11 +65,8 @@ class ProfileFormView extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Expanded(child: ProfileLocalPortSelector()),
-                                  // Spacer(),
                                   gapW103,
                                   Expanded(child: ProfileLocalHostTextField()),
-
-                                  // gapW103,
                                 ],
                               ),
                             ),
@@ -82,12 +79,10 @@ class ProfileFormView extends StatelessWidget {
                                 children: [
                                   Expanded(child: ProfileRemotePortSelector()),
                                   gapW103,
-                                  // Spacer(),
                                   Expanded(child: ProfileRemoteHostTextField()),
                                 ],
                               ),
                             ),
-                            gapH20,
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Sizes.p50,

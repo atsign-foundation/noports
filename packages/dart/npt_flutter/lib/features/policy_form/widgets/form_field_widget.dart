@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 
 class FormFieldWidget extends StatelessWidget {
   final String label;
@@ -7,6 +8,7 @@ class FormFieldWidget extends StatelessWidget {
   final String? helperText;
   final int? maxLines;
   final void Function(String)? onChanged;
+  final String? Function(String?)? validator;
 
   const FormFieldWidget({
     super.key,
@@ -16,6 +18,7 @@ class FormFieldWidget extends StatelessWidget {
     this.helperText,
     this.maxLines = 1,
     this.onChanged,
+    this.validator,
   });
 
   @override
@@ -25,12 +28,9 @@ class FormFieldWidget extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
-        const SizedBox(height: 8),
+        gapH8,
         SizedBox(
           width: double.infinity,
           child: TextFormField(
@@ -38,11 +38,14 @@ class FormFieldWidget extends StatelessWidget {
             enabled: enabled,
             maxLines: maxLines,
             onChanged: onChanged,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: validator,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               helperText: helperText,
-              filled: !enabled,
-              fillColor: enabled ? null : Colors.grey[100],
             ),
           ),
         ),

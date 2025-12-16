@@ -63,9 +63,6 @@ class SidebarActionButtonsWidget extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColor.primaryColor,
                     foregroundColor: Colors.white,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
                   ),
                 );
               },
