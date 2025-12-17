@@ -1,7 +1,6 @@
 import 'package:args/args.dart';
-import 'package:at_utils/at_utils.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:noports_core/commands.dart';
-
 import 'package:noports_core/src/commands/utils/constants.dart';
 import 'package:noports_core/src/commands/utils/regex.dart';
 
@@ -57,7 +56,7 @@ class ActivateParams {
       );
     }
 
-    final activationString = results.rest.first;
+    final activationString = results.rest.single;
     final type = ActivateType.parse(activationString);
 
     final atsign = _parseAtsign(activationString, type);
@@ -102,9 +101,7 @@ class ActivateParams {
     final match = regex.firstMatch(input);
     final atsign = match?.namedGroup(ActivateRegexGroups.atsign);
 
-    return atsign != null && atsign.isNotEmpty
-        ? AtUtils.fixAtSign(atsign)
-        : null;
+    return atsign != null && atsign.isNotEmpty ? atsign.toAtsign() : null;
   }
 
   static String? _parseCramSecret(String input) {

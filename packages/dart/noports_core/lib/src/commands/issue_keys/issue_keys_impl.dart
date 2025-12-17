@@ -19,7 +19,6 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
-
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:noports_core/src/commands/utils/constants.dart';
 import 'package:noports_core/utils.dart';
@@ -49,13 +48,13 @@ class IssueKeys {
     loggingHandler: CLILoggingHandler(),
   )..level = 'info';
 
-  IssueKeys._(this._params);
+  IssueKeys(this._params);
 
   factory IssueKeys.fromArgs(List<String> args) {
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
     }
-    return IssueKeys._(IssueKeysParams.fromArgs(args));
+    return IssueKeys(IssueKeysParams.fromArgs(args));
   }
 
   /// Entry point for the `issue-keys` command.

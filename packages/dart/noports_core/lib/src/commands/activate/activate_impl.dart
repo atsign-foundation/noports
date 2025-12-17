@@ -4,7 +4,6 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_logger.dart';
-
 import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:noports_core/utils.dart';
@@ -17,7 +16,7 @@ class Activate {
   final logger = AtSignLogger('Activate', loggingHandler: CLILoggingHandler())
     ..level = 'info';
 
-  Activate._(this._onboardingService, this._params);
+  Activate(this._onboardingService, this._params);
 
   factory Activate.fromArgs(List<String> args) {
     if (args.isEmpty) {
@@ -34,7 +33,7 @@ class Activate {
       preference,
     );
 
-    return Activate._(service, params);
+    return Activate(service, params);
   }
 
   /// Entry point for the activate command

@@ -1,3 +1,3 @@
-class HelpRequestedException implements Exception{
-  HelpRequestedException(): super();
+class HelpRequestedException implements Exception {
+  HelpRequestedException() : super();
 }
