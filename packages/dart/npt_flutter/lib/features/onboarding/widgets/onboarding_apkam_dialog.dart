@@ -182,10 +182,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('Device Name: $deviceName'.loggable);
 
     final enrollmentRequest = EnrollmentRequest(
-      appName: Constants.namespace!,
+      appName: Constants.namespace,
       deviceName: deviceName,
       otp: otp,
-      namespaces: {Constants.namespace!: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
     );
 
     App.log('About to enroll with $enrollmentRequest'.loggable);
