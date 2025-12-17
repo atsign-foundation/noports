@@ -1,74 +1,57 @@
 import 'package:chalkdart/chalk.dart';
+import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 
 class UsageMessages {
   static final mainMenu =
       '''
-  
-${chalk.bold('Usage:')} noports ${chalk.cyan('<command>')} [options]
+${chalk.bold('Usage')}
+  noports issue-keys ${chalk.bold('@<atsign>')} ${chalk.gray('[options]')}
+  noports activate ${chalk.bold('<activation_string>')} ${chalk.gray('[options]')}
 
-${chalk.bold('Commands:')}
-  ${chalk.cyan('activate')}      Activate your atsign (new user onboarding)
-  ${chalk.cyan('issue-keys')}    Create a new enrollment
- 
-${chalk.bold('Examples:')}
-  ${chalk.cyan('activate')}      noports activate '@alice:enroll:otp:123456' --keyfile ~/.mykeys.json
-  ${chalk.cyan('issue-keys')}    noports issue-keys -a @alice -k /home/user/keys/@alice.atKeys
+${chalk.bold('Examples')}
+  noports activate '@alice:cram:secret123' (one-time onboarding)
+
+  noports issue-keys @alice
+  noports issue-keys @alice --key-file /path/to/@alice.atKeys --device laptop01
   
-Run 'noports ${chalk.cyan('<command>')} --help' for more information
+  noports activate '@alice:enroll:otp:123456'
+  noports activate '@alice:enroll:otp:123456' --target-keyfile ~/.mykeys.json
+
+${chalk.bold('Further help')}
+  noports ${chalk.cyan('<command>')} --help
 ''';
 
   static final activateHelp =
       '''
 ${chalk.bold('Usage:')} noports activate ${chalk.cyan('<activation_string>')} [options]
 
-${chalk.bold('Options:')}
-  -k, --keyfile <path>        Path to save atKeys file
-  -h, --help                  Show this help message
+  Performs CRAM Onboarding for an atsign (or) initiates a new device enrollment
 
-${chalk.bold('Examples:')}
-  ${chalk.dim('# Using system-generated activation string')}
-  noports activate '@alice:enroll:otp:123456'
+${ActivateParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
 
-  ${chalk.dim('# With custom keyfile location')}
-  noports activate '@alice:enroll:otp:123456' --keyfile ~/.mykeys.json
-
-${chalk.bold('Workflow:')}
-  1. Run 'noports issue-keys @alice' on authenticated device
-  2. Copy activation string to new device
-  3. Run 'noports activate <string>' on new device
-  4. Enrollment auto-approved
-
-${chalk.bold('Notes:')}
-  • If keys file exists at target location, you'll be prompted for alternate path
-  • Default keyfile location: ~/.atsign/keys/@<atsign>_key.atKeys
-  • activation_string needs to be wrapped in quotes
+${chalk.bold('Notes')}
+  • activation_string is system-generated (run 'noports issue-keys --help')
+  • Default keyfile: ~/.atsign/keys/@<atsign>_key.atKeys
 ''';
 
   static final issueKeysHelp =
       '''
-${chalk.bold('Usage:')} noports issue-keys -a ${chalk.cyan('<@atsign>')} ${chalk.cyan('[options]')}
+${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('@<atsign>')} [options]
 
-${chalk.bold('Available Options: ')}
-${IssueKeysParams.argParser.usage}
+  Generates an activation string and auto-approves the corresponding enrollment.
 
-${chalk.bold('Example:')}
-  noports issue-keys @alice
-  noports issue-keys -a @alice -k /home/user/keys/@alice.atKeys
-  noports issue-keys -a @alice -k /home/user/keys/@alice.atKeys -d dev01
-  
-${chalk.bold('Description:')}
-  Generates an enrollment OTP. Then constructs the activation_string with available parameters. 
-  Waits for and automatically approves matching enrollment request.
+${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
 
-${chalk.bold('Workflow:')}
-  1. Run 'noports issue-keys @alice' on authenticated device
-  2. Copy activation string to new device
-  3. Run 'noports activate <string>' on new device
-  4. Enrollment auto-approved
+${chalk.bold('Workflow')}
+  1. Run 'noports issue-keys -a @alice' on authenticated device
+  2. Copy displayed activation_string
+  3. Run 'noports activate <activation_string>' on new device
+  4. Enrollment automatically approved
 
-${chalk.bold('Notes:')}
-  • OTP expires in 1 hour
-  • Resumable if interrupted (re-run the same command)
+${chalk.bold('Notes')}
+  • The activation_string is valid for 1 hour
+  • Resumable if interrupted (re-run same command)
+  • Device name argument applies the target device, not the executing device.
 ''';
 }

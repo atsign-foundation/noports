@@ -6,8 +6,7 @@ class ActivateRegex {
   // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>:keyfile:<path>]
   static final enroll = RegExp(
     r'^(?<atsign>[^:]+):enroll:otp:(?<otp>[A-Za-z0-9]{6})'
-    r'(?:\[:name:(?<device_name>[^:\]]+))?'
-    r'(?::?keyfile:(?<keyfile_path>[^\]]+))?\]?$',
+    r'(?:\[:name:(?<device_name>[^:\]]+))?$',
   );
 }
 

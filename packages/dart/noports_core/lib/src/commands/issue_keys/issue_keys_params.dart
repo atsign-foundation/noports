@@ -37,14 +37,11 @@ class IssueKeysParams {
   static ArgParser _createArgParser() {
     int? usageLineLength = stdout.hasTerminal ? stdout.terminalColumns : null;
     ArgParser p = ArgParser(usageLineLength: usageLineLength);
-
-    p.addFlag('help', abbr: 'h', negatable: false, help: 'Usage instructions');
-
     p.addOption(
       'atsign',
       abbr: 'a',
       mandatory: true,
-      help: 'atSign of this policy service',
+      help: 'The atSign',
     );
 
     p.addOption(
@@ -59,17 +56,17 @@ class IssueKeysParams {
       'pass-phrase',
       abbr: 'P',
       mandatory: false,
-      help: 'Pass phrase to encrypt/decrypt the password protected atKeys file',
+      help: 'Pass phrase to decrypt the password protected atKeys file',
     );
 
     p.addOption(
       'device',
       abbr: 'd',
       mandatory: false,
-      help: 'Name of the device this enrollment is created for',
+      help: 'Name for the device being activated',
     );
 
-    p.addFlag('verbose', abbr: 'v', negatable: false, help: 'More logging');
+    p.addFlag('help', abbr: 'h', negatable: false, help: 'Show this usage info');
 
     return p;
   }

@@ -31,7 +31,7 @@ class ActivateParams {
   Map<String, String> namespaces = defaultEnrollmentNamespaces;
 
   // Static parser for consistent usage and help generation
-  static final ArgParser parser = _createArgParser();
+  static final ArgParser argParser = _createArgParser();
 
   ActivateParams({
     required this.atsign,
@@ -43,7 +43,7 @@ class ActivateParams {
   });
 
   factory ActivateParams.fromArgs(List<String> args) {
-    final results = parser.parse(args);
+    final results = argParser.parse(args);
 
     if (results.wasParsed('help')) {
       throw HelpRequestedException();
@@ -65,7 +65,7 @@ class ActivateParams {
     }
 
     // parse from arg parser results
-    final keyfile = results['keyfile'] as String?;
+    final keyfile = results['target-keyfile'] as String?;
 
     return ActivateParams(
       atsign: atsign,
@@ -77,19 +77,20 @@ class ActivateParams {
     );
   }
 
+  
   static ArgParser _createArgParser() {
     return ArgParser()
       ..addOption(
-        'keyfile',
-        abbr: 'k',
+        'target-keyfile',
+        abbr: 't',
         mandatory: false,
-        help: 'Target location for atKeys file',
+        help: 'Destination path for atKeys file',
       )
       ..addFlag(
         'help',
         abbr: 'h',
         negatable: false,
-        help: 'Show usage information',
+        help: 'Show this usage info',
       );
   }
 

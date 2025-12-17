@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/commands.dart';
-import 'package:noports_core/utils.dart' show CLILoggingHandler;
+import 'package:noports_core/utils.dart';
+import 'package:sshnoports/src/print_version.dart';
 
 enum NoPortsCommand {
   activate('activate'),
@@ -75,6 +76,7 @@ Future<void> main(List<String> args) async {
 void printUsage({NoPortsCommand? command}) {
   if (command == null) {
     stderr.writeln(UsageMessages.mainMenu);
+    printVersion();
     return;
   }
 
@@ -86,4 +88,5 @@ void printUsage({NoPortsCommand? command}) {
       stderr.writeln(UsageMessages.issueKeysHelp);
       break;
   }
+  printVersion();
 }
