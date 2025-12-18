@@ -13,6 +13,7 @@ icon: wrench
 | [Client SSH error "chown failed error"](troubleshooting-1.md#issue-client-ssh-error-chown-failed-error) | SSH error on client                                             | Use `--permit-open` with both 127.0.0.1 and localhost; check file ownership |
 | [Windows app hangs on activation](troubleshooting-1.md#issue-windows-app-hangs-on-activation)           | Stuck on “preparing for activation”                             | Update CA certificates via certutil                                         |
 | [Enrollment authorization failed](troubleshooting-1.md#issue-enrollment-authorization-failed)           | `Failed to authorise enrollment`                                | Use manager keys instead of reused ones                                     |
+| [SUDO\_USER is not set](troubleshooting-1.md#issue-sudo_user-is-not-set)                                | `SUDO_USER: unbound variable` or `SUDO_USER is not set`         | Log in with a regular account instead of root                               |
 
 ### ❌ Issue: Timeout to srvd
 
@@ -106,3 +107,18 @@ icon: wrench
 **Solution** Use the correct **manager keys** for enrollment.
 
 ***
+
+### ❌ Issue: SUDO\_USER is not set
+
+**Symptom**  `SUDO_USER: unbound variable` or `SUDO_USER is not set`               &#x20;
+
+**Root Cause**&#x20;
+
+* You are logged in as the root user.&#x20;
+* No regular (non‑root) account exists on the system.
+
+**Solution**&#x20;
+
+* Log in with a regular account instead of root.
+* Use `sudo` when elevated privileges are required.
+* If you do not have a regular account, create one before running NoPorts commands.
