@@ -7,7 +7,6 @@ import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
 import 'package:npt_flutter/features/features.dart';
-import 'package:npt_flutter/features/policy/repositories/role_repository.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
@@ -44,9 +43,7 @@ class App extends StatelessWidget {
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
         ),
-        RepositoryProvider<RoleRepository>(
-          create: (_) => RoleRepository(),
-        ),
+        RepositoryProvider<RoleRepository>(create: (_) => RoleRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -109,6 +106,9 @@ class App extends StatelessWidget {
           BlocProvider<SyncCubit>(create: (_) => SyncCubit()),
           // A cubit which tracks if the atkey is backed up
           BlocProvider<BackupKeyCubit>(create: (ctx) => BackupKeyCubit()),
+          BlocProvider<PolicyCubit>(
+            create: (ctx) => PolicyCubit(ctx.read<RoleRepository>()),
+          ),
         ],
         child: BlocSelector<SettingsBloc, SettingsState, Language?>(
           selector: (state) {
