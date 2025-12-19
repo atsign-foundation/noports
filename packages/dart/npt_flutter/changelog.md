@@ -1,12 +1,12 @@
 ## 1.8.0+25
 
--FIX: Local port and Remote port are aligned correctly.
--FIX: Info SnackBar prefix text now visible.
--FIX: No Error SnackBar is shown when user cancels backing up their key.
--FIX: Policy Screen layout update for better spacing.
--FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
-
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
+- FIX: Local port and Remote port are aligned correctly.
+- FIX: Info SnackBar prefix text now visible.
+- FIX: No Error SnackBar is shown when user cancels backing up their key.
+- FIX: Policy Screen layout update for better spacing.
+- FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
+- FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
 
 ## 1.7.0+24
 
