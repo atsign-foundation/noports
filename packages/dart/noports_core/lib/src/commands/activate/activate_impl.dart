@@ -135,6 +135,7 @@ class Activate {
     _params.atKeysFilePath = promptUser(
       'Please provide alternate location to store keyfile',
     );
+    logger.info('Sending updated enrollment request');
   }
 
   File? _getKeysFile() {

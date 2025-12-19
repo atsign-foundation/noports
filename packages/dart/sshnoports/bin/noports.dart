@@ -13,80 +13,87 @@ enum NoPortsCommand {
 
   const NoPortsCommand(this.commandName);
 
-  static NoPortsCommand fromString(String value) {
+  static NoPortsCommand? tryParse(String value) {
     try {
       return NoPortsCommand.values
           .firstWhere((cmd) => cmd.commandName == value);
     } catch (e) {
-      throw ArgumentError(value);
+      return null;
     }
   }
 }
 
 Future<void> main(List<String> args) async {
-  displayBanner();
-  AtSignLogger.root_level = 'severe';
-  AtSignLogger logger =
-      AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())
-        ..level = 'info';
+  final logger = setupLogging();
 
-  // Check for help flag
-  if (args.isEmpty || isHelpFlag(args[0])) {
+  if (args.isEmpty) {
+    logger.shout('At least one argument is required');
+    printUsage();
+    exit(1);
+  }
+
+  // Display help if requested
+  if (isHelpFlag(args[0])) {
     printUsage();
     exit(0);
   }
 
   // Parse command
-  final NoPortsCommand command;
-  try {
-    command = NoPortsCommand.fromString(args[0]);
-  } catch (e) {
-    logger.shout('Unknown command: ${args[0]}');
+  final command = NoPortsCommand.tryParse(args[0]);
+  if (command == null) {
+    logger.shout('Invalid command: ${args[0]}');
     printUsage();
     exit(1);
   }
 
-  int exitCode = 0;
   try {
+    final commandArgs = args.sublist(1);
+    int exitCode = 0;
+
     switch (command) {
       case NoPortsCommand.activate:
-        Activate activate = Activate.fromArgs(args.sublist(1));
-        exitCode = await activate.wrappedMain();
+        final activateImpl = Activate.fromArgs(commandArgs);
+        exitCode = await activateImpl.wrappedMain();
         break;
       case NoPortsCommand.issueKeys:
-        IssueKeys issueKeys = IssueKeys.fromArgs(args.sublist(1));
-        exitCode = await issueKeys.wrappedMain();
+        final issueKeysImpl = IssueKeys.fromArgs(commandArgs);
+        exitCode = await issueKeysImpl.wrappedMain();
         break;
     }
+    exit(exitCode);
   } on HelpRequestedException {
     printUsage(command: command);
     exit(0);
   } on ArgumentError catch (e) {
     logger.shout(e.message);
-    printUsage(command: command);
-    exit(2);
+    printUsage();
+    exit(1);
   } catch (e) {
     logger.shout(e.toString());
     exit(2);
   }
-
-  exit(exitCode);
 }
 
 void printUsage({NoPortsCommand? command}) {
   if (command == null) {
     stderr.writeln(UsageMessages.mainMenu);
-    printVersion();
-    return;
-  }
-
-  switch (command) {
-    case NoPortsCommand.activate:
-      stderr.writeln(UsageMessages.activateHelp);
-      break;
-    case NoPortsCommand.issueKeys:
-      stderr.writeln(UsageMessages.issueKeysHelp);
-      break;
+  } else {
+    switch (command) {
+      case NoPortsCommand.activate:
+        stderr.writeln(UsageMessages.activateHelp);
+        break;
+      case NoPortsCommand.issueKeys:
+        stderr.writeln(UsageMessages.issueKeysHelp);
+        break;
+    }
   }
   printVersion();
+  return;
+}
+
+AtSignLogger setupLogging() {
+  displayBanner();
+  AtSignLogger.root_level = 'severe';
+  return AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())
+    ..level = 'info';
 }

@@ -25,10 +25,10 @@ class ActivateParams {
   final String? cramSecret;
   final String? otp;
   final String? deviceName;
+  final appName = defaultAppName;
+  final namespaces = defaultEnrollmentNamespaces;
 
   String? atKeysFilePath;
-  String appName = defaultAppName;
-  Map<String, String> namespaces = defaultEnrollmentNamespaces;
 
   // Static parser for consistent usage and help generation
   static final ArgParser argParser = _createArgParser();
@@ -77,7 +77,6 @@ class ActivateParams {
     );
   }
 
-  
   static ArgParser _createArgParser() {
     return ArgParser()
       ..addOption(

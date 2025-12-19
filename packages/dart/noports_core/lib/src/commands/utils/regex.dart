@@ -3,10 +3,10 @@ class ActivateRegex {
   // CRAM authentication: <atsign>:cram:<secret>
   static final cram = RegExp(r'^(?<atsign>[^:]+):cram:(?<secret>.+)$');
 
-  // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>:keyfile:<path>]
+  // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>]
   static final enroll = RegExp(
     r'^(?<atsign>[^:]+):enroll:otp:(?<otp>[A-Za-z0-9]{6})'
-    r'(?:\[:name:(?<device_name>[^:\]]+))?$',
+    r'(?:\[:name:(?<device_name>[^]+)\])?$',
   );
 }
 

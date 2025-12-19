@@ -7,6 +7,7 @@ class IssueKeysParams {
   final String atsign;
   final String? atKeysFilePath;
   final String? passPhrase;
+
   String? device;
   String? otp;
 
@@ -37,12 +38,7 @@ class IssueKeysParams {
   static ArgParser _createArgParser() {
     int? usageLineLength = stdout.hasTerminal ? stdout.terminalColumns : null;
     ArgParser p = ArgParser(usageLineLength: usageLineLength);
-    p.addOption(
-      'atsign',
-      abbr: 'a',
-      mandatory: true,
-      help: 'The atSign',
-    );
+    p.addOption('atsign', abbr: 'a', mandatory: true, help: 'The atSign');
 
     p.addOption(
       'key-file',
@@ -66,7 +62,12 @@ class IssueKeysParams {
       help: 'Name for the device being activated',
     );
 
-    p.addFlag('help', abbr: 'h', negatable: false, help: 'Show this usage info');
+    p.addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show this usage info',
+    );
 
     return p;
   }
