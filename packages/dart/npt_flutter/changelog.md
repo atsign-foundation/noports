@@ -8,6 +8,7 @@
 - FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
 - FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
 - FIX: Enrollment Dialog cannot be dismissed once the enrollment process starts
+- FIX: Policy and Authorization Screen refreshes after switching atsign.
 
 ## 1.7.0+24
 
