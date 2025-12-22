@@ -47,7 +47,6 @@ class _ETPhoneHomeHttp implements ETPH {
       logger.info('Phoning home: $body');
       var response = await http.post(
         uri,
-        headers: {"Content-Type": "application/json"},
         body: body,
       );
       logger.info('Response status: ${response.statusCode}');
