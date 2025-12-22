@@ -234,27 +234,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await _setStateOnStatus(finalStatus);
   }
 
-  Widget getPopButton(String strings) {
-    return FilledButton(
-      style: FilledButton.styleFrom(
-        textStyle: const TextStyle(fontSize: Sizes.p18),
-        padding: const EdgeInsets.symmetric(
-          horizontal: Sizes.p32,
-          vertical: Sizes.p20,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Sizes.p8),
-        ),
-      ),
-      onPressed: onboardingStatus != OnboardingStatus.pendingApproval
-          ? () {
-              Navigator.of(context).pop();
-            }
-          : null,
-      child: Text(strings),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -369,7 +348,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                             },
                           ),
                           gapH8,
-                          getPopButton(strings.back),
+                          PopButton(
+                            onboardingStatus: onboardingStatus,
+                            context: context,
+                            title: strings.back,
+                          ),
                         ],
                       ),
                     ),
@@ -467,7 +450,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 ],
               ),
               gapW8,
-              getPopButton(strings.done),
+              PopButton(
+                onboardingStatus: onboardingStatus,
+                context: context,
+                title: strings.done,
+              ),
             ],
           ),
           OnboardingStatus.denied => Column(
@@ -485,11 +472,49 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 ],
               ),
               gapW8,
-              getPopButton(strings.done),
+              PopButton(
+                onboardingStatus: onboardingStatus,
+                context: context,
+                title: strings.done,
+              ),
             ],
           ),
         },
       ),
+    );
+  }
+}
+
+class PopButton extends StatelessWidget {
+  const PopButton({
+    super.key,
+    required this.onboardingStatus,
+    required this.context,
+    required this.title,
+  });
+
+  final OnboardingStatus onboardingStatus;
+  final BuildContext context;
+  final String title;
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        textStyle: const TextStyle(fontSize: Sizes.p18),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Sizes.p32,
+          vertical: Sizes.p20,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Sizes.p8),
+        ),
+      ),
+      onPressed: onboardingStatus != OnboardingStatus.pendingApproval
+          ? () {
+              Navigator.of(context).pop();
+            }
+          : null,
+      child: Text(title),
     );
   }
 }
