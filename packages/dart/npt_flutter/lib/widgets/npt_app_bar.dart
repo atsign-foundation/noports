@@ -7,6 +7,7 @@ import 'package:npt_flutter/pages/pages.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/widgets/switch_atsign_button.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -61,7 +62,7 @@ class _NptAppBarState extends State<NptAppBar> {
                     Row(
                       children: [
                         Image.asset('assets/logo.png', width: 24, height: 24),
-                        const SizedBox(width: 8),
+                        gapW8,
                         RichText(
                           text: TextSpan(
                             children: [
@@ -84,7 +85,7 @@ class _NptAppBarState extends State<NptAppBar> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        gapW8,
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,

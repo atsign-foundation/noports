@@ -347,6 +347,12 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                               );
                             },
                           ),
+                          gapH8,
+                          PopButton(
+                            onboardingStatus: onboardingStatus,
+                            context: context,
+                            title: strings.back,
+                          ),
                         ],
                       ),
                     ),
@@ -429,32 +435,86 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
             ],
           ),
-          OnboardingStatus.success => Row(
-            key: const Key('success'),
-            mainAxisSize: MainAxisSize.min,
+          OnboardingStatus.success => Column(
             children: [
-              const Icon(Icons.check, color: Colors.green, size: Sizes.p32),
-              gapW4,
-              Text(
-                strings.enrollApproved,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                key: const Key('success'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check, color: Colors.green, size: Sizes.p32),
+                  gapW4,
+                  Text(
+                    strings.enrollApproved,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+              gapW8,
+              PopButton(
+                onboardingStatus: onboardingStatus,
+                context: context,
+                title: strings.done,
               ),
             ],
           ),
-          OnboardingStatus.denied => Row(
-            key: const Key('denied'),
-            mainAxisSize: MainAxisSize.min,
+          OnboardingStatus.denied => Column(
             children: [
-              const Icon(Icons.close, color: Colors.red, size: Sizes.p32),
-              gapW4,
-              Text(
-                strings.enrollDenied,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                key: const Key('denied'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.close, color: Colors.red, size: Sizes.p32),
+                  gapW4,
+                  Text(
+                    strings.enrollDenied,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+              gapW8,
+              PopButton(
+                onboardingStatus: onboardingStatus,
+                context: context,
+                title: strings.done,
               ),
             ],
           ),
         },
       ),
+    );
+  }
+}
+
+class PopButton extends StatelessWidget {
+  const PopButton({
+    super.key,
+    required this.onboardingStatus,
+    required this.context,
+    required this.title,
+  });
+
+  final OnboardingStatus onboardingStatus;
+  final BuildContext context;
+  final String title;
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        textStyle: const TextStyle(fontSize: Sizes.p18),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Sizes.p32,
+          vertical: Sizes.p20,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Sizes.p8),
+        ),
+      ),
+      onPressed: onboardingStatus != OnboardingStatus.pendingApproval
+          ? () {
+              Navigator.of(context).pop();
+            }
+          : null,
+      child: Text(title),
     );
   }
 }
