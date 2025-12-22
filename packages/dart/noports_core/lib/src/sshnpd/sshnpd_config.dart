@@ -53,7 +53,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: mainGroup,
     ),
   ),
-
   passPhrase(
     StringOption(
       argName: 'pass-phrase',
@@ -67,7 +66,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       hide: true,
     ),
   ),
-
   atsign(
     StringOption(
       argName: 'atsign',
@@ -78,7 +76,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: mainGroup,
     ),
   ),
-
   rootServer(
     StringOption(
       argName: 'root-server',
@@ -111,7 +108,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: accessControlGroup,
     ),
   ),
-
   policyManager(
     StringOption(
       argName: 'policy-manager',
@@ -128,7 +124,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: accessControlGroup,
     ),
   ),
-
   permitOpen(
     MultiStringOption(
       argName: 'permit-open',
@@ -158,7 +153,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: deviceConfigGroup,
     ),
   ),
-
   deviceGroup(
     StringOption(
       argName: 'device-group',
@@ -175,7 +169,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: deviceConfigGroup,
     ),
   ),
-
   hide(
     FlagOption(
       argName: 'hide',
@@ -189,7 +182,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: deviceConfigGroup,
     ),
   ),
-
   unHide(
     FlagOption(
       argName: 'un-hide',
@@ -214,7 +206,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: sshGroup,
     ),
   ),
-
   sshClient(
     EnumOption(
       enumParser: EnumParser(SupportedSshClient.values),
@@ -226,7 +217,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: sshGroup,
     ),
   ),
-
   localSshdPort(
     IntOption(
       argName: 'local-sshd-port',
@@ -239,7 +229,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: sshGroup,
     ),
   ),
-
   sshPublicKeyPermissions(
     MultiStringOption(
       argName: 'sshpublickey-permissions',
@@ -252,7 +241,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: sshGroup,
     ),
   ),
-
   sshEphemeralPermissions(
     MultiStringOption(
       argName: 'ephemeral-permissions',
@@ -267,7 +255,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: sshGroup,
     ),
   ),
-
   sshAlgorithm(
     EnumOption(
       enumParser: EnumParser(SupportedSshAlgorithm.values),
@@ -291,7 +278,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: runtimeGroup,
     ),
   ),
-
   clearCachedPks(
     FlagOption(
       argName: 'clear-cached-pks',
@@ -302,12 +288,12 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: runtimeGroup,
     ),
   ),
-
   strict(
     FlagOption(
       argName: 'strict',
       configKey: '/runtime/strict',
-      helpText: 'Explicitly set strict request verification. By default,'
+      helpText:
+          'Explicitly set strict request verification. By default,'
           ' strict mode is only enabled when using a policy service. NOTE: If'
           ' strict mode is enabled when you are not using a policy service'
           ' then, if a requesting atSign\'s public key has changed since a'
@@ -317,7 +303,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: runtimeGroup,
     ),
   ),
-
   verbose(
     FlagOption(
       argName: 'verbose',
@@ -328,7 +313,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: runtimeGroup,
     ),
   ),
-
   debug(
     FlagOption(
       argName: 'debug',
@@ -338,7 +322,18 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       group: runtimeGroup,
     ),
   ),
-
+  etphUrl(
+    StringOption(
+      argName: 'etph',
+      configKey: '/runtime/etph',
+      mandatory: false,
+      helpText:
+          'An https url. When set, severe error conditions are POSTed here -'
+          ' for example, connectivity problems to the atDirectory, proxy,'
+          ' this daemon\'s atSign\'s atServer, etc',
+      group: runtimeGroup,
+    ),
+  ),
   help(
     FlagOption(
       argName: 'help',

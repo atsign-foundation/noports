@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
+import 'package:at_lookup/at_lookup.dart' show CacheableSecondaryAddressFinder;
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
@@ -174,6 +175,51 @@ class SshnpdImpl
     };
   }
 
+  static Future<void> connectivityCheck(SshnpdParams p) async {
+    ETPH? etph;
+    if (p.etphUrl != null) {
+      etph = ETPH.http(p.deviceAtsign, p.etphUrl!);
+    }
+
+    AtRootDomain atDir = AtRootDomain.parse(p.rootDomain);
+
+    ConnectivityChecker cc = ConnectivityChecker();
+    try {
+      await cc.atDirectory(atDir);
+    } catch (e) {
+      await etph?.phoneHome({
+        'connectivity.atDirectory': p.rootDomain,
+        'exception': e.toString(),
+      });
+
+      // no point in going on to check the atServers
+      return;
+    }
+
+    CacheableSecondaryAddressFinder saf = CacheableSecondaryAddressFinder(
+      atDir.rootDomain,
+      atDir.rootPort,
+    );
+
+    List<String> atSigns = [p.deviceAtsign];
+    if (p.policyManagerAtsign != null) {
+      atSigns.add(p.policyManagerAtsign!);
+    }
+    atSigns.addAll(p.managerAtsigns);
+
+    for (final atSign in atSigns.map((s) => s.toAtsign())) {
+      try {
+        await cc.atServer(saf, atSign);
+      } catch (e) {
+        await etph?.phoneHome({
+          'connectivity.atServer': atSign,
+          'atDirectory': '${atDir.rootDomain}:${atDir.rootPort}',
+          'exception': e.toString(),
+        });
+      }
+    }
+  }
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,
@@ -190,6 +236,8 @@ class SshnpdImpl
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
+
+      await connectivityCheck(p);
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -232,8 +280,7 @@ class SshnpdImpl
 
       if (p.debug) {
         sshnpd.logger.logger.level = Level.FINEST;
-      }
-      else if (p.verbose) {
+      } else if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
       }
 
@@ -333,8 +380,8 @@ class SshnpdImpl
 
   /// Notification handler for requests from clients
   Future<void> clientRequestNotificationHandler(
-      AtNotification notification,
-      ) async {
+    AtNotification notification,
+  ) async {
     try {
       try {
         if (notifPreProcessor != null) {
@@ -343,7 +390,7 @@ class SshnpdImpl
       } catch (e) {
         logger.shout(
           'Notification pre-processing failed with $e\n'
-              'Notification: $notification',
+          'Notification: $notification',
         );
         return;
       }
@@ -351,11 +398,11 @@ class SshnpdImpl
       String messageType = notification.key
           .replaceAll('${notification.to}:', '')
           .replaceAll(
-        '.$device.${DefaultArgs.namespace}${notification.from}',
-        '',
-      )
-      // convert to lower case as the latest AtClient converts notification
-      // keys to lower case when received
+            '.$device.${DefaultArgs.namespace}${notification.from}',
+            '',
+          )
+          // convert to lower case as the latest AtClient converts notification
+          // keys to lower case when received
           .toLowerCase();
 
       NPAAuthCheckResponse auth = await authCheck(notification);
@@ -738,14 +785,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-          SessionEvent.denied(
-            sessionId: req.sessionId,
-            authInfo: NPAAuthCheckResponse(
-              authorized: false,
-              message: 'POLICY denied request',
-              permitOpen: auth.permitOpen,
-            ).toJson(),
-          )
+        SessionEvent.denied(
+          sessionId: req.sessionId,
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'POLICY denied request',
+            permitOpen: auth.permitOpen,
+          ).toJson(),
+        ),
       );
 
       // Notify noports client that this session is NOT connected
@@ -883,7 +930,7 @@ class SshnpdImpl
         d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
       }
     }
-      if (inline) {
+    if (inline) {
       SocketConnector sc = await Srv.dart(
         req.rvdHost,
         req.rvdPort,
@@ -1036,14 +1083,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-          SessionEvent.denied(
-            sessionId: req.sessionId,
-            authInfo: NPAAuthCheckResponse(
-              authorized: false,
-              message: 'POLICY denied request',
-              permitOpen: auth.permitOpen,
-            ).toJson(),
-          )
+        SessionEvent.denied(
+          sessionId: req.sessionId,
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'POLICY denied request',
+            permitOpen: auth.permitOpen,
+          ).toJson(),
+        ),
       );
 
       // Notify noports client that this session is NOT connected
@@ -1391,7 +1438,9 @@ class SshnpdImpl
           sessionId: sessionId,
         );
       } else {
-        await _logEvent(SessionEvent.daemonConnecting(sessionId: req.sessionId));
+        await _logEvent(
+          SessionEvent.daemonConnecting(sessionId: req.sessionId),
+        );
 
         /// Notify sshnp that the connection has been made
         await _notify(
