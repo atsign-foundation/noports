@@ -43,9 +43,15 @@ void main(List<String> args) async {
 
   final app = Alfred();
 
-  app.post('/api/ph/et', (req, res) async {
+  //   app.all('/typed-example/:id:int/:name', (req, res) {
+  //     req.params['id'] != null;
+  //     req.params['id'] is int;
+  //     req.params['name'] != null;
+  //   });
+  app.post('/api/ph/et/:atsign64', (req, res) async {
+    String? atSign = req.params['atsign64'] ?? '@n/s';
     stdout.writeln(
-        '${DateTime.now().toUtc().toIso8601String()} | ${await req.body}\n');
+        '${DateTime.now().toUtc().toIso8601String()} | $atSign | ${await req.body}\n');
 
     res.statusCode = 200;
   });
