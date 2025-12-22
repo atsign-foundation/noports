@@ -28,6 +28,7 @@ updates:
       - "/packages/dart/sshnoports/"
       - "/packages/dart/sshnp_flutter/"
       - "/apps/admin/admin_api/"
+      - "/apps/admin/etph/"
     schedule:
       interval: "daily"
     groups:

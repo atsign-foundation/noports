@@ -5,6 +5,7 @@ packages:
   - packages/dart/sshnoports
   - packages/dart/npt_flutter
   - apps/admin/admin_api
+  - apps/admin/etph
 
 command:
   bootstrap:
@@ -16,4 +17,5 @@ command:
         --scope="sshnoports" \
         --scope="npt_flutter" \
         --scope="admin_api" \
+        --scope="etph" \
         -- "dart run build_runner build --delete-conflicting-outputs"

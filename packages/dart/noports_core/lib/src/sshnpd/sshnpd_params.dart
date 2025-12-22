@@ -30,6 +30,7 @@ class SshnpdParams {
   final String permitOpen;
   final bool clearCachedPKs;
   final bool strict;
+  final String? etphUrl;
 
   SshnpdParams({
     required this.device,
@@ -55,6 +56,7 @@ class SshnpdParams {
     required this.permitOpen,
     required this.clearCachedPKs,
     required this.strict,
+    required this.etphUrl,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -165,6 +167,7 @@ class SshnpdParams {
       clearCachedPKs: c.value(SshnpdOption.clearCachedPks),
       strict:
           c.optionalValue(SshnpdOption.strict) ?? policyManagerAtsign != null,
+      etphUrl: c.optionalValue(SshnpdOption.etphUrl),
     );
   }
 }

@@ -1,3 +1,7 @@
+# 6.11.0
+
+- feat: Added ETPH, ability to 'phone home' with error / exception telemetry.
+
 # 6.10.2
 
 - fix: Require authenticated connection when sshnpd is sending its periodic 
