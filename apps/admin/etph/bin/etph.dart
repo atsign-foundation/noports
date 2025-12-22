@@ -54,7 +54,10 @@ void main(List<String> args) async {
     String atSign = atSign64;
     try {
       atSign = String.fromCharCodes(base64Decode(atSign64));
-    } catch (_) {}
+    } catch (_) {
+      res.statusCode = 404;
+      return;
+    }
     stdout.writeln(
         '${DateTime.now().toUtc().toIso8601String()} | $atSign | ${await req.body}\n');
 
