@@ -36,14 +36,14 @@ class _ETPhoneHomeHttp implements ETPH {
   late final AtSignLogger logger;
 
   _ETPhoneHomeHttp(this.atSign, this.url) {
-    uri = Uri.parse('$url/${base64Encode(atSign.codeUnits)}');
+    uri = Uri.parse(url);
     logger = AtSignLogger(runtimeType.toString())..level = 'info';
   }
 
   @override
   Future<bool> phoneHome(Map<String, dynamic> json) async {
     try {
-      String body = jsonEncode(json);
+      String body = jsonEncode({"atSign": atSign, "payload": json});
       logger.info('Phoning home: $body');
       var response = await http.post(
         uri,
