@@ -51,11 +51,13 @@ class _ETPhoneHomeHttp implements ETPH {
         body: body,
       );
       logger.info('Response status: ${response.statusCode}');
-      logger.info('Response body: ${response.body}');
+      if (response.body.isNotEmpty) {
+        logger.info('Response body: ${response.body}');
+      }
 
       return (response.statusCode >= 200 && response.statusCode < 300);
     } catch (e) {
-      logger.severe('Failed to phoneHome: $e');
+      logger.warning('Failed to phoneHome: $e');
       return false;
     }
   }
