@@ -213,6 +213,7 @@ class SshnpdImpl
       } catch (e) {
         await etph?.phoneHome({
           'connectivity.atServer': atSign,
+          'atDirectory': '${atDir.rootDomain}:${atDir.rootPort}',
           'exception': e.toString(),
         });
       }
