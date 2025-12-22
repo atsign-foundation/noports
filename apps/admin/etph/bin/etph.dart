@@ -63,6 +63,7 @@ void main(List<String> args) async {
         '${DateTime.now().toUtc().toIso8601String()} | $atSign | ${await req.body}\n');
 
     res.statusCode = 200;
+
   });
 
   await app.listen(bindPort, bindIp);
