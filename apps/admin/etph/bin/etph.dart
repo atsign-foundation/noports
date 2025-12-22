@@ -49,16 +49,9 @@ void main(List<String> args) async {
   //     req.params['id'] is int;
   //     req.params['name'] != null;
   //   });
-  app.post('/api/ph/et/:atsign64', (req, res) async {
-    String atSign64 = req.params['atsign64'];
-    String atSign = atSign64;
-    try {
-      atSign = String.fromCharCodes(base64Decode(atSign64));
-    } catch (_) {
-      res.statusCode = 404;
-      await res.send('404 not found');
-      return;
-    }
+  app.post('/api/ph/et/:atsign', (req, res) async {
+    String atSign = req.params['atsign'];
+
     stdout.writeln(
         '${DateTime.now().toUtc().toIso8601String()} | $atSign | ${await req.body}\n');
 
