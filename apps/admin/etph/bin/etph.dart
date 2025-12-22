@@ -56,6 +56,7 @@ void main(List<String> args) async {
       atSign = String.fromCharCodes(base64Decode(atSign64));
     } catch (_) {
       res.statusCode = 404;
+      await res.send('404 not found');
       return;
     }
     stdout.writeln(
