@@ -19,7 +19,7 @@ In this installation guide, `@example01_np` will represent the client atSign, wh
 
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
-Download the installer from GitHub by running the following command:
+Open a terminal and download the installer from GitHub by running the following command:
 
 ```bash
 curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh
@@ -118,7 +118,7 @@ After setting up the machine you're connecting from, you'll configure the machin
 Do not run the following commands while logged in as the root user. Instead, use `sudo` from a regular account when elevated privileges are required, and create a regular account if one does not already exist.
 {% endhint %}
 
-Download the installer from GitHub by running the following command:
+Open a terminal and download the installer from GitHub by running the following command:
 
 ```bash
 curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh

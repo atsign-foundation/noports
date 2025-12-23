@@ -19,7 +19,7 @@ In this installation guide, `@example01_np` will represent the client atSign, wh
 
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
-Download the installer from GitHub by running the following command:
+Open a terminal and download the installer from GitHub by running the following command:
 
 ```bash
 curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh

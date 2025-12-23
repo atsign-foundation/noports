@@ -24,7 +24,7 @@ Ensure both Core Tools & Daemon Service are being installed.
 
 ### <mark style="color:orange;">Step 7:</mark> Initiate atSign authorization request
 
-Run the following command to make an authorization request.&#x20;
+Open a terminal (Command Prompt or PowerShell) and run the following command to make an authorization request.&#x20;
 
 {% hint style="warning" %}
 Be sure to replace the following values:
@@ -62,7 +62,7 @@ If you encounter a handshake exception, it usually means your root certificates 
 
 ### <mark style="color:orange;">Step 8:</mark> Setup Service Config
 
-The service config lives in C:\Program Data\NoPorts\sshnpd.yaml, you can open it in notepad with this command:
+The service config lives in C:\Program Data\NoPorts\sshnpd.yaml, you can open it in notepad buy running the following command:
 
 {% hint style="danger" %}
 Make sure you run notepad/terminal as administrator or else you won't be able to save your changes!

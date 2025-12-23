@@ -16,7 +16,7 @@ Complete these steps **on the machine you are connecting to (MacOS)**
 
 ### <mark style="color:orange;">Step 6:</mark> Download and run the Installer
 
-Download the installer from GitHub by running the following command:
+Open a terminal and download the installer from GitHub by running the following command:
 
 ```bash
 curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh
