@@ -18,11 +18,10 @@ class PolicyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
-    return BlocProvider(
-      create: (context) =>
-          PolicyCubit(context.read<RoleRepository>())..loadRoles(strings),
-      child: PolicyContent(atSign: atSign),
+    return BlocBuilder<PolicyCubit, PolicyState>(
+      builder: (context, state) {
+        return PolicyContent(atSign: atSign);
+      },
     );
   }
 }
