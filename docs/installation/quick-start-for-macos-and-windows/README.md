@@ -54,8 +54,16 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 
 ### <mark style="color:orange;">Step 5:</mark> Establish a connection&#x20;
 
+**Connection Options**\
+&#x20;You can either connect to your own remote machine or use our hidden test connection page.
+
+* **Remote machine setup:** Activate a second atSign, install NoPorts on the remote machine, and create a connection profile (about 10 minutes).
+* **Test connection:** Use the hidden test page for a quicker option.
+
+Select a tab below to continue.
+
 {% tabs %}
-{% tab title="Connect to your own remote machine" %}
+{% tab title="Your Remote Machine" %}
 ### <mark style="color:orange;">Step 5.1:</mark> Activate your device atSign (@example02\_np)
 
 {% hint style="warning" %}
@@ -84,7 +92,7 @@ Please select the operating system running on the machine you are connecting to 
 <table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>macOS</strong></td><td><a href="to-macos.md">to-macos.md</a></td></tr><tr><td><strong>Linux</strong></td><td><a href="to-linux.md">to-linux.md</a></td></tr><tr><td><strong>Windows</strong></td><td><a href="to-windows.md">to-windows.md</a></td></tr></tbody></table>
 {% endtab %}
 
-{% tab title="Set up a test connection to our hidden page " %}
+{% tab title="Our Test Page " %}
 1. On the Connections tab, you'll see a banner saying "Demo. Click here to load the test profile." Click **Try Now.**
 2. Once the profile has been added to your list, click the **Connect Icon ▶️** to establish a connection.
 3. Open a web browser and navigate to`http://localhost:8080`.
