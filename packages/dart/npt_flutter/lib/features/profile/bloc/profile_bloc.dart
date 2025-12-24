@@ -246,7 +246,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
-      
+
       // Launch the connection URI if provided
       if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
         UriHandlerService.handleUri(profile.connectUri);
@@ -369,7 +369,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           sc,
         );
         emit(ProfileStarted(uuid, profile: profile));
-        
+
         // Launch the connection URI if provided
         if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
           UriHandlerService.handleUri(profile.connectUri);

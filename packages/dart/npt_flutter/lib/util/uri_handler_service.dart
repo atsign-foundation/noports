@@ -5,7 +5,7 @@ import 'package:npt_flutter/app.dart';
 /// Service to handle connection URIs and launch appropriate applications
 class UriHandlerService {
   /// Launches the appropriate application for the given URI
-  /// 
+  ///
   /// Supports:
   /// - http/https: Opens in default browser
   /// - rdp: Launches RDP client
@@ -19,22 +19,22 @@ class UriHandlerService {
 
     try {
       final uri = Uri.parse(uriString.trim());
-      
+
       // Handle different URI schemes
       switch (uri.scheme.toLowerCase()) {
         case 'http':
         case 'https':
           return await _launchUrl(uri);
-        
+
         case 'rdp':
           return await _launchRdp(uri);
-        
+
         case 'ssh':
           return await _launchSsh(uri);
-        
+
         case 'vnc':
           return await _launchVnc(uri);
-        
+
         default:
           // Try to launch using the OS default handler
           return await _launchUrl(uri);
@@ -49,10 +49,7 @@ class UriHandlerService {
   static Future<bool> _launchUrl(Uri uri) async {
     try {
       if (await canLaunchUrl(uri)) {
-        return await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
       App.log('Cannot launch URL: $uri'.loggable);
       return false;
@@ -67,47 +64,41 @@ class UriHandlerService {
     try {
       String host = uri.host;
       int port = uri.hasPort ? uri.port : 3389;
-      
+
+      App.log('Launching RDP: $host:$port'.loggable);
+
       if (Platform.isWindows) {
         // Windows: Use mstsc (Microsoft Terminal Services Client)
-        final result = await Process.run(
-          'mstsc',
-          ['/v:$host:$port'],
-        );
+        final result = await Process.run('mstsc', ['/v:$host:$port']);
         return result.exitCode == 0;
       } else if (Platform.isMacOS) {
-        // macOS: Try to launch Microsoft Remote Desktop or use rdp:// URL
+        // macOS: Try to launch rdp:// URI with system handler
         final rdpUri = Uri(scheme: 'rdp', host: host, port: port);
         if (await canLaunchUrl(rdpUri)) {
-          return await launchUrl(
-            rdpUri,
-            mode: LaunchMode.externalApplication,
-          );
+          App.log('Launching RDP URI: $rdpUri'.loggable);
+          return await launchUrl(rdpUri, mode: LaunchMode.externalApplication);
         }
-        // Fallback: open Microsoft Remote Desktop if installed
-        final result = await Process.run(
-          'open',
-          ['-a', 'Microsoft Remote Desktop', '--args', 'rdp://full%20address=s:$host:$port'],
-        );
-        return result.exitCode == 0;
+
+        App.log('No RDP handler found on macOS'.loggable);
+        return false;
       } else if (Platform.isLinux) {
         // Linux: Try xfreerdp, rdesktop, or other RDP clients
         try {
-          final result = await Process.run(
-            'xfreerdp',
-            ['/v:$host:$port', '/cert:ignore'],
-          );
+          final result = await Process.run('xfreerdp', [
+            '/v:$host:$port',
+            '/cert:ignore',
+          ]);
           return result.exitCode == 0;
         } catch (e) {
           // Try rdesktop as fallback
           try {
-            final result = await Process.run(
-              'rdesktop',
-              ['$host:$port'],
-            );
+            final result = await Process.run('rdesktop', ['$host:$port']);
             return result.exitCode == 0;
           } catch (e) {
-            App.log('No RDP client found on Linux. Install xfreerdp or rdesktop.'.loggable);
+            App.log(
+              'No RDP client found on Linux. Install xfreerdp or rdesktop.'
+                  .loggable,
+            );
             return false;
           }
         }
@@ -122,40 +113,51 @@ class UriHandlerService {
   /// Launches SSH client with the given URI
   static Future<bool> _launchSsh(Uri uri) async {
     try {
-      String host = uri.host;
-      int port = uri.hasPort ? uri.port : 22;
-      String? user = uri.userInfo.isNotEmpty ? uri.userInfo : null;
-      
-      String sshCommand = user != null ? '$user@$host' : host;
-      
-      if (Platform.isWindows) {
-        // Windows: Launch in new terminal window
-        final result = await Process.run(
-          'cmd',
-          ['/c', 'start', 'ssh', '-p', '$port', sshCommand],
+      App.log('Launching SSH URI: $uri'.loggable);
+
+      // Try to launch the ssh:// URI with the system default handler
+      if (await canLaunchUrl(uri)) {
+        final result = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
         );
-        return result.exitCode == 0;
-      } else if (Platform.isMacOS) {
-        // macOS: Launch Terminal with SSH command
-        final result = await Process.run(
-          'osascript',
-          [
-            '-e',
-            'tell application "Terminal" to do script "ssh -p $port $sshCommand"'
-          ],
-        );
-        return result.exitCode == 0;
-      } else if (Platform.isLinux) {
-        // Linux: Launch in default terminal
-        final result = await Process.run(
-          'x-terminal-emulator',
-          ['-e', 'ssh', '-p', '$port', sshCommand],
-        );
-        return result.exitCode == 0;
+        if (result) {
+          App.log('SSH URI launched successfully'.loggable);
+        } else {
+          App.log('SSH URI launch returned false'.loggable);
+        }
+        return result;
       }
+
+      App.log('Cannot launch SSH URI - no handler available'.loggable);
+
+      // Fallback: construct an ssh command and try to launch Terminal with it
+      if (Platform.isMacOS) {
+        String host = uri.host;
+        int port = uri.hasPort ? uri.port : 22;
+        String? user = uri.userInfo.isNotEmpty ? uri.userInfo : null;
+        String sshCommand = user != null ? '$user@$host' : host;
+
+        try {
+          final result = await Process.run('osascript', [
+            '-e',
+            'tell application "Terminal" to do script "ssh -p $port $sshCommand"',
+          ]);
+
+          if (result.exitCode == 0) {
+            App.log('SSH launched via Terminal fallback'.loggable);
+            return true;
+          } else {
+            App.log('Terminal fallback failed: ${result.stderr}'.loggable);
+          }
+        } catch (e) {
+          App.log('Terminal fallback error: $e'.loggable);
+        }
+      }
+
       return false;
     } catch (e) {
-      App.log('Error launching SSH client: $e'.loggable);
+      App.log('Error launching SSH: $e'.loggable);
       return false;
     }
   }
@@ -165,29 +167,20 @@ class UriHandlerService {
     try {
       String host = uri.host;
       int port = uri.hasPort ? uri.port : 5900;
-      
+
       if (Platform.isWindows) {
         // Try to use TightVNC or other VNC viewer
         final vncUri = Uri(scheme: 'vnc', host: host, port: port);
         if (await canLaunchUrl(vncUri)) {
-          return await launchUrl(
-            vncUri,
-            mode: LaunchMode.externalApplication,
-          );
+          return await launchUrl(vncUri, mode: LaunchMode.externalApplication);
         }
       } else if (Platform.isMacOS) {
         // macOS: Use Screen Sharing
-        final result = await Process.run(
-          'open',
-          ['vnc://$host:$port'],
-        );
+        final result = await Process.run('open', ['vnc://$host:$port']);
         return result.exitCode == 0;
       } else if (Platform.isLinux) {
         // Linux: Try vncviewer
-        final result = await Process.run(
-          'vncviewer',
-          ['$host:$port'],
-        );
+        final result = await Process.run('vncviewer', ['$host:$port']);
         return result.exitCode == 0;
       }
       return false;

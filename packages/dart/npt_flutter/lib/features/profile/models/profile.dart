@@ -68,7 +68,9 @@ final class Profile extends Loggable with Favoritable {
       localPort: localPort ?? this.localPort,
       only443: only443 ?? this.only443,
       keepAlive: keepAlive ?? this.keepAlive,
-      connectUri: connectUri == _undefined ? this.connectUri : connectUri as String?,
+      connectUri: connectUri == _undefined
+          ? this.connectUri
+          : connectUri as String?,
     );
   }
 

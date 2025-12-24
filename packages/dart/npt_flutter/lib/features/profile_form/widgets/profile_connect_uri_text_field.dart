@@ -31,14 +31,16 @@ class ProfileConnectUriTextField extends StatelessWidget {
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: const InputDecoration(
                   errorMaxLines: 3,
-                  hintText: 'e.g., http://localhost:8080 or rdp://localhost:3389',
+                  hintText:
+                      'e.g., http://localhost:8080 or rdp://localhost:3389',
                 ),
                 onChanged: (value) {
                   var bloc = context.read<ProfileBloc>();
                   bloc.add(
                     ProfileEditEvent(
-                      profile: state.profile
-                          .copyWith(connectUri: value.isEmpty ? null : value),
+                      profile: state.profile.copyWith(
+                        connectUri: value.isEmpty ? null : value,
+                      ),
                     ),
                   );
                 },
