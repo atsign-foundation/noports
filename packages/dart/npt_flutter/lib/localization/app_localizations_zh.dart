@@ -668,6 +668,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
+  String get connectUri => '连接 URI';
+
+  @override
+  String get connectUriDescription =>
+      '建立连接时自动打开的可选 URI（例如：http://localhost:8080 或 rdp://localhost:3389）';
+
+  @override
   String get removeAtsign => '删除 atSign';
 
   @override

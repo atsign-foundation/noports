@@ -702,6 +702,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The port that will be used on the remote machine';
 
   @override
+  String get connectUri => 'Connection URI';
+
+  @override
+  String get connectUriDescription =>
+      'Optional URI to automatically open when connection is established (e.g., http://localhost:8080 or rdp://localhost:3389)';
+
+  @override
   String get removeAtsign => 'Remove atSign';
 
   @override

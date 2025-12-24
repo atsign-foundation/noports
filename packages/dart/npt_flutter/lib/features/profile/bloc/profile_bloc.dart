@@ -9,6 +9,7 @@ import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/uri_handler_service.dart';
 import 'package:socket_connector/socket_connector.dart';
 
 part 'profile_event.dart';
@@ -245,6 +246,11 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
+      
+      // Launch the connection URI if provided
+      if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
+        UriHandlerService.handleUri(profile.connectUri);
+      }
     } catch (err) {
       cancel?.call();
       emit(
@@ -363,6 +369,11 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           sc,
         );
         emit(ProfileStarted(uuid, profile: profile));
+        
+        // Launch the connection URI if provided
+        if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
+          UriHandlerService.handleUri(profile.connectUri);
+        }
       }
     } catch (err) {
       cancel?.call();

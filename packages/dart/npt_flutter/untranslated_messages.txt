@@ -1,1 +1,16 @@
-{}
+{
+  "pt_BR": [
+    "connectUri",
+    "connectUriDescription"
+  ],
+
+  "zh_Hans_CH": [
+    "connectUri",
+    "connectUriDescription"
+  ],
+
+  "zh_Hant_HK": [
+    "connectUri",
+    "connectUriDescription"
+  ]
+}

@@ -1391,6 +1391,18 @@ abstract class AppLocalizations {
   /// **'The port that will be used on the remote machine'**
   String get remotePortDescription;
 
+  /// No description provided for @connectUri.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection URI'**
+  String get connectUri;
+
+  /// No description provided for @connectUriDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional URI to automatically open when connection is established (e.g., http://localhost:8080 or rdp://localhost:3389)'**
+  String get connectUriDescription;
+
   /// No description provided for @removeAtsign.
   ///
   /// In en, this message translates to:

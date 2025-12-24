@@ -711,6 +711,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'A porta que será usada na máquina remota';
 
   @override
+  String get connectUri => 'URI de Conexão';
+
+  @override
+  String get connectUriDescription =>
+      'URI opcional para abrir automaticamente quando a conexão for estabelecida (ex., http://localhost:8080 ou rdp://localhost:3389)';
+
+  @override
   String get removeAtsign => 'Remover atSign';
 
   @override

@@ -23,6 +23,7 @@ final class Profile extends Loggable with Favoritable {
   final String localHost;
   final bool only443;
   final bool keepAlive;
+  final String? connectUri;
 
   // String get localHost => _localHost ?? StringConst.localhost;
 
@@ -38,6 +39,7 @@ final class Profile extends Loggable with Favoritable {
     this.localHost = StringConst.localhost,
     this.only443 = false,
     this.keepAlive = false,
+    this.connectUri,
   });
 
   Profile copyWith({
@@ -52,6 +54,7 @@ final class Profile extends Loggable with Favoritable {
     String? localHost,
     bool? only443,
     bool? keepAlive,
+    Object? connectUri = _undefined,
   }) {
     return Profile(
       uuid ?? this.uuid,
@@ -65,8 +68,11 @@ final class Profile extends Loggable with Favoritable {
       localPort: localPort ?? this.localPort,
       only443: only443 ?? this.only443,
       keepAlive: keepAlive ?? this.keepAlive,
+      connectUri: connectUri == _undefined ? this.connectUri : connectUri as String?,
     );
   }
+
+  static const _undefined = Object();
 
   /// Json but without the uuid
   Map<String, dynamic> toExportableJson() => _$ProfileToJson(this);
@@ -98,6 +104,7 @@ final class Profile extends Loggable with Favoritable {
     localHost,
     only443,
     keepAlive,
+    connectUri,
   ];
 
   @override
