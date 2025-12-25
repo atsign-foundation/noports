@@ -675,6 +675,25 @@ class AppLocalizationsZh extends AppLocalizations {
       '建立连接时自动打开的可选 URI（例如：http://localhost:8080 或 rdp://localhost:3389）';
 
   @override
+  String get autoStartApplication => '连接时自动启动应用程序';
+
+  @override
+  String get connectUriProtocol => '协议';
+
+  @override
+  String get connectUriProtocolDescription => '选择连接的协议（使用本地主机和本地端口）';
+
+  @override
+  String get connectUriUsername => '用户名';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'SSH 等协议的可选用户名（例如 ssh://user@host 中的 user）';
+
+  @override
+  String get connectUriProtocolNone => '无';
+
+  @override
   String get removeAtsign => '删除 atSign';
 
   @override

@@ -718,6 +718,27 @@ class AppLocalizationsPt extends AppLocalizations {
       'URI opcional para abrir automaticamente quando a conexão for estabelecida (ex., http://localhost:8080 ou rdp://localhost:3389)';
 
   @override
+  String get autoStartApplication =>
+      'Iniciar Aplicativo Automaticamente ao Conectar';
+
+  @override
+  String get connectUriProtocol => 'Protocolo';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Selecione o protocolo para a conexão (usa Host Local e Porta Local)';
+
+  @override
+  String get connectUriUsername => 'Nome de usuário';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nome de usuário opcional para protocolos como SSH (ex., usuário em ssh://usuário@host)';
+
+  @override
+  String get connectUriProtocolNone => 'Nenhum';
+
+  @override
   String get removeAtsign => 'Remover atSign';
 
   @override

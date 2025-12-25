@@ -248,8 +248,9 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       emit(ProfileStarted(uuid, profile: profile));
 
       // Launch the connection URI if provided
-      if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
-        UriHandlerService.handleUri(profile.connectUri);
+      final uri = profile.constructedConnectUri;
+      if (uri != null && uri.isNotEmpty) {
+        UriHandlerService.handleUri(uri);
       }
     } catch (err) {
       cancel?.call();
@@ -371,8 +372,9 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         emit(ProfileStarted(uuid, profile: profile));
 
         // Launch the connection URI if provided
-        if (profile.connectUri != null && profile.connectUri!.isNotEmpty) {
-          UriHandlerService.handleUri(profile.connectUri);
+        final uri = profile.constructedConnectUri;
+        if (uri != null && uri.isNotEmpty) {
+          UriHandlerService.handleUri(uri);
         }
       }
     } catch (err) {

@@ -24,8 +24,30 @@ final class Profile extends Loggable with Favoritable {
   final bool only443;
   final bool keepAlive;
   final String? connectUri;
+  final String? connectUriProtocol;
+  final String? connectUriUsername;
 
   // String get localHost => _localHost ?? StringConst.localhost;
+  
+  /// Constructs the full connection URI from protocol, username, localHost, and localPort
+  String? get constructedConnectUri {
+    // If protocol is explicitly set (even if empty), use it
+    // Only fall back to manual connectUri if protocol was never set
+    if (connectUriProtocol != null) {
+      if (connectUriProtocol!.isEmpty) {
+        return null; // Protocol explicitly set to "None"
+      }
+      
+      final userPart = (connectUriUsername != null && connectUriUsername!.isNotEmpty) 
+          ? '$connectUriUsername@' 
+          : '';
+      
+      return '$connectUriProtocol://$userPart$localHost:$localPort';
+    }
+    
+    // Fallback for old profiles that never had protocol field set
+    return connectUri;
+  }
 
   const Profile(
     this.uuid, {
@@ -40,6 +62,8 @@ final class Profile extends Loggable with Favoritable {
     this.only443 = false,
     this.keepAlive = false,
     this.connectUri,
+    this.connectUriProtocol,
+    this.connectUriUsername,
   });
 
   Profile copyWith({
@@ -53,6 +77,8 @@ final class Profile extends Loggable with Favoritable {
     int? localPort,
     String? localHost,
     bool? only443,
+    Object? connectUriProtocol = _undefined,
+    Object? connectUriUsername = _undefined,
     bool? keepAlive,
     Object? connectUri = _undefined,
   }) {
@@ -71,6 +97,12 @@ final class Profile extends Loggable with Favoritable {
       connectUri: connectUri == _undefined
           ? this.connectUri
           : connectUri as String?,
+      connectUriProtocol: connectUriProtocol == _undefined
+          ? this.connectUriProtocol
+          : connectUriProtocol as String?,
+      connectUriUsername: connectUriUsername == _undefined
+          ? this.connectUriUsername
+          : connectUriUsername as String?,
     );
   }
 
@@ -95,19 +127,21 @@ final class Profile extends Loggable with Favoritable {
 
   @override
   List<Object?> get props => [
-    uuid,
-    displayName,
-    relayAtsign,
-    sshnpdAtsign,
-    deviceName,
-    remoteHost,
-    remotePort,
-    localPort,
-    localHost,
-    only443,
-    keepAlive,
-    connectUri,
-  ];
+        uuid,
+        displayName,
+        relayAtsign,
+        sshnpdAtsign,
+        deviceName,
+        remoteHost,
+        remotePort,
+        localPort,
+        localHost,
+        only443,
+        keepAlive,
+        connectUri,
+        connectUriProtocol,
+        connectUriUsername,
+      ];
 
   @override
   bool get stringify => true;

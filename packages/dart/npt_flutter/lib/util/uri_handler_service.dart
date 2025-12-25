@@ -176,8 +176,19 @@ class UriHandlerService {
         }
       } else if (Platform.isMacOS) {
         // macOS: Use Screen Sharing
-        final result = await Process.run('open', ['vnc://$host:$port']);
-        return result.exitCode == 0;
+        try {
+          final result = await Process.run('open', ['vnc://$host:$port']);
+          if (result.exitCode == 0) {
+            App.log('VNC launched successfully'.loggable);
+            return true;
+          } else {
+            App.log('VNC open command failed: ${result.stderr}'.loggable);
+            return false;
+          }
+        } catch (e) {
+          App.log('Error running open command for VNC: $e'.loggable);
+          return false;
+        }
       } else if (Platform.isLinux) {
         // Linux: Try vncviewer
         final result = await Process.run('vncviewer', ['$host:$port']);

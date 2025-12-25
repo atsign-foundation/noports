@@ -102,7 +102,7 @@ class ProfileFormView extends StatelessWidget {
                                   gapH10,
                                   const ProfileKeepAliveCheckbox(),
                                   gapH10,
-                                  const ProfileConnectUriTextField(),
+                                  const ProfileConnectUriFields(),
                                 ],
                               ),
                             ),

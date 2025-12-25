@@ -1,4 +1,5 @@
 export 'profile_443_checkbox.dart';
+export 'profile_connect_uri_fields.dart';
 export 'profile_connect_uri_text_field.dart';
 export 'profile_device_at_sign_text_field.dart';
 export 'profile_device_name_text_field.dart';

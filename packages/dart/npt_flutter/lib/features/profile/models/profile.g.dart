@@ -19,6 +19,8 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
   only443: json['only443'] as bool? ?? false,
   keepAlive: json['keepAlive'] as bool? ?? false,
   connectUri: json['connectUri'] as String?,
+  connectUriProtocol: json['connectUriProtocol'] as String?,
+  connectUriUsername: json['connectUriUsername'] as String?,
 );
 
 Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
@@ -33,4 +35,6 @@ Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'only443': instance.only443,
   'keepAlive': instance.keepAlive,
   'connectUri': instance.connectUri,
+  'connectUriProtocol': instance.connectUriProtocol,
+  'connectUriUsername': instance.connectUriUsername,
 };
