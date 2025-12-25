@@ -22,7 +22,7 @@ class ProfileConnectUriFields extends StatelessWidget {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (BuildContext context, ProfileState state) {
         if (state is! ProfileLoadedState) return const SizedBox.shrink();
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -51,7 +51,11 @@ class ProfileConnectUriFields extends StatelessWidget {
                 items: protocols.map((protocol) {
                   return DropdownMenuItem<String>(
                     value: protocol,
-                    child: Text(protocol.isEmpty ? strings.connectUriProtocolNone : protocol),
+                    child: Text(
+                      protocol.isEmpty
+                          ? strings.connectUriProtocolNone
+                          : protocol,
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -69,9 +73,9 @@ class ProfileConnectUriFields extends StatelessWidget {
                 },
               ),
             ),
-            
+
             // Username field (only show if protocol is selected)
-            if (state.profile.connectUriProtocol != null && 
+            if (state.profile.connectUriProtocol != null &&
                 state.profile.connectUriProtocol!.isNotEmpty) ...[
               gapH20,
               Text(strings.connectUriUsername),
@@ -86,9 +90,7 @@ class ProfileConnectUriFields extends StatelessWidget {
                 child: TextFormField(
                   key: ValueKey('connectUriUsername_${state.profile.uuid}'),
                   initialValue: state.profile.connectUriUsername ?? '',
-                  decoration: const InputDecoration(
-                    hintText: 'username',
-                  ),
+                  decoration: const InputDecoration(hintText: 'username'),
                   onChanged: (value) {
                     var bloc = context.read<ProfileBloc>();
                     bloc.add(

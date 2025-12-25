@@ -28,7 +28,7 @@ final class Profile extends Loggable with Favoritable {
   final String? connectUriUsername;
 
   // String get localHost => _localHost ?? StringConst.localhost;
-  
+
   /// Constructs the full connection URI from protocol, username, localHost, and localPort
   String? get constructedConnectUri {
     // If protocol is explicitly set (even if empty), use it
@@ -37,14 +37,15 @@ final class Profile extends Loggable with Favoritable {
       if (connectUriProtocol!.isEmpty) {
         return null; // Protocol explicitly set to "None"
       }
-      
-      final userPart = (connectUriUsername != null && connectUriUsername!.isNotEmpty) 
-          ? '$connectUriUsername@' 
+
+      final userPart =
+          (connectUriUsername != null && connectUriUsername!.isNotEmpty)
+          ? '$connectUriUsername@'
           : '';
-      
+
       return '$connectUriProtocol://$userPart$localHost:$localPort';
     }
-    
+
     // Fallback for old profiles that never had protocol field set
     return connectUri;
   }
@@ -127,21 +128,21 @@ final class Profile extends Loggable with Favoritable {
 
   @override
   List<Object?> get props => [
-        uuid,
-        displayName,
-        relayAtsign,
-        sshnpdAtsign,
-        deviceName,
-        remoteHost,
-        remotePort,
-        localPort,
-        localHost,
-        only443,
-        keepAlive,
-        connectUri,
-        connectUriProtocol,
-        connectUriUsername,
-      ];
+    uuid,
+    displayName,
+    relayAtsign,
+    sshnpdAtsign,
+    deviceName,
+    remoteHost,
+    remotePort,
+    localPort,
+    localHost,
+    only443,
+    keepAlive,
+    connectUri,
+    connectUriProtocol,
+    connectUriUsername,
+  ];
 
   @override
   bool get stringify => true;
