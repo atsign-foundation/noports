@@ -40,38 +40,20 @@ class ProfileConnectUriFields extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             gapH14,
-            SizedBox(
-              width: double.infinity,
-              child: DropdownButtonFormField<String>(
-                key: ValueKey('connectUriProtocol_${state.profile.uuid}'),
-                value: state.profile.connectUriProtocol ?? '',
-                decoration: InputDecoration(
-                  hintText: strings.connectUriProtocolNone,
-                ),
-                items: protocols.map((protocol) {
-                  return DropdownMenuItem<String>(
-                    value: protocol,
-                    child: Text(
-                      protocol.isEmpty
-                          ? strings.connectUriProtocolNone
-                          : protocol,
+            _ProtocolDropdown(
+              key: ValueKey('connectUriProtocol_${state.profile.uuid}'),
+              protocol: state.profile.connectUriProtocol ?? '',
+              onChanged: (value) {
+                var bloc = context.read<ProfileBloc>();
+                bloc.add(
+                  ProfileEditEvent(
+                    profile: state.profile.copyWith(
+                      connectUriProtocol: value,
+                      connectUri: null,
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  var bloc = context.read<ProfileBloc>();
-                  bloc.add(
-                    ProfileEditEvent(
-                      profile: state.profile.copyWith(
-                        // Set to empty string for "None", which marks it as explicitly set
-                        connectUriProtocol: value,
-                        // Clear old connectUri when setting protocol
-                        connectUri: null,
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
 
             // Username field (only show if protocol is selected)
@@ -107,6 +89,46 @@ class ProfileConnectUriFields extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _ProtocolDropdown extends StatefulWidget {
+  final String protocol;
+  final ValueChanged<String?> onChanged;
+
+  const _ProtocolDropdown({
+    super.key,
+    required this.protocol,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ProtocolDropdown> createState() => _ProtocolDropdownState();
+}
+
+class _ProtocolDropdownState extends State<_ProtocolDropdown> {
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return SizedBox(
+      width: double.infinity,
+      child: DropdownMenu<String>(
+        initialSelection: widget.protocol,
+        expandedInsets: EdgeInsets.zero,
+        hintText: strings.connectUriProtocolNone,
+        dropdownMenuEntries: ProfileConnectUriFields.protocols.map((protocol) {
+          return DropdownMenuEntry<String>(
+            value: protocol,
+            label: protocol.isEmpty ? strings.connectUriProtocolNone : protocol,
+          );
+        }).toList(),
+        onSelected: (value) {
+          if (value != null) {
+            widget.onChanged(value);
+          }
+        },
+      ),
     );
   }
 }
