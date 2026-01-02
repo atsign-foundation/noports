@@ -52,11 +52,7 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 1. Click on **Save atKeys**
 2. Select a memorable location on your machine and **save** your keys.&#x20;
 
-### <mark style="color:orange;">Step 5:</mark> Establish a connection&#x20;
-
-To establish a connection, you'll need to activate a second atSign, install NoPorts on the remote machine, and create a connection profile in the desktop app (about 10 minutes).
-
-### <mark style="color:orange;">Step 5.1:</mark> Activate your device atSign (@example02\_np)
+### <mark style="color:orange;">Step 5:</mark> Activate your device atSign (@example02\_np)
 
 {% hint style="warning" %}
 Both the atSigns are activated on the machine you are connecting from. Later, you’ll grant your remote machine access to the keys stored on this machine.
@@ -66,19 +62,33 @@ Both the atSigns are activated on the machine you are connecting from. Later, yo
 2. Click **Get Started** and enter your **device atSign** into the text field (e.g., @example02\_np). Leave the root domain as is, and then click **Next**.
 3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
 
-### <mark style="color:orange;">Step 5.2:</mark> Save a copy of your device atKeys&#x20;
+### <mark style="color:orange;">Step 6:</mark> Save a copy of your device atKeys&#x20;
 
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
 2. Select a memorable location on your machine and **save** your keys.&#x20;
 
-### <mark style="color:orange;">Step 5.3:</mark> Generate a device atSign authorization passcode
+### <mark style="color:orange;">Step 7:</mark> Generate a device atSign authorization passcode
 
-Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 6 character code in **Step 7**.
+Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 6 character code in **Step 10**.
 
-### <mark style="color:orange;">Step 5.4:</mark> Switch to the machine you are connecting to
+### <mark style="color:orange;">Step 8:</mark> Switch to the machine you are connecting to OR use a demo profile to access our test page
 
-Please select the operating system running on the machine you are connecting to and follow the relevant instructions:
+You can either connect to your own remote machine or use our hidden test connection page.
 
-<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>macOS</strong></td><td><a href="to-macos.md">to-macos.md</a></td></tr><tr><td><strong>Linux</strong></td><td><a href="to-linux.md">to-linux.md</a></td></tr><tr><td><strong>Windows</strong></td><td><a href="to-windows.md">to-windows.md</a></td></tr></tbody></table>
+* **Remote machine setup:** Install NoPorts on the remote machine, authorize atSign access to the remote machine and create a connection profile in the desktop app (about 10 minutes).
+* **Test page:** Use our demo profile to access our hidden test page if you don't have a machine to connect to.
+
+**Remote machine setup**\
+Please select the operating system running on the machine you are connecting to and follow the relevant instructions on that machine:
+
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th><th data-hidden data-card-cover data-type="image">Cover image</th></tr></thead><tbody><tr><td><strong>macOS</strong></td><td><a href="to-macos.md">to-macos.md</a></td><td><a href="../../.gitbook/assets/Maclogo.png">Maclogo.png</a></td></tr><tr><td><strong>Linux</strong></td><td><a href="to-linux.md">to-linux.md</a></td><td><a href="../../.gitbook/assets/Linuxlogo.png">Linuxlogo.png</a></td></tr><tr><td><strong>Windows</strong></td><td><a href="to-windows.md">to-windows.md</a></td><td><a href="../../.gitbook/assets/Windowslogo.png">Windowslogo.png</a></td></tr></tbody></table>
+
+**OR Test connection**
+
+1. In the NoPorts desktop application, on the Connections tab, you'll see a banner saying "Demo. Click here to load the test profile." Click **Try Now.**
+2. Once the profile has been added to your list, click the **Connect Icon ▶️** to establish a connection.
+3. Open a web browser and navigate to`http://localhost:8080`.
+
+Congratulations! You're connected to a hidden webpage via NoPorts!&#x20;
