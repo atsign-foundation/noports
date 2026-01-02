@@ -75,7 +75,7 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 
 ### <mark style="color:orange;">Step 5.3:</mark> Generate a device atSign authorization passcode
 
-Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 4 character code in **Step 7**.
+Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 6 character code in **Step 7**.
 
 ### <mark style="color:orange;">Step 5.4:</mark> Switch to the machine you are connecting to
 
