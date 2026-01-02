@@ -64,8 +64,6 @@ Both the atSigns are activated on the machine you are connecting from. Later, yo
 
 ### <mark style="color:orange;">Step 6:</mark> Save a copy of your device atKeys&#x20;
 
-Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
-
 1. Click on **Save atKeys**
 2. Select a memorable location on your machine and **save** your keys.&#x20;
 
