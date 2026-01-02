@@ -73,10 +73,10 @@ Click on **Authenticator** at the top of the screen and then click on **OTP.** Y
 
 ### <mark style="color:orange;">Step 8:</mark> Switch to the machine you are connecting to OR use a demo profile to access our test page
 
-You can either connect to your own remote machine or use our hidden test connection page.
+Now that your atSigns are ready, you can either set up your remote machine or try our hidden test page.
 
 * **Remote machine setup:** Install NoPorts on the remote machine, authorize atSign access to the remote machine and create a connection profile in the desktop app (about 10 minutes).
-* **Test page:** Use our demo profile to access our hidden test page if you don't have a machine to connect to.
+* **Test page:** Try our demo profile to access our hidden test page if you don't have a machine to connect to.
 
 **Remote Machine Setup**\
 Please select the operating system running on the machine you are connecting to and follow the relevant instructions on that machine:
