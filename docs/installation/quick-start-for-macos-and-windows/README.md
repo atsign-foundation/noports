@@ -78,12 +78,12 @@ You can either connect to your own remote machine or use our hidden test connect
 * **Remote machine setup:** Install NoPorts on the remote machine, authorize atSign access to the remote machine and create a connection profile in the desktop app (about 10 minutes).
 * **Test page:** Use our demo profile to access our hidden test page if you don't have a machine to connect to.
 
-**Remote machine setup**\
+**Remote Machine Setup**\
 Please select the operating system running on the machine you are connecting to and follow the relevant instructions on that machine:
 
 <table data-view="cards"><thead><tr><th></th><th data-hidden data-card-target data-type="content-ref"></th><th data-hidden data-card-cover data-type="image">Cover image</th></tr></thead><tbody><tr><td><strong>macOS</strong></td><td><a href="to-macos.md">to-macos.md</a></td><td><a href="../../.gitbook/assets/Maclogo.png">Maclogo.png</a></td></tr><tr><td><strong>Linux</strong></td><td><a href="to-linux.md">to-linux.md</a></td><td><a href="../../.gitbook/assets/Linuxlogo.png">Linuxlogo.png</a></td></tr><tr><td><strong>Windows</strong></td><td><a href="to-windows.md">to-windows.md</a></td><td><a href="../../.gitbook/assets/Windowslogo.png">Windowslogo.png</a></td></tr></tbody></table>
 
-**OR Test connection**
+**OR Test Page**
 
 1. In the NoPorts desktop application, on the Connections tab, you'll see a banner saying "Demo. Click here to load the test profile." Click **Try Now.**
 2. Once the profile has been added to your list, click the **Connect Icon ▶️** to establish a connection.
