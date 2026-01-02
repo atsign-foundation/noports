@@ -11,7 +11,7 @@ This guide is intended for people connecting from a machine running Windows or m
 For people connecting from Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
 {% endhint %}
 
-### <mark style="color:orange;">Step 1:</mark> Sign up for a NoPorts free trial
+### <mark style="color:orange;">Step 1:</mark> Sign up for NoPorts
 
 Go to [noports.com](https://my.noports.com/no-ports-invite/30dayfreetrial) and sign up for a subscription or free trial&#x20;
 
