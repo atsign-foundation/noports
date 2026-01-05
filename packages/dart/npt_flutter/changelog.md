@@ -1,3 +1,8 @@
+
+FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
+FEAT: Added auto start of application via URI in configuration of connections
+
+
 ## 1.8.0+25
 
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
