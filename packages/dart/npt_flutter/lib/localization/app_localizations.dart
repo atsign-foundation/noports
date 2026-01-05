@@ -1391,6 +1391,54 @@ abstract class AppLocalizations {
   /// **'The port that will be used on the remote machine'**
   String get remotePortDescription;
 
+  /// No description provided for @connectUri.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection URI'**
+  String get connectUri;
+
+  /// No description provided for @connectUriDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional URI to automatically open when connection is established (e.g., http://localhost:8080 or rdp://localhost:3389)'**
+  String get connectUriDescription;
+
+  /// No description provided for @autoStartApplication.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Start Application on Connect'**
+  String get autoStartApplication;
+
+  /// No description provided for @connectUriProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol'**
+  String get connectUriProtocol;
+
+  /// No description provided for @connectUriProtocolDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the protocol to use for the connection (uses Local Host and Local Port)'**
+  String get connectUriProtocolDescription;
+
+  /// No description provided for @connectUriUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get connectUriUsername;
+
+  /// No description provided for @connectUriUsernameDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional username for protocols like SSH (e.g., user in ssh://user@host)'**
+  String get connectUriUsernameDescription;
+
+  /// No description provided for @connectUriProtocolNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get connectUriProtocolNone;
+
   /// No description provided for @removeAtsign.
   ///
   /// In en, this message translates to:
