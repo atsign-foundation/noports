@@ -26,11 +26,12 @@ class PolicyClient {
   Future<Set<Client>> getClients() async {
     final Set<Client> clients = {};
 
-    final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
-    final Map<String, dynamic> response = await executePolicyDataOperation(operation);
-    final List<dynamic> clientsAsJson = response['value'];
-    final String client0AsStr = clientsAsJson[0];
-    Map<String, dynamic> client0AsJson = jsonDecode(client0AsStr);
+    // final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
+    // final Map<String, dynamic> response = await executePolicyDataOperation(operation);
+    // final List<dynamic> clientsAsJson = response['value'];
+    // final String client0AsStr = clientsAsJson[0];
+    // Map<String, dynamic> client0AsJson = jsonDecode(client0AsStr);
+
     return clients;
   }
 
