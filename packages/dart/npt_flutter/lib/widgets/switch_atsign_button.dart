@@ -36,30 +36,17 @@ class SwitchAtsignButton extends StatelessWidget {
       child: GestureDetector(
         onTap: () => _handleSwitchAtsign(context),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Sizes.p10,
-            vertical: Sizes.p6,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: Sizes.p10, vertical: Sizes.p6),
           decoration: BoxDecoration(
             border: Border.all(color: AppColor.primaryColor, width: Sizes.p1),
           ),
           child: Row(
             children: [
-              SvgPicture.asset(
-                'assets/At.svg',
-                width: Sizes.p16,
-                height: Sizes.p16,
-              ),
+              SvgPicture.asset('assets/At.svg', width: Sizes.p16, height: Sizes.p16),
               gapW4,
               Text(
-                atsign.isNotEmpty
-                    ? atsign.replaceFirst('@', '')
-                    : strings.switchAtSign,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: Sizes.p12,
-                  fontWeight: FontWeight.w500,
-                ),
+                atsign.isNotEmpty ? atsign.replaceFirst('@', '') : strings.switchAtSign,
+                style: const TextStyle(color: Colors.black, fontSize: Sizes.p12, fontWeight: FontWeight.w500),
               ),
               gapW4,
               PhosphorIcon(PhosphorIcons.caretUpDown()),
@@ -92,12 +79,7 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
 
   final result = await showMenu<String?>(
     context: context,
-    position: const RelativeRect.fromLTRB(
-      Sizes.p1000,
-      Sizes.p0,
-      Sizes.p0,
-      Sizes.p0,
-    ),
+    position: const RelativeRect.fromLTRB(Sizes.p1000, Sizes.p0, Sizes.p0, Sizes.p0),
     shape: RoundedRectangleBorder(
       side: const BorderSide(color: AppColor.primaryColor, width: Sizes.p2),
       borderRadius: BorderRadius.circular(Sizes.p8),
@@ -129,13 +111,7 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
 /// Checks for connected profiles and shows dialog if needed
 /// Returns true if we should continue, false if we should abort
 Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
-  final hasConnectedProfiles = context
-      .read<ProfilesRunningCubit>()
-      .state
-      .socketConnectors
-      .keys
-      .toSet()
-      .isNotEmpty;
+  final hasConnectedProfiles = context.read<ProfilesRunningCubit>().state.socketConnectors.keys.toSet().isNotEmpty;
 
   if (!hasConnectedProfiles) return true;
 
@@ -147,16 +123,11 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
     builder: (context) => const ConnectedProfilesDialog(),
   );
 
-  return shouldContinue !=
-      true; // Invert because dialog returns true when profiles are connected
+  return shouldContinue != true; // Invert because dialog returns true when profiles are connected
 }
 
 /// Handles the menu selection (signout, add atsign, or switch)
-Future<void> _handleSelection(
-  BuildContext context,
-  String selectedAtSign,
-  AppLocalizations strings,
-) async {
+Future<void> _handleSelection(BuildContext context, String selectedAtSign, AppLocalizations strings) async {
   if (selectedAtSign == strings.signout) {
     await _handleSignout(context);
   } else if (selectedAtSign == strings.addAtsign) {
@@ -176,17 +147,27 @@ Future<void> _handleSignout(BuildContext context) async {
   await preSignout();
 
   if (context.mounted) {
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
   }
 }
 
 /// Handles adding a new atsign
 Future<void> _handleAddAtsign(BuildContext context) async {
-  final options = await getAtsignEntries();
+  final cubit = context.read<OnboardingCubit>();
 
+  // Get available atSigns
+  var options = await getAtsignEntries();
+
+  // Clear the atSign field so user can enter a new one
+  String rootDomain = cubit.state.rootDomain;
+  if (rootDomain.isEmpty) {
+    rootDomain = Constants.getRootDomains(context).keys.first;
+  }
+  cubit.setState(atSign: '', rootDomain: rootDomain);
+
+  if (!context.mounted) return;
+
+  // Show the onboarding dialog directly
   final shouldOnboard = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) => OnboardingDialog(options: options),
@@ -194,42 +175,35 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
   if (shouldOnboard != true) return;
 
-  final currentContext = App.navState.currentContext!;
-  final atsignInfo = currentContext.read<OnboardingCubit>().state;
-  final newAtSign = atsignInfo.atSign;
-
-  await _performOnboarding(currentContext, newAtSign);
+  // Navigate to the onboarding route with autoStart flag
+  if (!context.mounted) return;
+  Navigator.of(
+    context,
+    rootNavigator: true,
+  ).pushNamedAndRemoveUntil(
+    Routes.onboarding,
+    (route) => false,
+    arguments: {'autoStart': true},
+  );
 }
 
 /// Handles switching to an existing atsign
-Future<void> _handleSwitchToAtsign(
-  BuildContext context,
-  String targetAtSign,
-) async {
+Future<void> _handleSwitchToAtsign(BuildContext context, String targetAtSign) async {
   await preSignout();
 
   log('change primary atsign called: $targetAtSign');
 
-  final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtSign,
-  );
+  final changeSuccess = await AtOnboarding.changePrimaryAtsign(atsign: targetAtSign);
 
   if (!changeSuccess) return;
 
   final currentContext = App.navState.currentContext!;
-  await _performOnboarding(currentContext, targetAtSign);
-}
-
-/// Performs the onboarding process for the given atsign
-Future<void> _performOnboarding(BuildContext context, String atsign) async {
-  final rootDomain = context.read<OnboardingCubit>().getRootDomain();
-  final atClientPreference = await AtClientMethods.loadAtClientPreference(
-    rootDomain,
-  );
+  final rootDomain = currentContext.read<OnboardingCubit>().getRootDomain();
+  final atClientPreference = await AtClientMethods.loadAtClientPreference(rootDomain);
 
   final onboardingResult = await AtOnboarding.onboard(
-    atsign: atsign,
-    context: context,
+    atsign: targetAtSign,
+    context: currentContext,
     config: AtOnboardingConfig(
       atClientPreference: atClientPreference,
       domain: rootDomain,
@@ -240,8 +214,8 @@ Future<void> _performOnboarding(BuildContext context, String atsign) async {
 
   if (onboardingResult.status == AtOnboardingResultStatus.success) {
     await BackupKeyUtils().backupKeyStatusCheck();
-    log("postOnbarding called");
-    await postOnboard(atsign, rootDomain);
+    log("postOnboarding called");
+    await postOnboard(targetAtSign, rootDomain);
   }
 }
 
@@ -274,9 +248,7 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: Container(
-        color: _hovering
-            ? AppColor.primaryColorButtonBackgroundAlt
-            : Colors.transparent,
+        color: _hovering ? AppColor.primaryColorButtonBackgroundAlt : Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -292,25 +264,17 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
                           text: displayAtsignPrefix(strings),
                           style: TextStyle(
                             color: AppColor.primaryColor,
-                            fontSize: widget.atSign == strings.addAtsign
-                                ? Sizes.p20
-                                : Sizes.p12,
+                            fontSize: widget.atSign == strings.addAtsign ? Sizes.p20 : Sizes.p12,
                           ),
                         ),
                         TextSpan(
                           text: widget.atSign.split('@').last,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(),
                         ),
                       ],
                     ),
                   ),
-                  PhosphorIcon(
-                    PhosphorIcons.dotOutline(),
-                    size: 40,
-                    color: _hovering ? AppColor.primaryColor : null,
-                  ),
+                  PhosphorIcon(PhosphorIcons.dotOutline(), size: 40, color: _hovering ? AppColor.primaryColor : null),
                 ],
               ),
             ),

@@ -7,8 +7,28 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-class OnboardingView extends StatelessWidget {
-  const OnboardingView({super.key});
+class OnboardingView extends StatefulWidget {
+  final bool autoStart;
+  
+  const OnboardingView({super.key, this.autoStart = false});
+
+  @override
+  State<OnboardingView> createState() => _OnboardingViewState();
+}
+
+class _OnboardingViewState extends State<OnboardingView> {
+  final GlobalKey<OnboardingButtonState> _onboardingButtonKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoStart) {
+      // Auto-trigger the onboarding button after the frame is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onboardingButtonKey.currentState?.triggerOnboarding();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +62,7 @@ class OnboardingView extends StatelessWidget {
               ),
               Text(strings.onboardingSubTitle, style: textTheme.headlineMedium),
               gapH20,
-              const OnboardingButton(),
+              OnboardingButton(key: _onboardingButtonKey),
             ],
           ),
         ),

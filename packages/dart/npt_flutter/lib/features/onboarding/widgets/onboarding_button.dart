@@ -33,13 +33,44 @@ class OnboardingButton extends StatefulWidget {
   const OnboardingButton({super.key});
 
   @override
-  State<OnboardingButton> createState() => _OnboardingButtonState();
+  State<OnboardingButton> createState() => OnboardingButtonState();
 }
 
 enum _OnboardingButtonStatus { ready, loading }
 
-class _OnboardingButtonState extends State<OnboardingButton> {
+class OnboardingButtonState extends State<OnboardingButton> {
   _OnboardingButtonStatus buttonStatus = _OnboardingButtonStatus.ready;
+
+  /// Public method to trigger onboarding programmatically
+  /// Assumes the atSign and rootDomain are already set in the OnboardingCubit
+  Future<void> triggerOnboarding() async {
+    if (buttonStatus != _OnboardingButtonStatus.ready) return;
+    if (!mounted) return;
+    
+    try {
+      setState(() {
+        buttonStatus = _OnboardingButtonStatus.loading;
+      });
+      
+      // Get the already-selected atSign information from the cubit
+      var atsignInformation = context.read<OnboardingCubit>().state;
+      
+      // Skip selectAtsign() since it was already done before navigation
+      // Just proceed directly to onboarding
+      if (mounted) {
+        onboard(
+          atsign: atsignInformation.atSign,
+          rootDomain: atsignInformation.rootDomain,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          buttonStatus = _OnboardingButtonStatus.ready;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

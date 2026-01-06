@@ -6,6 +6,10 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: OnboardingView());
+    // Check if we should auto-start the onboarding flow
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final autoStart = args?['autoStart'] as bool? ?? false;
+    
+    return Scaffold(body: OnboardingView(autoStart: autoStart));
   }
 }
