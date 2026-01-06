@@ -1,4 +1,4 @@
-import 'package:policyv3/models.dart';
+import 'package:noports_core/admin_v2.dart';
 
 class PolicyDataOperation {
   final String operation; // e.g. "get", "put",

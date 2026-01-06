@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
-import 'package:policyv3/models.dart';
-import 'package:policyv3/policy_data_operation.dart';
+import 'package:noports_core/admin_v2.dart';
 
 class PolicyClient {
   late AtRpcClient _atRpcClient;

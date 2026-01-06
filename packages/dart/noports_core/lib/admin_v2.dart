@@ -1,8 +1,5 @@
-library noports_core_admin;
+library noports_core_admin_v2;
 
-export 'src/admin/models.dart';
-export 'src/admin/interface.dart';
-export 'src/admin/impl.dart';
 export 'src/admin/v2/models.dart';
 export 'src/admin/v2/policy_cache.dart';
 export 'src/admin/v2/policy_client.dart';
