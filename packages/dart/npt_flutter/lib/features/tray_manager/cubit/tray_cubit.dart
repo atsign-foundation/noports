@@ -160,7 +160,24 @@ class TrayCubit extends LoggingCubit<TrayState> {
               statusIcon = ProfileStatus.off.emoji;
             }
             var label = '$statusIcon $displayName';
-            return MenuItem(label: label, toolTip: status, onClick: (_) => fav.toggle());
+            return MenuItem(
+              label: label,
+              toolTip: status,
+              onClick: (_) {
+                // Check if we're currently disconnected before toggling
+                final isDisconnected = status == null || 
+                    status == ProfileStatus.off.message ||
+                    status == ProfileStatus.failedToStart.message ||
+                    status == ProfileStatus.failedToLoad.message;
+                
+                fav.toggle();
+                
+                // Show the main window on Windows only when initiating a connection
+                if (Platform.isWindows && isDisconnected) {
+                  windowManager.show();
+                }
+              },
+            );
           }),
     );
 
