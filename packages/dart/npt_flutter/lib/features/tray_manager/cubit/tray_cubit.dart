@@ -63,7 +63,9 @@ class TrayCubit extends LoggingCubit<TrayState> {
         Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
       Brightness.dark =>
         Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
-    });
+    });   
+    // Set an empty tooltip for the main tray icon to avoid garbage characters
+    await trayManager.setToolTip('NoPorts Desktop');
   }
 
   MenuItem _getMenuItem(TrayAction action, AppLocalizations localizations) {
