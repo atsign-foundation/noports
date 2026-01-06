@@ -1,8 +1,4 @@
 
-FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
-FEAT: Added auto start of application via URI in configuration of connections
-
-
 ## 1.8.0+25
 
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
@@ -14,6 +10,8 @@ FEAT: Added auto start of application via URI in configuration of connections
 - FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
 - FIX: Enrollment Dialog cannot be dismissed once the enrollment process starts
 - FIX: Policy and Authorization Screen refreshes after switching atsign.
+- FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
+- FEAT: Added auto start of application via URI in configuration of connections
 
 ## 1.7.0+24
 
