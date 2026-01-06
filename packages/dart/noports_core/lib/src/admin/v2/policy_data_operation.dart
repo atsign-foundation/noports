@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:noports_core/admin_v2.dart';
 
 class PolicyDataOperation {
@@ -81,7 +83,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Client',
-        'value': client.toJson().toString(),
+        'value': jsonEncode(client.toJson()),
       },
     );
   }
@@ -92,7 +94,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroup',
-        'value': clientGroup.toJson().toString(),
+        'value': jsonEncode(clientGroup.toJson()),
       },
     );
   }
@@ -103,7 +105,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroupMember',
-        'value': clientGroupMember.toJson().toString(),
+        'value': jsonEncode(clientGroupMember.toJson()),
       },
     );
   }
@@ -114,7 +116,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Daemon',
-        'value': daemon.toJson().toString(),
+        'value': jsonEncode(daemon.toJson()),
       },
     );
   }
@@ -125,7 +127,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Service',
-        'value': service.toJson().toString(),
+        'value': jsonEncode(service.toJson()),
       },
     );
   }
@@ -136,7 +138,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ServiceACL',
-        'value': serviceACL.toJson().toString(),
+        'value': jsonEncode(serviceACL.toJson()),
       }
     );
   }
