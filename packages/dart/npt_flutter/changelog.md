@@ -7,8 +7,11 @@
 - FIX: Policy Screen layout update for better spacing.
 - FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
 - FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
+- FIX: Enrollment Dialog cannot be dismissed once the enrollment process starts
 - FIX: Policy and Authorization Screen refreshes after switching atsign.
-- Feat: User can Add atsign from the switch atsign button.
+- FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
+- FEAT: Added auto start of application via URI in configuration of connections
+- FEAT: User can Add atsign from the switch atsign button.
 
 ## 1.7.0+24
 

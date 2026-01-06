@@ -1,1 +1,34 @@
-{}
+{
+  "pt_BR": [
+    "connectUri",
+    "connectUriDescription",
+    "autoStartApplication",
+    "connectUriProtocol",
+    "connectUriProtocolDescription",
+    "connectUriUsername",
+    "connectUriUsernameDescription",
+    "connectUriProtocolNone"
+  ],
+
+  "zh_Hans_CH": [
+    "connectUri",
+    "connectUriDescription",
+    "autoStartApplication",
+    "connectUriProtocol",
+    "connectUriProtocolDescription",
+    "connectUriUsername",
+    "connectUriUsernameDescription",
+    "connectUriProtocolNone"
+  ],
+
+  "zh_Hant_HK": [
+    "connectUri",
+    "connectUriDescription",
+    "autoStartApplication",
+    "connectUriProtocol",
+    "connectUriProtocolDescription",
+    "connectUriUsername",
+    "connectUriUsernameDescription",
+    "connectUriProtocolNone"
+  ]
+}

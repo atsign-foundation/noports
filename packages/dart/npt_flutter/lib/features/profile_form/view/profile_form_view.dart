@@ -101,6 +101,8 @@ class ProfileFormView extends StatelessWidget {
                                   const Profile443Checkbox(),
                                   gapH10,
                                   const ProfileKeepAliveCheckbox(),
+                                  gapH10,
+                                  const ProfileConnectUriFields(),
                                 ],
                               ),
                             ),
