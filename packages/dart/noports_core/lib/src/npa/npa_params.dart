@@ -12,6 +12,7 @@ class NPAParams {
   final String homeDirectory;
   final String? eventLoggingAtsign;
   final String? storagePath;
+  final String policyVersion;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -23,6 +24,7 @@ class NPAParams {
     required this.rootDomain,
     required this.homeDirectory,
     required this.eventLoggingAtsign,
+    required this.policyVersion,
     this.storagePath,
   });
 
@@ -42,7 +44,8 @@ class NPAParams {
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
       eventLoggingAtsign: r['event-logging-atsign'],
-      storagePath: r['storage-path']
+      policyVersion: r['policy-version'],
+      storagePath: r['storage-path'],
     );
   }
 
@@ -94,6 +97,15 @@ class NPAParams {
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory domain',
       hide: true,
+    );
+
+    parser.addOption(
+      'policy-version',
+      mandatory: false,
+      help: 'Version of policy to use. Defaults to "v1". '
+        'Using v1 uses legacy policy rules. v2 includes more policy features',
+      defaultsTo: 'v1',
+      hide: false,
     );
 
     parser.addOption(
