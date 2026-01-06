@@ -96,7 +96,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   }
 
   Future<void> start() async {
-    npa.run();
+    await npa.run();
     rpcListener.start();
   }
 
