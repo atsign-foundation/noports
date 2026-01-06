@@ -137,6 +137,12 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get add;
 
+  /// No description provided for @addAtsign.
+  ///
+  /// In en, this message translates to:
+  /// **'Add atSign'**
+  String get addAtsign;
+
   /// No description provided for @addNew.
   ///
   /// In en, this message translates to:
@@ -1763,6 +1769,12 @@ abstract class AppLocalizations {
   /// **'This field cannot be left blank'**
   String get validationErrorEmptyField;
 
+  /// No description provided for @validationErrorHostField.
+  ///
+  /// In en, this message translates to:
+  /// **'Field must be partially or fully qualified hostname or an IP address'**
+  String get validationErrorHostField;
+
   /// No description provided for @validationErrorLocalPortField.
   ///
   /// In en, this message translates to:
@@ -1780,12 +1792,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Relay must be a valid atsign'**
   String get validationErrorRelayField;
-
-  /// No description provided for @validationErrorHostField.
-  ///
-  /// In en, this message translates to:
-  /// **'Field must be partially or fully qualified hostname or an IP address'**
-  String get validationErrorHostField;
 
   /// No description provided for @validationErrorRemotePortField.
   ///
