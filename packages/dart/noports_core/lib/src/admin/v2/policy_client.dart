@@ -18,14 +18,14 @@ class PolicyClient {
   Future<dynamic> executePolicyDataOperation(final PolicyDataOperation policyDataOperation) async {
     final Map<String, dynamic> response = await _atRpcClient.call(policyDataOperation.atRpcPayload);
     return response;
-
   }
 
   Future<Set<Client>> getClients() async {
     final Set<Client> clients = {};
 
-    // final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
-    // final Map<String, dynamic> response = await executePolicyDataOperation(operation);
+    final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
+    final Map<String, dynamic> response = await executePolicyDataOperation(operation);
+    print(response);
     // final List<dynamic> clientsAsJson = response['value'];
     // final String client0AsStr = clientsAsJson[0];
     // Map<String, dynamic> client0AsJson = jsonDecode(client0AsStr);
