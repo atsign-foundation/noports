@@ -32,7 +32,6 @@ class PolicyClient {
 
   Future<dynamic> executePolicyDataOperation(final PolicyDataOperation policyDataOperation) async {
     final Map<String, dynamic> response = await _atRpcClient.call(policyDataOperation.atRpcPayload);
-    print(jsonEncode(response));
     return response;
   }
 
@@ -41,18 +40,16 @@ class PolicyClient {
 
     final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
     final Map<String, dynamic> response = await executePolicyDataOperation(operation);
-    if(!response.containsKey('success')) {
-      throw Exception('success key not found in response: $response');
+    if(!response.containsKey('amount')) {
+      throw Exception('amount key not found in response: $response');
     }
-    if(!response.containsKey('message')) {
-      throw Exception('message key not found in response map: $response');
+    if(!response.containsKey('list')) {
+      throw Exception('list key not found in response map: $response');
     }
-    if(!response.containsKey('value')) {
-      throw Exception('value key not found in response map: $response');
-    }
-    final bool success = response['success'];
-    final String message = response['message'];
-    final dynamic valueString = response['value'];
+    final int amount = response['amount'];
+    final List<dynamic> list = response['list'];
+    print('amount: ${amount.toString()} ${amount.runtimeType}');
+    print('list: ${list.toString()} ${list.runtimeType}');
     return clients;
   }
 
