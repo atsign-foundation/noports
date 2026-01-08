@@ -42,8 +42,20 @@ Future<void> main(List<String> args) async {
       }
     }
     case '2': { // getAllCleintGroups
-      // final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      print('Obtained ${allClientGroups.length} client groups:');
+      for(int i = 0; i < allClientGroups.length; i++) {
+        final ClientGroup clientGroup = allClientGroups.elementAt(i);
+        print('[$i]: clientGroup.name: ${clientGroup.name} | clientGroup.id: ${clientGroup.id}');
+      }
+    }
+    case '3': { // getAllClientGroupMembers
+      final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
+      print('Obtained ${allClientGroupMembers.length} client group members:');
+      for(int i = 0; i < allClientGroupMembers.length; i++) {
+        final ClientGroupMember clientGroupMember = allClientGroupMembers.elementAt(i);
+        print('[$i]: clientGroupMember.id: ${clientGroupMember.id} | clientGroupId ${clientGroupMember.clientGroupId}');
+      }
     }
   }
 }

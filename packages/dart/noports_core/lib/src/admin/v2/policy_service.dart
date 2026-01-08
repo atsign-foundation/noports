@@ -110,8 +110,15 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
     }
     final Map<String, dynamic> requestPayload = request.payload;
     final Map<String, dynamic> responsePayload = {};
-    if(!requestPayload.containsKey('operation') || !requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
-      return AtRpcResp(reqId: reqId, respType: AtRpcRespType.error, message: 'operation, target, or value JSON keys was not found in the payload.', payload: {});
+    if(!requestPayload.containsKey('operation') ||
+      !requestPayload.containsKey('target') ||
+      !requestPayload.containsKey('value')) {
+      return AtRpcResp(
+        reqId: reqId,
+        respType: AtRpcRespType.error,
+        message: 'operation, target, or value JSON keys was not found in the '
+          'payload.',
+        payload: {});
     }
     final String operation = requestPayload['operation'];
     final String target = requestPayload['target'];
@@ -136,7 +143,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups.map((clientGroup) => clientGroup.toJson()).toSet();
             final int amount = clientGroups.length;
             responsePayload['amount'] = amount;
-            responsePayload['list'] = clientGroupsAsJson;
+            responsePayload['list'] = clientGroupsAsJson.toList();
             message = '$amount ClientGroups found.';
             break;
           }
@@ -145,7 +152,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> clientGroupMembersAsJson = clientGroupMembers.map((clientGroupMember) => clientGroupMember.toJson()).toSet();
             final int amount = clientGroupMembersAsJson.length;
             responsePayload['amount'] = amount;
-            responsePayload['list'] = clientGroupMembersAsJson;
+            responsePayload['list'] = clientGroupMembersAsJson.toList();
             message = '$amount ClientGroupMembers found.';
             success = true;
             break;
@@ -155,7 +162,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> daemonsAsJson = daemons.map((daemon) => daemon.toJson()).toSet();
             final int amount = daemonsAsJson.length;
             responsePayload['amount'] = amount;
-            responsePayload['list'] = daemonsAsJson;
+            responsePayload['list'] = daemonsAsJson.toList();
             message = '$amount daemons found.';
             success = true;
             break;
@@ -165,7 +172,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> servicesAsJson = services.map((service) => service.toJson()).toSet();
             final int amount = servicesAsJson.length;
             responsePayload['amount'] = amount;
-            responsePayload['list'] = servicesAsJson;
+            responsePayload['list'] = servicesAsJson.toList();
             message = '$amount services found.';
             success = true;
             break;
@@ -175,7 +182,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> serviceACLsAsJson = serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
             final int amount = serviceACLsAsJson.length;
             responsePayload['amount'] = serviceACLsAsJson.length;
-            responsePayload['list'] = serviceACLsAsJson;
+            responsePayload['list'] = serviceACLsAsJson.toList();
             message = '$amount ServiceACLs found.';
             success = true;
             break;
