@@ -1,9 +1,9 @@
 import './models.dart';
 
 class PolicyCache {
-  final Set<Client> _clients; // Client.atSign must be unique across all clients
-  final Set<ClientGroup> _clientGroups; 
-  final Set<ClientGroupMember> _clientGroupMembers; 
+  final Set<Client> _clients; // Client.atSign must be unique across all clients {"User1", "Colin", "@colin"}, {"User2", "Srie Teja", "@srie"}
+  final Set<ClientGroup> _clientGroups; // {"CG1", "Atsign Engineers"},
+  final Set<ClientGroupMember> _clientGroupMembers; // {"CG1", "User1"}, {"CG1", "User2}
   final Set<Daemon> _daemons; // Daemon.atSign must be unique across all daemons
   final Set<Service> _services; 
   final Set<ServiceACL> _serviceACLs;

@@ -71,10 +71,10 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
 
   PolicyService({required this.atClient});
 
-  Future<void> init() async {
+  Future<void> init({final String? homeDirectory}) async {
     cache = PolicyCache();
 
-    final String? homeDir = getHomeDirectory();
+    final String? homeDir = homeDirectory ?? getHomeDirectory();
     if(homeDir == null) {
       throw Exception('Home directory not found.');
     }
@@ -108,162 +108,146 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
     if(fromAtSign != atClient.getCurrentAtSign()) {
       return AtRpcResp(reqId: reqId, respType: AtRpcRespType.error, message: 'Unauthorized atSign', payload: {'success': false});
     }
-    final Map<String, dynamic> payload = request.payload;
-    final Map<String, dynamic> response = {
-    'success': false,
-    'message': 'Default message',
-  };
-    if(!payload.containsKey('operation') || !payload.containsKey('target') || !payload.containsKey('value')) {
-      return AtRpcResp(reqId: reqId, respType: AtRpcRespType.error, message: 'operation, target, or value JSON keys was not found in the payload.', payload: {'success': false});
+    final Map<String, dynamic> requestPayload = request.payload;
+    final Map<String, dynamic> responsePayload = {};
+    if(!requestPayload.containsKey('operation') || !requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
+      return AtRpcResp(reqId: reqId, respType: AtRpcRespType.error, message: 'operation, target, or value JSON keys was not found in the payload.', payload: {});
     }
-    final String operation = payload['operation'];
-    final String target = payload['target'];
-    final Map<String, dynamic> value = jsonDecode(payload['value']);
+    final String operation = requestPayload['operation'];
+    final String target = requestPayload['target'];
+    final Map<String, dynamic> valueAsMap = requestPayload['value'];
+    late String message;
+    late bool success; 
     switch(operation) {
       case 'get':
         switch(target) {
           case 'allClients': {
             final Set<Client> clients = cache.clients;
-            List<String> clientsAsJsonStrings = [];
-            for(final Client client in clients) {
-              clientsAsJsonStrings.add(jsonEncode(client.toJson()));
-            }
-            final int amount = clients.length;
-            response['success'] = true;
-            response['message'] = '$amount clients found.';
-            response['value'] = clientsAsJsonStrings;
+            final Set<Map<String, dynamic>> clientsAsJson = clients.map((client) => client.toJson()).toSet();
+            final int amount = clientsAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['value'] = clientsAsJson;
+            message = '$amount Clients found.';
+            success = true;
             break;
           }
           case 'allClientGroups': {
             final Set<ClientGroup> clientGroups = cache.clientGroups;
-            List<String> clientGroupsAsJsonStrings = [];
-            for(final ClientGroup clientGroup in clientGroups) {
-              clientGroupsAsJsonStrings.add(jsonEncode(clientGroup.toJson()));
-            }
+            final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups.map((clientGroup) => clientGroup.toJson()).toSet();
             final int amount = clientGroups.length;
-            response['success'] = true;
-            response['message'] = '$amount client groups found.';
-            response['value'] = clientGroupsAsJsonStrings;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = clientGroupsAsJson;
+            message = '$amount ClientGroups found.';
             break;
           }
           case 'allClientGroupMembers': {
             final Set<ClientGroupMember> clientGroupMembers = cache.clientGroupMembers;
-            List<String> clientGroupMembersAsJsonStrings = [];
-            for(final ClientGroupMember clientGroupMember in clientGroupMembers) {
-              clientGroupMembersAsJsonStrings.add(jsonEncode(clientGroupMember.toJson()));
-            }
-            final int amount = clientGroupMembers.length;
-            response['success'] = true;
-            response['message'] = '$amount client group members found.';
-            response['value'] = clientGroupMembersAsJsonStrings;
+            final Set<Map<String, dynamic>> clientGroupMembersAsJson = clientGroupMembers.map((clientGroupMember) => clientGroupMember.toJson()).toSet();
+            final int amount = clientGroupMembersAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = clientGroupMembersAsJson;
+            message = '$amount ClientGroupMembers found.';
+            success = true;
             break;
           }
           case 'allDaemons': {
             final Set<Daemon> daemons = cache.daemons;
-            List<String> daemonsAsJsonStrings = [];
-            for(final Daemon daemon in daemons) {
-            daemonsAsJsonStrings.add(jsonEncode(daemon.toJson()));
-          }
-            final int amount = daemons.length;
-            response['success'] = true;
-            response['message'] = '$amount daemons found.';
-            response['value'] = daemonsAsJsonStrings;
+            final Set<Map<String, dynamic>> daemonsAsJson = daemons.map((daemon) => daemon.toJson()).toSet();
+            final int amount = daemonsAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = daemonsAsJson;
+            message = '$amount daemons found.';
+            success = true;
             break;
           }
           case 'allServices': {
             final Set<Service> services = cache.services;
-            List<String> servicesAsJsonStrings = [];
-            for(final Service service in services) {
-            servicesAsJsonStrings.add(jsonEncode(service.toJson()));
-          }
-            final int amount = services.length;
-            response['success'] = true;
-            response['message'] = '$amount services found.';
-            response['value'] = servicesAsJsonStrings;
+            final Set<Map<String, dynamic>> servicesAsJson = services.map((service) => service.toJson()).toSet();
+            final int amount = servicesAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = servicesAsJson;
+            message = '$amount services found.';
+            success = true;
             break;
           }
           case 'allServiceACLs': {
             final Set<ServiceACL> serviceACLs = cache.serviceACLs;
-            List<String> serviceACLsAsJsonStrings = [];
-            for(final ServiceACL serviceACL in serviceACLs) {
-            serviceACLsAsJsonStrings.add(jsonEncode(serviceACL.toJson()));
-          }
-            final int amount = serviceACLs.length;
-            response['success'] = true;
-            response['message'] = '$amount service ACLs found.';
-            response['value'] = serviceACLsAsJsonStrings;
+            final Set<Map<String, dynamic>> serviceACLsAsJson = serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
+            final int amount = serviceACLsAsJson.length;
+            responsePayload['amount'] = serviceACLsAsJson.length;
+            responsePayload['list'] = serviceACLsAsJson;
+            message = '$amount ServiceACLs found.';
+            success = true;
             break;
           }
           default: {
-            response['success'] = false;
-            response['message'] = 'Unknown operation: $operation';
+            break;
           }
         }
         break;  
       case 'put':
         switch(target) {
           case 'Client': {
-            final Client client = Client.fromJson(value);
+            final Client client = Client.fromJson(valueAsMap);
             cache.putClient(client);
-            response['success'] = true;
-            response['message'] = 'Client stored successfully.';
-            response['value'] = cache.getClientById(client.id!);
+            responsePayload['clientId'] = cache.getClientById(client.id!);
+            success = true;
+            message = 'Client stored successfully.';
             break;
           }
           case 'ClientGroup': {
-            final ClientGroup clientGroup = ClientGroup.fromJson(value);
+            final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
             cache.putClientGroup(clientGroup);
-            response['success'] = true;
-            response['message'] = 'Client group stored successfully.';
-            response['value'] = cache.getClientGroupById(clientGroup.id!);
+            responsePayload['clientGroupId'] = cache.getClientGroupById(clientGroup.id!);
+            success = true;
+            message = 'Client group stored successfully.';
             break;
           }
           case 'ClientGroupMember': {
-            final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(value);
+            final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(valueAsMap);
             cache.putClientGroupMember(clientGroupMember);
-            response['success'] = true;
-            response['message'] = 'Client group member stored successfully.';
-            response['value'] = cache.getClientGroupMemberById(clientGroupMember.id!);
+            responsePayload['clientGroupMemberId'] = cache.getClientGroupMemberById(clientGroupMember.id!);
+            success = true;
+            message = 'Client group member stored successfully.';
             break;
           }
           case 'Daemon': {
-            final Daemon daemon = Daemon.fromJson(value);
+            final Daemon daemon = Daemon.fromJson(valueAsMap);
             cache.putDaemon(daemon);
-            response['success'] = true;
-            response['message'] = 'Daemon stored successfully.';
-            response['value'] = cache.getDaemonById(daemon.id!);
+            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!);
+            success = true;
+            message = 'Daemon stored successfully.';
             break;
           }
           case 'Service': {
-            final Service service = Service.fromJson(value);
+            final Service service = Service.fromJson(valueAsMap);
             cache.putService(service);
-            response['success'] = true;
-            response['message'] = 'Service stored successfully.';
-            response['value'] = cache.getServiceById(service.id!);
+            responsePayload['serviceId'] = cache.getServiceById(service.id!);
+            success = true;
+            message = 'Service stored successfully.';
             break;
           }
           case 'ServiceACL': {
-            final ServiceACL serviceACL = ServiceACL.fromJson(value);
+            final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
             cache.putServiceACL(serviceACL);
-            response['success'] = true;
-            response['message'] = 'Service ACL stored successfully.';
-            response['value'] = cache.getServiceACLById(serviceACL.id!);
+            responsePayload['serviceACLId'] = cache.getServiceACLById(serviceACL.id!);
+            success = true;
+            message = 'Service ACL stored successfully.';
             break;
           }
           default: {
-            response['success'] = false;
-            response['message'] = 'Unknown target for put operation: $target';
-            response['value'] = {};
+            success = false;
+            message = 'Unknown target for put operation: $target';
             break;
           }
         }
         break;
       default:
-        response['success'] = false;
-        response['message'] = 'Unknown operation: $operation';
+        success = false;
+        message = 'Unknown operation: $operation';
         break;
     }
-    return AtRpcResp(reqId: reqId, payload: response, message: response['message'], respType: response['success'] ? AtRpcRespType.success : AtRpcRespType.error);
+    return AtRpcResp(reqId: reqId, payload: responsePayload, message: message, respType: success ? AtRpcRespType.success : AtRpcRespType.error);
   }
 
   @override

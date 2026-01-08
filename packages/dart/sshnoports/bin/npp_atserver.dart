@@ -9,6 +9,7 @@ import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
+import 'package:noports_core/admin_v2.dart' as admin_v2;
 
 late AtSignLogger logger;
 
@@ -74,44 +75,55 @@ void main(List<String> args) async {
     exit(3);
   }
 
-  Handler handler = Handler(atClient);
-  try {
-    await handler.init();
-  } catch (err) {
-    stderr.writeln(err);
+  logger.info('Detected policy version: ${p.policyVersion}');
+
+  if(p.policyVersion == 'v1') {
+    Handler handler = Handler(atClient);
+    try {
+      await handler.init();
+    } catch (err) {
+      stderr.writeln(err);
+      exit(4);
+    }
+
+    var sshnpa = NPAImpl(
+      atClient: atClient,
+      homeDirectory: p.homeDirectory,
+      handler: handler,
+      eventLoggingAtsign: p.eventLoggingAtsign,
+    );
+
+    if (p.verbose) {
+      sshnpa.logger.logger.level = Level.INFO;
+    }
+
+    // start updating the heartbeat atkey periodically
+    Timer.periodic(const Duration(seconds: 60), (_) async {
+      // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
+      await _updateHeartbeatKey(atClient);
+    });
+
+    // start listening for force heartbeats from the same atSign
+    logger.shout('Starting AtRpc Server to listen for forced heartbeats...');
+    AtRpc(
+      atClient: atClient,
+      baseNameSpace: 'sshnp',
+      domainNameSpace: 'npp_atserver_heartbeat',
+      callbacks: _HeartbeatHelper(atClient: atClient),
+      allowList: {atClient.getCurrentAtSign()!}.toSet(),
+      isServer: true,
+      isClient: false,
+    ).start();
+
+    await sshnpa.run();
+  } else if(p.policyVersion == 'v2') {
+    final admin_v2.PolicyService policyService = admin_v2.PolicyService(atClient: atClient);
+    await policyService.init(homeDirectory: p.homeDirectory); 
+    await policyService.start();
+  } else {
+    stderr.writeln('Unknown policy version: ${p.policyVersion}');
     exit(4);
   }
-
-  var sshnpa = NPAImpl(
-    atClient: atClient,
-    homeDirectory: p.homeDirectory,
-    handler: handler,
-    eventLoggingAtsign: p.eventLoggingAtsign,
-  );
-
-  if (p.verbose) {
-    sshnpa.logger.logger.level = Level.INFO;
-  }
-
-  // start updating the heartbeat atkey periodically
-  Timer.periodic(const Duration(seconds: 60), (_) async {
-    // key format: `heartbeat.noports@<atsign>`: {'timestamp': '...'}
-    await _updateHeartbeatKey(atClient);
-  });
-
-  // start listening for force heartbeats from the same atSign
-  logger.shout('Starting AtRpc Server to listen for forced heartbeats...');
-  AtRpc(
-    atClient: atClient,
-    baseNameSpace: 'sshnp',
-    domainNameSpace: 'npp_atserver_heartbeat',
-    callbacks: _HeartbeatHelper(atClient: atClient),
-    allowList: {atClient.getCurrentAtSign()!}.toSet(),
-    isServer: true,
-    isClient: false,
-  ).start();
-
-  await sshnpa.run();
 }
 
 class Handler implements NPARequestHandler {
