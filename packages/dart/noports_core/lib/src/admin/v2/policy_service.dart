@@ -126,7 +126,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             final Set<Map<String, dynamic>> clientsAsJson = clients.map((client) => client.toJson()).toSet();
             final int amount = clientsAsJson.length;
             responsePayload['amount'] = amount;
-            responsePayload['value'] = clientsAsJson;
+            responsePayload['list'] = clientsAsJson.toList();
             message = '$amount Clients found.';
             success = true;
             break;
