@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.14.3
+version: 5.14.4
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -24,6 +24,11 @@ dependencies:
   config: ^0.8.3
 
 dependency_overrides:
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_client
+      ref: gkc-notif-service-connection-reliability
   archive: ^4.0.7
   dartssh2:
     git:
