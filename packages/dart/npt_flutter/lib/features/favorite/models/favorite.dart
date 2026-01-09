@@ -65,8 +65,7 @@ sealed class Favorite<T extends Loggable> extends Loggable {
 
 @JsonSerializable()
 class FavoriteProfile extends Favorite<ProfileState> {
-  const FavoriteProfile({required super.uuid})
-    : super(type: FavoriteType.profile);
+  const FavoriteProfile({required super.uuid}) : super(type: FavoriteType.profile);
 
   @override
   List<Object?> get props => [uuid];
@@ -76,8 +75,7 @@ class FavoriteProfile extends Favorite<ProfileState> {
     return 'FavoriteProfile(uuid: $uuid)';
   }
 
-  factory FavoriteProfile.fromJson(Map<String, dynamic> json) =>
-      _$FavoriteProfileFromJson(json);
+  factory FavoriteProfile.fromJson(Map<String, dynamic> json) => _$FavoriteProfileFromJson(json);
 
   @override
   Map<String, dynamic> toJson() {
@@ -109,10 +107,9 @@ class FavoriteProfile extends Favorite<ProfileState> {
     return switch (state) {
       ProfileLoaded _ || ProfileFailedSave _ => ProfileStatus.off.message,
       ProfileStarting _ => ProfileStatus.starting.message,
-      ProfileStarted _ =>
-        '${ProfileStatus.on.message} - ${(state as ProfileLoadedState).profile.localPort}]',
+      ProfileStarted _ => '${ProfileStatus.on.message} - [${(state as ProfileLoadedState).profile.localPort}]',
       ProfileStopping _ => ProfileStatus.stopping.message,
-      ProfileInitial _ || ProfileLoading _ => ProfileStatus.loading.message,
+      ProfileInitial _ || ProfileLoading _ => ProfileStatus.off.message, // Show as disconnected during initialization
       ProfileFailedStart _ => ProfileStatus.failedToStart.message,
       ProfileFailedLoad _ => ProfileStatus.failedToLoad.message,
     };
