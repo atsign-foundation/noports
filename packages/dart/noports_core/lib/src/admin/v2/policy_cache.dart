@@ -77,11 +77,7 @@ class PolicyCache {
       print('$clientAtSign is not a registered client in PolicyCache');
       return {};
     }
-    final String? clientId = client.id;
-    if(clientId == null) {
-      throw Exception('WARN: $clientAtSign\'s Client object does not have an id which is not right!');
-      
-    }
+    final String clientId = client.id;
     Set<ClientGroupMember> matchedClientGroupMembers = _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientId == clientId).toSet();
     Set<ClientGroup> matchedClientGroups = {};
     for(final ClientGroupMember clientGroupMember in matchedClientGroupMembers) {
@@ -133,10 +129,7 @@ class PolicyCache {
       print('No daemon found in PolicyCache with atSign $daemonAtSign');
       return {};
     }
-    final String? daemonId = daemon.id;
-    if(daemonId == null) {
-      throw Exception('daemon.id of $daemonAtSign is null when it should have never made its way into the PolicyCache');
-    }
+    final String daemonId = daemon.id;
     Set<Service> servicesThatMatchDaemonAtSign = getServicesByDaemonId(daemonId); // services that match this daemon atSign
     return servicesThatMatchDaemonAtSign;
   }
@@ -187,14 +180,11 @@ class PolicyCache {
           'property of policy cache');
       }
     }
-    client.id ??= (_maxId(_clients) + 1).toString();
     _clients.removeWhere((c) => c.id == client.id);
     _clients.add(client);
   }
 
   void putClientGroup(final ClientGroup clientGroup) {
-    // it's okay to have client groups with the same name
-    clientGroup.id ??= (_maxId(_clientGroups) + 1).toString();
     _clientGroups.removeWhere((cg) => cg.id == clientGroup.id);
     _clientGroups.add(clientGroup);
   }
@@ -207,7 +197,6 @@ class PolicyCache {
           ' and ${clientGroupMember.clientGroupId}');
       }
     }
-    clientGroupMember.id ??= (_maxId(_clientGroupMembers) + 1).toString();
     _clientGroupMembers.removeWhere((cgm) => cgm.id == clientGroupMember.id);
     _clientGroupMembers.add(clientGroupMember);
   }
@@ -219,7 +208,6 @@ class PolicyCache {
         throw Exception('Found duplicate daemon atSign ${daemon.atSign}');
       }
     }
-    daemon.id ??= (_maxId(_daemons) + 1).toString();
     _daemons.removeWhere((d) => d.id == daemon.id);
     _daemons.add(daemon);
   }
@@ -235,7 +223,6 @@ class PolicyCache {
           'deviceGroupName: ${service.deviceGroupName}'); 
       }
     }
-    service.id ??= (_maxId(_services) + 1).toString();
     _services.removeWhere((s) => s.id == service.id);
     _services.add(service);
   }
@@ -250,29 +237,28 @@ class PolicyCache {
           ' permitOpen: ${serviceACL.permitOpen}');
       }
     } 
-    serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
     _serviceACLs.removeWhere((sa) => sa.id == serviceACL.id);
     _serviceACLs.add(serviceACL);
   }
 
-  // Returns the maximum integer id in the given set of PolicyEntry.
-  int _maxId(final Set<PolicyEntry> entries) {
-    int maxId = 0;
-    for(final entry in entries) {
-      if(entry.id == null) {
-        print('Warning: entry id is null');
-        continue;
-      }
-      int? parsedId = int.tryParse(entry.id!);
-      if(parsedId == null) {
-        print('Warning: entry id is not an integer: ${entry.id}');
-        continue;
-      }
-      if(parsedId > maxId) {
-        maxId = parsedId;
-      }
-    }
-    return maxId;
-  }
+  // // Returns the maximum integer id in the given set of PolicyEntry.
+  // int _maxId(final Set<PolicyEntry> entries) {
+  //   int maxId = 0;
+  //   for(final entry in entries) {
+  //     if(entry.id == null) {
+  //       print('Warning: entry id is null');
+  //       continue;
+  //     }
+  //     int? parsedId = int.tryParse(entry.id!);
+  //     if(parsedId == null) {
+  //       print('Warning: entry id is not an integer: ${entry.id}');
+  //       continue;
+  //     }
+  //     if(parsedId > maxId) {
+  //       maxId = parsedId;
+  //     }
+  //   }
+  //   return maxId;
+  // }
 }
 

@@ -1,9 +1,11 @@
-import 'dart:convert';
-
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/admin_v2.dart';
 
 class PolicyClient {
+
+  static final AtSignLogger logger = AtSignLogger('PolicyClient');
+
   late AtRpcClient _atRpcClient;
 
   PolicyClient._();

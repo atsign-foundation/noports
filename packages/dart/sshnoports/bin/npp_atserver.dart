@@ -119,6 +119,34 @@ void main(List<String> args) async {
   } else if(p.policyVersion == 'v2') {
     final admin_v2.PolicyService policyService = admin_v2.PolicyService(atClient: atClient);
     await policyService.init(homeDirectory: p.homeDirectory); 
+
+    final admin_v2.Client client1 = admin_v2.Client(id: '1', name: 'Jeremy', atSign: '@jeremy');
+    final admin_v2.Client client2 = admin_v2.Client(id: '2', name: 'Xavier', atSign: '@xavier');
+    final admin_v2.Client client3 = admin_v2.Client(id: '3', name: 'Daria', atSign: '@daria');
+    
+    final admin_v2.ClientGroup clientGroup1 = admin_v2.ClientGroup(id: '1', name: 'Engineers');
+    final admin_v2.ClientGroup clientGroup2 = admin_v2.ClientGroup(id: '2', name: 'Marketing');
+
+    final admin_v2.ClientGroupMember clientGroupMember1 = admin_v2.ClientGroupMember(id: '1', clientId: client1.id, clientGroupId: clientGroup1.id);
+    final admin_v2.ClientGroupMember clientGroupMember2 = admin_v2.ClientGroupMember(id: '2', clientId: client2.id, clientGroupId: clientGroup1.id);
+    final admin_v2.ClientGroupMember clientGroupMember3 = admin_v2.ClientGroupMember(id: '3', clientId: client3.id, clientGroupId: clientGroup2.id);
+
+    final admin_v2.Daemon daemon1 = admin_v2.Daemon(id: '1', atSign: '@daemon');
+
+    final admin_v2.Service service1 = admin_v2.Service(id: '1', daemonId: daemon1.id, deviceName: 'default', deviceGroupName: '__none__');
+
+    final admin_v2.ServiceACL serviceACL1 = admin_v2.ServiceACL(id: '1', serviceId: service1.id, clientGroupId: clientGroup1.id, permitOpen: 'localhost:22');
+    policyService.cache.putClient(client1);
+    policyService.cache.putClient(client2);
+    policyService.cache.putClient(client3);
+    policyService.cache.putClientGroup(clientGroup1);
+    policyService.cache.putClientGroup(clientGroup2);
+    policyService.cache.putClientGroupMember(clientGroupMember1);
+    policyService.cache.putClientGroupMember(clientGroupMember2);
+    policyService.cache.putClientGroupMember(clientGroupMember3);
+    policyService.cache.putDaemon(daemon1);
+    policyService.cache.putService(service1);
+    policyService.cache.putServiceACL(serviceACL1);
     await policyService.start();
   } else {
     stderr.writeln('Unknown policy version: ${p.policyVersion}');

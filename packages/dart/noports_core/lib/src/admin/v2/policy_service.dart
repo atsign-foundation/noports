@@ -141,10 +141,11 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           case 'allClientGroups': {
             final Set<ClientGroup> clientGroups = cache.clientGroups;
             final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups.map((clientGroup) => clientGroup.toJson()).toSet();
-            final int amount = clientGroups.length;
+            final int amount = clientGroupsAsJson.length;
             responsePayload['amount'] = amount;
             responsePayload['list'] = clientGroupsAsJson.toList();
             message = '$amount ClientGroups found.';
+            success = true;
             break;
           }
           case 'allClientGroupMembers': {
