@@ -145,7 +145,13 @@ class PolicyClient {
     return serviceACLs;
   }
 
-  Future<String> putClient(final Client client) async {
+  Future<String> putClient({
+    required final String atSign,
+    required final String name}) async {
+    final Client client = Client(
+      atSign: atSign,
+      name: name,
+    );
     final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClient(client);
     final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
     if(!response.containsKey('success')) {
@@ -156,6 +162,111 @@ class PolicyClient {
     }
     final String clientId = response['clientId'];
     return clientId;
+  }
+
+  Future<String> putClientGroup({
+    required final String name,
+  }) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClientGroup(
+      ClientGroup(
+        name: name,
+      ),
+    );
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    if(!response.containsKey('success')) {
+      throw Exception('success key not found in response map: $response');
+    }
+    if(!response.containsKey('clientGroupId')) {
+      throw Exception('clientGroupId key not found in response map: $response');
+    }
+    final String clientGroupId = response['clientGroupId'];
+    return clientGroupId;
+  }
+
+  Future<String> putClientGroupMember({
+    required final String clientGroupId,
+    required final String clientId,
+  }) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClientGroupMember(
+      ClientGroupMember(
+        clientGroupId: clientGroupId,
+        clientId: clientId,
+      ),
+    );
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    if(!response.containsKey('success')) {
+      throw Exception('success key not found in response map: $response');
+    }
+    if(!response.containsKey('clientGroupMemberId')) {
+      throw Exception('clientGroupMemberId key not found in response map: $response');
+    }
+    final String clientGroupMemberId = response['clientGroupMemberId'];
+    return clientGroupMemberId;
+  }
+
+  Future<String> putDaemon({
+    required final String atSign,
+  }) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putDaemon(
+      Daemon(
+        atSign: atSign,
+      ),
+    );
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    if(!response.containsKey('success')) {
+      throw Exception('success key not found in response map: $response');
+    }
+    if(!response.containsKey('daemonId')) {
+      throw Exception('daemonId key not found in response map: $response');
+    }
+    final String daemonId = response['daemonId'];
+    return daemonId;
+  }
+
+  Future<String> putService({
+    required final String daemonId,
+    required final String deviceName,
+    required final String deviceGroupName,
+  }) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putService(
+      Service(
+        daemonId: daemonId,
+        deviceName: deviceName,
+        deviceGroupName: deviceGroupName,
+      ),
+    );
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    if(!response.containsKey('success')) {
+      throw Exception('success key not found in response map: $response');
+    }
+    if(!response.containsKey('serviceId')) {
+      throw Exception('serviceId key not found in response map: $response');
+    }
+    final String serviceId = response['serviceId'];
+    return serviceId;
+  }
+
+  Future<String> putServiceACL({
+    required final String serviceId,
+    required final String clientGroupId,
+    required final String permitOpen,
+  }) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putServiceACL(
+      ServiceACL(
+        serviceId: serviceId,
+        clientGroupId: clientGroupId,
+        permitOpen: permitOpen,
+      ),
+    );
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    if(!response.containsKey('success')) {
+      throw Exception('success key not found in response map: $response');
+    }
+    if(!response.containsKey('serviceACLId')) {
+      throw Exception('serviceACLId key not found in response map: $response');
+    }
+    final String serviceACLId = response['serviceACLId'];
+    return serviceACLId;
   }
   
 }
