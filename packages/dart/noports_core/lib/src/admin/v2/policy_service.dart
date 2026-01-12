@@ -197,49 +197,80 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
         switch(target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
-            cache.putClient(client);
-            responsePayload['clientId'] = cache.getClientById(client.id!);
-            success = true;
+            success = cache.putClient(client);
+            if(!success) {
+              message = 'Failed to store client with atSign: ${client.atSign}';
+              break;
+            } 
+            responsePayload['success'] = success;
+            responsePayload['clientId'] = cache.getClientById(client.id!).id!; // client.id is non-null after putClient
             message = 'Client stored successfully.';
             break;
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-            cache.putClientGroup(clientGroup);
-            responsePayload['clientGroupId'] = cache.getClientGroupById(clientGroup.id!);
-            success = true;
+            success = cache.putClientGroup(clientGroup);
+            if(!success) {
+              message = 'Failed to store client group with name: ${clientGroup.name}';
+              break;
+            }
+            responsePayload['success'] = success;
+            responsePayload['clientGroupId'] = cache.getClientGroupById(clientGroup.id!).id!; // clientGroup.id is non-null after putClientGroup
             message = 'Client group stored successfully.';
             break;
           }
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(valueAsMap);
-            cache.putClientGroupMember(clientGroupMember);
-            responsePayload['clientGroupMemberId'] = cache.getClientGroupMemberById(clientGroupMember.id!);
-            success = true;
+            success = cache.putClientGroupMember(clientGroupMember);
+            if(!success) {
+              message = 'Failed to store client group member: '
+                'clientId=${clientGroupMember.clientId} '
+                'clientGroupId=${clientGroupMember.clientGroupId}';
+              break;
+            }
+            responsePayload['success'] = success;
+            responsePayload['clientGroupMemberId'] = cache.getClientGroupMemberById(clientGroupMember.id!).id!; // clientGroupMember.id is non-null after putClientGroupMember
             message = 'Client group member stored successfully.';
             break;
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
-            cache.putDaemon(daemon);
-            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!);
-            success = true;
+            success = cache.putDaemon(daemon);
+            if(!success) {
+              message = 'Failed to store daemon with atSign: ${daemon.atSign}';
+              break;
+            }
+            responsePayload['success'] = success;
+            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!); // daemon.id is non-null after putDaemon
             message = 'Daemon stored successfully.';
             break;
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
-            cache.putService(service);
-            responsePayload['serviceId'] = cache.getServiceById(service.id!);
-            success = true;
+            success = cache.putService(service);
+            if(!success) {
+              message = 'Failed to store service: '
+                'deviceName=${service.deviceName} '
+                'daemonId=${service.daemonId}';
+              break;
+            }
+            responsePayload['success'] = success;
+            responsePayload['serviceId'] = cache.getServiceById(service.id!).id!; // service.id is non-null after putService
             message = 'Service stored successfully.';
             break;
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-            cache.putServiceACL(serviceACL);
-            responsePayload['serviceACLId'] = cache.getServiceACLById(serviceACL.id!);
-            success = true;
+            success = cache.putServiceACL(serviceACL);
+            if(!success) {
+              message = 'Failed to store service ACL: '
+                'serviceId=${serviceACL.serviceId} '
+                'clientGroupId=${serviceACL.clientGroupId} '
+                'permitOpen=${serviceACL.permitOpen}';
+              break;
+            }
+            responsePayload['success'] = success;
+            responsePayload['serviceACLId'] = cache.getServiceACLById(serviceACL.id!).id!; // serviceACL.id is non-null after putServiceACL
             message = 'Service ACL stored successfully.';
             break;
           }
@@ -255,7 +286,11 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
         message = 'Unknown operation: $operation';
         break;
     }
-    return AtRpcResp(reqId: reqId, payload: responsePayload, message: message, respType: success ? AtRpcRespType.success : AtRpcRespType.error);
+    return AtRpcResp(
+      reqId: reqId,
+      payload: responsePayload,
+      message: message,
+      respType: success ? AtRpcRespType.success : AtRpcRespType.error);
   }
 
   @override

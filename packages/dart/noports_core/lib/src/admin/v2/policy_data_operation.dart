@@ -83,7 +83,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Client',
-        'value': jsonEncode(client.toJson()),
+        'value': client.toJson(),
       },
     );
   }

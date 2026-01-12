@@ -1,9 +1,14 @@
+import 'package:at_utils/at_utils.dart';
+
 import './models.dart';
 
 class PolicyCache {
-  final Set<Client> _clients; // Client.atSign must be unique across all clients {"User1", "Colin", "@colin"}, {"User2", "Srie Teja", "@srie"}
-  final Set<ClientGroup> _clientGroups; // {"CG1", "Atsign Engineers"},
-  final Set<ClientGroupMember> _clientGroupMembers; // {"CG1", "User1"}, {"CG1", "User2}
+
+  static final AtSignLogger logger = AtSignLogger('PolicyCache');
+
+  final Set<Client> _clients; // Client.atSign must be unique across all clients  
+  final Set<ClientGroup> _clientGroups; 
+  final Set<ClientGroupMember> _clientGroupMembers; 
   final Set<Daemon> _daemons; // Daemon.atSign must be unique across all daemons
   final Set<Service> _services; 
   final Set<ServiceACL> _serviceACLs;
@@ -77,7 +82,10 @@ class PolicyCache {
       print('$clientAtSign is not a registered client in PolicyCache');
       return {};
     }
-    final String clientId = client.id;
+    if(client.id == null) {
+      throw Exception('Client ${client.atSign} has null id which should never happen');
+    }
+    final String clientId = client.id!;
     Set<ClientGroupMember> matchedClientGroupMembers = _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientId == clientId).toSet();
     Set<ClientGroup> matchedClientGroups = {};
     for(final ClientGroupMember clientGroupMember in matchedClientGroupMembers) {
@@ -129,7 +137,10 @@ class PolicyCache {
       print('No daemon found in PolicyCache with atSign $daemonAtSign');
       return {};
     }
-    final String daemonId = daemon.id;
+    if(daemon.id == null) {
+      throw Exception('Daemon with atSign $daemonAtSign has null id which should never happen');
+    }
+    final String daemonId = daemon.id!;
     Set<Service> servicesThatMatchDaemonAtSign = getServicesByDaemonId(daemonId); // services that match this daemon atSign
     return servicesThatMatchDaemonAtSign;
   }
@@ -170,7 +181,7 @@ class PolicyCache {
   }
 
   /// put* object into PolicyCache
-  void putClient(final Client client) {
+  bool putClient(final Client client) {
     // ensure no other clients exist with the same atSign
     for(final Client c in _clients) {
       if(c.atSign == client.atSign) {
@@ -179,40 +190,59 @@ class PolicyCache {
           'cache. It\'s very important to maintain 1 atSign = 1 client '
           'property of policy cache');
       }
+      if(client.id != null && c.id == client.id) {
+        throw Exception('Attempted to add a new client with id '
+          '${client.id} when that id already exists in the policy cache.');
+      }
     }
-    _clients.removeWhere((c) => c.id == client.id);
-    _clients.add(client);
+    client.id ??= (_maxId(_clients) + 1).toString();
+    return _clients.add(client);
   }
 
-  void putClientGroup(final ClientGroup clientGroup) {
-    _clientGroups.removeWhere((cg) => cg.id == clientGroup.id);
-    _clientGroups.add(clientGroup);
+  bool putClientGroup(final ClientGroup clientGroup) {
+    // ensure no duplicate client group names
+    for(final ClientGroup cg in _clientGroups) {
+      if(cg.name == clientGroup.name) {
+        throw Exception('Found duplicate client group name ${clientGroup.name}');
+      }
+      if(cg.id != null && cg.id == clientGroup.id) {
+        throw Exception('Found duplicate client group id ${clientGroup.id}');
+      }
+    }
+    clientGroup.id ??= (_maxId(_clientGroups) + 1).toString();
+    return _clientGroups.add(clientGroup);
   }
 
-  void putClientGroupMember(final ClientGroupMember clientGroupMember) {
+  bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
     // ensure no duplicate client group member (Client.id, ClientGroup.id)
     for(final ClientGroupMember cgm in _clientGroupMembers) {
       if(cgm.clientId == clientGroupMember.clientId && cgm.clientGroupId == clientGroupMember.clientGroupId) {
         throw Exception('Found duplicate value for ${clientGroupMember.clientId}'
           ' and ${clientGroupMember.clientGroupId}');
       }
+      if(cgm.id != null && cgm.id == clientGroupMember.id) {
+        throw Exception('Found duplicate client group member id ${clientGroupMember.id}');
+      }
     }
-    _clientGroupMembers.removeWhere((cgm) => cgm.id == clientGroupMember.id);
-    _clientGroupMembers.add(clientGroupMember);
+    clientGroupMember.id ??= (_maxId(_clientGroupMembers) + 1).toString();
+    return _clientGroupMembers.add(clientGroupMember);
   }
 
-  void putDaemon(final Daemon daemon) {
+  bool putDaemon(final Daemon daemon) {
     // ensure policy cache only has one unique daemon atSign
     for(final Daemon d in _daemons) {
       if(d.atSign == daemon.atSign) {
         throw Exception('Found duplicate daemon atSign ${daemon.atSign}');
       }
+      if(daemon.id != null && d.id == daemon.id) {
+        throw Exception('Found duplicate daemon id ${daemon.id}');
+      }
     }
-    _daemons.removeWhere((d) => d.id == daemon.id);
-    _daemons.add(daemon);
+    daemon.id ??= (_maxId(_daemons) + 1).toString();
+    return _daemons.add(daemon);
   }
 
-  void putService(final Service service) {
+  bool putService(final Service service) {
     // ensure no duplicate services
     for(final Service s in _services) {
       if(s.daemonId == service.daemonId && 
@@ -222,12 +252,15 @@ class PolicyCache {
           'deviceName: ${service.deviceName} '
           'deviceGroupName: ${service.deviceGroupName}'); 
       }
+      if(service.id != null && s.id == service.id) {
+        throw Exception('Found duplicate service id ${service.id}');
+      }
     }
-    _services.removeWhere((s) => s.id == service.id);
-    _services.add(service);
+    service.id ??= (_maxId(_services) + 1).toString();
+    return _services.add(service);
   }
 
-  void putServiceACL(final ServiceACL serviceACL) {
+  bool putServiceACL(final ServiceACL serviceACL) {
     for(final ServiceACL sa in _serviceACLs) {
       if(sa.clientGroupId == serviceACL.clientGroupId &&
         sa.serviceId == serviceACL.serviceId &&
@@ -236,29 +269,28 @@ class PolicyCache {
           '${serviceACL.clientGroupId} serviceId: ${serviceACL.serviceId}'
           ' permitOpen: ${serviceACL.permitOpen}');
       }
+      if(sa.id == serviceACL.id) {
+        throw Exception('Found duplicate service ACL id ${serviceACL.id}');
+      }
     } 
-    _serviceACLs.removeWhere((sa) => sa.id == serviceACL.id);
-    _serviceACLs.add(serviceACL);
+    serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
+    return _serviceACLs.add(serviceACL);
   }
 
-  // // Returns the maximum integer id in the given set of PolicyEntry.
-  // int _maxId(final Set<PolicyEntry> entries) {
-  //   int maxId = 0;
-  //   for(final entry in entries) {
-  //     if(entry.id == null) {
-  //       print('Warning: entry id is null');
-  //       continue;
-  //     }
-  //     int? parsedId = int.tryParse(entry.id!);
-  //     if(parsedId == null) {
-  //       print('Warning: entry id is not an integer: ${entry.id}');
-  //       continue;
-  //     }
-  //     if(parsedId > maxId) {
-  //       maxId = parsedId;
-  //     }
-  //   }
-  //   return maxId;
-  // }
+  int _maxId(final Set<PolicyEntry> entries) {
+    int maxId = 0;
+    for(final PolicyEntry entry in entries) {
+      if(entry.id == null) {
+        logger.warning('Encountered PolicyEntry with null id: $entry');
+        continue;
+      }
+      final int entryId = int.tryParse(entry.id!) ?? 0;
+      if(entryId > maxId) {
+        maxId = entryId;
+      }
+    }
+    return maxId;
+  }
+
 }
 

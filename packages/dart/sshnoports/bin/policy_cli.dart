@@ -22,8 +22,8 @@ Future<void> main(List<String> args) async {
     baseNameSpace: policyCLIParams.namespace,
     domainNameSpace: 'policy');
 
-  final PolicyClient policyClient =
-  PolicyClient.fromAtRpcClient(atRpcClient: atRpcClient);
+  final PolicyClient policyClient = 
+    PolicyClient.fromAtRpcClient(atRpcClient: atRpcClient);
 
   while(true) {
   printHelpMessage();
@@ -96,6 +96,26 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '7': { // putClient
+      print('Enter client name: \n');
+      final String? clientName = stdin.readLineSync();
+      if(clientName == null || clientName.isEmpty) {
+        print('Invalid client name: $clientName');
+      }
+      print('Enter client atSign: \n');
+      final String? clientAtSign = stdin.readLineSync();
+      if(clientAtSign == null || clientAtSign.isEmpty) {
+        print('Invalid client atSign: $clientAtSign');
+      }
+      final Client client = Client(name: clientName!, atSign: clientAtSign!);
+      final String clientId = await policyClient.putClient(client);
+      print('Put client with generated id: $clientId');
+
+      final Set<Client> allClients = await policyClient.getAllClients();
+      print('Obtained ${allClients.length} clients:');
+      for(int i = 0; i < allClients.length; i++) {
+        final Client client = allClients.elementAt(i);
+        print('[$i]: client.name: ${client.name} | client.atSign: ${client.atSign}');
+      }
       break;
     }
     case '8': { // putClientGroup
@@ -143,6 +163,10 @@ AtOnboardingPreference generateAtOnboardingPreference(
   ..rootDomain = policyCLIParams.rootServer.split(':')[0]
   ..rootPort = int.parse(policyCLIParams.rootServer.split(':')[1])
   ..atKeysFilePath = policyCLIParams.atKeysFilePath;
+
+  if(policyCLIParams.storagePath != null) {
+    atOnboardingPreference.hiveStoragePath = policyCLIParams.storagePath;
+  }
 
   return atOnboardingPreference;
 }

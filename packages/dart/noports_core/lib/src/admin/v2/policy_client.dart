@@ -145,14 +145,17 @@ class PolicyClient {
     return serviceACLs;
   }
 
-  Future<bool> putClient(final Client client) async {
+  Future<String> putClient(final Client client) async {
     final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClient(client);
     final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
-    final bool success = response['success'];
-    return success;
+    if(!response.containsKey('clientId')) {
+      throw Exception('clientId key not found in response map: $response');
+    }
+    final String clientId = response['clientId'];
+    return clientId;
   }
   
 }

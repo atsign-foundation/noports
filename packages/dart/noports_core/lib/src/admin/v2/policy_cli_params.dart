@@ -2,27 +2,27 @@ import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 
 class PolicyCLIParamsDefaults {
-  static bool verbose = false;
-  static String rootServer = 'root.atsign.org:64';
-  static String namespace = 'sshnp';
+  static const bool verbose = false;
+  static const String rootServer = 'root.atsign.org:64';
+  static const String namespace = 'sshnp';
+  static const String policyVersion = 'v1';
 }
 
 class PolicyCLIParams {
-
   // The goal of PolicyCLIParams is to have all parameters non-null after
   // parsing command-line arguments.
   // There are three categories of parameters:
-  // 1. Mandatory options (no defaults, must be specified by ArgParser)
+  // 1. Mandatory options (no defaults, must be specified by ArgParser), should be a final variable
   // 2. Non-mandatory options with resolvable defaults
-  //    a. either specified by the ArgParser using `defaultsTo`
-  //    b. or we resolve our own default after parsing (e.g. atKeysFilePath)
-  // 3. Non-mandatory options with no defaults (null if not specified)
+  //    a. has a compile-time default (e.g. _rootServer); the default comes from ArgParser's defaultsTo, should be a final non-null variable
+  //    b. has a run-time default (e.g. _atKeysFilePath)
+  // 3. Non-mandatory options with no defaults (null if not specified), should be a non-final nullable variable
 
   // Mandatory by ArgParser (this is case 1)
   final String _atSign; // policy atSign, will always be specified (mandatory option)
 
   // Non-mandatory with resolvable defaults (this is case 2):
-  // Case 2a
+  // Case 2a:
   late bool _verbose; // will always be non-null; it has a resolvable default
   late String _rootServer; // will always be non-null; it has a resolvable default
   late String _namespace;
@@ -30,6 +30,9 @@ class PolicyCLIParams {
   // Case 2b:
   late String _atKeysFilePath; // resolves to ~/.atsign/keys/<atsign>-key.atKeys
   late String _policyAtSign; // non-null, resolves to _atSign if not specified by ArgParser
+
+  // Case 3: Non-mandatory with no defaults (null, if not specified).
+  String? _storagePath;
 
   static final ArgParser _argParser = _createArgParser();
 
@@ -44,6 +47,7 @@ class PolicyCLIParams {
   String get atKeysFilePath => _atKeysFilePath;
   String get policyAtSign => _policyAtSign;
   String get namespace => _namespace;
+  String? get storagePath => _storagePath;
 
   factory PolicyCLIParams.fromArgs(List<String> args) {
     ArgResults argResults = _argParser.parse(args);
@@ -67,6 +71,9 @@ class PolicyCLIParams {
       getDefaultAtKeysFilePath(homeDirectory!, atSign);
     p._policyAtSign = argResults['policy-atsign'] ??
       p._atSign;
+
+    // Case 3: Non-mandatory nullable variables
+    p._storagePath = argResults['storage-path'];
     return p;
   }
 
@@ -82,6 +89,7 @@ class PolicyCLIParams {
     );
 
     // Case 2a: Non-mandatory, but has defaultsTo:
+    // Be sure to use PolicyCLIParamsDefaults
     argParser.addOption(
       'root-server',
       mandatory: false,
@@ -104,6 +112,14 @@ class PolicyCLIParams {
       help: 'Namespace of the application, defaults to ${PolicyCLIParamsDefaults.namespace}'
     );
 
+    argParser.addOption(
+      'policy-version',
+      mandatory: false,
+      defaultsTo: PolicyCLIParamsDefaults.policyVersion,
+      help: 'Policy version that the server is using, defaults to v1, '
+        'other possible value is \'v2\'',
+    );
+
     // Case 2b: Non-mandatory, but does not have defaultsTo:
     argParser.addOption(
       'key-file',
@@ -117,6 +133,14 @@ class PolicyCLIParams {
       'policy-atsign',
       mandatory: false,
       help: 'Policy atSign, defaults to the specified -a atSign'
+    );
+
+    // Case 3: Non-mandatory 
+    argParser.addOption(
+      'storage-path',
+      abbr: 's',
+      mandatory: false,
+      help: 'Specified storage directory',
     );
 
     return argParser;

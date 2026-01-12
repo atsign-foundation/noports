@@ -3,10 +3,10 @@ import 'package:json_annotation/json_annotation.dart';
 part 'models.g.dart';
 
 class PolicyEntry {
-  String id; 
-
-  PolicyEntry({required this.id});
+  String? id; 
+  PolicyEntry({this.id});
 }
+
 // represents an individual client (e.g. "@colin", "Colin")
 // each Client should have a unqiue atSign
 @JsonSerializable()
@@ -14,7 +14,7 @@ class Client extends PolicyEntry {
   late String name;
   late String atSign; // unique
 
-  Client({required super.id, required this.name, required this.atSign});
+  Client({super.id, required this.name, required this.atSign});
 
   @override
   bool operator ==(Object other) {
@@ -40,7 +40,7 @@ class Client extends PolicyEntry {
 class ClientGroup extends PolicyEntry {
   late String name;
 
-  ClientGroup({required super.id, required this.name});
+  ClientGroup({super.id, required this.name});
 
   factory ClientGroup.fromJson(Map<String, dynamic> json) => _$ClientGroupFromJson(json);
   Map<String, dynamic> toJson() => _$ClientGroupToJson(this);
@@ -56,7 +56,7 @@ class ClientGroupMember extends PolicyEntry {
   late String clientId;
   late String clientGroupId;
 
-  ClientGroupMember({required super.id, required this.clientId, required this.clientGroupId});
+  ClientGroupMember({super.id, required this.clientId, required this.clientGroupId});
 
   factory ClientGroupMember.fromJson(Map<String, dynamic> json) => _$ClientGroupMemberFromJson(json);
   Map<String, dynamic> toJson() => _$ClientGroupMemberToJson(this);
@@ -68,7 +68,7 @@ class ClientGroupMember extends PolicyEntry {
 class Daemon extends PolicyEntry {
   late String atSign;
 
-  Daemon({required super.id, required this.atSign});
+  Daemon({super.id, required this.atSign});
 
   factory Daemon.fromJson(Map<String, dynamic> json) => _$DaemonFromJson(json);
   Map<String, dynamic> toJson() => _$DaemonToJson(this);
@@ -83,7 +83,7 @@ class Service extends PolicyEntry {
   late String deviceGroupName; // can be `__none__`
 
   Service({
-    required super.id,
+    super.id,
     required this.daemonId,
     required this.deviceName,
     required this.deviceGroupName});
@@ -100,7 +100,7 @@ class ServiceACL extends PolicyEntry {
   late String clientGroupId;
   late String permitOpen;
 
-  ServiceACL({required super.id, required this.serviceId, required this.clientGroupId, required this.permitOpen});
+  ServiceACL({super.id, required this.serviceId, required this.clientGroupId, required this.permitOpen});
 
   factory ServiceACL.fromJson(Map<String, dynamic> json) => _$ServiceACLFromJson(json);
   Map<String, dynamic> toJson() => _$ServiceACLToJson(this);
