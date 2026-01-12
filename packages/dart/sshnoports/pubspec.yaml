@@ -12,7 +12,7 @@ dependencies:
   at_onboarding_cli: ^1.14.1
   at_commons: ^5.6.2
   at_cli_commons: ^3.0.1
-  at_client: ^3.9.2
+  at_client: ^3.10.0
   args: 2.7.0
   socket_connector: 2.4.1
   dartssh2: 2.11.0
@@ -24,11 +24,6 @@ dependencies:
   config: ^0.8.3
 
 dependency_overrides:
-  at_client:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_client
-      ref: gkc-notif-service-connection-reliability
   archive: ^4.0.7
   dartssh2:
     git:
