@@ -1,11 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/commands.dart';
-import 'package:noports_core/src/commands/issue_keys/issue_keys_impl.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:test/test.dart';
-
-import 'issue_keys_impl_mock.dart';
 
 class MockAtClient extends Mock implements AtClient {}
 
@@ -14,31 +10,6 @@ class MockEnrollmentService extends Mock implements EnrollmentService {}
 class MockEnrollment extends Mock implements Enrollment {}
 
 void main() {
-  late IssueKeys issueKeys;
-  late MockAtClient mockAtClient;
-  late MockEnrollmentService mockEnrollmentService;
-  late IssueKeysParams params;
-
-  const testAtsign = '@test';
-  const testOtp = '123456';
-  const testDevice = 'test-device';
-
-  setUp(() {
-    mockAtClient = MockAtClient();
-    mockEnrollmentService = MockEnrollmentService();
-    params = IssueKeysParams(
-      atsign: testAtsign,
-      device: testDevice,
-      otp: testOtp,
-    );
-
-    issueKeys = IssueKeysTest.test(
-      params,
-      atClient: mockAtClient,
-      enrollmentService: mockEnrollmentService,
-    );
-  });
-
   group('IssueKeysParams', () {
     test('throws for missing args', () {
       expect(() => IssueKeysParams.fromArgs([]), throwsA(isA<ArgumentError>()));
