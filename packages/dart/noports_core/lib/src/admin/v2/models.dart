@@ -3,33 +3,34 @@ import 'package:json_annotation/json_annotation.dart';
 part 'models.g.dart';
 
 class PolicyEntry {
-  String? id; 
-  PolicyEntry({this.id});
+  final String id; 
+  PolicyEntry({required this.id});
 }
 
 // represents an individual client (e.g. "@colin", "Colin")
 // each Client should have a unqiue atSign
 @JsonSerializable()
 class Client extends PolicyEntry {
-  late String name;
-  late String atSign; // unique
+  final String name;
+  final String atSign; // unique
 
-  Client({super.id, required this.name, required this.atSign});
+  Client({
+    required super.id,
+    required this.name,
+    required this.atSign});
 
   factory Client.fromJson(Map<String, dynamic> json) => _$ClientFromJson(json);
   Map<String, dynamic> toJson() => _$ClientToJson(this);
-
-  bool isIdentical(final Client client) {
-    return atSign == client.atSign;
-  }
 }
 
 // represents a group of clients (e.g. "Atsign Engineers")
 @JsonSerializable()
 class ClientGroup extends PolicyEntry {
-  late String name;
+  final String name;
 
-  ClientGroup({super.id, required this.name});
+  ClientGroup({
+    required super.id,
+    required this.name});
 
   factory ClientGroup.fromJson(Map<String, dynamic> json) => _$ClientGroupFromJson(json);
   Map<String, dynamic> toJson() => _$ClientGroupToJson(this);
@@ -38,10 +39,13 @@ class ClientGroup extends PolicyEntry {
 // maps a client (e.g. @colin, "Colin) to a client group (e.g. "Atsign Engineers")
 @JsonSerializable()
 class ClientGroupMember extends PolicyEntry {
-  late String clientId;
-  late String clientGroupId;
+  final String clientId;
+  final String clientGroupId;
 
-  ClientGroupMember({super.id, required this.clientId, required this.clientGroupId});
+  ClientGroupMember({
+    required super.id,
+    required this.clientId,
+    required this.clientGroupId});
 
   factory ClientGroupMember.fromJson(Map<String, dynamic> json) => _$ClientGroupMemberFromJson(json);
   Map<String, dynamic> toJson() => _$ClientGroupMemberToJson(this);
@@ -51,9 +55,11 @@ class ClientGroupMember extends PolicyEntry {
 // each Daemon should have a unique atSign
 @JsonSerializable()
 class Daemon extends PolicyEntry {
-  late String atSign;
+  final String atSign;
 
-  Daemon({super.id, required this.atSign});
+  Daemon({
+    required super.id,
+    required this.atSign});
 
   factory Daemon.fromJson(Map<String, dynamic> json) => _$DaemonFromJson(json);
   Map<String, dynamic> toJson() => _$DaemonToJson(this);
@@ -63,12 +69,12 @@ class Daemon extends PolicyEntry {
 // each Service should have a unique daemonId+deviceName+deviceGroupName 
 @JsonSerializable()
 class Service extends PolicyEntry {
-  late String daemonId;
-  late String deviceName; // can be `default`
-  late String deviceGroupName; // can be `__none__`
+  final String daemonId;
+  final String deviceName; // can be `default`
+  final String deviceGroupName; // can be `__none__`
 
   Service({
-    super.id,
+    required super.id,
     required this.daemonId,
     required this.deviceName,
     required this.deviceGroupName});
@@ -81,11 +87,15 @@ class Service extends PolicyEntry {
 // each ServiceACL should have a unique serviceId+clientGroupId+permitOpen
 @JsonSerializable()
 class ServiceACL extends PolicyEntry {
-  late String serviceId;
-  late String clientGroupId;
-  late String permitOpen;
+  final String serviceId;
+  final String clientGroupId;
+  final String permitOpen;
 
-  ServiceACL({super.id, required this.serviceId, required this.clientGroupId, required this.permitOpen});
+  ServiceACL({
+    required super.id,
+    required this.serviceId,
+    required this.clientGroupId,
+    required this.permitOpen});
 
   factory ServiceACL.fromJson(Map<String, dynamic> json) => _$ServiceACLFromJson(json);
   Map<String, dynamic> toJson() => _$ServiceACLToJson(this);
