@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertDialogTitle => 'Are you sure?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, All Rights Reserved';
+  String get allRightsReserved => '© 2026 Atsign, All Rights Reserved';
 
   @override
   String get americas => 'Americas';

@@ -170,7 +170,7 @@ abstract class AppLocalizations {
   /// No description provided for @allRightsReserved.
   ///
   /// In en, this message translates to:
-  /// **'© 2025 Atsign, All Rights Reserved'**
+  /// **'© 2026 Atsign, All Rights Reserved'**
   String get allRightsReserved;
 
   /// No description provided for @americas.

@@ -38,7 +38,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get allRightsReserved =>
-      '© 2025 Atsign, Todos los derechos reservados';
+      '© 2026 Atsign, Todos los derechos reservados';
 
   @override
   String get americas => 'Américas';

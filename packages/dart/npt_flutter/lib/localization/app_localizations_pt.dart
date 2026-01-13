@@ -36,7 +36,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -1029,7 +1029,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';

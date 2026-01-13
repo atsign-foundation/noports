@@ -36,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -967,7 +967,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -1872,7 +1872,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get alertDialogTitle => '您確定嗎？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign，保留所有權利';
+  String get allRightsReserved => '© 2026 Atsign，保留所有權利';
 
   @override
   String get americas => '美洲';
