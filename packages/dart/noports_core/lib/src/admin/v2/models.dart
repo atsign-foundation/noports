@@ -16,17 +16,6 @@ class Client extends PolicyEntry {
 
   Client({super.id, required this.name, required this.atSign});
 
-  @override
-  bool operator ==(Object other) {
-    if(other is Client) {
-      return atSign == other.atSign;
-    }
-    return identical(this, other);
-  }
-
-  @override
-  int get hashCode => name.hashCode ^ atSign.hashCode;
-
   factory Client.fromJson(Map<String, dynamic> json) => _$ClientFromJson(json);
   Map<String, dynamic> toJson() => _$ClientToJson(this);
 
@@ -44,10 +33,6 @@ class ClientGroup extends PolicyEntry {
 
   factory ClientGroup.fromJson(Map<String, dynamic> json) => _$ClientGroupFromJson(json);
   Map<String, dynamic> toJson() => _$ClientGroupToJson(this);
-
-  bool isIdentical(final ClientGroup clientGroup) {
-    return name == clientGroup.name;
-  }
 }
 
 // maps a client (e.g. @colin, "Colin) to a client group (e.g. "Atsign Engineers")
