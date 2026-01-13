@@ -5,4 +5,3 @@ export 'src/common/default_args.dart';
 
 export 'src/common/types.dart';
 export 'src/common/validation_utils.dart';
-export 'src/common/cli_logging_handler.dart';
