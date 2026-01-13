@@ -1,3 +1,7 @@
+# 6.10.4
+
+- build(deps): take up at_client 3.10.0
+
 # 6.10.3
 
 - fix: In the RelayAuthVerifiers, catch in the same place all the exceptions 
