@@ -149,10 +149,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: "88a31fac0f046935cfced7c5fc7e1c2a781b6e0cc3d2101cbfd9bdf721425723"
+      sha256: e974616a816e9f6f3b186f33efea823f345d193b6ea9b42f08d28f35848c4de1
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.0"
+    version: "3.4.0"
   boolean_selector:
     dependency: transitive
     description:
