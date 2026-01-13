@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
@@ -188,6 +190,52 @@ void main() {
       expect(verifier.atSign, null);
       expect(verifier.sessionId, relaySessionId);
       expect(verifier.isSideA, false);
+    });
+
+    test('too much data', () async {
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'too much data',
+        helper,
+      );
+
+      Random r = Random();
+      Uint8List data = Uint8List.fromList(List.generate(
+          RelayAuthVerifier.maxAuthBufferLength + 1, (i) => r.nextInt(256)));
+
+      late Function(Uint8List data) socketOnDataFn;
+      MockSocket mockSocket = MockSocket();
+
+      when (() => mockSocket.flush()).thenAnswer((Invocation i) async {Completer c = Completer(); c.complete(); return c.future;});
+      when(
+            () => mockSocket.listen(
+          any(),
+          onError: any(named: "onError"),
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
+        socketOnDataFn = invocation.positionalArguments[0];
+
+        socketOnDataFn(data);
+
+        return MockStreamSubscription<Uint8List>();
+      });
+
+      bool somethingThrown = false;
+      try {
+        await verifier.verifySocketAuth(mockSocket);
+      } catch (e, st) {
+        expect(e.toString(), contains('Error during socket authentication:'
+            ' RelayAuthVerifierException: malformedChallengeResponse :'
+            ' Too much data from client (more than 4096 bytes)'));
+        print('Caught $e as expected\n$st');
+        somethingThrown = true;
+      }
+      expect(somethingThrown, true, reason: 'exception should have been thrown');
+
+
+      expect(verifier.atSign, null);
+      expect(verifier.sessionId, null);
+      expect(verifier.isSideA, null);
     });
   });
 }
