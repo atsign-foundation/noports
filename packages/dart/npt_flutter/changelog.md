@@ -16,6 +16,7 @@
 - FIX: In the tool tray now when you click settings you get to the app and the settings page
 - FEAT: On Windows clicking the tool tray Icon for a favourite will open the app and connect, if already connected will simply disconnect
 - FIX: Updated copyright year to 2026.
+- FEAT: Demo Profile uses http as the default protocol.
 
 ## 1.7.0+24
 
