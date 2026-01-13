@@ -1,0 +1,153 @@
+import 'package:at_auth/at_auth.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_utils/at_utils.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/commands/activate/activate_impl.dart';
+import 'package:noports_core/src/commands/activate/activate_params.dart';
+import 'package:test/test.dart';
+
+class MockAtOnboardingService extends Mock implements AtOnboardingService {}
+
+class MockAtOnboardingPreference extends Mock
+    implements AtOnboardingPreference {}
+
+class MockAtClient extends Mock implements AtClient {}
+
+void main() {
+  late MockAtOnboardingService mockOnboardingService;
+  late ActivateParams params;
+  late Activate activate;
+
+  const testAtsign = '@test';
+  const testCramSecret = 'test_cram_secret';
+  const testDeviceName = 'test_device';
+  const testOtp = '123456';
+
+  setUp(() {
+    mockOnboardingService = MockAtOnboardingService();
+
+    AtSignLogger.root_level = 'WARNING';
+  });
+
+  group('Activate command', () {
+    group('cram', () {
+      test('throws ArgumentError when cramSecret is null', () {
+        params = ActivateParams(atsign: testAtsign, type: ActivateType.cram);
+        activate = Activate(mockOnboardingService, params);
+
+        expect(
+          () => activate.cramAuthenticate(),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('case: onboarding succeeds', () async {
+        params = ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.cram,
+          cramSecret: testCramSecret,
+        );
+        activate = Activate(mockOnboardingService, params);
+
+        when(
+          () => mockOnboardingService.onboard(),
+        ).thenAnswer((_) async => true);
+
+        final result = await activate.cramAuthenticate();
+
+        expect(result, equals(0));
+        verify(() => mockOnboardingService.onboard()).called(1);
+      });
+
+      test('case: onboarding failure', () async {
+        params = ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.cram,
+          cramSecret: testCramSecret,
+        );
+        activate = Activate(mockOnboardingService, params);
+
+        when(
+          () => mockOnboardingService.onboard(),
+        ).thenAnswer((_) async => false);
+
+        final result = await activate.cramAuthenticate();
+
+        expect(result, equals(1));
+        verify(() => mockOnboardingService.onboard()).called(1);
+      });
+    });
+
+    group('enroll', () {
+      test('throws ArgumentError when otp is null', () {
+        params = ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.enroll,
+          deviceName: testDeviceName,
+        );
+        activate = Activate(mockOnboardingService, params);
+
+        expect(() => activate.enroll(), throwsA(isA<ArgumentError>()));
+      });
+
+      test('enroll created and approved successfully', () async {
+        params = ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.enroll,
+          otp: testOtp,
+          deviceName: testDeviceName,
+          atKeysFilePath: 'dummy_keys_file',
+        );
+        activate = Activate(mockOnboardingService, params);
+
+        final fakeResponse = AtEnrollmentResponse(
+          'enrollmentId',
+          EnrollmentStatus.approved,
+        );
+
+        when(
+          () => mockOnboardingService.enroll(
+            any(),
+            any(),
+            any(),
+            any(),
+            atKeysFile: any(named: 'atKeysFile'),
+          ),
+        ).thenAnswer((_) async => fakeResponse);
+
+        final result = await activate.enroll();
+        expect(result, equals(0));
+      });
+
+      test('enroll not approved', () async {
+        params = ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.enroll,
+          otp: testOtp,
+          deviceName: testDeviceName,
+          atKeysFilePath: 'dummy_keys_file',
+        );
+        activate = Activate(mockOnboardingService, params);
+
+        final fakeResponse = AtEnrollmentResponse(
+          'enrollmentId',
+          EnrollmentStatus.denied,
+        );
+
+        when(
+          () => mockOnboardingService.enroll(
+            any(),
+            any(),
+            any(),
+            any(),
+            atKeysFile: any(named: 'atKeysFile'),
+          ),
+        ).thenAnswer((_) async => fakeResponse);
+
+        final result = await activate.enroll();
+        expect(result, equals(1));
+      });
+    });
+  });
+}
