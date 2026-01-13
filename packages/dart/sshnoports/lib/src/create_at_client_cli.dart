@@ -23,6 +23,7 @@ Future<AtClient> createAtClientCli({
     ..hiveStoragePath = storagePath
     ..namespace = namespace
     ..downloadPath = path.normalize('$storagePath/downloads')
+    // ignore: deprecated_member_use
     ..isLocalStoreRequired = true
     ..commitLogPath = path.normalize('$storagePath/commitLog')
     ..fetchOfflineNotifications = false

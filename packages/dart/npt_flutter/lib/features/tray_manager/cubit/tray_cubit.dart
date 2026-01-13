@@ -8,6 +8,7 @@ import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/constants.dart';
@@ -36,9 +37,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (state is! TrayInitial || localizations == null) return;
     var context = App.navState.currentContext;
     if (context == null) return;
-    var showSettings =
-        context.read<OnboardingCubit>().getStatus() ==
-        OnboardingStatus.onboarded;
+    var showSettings = context.read<OnboardingCubit>().getStatus() == OnboardingStatus.onboarded;
 
     await reloadIcon();
 
@@ -46,8 +45,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
       Menu(
         items: [
           _getMenuItem(TrayAction.showDashboard, localizations),
-          if (showSettings)
-            _getMenuItem(TrayAction.showSettings, localizations),
+          if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),
           _getMenuItem(TrayAction.quitApp, localizations),
         ],
       ),
@@ -56,36 +54,23 @@ class TrayCubit extends LoggingCubit<TrayState> {
   }
 
   Future<void> reloadIcon() async {
-    final brightness =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     await trayManager.setIcon(switch (brightness) {
-      Brightness.light =>
-        Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
-      Brightness.dark =>
-        Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
-    });   
+      Brightness.light => Platform.isWindows ? Constants.icoIconLight : Constants.pngIconLight,
+      Brightness.dark => Platform.isWindows ? Constants.icoIconDark : Constants.pngIconDark,
+    });
     // Set an empty tooltip for the main tray icon to avoid garbage characters
     await trayManager.setToolTip('NoPorts Desktop');
   }
 
   MenuItem _getMenuItem(TrayAction action, AppLocalizations localizations) {
     final (label, callback) = _getAction(action, localizations);
-    return MenuItem(
-      key: _$TrayActionEnumMap[action],
-      label: label,
-      onClick: callback,
-    );
+    return MenuItem(key: _$TrayActionEnumMap[action], label: label, onClick: callback);
   }
 
-  (String, void Function(MenuItem)) _getAction(
-    TrayAction action,
-    AppLocalizations localizations,
-  ) {
+  (String, void Function(MenuItem)) _getAction(TrayAction action, AppLocalizations localizations) {
     return switch (action) {
-      TrayAction.showDashboard => (
-        localizations.showWindow,
-        (_) => windowManager.show(inactive: true),
-      ),
+      TrayAction.showDashboard => (localizations.showWindow, (_) => windowManager.show(inactive: true)),
       TrayAction.showSettings => (
         localizations.settings,
         (_) => windowManager.show(inactive: true).then((_) {
@@ -94,10 +79,8 @@ class TrayCubit extends LoggingCubit<TrayState> {
           if (context.mounted) {
             var cubit = context.read<OnboardingCubit>();
             if (cubit.getStatus() != OnboardingStatus.onboarded) return;
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              HomeRoutes.settings,
-              (route) => route.isFirst,
-            );
+            // Use the wrapper navigator which has the settings route
+            wrapperNav.currentState?.pushNamedAndRemoveUntil(HomeRoutes.settings, (route) => route.isFirst);
           }
         }),
       ),
@@ -141,31 +124,28 @@ class TrayCubit extends LoggingCubit<TrayState> {
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
       favoriteState.favorites
-          .where(
-            (fav) => fav.isLoadedInProfiles(
-              (profileListState as ProfileListLoaded).profiles,
-            ),
-          )
+          .where((fav) => fav.isLoadedInProfiles((profileListState as ProfileListLoaded).profiles))
           .map((fav) async {
             /// Make sure to call [e.displayName] and [e.isRunning] only once to
             /// ensure good performance - these getters call a bunch of nested
             /// information from elsewhere in the app state
 
             var displayName =
-                (profileState != null &&
-                    profileState is ProfileLoadedState &&
-                    profileState.uuid == fav.uuid)
+                (profileState != null && profileState is ProfileLoadedState && profileState.uuid == fav.uuid)
                 ? profileState.profile.displayName
                 : await fav.displayName;
 
             final status = fav.status;
 
             final String statusIcon;
-            if (status == ProfileStatus.off.message) {
+            if (status == null) {
+              // Status is not available yet - default to disconnected
+              statusIcon = ProfileStatus.off.emoji;
+            } else if (status == ProfileStatus.off.message) {
               statusIcon = ProfileStatus.off.emoji;
             } else if (status == ProfileStatus.starting.message) {
               statusIcon = ProfileStatus.starting.emoji;
-            } else if (status?.contains(ProfileStatus.on.message) ?? false) {
+            } else if (status.contains(ProfileStatus.on.message)) {
               statusIcon = ProfileStatus.on.emoji;
             } else if (status == ProfileStatus.stopping.message) {
               statusIcon = ProfileStatus.stopping.emoji;
@@ -176,13 +156,27 @@ class TrayCubit extends LoggingCubit<TrayState> {
             } else if (status == ProfileStatus.failedToLoad.message) {
               statusIcon = ProfileStatus.failedToLoad.emoji;
             } else {
-              statusIcon = '';
+              // Unknown status - default to disconnected
+              statusIcon = ProfileStatus.off.emoji;
             }
             var label = '$statusIcon $displayName';
             return MenuItem(
               label: label,
               toolTip: status,
-              onClick: (_) => fav.toggle(),
+              onClick: (_) {
+                // Check if we're currently disconnected before toggling
+                final isDisconnected = status == null || 
+                    status == ProfileStatus.off.message ||
+                    status == ProfileStatus.failedToStart.message ||
+                    status == ProfileStatus.failedToLoad.message;
+                
+                fav.toggle();
+                
+                // Show the main window on Windows only when initiating a connection
+                if (Platform.isWindows && isDisconnected) {
+                  windowManager.show();
+                }
+              },
             );
           }),
     );
@@ -198,8 +192,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
           ...favMenuItems,
           MenuItem.separator(),
           _getMenuItem(TrayAction.showDashboard, localizations),
-          if (showSettings)
-            _getMenuItem(TrayAction.showSettings, localizations),
+          if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),
           _getMenuItem(TrayAction.quitApp, localizations),
         ],
       ),
