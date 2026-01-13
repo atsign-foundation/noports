@@ -4,9 +4,9 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
-import 'package:noports_core/utils.dart';
 
 class Activate {
   final ActivateParams _params;
@@ -38,11 +38,23 @@ class Activate {
 
   /// Entry point for the activate command
   Future<int> wrappedMain() async {
+    _setLoggingLevel();
+
     switch (_params.type) {
       case ActivateType.cram:
         return await cramAuthenticate();
       case ActivateType.enroll:
         return await enroll();
+    }
+  }
+
+  void _setLoggingLevel() {
+    if (_params.verbose) {
+      AtSignLogger.root_level = 'INFO';
+    }
+    if (_params.debug) {
+      AtSignLogger.root_level = 'FINEST';
+      logger.level = 'FINEST';
     }
   }
 
@@ -84,13 +96,12 @@ class Activate {
     );
 
     await _validateAndPrepareKeysFile();
-
-    final response = await _onboardingService.enroll(
+    final AtEnrollmentResponse response = await _onboardingService.enroll(
       _params.appName,
       _params.deviceName!,
       _params.otp!,
       _params.namespaces,
-      atKeysFile: _getKeysFile(),
+      atKeysFile: getKeysFile(),
     );
 
     return response.enrollStatus == EnrollmentStatus.approved ? 0 : 1;
@@ -111,34 +122,22 @@ class Activate {
   ///    path and updates [_params.atKeysFilePath]
   /// 4. If no file exists, returns without modification (safe to proceed)
   ///
-  ///
-  /// TODO: Replace [AtOnboardingServiceImpl] after ensuring that
-  /// [AtOnboardingService] throws a specific exception when keyFile exists at defaultPath
+  /// TODO: Replace this with AtKeysFile collision handler from OnboardingCLI
   Future<void> _validateAndPrepareKeysFile() async {
-    final String? keysFilePath;
-
-    if (_params.atKeysFilePath == null) {
-      // Use the default path from onboarding service preferences
-      keysFilePath = (_onboardingService as AtOnboardingServiceImpl)
-          .atOnboardingPreference
-          .atKeysFilePath;
-    } else {
-      // Use the user-provided path
-      keysFilePath = _params.atKeysFilePath;
+    if (_params.atKeysFilePath != null) {
+      if (!File(_params.atKeysFilePath!).existsSync()) {
+        return;
+      } else {
+        _params.atKeysFilePath = promptUser(
+          'Please provide alternate location to store keyfile',
+        );
+        logger.info('Writing keys to ${_params.atKeysFilePath}');
+      }
     }
-
-    if (keysFilePath != null && !File(keysFilePath).existsSync()) {
-      return;
-    }
-
-    logger.shout('KeysFile exists at $keysFilePath');
-    _params.atKeysFilePath = promptUser(
-      'Please provide alternate location to store keyfile',
-    );
-    logger.info('Sending updated enrollment request');
   }
 
-  File? _getKeysFile() {
+  @visibleForTesting
+  File? getKeysFile() {
     final path = _params.atKeysFilePath;
     return path != null ? File(path) : null;
   }
