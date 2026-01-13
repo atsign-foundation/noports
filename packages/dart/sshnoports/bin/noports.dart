@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/commands.dart';
-import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 enum NoPortsCommand {
@@ -13,10 +12,13 @@ enum NoPortsCommand {
 
   const NoPortsCommand(this.commandName);
 
+  static NoPortsCommand parse(String value) {
+    return NoPortsCommand.values.firstWhere((cmd) => cmd.commandName == value);
+  }
+
   static NoPortsCommand? tryParse(String value) {
     try {
-      return NoPortsCommand.values
-          .firstWhere((cmd) => cmd.commandName == value);
+      return parse(value);
     } catch (e) {
       return null;
     }
@@ -66,7 +68,7 @@ Future<void> main(List<String> args) async {
     exit(0);
   } on ArgumentError catch (e) {
     logger.shout(e.message);
-    printUsage();
+    printUsage(command: command);
     exit(1);
   } catch (e) {
     logger.shout(e.toString());
