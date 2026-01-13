@@ -14,7 +14,8 @@
 - FEAT: User can Add atsign from the switch atsign button.
 - FIX: On Windows the tool tray now has Icons to indicate status (Windows cannot do color in tool tray)
 - FIX: In the tool tray now when you click settings you get to the app and the settings page
-- FEAT: On Windows clicking the tool tray Icon for a favourite will open the app and connect, if already connected will simply disconnect 
+- FEAT: On Windows clicking the tool tray Icon for a favourite will open the app and connect, if already connected will simply disconnect
+- FIX: Updated copyright year to 2026.
 
 ## 1.7.0+24
 
