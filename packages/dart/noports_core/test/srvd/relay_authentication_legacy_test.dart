@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
@@ -18,6 +19,54 @@ void main() {
 
       atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
     });
+
+    test('too much data', () async {
+      String rvdSessionNonce = DateTime.now().toIso8601String();
+      Map payload = {
+        'sessionId': Uuid().v4().toString(),
+        'rvdNonce': rvdSessionNonce,
+      };
+
+      RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
+        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        'some other payload',
+        rvdSessionNonce,
+        'legacy_test_overflow',
+        '@alice',
+        payload['sessionId'],
+      );
+
+      Random r = Random();
+      Uint8List data = Uint8List.fromList(List.generate(
+          RelayAuthVerifier.maxAuthBufferLength + 1, (i) => r.nextInt(256)));
+
+      late Function(Uint8List data) socketOnDataFn;
+      MockSocket mockSocket = MockSocket();
+
+      when(
+            () => mockSocket.listen(
+          any(),
+          onError: any(named: "onError"),
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
+        socketOnDataFn = invocation.positionalArguments[0];
+
+        socketOnDataFn(data);
+
+        return MockStreamSubscription<Uint8List>();
+      });
+
+      bool somethingThrown = false;
+      try {
+        await sa.verifySocketAuth(mockSocket);
+      } catch (e) {
+        print('Caught $e as expected');
+        somethingThrown = true;
+      }
+      expect(somethingThrown, true);
+    });
+
     test('signature verification success', () async {
       String rvdSessionNonce = DateTime.now().toIso8601String();
       Map payload = {'sessionId': Uuid().v4(), 'rvdNonce': rvdSessionNonce};

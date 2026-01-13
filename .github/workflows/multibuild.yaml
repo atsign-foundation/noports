@@ -247,7 +247,7 @@ jobs:
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
       - name: Setup Docker BuildX
         if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Run build inside of Docker
         if: ${{ ! inputs.main_build_only }}
         run: |
@@ -344,7 +344,7 @@ jobs:
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@c34242c23d6df06a646c680abb1793fb334621bf # v0.6
+        uses: sbomify/github-action@57f1d33623e4774b7786af11c07fbf3fd9a8e8ac # v0.10
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'

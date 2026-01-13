@@ -1,3 +1,8 @@
+# 6.10.3
+
+- fix: In the RelayAuthVerifiers, catch in the same place all the exceptions 
+  which can be thrown during parsing and processing
+
 # 6.10.2
 
 - fix: Require authenticated connection when sshnpd is sending its periodic 

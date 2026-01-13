@@ -1,3 +1,4 @@
+
 ## 1.8.0+25
 
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
@@ -7,6 +8,13 @@
 - FIX: Policy Screen layout update for better spacing.
 - FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
 - FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
+- FIX: Enrollment Dialog cannot be dismissed once the enrollment process starts
+- FIX: Policy and Authorization Screen refreshes after switching atsign.
+- FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
+- FEAT: Added auto start of application via URI in configuration of connections
+- FIX: On Windows the tool tray now has Icons to indicate status (Windows cannot do color in tool tray)
+- FIX: In the tool tray now when you click settings you get to the app and the settings page
+- FEAT: On Windows clicking the tool tray Icon for a favourite will open the app and connect, if already connected will simply disconnect 
 
 ## 1.7.0+24
 
