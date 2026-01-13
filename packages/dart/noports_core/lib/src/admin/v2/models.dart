@@ -7,7 +7,7 @@ class PolicyEntry {
   PolicyEntry({required this.id});
 }
 
-// represents an individual client (e.g. "@colin", "Colin")
+// represents an individual client (e.g. "@alice", "Alice")
 // each Client should have a unqiue atSign
 @JsonSerializable()
 class Client extends PolicyEntry {
@@ -36,7 +36,7 @@ class ClientGroup extends PolicyEntry {
   Map<String, dynamic> toJson() => _$ClientGroupToJson(this);
 }
 
-// maps a client (e.g. @colin, "Colin) to a client group (e.g. "Atsign Engineers")
+// maps a client (e.g. @alice, "Alice") to a client group (e.g. "Atsign Engineers")
 @JsonSerializable()
 class ClientGroupMember extends PolicyEntry {
   final String clientId;
