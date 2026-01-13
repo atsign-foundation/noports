@@ -26,6 +26,7 @@ class PolicyCLIParams {
   late bool _verbose; // will always be non-null; it has a resolvable default
   late String _rootServer; // will always be non-null; it has a resolvable default
   late String _namespace;
+  late String _policyVersion;
 
   // Case 2b:
   late String _atKeysFilePath; // resolves to ~/.atsign/keys/<atsign>-key.atKeys
@@ -47,6 +48,7 @@ class PolicyCLIParams {
   String get atKeysFilePath => _atKeysFilePath;
   String get policyAtSign => _policyAtSign;
   String get namespace => _namespace;
+  String get policyVersion => _policyVersion;
   String? get storagePath => _storagePath;
 
   factory PolicyCLIParams.fromArgs(List<String> args) {
@@ -65,6 +67,7 @@ class PolicyCLIParams {
     p._verbose = argResults['verbose'];
     p._rootServer = argResults['root-server'];
     p._namespace = argResults['namespace'];
+    p._policyVersion = argResults['policy-version'];
 
     // Case 2b: resolve to our own default (default cannot be obtained from ArgParser)
     p._atKeysFilePath = argResults['key-file'] ?? 

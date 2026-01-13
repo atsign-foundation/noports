@@ -241,7 +241,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!); // daemon.id is non-null after putDaemon
+            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!).id!; // daemon.id is non-null after putDaemon
             message = 'Daemon stored successfully.';
             break;
           }

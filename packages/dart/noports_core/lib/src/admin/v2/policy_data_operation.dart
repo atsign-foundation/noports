@@ -94,7 +94,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroup',
-        'value': jsonEncode(clientGroup.toJson()),
+        'value': clientGroup.toJson(),
       },
     );
   }
@@ -105,7 +105,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroupMember',
-        'value': jsonEncode(clientGroupMember.toJson()),
+        'value': clientGroupMember.toJson(),
       },
     );
   }
@@ -116,7 +116,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Daemon',
-        'value': jsonEncode(daemon.toJson()),
+        'value': daemon.toJson(),
       },
     );
   }
@@ -127,7 +127,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Service',
-        'value': jsonEncode(service.toJson()),
+        'value': service.toJson(),
       },
     );
   }
@@ -138,7 +138,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'ServiceACL',
-        'value': jsonEncode(serviceACL.toJson()),
+        'value': serviceACL.toJson(),
       }
     );
   }

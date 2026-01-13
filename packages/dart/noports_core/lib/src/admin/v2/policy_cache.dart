@@ -269,6 +269,10 @@ class PolicyCache {
           '${serviceACL.clientGroupId} serviceId: ${serviceACL.serviceId}'
           ' permitOpen: ${serviceACL.permitOpen}');
       }
+      if(sa.id == null) {
+          throw Exception('Encountered ServiceACL with null id: $sa, '
+            'which should never happen');
+      }
       if(sa.id == serviceACL.id) {
         throw Exception('Found duplicate service ACL id ${serviceACL.id}');
       }
