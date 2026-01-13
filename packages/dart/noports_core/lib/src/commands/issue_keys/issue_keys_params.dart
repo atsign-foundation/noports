@@ -11,13 +11,20 @@ class IssueKeysParams {
   String? device;
   String? otp;
 
+  // Logging
+  bool verbose = false;
+  bool debug = false;
+
   static final ArgParser argParser = _createArgParser();
 
   IssueKeysParams({
     required this.atsign,
     this.device,
+    this.otp,
     this.atKeysFilePath,
     this.passPhrase,
+    this.verbose = false,
+    this.debug = false,
   });
 
   static IssueKeysParams fromArgs(List<String> args) {
@@ -32,6 +39,8 @@ class IssueKeysParams {
       device: r['device'],
       atKeysFilePath: r['key-file'],
       passPhrase: r['pass-phrase'],
+      verbose: r['verbose'],
+      debug: r['debug'],
     );
   }
 
@@ -67,6 +76,19 @@ class IssueKeysParams {
       abbr: 'h',
       negatable: false,
       help: 'Show this usage info',
+    );
+
+    p.addFlag(
+      'verbose',
+      abbr: 'v',
+      negatable: false,
+      help: 'More logging (INFO and above)',
+    );
+
+    p.addFlag(
+      'debug',
+      negatable: false,
+      help: 'More logging (DEBUG and above)',
     );
 
     return p;

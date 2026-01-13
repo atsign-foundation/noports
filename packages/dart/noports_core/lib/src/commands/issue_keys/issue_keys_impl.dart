@@ -1,4 +1,3 @@
-import 'dart:core';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart'
@@ -19,9 +18,12 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:noports_core/src/commands/utils/constants.dart';
-import 'package:noports_core/utils.dart';
+
+typedef OTPGenerator =
+    Future<String?> Function(AtClient atClient, {String? otpExpiry});
 
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
@@ -30,31 +32,45 @@ import 'package:noports_core/utils.dart';
 /// 2. Waits for the enrollment request from the new device
 /// 3. Approves the enrollment request
 class IssueKeys {
-  static const _baseEnrollCommand = '<atsign>:enroll:otp:<otp>';
+  static const _baseEnrollCommand = '<atsign>:enroll:otp:<otp>:name:<device>';
   static const _defaultDeviceNamePrefix = 'noports_';
 
   static const _otpExpirySeconds = 3600; // 1 hour
-  static const otpExpiryString = '${_otpExpirySeconds}s';
-
+  static const _otpExpiryString = '${_otpExpirySeconds}s';
   static const _enrollmentCheckIntervalSeconds = 3;
-  static const _maxRetries =
-      _otpExpirySeconds / _enrollmentCheckIntervalSeconds;
 
-  late final EnrollmentService _enrollmentService;
-  late final AtClient _atClient;
+  static final _defaultMaxRetries =
+      (_otpExpirySeconds / _enrollmentCheckIntervalSeconds).floor();
+  final int _maxRetries;
+  final Duration _checkInterval;
+
+  EnrollmentService? _enrollmentService;
+  AtClient? _atClient;
 
   final IssueKeysParams _params;
 
   final logger = AtSignLogger('IssueKeys', loggingHandler: CLILoggingHandler())
     ..level = 'info';
 
-  IssueKeys(this._params);
+  IssueKeys(
+    this._params, {
+    AtClient? atClient,
+    EnrollmentService? enrollmentService,
+    int? maxRetries,
+    Duration? checkInterval,
+  }) : _atClient = atClient,
+       _enrollmentService = enrollmentService,
+       _maxRetries = maxRetries ?? _defaultMaxRetries,
+       _checkInterval =
+           checkInterval ?? Duration(seconds: _enrollmentCheckIntervalSeconds);
 
   factory IssueKeys.fromArgs(List<String> args) {
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
     }
-    return IssueKeys(IssueKeysParams.fromArgs(args));
+
+    final params = IssueKeysParams.fromArgs(args);
+    return IssueKeys(params);
   }
 
   /// Entry point for the `issue-keys` command.
@@ -68,49 +84,61 @@ class IssueKeys {
   ///
   /// Returns: 0 on success, 1 on failure
   Future<int> wrappedMain() async {
+    _setLoggingLevel();
     await _init();
 
     // Check for matching pending enrollment, approve if found | works like a resume
-    final existingEnrollment = await _fetchMatchingEnrollment();
+    final existingEnrollment = await fetchMatchingEnrollment();
     if (existingEnrollment != null) {
-      await _approveEnrollment(existingEnrollment);
-      return 0;
+      await approveEnrollment(existingEnrollment);
+    } else {
+      _params.otp = await generateOTP();
+      ensureDeviceName();
+      _displayActivationCommand();
+      final enrollment = await waitForMatchingEnrollment();
+      await approveEnrollment(enrollment);
     }
 
-    await _generateOtpAndEnsureDeviceName();
-    _displayActivationCommand();
-    final enrollment = await _waitForMatchingEnrollment();
-    await _approveEnrollment(enrollment);
-
     return 0;
+  }
+
+  void _setLoggingLevel() {
+    if (_params.verbose) {
+      AtSignLogger.root_level = 'INFO';
+    }
+    if (_params.debug) {
+      AtSignLogger.root_level = 'FINEST';
+      logger.level = 'FINEST';
+    }
   }
 
   Future<void> _init() async {
     stderr.write(chalk.blue('Connecting...\t'));
 
-    _atClient = await createAtClient(
+    _atClient ??= await createAtClient(
       atSign: _params.atsign,
       atKeysFilePath: _params.atKeysFilePath,
     );
     stderr.writeln('\n');
 
-    _enrollmentService = DefaultAtServiceFactory().enrollmentService(_atClient);
+    _enrollmentService ??= DefaultAtServiceFactory().enrollmentService(
+      _atClient!,
+    );
   }
 
-  /// Generated enrollment OTP
-  ///
-  /// Uses default device name(noports_<otp>) as fallback
-  Future<void> _generateOtpAndEnsureDeviceName() async {
-    _params.otp = await requestEnrollmentOtp(
-      _atClient,
-      otpExpiry: otpExpiryString,
-    );
+  @visibleForTesting
+  Future<String> generateOTP() async {
+    return await requestEnrollmentOtp(_atClient!, otpExpiry: _otpExpiryString);
+  }
 
+  /// Uses "noports_<otp>" as fallback device name
+  @visibleForTesting
+  void ensureDeviceName() async {
     _params.device ??= '$_defaultDeviceNamePrefix${_params.otp}';
   }
 
   void _displayActivationCommand() {
-    final activationStr = _generateEnrollmentCommand();
+    final activationStr = generateEnrollmentCommand();
     logger.info(
       'Copy the string below and run `noports activate <string>` on the other device:\n'
       '\n\tNoPorts Desktop:\n\t$activationStr\n'
@@ -120,21 +148,23 @@ class IssueKeys {
 
   /// Builds the activation command string.
   ///
-  /// Format: `<atsign>:enroll:otp:<otp>[:name:<deviceName>]`
-  String _generateEnrollmentCommand() {
+  /// Format: `<atsign>:enroll:otp:<otp>:name:<deviceName>`
+  @visibleForTesting
+  String generateEnrollmentCommand() {
     final buffer = StringBuffer();
 
     buffer.write(
       _baseEnrollCommand
           .replaceFirst('<atsign>', _params.atsign)
-          .replaceFirst('<otp>', _params.otp!),
+          .replaceFirst('<otp>', _params.otp!)
+          .replaceFirst('<device>', _params.device!),
     );
-    buffer.write('[:name:${_params.device}]'); // Optional parameter(s)
 
     return buffer.toString();
   }
 
-  Future<void> _approveEnrollment(Enrollment enrollment) async {
+  @visibleForTesting
+  Future<void> approveEnrollment(Enrollment enrollment) async {
     logger.info('Approving enrollment...');
 
     final decisionBuilder = ApprovedRequestDecisionBuilder(
@@ -143,7 +173,7 @@ class IssueKeys {
     );
 
     final decision = EnrollmentRequestDecision.approved(decisionBuilder);
-    AtEnrollmentResponse er = await _enrollmentService.approve(decision);
+    AtEnrollmentResponse er = await _enrollmentService!.approve(decision);
 
     if (er.enrollStatus != EnrollmentStatus.approved) {
       throw AtEnrollmentException('Failed to approve enrollment | $er');
@@ -159,10 +189,11 @@ class IssueKeys {
   /// attempts before timing out.
   ///
   /// Throws: [AtEnrollmentException] if OTP expires before enrollment found
-  Future<Enrollment> _waitForMatchingEnrollment() async {
+  @visibleForTesting
+  Future<Enrollment> waitForMatchingEnrollment() async {
     logger.info(
       'Waiting for enrollment request '
-      '(retry every ${_enrollmentCheckIntervalSeconds}s)...',
+      '(retry every ${_checkInterval.inSeconds}s)...',
     );
 
     final rp = EnrollmentListRequestParam()
@@ -174,12 +205,10 @@ class IssueKeys {
     logger.info('Listening...');
 
     for (int attempt = 0; attempt < _maxRetries; attempt++) {
-      Enrollment? e = await _fetchMatchingEnrollment(requestParam: rp);
+      Enrollment? e = await fetchMatchingEnrollment(requestParam: rp);
 
       if (e == null) {
-        await Future.delayed(
-          Duration(seconds: _enrollmentCheckIntervalSeconds),
-        );
+        await Future.delayed(_checkInterval);
         continue;
       }
       return e;
@@ -187,7 +216,8 @@ class IssueKeys {
     throw AtEnrollmentException('OTP expired. Please re-run the command');
   }
 
-  Future<Enrollment?> _fetchMatchingEnrollment({
+  @visibleForTesting
+  Future<Enrollment?> fetchMatchingEnrollment({
     EnrollmentListRequestParam? requestParam,
   }) async {
     requestParam ??= EnrollmentListRequestParam()
@@ -196,14 +226,20 @@ class IssueKeys {
       ..namespace = defaultEnrollmentNamespaces.toString()
       ..enrollmentListFilter = [EnrollmentStatus.pending];
 
-    final results = await _enrollmentService.fetchEnrollmentRequests(
+    final results = await _enrollmentService!.fetchEnrollmentRequests(
       enrollmentListParams: requestParam,
     );
     logger.finer('Found matching enrollments: ${results.toString()}');
 
-    if (results.isNotEmpty) {
+    // There can only be one pending enrollment for a given device name
+    if (results.length == 1) {
       logger.info('Enrollment found with id: ${results.first.enrollmentId}');
       return results.first;
+    } else if (results.length > 1) {
+      // This should never happen
+      throw AtEnrollmentException(
+        'Multiple enrollments found for device ${_params.device}',
+      );
     }
 
     return null;

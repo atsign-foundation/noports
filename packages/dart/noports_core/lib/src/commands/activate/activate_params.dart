@@ -2,7 +2,6 @@ import 'package:args/args.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/utils/constants.dart';
-import 'package:noports_core/src/commands/utils/regex.dart';
 
 enum ActivateType {
   cram,
@@ -11,7 +10,7 @@ enum ActivateType {
   static ActivateType parse(String input) {
     try {
       return values.firstWhere((type) => input.contains(type.name));
-    } on Exception {
+    } catch (e) {
       throw ArgumentError(
         'Invalid activation type in: $input (expected "cram" or "enroll")',
       );
@@ -20,7 +19,7 @@ enum ActivateType {
 }
 
 class ActivateParams {
-  final String atsign;
+  final Atsign atsign;
   final ActivateType type;
   final String? cramSecret;
   final String? otp;
@@ -29,6 +28,10 @@ class ActivateParams {
   final namespaces = defaultEnrollmentNamespaces;
 
   String? atKeysFilePath;
+
+  // Logging
+  bool verbose = false;
+  bool debug = false;
 
   // Static parser for consistent usage and help generation
   static final ArgParser argParser = _createArgParser();
@@ -40,6 +43,8 @@ class ActivateParams {
     this.otp,
     this.deviceName,
     this.atKeysFilePath,
+    this.verbose = false,
+    this.debug = false,
   });
 
   factory ActivateParams.fromArgs(List<String> args) {
@@ -74,26 +79,45 @@ class ActivateParams {
       otp: _parseOtp(activationString),
       deviceName: _parseDeviceName(activationString),
       atKeysFilePath: keyfile,
+      verbose: results['verbose'],
+      debug: results['debug'],
     );
   }
 
   static ArgParser _createArgParser() {
-    return ArgParser()
-      ..addOption(
-        'target-keyfile',
-        abbr: 't',
-        mandatory: false,
-        help: 'Destination path for atKeys file',
-      )
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        negatable: false,
-        help: 'Show this usage info',
-      );
+    final p = ArgParser();
+    p.addOption(
+      'target-keyfile',
+      abbr: 't',
+      mandatory: false,
+      help: 'Destination path for atKeys file',
+    );
+
+    p.addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show this usage info',
+    );
+
+    p.addFlag(
+      'verbose',
+      abbr: 'v',
+      negatable: false,
+      help: 'More logging (INFO and above)',
+    );
+
+    p.addFlag(
+      'debug',
+      abbr: 'd',
+      negatable: false,
+      help: 'More logging (DEBUG and above)',
+    );
+
+    return p;
   }
 
-  static String? _parseAtsign(String input, ActivateType type) {
+  static Atsign? _parseAtsign(String input, ActivateType type) {
     final regex = type == ActivateType.cram
         ? ActivateRegex.cram
         : ActivateRegex.enroll;
@@ -118,14 +142,24 @@ class ActivateParams {
     final match = ActivateRegex.enroll.firstMatch(input);
     return match?.namedGroup(ActivateRegexGroups.deviceName);
   }
+}
 
-  Map<String, String?> toJson() {
-    return {
-      'atsign': atsign,
-      'cramSecret': cramSecret,
-      'otp': otp,
-      'deviceName': deviceName,
-      'atKeysFilePath': atKeysFilePath,
-    };
-  }
+class ActivateRegex {
+  // CRAM authentication: <atsign>:cram:<secret>
+  static final cram = RegExp(r'^(?<atsign>[^:]+):cram:(?<secret>.+)$');
+
+  // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>]
+  static final enroll = RegExp(
+    r'^(?<atsign>[^:]+):enroll:otp:(?<otp>[A-Za-z0-9]{6})'
+    r'(?::name:(?<device_name>[^]+))?$', // ?: indicates a non-capturing group
+  );
+}
+
+/// Named capture groups used in [ActivateRegex]
+class ActivateRegexGroups {
+  static const atsign = 'atsign';
+  static const cram = 'secret';
+  static const otp = 'otp';
+  static const deviceName = 'device_name';
+  static const keyfilePath = 'keyfile_path';
 }
