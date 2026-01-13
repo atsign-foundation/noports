@@ -1,15 +1,19 @@
 import 'dart:developer';
 
+import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
+import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
@@ -34,7 +38,7 @@ class SwitchAtsignButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 24.0),
       child: GestureDetector(
-        onTap: () => _handleSwitchAtsign(context),
+        onTap: () async => await _handleSwitchAtsign(context),
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: Sizes.p10,
@@ -187,18 +191,144 @@ Future<void> _handleSignout(BuildContext context) async {
 Future<void> _handleAddAtsign(BuildContext context) async {
   final options = await getAtsignEntries();
 
+  // Store the current atsign before showing the dialog
+  final currentContext = App.navState.currentContext!;
+  final originalAtsign = currentContext.read<OnboardingCubit>().state.atSign;
+  final originalRootDomain = currentContext
+      .read<OnboardingCubit>()
+      .state
+      .rootDomain;
+
+  // Clear the atsign field before showing the dialog
+  if (currentContext.mounted) {
+    currentContext.read<OnboardingCubit>().setState(
+      atSign: '',
+      rootDomain: originalRootDomain,
+    );
+  }
+
   final shouldOnboard = await showDialog<bool>(
+    barrierDismissible: false,
     context: context,
     builder: (BuildContext context) => OnboardingDialog(options: options),
   );
 
-  if (shouldOnboard != true) return;
+  if (shouldOnboard != true) {
+    log('should Onboard is false or null');
+    // User cancelled - revert to original atsign
+    if (currentContext.mounted) {
+      currentContext.read<OnboardingCubit>().setState(
+        atSign: originalAtsign,
+        rootDomain: originalRootDomain,
+      );
+    }
+    return;
+  }
 
-  final currentContext = App.navState.currentContext!;
   final atsignInfo = currentContext.read<OnboardingCubit>().state;
   final newAtSign = atsignInfo.atSign;
+  final rootDomain = atsignInfo.rootDomain;
 
-  await _performOnboarding(currentContext, newAtSign);
+  // Check if atsign already exists in keychain
+  final atSignList = await KeychainUtil.getAtsignList();
+
+  // Show loading dialog
+  if (currentContext.mounted) {
+    showDialog(
+      context: currentContext,
+      barrierDismissible: false,
+      builder: (context) => const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  try {
+    if (atSignList?.contains(newAtSign) ?? false) {
+      // Atsign exists in keychain - use existing flow
+      await _performOnboarding(currentContext, newAtSign);
+    } else {
+      // New atsign - use shared util method for activation/APKAM flow
+      final apiKey = await Constants.appAPIKey;
+      final config = AtOnboardingConfig(
+        atClientPreference: await AtClientMethods.loadAtClientPreference(
+          rootDomain,
+        ),
+        rootEnvironment: RootEnvironment.Production,
+        domain: rootDomain,
+        appAPIKey: apiKey,
+      );
+
+      final util = NoPortsOnboardingUtil(config);
+      final onboardingResult = await util.handleAtsignByStatus(
+        context: currentContext,
+        atsign: newAtSign,
+      );
+
+      switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
+        case AtOnboardingResultStatus.success:
+          await preSignout();
+
+          await initializeContactsService(rootDomain: rootDomain);
+          AtClientManager.getInstance().atClient.syncService
+              .addProgressListener(ProfileProgressListener());
+          AtClientManager.getInstance().atClient.syncService.sync();
+          postOnboard(onboardingResult!.atsign!, rootDomain);
+          final result = await saveAtsignInformation(
+            AtsignInformation(
+              atSign: onboardingResult.atsign!,
+              rootDomain: rootDomain,
+            ),
+          );
+          final backupKeyCubit = App.navState.currentContext!
+              .read<BackupKeyCubit>();
+
+          await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
+
+          if (currentContext.mounted) {
+            Navigator.of(currentContext).pop();
+          }
+
+          await BackupKeyUtils().backupKeyStatusCheck(context: context);
+
+          App.log('atsign result is:$result'.loggable);
+
+          return;
+        case AtOnboardingResultStatus.error:
+          if (currentContext.mounted) {
+            currentContext.read<OnboardingCubit>().setState(
+              atSign: originalAtsign,
+              rootDomain: originalRootDomain,
+            );
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text(
+                onboardingResult?.message ??
+                    AppLocalizations.of(context)!.onboardingError,
+              ),
+            ),
+          );
+
+          break;
+        case AtOnboardingResultStatus.cancel:
+          if (currentContext.mounted) {
+            currentContext.read<OnboardingCubit>().setState(
+              atSign: originalAtsign,
+              rootDomain: originalRootDomain,
+            );
+          }
+          break;
+      }
+    }
+  } finally {
+    // Dismiss loading dialog
+    if (currentContext.mounted) {
+      Navigator.of(currentContext).pop();
+    }
+  }
 }
 
 /// Handles switching to an existing atsign
