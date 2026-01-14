@@ -44,13 +44,14 @@ class IssueKeys {
   EnrollmentService? _enrollmentService;
   AtClient? _atClient;
 
-  final IssueKeysParams _params;
+  @protected
+  final IssueKeysParams params;
 
   final logger = AtSignLogger('IssueKeys', loggingHandler: CLILoggingHandler())
     ..level = 'info';
 
   IssueKeys(
-    this._params, {
+    this.params, {
     AtClient? atClient,
     EnrollmentService? enrollmentService,
     int? maxRetries,
@@ -89,7 +90,7 @@ class IssueKeys {
     if (existingEnrollment != null) {
       await approveEnrollment(existingEnrollment);
     } else {
-      _params.otp = await generateOTP();
+      await generateOTP();
       ensureDeviceName();
       _displayActivationCommand();
       final enrollment = await waitForMatchingEnrollment();
@@ -100,10 +101,10 @@ class IssueKeys {
   }
 
   void _setLoggingLevel() {
-    if (_params.verbose) {
+    if (params.verbose) {
       AtSignLogger.root_level = 'INFO';
     }
-    if (_params.debug) {
+    if (params.debug) {
       AtSignLogger.root_level = 'FINEST';
       logger.level = 'FINEST';
     }
@@ -113,8 +114,8 @@ class IssueKeys {
     stderr.write(chalk.blue('Connecting...\t'));
 
     _atClient ??= await createAtClient(
-      atSign: _params.atsign,
-      atKeysFilePath: _params.atKeysFilePath,
+      atSign: params.atsign,
+      atKeysFilePath: params.atKeysFilePath,
     );
     stderr.writeln('\n');
 
@@ -124,14 +125,15 @@ class IssueKeys {
   }
 
   @visibleForTesting
-  Future<String> generateOTP() async {
-    return await requestEnrollmentOtp(_atClient!, otpExpiry: _otpExpiryString);
+  Future<void> generateOTP() async {
+    params.otp =
+        await requestEnrollmentOtp(_atClient!, otpExpiry: _otpExpiryString);
   }
 
   /// Uses "noports_<otp>" as fallback device name
   @visibleForTesting
-  void ensureDeviceName() async {
-    _params.device ??= '$_defaultDeviceNamePrefix${_params.otp}';
+  void ensureDeviceName() {
+    params.device ??= '$_defaultDeviceNamePrefix${params.otp}';
   }
 
   void _displayActivationCommand() {
@@ -152,9 +154,9 @@ class IssueKeys {
 
     buffer.write(
       _baseEnrollCommand
-          .replaceFirst('<atsign>', _params.atsign)
-          .replaceFirst('<otp>', _params.otp!)
-          .replaceFirst('<device>', _params.device!),
+          .replaceFirst('<atsign>', params.atsign)
+          .replaceFirst('<otp>', params.otp!)
+          .replaceFirst('<device>', params.device!),
     );
 
     return buffer.toString();
@@ -194,7 +196,7 @@ class IssueKeys {
     );
 
     final rp = EnrollmentListRequestParam()
-      ..deviceName = _params.device
+      ..deviceName = params.device
       ..appName = defaultAppName
       ..namespace = defaultEnrollmentNamespaces.toString()
       ..enrollmentListFilter = [EnrollmentStatus.pending];
@@ -218,7 +220,7 @@ class IssueKeys {
     EnrollmentListRequestParam? requestParam,
   }) async {
     requestParam ??= EnrollmentListRequestParam()
-      ..deviceName = _params.device
+      ..deviceName = params.device
       ..appName = defaultAppName
       ..namespace = defaultEnrollmentNamespaces.toString()
       ..enrollmentListFilter = [EnrollmentStatus.pending];
@@ -235,7 +237,7 @@ class IssueKeys {
     } else if (results.length > 1) {
       // This should never happen
       throw AtEnrollmentException(
-        'Multiple enrollments found for device ${_params.device}',
+        'Multiple enrollments found for device ${params.device}',
       );
     }
 

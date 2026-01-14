@@ -17,7 +17,7 @@ class IssueKeysTest extends IssueKeys {
        );
 
   @override
-  Future<String> generateOTP() async {
-    return '12345A';
+  Future<void> generateOTP() async {
+    super.params.otp = '12345A';
   }
 }

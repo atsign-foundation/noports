@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
@@ -28,6 +30,41 @@ void main() {
     mockOnboardingService = MockAtOnboardingService();
 
     AtSignLogger.root_level = 'WARNING';
+  });
+
+  group('Activate.fromArgs factory', () {
+    test('assert empty args throws', () {
+      expect(() => Activate.fromArgs([]), throwsA(isA<ArgumentError>()));
+    });
+
+    test('factory generates instance with valid cram args', () {
+      List<String> testArgs = ['@alice:cram:secret'];
+      expect(() => Activate.fromArgs(testArgs), returnsNormally);
+    });
+
+    test('factory generates instance with valid cram args', () {
+      List<String> testArgs = ['@alice:cram:secret', '-t', 'path/to/keys'];
+      expect(() => Activate.fromArgs(testArgs), returnsNormally);
+    });
+
+    test('factory generates instance with valid enroll args', () {
+      List<String> testArgs = ['@alice:enroll:otp:123456:name:device'];
+      expect(() => Activate.fromArgs(testArgs), returnsNormally);
+    });
+
+    test('factory generates instance with valid enroll args', () {
+      List<String> testArgs = [
+        '@alice:enroll:otp:123456:name:device',
+        '-t',
+        '/path/to/keys',
+      ];
+      expect(() => Activate.fromArgs(testArgs), returnsNormally);
+    });
+
+    test('factory throws with invalid activation string', () {
+      List<String> testArgs = ['invalid_string'];
+      expect(() => Activate.fromArgs(testArgs), throwsA(isA<ArgumentError>()));
+    });
   });
 
   group('activate type: cram', () {
@@ -139,6 +176,34 @@ void main() {
 
       final result = await activate.enroll();
       expect(result, equals(1));
+    });
+  });
+
+  group('validate getKeysFile', () {
+    test('keyfile path is null', () {
+      params = ActivateParams(
+        atsign: testAtsign,
+        type: ActivateType.cram,
+        cramSecret: testCramSecret,
+        atKeysFilePath: null,
+      );
+
+      activate = Activate(mockOnboardingService, params);
+      expect(activate.getKeysFile(), isNull);
+    });
+
+    test('keyfile path is not null', () {
+      String testKeysPath =
+          '${Directory.current.path}/tmp/test_keys_file.atKeys';
+      params = ActivateParams(
+        atsign: testAtsign,
+        type: ActivateType.enroll,
+        otp: testOtp,
+        atKeysFilePath: testKeysPath,
+      );
+
+      activate = Activate(mockOnboardingService, params);
+      expect(activate.getKeysFile()?.path, equals(File(testKeysPath).path));
     });
   });
 }

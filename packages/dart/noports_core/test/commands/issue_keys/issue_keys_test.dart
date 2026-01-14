@@ -98,7 +98,7 @@ void main() {
 
       test('generates correct command without device name', () async {
         // create a new instance to ensure device name is null
-        final localParams = IssueKeysParams(atsign: testAtsign);
+        final localParams = IssueKeysParams(atsign: testAtsign, device: null);
         final localIssueKeys = IssueKeysTest.test(
           localParams,
           atClient: mockAtClient,
@@ -106,7 +106,8 @@ void main() {
           maxRetries: 1,
         );
 
-        localParams.otp = await localIssueKeys.generateOTP();
+        // manually triggering otp generation
+        await localIssueKeys.generateOTP();
         localIssueKeys.ensureDeviceName();
 
         final command = localIssueKeys.generateEnrollmentCommand();
@@ -118,7 +119,7 @@ void main() {
         );
       });
 
-      test('ensure fallback device name uses OTP', () {
+      test('ensure fallback device name uses provided OTP', () {
         final params = IssueKeysParams(atsign: testAtsign)..otp = 'XYZ123';
         final issueKeys = IssueKeysTest.test(
           params,
@@ -136,7 +137,7 @@ void main() {
     });
 
     group('approveEnrollment', () {
-      test('approveEnrollment approves enrollment successfully', () async {
+      test('enrollment approved successfully', () async {
         final fakeEnrollment = Enrollment()
           ..enrollmentId = 'test-id'
           ..encryptedAPKAMSymmetricKey = 'test-key';
@@ -152,7 +153,7 @@ void main() {
         await expectLater(
           issueKeys.approveEnrollment(fakeEnrollment),
           completes,
-        );
+        ); // error less execution should count as success
       });
 
       test('approveEnrollment throws when enrollment not approved', () async {
@@ -161,7 +162,7 @@ void main() {
           ..encryptedAPKAMSymmetricKey = 'test-key';
         final mockEnrollmentResponse = AtEnrollmentResponse(
           fakeEnrollment.enrollmentId!,
-          EnrollmentStatus.pending,
+          EnrollmentStatus.denied,
         );
 
         when(

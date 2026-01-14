@@ -70,6 +70,7 @@ class Activate {
     }
     logger.info('Activating atsign: ${_params.atsign}');
 
+    _validateAndPrepareKeysFile();
     final success = await _onboardingService.onboard();
 
     if (!success) {
@@ -110,17 +111,15 @@ class Activate {
   /// Validates and prepares the atKeys file location before enrollment.
   ///
   /// This method checks if a keys file already exists at the target location
-  /// (either specified by the user or at the default path) and prompts the user
-  /// to provide an alternate location if a file is found. This prevents
-  /// accidentally overwriting existing authentication keys during enrollment.
+  /// and prompts the user to provide an alternate location if a file is found.
+  /// This prevents accidentally overwriting existing authentication keys
+  /// during enrollment.
   ///
   /// The validation flow:
-  /// 1. If [_params.atKeysFilePath] is null, checks the default keys file path
-  ///    from the [AtOnboardingPreference]
-  /// 2. If [_params.atKeysFilePath] is provided, checks that custom path
-  /// 3. If a file exists at either location, prompts the user for an alternate
+  /// 1. If [_params.atKeysFilePath] is provided, checks that custom path
+  /// 2. If a file exists at either location, prompts the user for an alternate
   ///    path and updates [_params.atKeysFilePath]
-  /// 4. If no file exists, returns without modification (safe to proceed)
+  /// 3. If no file exists, returns without modification
   ///
   /// TODO: Replace this with AtKeysFile collision handler from OnboardingCLI
   void _validateAndPrepareKeysFile() {
@@ -134,6 +133,7 @@ class Activate {
         logger.info('Writing keys to ${_params.atKeysFilePath}');
       }
     }
+    return ;
   }
 
   @visibleForTesting

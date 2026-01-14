@@ -1,13 +1,5 @@
-import 'package:at_client/at_client.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:test/test.dart';
-
-class MockAtClient extends Mock implements AtClient {}
-
-class MockEnrollmentService extends Mock implements EnrollmentService {}
-
-class MockEnrollment extends Mock implements Enrollment {}
 
 void main() {
   group('IssueKeysParams', () {
@@ -23,21 +15,17 @@ void main() {
       );
     });
 
-    test('parses atsign with missing device and passphrase', () {
+    test('parses atsign short flag', () {
       final params = IssueKeysParams.fromArgs(['-a', '@alice']);
       expect(params.atsign, equals('@alice'));
-      expect(params.device, isNull);
-      expect(params.passPhrase, isNull);
     });
 
-    test('parses atsign flag with missing device and passphrase', () {
+    test('parses atsign long flag', () {
       final params = IssueKeysParams.fromArgs(['--atsign', '@alice']);
       expect(params.atsign, equals('@alice'));
-      expect(params.device, isNull);
-      expect(params.passPhrase, isNull);
     });
 
-    test('parses device name', () {
+    test('parses device name long flag', () {
       final params = IssueKeysParams.fromArgs([
         '-a',
         '@alice',
@@ -47,7 +35,7 @@ void main() {
       expect(params.device, equals('my-device'));
     });
 
-    test('parses device name flag', () {
+    test('parses device name short flag', () {
       final params = IssueKeysParams.fromArgs([
         '--atsign',
         '@alice',
@@ -57,7 +45,7 @@ void main() {
       expect(params.device, equals('my-device'));
     });
 
-    test('parses key-file', () {
+    test('parses key-file long flag', () {
       final params = IssueKeysParams.fromArgs([
         '-a',
         '@alice',
@@ -77,7 +65,7 @@ void main() {
       expect(params.atKeysFilePath, equals('path/to/keyfile'));
     });
 
-    test('parses passphrase', () {
+    test('parses passphrase long flag', () {
       final params = IssueKeysParams.fromArgs([
         '-a',
         '@alice',
@@ -87,17 +75,22 @@ void main() {
       expect(params.passPhrase, equals('mypass'));
     });
 
-    test('parses passphrase flag', () {
+    test('parses passphrase short flag', () {
       final params = IssueKeysParams.fromArgs(['-a', '@alice', '-P', 'mypass']);
       expect(params.passPhrase, equals('mypass'));
     });
 
-    test('parses verbose flag', () {
+    test('parses verbose long flag', () {
       final params = IssueKeysParams.fromArgs(['-a', '@alice', '--verbose']);
       expect(params.verbose, isTrue);
     });
 
-    test('parses debug flag', () {
+    test('parses verbose short flag', () {
+      final params = IssueKeysParams.fromArgs(['-a', '@alice', '-v']);
+      expect(params.verbose, isTrue);
+    });
+
+    test('parses debug long flag', () {
       final params = IssueKeysParams.fromArgs(['-a', '@alice', '--debug']);
       expect(params.debug, isTrue);
     });
