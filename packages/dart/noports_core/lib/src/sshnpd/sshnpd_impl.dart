@@ -789,15 +789,15 @@ class SshnpdImpl
       return;
     }
 
-    logger.shout(
-      'relayAtsign ${req.relayAtsign}'
-      ' eventLoggingConfig $elc',
-    );
     if (req.relayAtsign != null && elc != null) {
+      logger.info(
+        'relayAtsign ${req.relayAtsign}'
+        ' eventLoggingConfig $elc',
+      );
       final keyForRelay = AtKey.fromString(
         '${req.relayAtsign}:logging.${req.sessionId}.sessions.${Srvd.namespace}$deviceAtsign',
       )..metadata.namespaceAware = false;
-      logger.shout('Sending session logging config to relay : $keyForRelay');
+      logger.info('Sending session logging config to relay : $keyForRelay');
       await notify(
         keyForRelay,
         jsonEncode(elc!.toJson()),

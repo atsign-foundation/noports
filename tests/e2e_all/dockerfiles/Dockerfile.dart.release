@@ -1,4 +1,4 @@
-FROM debian:stable-20260112-slim@sha256:fa7991b272e289a0e841553d857dfd723453fd7adad54d2c813a6be433e4afcc AS buildimage
+FROM debian:stable-20260112-slim@sha256:ed542b2d269ff08139fc5ab8c762efe8c8986b564a423d5241a5ce9fb09b6c08 AS buildimage
 
 ENV URL="https://api.github.com/repos/atsign-foundation/noports/releases/latest"
 ENV URLP="https://github.com/atsign-foundation/noports/releases/download"
