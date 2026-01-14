@@ -82,10 +82,16 @@ void main() {
           throwsA(isA<ArgumentError>()),
         );
       });
+
+      test('factory works with just atsign', () {
+        List<String> testArgs = ['-a', '@alice'];
+        expect(() => IssueKeys.fromArgs(testArgs), returnsNormally);
+        // error less execution should count as success
+      });
     });
 
-    group('generateEnrollmentCommand', () {
-      test('generates correct command with device name', () {
+    group('validate behaviour of generateEnrollmentCommand() method', () {
+      test('generates correct command with device name provided', () {
         params.otp = 'ABCD12';
         params.device = 'testDevice_123456';
         final command = issueKeys.generateEnrollmentCommand();
@@ -136,7 +142,7 @@ void main() {
       });
     });
 
-    group('approveEnrollment', () {
+    group('validate behaviour of approveEnrollment() method', () {
       test('enrollment approved successfully', () async {
         final fakeEnrollment = Enrollment()
           ..enrollmentId = 'test-id'
@@ -176,13 +182,12 @@ void main() {
       });
     });
 
-    group('waitForMatchingEnrollment', () {
+    group('validate behaviour of waitForMatchingEnrollment() method', () {
       final mockEnrollment = MockEnrollment();
       const maxAttempts = 3;
       const checkInterval = Duration(milliseconds: 100);
 
       setUp(() {
-        // Set up test instance with shorter intervals for testing
         issueKeys = IssueKeysTest.test(
           params,
           atClient: mockAtClient,
@@ -235,18 +240,16 @@ void main() {
       });
     });
 
-    group('fetchMatchingEnrollment', () {
-      final mockEnrollment = MockEnrollment();
+    group('validate behaviour of fetchMatchingEnrollment() method', () {
+      test('returns enrollment when found', () async {
+        final mockEnrollment = MockEnrollment();
 
-      setUp(() {
         when(
           () => mockEnrollmentService.fetchEnrollmentRequests(
             enrollmentListParams: any(named: 'enrollmentListParams'),
           ),
         ).thenAnswer((_) async => [mockEnrollment]);
-      });
 
-      test('returns enrollment when found', () async {
         final enrollment = await issueKeys.fetchMatchingEnrollment();
         expect(enrollment, equals(mockEnrollment));
         verify(
