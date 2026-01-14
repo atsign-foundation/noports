@@ -286,14 +286,9 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
           await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
 
-          if (currentContext.mounted) {
-            Navigator.of(currentContext).pop();
-          }
-
           await BackupKeyUtils().backupKeyStatusCheck(context: context);
 
           App.log('atsign result is:$result'.loggable);
-
           return;
         case AtOnboardingResultStatus.error:
           if (currentContext.mounted) {
