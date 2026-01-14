@@ -2,11 +2,11 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/commands.dart';
-import 'package:noports_core/src/commands/issue_keys/issue_keys_impl.dart';
+import 'package:noports_core/src/commands/issue_keys/issue_keys.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:test/test.dart';
 
-import 'issue_keys_impl_mock.dart';
+import 'issue_keys_mock.dart';
 
 class MockAtClient extends Mock implements AtClient {}
 

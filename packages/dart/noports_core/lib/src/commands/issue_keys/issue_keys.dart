@@ -22,9 +22,6 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 import 'package:noports_core/src/commands/utils/constants.dart';
 
-typedef OTPGenerator =
-    Future<String?> Function(AtClient atClient, {String? otpExpiry});
-
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
 /// Manages the enrollment flow:

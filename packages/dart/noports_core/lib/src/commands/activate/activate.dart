@@ -95,7 +95,7 @@ class Activate {
       'Creating new enrollment with deviceName: ${_params.deviceName}',
     );
 
-    await _validateAndPrepareKeysFile();
+    _validateAndPrepareKeysFile();
     final AtEnrollmentResponse response = await _onboardingService.enroll(
       _params.appName,
       _params.deviceName!,
@@ -123,7 +123,7 @@ class Activate {
   /// 4. If no file exists, returns without modification (safe to proceed)
   ///
   /// TODO: Replace this with AtKeysFile collision handler from OnboardingCLI
-  Future<void> _validateAndPrepareKeysFile() async {
+  void _validateAndPrepareKeysFile() {
     if (_params.atKeysFilePath != null) {
       if (!File(_params.atKeysFilePath!).existsSync()) {
         return;
