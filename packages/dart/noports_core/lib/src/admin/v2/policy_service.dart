@@ -229,9 +229,9 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             if(!success) {
               message = 'Failed to store client with atSign: ${client.atSign}';
               break;
-            } 
+            }
             responsePayload['success'] = success;
-            responsePayload['clientId'] = policyCache.getClientById(client.id!).id!; // client.id is non-null after putClient
+            responsePayload['clientId'] = client.id!; // client.id is non-null after putClient
             message = 'Client stored successfully.';
             break;
           }
@@ -243,7 +243,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupId'] = policyCache.getClientGroupById(clientGroup.id!).id!; // clientGroup.id is non-null after putClientGroup
+            responsePayload['clientGroupId'] = clientGroup.id!; // clientGroup.id is non-null after putClientGroup
             message = 'Client group stored successfully.';
             break;
           }
@@ -257,7 +257,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupMemberId'] = policyCache.getClientGroupMemberById(clientGroupMember.id!).id!; // clientGroupMember.id is non-null after putClientGroupMember
+            responsePayload['clientGroupMemberId'] = clientGroupMember.id!; // clientGroupMember.id is non-null after putClientGroupMember
             message = 'Client group member stored successfully.';
             break;
           }
@@ -269,7 +269,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['daemonId'] = policyCache.getDaemonById(daemon.id!).id!; // daemon.id is non-null after putDaemon
+            responsePayload['daemonId'] = daemon.id!; // daemon.id is non-null after putDaemon
             message = 'Daemon stored successfully.';
             break;
           }
@@ -283,7 +283,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['serviceId'] = policyCache.getServiceById(service.id!).id!; // service.id is non-null after putService
+            responsePayload['serviceId'] = service.id!; // service.id is non-null after putService
             message = 'Service stored successfully.';
             break;
           }
@@ -298,7 +298,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['serviceACLId'] = policyCache.getServiceACLById(serviceACL.id!).id!; // serviceACL.id is non-null after putServiceACL
+            responsePayload['serviceACLId'] = serviceACL.id!; // serviceACL.id is non-null after putServiceACL
             message = 'Service ACL stored successfully.';
             break;
           }

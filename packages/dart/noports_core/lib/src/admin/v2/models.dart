@@ -3,8 +3,10 @@ import 'package:json_annotation/json_annotation.dart';
 part 'models.g.dart';
 
 class PolicyEntry {
-  final String id; 
-  PolicyEntry({required this.id});
+  // All PolicyEntries in the server cache should have an id
+  // Server generated id
+  String? id;  // Nullable and mutable - server-generated
+  PolicyEntry({this.id});
 }
 
 // represents an individual client (e.g. "@alice", "Alice")
@@ -15,7 +17,7 @@ class Client extends PolicyEntry {
   final String atSign; // unique
 
   Client({
-    required super.id,
+    super.id,
     required this.name,
     required this.atSign});
 
@@ -29,7 +31,7 @@ class ClientGroup extends PolicyEntry {
   final String name;
 
   ClientGroup({
-    required super.id,
+    super.id,
     required this.name});
 
   factory ClientGroup.fromJson(Map<String, dynamic> json) => _$ClientGroupFromJson(json);
@@ -43,7 +45,7 @@ class ClientGroupMember extends PolicyEntry {
   final String clientGroupId;
 
   ClientGroupMember({
-    required super.id,
+    super.id,
     required this.clientId,
     required this.clientGroupId});
 
@@ -58,7 +60,7 @@ class Daemon extends PolicyEntry {
   final String atSign;
 
   Daemon({
-    required super.id,
+    super.id,
     required this.atSign});
 
   factory Daemon.fromJson(Map<String, dynamic> json) => _$DaemonFromJson(json);
@@ -74,7 +76,7 @@ class Service extends PolicyEntry {
   final String deviceGroupName; // can be `__none__`
 
   Service({
-    required super.id,
+    super.id,
     required this.daemonId,
     required this.deviceName,
     required this.deviceGroupName});
@@ -92,7 +94,7 @@ class ServiceACL extends PolicyEntry {
   final String permitOpen;
 
   ServiceACL({
-    required super.id,
+    super.id,
     required this.serviceId,
     required this.clientGroupId,
     required this.permitOpen});
