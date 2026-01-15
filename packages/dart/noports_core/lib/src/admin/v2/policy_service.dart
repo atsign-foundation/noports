@@ -26,13 +26,21 @@ class PolicyRequestHandler implements NPARequestHandler {
     final String deviceName = authCheckRequest.daemonDeviceName;
     final String deviceGroupName = authCheckRequest.daemonDeviceGroupName;
 
-    final Set<ServiceACL> matchedServiceACLs = policyCache.findMatchedServiceACLs(clientAtSign: clientAtSign, daemonAtSign: daemonAtSign, deviceName: deviceName, deviceGroupName: deviceGroupName);
+    final Set<ServiceACL> matchedServiceACLs = 
+      policyCache.findMatchedServiceACLs(
+        clientAtSign: clientAtSign,
+        daemonAtSign: daemonAtSign,
+        deviceName: deviceName,
+        deviceGroupName: deviceGroupName);
 
     final List<String> permitOpens = [];
     for(final ServiceACL sacl in matchedServiceACLs) {
-    permitOpens.add(sacl.permitOpen);
-  }
+      permitOpens.add(sacl.permitOpen);
+    }
 
+    // authorized bool doesn't actually make sense
+    // sshnpd's should be checking the permitOpens for when doing a true
+    // policy check
     final bool authorized = permitOpens.isNotEmpty;
 
     NPAAuthCheckResponse response;
@@ -58,6 +66,11 @@ class PolicyRequestHandler implements NPARequestHandler {
   }
 }
 
+class PolicyServiceDefaults {
+  static const String domainNamespace = 'policy_v2';
+  static const String baseNamespace = 'sshnp';
+}
+
 class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   @override
   final AtClient atClient;
@@ -65,26 +78,41 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   @override
   final AtSignLogger logger = AtSignLogger('PolicyService');
 
-  late PolicyCache cache;
+  late PolicyCache policyCache;
   late NPA npa;
   late AtRpc rpcListener;
 
-  PolicyService({required this.atClient});
+  PolicyService({
+    // mandatroy
+    required this.atClient,
+    required final Set<String> allowList,
+    // non-mandatory with defaults
+    final String domainNamespace = PolicyServiceDefaults.domainNamespace,
+    final String baseNamespace = PolicyServiceDefaults.baseNamespace,
+    // optional
+    String? homeDirectory,
+    final PolicyCache? initialPolicyCache,
+    final String? eventLoggingAtSign,
+  }) {
+    if(initialPolicyCache != null) {
+      policyCache = initialPolicyCache;
+    } else {
+      policyCache = PolicyCache();
+    }
 
-  Future<void> init({final String? homeDirectory}) async {
-    cache = PolicyCache();
-
-    final String? homeDir = homeDirectory ?? getHomeDirectory();
-    if(homeDir == null) {
-      throw Exception('Home directory not found.');
+    if(homeDirectory == null) {
+      homeDirectory = getHomeDirectory();
+      if(homeDirectory == null) {
+        throw Exception('Home directory could not be resolved.');
+      }
     }
 
     // RPC for handling incoming policy detail requests
     npa = NPAImpl(
-      handler: PolicyRequestHandler(cache),
+      handler: PolicyRequestHandler(policyCache),
       atClient: atClient,
-      homeDirectory: homeDir,
-      eventLoggingAtsign: null);
+      homeDirectory: homeDirectory,
+      eventLoggingAtsign: eventLoggingAtSign);
 
     // RPC for handling other v2 policy operations
     rpcListener = AtRpc(atClient: atClient,
@@ -92,9 +120,9 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       isClient: false,
       isServer: true,
       allowAll: true,
-      allowList: {atClient.getCurrentAtSign()!}, // for now, only the policy service atSign will be allowed to modify policy data
-      baseNameSpace: 'sshnp',
-      domainNameSpace: 'policy');
+      allowList: allowList, 
+      baseNameSpace: baseNamespace,
+      domainNameSpace: domainNamespace);
   }
 
   Future<void> start() async {
@@ -129,7 +157,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       case 'get':
         switch(target) {
           case 'allClients': {
-            final Set<Client> clients = cache.clients;
+            final Set<Client> clients = policyCache.clients;
             final Set<Map<String, dynamic>> clientsAsJson = clients.map((client) => client.toJson()).toSet();
             final int amount = clientsAsJson.length;
             responsePayload['amount'] = amount;
@@ -139,7 +167,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             break;
           }
           case 'allClientGroups': {
-            final Set<ClientGroup> clientGroups = cache.clientGroups;
+            final Set<ClientGroup> clientGroups = policyCache.clientGroups;
             final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups.map((clientGroup) => clientGroup.toJson()).toSet();
             final int amount = clientGroupsAsJson.length;
             responsePayload['amount'] = amount;
@@ -149,7 +177,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             break;
           }
           case 'allClientGroupMembers': {
-            final Set<ClientGroupMember> clientGroupMembers = cache.clientGroupMembers;
+            final Set<ClientGroupMember> clientGroupMembers = policyCache.clientGroupMembers;
             final Set<Map<String, dynamic>> clientGroupMembersAsJson = clientGroupMembers.map((clientGroupMember) => clientGroupMember.toJson()).toSet();
             final int amount = clientGroupMembersAsJson.length;
             responsePayload['amount'] = amount;
@@ -159,7 +187,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             break;
           }
           case 'allDaemons': {
-            final Set<Daemon> daemons = cache.daemons;
+            final Set<Daemon> daemons = policyCache.daemons;
             final Set<Map<String, dynamic>> daemonsAsJson = daemons.map((daemon) => daemon.toJson()).toSet();
             final int amount = daemonsAsJson.length;
             responsePayload['amount'] = amount;
@@ -169,7 +197,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             break;
           }
           case 'allServices': {
-            final Set<Service> services = cache.services;
+            final Set<Service> services = policyCache.services;
             final Set<Map<String, dynamic>> servicesAsJson = services.map((service) => service.toJson()).toSet();
             final int amount = servicesAsJson.length;
             responsePayload['amount'] = amount;
@@ -179,7 +207,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
             break;
           }
           case 'allServiceACLs': {
-            final Set<ServiceACL> serviceACLs = cache.serviceACLs;
+            final Set<ServiceACL> serviceACLs = policyCache.serviceACLs;
             final Set<Map<String, dynamic>> serviceACLsAsJson = serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
             final int amount = serviceACLsAsJson.length;
             responsePayload['amount'] = serviceACLsAsJson.length;
@@ -197,31 +225,31 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
         switch(target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
-            success = cache.putClient(client);
+            success = policyCache.putClient(client);
             if(!success) {
               message = 'Failed to store client with atSign: ${client.atSign}';
               break;
             } 
             responsePayload['success'] = success;
-            responsePayload['clientId'] = cache.getClientById(client.id!).id!; // client.id is non-null after putClient
+            responsePayload['clientId'] = policyCache.getClientById(client.id!).id!; // client.id is non-null after putClient
             message = 'Client stored successfully.';
             break;
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-            success = cache.putClientGroup(clientGroup);
+            success = policyCache.putClientGroup(clientGroup);
             if(!success) {
               message = 'Failed to store client group with name: ${clientGroup.name}';
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupId'] = cache.getClientGroupById(clientGroup.id!).id!; // clientGroup.id is non-null after putClientGroup
+            responsePayload['clientGroupId'] = policyCache.getClientGroupById(clientGroup.id!).id!; // clientGroup.id is non-null after putClientGroup
             message = 'Client group stored successfully.';
             break;
           }
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(valueAsMap);
-            success = cache.putClientGroupMember(clientGroupMember);
+            success = policyCache.putClientGroupMember(clientGroupMember);
             if(!success) {
               message = 'Failed to store client group member: '
                 'clientId=${clientGroupMember.clientId} '
@@ -229,25 +257,25 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupMemberId'] = cache.getClientGroupMemberById(clientGroupMember.id!).id!; // clientGroupMember.id is non-null after putClientGroupMember
+            responsePayload['clientGroupMemberId'] = policyCache.getClientGroupMemberById(clientGroupMember.id!).id!; // clientGroupMember.id is non-null after putClientGroupMember
             message = 'Client group member stored successfully.';
             break;
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
-            success = cache.putDaemon(daemon);
+            success = policyCache.putDaemon(daemon);
             if(!success) {
               message = 'Failed to store daemon with atSign: ${daemon.atSign}';
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['daemonId'] = cache.getDaemonById(daemon.id!).id!; // daemon.id is non-null after putDaemon
+            responsePayload['daemonId'] = policyCache.getDaemonById(daemon.id!).id!; // daemon.id is non-null after putDaemon
             message = 'Daemon stored successfully.';
             break;
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
-            success = cache.putService(service);
+            success = policyCache.putService(service);
             if(!success) {
               message = 'Failed to store service: '
                 'deviceName=${service.deviceName} '
@@ -255,13 +283,13 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['serviceId'] = cache.getServiceById(service.id!).id!; // service.id is non-null after putService
+            responsePayload['serviceId'] = policyCache.getServiceById(service.id!).id!; // service.id is non-null after putService
             message = 'Service stored successfully.';
             break;
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-            success = cache.putServiceACL(serviceACL);
+            success = policyCache.putServiceACL(serviceACL);
             if(!success) {
               message = 'Failed to store service ACL: '
                 'serviceId=${serviceACL.serviceId} '
@@ -270,7 +298,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               break;
             }
             responsePayload['success'] = success;
-            responsePayload['serviceACLId'] = cache.getServiceACLById(serviceACL.id!).id!; // serviceACL.id is non-null after putServiceACL
+            responsePayload['serviceACLId'] = policyCache.getServiceACLById(serviceACL.id!).id!; // serviceACL.id is non-null after putServiceACL
             message = 'Service ACL stored successfully.';
             break;
           }

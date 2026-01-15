@@ -195,7 +195,7 @@ class PolicyCache {
           '${client.id} when that id already exists in the policy cache.');
       }
     }
-    client.id ??= (_maxId(_clients) + 1).toString();
+    client.id = (_maxId(_clients) + 1).toString();
     return _clients.add(client);
   }
 

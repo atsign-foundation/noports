@@ -28,8 +28,9 @@ Future<void> main(List<String> args) async {
   final AtRpcClient atRpcClient = AtRpcClient(
     atClient: atClient,
     serverAtsign: policyCLIParams.policyAtSign,
-    baseNameSpace: policyCLIParams.namespace,
-    domainNameSpace: 'policy');
+    baseNameSpace: policyCLIParams.baseNamespace,
+    domainNameSpace: policyCLIParams.domainNamespace,
+  );
 
   final PolicyClient policyClient = 
   PolicyClient.fromAtRpcClient(atRpcClient: atRpcClient);
@@ -119,8 +120,8 @@ Future<void> main(List<String> args) async {
         break;
       }
       final String clientId = await policyClient.putClient(
-        name: clientName!,
-        atSign: clientAtSign!);
+        name: clientName,
+        atSign: clientAtSign);
       print('Put client with generated id: $clientId');
       // final Set<Client> allClients = await policyClient.getAllClients();
       // print('Obtained ${allClients.length} clients:');

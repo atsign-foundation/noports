@@ -4,7 +4,8 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 class PolicyCLIParamsDefaults {
   static const bool verbose = false;
   static const String rootServer = 'root.atsign.org:64';
-  static const String namespace = 'sshnp';
+  static const String baseNamespace = 'sshnp';
+  static const String domainNamespace = 'policy';
   static const String policyVersion = 'v1';
 }
 
@@ -25,7 +26,8 @@ class PolicyCLIParams {
   // Case 2a:
   late bool _verbose; // will always be non-null; it has a resolvable default
   late String _rootServer; // will always be non-null; it has a resolvable default
-  late String _namespace;
+  late String _domainNamespace; // e.g. 'sshnp'
+  late String _baseNamespace; // e.g. 'policy_v2'
   late String _policyVersion;
 
   // Case 2b:
@@ -47,7 +49,8 @@ class PolicyCLIParams {
   String get rootServer => _rootServer;
   String get atKeysFilePath => _atKeysFilePath;
   String get policyAtSign => _policyAtSign;
-  String get namespace => _namespace;
+  String get baseNamespace => _baseNamespace;
+  String get domainNamespace => _domainNamespace;
   String get policyVersion => _policyVersion;
   String? get storagePath => _storagePath;
 
@@ -66,7 +69,8 @@ class PolicyCLIParams {
     // Case 2a: gets value or default from ArgParser
     p._verbose = argResults['verbose'];
     p._rootServer = argResults['root-server'];
-    p._namespace = argResults['namespace'];
+    p._baseNamespace = argResults['base-namespace'];
+    p._domainNamespace = argResults['domain-namespace'];
     p._policyVersion = argResults['policy-version'];
 
     // Case 2b: resolve to our own default (default cannot be obtained from ArgParser)
@@ -109,10 +113,21 @@ class PolicyCLIParams {
     );
 
     argParser.addOption(
-      'namespace',
+      'base-namespace',
+      aliases: const ['namespace'],
       mandatory: false,
-      defaultsTo: PolicyCLIParamsDefaults.namespace,
-      help: 'Namespace of the application, defaults to ${PolicyCLIParamsDefaults.namespace}'
+      defaultsTo: PolicyCLIParamsDefaults.baseNamespace,
+      help: 'Namespace of the application, defaults to '
+        '${PolicyCLIParamsDefaults.baseNamespace}. Alias: --namespace'
+    );
+
+    argParser.addOption(
+      'domain-namespace',
+      mandatory: false,
+      defaultsTo: PolicyCLIParamsDefaults.domainNamespace,
+      help: 'Domain namespace of the application, defaults to '
+        '${PolicyCLIParamsDefaults.domainNamespace}. If using policy-version ' 
+        'v2, then this will be set to "policy_v2".'
     );
 
     argParser.addOption(
