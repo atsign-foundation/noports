@@ -21,6 +21,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get add => 'Adicionar';
 
   @override
+  String get addAtsign => 'Adicionar atSign';
+
+  @override
   String get addNew => 'Adicionar Novo';
 
   @override
@@ -33,7 +36,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -953,6 +956,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Este campo não pode ser deixado em branco';
 
   @override
+  String get validationErrorHostField =>
+      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
+
+  @override
   String get validationErrorLocalPortField =>
       'O número deve estar entre 1024 e 65535';
 
@@ -962,10 +969,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um atSign válido';
-
-  @override
-  String get validationErrorHostField =>
-      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
 
   @override
   String get validationErrorRemotePortField =>
@@ -1011,6 +1014,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get add => 'Adicionar';
 
   @override
+  String get addAtsign => 'Adicionar atSign';
+
+  @override
   String get addNew => 'Adicionar Novo';
 
   @override
@@ -1023,7 +1029,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -1915,6 +1921,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Este campo não pode ser deixado em branco';
 
   @override
+  String get validationErrorHostField =>
+      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
+
+  @override
   String get validationErrorLocalPortField =>
       'O número deve estar entre 1024 e 65535';
 
@@ -1924,10 +1934,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um atSign válido';
-
-  @override
-  String get validationErrorHostField =>
-      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
 
   @override
   String get validationErrorRemotePortField =>
