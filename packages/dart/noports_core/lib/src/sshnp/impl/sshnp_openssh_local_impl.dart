@@ -68,7 +68,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
       clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
       clientEphemeralPKType: params.sessionKPType.name,
       twinKeys: sshnpdChannel.twinKeys,
-      relayAtsign: srvdChannel.supportsEventLogging ? params.srvdAtSign : null,
+      relayAtsign: srvdChannel.supportsEventLogging
+          ? params.srvdAtSign.toAtsign()
+          : null,
     );
 
     final notifyPayload = signAndWrapAndJsonEncode(

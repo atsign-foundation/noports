@@ -8,7 +8,7 @@ part of 'event_models.dart';
 
 AtEventConfig _$AtEventConfigFromJson(Map<String, dynamic> json) =>
     AtEventConfig(
-      atSign: json['atSign'] as String,
+      atSign: (json['atSign'] as String).toAtsign(),
       topic: json['topic'] as String,
       ttln: (json['ttln'] as num).toInt(),
     );

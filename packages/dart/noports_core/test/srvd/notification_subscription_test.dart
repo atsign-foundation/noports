@@ -62,7 +62,7 @@ void main() {
 
       Srvd srvd = SrvdImpl(
         atClient: mockAtClient,
-        atSign: relayAtSign,
+        atSign: relayAtSign.toAtsign(),
         homeDirectory: Directory.current.path,
         atKeysFilePath: Directory.current.path,
         managerAtsign: 'open',

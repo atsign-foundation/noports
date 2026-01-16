@@ -271,7 +271,9 @@ class _NptImpl extends NptBase
       requestedHost: params.remoteHost,
       timeout: params.timeout,
       twinKeys: sshnpdChannel.twinKeys,
-      relayAtsign: _srvdChannel.supportsEventLogging ? params.srvdAtSign : null,
+      relayAtsign: _srvdChannel.supportsEventLogging
+          ? params.srvdAtSign.toAtsign()
+          : null,
     );
     final notifyPayload = signAndWrapAndJsonEncode(
       atClient,
