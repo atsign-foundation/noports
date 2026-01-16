@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
@@ -129,7 +130,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         jsonEncode(expectedPayloadForSignature),
         params.rvdNonce,
         params.atSignA,
-        params.atSignA,
+        params.atSignA.toAtsign(),
         params.sessionId,
       );
     }
@@ -157,7 +158,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         jsonEncode(expectedPayloadForSignature),
         params.rvdNonce,
         params.atSignB,
-        params.atSignB,
+        params.atSignB.toAtsign(),
         params.sessionId,
       );
     }

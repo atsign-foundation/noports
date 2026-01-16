@@ -31,7 +31,7 @@ class SrvdImpl
   @override
   AtClient atClient;
   @override
-  final String atSign;
+  final Atsign atSign;
   @override
   final String homeDirectory;
   @override
@@ -109,7 +109,7 @@ class SrvdImpl
 
       var srvd = SrvdImpl(
         atClient: atClient,
-        atSign: p.atSign,
+        atSign: p.atSign.toAtsign(),
         homeDirectory: p.homeDirectory,
         atKeysFilePath: p.atKeysFilePath,
         managerAtsign: p.managerAtsign,

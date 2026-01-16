@@ -102,10 +102,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: "4c9cafd32e1520fbdde8836ee5bb09616fc5e20accbc3191dc38d3632fc99a4c"
+      sha256: a8a07fff913a36524b95757ff72fcde448ae461b1647c8e8aee3276395452ae7
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.1"
+    version: "5.8.0"
   at_lookup:
     dependency: transitive
     description:

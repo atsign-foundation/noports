@@ -86,7 +86,7 @@ abstract interface class RelayAuthVerifier {
 ///   - complete successfully
 class RelayAuthVerifierESCR implements RelayAuthVerifier {
   @override
-  String? atSign;
+  Atsign? atSign;
 
   @override
   String? sessionId;
@@ -274,9 +274,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    atSign = publicSigningKeyUri.substring(
-      publicSigningKeyUri.lastIndexOf('@'),
-    );
+    atSign = publicSigningKeyUri
+        .substring(publicSigningKeyUri.lastIndexOf('@'))
+        .toAtsign();
 
     if (!publicSigningKeyUri
         .substring(0, publicSigningKeyUri.lastIndexOf('@'))
