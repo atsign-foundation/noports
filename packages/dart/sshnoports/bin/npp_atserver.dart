@@ -86,7 +86,7 @@ void main(List<String> args) async {
     atClient: atClient,
     homeDirectory: p.homeDirectory,
     handler: handler,
-    eventLoggingAtsign: p.eventLoggingAtsign,
+    eventLoggingAtsign: p.eventLoggingAtsign?.toAtsign(),
   );
 
   if (p.verbose) {
