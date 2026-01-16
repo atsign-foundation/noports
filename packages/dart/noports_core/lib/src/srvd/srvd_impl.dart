@@ -167,13 +167,13 @@ class SrvdImpl
   }
 
   Future<void> notificationHandler(AtNotification n) async {
-    if (!wellFormedRequest(n)) {
-      logger.shout('Un-handled notification key: ${n.key}');
-      return;
-    }
-
-    logger.shout('Notification key: ${n.key}');
     try {
+      if (!wellFormedRequest(n)) {
+        logger.shout('Un-handled notification key: ${n.key}');
+        return;
+      }
+
+      logger.shout('Notification key: ${n.key}');
       String topic;
       String messageType;
       try {
