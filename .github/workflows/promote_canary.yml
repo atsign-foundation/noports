@@ -24,6 +24,8 @@ jobs:
   single:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write # for creating OIDC tokens for signing.
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
@@ -56,6 +58,8 @@ jobs:
   multi:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write # for creating OIDC tokens for signing.
     strategy:
       matrix:
         include:

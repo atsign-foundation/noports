@@ -1,4 +1,5 @@
 import 'package:noports_core/utils.dart';
+import 'package:at_commons/atsign.dart';
 
 class SshnpSessionRequest {
   final bool direct;
@@ -17,7 +18,7 @@ class SshnpSessionRequest {
   final int? remoteForwardPort;
   final String? privateKey;
   final bool twinKeys;
-  final String? relayAtsign;
+  final Atsign? relayAtsign;
 
   SshnpSessionRequest({
     required this.direct,
@@ -126,7 +127,7 @@ class NptSessionRequest {
   final String clientEphemeralPKType;
   final Duration timeout;
   final bool twinKeys;
-  final String? relayAtsign;
+  final Atsign? relayAtsign;
 
   NptSessionRequest({
     required this.sessionId,

@@ -23,7 +23,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   final String homeDirectory;
 
   @override
-  String get policyAtsign => atClient.getCurrentAtSign()!;
+  Atsign get policyAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   @override
   final Atsign? eventLoggingAtsign;
@@ -74,7 +74,7 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
         atClient: atClient,
         homeDirectory: p.homeDirectory,
         handler: handler,
-        eventLoggingAtsign: p.eventLoggingAtsign,
+        eventLoggingAtsign: p.eventLoggingAtsign?.toAtsign(),
       );
 
       if (p.verbose) {

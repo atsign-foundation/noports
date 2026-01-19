@@ -12,7 +12,7 @@ final GetRequestOptions _gro = GetRequestOptions()..useRemoteAtServer = true;
 final PutRequestOptions _pro = PutRequestOptions()..useRemoteAtServer = true;
 
 mixin AtEventListener on AtClientBindings {
-  Atsign get myAtsign => atClient.getCurrentAtSign()!;
+  Atsign get myAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   Future<AtEventConfig> _getConfig(AtKey key) async {
     logger.info('Fetching EventLoggingConfig from $key');
@@ -104,7 +104,7 @@ mixin AtEventListener on AtClientBindings {
 }
 
 mixin AtEventLogger on AtClientBindings {
-  Atsign get myAtsign => atClient.getCurrentAtSign()!;
+  Atsign get myAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   final StreamController<(AtEventConfig, AtEventEnvelope)>
   eventStreamController = StreamController<(AtEventConfig, AtEventEnvelope)>();

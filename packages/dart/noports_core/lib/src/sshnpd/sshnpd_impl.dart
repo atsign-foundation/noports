@@ -46,13 +46,13 @@ class SshnpdImpl
   final String device;
 
   @override
-  String get deviceAtsign => atClient.getCurrentAtSign()!;
+  Atsign get deviceAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   @override
   final List<String> managerAtsigns;
 
   @override
-  final String? policyManagerAtsign;
+  final Atsign? policyManagerAtsign;
 
   @override
   final SupportedSshClient sshClient;
@@ -215,7 +215,7 @@ class SshnpdImpl
         homeDirectory: p.homeDirectory,
         device: p.device,
         managerAtsigns: p.managerAtsigns,
-        policyManagerAtsign: p.policyManagerAtsign,
+        policyManagerAtsign: p.policyManagerAtsign?.toAtsign(),
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
@@ -662,7 +662,7 @@ class SshnpdImpl
     AtNotification notification,
     NPAAuthCheckResponse auth,
   ) async {
-    String requestingAtsign = notification.from;
+    Atsign requestingAtsign = notification.from.toAtsign();
 
     // Extract the NPT request payload.
     late final Map envelope;
@@ -961,7 +961,7 @@ class SshnpdImpl
     AtNotification notification,
     NPAAuthCheckResponse auth,
   ) async {
-    String requestingAtsign = notification.from;
+    Atsign requestingAtsign = notification.from.toAtsign();
 
     // Validate the request payload.
     late final Map envelope;

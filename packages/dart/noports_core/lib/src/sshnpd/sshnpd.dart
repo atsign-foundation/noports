@@ -103,7 +103,6 @@ abstract class Sshnpd {
   /// policy service is being used, and false otherwise.
   abstract final bool strict;
 
-
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,

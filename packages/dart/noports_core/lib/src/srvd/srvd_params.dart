@@ -94,11 +94,10 @@ class SrvdParams {
       'pass-phrase',
       aliases: const ['passPhrase'],
       abbr: 'P',
-      help:
-      'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+      help: 'Pass Phrase to encrypt/decrypt the password protected atKeys file',
       mandatory: false,
       defaultsTo: '',
-      hide: true
+      hide: true,
     );
     parser.addOption(
       'atsign',
