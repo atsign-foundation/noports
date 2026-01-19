@@ -1,9 +1,9 @@
+import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
 import './models.dart';
 
 class PolicyCache {
-
   static final AtSignLogger logger = AtSignLogger('PolicyCache');
 
   final Set<Client> _clients; // Client.atSign must be unique across all clients  
@@ -27,6 +27,14 @@ class PolicyCache {
     _daemons = {},
     _services = {},
     _serviceACLs = {};
+
+
+  // *.client.policy.sshnp --> a client (e.g. "@colin", "Colin")
+  // *.client_group.policy.sshnp --> a client group (e.g. client.id, "Atsign Engineers")
+  // *.client_group_members.policy.sshnp --> maps client to a client group (e.g. client.id, client_group.id)
+  // *.daemon.policy.sshnp --> a daemon (e.g. "@device")
+  // *.service.policy.sshnp --> a device (e.g. daemon.id, "deviceName")
+  // *.service_acl.policy.sshnp --> a service ACL (e.g. service.id, client_group.id, "localhost:22")
 
   Set<ServiceACL> findMatchedServiceACLs({
     required final String clientAtSign,

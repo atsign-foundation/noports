@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:noports_core/admin_v2.dart';
 
 class PolicyDataOperation {
@@ -15,10 +13,10 @@ class PolicyDataOperation {
     return PolicyDataOperation(
       operation: 'get',
       atRpcPayload: {
-        'operation': 'get',
-        'target': 'allClients',
-        'value': {},
-      },
+      'operation': 'get',
+      'target': 'allClients',
+      'value': {},
+    },
     );
   }
 
@@ -26,10 +24,10 @@ class PolicyDataOperation {
     return PolicyDataOperation(
       operation: 'get',
       atRpcPayload: {
-        'operation': 'get',
-        'target': 'allClientGroups',
-        'value': {},
-      },
+      'operation': 'get',
+      'target': 'allClientGroups',
+      'value': {},
+    },
     );
   } 
 
@@ -46,7 +44,7 @@ class PolicyDataOperation {
 
   factory PolicyDataOperation.getAllDaemons() {
     return PolicyDataOperation(
-        operation: 'get',
+      operation: 'get',
       atRpcPayload: {
         'operation': 'get',
         'target': 'allDaemons',
@@ -80,7 +78,7 @@ class PolicyDataOperation {
   factory PolicyDataOperation.putClient(final Client client) {
     return PolicyDataOperation(
       operation: 'put',
-      atRpcPayload: {
+        atRpcPayload: {
         'operation': 'put',
         'target': 'Client',
         'value': client.toJson(),
@@ -102,7 +100,7 @@ class PolicyDataOperation {
   factory PolicyDataOperation.putClientGroupMember(final ClientGroupMember clientGroupMember) {
     return PolicyDataOperation(
       operation: 'put',
-      atRpcPayload: {
+        atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroupMember',
         'value': clientGroupMember.toJson(),

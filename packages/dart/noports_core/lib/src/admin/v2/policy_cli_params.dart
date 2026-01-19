@@ -5,7 +5,8 @@ class PolicyCLIParamsDefaults {
   static const bool verbose = false;
   static const String rootServer = 'root.atsign.org:64';
   static const String baseNamespace = 'sshnp';
-  static const String domainNamespace = 'policy';
+  static const String domainNamespaceV1 = 'policy';
+  static const String domainNamespaceV2 = 'policy_v2';
   static const String policyVersion = 'v1';
 }
 
@@ -22,17 +23,17 @@ class PolicyCLIParams {
   // Mandatory by ArgParser (this is case 1)
   final String _atSign; // policy atSign, will always be specified (mandatory option)
 
-  // Non-mandatory with resolvable defaults (this is case 2):
-  // Case 2a:
+  // Non-mandatory with resolvable non-null defaults (this is case 2):
+  // Case 2a: compile-time default
   late bool _verbose; // will always be non-null; it has a resolvable default
   late String _rootServer; // will always be non-null; it has a resolvable default
   late String _domainNamespace; // e.g. 'sshnp'
-  late String _baseNamespace; // e.g. 'policy_v2'
-  late String _policyVersion;
+  late String _policyVersion; // e.g. 'v1', 'v2'
 
-  // Case 2b:
+  // Case 2b: run-time default
   late String _atKeysFilePath; // resolves to ~/.atsign/keys/<atsign>-key.atKeys
   late String _policyAtSign; // non-null, resolves to _atSign if not specified by ArgParser
+  late String _baseNamespace; // e.g. 'policy_v2'
 
   // Case 3: Non-mandatory with no defaults (null, if not specified).
   String? _storagePath;
@@ -50,9 +51,10 @@ class PolicyCLIParams {
   String get atKeysFilePath => _atKeysFilePath;
   String get policyAtSign => _policyAtSign;
   String get baseNamespace => _baseNamespace;
-  String get domainNamespace => _domainNamespace;
   String get policyVersion => _policyVersion;
+
   String? get storagePath => _storagePath;
+  String? get domainNamespace => _domainNamespace;
 
   factory PolicyCLIParams.fromArgs(List<String> args) {
     ArgResults argResults = _argParser.parse(args);
@@ -70,17 +72,29 @@ class PolicyCLIParams {
     p._verbose = argResults['verbose'];
     p._rootServer = argResults['root-server'];
     p._baseNamespace = argResults['base-namespace'];
-    p._domainNamespace = argResults['domain-namespace'];
     p._policyVersion = argResults['policy-version'];
 
-    // Case 2b: resolve to our own default (default cannot be obtained from ArgParser)
+    // Case 2b: resolve to our own default 
+    //(default cannot be obtained from ArgParser)
     p._atKeysFilePath = argResults['key-file'] ?? 
       getDefaultAtKeysFilePath(homeDirectory!, atSign);
-    p._policyAtSign = argResults['policy-atsign'] ??
-      p._atSign;
+    p._policyAtSign = argResults['policy-atsign'] ?? p._atSign;
+    if(argResults['domain-namespace'] != null) {
+      p._domainNamespace = argResults['domain-namespace'];
+    } else {
+      if(p._policyVersion == 'v1') {
+        p._domainNamespace = PolicyCLIParamsDefaults.domainNamespaceV1;
+      } else if(p._policyVersion == 'v2') {
+        p._domainNamespace = PolicyCLIParamsDefaults.domainNamespaceV2;
+      } else {
+        p._domainNamespace = PolicyCLIParamsDefaults.domainNamespaceV1;
+      }
+    }
 
     // Case 3: Non-mandatory nullable variables
     p._storagePath = argResults['storage-path'];
+
+    // Edge case with domainNamespace (if it's null, set it to policy or policy_v2)
     return p;
   }
 
@@ -122,15 +136,6 @@ class PolicyCLIParams {
     );
 
     argParser.addOption(
-      'domain-namespace',
-      mandatory: false,
-      defaultsTo: PolicyCLIParamsDefaults.domainNamespace,
-      help: 'Domain namespace of the application, defaults to '
-        '${PolicyCLIParamsDefaults.domainNamespace}. If using policy-version ' 
-        'v2, then this will be set to "policy_v2".'
-    );
-
-    argParser.addOption(
       'policy-version',
       mandatory: false,
       defaultsTo: PolicyCLIParamsDefaults.policyVersion,
@@ -138,7 +143,8 @@ class PolicyCLIParams {
         'other possible value is \'v2\'',
     );
 
-    // Case 2b: Non-mandatory, but does not have defaultsTo:
+    // Case 2b: Non-mandatory, does not have defaultsTo:
+    // has a compile-time default
     argParser.addOption(
       'key-file',
       mandatory: false,
@@ -151,6 +157,13 @@ class PolicyCLIParams {
       'policy-atsign',
       mandatory: false,
       help: 'Policy atSign, defaults to the specified -a atSign'
+    );
+
+    argParser.addOption(
+      'domain-namespace',
+      mandatory: false,
+      help: 'Domain namespace of the application, defaults to "policy". '
+        'If using policy-version="v2", then this will be set to "policy_v2".'
     );
 
     // Case 3: Non-mandatory 

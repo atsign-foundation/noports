@@ -1,18 +1,11 @@
-import 'dart:convert';
-
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/admin_v2.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/admin/v2/policy_operation_hooks.dart';
 
-// *.client.policy.sshnp --> a client (e.g. "@colin", "Colin")
-// *.client_group.policy.sshnp --> a client group (e.g. client.id, "Atsign Engineers")
-// *.client_group_members.policy.sshnp --> maps client to a client group (e.g. client.id, client_group.id)
-// *.daemon.policy.sshnp --> a daemon (e.g. "@device")
-// *.service.policy.sshnp --> a device (e.g. daemon.id, "deviceName")
-// *.service_acl.policy.sshnp --> a service ACL (e.g. service.id, client_group.id, "localhost:22")
 
 class PolicyRequestHandler implements NPARequestHandler {
   final PolicyCache policyCache;
@@ -78,28 +71,27 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   @override
   final AtSignLogger logger = AtSignLogger('PolicyService');
 
-  late PolicyCache policyCache;
-  late NPA npa;
-  late AtRpc rpcListener;
+  final PolicyCache policyCache;
+
+  final PolicyOperationHooks? policyOperationHooks;
+
+  // services
+  late NPA npa; // responds to policy requests
+  late AtRpc rpcListener; // policy api (put/get)
 
   PolicyService({
     // mandatroy
     required this.atClient,
-    required final Set<String> allowList,
+    required this.policyCache,
+    required final Set<String> allowList, // set of atSigns who can talk to policy api rpc (put/get policy rules)
     // non-mandatory with defaults
     final String domainNamespace = PolicyServiceDefaults.domainNamespace,
     final String baseNamespace = PolicyServiceDefaults.baseNamespace,
     // optional
     String? homeDirectory,
-    final PolicyCache? initialPolicyCache,
     final String? eventLoggingAtSign,
+    this.policyOperationHooks,
   }) {
-    if(initialPolicyCache != null) {
-      policyCache = initialPolicyCache;
-    } else {
-      policyCache = PolicyCache();
-    }
-
     if(homeDirectory == null) {
       homeDirectory = getHomeDirectory();
       if(homeDirectory == null) {
@@ -225,10 +217,28 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
         switch(target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
+            if(policyOperationHooks?.prePutClient != null) {
+              try {
+                await policyOperationHooks!.prePutClient!(client);
+              } catch(e, s) {
+                logger.severe('prePutClient hook failed for client ${client.atSign}', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putClient(client);
             if(!success) {
               message = 'Failed to store client with atSign: ${client.atSign}';
               break;
+            }
+            // Call post-hook if provided (errors are logged but don't fail the operation)
+            if(policyOperationHooks?.postPutClient != null) {
+              try {
+                await policyOperationHooks!.postPutClient!(client);
+              } catch(e, s) {
+                logger.severe('postPutClient hook failed for client ${client.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['clientId'] = client.id!; // client.id is non-null after putClient
@@ -237,10 +247,29 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
+            // Call pre-hook if provided
+            if(policyOperationHooks?.prePutClientGroup != null) {
+              try {
+                await policyOperationHooks!.prePutClientGroup!(clientGroup);
+              } catch(e, s) {
+                logger.severe('prePutClientGroup hook failed for client group ${clientGroup.name}', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putClientGroup(clientGroup);
             if(!success) {
               message = 'Failed to store client group with name: ${clientGroup.name}';
               break;
+            }
+            // Call post-hook if provided
+            if(policyOperationHooks?.postPutClientGroup != null) {
+              try {
+                await policyOperationHooks!.postPutClientGroup!(clientGroup);
+              } catch(e, s) {
+                logger.severe('postPutClientGroup hook failed for client group ${clientGroup.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['clientGroupId'] = clientGroup.id!; // clientGroup.id is non-null after putClientGroup
@@ -249,12 +278,31 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           }
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(valueAsMap);
+            // Call pre-hook if provided
+            if(policyOperationHooks?.prePutClientGroupMember != null) {
+              try {
+                await policyOperationHooks!.prePutClientGroupMember!(clientGroupMember);
+              } catch(e, s) {
+                logger.severe('prePutClientGroupMember hook failed', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putClientGroupMember(clientGroupMember);
             if(!success) {
               message = 'Failed to store client group member: '
                 'clientId=${clientGroupMember.clientId} '
                 'clientGroupId=${clientGroupMember.clientGroupId}';
               break;
+            }
+            // Call post-hook if provided
+            if(policyOperationHooks?.postPutClientGroupMember != null) {
+              try {
+                await policyOperationHooks!.postPutClientGroupMember!(clientGroupMember);
+              } catch(e, s) {
+                logger.severe('postPutClientGroupMember hook failed for client group member ${clientGroupMember.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['clientGroupMemberId'] = clientGroupMember.id!; // clientGroupMember.id is non-null after putClientGroupMember
@@ -263,10 +311,29 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
+            // Call pre-hook if provided
+            if(policyOperationHooks?.prePutDaemon != null) {
+              try {
+                await policyOperationHooks!.prePutDaemon!(daemon);
+              } catch(e, s) {
+                logger.severe('prePutDaemon hook failed for daemon ${daemon.atSign}', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putDaemon(daemon);
             if(!success) {
               message = 'Failed to store daemon with atSign: ${daemon.atSign}';
               break;
+            }
+            // Call post-hook if provided
+            if(policyOperationHooks?.postPutDaemon != null) {
+              try {
+                await policyOperationHooks!.postPutDaemon!(daemon);
+              } catch(e, s) {
+                logger.severe('postPutDaemon hook failed for daemon ${daemon.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['daemonId'] = daemon.id!; // daemon.id is non-null after putDaemon
@@ -275,12 +342,31 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
+            // Call pre-hook if provided
+            if(policyOperationHooks?.prePutService != null) {
+              try {
+                await policyOperationHooks!.prePutService!(service);
+              } catch(e, s) {
+                logger.severe('prePutService hook failed for service', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putService(service);
             if(!success) {
               message = 'Failed to store service: '
                 'deviceName=${service.deviceName} '
                 'daemonId=${service.daemonId}';
               break;
+            }
+            // Call post-hook if provided
+            if(policyOperationHooks?.postPutService != null) {
+              try {
+                await policyOperationHooks!.postPutService!(service);
+              } catch(e, s) {
+                logger.severe('postPutService hook failed for service ${service.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['serviceId'] = service.id!; // service.id is non-null after putService
@@ -289,6 +375,17 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
+            // Call pre-hook if provided
+            if(policyOperationHooks?.prePutServiceACL != null) {
+              try {
+                await policyOperationHooks!.prePutServiceACL!(serviceACL);
+              } catch(e, s) {
+                logger.severe('prePutServiceACL hook failed for service ACL', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = policyCache.putServiceACL(serviceACL);
             if(!success) {
               message = 'Failed to store service ACL: '
@@ -296,6 +393,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
                 'clientGroupId=${serviceACL.clientGroupId} '
                 'permitOpen=${serviceACL.permitOpen}';
               break;
+            }
+            // Call post-hook if provided
+            if(policyOperationHooks?.postPutServiceACL != null) {
+              try {
+                await policyOperationHooks!.postPutServiceACL!(serviceACL);
+              } catch(e, s) {
+                logger.severe('postPutServiceACL hook failed for service ACL ${serviceACL.id}', e, s);
+              }
             }
             responsePayload['success'] = success;
             responsePayload['serviceACLId'] = serviceACL.id!; // serviceACL.id is non-null after putServiceACL

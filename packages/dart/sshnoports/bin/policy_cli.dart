@@ -29,7 +29,7 @@ Future<void> main(List<String> args) async {
     atClient: atClient,
     serverAtsign: policyCLIParams.policyAtSign,
     baseNameSpace: policyCLIParams.baseNamespace,
-    domainNameSpace: policyCLIParams.domainNamespace,
+    domainNameSpace: 'policy_v2',
   );
 
   final PolicyClient policyClient = 
@@ -119,9 +119,9 @@ Future<void> main(List<String> args) async {
         print('Invalid client atSign: $clientAtSign');
         break;
       }
-      final String clientId = await policyClient.putClient(
-        name: clientName,
-        atSign: clientAtSign);
+      final String clientId = await policyClient.putClient(Client(
+          name: clientName,
+          atSign: clientAtSign));
       print('Put client with generated id: $clientId');
       // final Set<Client> allClients = await policyClient.getAllClients();
       // print('Obtained ${allClients.length} clients:');
@@ -146,8 +146,8 @@ Future<void> main(List<String> args) async {
         print('Cancelled creation of ClientGroup');
         break;
       }
-      final String clientGroupId = await policyClient.putClientGroup(
-        name: clientGroupName);
+      final String clientGroupId = await policyClient.putClientGroup(ClientGroup(
+        name: clientGroupName));
       print('Put client group with generated id: $clientGroupId');
       break;
     }
@@ -173,9 +173,9 @@ Future<void> main(List<String> args) async {
         print('Cancelled creation of ClientGroupMember');
         break;
       }
-      final String clientGroupMemberId = await policyClient.putClientGroupMember(
+      final String clientGroupMemberId = await policyClient.putClientGroupMember(ClientGroupMember(
         clientGroupId: clientGroupId,
-        clientId: clientId);
+        clientId: clientId));
       print('Put client group member with generated id: $clientGroupMemberId');
       break;
     }
@@ -194,8 +194,8 @@ Future<void> main(List<String> args) async {
         print('Cancelled creation of Daemon');
         break;
       }
-      final String daemonId = await policyClient.putDaemon(
-        atSign: daemonAtSign);
+      final String daemonId = await policyClient.putDaemon(Daemon(
+        atSign: daemonAtSign));
       print('Put daemon with generated id: $daemonId');
       break;
     }
@@ -234,10 +234,10 @@ Future<void> main(List<String> args) async {
         print('Cancelled creation of Service');
         break;
       }
-      final String serviceId = await policyClient.putService(
+      final String serviceId = await policyClient.putService(Service(
         daemonId: daemonId,
         deviceName: deviceName,
-        deviceGroupName: deviceGroupName);
+        deviceGroupName: deviceGroupName));
       print('Put service with generated id: $serviceId');
       break;
     }
@@ -270,10 +270,10 @@ Future<void> main(List<String> args) async {
         print('Cancelled creation of ServiceACL');
         break;
       }
-      final String serviceACLId = await policyClient.putServiceACL(
+      final String serviceACLId = await policyClient.putServiceACL(ServiceACL(
         serviceId: serviceId,
         clientGroupId: clientGroupId,
-        permitOpen: permitOpen);
+        permitOpen: permitOpen));
       print('Put service ACL with generated id: $serviceACLId');
       break;
     }
