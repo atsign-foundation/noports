@@ -6,4 +6,4 @@ export 'src/admin/v2/policy_client.dart';
 export 'src/admin/v2/policy_data_operation.dart';
 export 'src/admin/v2/policy_service.dart';
 export 'src/admin/v2/policy_cli_params.dart';
-export 'src/admin/v2/policy_operation_hooks.dart';
+export 'src/admin/v2/policy_data_operation_hooks.dart';

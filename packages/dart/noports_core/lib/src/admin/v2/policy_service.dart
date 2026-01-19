@@ -4,7 +4,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/admin_v2.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/src/admin/v2/policy_operation_hooks.dart';
+import 'package:noports_core/src/admin/v2/policy_data_operation_hooks.dart';
 
 
 class PolicyRequestHandler implements NPARequestHandler {
