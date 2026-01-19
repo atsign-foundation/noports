@@ -21,7 +21,7 @@ void main() {
   late ActivateParams params;
   late Activate activate;
 
-  const testAtsign = '@test';
+  final testAtsign = '@test'.toAtsign();
   const testCramSecret = 'test_cram_secret';
   const testDeviceName = 'test_device';
   const testOtp = '123456';
