@@ -321,42 +321,144 @@ Future<void> _populatePolicyCacheFromAtServer({
     useRemoteAtServer: true,
     regex: clientRegex,
   );
-  logger.info('Found ${clientAtKeys.length} Client atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int clientsLoaded = 0;
+  for (final AtKey atKey in clientAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for Client atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> clientJson = jsonDecode(atValue.value);
+      final admin_v2.Client client = admin_v2.Client.fromJson(clientJson);
+      policyCache.putClient(client);
+      logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
+      clientsLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading Client from atKey ${atKey.toString()}: $e', e, s);
+    }
+  }
+  logger.info('Loaded $clientsLoaded/${clientAtKeys.length} Clients into cache');
 
   final List<AtKey> clientGroupAtKeys = await atClient.getAtKeys(
     sharedBy: atClient.getCurrentAtSign(),
     useRemoteAtServer: true,
     regex: clientGroupRegex,
   );
-  logger.info('Found ${clientGroupAtKeys.length} ClientGroup atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int clientGroupsLoaded = 0;
+  for (final AtKey atKey in clientGroupAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for ClientGroup atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> clientGroupJson = jsonDecode(atValue.value);
+      final admin_v2.ClientGroup clientGroup = admin_v2.ClientGroup.fromJson(clientGroupJson);
+      policyCache.putClientGroup(clientGroup);
+      logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
+      clientGroupsLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading ClientGroup from atKey ${atKey.toString()}', e, s);
+    }
+  }
+  logger.info('Loaded $clientGroupsLoaded/${clientGroupAtKeys.length} ClientGroups into cache');
 
   final List<AtKey> clientGroupMemberAtKeys = await atClient.getAtKeys(
     sharedBy: atClient.getCurrentAtSign(),
     useRemoteAtServer: true,
     regex: clientGroupMemberRegex,
   );
-  logger.info('Found ${clientGroupMemberAtKeys.length} ClientGroupMember atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int clientGroupMembersLoaded = 0;
+  for (final AtKey atKey in clientGroupMemberAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for ClientGroupMember atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> clientGroupMemberJson = jsonDecode(atValue.value);
+      final admin_v2.ClientGroupMember clientGroupMember = admin_v2.ClientGroupMember.fromJson(clientGroupMemberJson);
+      policyCache.putClientGroupMember(clientGroupMember);
+      logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
+      clientGroupMembersLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading ClientGroupMember from atKey ${atKey.toString()}', e, s);
+    }
+  }
+  logger.info('Loaded $clientGroupMembersLoaded/${clientGroupMemberAtKeys.length} ClientGroupMembers into cache');
 
   final List<AtKey> daemonAtKeys = await atClient.getAtKeys(
     sharedBy: atClient.getCurrentAtSign(),
     useRemoteAtServer: true,
     regex: daemonRegex,
   );
-  logger.info('Found ${daemonAtKeys.length} Daemon atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int daemonsLoaded = 0;
+  for (final AtKey atKey in daemonAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for Daemon atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> daemonJson = jsonDecode(atValue.value);
+      final admin_v2.Daemon daemon = admin_v2.Daemon.fromJson(daemonJson);
+      policyCache.putDaemon(daemon);
+      logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
+      daemonsLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading Daemon from atKey ${atKey.toString()}', e, s);
+    }
+  }
+  logger.info('Loaded $daemonsLoaded/${daemonAtKeys.length} Daemons into cache');
 
   final List<AtKey> serviceAtKeys = await atClient.getAtKeys(
     sharedBy: atClient.getCurrentAtSign(),
     useRemoteAtServer: true,
     regex: serviceRegex,
   );
-  logger.info('Found ${serviceAtKeys.length} Service atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int servicesLoaded = 0;
+  for (final AtKey atKey in serviceAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for Service atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> serviceJson = jsonDecode(atValue.value);
+      final admin_v2.Service service = admin_v2.Service.fromJson(serviceJson);
+      policyCache.putService(service);
+      logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
+      servicesLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading Service from atKey ${atKey.toString()}', e, s);
+    }
+  }
+  logger.info('Loaded $servicesLoaded/${serviceAtKeys.length} Services into cache');
 
   final List<AtKey> serviceACLAtKeys = await atClient.getAtKeys(
     sharedBy: atClient.getCurrentAtSign(),
     useRemoteAtServer: true,
     regex: serviceACLRegex,
   );
-  logger.info('Found ${serviceACLAtKeys.length} ServiceACL atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+  int serviceACLsLoaded = 0;
+  for (final AtKey atKey in serviceACLAtKeys) {
+    try {
+      final AtValue atValue = await atClient.get(atKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+      if (atValue.value == null) {
+        logger.warning('Failed to fetch value for ServiceACL atKey: ${atKey.toString()}');
+        continue;
+      }
+      final Map<String, dynamic> serviceACLJson = jsonDecode(atValue.value);
+      final admin_v2.ServiceACL serviceACL = admin_v2.ServiceACL.fromJson(serviceACLJson);
+      policyCache.putServiceACL(serviceACL);
+      logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
+      serviceACLsLoaded++;
+    } catch (e, s) {
+      logger.severe('Error loading ServiceACL from atKey ${atKey.toString()}', e, s);
+    }
+  }
+  logger.info('Loaded $serviceACLsLoaded/${serviceACLAtKeys.length} ServiceACLs into cache');
 }
 
 admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
@@ -365,11 +467,11 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   final String baseNamespace = admin_v2.PolicyCLIParamsDefaults.baseNamespace, // e.g 'sshnp'
 }) {
   admin_v2.PolicyOperationHooks policyOperationHooks = admin_v2.PolicyOperationHooks();
-  
+
   policyOperationHooks.prePutClient = (admin_v2.Client client) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${client.id}' // e.g. '1'
+        ..key = '${client.id}' // e.g. '1' (assigned before pre-hook is called)
         ..namespace = 'client.$domainNamespace.$baseNamespace' // client.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(client.toJson()),
@@ -383,7 +485,7 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   policyOperationHooks.prePutClientGroup = (admin_v2.ClientGroup clientGroup) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${clientGroup.id}' // e.g. '1'
+        ..key = '${clientGroup.id}' // e.g. '1' (assigned before pre-hook is called)
         ..namespace = 'client_group.$domainNamespace.$baseNamespace' // client_group.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(clientGroup.toJson()),
@@ -397,7 +499,7 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   policyOperationHooks.prePutClientGroupMember = (admin_v2.ClientGroupMember clientGroupMember) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${clientGroupMember.clientId}_${clientGroupMember.clientGroupId}' // e.g. '1_1'
+        ..key = '${clientGroupMember.clientId}_${clientGroupMember.clientGroupId}' // e.g. '1'
         ..namespace = 'client_group_member.$domainNamespace.$baseNamespace' // client_group_member.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(clientGroupMember.toJson()),
@@ -411,7 +513,7 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   policyOperationHooks.prePutDaemon = (admin_v2.Daemon daemon) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${daemon.id}' // e.g. '1'
+        ..key = '${daemon.id}' // e.g. '1' (assigned before pre-hook is called)
         ..namespace = 'daemon.$domainNamespace.$baseNamespace' // daemon.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(daemon.toJson()),
@@ -425,7 +527,7 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   policyOperationHooks.prePutService = (admin_v2.Service service) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${service.id}' // e.g. '1'
+        ..key = '${service.id}' // e.g. '1' (assigned before pre-hook is called)
         ..namespace = 'service.$domainNamespace.$baseNamespace' // service.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(service.toJson()),
@@ -439,7 +541,7 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
   policyOperationHooks.prePutServiceACL = (admin_v2.ServiceACL serviceACL) async {
     final bool success = await atClient.put(
       AtKey()
-        ..key = '${serviceACL.serviceId}_${serviceACL.clientGroupId}' // e.g. '1_1'
+        ..key = '${serviceACL.serviceId}_${serviceACL.clientGroupId}' // e.g. '1'
         ..namespace = 'service_acl.$domainNamespace.$baseNamespace' // service_acl.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
       jsonEncode(serviceACL.toJson()),

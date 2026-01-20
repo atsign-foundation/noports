@@ -152,30 +152,78 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '9': { // putClientGroupMember
-      print('Enter client group id:\n');
-      final String? clientGroupId = stdin.readLineSync();
-      if(clientGroupId == null || clientGroupId.isEmpty) {
-        print('Invalid client group id: $clientGroupId');
+      // Fetch and display available clients
+      print('Fetching available clients...');
+      final Set<Client> allClients = await policyClient.getAllClients();
+      if(allClients.isEmpty) {
+        print('No clients found. Please create a client first (option 7).');
         break;
       }
-      print('Enter client id:\n');
-      final String? clientId = stdin.readLineSync();
-      if(clientId == null || clientId.isEmpty) {
-        print('Invalid client id: $clientId');
+      print('\nAvailable Clients:');
+      final List<Client> clientsList = allClients.toList();
+      for(int i = 0; i < clientsList.length; i++) {
+        final Client client = clientsList[i];
+        print('  [${i}] id: ${client.id} | name: ${client.name} | atSign: ${client.atSign}');
+      }
+
+      print('\nEnter client index or id:');
+      final String? clientInput = stdin.readLineSync();
+      if(clientInput == null || clientInput.isEmpty) {
+        print('Invalid client input: $clientInput');
         break;
       }
-      print('Confirm creation of ClientGroupMember:');
-      print('ClientGroupMember.clientGroupId: $clientGroupId');
-      print('ClientGroupMember.clientId: $clientId');
-      print('Enter \'y\' to confirm, any other key to cancel:\n');
+
+      // Try to parse as index first, then as direct id
+      String? clientId;
+      final int? clientIndex = int.tryParse(clientInput);
+      if(clientIndex != null && clientIndex >= 0 && clientIndex < clientsList.length) {
+        clientId = clientsList[clientIndex].id;
+      } else {
+        clientId = clientInput;
+      }
+
+      // Fetch and display available client groups
+      print('\nFetching available client groups...');
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      if(allClientGroups.isEmpty) {
+        print('No client groups found. Please create a client group first (option 8).');
+        break;
+      }
+      print('\nAvailable Client Groups:');
+      final List<ClientGroup> clientGroupsList = allClientGroups.toList();
+      for(int i = 0; i < clientGroupsList.length; i++) {
+        final ClientGroup clientGroup = clientGroupsList[i];
+        print('  [${i}] id: ${clientGroup.id} | name: ${clientGroup.name}');
+      }
+
+      print('\nEnter client group index or id:');
+      final String? clientGroupInput = stdin.readLineSync();
+      if(clientGroupInput == null || clientGroupInput.isEmpty) {
+        print('Invalid client group input: $clientGroupInput');
+        break;
+      }
+
+      // Try to parse as index first, then as direct id
+      String? clientGroupId;
+      final int? clientGroupIndex = int.tryParse(clientGroupInput);
+      if(clientGroupIndex != null && clientGroupIndex >= 0 && clientGroupIndex < clientGroupsList.length) {
+        clientGroupId = clientGroupsList[clientGroupIndex].id;
+      } else {
+        clientGroupId = clientGroupInput;
+      }
+
+      print('\nConfirm creation of ClientGroupMember:');
+      print('  ClientGroupMember.clientId: $clientId');
+      print('  ClientGroupMember.clientGroupId: $clientGroupId');
+      print('Enter \'y\' to confirm, any other key to cancel:');
       final String? confirm = stdin.readLineSync();
       if(confirm == null || confirm.toLowerCase() != 'y') {
         print('Cancelled creation of ClientGroupMember');
         break;
       }
       final String clientGroupMemberId = await policyClient.putClientGroupMember(ClientGroupMember(
-        clientGroupId: clientGroupId,
-        clientId: clientId));
+        clientGroupId: clientGroupId!,
+        clientId: clientId!));
       print('Put client group member with generated id: $clientGroupMemberId');
       break;
     }
@@ -200,13 +248,37 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '11': { // putService
-      print('Enter daemon id:\n');
-      final String? daemonId = stdin.readLineSync();
-      if(daemonId == null || daemonId.isEmpty) {
-        print('Invalid daemon id: $daemonId');
+      // Fetch and display available daemons
+      print('Fetching available daemons...');
+      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      if(allDaemons.isEmpty) {
+        print('No daemons found. Please create a daemon first (option 10).');
         break;
       }
-      print('Enter device name (press Enter to default to "default"):\n');
+      print('\nAvailable Daemons:');
+      final List<Daemon> daemonsList = allDaemons.toList();
+      for(int i = 0; i < daemonsList.length; i++) {
+        final Daemon daemon = daemonsList[i];
+        print('  [${i}] id: ${daemon.id} | atSign: ${daemon.atSign}');
+      }
+
+      print('\nEnter daemon index or id:');
+      final String? daemonInput = stdin.readLineSync();
+      if(daemonInput == null || daemonInput.isEmpty) {
+        print('Invalid daemon input: $daemonInput');
+        break;
+      }
+
+      // Try to parse as index first, then as direct id
+      String? daemonId;
+      final int? daemonIndex = int.tryParse(daemonInput);
+      if(daemonIndex != null && daemonIndex >= 0 && daemonIndex < daemonsList.length) {
+        daemonId = daemonsList[daemonIndex].id;
+      } else {
+        daemonId = daemonInput;
+      }
+
+      print('\nEnter device name (press Enter to default to "default"):');
       String? deviceName = stdin.readLineSync();
       if(deviceName == null) {
         print('Invalid device name: $deviceName');
@@ -215,7 +287,8 @@ Future<void> main(List<String> args) async {
       if(deviceName.isEmpty) {
         deviceName = 'default';
       }
-      print('Enter device group name (press Enter to default to "__none__"):\n');
+
+      print('Enter device group name (press Enter to default to "__none__"):');
       String? deviceGroupName = stdin.readLineSync();
       if(deviceGroupName == null) {
         print('Invalid device group name: $deviceGroupName');
@@ -224,55 +297,105 @@ Future<void> main(List<String> args) async {
       if(deviceGroupName.isEmpty) {
         deviceGroupName = '__none__';
       }
-      print('Confirm creation of Service:');
-      print('Service.daemonId: $daemonId');
-      print('Service.deviceName: $deviceName');
-      print('Service.deviceGroupName: $deviceGroupName');
-      print('Enter \'y\' to confirm, any other key to cancel:\n');
+
+      print('\nConfirm creation of Service:');
+      print('  Service.daemonId: $daemonId');
+      print('  Service.deviceName: $deviceName');
+      print('  Service.deviceGroupName: $deviceGroupName');
+      print('Enter \'y\' to confirm, any other key to cancel:');
       final String? confirm = stdin.readLineSync();
       if(confirm == null || confirm.toLowerCase() != 'y') {
         print('Cancelled creation of Service');
         break;
       }
       final String serviceId = await policyClient.putService(Service(
-        daemonId: daemonId,
+        daemonId: daemonId!,
         deviceName: deviceName,
         deviceGroupName: deviceGroupName));
       print('Put service with generated id: $serviceId');
       break;
     }
     case '12': { // putServiceACL
-      print('Enter service id:\n');
-      final String? serviceId = stdin.readLineSync(); 
-      if(serviceId == null || serviceId.isEmpty) {
-        print('Invalid service id: $serviceId');
+      // Fetch and display available services
+      print('Fetching available services...');
+      final Set<Service> allServices = await policyClient.getAllServices();
+      if(allServices.isEmpty) {
+        print('No services found. Please create a service first (option 11).');
         break;
       }
-      print('Enter client group id:\n');
-      final String? clientGroupId = stdin.readLineSync();
-      if(clientGroupId == null || clientGroupId.isEmpty) {
-        print('Invalid client group id: $clientGroupId');
+      print('\nAvailable Services:');
+      final List<Service> servicesList = allServices.toList();
+      for(int i = 0; i < servicesList.length; i++) {
+        final Service service = servicesList[i];
+        print('  [${i}] id: ${service.id} | daemonId: ${service.daemonId} | deviceName: ${service.deviceName} | deviceGroupName: ${service.deviceGroupName}');
+      }
+
+      print('\nEnter service index or id:');
+      final String? serviceInput = stdin.readLineSync();
+      if(serviceInput == null || serviceInput.isEmpty) {
+        print('Invalid service input: $serviceInput');
         break;
       }
-      print('Enter permit open (e.g. "localhost:22"):\n');
+
+      // Try to parse as index first, then as direct id
+      String? serviceId;
+      final int? serviceIndex = int.tryParse(serviceInput);
+      if(serviceIndex != null && serviceIndex >= 0 && serviceIndex < servicesList.length) {
+        serviceId = servicesList[serviceIndex].id;
+      } else {
+        serviceId = serviceInput;
+      }
+
+      // Fetch and display available client groups
+      print('\nFetching available client groups...');
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      if(allClientGroups.isEmpty) {
+        print('No client groups found. Please create a client group first (option 8).');
+        break;
+      }
+      print('\nAvailable Client Groups:');
+      final List<ClientGroup> clientGroupsList = allClientGroups.toList();
+      for(int i = 0; i < clientGroupsList.length; i++) {
+        final ClientGroup clientGroup = clientGroupsList[i];
+        print('  [${i}] id: ${clientGroup.id} | name: ${clientGroup.name}');
+      }
+
+      print('\nEnter client group index or id:');
+      final String? clientGroupInput = stdin.readLineSync();
+      if(clientGroupInput == null || clientGroupInput.isEmpty) {
+        print('Invalid client group input: $clientGroupInput');
+        break;
+      }
+
+      // Try to parse as index first, then as direct id
+      String? clientGroupId;
+      final int? clientGroupIndex = int.tryParse(clientGroupInput);
+      if(clientGroupIndex != null && clientGroupIndex >= 0 && clientGroupIndex < clientGroupsList.length) {
+        clientGroupId = clientGroupsList[clientGroupIndex].id;
+      } else {
+        clientGroupId = clientGroupInput;
+      }
+
+      print('\nEnter permit open (e.g. "localhost:22"):');
       final String? permitOpen = stdin.readLineSync();
       if(permitOpen == null || permitOpen.isEmpty) {
         print('Invalid permit open: $permitOpen');
         break;
       }
-      print('Confirm creation of ServiceACL:');
-      print('ServiceACL.serviceId: $serviceId');
-      print('ServiceACL.clientGroupId: $clientGroupId');
-      print('ServiceACL.permitOpen: $permitOpen');
-      print('Enter \'y\' to confirm, any other key to cancel:\n');
+
+      print('\nConfirm creation of ServiceACL:');
+      print('  ServiceACL.serviceId: $serviceId');
+      print('  ServiceACL.clientGroupId: $clientGroupId');
+      print('  ServiceACL.permitOpen: $permitOpen');
+      print('Enter \'y\' to confirm, any other key to cancel:');
       final String? confirm = stdin.readLineSync();
       if(confirm == null || confirm.toLowerCase() != 'y') {
         print('Cancelled creation of ServiceACL');
         break;
       }
       final String serviceACLId = await policyClient.putServiceACL(ServiceACL(
-        serviceId: serviceId,
-        clientGroupId: clientGroupId,
+        serviceId: serviceId!,
+        clientGroupId: clientGroupId!,
         permitOpen: permitOpen));
       print('Put service ACL with generated id: $serviceACLId');
       break;

@@ -123,6 +123,20 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
     rpcListener.start();
   }
 
+  String _generateId(Set<PolicyEntry> entities) {
+    int maxId = 0;
+    for(final PolicyEntry entry in entities) {
+      if(entry.id == null) {
+        continue;
+      }
+      final int entryId = int.tryParse(entry.id!) ?? 0;
+      if(entryId > maxId) {
+        maxId = entryId;
+      }
+    }
+    return (maxId + 1).toString();
+  }
+
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
     final int reqId = request.reqId;
@@ -218,6 +232,8 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
         switch(target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            client.id ??= _generateId(policyCache.clients);
             if(policyOperationHooks?.prePutClient != null) {
               try {
                 await policyOperationHooks!.prePutClient!(client);
@@ -242,12 +258,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['clientId'] = client.id!; // client.id is non-null after putClient
+            responsePayload['clientId'] = client.id!; // client.id is non-null after ID generation
             message = 'Client stored successfully.';
             break;
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            clientGroup.id ??= _generateId(policyCache.clientGroups);
             // Call pre-hook if provided
             if(policyOperationHooks?.prePutClientGroup != null) {
               try {
@@ -273,12 +291,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupId'] = clientGroup.id!; // clientGroup.id is non-null after putClientGroup
+            responsePayload['clientGroupId'] = clientGroup.id!; // clientGroup.id is non-null after ID generation
             message = 'Client group stored successfully.';
             break;
           }
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            clientGroupMember.id ??= _generateId(policyCache.clientGroupMembers);
             // Call pre-hook if provided
             if(policyOperationHooks?.prePutClientGroupMember != null) {
               try {
@@ -306,12 +326,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['clientGroupMemberId'] = clientGroupMember.id!; // clientGroupMember.id is non-null after putClientGroupMember
+            responsePayload['clientGroupMemberId'] = clientGroupMember.id!; // clientGroupMember.id is non-null after ID generation
             message = 'Client group member stored successfully.';
             break;
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            daemon.id ??= _generateId(policyCache.daemons);
             // Call pre-hook if provided
             if(policyOperationHooks?.prePutDaemon != null) {
               try {
@@ -337,12 +359,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['daemonId'] = daemon.id!; // daemon.id is non-null after putDaemon
+            responsePayload['daemonId'] = daemon.id!; // daemon.id is non-null after ID generation
             message = 'Daemon stored successfully.';
             break;
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            service.id ??= _generateId(policyCache.services);
             // Call pre-hook if provided
             if(policyOperationHooks?.prePutService != null) {
               try {
@@ -370,12 +394,14 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['serviceId'] = service.id!; // service.id is non-null after putService
+            responsePayload['serviceId'] = service.id!; // service.id is non-null after ID generation
             message = 'Service stored successfully.';
             break;
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
+            // Generate ID before calling pre-hook
+            serviceACL.id ??= _generateId(policyCache.serviceACLs);
             // Call pre-hook if provided
             if(policyOperationHooks?.prePutServiceACL != null) {
               try {
@@ -404,7 +430,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
               }
             }
             responsePayload['success'] = success;
-            responsePayload['serviceACLId'] = serviceACL.id!; // serviceACL.id is non-null after putServiceACL
+            responsePayload['serviceACLId'] = serviceACL.id!; // serviceACL.id is non-null after ID generation
             message = 'Service ACL stored successfully.';
             break;
           }
