@@ -56,6 +56,13 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     _getPinCode();
   }
 
+  @override
+  void dispose() {
+    pinFocusNode.dispose();
+    pinController.dispose();
+    super.dispose();
+  }
+
   final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
   @override
@@ -208,6 +215,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               setState(() {
                 pinController =
                     TextEditingController(); // controller was disposed, make a new one
+                pinFocusNode =
+                    FocusNode(); // focus node was disposed, make a new one
                 status = ActivationStatus.otpWait;
               });
               return;

@@ -1,6 +1,7 @@
 ## 1.8.1+26
 
 - FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.
+- FIX: Properly dispose of pin controller and focus node in ActivateAtsignDialog.
 
 ## 1.8.0+25
 
