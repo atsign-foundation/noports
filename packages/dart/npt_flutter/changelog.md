@@ -1,3 +1,7 @@
+## 1.8.1+26
+
+- FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.
+
 ## 1.8.0+25
 
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
