@@ -56,13 +56,6 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     _getPinCode();
   }
 
-  @override
-  void dispose() {
-    pinFocusNode.dispose();
-    pinController.dispose();
-    super.dispose();
-  }
-
   final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
   @override
@@ -177,6 +170,10 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     key: const Key("NoPortsActivateCancelButton"),
     child: Text(strings.cancel),
     onPressed: () {
+      // Unfocus the field before closing the dialog
+      if (pinFocusNode.hasFocus) {
+        pinFocusNode.unfocus();
+      }
       Navigator.of(context).pop(AtOnboardingResult.cancelled());
     },
   );
