@@ -117,36 +117,29 @@ void main(List<String> args) async {
 
     await sshnpa.run();
   } else if(p.policyVersion == 'v2') {
-    final admin_v2.PolicyService policyService = admin_v2.PolicyService(atClient: atClient);
-    await policyService.init(homeDirectory: p.homeDirectory); 
 
-    final admin_v2.Client client1 = admin_v2.Client(id: '1', name: 'Jeremy', atSign: '@jeremy');
-    final admin_v2.Client client2 = admin_v2.Client(id: '2', name: 'Xavier', atSign: '@xavier');
-    final admin_v2.Client client3 = admin_v2.Client(id: '3', name: 'Daria', atSign: '@daria');
+    final admin_v2.PolicyCache policyCache = admin_v2.PolicyCache();
+
+    // 1. Import default policyCache data
+    await _populatePolicyCacheFromAtServer(
+      policyCache: policyCache,
+      atClient: atClient,
+      domainNamespace: 'policy_v2', // TODO: make this a const somewhere
+      baseNamespace: DefaultArgs.namespace,
+      );
+
     
-    final admin_v2.ClientGroup clientGroup1 = admin_v2.ClientGroup(id: '1', name: 'Engineers');
-    final admin_v2.ClientGroup clientGroup2 = admin_v2.ClientGroup(id: '2', name: 'Marketing');
+    final admin_v2.PolicyService policyService = admin_v2.PolicyService(
+      policyOperationHooks: generatePolicyOperationHooks(
+        atClient: atClient,
+        domainNamespace: 'policy_v2', // TODO: make this a const somewhere
+        baseNamespace: DefaultArgs.namespace,
+        ),
+      atClient: atClient,
+      allowList: p.allowList.split(',').toSet(),
+      policyCache: policyCache,
+      );
 
-    final admin_v2.ClientGroupMember clientGroupMember1 = admin_v2.ClientGroupMember(id: '1', clientId: client1.id, clientGroupId: clientGroup1.id);
-    final admin_v2.ClientGroupMember clientGroupMember2 = admin_v2.ClientGroupMember(id: '2', clientId: client2.id, clientGroupId: clientGroup1.id);
-    final admin_v2.ClientGroupMember clientGroupMember3 = admin_v2.ClientGroupMember(id: '3', clientId: client3.id, clientGroupId: clientGroup2.id);
-
-    final admin_v2.Daemon daemon1 = admin_v2.Daemon(id: '1', atSign: '@daemon');
-
-    final admin_v2.Service service1 = admin_v2.Service(id: '1', daemonId: daemon1.id, deviceName: 'default', deviceGroupName: '__none__');
-
-    final admin_v2.ServiceACL serviceACL1 = admin_v2.ServiceACL(id: '1', serviceId: service1.id, clientGroupId: clientGroup1.id, permitOpen: 'localhost:22');
-    policyService.cache.putClient(client1);
-    policyService.cache.putClient(client2);
-    policyService.cache.putClient(client3);
-    policyService.cache.putClientGroup(clientGroup1);
-    policyService.cache.putClientGroup(clientGroup2);
-    policyService.cache.putClientGroupMember(clientGroupMember1);
-    policyService.cache.putClientGroupMember(clientGroupMember2);
-    policyService.cache.putClientGroupMember(clientGroupMember3);
-    policyService.cache.putDaemon(daemon1);
-    policyService.cache.putService(service1);
-    policyService.cache.putServiceACL(serviceACL1);
     await policyService.start();
   } else {
     stderr.writeln('Unknown policy version: ${p.policyVersion}');
@@ -289,4 +282,173 @@ class _HeartbeatHelper implements AtRpcCallbacks {
     throw UnimplementedError(
         ':('); // we are only receiving messages, not sending messages.
   }
+}
+
+/// Populate the policy cache by fetching AtKeys from the atServer.
+/// 1) *.client.policy.sshnp --> a client (e.g. "@alice", "Alice")
+/// 2) *.client_group.policy.sshnp --> a client group (e.g. client.id, "Atsign Engineers")
+/// 3) *.client_group_member.policy.sshnp --> maps client to a client group (e.g. client.id, client_group.id)
+/// 4) *.daemon.policy.sshnp --> a daemon (e.g. "@device")
+/// 5) *.service.policy.sshnp --> a device (e.g. daemon.id, "deviceName")
+/// 6) *.service_acl.policy.sshnp --> a service ACL (e.g. service.id, client_group.id, "localhost:22")
+Future<void> _populatePolicyCacheFromAtServer({
+  required admin_v2.PolicyCache policyCache, // policy cache to populate
+  // assuming that this is an authenticated atClient which has AtKeys that we need to go out and fetch.
+  required AtClient atClient, 
+  final String domainNamespace = admin_v2.PolicyCLIParamsDefaults.domainNamespaceV2, // e.g. 'policy_v2'
+  final String baseNamespace = admin_v2.PolicyCLIParamsDefaults.baseNamespace, // e.g. 'sshnp'
+}) async {
+  if(atClient.getCurrentAtSign() == null) {
+    throw Exception('atClient.getCurrentAtSign() is null. '
+      'Be sure to authenticate atClient before passing it into this '
+      'function.');
+  }
+
+  // Helper function to build policy regex patterns
+  String buildPolicyRegex(String entityType) =>
+      r'.*\.' '$entityType' r'\.' '$domainNamespace' r'\.' '$baseNamespace';
+
+  // TODO: make these constans somewhere
+  final String clientRegex = buildPolicyRegex('client');
+  final String clientGroupRegex = buildPolicyRegex('client_group');
+  final String clientGroupMemberRegex = buildPolicyRegex('client_group_member');
+  final String daemonRegex = buildPolicyRegex('daemon');
+  final String serviceRegex = buildPolicyRegex('service');
+  final String serviceACLRegex = buildPolicyRegex('service_acl');
+
+  final List<AtKey> clientAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: clientRegex,
+  );
+  logger.info('Found ${clientAtKeys.length} Client atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+
+  final List<AtKey> clientGroupAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: clientGroupRegex,
+  );
+  logger.info('Found ${clientGroupAtKeys.length} ClientGroup atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+
+  final List<AtKey> clientGroupMemberAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: clientGroupMemberRegex,
+  );
+  logger.info('Found ${clientGroupMemberAtKeys.length} ClientGroupMember atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+
+  final List<AtKey> daemonAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: daemonRegex,
+  );
+  logger.info('Found ${daemonAtKeys.length} Daemon atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+
+  final List<AtKey> serviceAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: serviceRegex,
+  );
+  logger.info('Found ${serviceAtKeys.length} Service atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+
+  final List<AtKey> serviceACLAtKeys = await atClient.getAtKeys(
+    sharedBy: atClient.getCurrentAtSign(),
+    useRemoteAtServer: true,
+    regex: serviceACLRegex,
+  );
+  logger.info('Found ${serviceACLAtKeys.length} ServiceACL atKeys on ${atClient.getCurrentAtSign()}\'s atServer.');
+}
+
+admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
+  required AtClient atClient,
+  final String domainNamespace = admin_v2.PolicyCLIParamsDefaults.domainNamespaceV2, // e.g. 'policy_v2'
+  final String baseNamespace = admin_v2.PolicyCLIParamsDefaults.baseNamespace, // e.g 'sshnp'
+}) {
+  admin_v2.PolicyOperationHooks policyOperationHooks = admin_v2.PolicyOperationHooks();
+  
+  policyOperationHooks.prePutClient = (admin_v2.Client client) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${client.id}' // e.g. '1'
+        ..namespace = 'client.$domainNamespace.$baseNamespace' // client.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(client.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for Client: ${client.toJson()}, success: $success');
+  };
+
+  policyOperationHooks.prePutClientGroup = (admin_v2.ClientGroup clientGroup) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${clientGroup.id}' // e.g. '1'
+        ..namespace = 'client_group.$domainNamespace.$baseNamespace' // client_group.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(clientGroup.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for ClientGroup: ${clientGroup.toJson()}, success: $success');
+  };
+
+  policyOperationHooks.prePutClientGroupMember = (admin_v2.ClientGroupMember clientGroupMember) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${clientGroupMember.clientId}_${clientGroupMember.clientGroupId}' // e.g. '1_1'
+        ..namespace = 'client_group_member.$domainNamespace.$baseNamespace' // client_group_member.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(clientGroupMember.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for ClientGroupMember: ${clientGroupMember.toJson()}, success: $success');
+  };
+
+  policyOperationHooks.prePutDaemon = (admin_v2.Daemon daemon) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${daemon.id}' // e.g. '1'
+        ..namespace = 'daemon.$domainNamespace.$baseNamespace' // daemon.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(daemon.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for Daemon: ${daemon.toJson()}, success: $success');
+  };
+
+  policyOperationHooks.prePutService = (admin_v2.Service service) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${service.id}' // e.g. '1'
+        ..namespace = 'service.$domainNamespace.$baseNamespace' // service.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(service.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for Service: ${service.toJson()}, success: $success');
+  };
+
+  policyOperationHooks.prePutServiceACL = (admin_v2.ServiceACL serviceACL) async {
+    final bool success = await atClient.put(
+      AtKey()
+        ..key = '${serviceACL.serviceId}_${serviceACL.clientGroupId}' // e.g. '1_1'
+        ..namespace = 'service_acl.$domainNamespace.$baseNamespace' // service_acl.policy_v2.sshnp
+        ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
+      jsonEncode(serviceACL.toJson()),
+      putRequestOptions: PutRequestOptions()
+        ..shouldEncrypt = true
+        ..useRemoteAtServer = true,
+    );
+    logger.info('Pre-put hook for ServiceACL: ${serviceACL.toJson()}, success: $success');
+  };
+
+  return policyOperationHooks;
 }

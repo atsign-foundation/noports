@@ -14,6 +14,9 @@ class NPAParams {
   final String? storagePath;
   final String policyVersion;
 
+  final String allowList;
+
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -25,6 +28,7 @@ class NPAParams {
     required this.homeDirectory,
     required this.eventLoggingAtsign,
     required this.policyVersion,
+    required this.allowList,
     this.storagePath,
   });
 
@@ -46,6 +50,7 @@ class NPAParams {
       eventLoggingAtsign: r['event-logging-atsign'],
       policyVersion: r['policy-version'],
       storagePath: r['storage-path'],
+      allowList: r['allow-list'] ?? policyAtsign,
     );
   }
 
@@ -115,6 +120,16 @@ class NPAParams {
       help: 'Path to atsign storage directory. Defaults to "~/.atsign/storage/<atSign>/sshnp/single/". '
           'Running multiple CLI atClient programs with the same storage path is not supported. '
           'An alternate storage directory can be passed through this argument when running multiple instances.',
+    );
+
+    parser.addOption(
+      'allow-list',
+      mandatory: false,
+      help: 'This is a v2 feature. List of atSigns that can send policy data'
+        ' operations (puts/gets) to the policy service API. E.g.'
+        ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'
+        ' e.g. "@alice"'
+
     );
 
     return parser;

@@ -79,12 +79,13 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   late NPA npa; // responds to policy requests
   late AtRpc rpcListener; // policy api (put/get)
 
+  final Set<String> allowList; // set of atSigns who can talk to policy api rpc (put/get policy rules)
+
   PolicyService({
     // mandatroy
     required this.atClient,
     required this.policyCache,
-    required final Set<String> allowList, // set of atSigns who can talk to policy api rpc (put/get policy rules)
-    // non-mandatory with defaults
+    required this.allowList,     // non-mandatory with defaults
     final String domainNamespace = PolicyServiceDefaults.domainNamespace,
     final String baseNamespace = PolicyServiceDefaults.baseNamespace,
     // optional
@@ -111,7 +112,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       callbacks: this,
       isClient: false,
       isServer: true,
-      allowAll: true,
+      allowAll: false, // people not on the allowList should not be allowed to change policy rules
       allowList: allowList, 
       baseNameSpace: baseNamespace,
       domainNameSpace: domainNamespace);
