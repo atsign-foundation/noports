@@ -3,6 +3,7 @@
 - FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.
 - FIX: Properly dispose of pin controller and focus node in ActivateAtsignDialog.
 - FIX: update error handling for invalid OTP in OnboardingApkamDialog.
+- FIX: cursor doesn't jump to the end of the text field unless "@" was auto add to the atsign field.
 
 ## 1.8.0+25
 
