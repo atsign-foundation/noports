@@ -13,9 +13,8 @@ class NPAParams {
   final String? eventLoggingAtsign;
   final String? storagePath;
   final String policyVersion;
-
   final String allowList;
-
+  final String persistenceMethod;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -29,6 +28,7 @@ class NPAParams {
     required this.eventLoggingAtsign,
     required this.policyVersion,
     required this.allowList,
+    required this.persistenceMethod,
     this.storagePath,
   });
 
@@ -51,6 +51,7 @@ class NPAParams {
       policyVersion: r['policy-version'],
       storagePath: r['storage-path'],
       allowList: r['allow-list'] ?? policyAtsign,
+      persistenceMethod: r['persistence-method'], // defaults to 'atserver'
     );
   }
 
@@ -129,7 +130,19 @@ class NPAParams {
         ' operations (puts/gets) to the policy service API. E.g.'
         ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'
         ' e.g. "@alice"'
+    );
 
+    parser.addOption(
+      'persistence-method',
+      mandatory: false,
+      defaultsTo: 'atserver',
+      help: 'This is a v2 feature.'
+        ' Method to use for persistence of policy data. Options are:'
+        ' "atserver" (default), "file" or "none". "atserver" uses the'
+        ' atSign\'s'
+        ' atServer for persistence of policy data. "file" uses local file'
+        ' storage for policy data persistence. "none" means that policy data'
+        ' will not be saved anywhere and will be lost when the service stops.',
     );
 
     return parser;

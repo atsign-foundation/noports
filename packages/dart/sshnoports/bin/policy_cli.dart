@@ -4,6 +4,10 @@ import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/admin_v2.dart';
+import 'package:chalkdart/chalk.dart';
+import 'package:cli_menu/cli_menu.dart';
+
+import 'cli_menu_helper.dart';
 
 late AtSignLogger logger;
 
@@ -37,29 +41,24 @@ Future<void> main(List<String> args) async {
 
 
   while(true) {
-  printMenu();
-  print('Enter option:');
-  final String? option = stdin.readLineSync();
-  if(option == null) {
-      throw Exception('$option is null'); 
-    }
+  final String option = showMenuAndGetSelection();
   switch(option) {
     case '1': { // getAllClients
       final Set<Client> allClients = await policyClient.getAllClients();
-      print('Obtained ${allClients.length} clients:');
+      print(chalk.green('\n✓ Obtained ${allClients.length} clients:'));
       for(int i = 0; i < allClients.length; i++) {
       final Client client = allClients.elementAt(i);
-      print('[$i]: client.name: ${client.name} | client.atSign: ${client.atSign}');
+      print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(client.id ?? 'N/A')} | name: ${client.name} | atSign: ${client.atSign}');
     }
       break;
     }
     case '2': { // getAllClientGroups
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-      print('Obtained ${allClientGroups.length} client groups:');
+      print(chalk.green('\n✓ Obtained ${allClientGroups.length} client groups:'));
       for(int i = 0; i < allClientGroups.length; i++) {
       final ClientGroup clientGroup = allClientGroups.elementAt(i);
-      print('[$i]: clientGroup.id: ${clientGroup.id} | '
-        'clientGroup.name: ${clientGroup.name}');
+      print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(clientGroup.id ?? 'N/A')} | '
+        'name: ${clientGroup.name}');
     }
       break;
     }
@@ -107,301 +106,243 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '7': { // putClient
-      print('Enter client name:\n');
+      stdout.write(chalk.white('\nEnter client name: '));
       final String? clientName = stdin.readLineSync();
       if(clientName == null || clientName.isEmpty) {
-        print('Invalid client name: $clientName');
+        print(chalk.red('Invalid client name: $clientName'));
         break;
       }
-      print('Enter client atSign:\n');
+      stdout.write(chalk.white('Enter client atSign: '));
       final String? clientAtSign = stdin.readLineSync();
       if(clientAtSign == null || clientAtSign.isEmpty) {
-        print('Invalid client atSign: $clientAtSign');
+        print(chalk.red('Invalid client atSign: $clientAtSign'));
         break;
       }
+
+      print(chalk.bold.white('\nConfirm creation of Client:'));
+      print('  ${chalk.cyan('name')}: $clientName');
+      print('  ${chalk.cyan('atSign')}: $clientAtSign');
+
+      final bool confirmed = CliMenuHelper.confirm('Create this Client?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of Client'));
+        break;
+      }
+
       final String clientId = await policyClient.putClient(Client(
           name: clientName,
           atSign: clientAtSign));
-      print('Put client with generated id: $clientId');
-      // final Set<Client> allClients = await policyClient.getAllClients();
-      // print('Obtained ${allClients.length} clients:');
-      // for(int i = 0; i < allClients.length; i++) {
-      //   final Client client = allClients.elementAt(i);
-      //   print('[$i]: client.name: ${client.name} | client.atSign: ${client.atSign}');
-      // }
+      print(chalk.green('✓ Put client with generated id: $clientId'));
       break;
     }
     case '8': { // putClientGroup
-      print('Enter client group name (e.g. "RDP Users"):\n');
+      stdout.write(chalk.white('\nEnter client group name (e.g. "RDP Users"): '));
       final String? clientGroupName = stdin.readLineSync();
       if(clientGroupName == null || clientGroupName.isEmpty) {
-        print('Invalid client group name: $clientGroupName');
+        print(chalk.red('Invalid client group name: $clientGroupName'));
         break;
       }
-      print('Confirm creation of ClientGroup:');
-      print('ClientGroup.name: $clientGroupName');
-      print('Enter \'y\' to confirm, any other key to cancel:\n');
-      final String? confirm = stdin.readLineSync();
-      if(confirm == null || confirm.toLowerCase() != 'y') {
-        print('Cancelled creation of ClientGroup');
+
+      print(chalk.bold.white('\nConfirm creation of ClientGroup:'));
+      print('  ${chalk.cyan('name')}: $clientGroupName');
+
+      final bool confirmed = CliMenuHelper.confirm('Create this ClientGroup?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of ClientGroup'));
         break;
       }
+
       final String clientGroupId = await policyClient.putClientGroup(ClientGroup(
         name: clientGroupName));
-      print('Put client group with generated id: $clientGroupId');
+      print(chalk.green('✓ Put client group with generated id: $clientGroupId'));
       break;
     }
     case '9': { // putClientGroupMember
-      // Fetch and display available clients
-      print('Fetching available clients...');
+      print(chalk.blue('Fetching available clients...'));
       final Set<Client> allClients = await policyClient.getAllClients();
       if(allClients.isEmpty) {
-        print('No clients found. Please create a client first (option 7).');
+        print(chalk.red('No clients found. Please create a client first (option 7).'));
         break;
       }
-      print('\nAvailable Clients:');
+
       final List<Client> clientsList = allClients.toList();
-      for(int i = 0; i < clientsList.length; i++) {
-        final Client client = clientsList[i];
-        print('  [${i}] id: ${client.id} | name: ${client.name} | atSign: ${client.atSign}');
-      }
-
-      print('\nEnter client index or id:');
-      final String? clientInput = stdin.readLineSync();
-      if(clientInput == null || clientInput.isEmpty) {
-        print('Invalid client input: $clientInput');
+      final String? clientId = await CliMenuHelper.selectClientId(clientsList);
+      if(clientId == null || clientId.isEmpty) {
+        print(chalk.yellow('Cancelled client selection'));
         break;
       }
 
-      // Try to parse as index first, then as direct id
-      String? clientId;
-      final int? clientIndex = int.tryParse(clientInput);
-      if(clientIndex != null && clientIndex >= 0 && clientIndex < clientsList.length) {
-        clientId = clientsList[clientIndex].id;
-      } else {
-        clientId = clientInput;
-      }
+      final Client selectedClient = clientsList.firstWhere((c) => c.id == clientId);
 
-      // Fetch and display available client groups
-      print('\nFetching available client groups...');
+      print(chalk.blue('\nFetching available client groups...'));
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
-        print('No client groups found. Please create a client group first (option 8).');
+        print(chalk.red('No client groups found. Please create a client group first (option 8).'));
         break;
       }
-      print('\nAvailable Client Groups:');
+
       final List<ClientGroup> clientGroupsList = allClientGroups.toList();
-      for(int i = 0; i < clientGroupsList.length; i++) {
-        final ClientGroup clientGroup = clientGroupsList[i];
-        print('  [${i}] id: ${clientGroup.id} | name: ${clientGroup.name}');
-      }
-
-      print('\nEnter client group index or id:');
-      final String? clientGroupInput = stdin.readLineSync();
-      if(clientGroupInput == null || clientGroupInput.isEmpty) {
-        print('Invalid client group input: $clientGroupInput');
+      final String? clientGroupId = await CliMenuHelper.selectClientGroupId(clientGroupsList);
+      if(clientGroupId == null || clientGroupId.isEmpty) {
+        print(chalk.yellow('Cancelled client group selection'));
         break;
       }
 
-      // Try to parse as index first, then as direct id
-      String? clientGroupId;
-      final int? clientGroupIndex = int.tryParse(clientGroupInput);
-      if(clientGroupIndex != null && clientGroupIndex >= 0 && clientGroupIndex < clientGroupsList.length) {
-        clientGroupId = clientGroupsList[clientGroupIndex].id;
-      } else {
-        clientGroupId = clientGroupInput;
-      }
+      final ClientGroup selectedClientGroup = clientGroupsList.firstWhere((cg) => cg.id == clientGroupId);
 
-      print('\nConfirm creation of ClientGroupMember:');
-      print('  ClientGroupMember.clientId: $clientId');
-      print('  ClientGroupMember.clientGroupId: $clientGroupId');
-      print('Enter \'y\' to confirm, any other key to cancel:');
-      final String? confirm = stdin.readLineSync();
-      if(confirm == null || confirm.toLowerCase() != 'y') {
-        print('Cancelled creation of ClientGroupMember');
+      print(chalk.bold.white('\nConfirm creation of ClientGroupMember:'));
+      print('  ${chalk.cyan('clientId')}: $clientId (${selectedClient.atSign})');
+      print('  ${chalk.cyan('clientGroupId')}: $clientGroupId (${selectedClientGroup.name})');
+
+      final bool confirmed = CliMenuHelper.confirm('Add ${selectedClient.atSign} to ${selectedClientGroup.name}?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of ClientGroupMember'));
         break;
       }
+
       final String clientGroupMemberId = await policyClient.putClientGroupMember(ClientGroupMember(
-        clientGroupId: clientGroupId!,
-        clientId: clientId!));
-      print('Put client group member with generated id: $clientGroupMemberId');
+        clientGroupId: clientGroupId,
+        clientId: clientId));
+      print(chalk.green('✓ Put client group member with generated id: $clientGroupMemberId'));
       break;
     }
     case '10': { // putDaemon
-      print('Enter daemon atSign:\n');
+      stdout.write(chalk.white('\nEnter daemon atSign: '));
       final String? daemonAtSign = stdin.readLineSync();
       if(daemonAtSign == null || daemonAtSign.isEmpty) {
-        print('Invalid daemon atSign: $daemonAtSign');
+        print(chalk.red('Invalid daemon atSign: $daemonAtSign'));
         break;
       }
-      print('Confirm creation of Daemon:');
-      print('Daemon.atSign: $daemonAtSign');
-      print('Enter \'y\' to confirm, any other key to cancel:\n');
-      final String? confirm = stdin.readLineSync();
-      if(confirm == null || confirm.toLowerCase() != 'y') {
-        print('Cancelled creation of Daemon');
+
+      print(chalk.bold.white('\nConfirm creation of Daemon:'));
+      print('  ${chalk.cyan('atSign')}: $daemonAtSign');
+
+      final bool confirmed = CliMenuHelper.confirm('Create this Daemon?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of Daemon'));
         break;
       }
+
       final String daemonId = await policyClient.putDaemon(Daemon(
         atSign: daemonAtSign));
-      print('Put daemon with generated id: $daemonId');
+      print(chalk.green('✓ Put daemon with generated id: $daemonId'));
       break;
     }
     case '11': { // putService
-      // Fetch and display available daemons
-      print('Fetching available daemons...');
+      print(chalk.blue('Fetching available daemons...'));
       final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
       if(allDaemons.isEmpty) {
-        print('No daemons found. Please create a daemon first (option 10).');
+        print(chalk.red('No daemons found. Please create a daemon first (option 10).'));
         break;
       }
-      print('\nAvailable Daemons:');
+
       final List<Daemon> daemonsList = allDaemons.toList();
-      for(int i = 0; i < daemonsList.length; i++) {
-        final Daemon daemon = daemonsList[i];
-        print('  [${i}] id: ${daemon.id} | atSign: ${daemon.atSign}');
-      }
-
-      print('\nEnter daemon index or id:');
-      final String? daemonInput = stdin.readLineSync();
-      if(daemonInput == null || daemonInput.isEmpty) {
-        print('Invalid daemon input: $daemonInput');
+      final String? daemonId = await CliMenuHelper.selectDaemonId(daemonsList);
+      if(daemonId == null || daemonId.isEmpty) {
+        print(chalk.yellow('Cancelled daemon selection'));
         break;
       }
 
-      // Try to parse as index first, then as direct id
-      String? daemonId;
-      final int? daemonIndex = int.tryParse(daemonInput);
-      if(daemonIndex != null && daemonIndex >= 0 && daemonIndex < daemonsList.length) {
-        daemonId = daemonsList[daemonIndex].id;
-      } else {
-        daemonId = daemonInput;
-      }
+      final Daemon selectedDaemon = daemonsList.firstWhere((d) => d.id == daemonId);
 
-      print('\nEnter device name (press Enter to default to "default"):');
+      stdout.write(chalk.white('\nEnter device name (press Enter to default to "default"): '));
       String? deviceName = stdin.readLineSync();
       if(deviceName == null) {
-        print('Invalid device name: $deviceName');
+        print(chalk.red('Invalid device name: $deviceName'));
         break;
       }
       if(deviceName.isEmpty) {
         deviceName = 'default';
       }
 
-      print('Enter device group name (press Enter to default to "__none__"):');
+      stdout.write(chalk.white('Enter device group name (press Enter to default to "__none__"): '));
       String? deviceGroupName = stdin.readLineSync();
       if(deviceGroupName == null) {
-        print('Invalid device group name: $deviceGroupName');
+        print(chalk.red('Invalid device group name: $deviceGroupName'));
         break;
       }
       if(deviceGroupName.isEmpty) {
         deviceGroupName = '__none__';
       }
 
-      print('\nConfirm creation of Service:');
-      print('  Service.daemonId: $daemonId');
-      print('  Service.deviceName: $deviceName');
-      print('  Service.deviceGroupName: $deviceGroupName');
-      print('Enter \'y\' to confirm, any other key to cancel:');
-      final String? confirm = stdin.readLineSync();
-      if(confirm == null || confirm.toLowerCase() != 'y') {
-        print('Cancelled creation of Service');
+      print(chalk.bold.white('\nConfirm creation of Service:'));
+      print('  ${chalk.cyan('daemonId')}: $daemonId (${selectedDaemon.atSign})');
+      print('  ${chalk.cyan('deviceName')}: $deviceName');
+      print('  ${chalk.cyan('deviceGroupName')}: $deviceGroupName');
+
+      final bool confirmed = CliMenuHelper.confirm('Create this Service?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of Service'));
         break;
       }
+
       final String serviceId = await policyClient.putService(Service(
-        daemonId: daemonId!,
+        daemonId: daemonId,
         deviceName: deviceName,
         deviceGroupName: deviceGroupName));
-      print('Put service with generated id: $serviceId');
+      print(chalk.green('✓ Put service with generated id: $serviceId'));
       break;
     }
     case '12': { // putServiceACL
-      // Fetch and display available services
-      print('Fetching available services...');
+      print(chalk.blue('Fetching available services...'));
       final Set<Service> allServices = await policyClient.getAllServices();
       if(allServices.isEmpty) {
-        print('No services found. Please create a service first (option 11).');
+        print(chalk.red('No services found. Please create a service first (option 11).'));
         break;
       }
-      print('\nAvailable Services:');
+
       final List<Service> servicesList = allServices.toList();
-      for(int i = 0; i < servicesList.length; i++) {
-        final Service service = servicesList[i];
-        print('  [${i}] id: ${service.id} | daemonId: ${service.daemonId} | deviceName: ${service.deviceName} | deviceGroupName: ${service.deviceGroupName}');
-      }
-
-      print('\nEnter service index or id:');
-      final String? serviceInput = stdin.readLineSync();
-      if(serviceInput == null || serviceInput.isEmpty) {
-        print('Invalid service input: $serviceInput');
+      final String? serviceId = await CliMenuHelper.selectServiceId(servicesList);
+      if(serviceId == null || serviceId.isEmpty) {
+        print(chalk.yellow('Cancelled service selection'));
         break;
       }
 
-      // Try to parse as index first, then as direct id
-      String? serviceId;
-      final int? serviceIndex = int.tryParse(serviceInput);
-      if(serviceIndex != null && serviceIndex >= 0 && serviceIndex < servicesList.length) {
-        serviceId = servicesList[serviceIndex].id;
-      } else {
-        serviceId = serviceInput;
-      }
+      final Service selectedService = servicesList.firstWhere((s) => s.id == serviceId);
 
-      // Fetch and display available client groups
-      print('\nFetching available client groups...');
+      print(chalk.blue('\nFetching available client groups...'));
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
-        print('No client groups found. Please create a client group first (option 8).');
+        print(chalk.red('No client groups found. Please create a client group first (option 8).'));
         break;
       }
-      print('\nAvailable Client Groups:');
+
       final List<ClientGroup> clientGroupsList = allClientGroups.toList();
-      for(int i = 0; i < clientGroupsList.length; i++) {
-        final ClientGroup clientGroup = clientGroupsList[i];
-        print('  [${i}] id: ${clientGroup.id} | name: ${clientGroup.name}');
-      }
-
-      print('\nEnter client group index or id:');
-      final String? clientGroupInput = stdin.readLineSync();
-      if(clientGroupInput == null || clientGroupInput.isEmpty) {
-        print('Invalid client group input: $clientGroupInput');
+      final String? clientGroupId = await CliMenuHelper.selectClientGroupId(clientGroupsList);
+      if(clientGroupId == null || clientGroupId.isEmpty) {
+        print(chalk.yellow('Cancelled client group selection'));
         break;
       }
 
-      // Try to parse as index first, then as direct id
-      String? clientGroupId;
-      final int? clientGroupIndex = int.tryParse(clientGroupInput);
-      if(clientGroupIndex != null && clientGroupIndex >= 0 && clientGroupIndex < clientGroupsList.length) {
-        clientGroupId = clientGroupsList[clientGroupIndex].id;
-      } else {
-        clientGroupId = clientGroupInput;
-      }
+      final ClientGroup selectedClientGroup = clientGroupsList.firstWhere((cg) => cg.id == clientGroupId);
 
-      print('\nEnter permit open (e.g. "localhost:22"):');
+      stdout.write(chalk.white('\nEnter permit open (e.g. "localhost:22"): '));
       final String? permitOpen = stdin.readLineSync();
       if(permitOpen == null || permitOpen.isEmpty) {
-        print('Invalid permit open: $permitOpen');
+        print(chalk.red('Invalid permit open: $permitOpen'));
         break;
       }
 
-      print('\nConfirm creation of ServiceACL:');
-      print('  ServiceACL.serviceId: $serviceId');
-      print('  ServiceACL.clientGroupId: $clientGroupId');
-      print('  ServiceACL.permitOpen: $permitOpen');
-      print('Enter \'y\' to confirm, any other key to cancel:');
-      final String? confirm = stdin.readLineSync();
-      if(confirm == null || confirm.toLowerCase() != 'y') {
-        print('Cancelled creation of ServiceACL');
+      print(chalk.bold.white('\nConfirm creation of ServiceACL:'));
+      print('  ${chalk.cyan('serviceId')}: $serviceId (${selectedService.deviceName})');
+      print('  ${chalk.cyan('clientGroupId')}: $clientGroupId (${selectedClientGroup.name})');
+      print('  ${chalk.cyan('permitOpen')}: $permitOpen');
+
+      final bool confirmed = CliMenuHelper.confirm('Grant ${selectedClientGroup.name} access to ${selectedService.deviceName} at $permitOpen?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled creation of ServiceACL'));
         break;
       }
+
       final String serviceACLId = await policyClient.putServiceACL(ServiceACL(
-        serviceId: serviceId!,
-        clientGroupId: clientGroupId!,
+        serviceId: serviceId,
+        clientGroupId: clientGroupId,
         permitOpen: permitOpen));
-      print('Put service ACL with generated id: $serviceACLId');
+      print(chalk.green('✓ Put service ACL with generated id: $serviceACLId'));
       break;
     }
     default: {
-      print('Invalid option $option');
+      print(chalk.red('✗ Invalid option: $option'));
       break;
     }
   }
@@ -409,20 +350,30 @@ Future<void> main(List<String> args) async {
 }
 }
 
-void printMenu() {
-  print('Policy CLI:');
-  print('1. getAllClients');
-  print('2. getAllClientGroups');
-  print('3. getAllClientGroupMembers');
-  print('4. getAllDaemons');
-  print('5. getAllServices');
-  print('6. getAllServiceACLs');
-  print('7. putClient');
-  print('8. putClientGroup');
-  print('9. putClientGroupMember');
-  print('10. putDaemon');
-  print('11. putService');
-  print('12. putServiceACL');
+String showMenuAndGetSelection() {
+  print(chalk.bold.blue('\n╔════════════════════════════════════════╗'));
+  print(chalk.bold.blue('║          Policy CLI Menu               ║'));
+  print(chalk.bold.blue('╚════════════════════════════════════════╝'));
+
+  final List<String> menuItems = [
+    chalk.cyan('1. ') + 'getAllClients',
+    chalk.cyan('2. ') + 'getAllClientGroups',
+    chalk.cyan('3. ') + 'getAllClientGroupMembers',
+    chalk.cyan('4. ') + 'getAllDaemons',
+    chalk.cyan('5. ') + 'getAllServices',
+    chalk.cyan('6. ') + 'getAllServiceACLs',
+    chalk.green('7. ') + 'putClient',
+    chalk.green('8. ') + 'putClientGroup',
+    chalk.green('9. ') + 'putClientGroupMember',
+    chalk.green('10. ') + 'putDaemon',
+    chalk.green('11. ') + 'putService',
+    chalk.green('12. ') + 'putServiceACL',
+  ];
+
+  print(chalk.white('\nSelect an option (use arrow keys):'));
+  final menu = Menu(menuItems);
+  final result = menu.choose();
+  return (result.index + 1).toString();
 }
 
 AtOnboardingPreference generateAtOnboardingPreference(
