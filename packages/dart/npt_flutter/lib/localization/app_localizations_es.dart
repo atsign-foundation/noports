@@ -88,6 +88,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get authorisation => 'Autorización';
 
   @override
+  String get autoStartApplication =>
+      'Iniciar Aplicación del Cliente Automáticamente';
+
+  @override
   String get back => 'Atrás';
 
   @override
@@ -138,6 +142,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get connectionTimedOut =>
       'Tiempo de espera de la conexión agotado, se reintentará...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Esta configuración inicia automáticamente la aplicación apropiada después de establecerse una conexión, según el protocolo seleccionado. Si no se selecciona ningún protocolo, no se iniciará ninguna aplicación. Selecciona el protocolo a utilizar para la conexión.';
+
+  @override
+  String get connectUriProtocolNone => 'Ninguno';
+
+  @override
+  String get connectUriUsername => 'Nombre de Usuario';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nombre de usuario opcional para protocolos como SSH (por ejemplo, usuario en ssh://usuario@host)';
 
   @override
   String get couldNotLoadPreviousState => 'Error al cargar el estado anterior';
@@ -712,34 +730,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get remotePortDescription =>
       'El puerto que se usará en la máquina remota';
-
-  @override
-  String get connectUri => 'URI de Conexión';
-
-  @override
-  String get connectUriDescription =>
-      'URI opcional para abrir automáticamente cuando se establezca la conexión (ej., http://localhost:8080 o rdp://localhost:3389)';
-
-  @override
-  String get autoStartApplication =>
-      'Iniciar Aplicación Automáticamente al Conectar';
-
-  @override
-  String get connectUriProtocol => 'Protocolo';
-
-  @override
-  String get connectUriProtocolDescription =>
-      'Seleccione el protocolo para la conexión (usa Host Local y Puerto Local)';
-
-  @override
-  String get connectUriUsername => 'Nombre de usuario';
-
-  @override
-  String get connectUriUsernameDescription =>
-      'Nombre de usuario opcional para protocolos como SSH (ej., usuario en ssh://usuario@host)';
-
-  @override
-  String get connectUriProtocolNone => 'Ninguno';
 
   @override
   String get removeAtsign => 'Eliminar atSign';

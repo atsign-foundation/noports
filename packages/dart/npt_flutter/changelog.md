@@ -4,6 +4,7 @@
 - FIX: Properly dispose of pin controller and focus node in ActivateAtsignDialog.
 - FIX: update error handling for invalid OTP in OnboardingApkamDialog.
 - FIX: cursor doesn't jump to the end of the text field unless "@" was auto add to the atsign field.
+- FIX: updated and completed localization strings for profile_connect_uri_field strings, removed legacy code.
 
 ## 1.8.0+25
 

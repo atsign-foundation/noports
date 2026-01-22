@@ -84,6 +84,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get authorisation => '授权';
 
   @override
+  String get autoStartApplication => '自动启动客户端应用程序';
+
+  @override
   String get back => '返回';
 
   @override
@@ -129,6 +132,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
+
+  @override
+  String get connectUriProtocolNone => '无';
+
+  @override
+  String get connectUriUsername => '用户名';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'SSH 等协议的可选用户名（例如 ssh://user@host 中的 user）';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -671,32 +688,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remotePortDescription => '将在远程机器上使用的端口';
 
   @override
-  String get connectUri => '连接 URI';
-
-  @override
-  String get connectUriDescription =>
-      '建立连接时自动打开的可选 URI（例如：http://localhost:8080 或 rdp://localhost:3389）';
-
-  @override
-  String get autoStartApplication => '连接时自动启动应用程序';
-
-  @override
-  String get connectUriProtocol => '协议';
-
-  @override
-  String get connectUriProtocolDescription => '选择连接的协议（使用本地主机和本地端口）';
-
-  @override
-  String get connectUriUsername => '用户名';
-
-  @override
-  String get connectUriUsernameDescription =>
-      'SSH 等协议的可选用户名（例如 ssh://user@host 中的 user）';
-
-  @override
-  String get connectUriProtocolNone => '无';
-
-  @override
   String get removeAtsign => '删除 atSign';
 
   @override
@@ -1015,6 +1006,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get authorisation => '授权';
 
   @override
+  String get autoStartApplication => '自动启动客户端应用程序';
+
+  @override
   String get back => '返回';
 
   @override
@@ -1060,6 +1054,20 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
+
+  @override
+  String get connectUriProtocolNone => '无';
+
+  @override
+  String get connectUriUsername => '用户名';
+
+  @override
+  String get connectUriUsernameDescription =>
+      '协议（如 SSH）的可选用户名（例如，ssh://user@host 中的 user）';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -1920,6 +1928,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get authorisation => '授權';
 
   @override
+  String get autoStartApplication => '自動啟動用戶端應用程式';
+
+  @override
   String get back => '返回';
 
   @override
@@ -1965,6 +1976,20 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get connectionTimedOut => '連線逾時，將重試...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此設定會根據所選的通訊協定，在建立連線後自動啟動適當的應用程式。如果未選取通訊協定，則不會啟動任何應用程式。選取用於連線的通訊協定。';
+
+  @override
+  String get connectUriProtocolNone => '無';
+
+  @override
+  String get connectUriUsername => '使用者名稱';
+
+  @override
+  String get connectUriUsernameDescription =>
+      '通訊協定（如 SSH）的可選使用者名稱 (例如，ssh://user@host 中的 user)';
 
   @override
   String get couldNotLoadPreviousState => '無法載入先前狀態錯誤';
