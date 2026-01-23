@@ -7,6 +7,7 @@ class IssueKeysParams {
   final String atsign;
   final String? atKeysFilePath;
   final String? passPhrase;
+  final String rootDomain;
 
   String? device;
   String? otp;
@@ -23,6 +24,7 @@ class IssueKeysParams {
     this.otp,
     this.atKeysFilePath,
     this.passPhrase,
+    this.rootDomain = 'root.atsign.org',
     this.verbose = false,
     this.debug = false,
   });
@@ -39,6 +41,7 @@ class IssueKeysParams {
       device: r['device'],
       atKeysFilePath: r['key-file'],
       passPhrase: r['pass-phrase'],
+      rootDomain: r['root-server'] ?? 'root.atsign.org',
       verbose: r['verbose'],
       debug: r['debug'],
     );
@@ -69,6 +72,15 @@ class IssueKeysParams {
       abbr: 'd',
       mandatory: false,
       help: 'Name for the device being activated',
+    );
+
+    p.addOption(
+      'root-server',
+      abbr: 'r',
+      aliases: const ['root-domain'],
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory (aka root) server domain (e.g., root.atsign.org)',
     );
 
     p.addFlag(
