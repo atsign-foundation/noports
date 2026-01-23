@@ -28,9 +28,9 @@ ${chalk.bold('Usage:')} noports activate ${chalk.cyan('<activation_string>')} [o
 
   Performs CRAM Onboarding for an atsign (or) initiates a new device enrollment
   
-  Options:
+    Options:
 
-    ${ActivateParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
+\t${ActivateParams.argParser.usage.split('\n').map((line) => '  $line').join('\n\t')}
 
 ${chalk.bold('Notes')}
   • activation_string is system-generated (run 'noports issue-keys --help')
@@ -43,9 +43,9 @@ ${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('@<atsign>')} [options]
 
   Generates an activation string and auto-approves the corresponding enrollment.
   
-  Options:
+    Options:
   
-    ${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
+\t${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n\t')}
 
 ${chalk.bold('Workflow')}
   1. Run 'noports issue-keys -a @alice' on authenticated device
