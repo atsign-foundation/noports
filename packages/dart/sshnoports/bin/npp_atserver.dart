@@ -42,6 +42,13 @@ void main(List<String> args) async {
     exit(1);
   }
 
+  final validPersistenceMethods = ['atserver', 'file', 'none'];
+  if (!validPersistenceMethods.contains(p.persistenceMethod)) {
+    stderr.writeln('Invalid persistence-method: ${p.persistenceMethod}');
+    stderr.writeln('Valid options are: ${validPersistenceMethods.join(', ')}');
+    exit(1);
+  }
+
   if (!await File(p.atKeysFilePath).exists()) {
     stderr.writeln('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
     exit(2);
@@ -126,7 +133,7 @@ void main(List<String> args) async {
 
 
     final admin_v2.PolicyService policyService = admin_v2.PolicyService(
-      policyOperationHooks: generatePolicyOperationHooks(
+      policyOperationHooks: generatePolicyOperationHooksForAtServer(
         atClient: atClient,
         domainNamespace: 'policy_v2', // TODO: make this a const somewhere
         baseNamespace: DefaultArgs.namespace,
@@ -397,17 +404,17 @@ Future<admin_v2.PolicyCache> _populatePolicyCacheFromAtServer({
 
 /// Populate the policy cache by fetching JSON files from a directory.
 /// directoryPath ideally should be ~/.atsign/policy_v2/<@atsign>/*.json
-/// 1) client_*.json 
-/// 2) client_group_*.json 
-/// 3) client_group_member_*.json 
-/// 4) daemon_*.json 
-/// 5) service_*.json 
-/// 6) service_acl_*.json 
+/// 1) *_client.json
+/// 2) *_client_group.json
+/// 3) *_client_group_member.json
+/// 4) *_daemon.json
+/// 5) *_service.json
+/// 6) *_service_acl.json
 Future<admin_v2.PolicyCache> _generatePolicyCacheFromFiles({
   required String directoryPath, // directory path where JSON files are stored
 }) async {
   // First, let's see if the directory exists
-  final admin_v2.PolicyCache policyCache = admin_v2.PolicyCache(); 
+  final admin_v2.PolicyCache policyCache = admin_v2.PolicyCache();
   final directory = Directory(directoryPath);
   if(!(await directory.exists())) {
     logger.warning('Directory $directoryPath does not exist. Returning an empty PolicyCache()');
@@ -424,44 +431,49 @@ Future<admin_v2.PolicyCache> _generatePolicyCacheFromFiles({
         logger.finer('Skipping non-JSON file: ${file.path}');
         continue;
       }
-      if(!file.path.startsWith('client_') &&
-         !file.path.startsWith('client_group_') &&
-         !file.path.startsWith('client_group_member_') &&
-         !file.path.startsWith('daemon_') &&
-         !file.path.startsWith('service_') &&
-         !file.path.startsWith('service_acl_')) {
-        logger.finer('Skipping file with unrecognized prefix: ${file.path}');
+      final String fileName = file.uri.pathSegments.last;
+
+      // Check for recognized suffixes (check most specific first)
+      if(!fileName.endsWith('_client.json') &&
+         !fileName.endsWith('_client_group.json') &&
+         !fileName.endsWith('_client_group_member.json') &&
+         !fileName.endsWith('_daemon.json') &&
+         !fileName.endsWith('_service.json') &&
+         !fileName.endsWith('_service_acl.json')) {
+        logger.finer('Skipping file with unrecognized suffix: $fileName');
         continue;
       }
-      final String fileName = file.uri.pathSegments.last;
+
       logger.finer('Reading JSON file: $fileName');
       try {
         final String fileContent = await file.readAsString();
         final Map<String, dynamic> jsonData = jsonDecode(fileContent);
-        if(fileName.startsWith('client_')) {
-          final admin_v2.Client client = admin_v2.Client.fromJson(jsonData);
-          policyCache.putClient(client);
-          logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
-        } else if(fileName.startsWith('client_group_')) {
-          final admin_v2.ClientGroup clientGroup = admin_v2.ClientGroup.fromJson(jsonData);
-          policyCache.putClientGroup(clientGroup);
-          logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
-        } else if(fileName.startsWith('client_group_member_')) {
+
+        // Check most specific suffixes first to avoid mismatches
+        if(fileName.endsWith('_client_group_member.json')) {
           final admin_v2.ClientGroupMember clientGroupMember = admin_v2.ClientGroupMember.fromJson(jsonData);
           policyCache.putClientGroupMember(clientGroupMember);
           logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
-        } else if(fileName.startsWith('daemon_')) {
-          final admin_v2.Daemon daemon = admin_v2.Daemon.fromJson(jsonData);
-          policyCache.putDaemon(daemon);
-          logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
-        } else if(fileName.startsWith('service_')) {
-          final admin_v2.Service service = admin_v2.Service.fromJson(jsonData);
-          policyCache.putService(service);
-          logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
-        } else if(fileName.startsWith('service_acl_')) {
+        } else if(fileName.endsWith('_client_group.json')) {
+          final admin_v2.ClientGroup clientGroup = admin_v2.ClientGroup.fromJson(jsonData);
+          policyCache.putClientGroup(clientGroup);
+          logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
+        } else if(fileName.endsWith('_client.json')) {
+          final admin_v2.Client client = admin_v2.Client.fromJson(jsonData);
+          policyCache.putClient(client);
+          logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
+        } else if(fileName.endsWith('_service_acl.json')) {
           final admin_v2.ServiceACL serviceACL = admin_v2.ServiceACL.fromJson(jsonData);
           policyCache.putServiceACL(serviceACL);
           logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
+        } else if(fileName.endsWith('_service.json')) {
+          final admin_v2.Service service = admin_v2.Service.fromJson(jsonData);
+          policyCache.putService(service);
+          logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
+        } else if(fileName.endsWith('_daemon.json')) {
+          final admin_v2.Daemon daemon = admin_v2.Daemon.fromJson(jsonData);
+          policyCache.putDaemon(daemon);
+          logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
         }
       } catch (e, s) {
         logger.severe('Error reading or parsing file ${file.path}: $e', e, s);
@@ -481,7 +493,7 @@ Future<admin_v2.PolicyCache> _generatePolicyCacheFromFiles({
   return policyCache;
 }
 
-admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
+admin_v2.PolicyOperationHooks generatePolicyOperationHooksForAtServer({
   required AtClient atClient,
   final String domainNamespace = admin_v2.PolicyCLIParamsDefaults.domainNamespaceV2, // e.g. 'policy_v2'
   final String baseNamespace = admin_v2.PolicyCLIParamsDefaults.baseNamespace, // e.g 'sshnp'
@@ -574,6 +586,56 @@ admin_v2.PolicyOperationHooks generatePolicyOperationHooks({
         ..useRemoteAtServer = true,
     );
     logger.info('Pre-put hook for ServiceACL: ${serviceACL.toJson()}, success: $success');
+  };
+
+  return policyOperationHooks;
+}
+
+admin_v2.PolicyOperationHooks generatePolicyOperationHooksForFiles({
+  required String directoryPath, // directory path where JSON files will be stored
+}) {
+  admin_v2.PolicyOperationHooks policyOperationHooks = admin_v2.PolicyOperationHooks();
+
+  policyOperationHooks.prePutClient = (admin_v2.Client client) async {
+    final file = File('$directoryPath/${client.id}_client.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(client.toJson()));
+    logger.info('Pre-put hook for Client: wrote to ${file.path}');
+  };
+
+  policyOperationHooks.prePutClientGroup = (admin_v2.ClientGroup clientGroup) async {
+    final file = File('$directoryPath/${clientGroup.id}_client_group.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(clientGroup.toJson()));
+    logger.info('Pre-put hook for ClientGroup: wrote to ${file.path}');
+  };
+
+  policyOperationHooks.prePutClientGroupMember = (admin_v2.ClientGroupMember clientGroupMember) async {
+    final file = File('$directoryPath/${clientGroupMember.id}_client_group_member.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(clientGroupMember.toJson()));
+    logger.info('Pre-put hook for ClientGroupMember: wrote to ${file.path}');
+  };
+
+  policyOperationHooks.prePutDaemon = (admin_v2.Daemon daemon) async {
+    final file = File('$directoryPath/${daemon.id}_daemon.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(daemon.toJson()));
+    logger.info('Pre-put hook for Daemon: wrote to ${file.path}');
+  };
+
+  policyOperationHooks.prePutService = (admin_v2.Service service) async {
+    final file = File('$directoryPath/${service.id}_service.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(service.toJson()));
+    logger.info('Pre-put hook for Service: wrote to ${file.path}');
+  };
+
+  policyOperationHooks.prePutServiceACL = (admin_v2.ServiceACL serviceACL) async {
+    final file = File('$directoryPath/${serviceACL.id}_service_acl.json');
+    await file.parent.create(recursive: true);
+    await file.writeAsString(jsonEncode(serviceACL.toJson()));
+    logger.info('Pre-put hook for ServiceACL: wrote to ${file.path}');
   };
 
   return policyOperationHooks;
