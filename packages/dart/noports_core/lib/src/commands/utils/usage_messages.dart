@@ -12,11 +12,11 @@ ${chalk.bold('Usage')}
 ${chalk.bold('Examples')}
   noports activate '@alice:cram:secret123' (one-time onboarding)
 
-  noports issue-keys @alice
-  noports issue-keys @alice --key-file /path/to/@alice.atKeys --device laptop01
+  noports issue-keys -a @alice
+  noports issue-keys -a @alice --key-file /path/to/@alice.atKeys --device laptop01
   
   noports activate '@alice:enroll:otp:123456'
-  noports activate '@alice:enroll:otp:123456' --target-keyfile ~/.mykeys.json
+  noports activate '@alice:enroll:otp:123456' --target-keyfile /Users/alice/keys/.mykeys.json
 
 ${chalk.bold('Further help')}
   noports ${chalk.cyan('<command>')} --help
@@ -27,8 +27,10 @@ ${chalk.bold('Further help')}
 ${chalk.bold('Usage:')} noports activate ${chalk.cyan('<activation_string>')} [options]
 
   Performs CRAM Onboarding for an atsign (or) initiates a new device enrollment
+  
+  Options:
 
-${ActivateParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
+    ${ActivateParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
 
 ${chalk.bold('Notes')}
   • activation_string is system-generated (run 'noports issue-keys --help')
@@ -40,8 +42,10 @@ ${chalk.bold('Notes')}
 ${chalk.bold('Usage:')} noports issue-keys ${chalk.cyan('@<atsign>')} [options]
 
   Generates an activation string and auto-approves the corresponding enrollment.
-
-${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
+  
+  Options:
+  
+    ${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n')}
 
 ${chalk.bold('Workflow')}
   1. Run 'noports issue-keys -a @alice' on authenticated device
