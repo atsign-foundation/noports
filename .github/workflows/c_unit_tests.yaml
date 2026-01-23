@@ -14,11 +14,11 @@ jobs:
   unit-tests:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
         # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
         with:
           cmake-version: "3.31.6"
 
