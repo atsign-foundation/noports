@@ -35,7 +35,7 @@ RUN set -eux ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv ;
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:79a85f06f2a2075f9f7ec166dbc2c7356979f41dbb21eb87b9cd20081f56f09a AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:887fbf05b95d7f611d1adca446f6b3d2d9fa239d6402f90ac86265229b990485 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}

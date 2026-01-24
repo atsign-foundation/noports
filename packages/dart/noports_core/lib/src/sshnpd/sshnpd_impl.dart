@@ -46,13 +46,13 @@ class SshnpdImpl
   final String device;
 
   @override
-  String get deviceAtsign => atClient.getCurrentAtSign()!;
+  Atsign get deviceAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   @override
   final List<String> managerAtsigns;
 
   @override
-  final String? policyManagerAtsign;
+  final Atsign? policyManagerAtsign;
 
   @override
   final SupportedSshClient sshClient;
@@ -215,7 +215,7 @@ class SshnpdImpl
         homeDirectory: p.homeDirectory,
         device: p.device,
         managerAtsigns: p.managerAtsigns,
-        policyManagerAtsign: p.policyManagerAtsign,
+        policyManagerAtsign: p.policyManagerAtsign?.toAtsign(),
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,
@@ -232,8 +232,7 @@ class SshnpdImpl
 
       if (p.debug) {
         sshnpd.logger.logger.level = Level.FINEST;
-      }
-      else if (p.verbose) {
+      } else if (p.verbose) {
         sshnpd.logger.logger.level = Level.INFO;
       }
 
@@ -272,7 +271,7 @@ class SshnpdImpl
     await _shareUsername();
 
     logger.info('Starting heartbeat');
-    startHeartbeat();
+    startHeartbeats();
 
     handlePublicKeyChangedEvent(atClient, deviceAtsign);
 
@@ -304,37 +303,38 @@ class SshnpdImpl
       (_) async => await _sendHeartbeatToPolicy(),
     );
 
-    logger.info('Done');
+    logger.info('Daemon is running');
   }
 
-  void startHeartbeat() {
-    bool lastHeartbeatOk = true;
+  /// 1. Periodically send a 'noop' on the main atLookUp connection, so that
+  /// the connection is kept alive in normal conditions.
+  /// 2. Listen for notification listener currentState changes and log a
+  /// message when it changes
+  void startHeartbeats() {
+    // 1. keep-alive on the main atLookUp connection
     Timer.periodic(Duration(seconds: 90), (timer) async {
-      String? resp;
       try {
-        resp = await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
+        await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
           'noop:0\n',
           auth: true,
         );
       } catch (_) {}
-      if (resp == null || !resp.startsWith('data:ok')) {
-        if (lastHeartbeatOk) {
-          logger.shout('connection lost');
-        }
-        lastHeartbeatOk = false;
-      } else {
-        if (!lastHeartbeatOk) {
-          logger.shout('connection available');
-        }
-        lastHeartbeatOk = true;
+    });
+
+    // 2. Log a message when notification listener state changes
+    NotificationListenerState? lastState;
+    atClient.notificationService.currentListenerStateStream.listen((nls) {
+      if (nls != lastState) {
+        logger.shout('Notification listener state changed to $nls');
+        lastState = nls;
       }
     });
   }
 
   /// Notification handler for requests from clients
   Future<void> clientRequestNotificationHandler(
-      AtNotification notification,
-      ) async {
+    AtNotification notification,
+  ) async {
     try {
       try {
         if (notifPreProcessor != null) {
@@ -343,7 +343,7 @@ class SshnpdImpl
       } catch (e) {
         logger.shout(
           'Notification pre-processing failed with $e\n'
-              'Notification: $notification',
+          'Notification: $notification',
         );
         return;
       }
@@ -351,11 +351,11 @@ class SshnpdImpl
       String messageType = notification.key
           .replaceAll('${notification.to}:', '')
           .replaceAll(
-        '.$device.${DefaultArgs.namespace}${notification.from}',
-        '',
-      )
-      // convert to lower case as the latest AtClient converts notification
-      // keys to lower case when received
+            '.$device.${DefaultArgs.namespace}${notification.from}',
+            '',
+          )
+          // convert to lower case as the latest AtClient converts notification
+          // keys to lower case when received
           .toLowerCase();
 
       NPAAuthCheckResponse auth = await authCheck(notification);
@@ -662,7 +662,7 @@ class SshnpdImpl
     AtNotification notification,
     NPAAuthCheckResponse auth,
   ) async {
-    String requestingAtsign = notification.from;
+    Atsign requestingAtsign = notification.from.toAtsign();
 
     // Extract the NPT request payload.
     late final Map envelope;
@@ -738,14 +738,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-          SessionEvent.denied(
-            sessionId: req.sessionId,
-            authInfo: NPAAuthCheckResponse(
-              authorized: false,
-              message: 'POLICY denied request',
-              permitOpen: auth.permitOpen,
-            ).toJson(),
-          )
+        SessionEvent.denied(
+          sessionId: req.sessionId,
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'POLICY denied request',
+            permitOpen: auth.permitOpen,
+          ).toJson(),
+        ),
       );
 
       // Notify noports client that this session is NOT connected
@@ -789,15 +789,15 @@ class SshnpdImpl
       return;
     }
 
-    logger.shout(
-      'relayAtsign ${req.relayAtsign}'
-      ' eventLoggingConfig $elc',
-    );
     if (req.relayAtsign != null && elc != null) {
+      logger.info(
+        'relayAtsign ${req.relayAtsign}'
+        ' eventLoggingConfig $elc',
+      );
       final keyForRelay = AtKey.fromString(
         '${req.relayAtsign}:logging.${req.sessionId}.sessions.${Srvd.namespace}$deviceAtsign',
       )..metadata.namespaceAware = false;
-      logger.shout('Sending session logging config to relay : $keyForRelay');
+      logger.info('Sending session logging config to relay : $keyForRelay');
       await notify(
         keyForRelay,
         jsonEncode(elc!.toJson()),
@@ -883,7 +883,7 @@ class SshnpdImpl
         d2cBundle = await genBundle(encKeyType, req.clientEphemeralPK);
       }
     }
-      if (inline) {
+    if (inline) {
       SocketConnector sc = await Srv.dart(
         req.rvdHost,
         req.rvdPort,
@@ -961,7 +961,7 @@ class SshnpdImpl
     AtNotification notification,
     NPAAuthCheckResponse auth,
   ) async {
-    String requestingAtsign = notification.from;
+    Atsign requestingAtsign = notification.from.toAtsign();
 
     // Validate the request payload.
     late final Map envelope;
@@ -1036,14 +1036,14 @@ class SshnpdImpl
     // Check if this *client* is allowed connections to the requested host / port
     if (!_permittedToOpen(auth.permitOpen, req)) {
       await _logEvent(
-          SessionEvent.denied(
-            sessionId: req.sessionId,
-            authInfo: NPAAuthCheckResponse(
-              authorized: false,
-              message: 'POLICY denied request',
-              permitOpen: auth.permitOpen,
-            ).toJson(),
-          )
+        SessionEvent.denied(
+          sessionId: req.sessionId,
+          authInfo: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'POLICY denied request',
+            permitOpen: auth.permitOpen,
+          ).toJson(),
+        ),
       );
 
       // Notify noports client that this session is NOT connected
@@ -1391,7 +1391,9 @@ class SshnpdImpl
           sessionId: sessionId,
         );
       } else {
-        await _logEvent(SessionEvent.daemonConnecting(sessionId: req.sessionId));
+        await _logEvent(
+          SessionEvent.daemonConnecting(sessionId: req.sessionId),
+        );
 
         /// Notify sshnp that the connection has been made
         await _notify(

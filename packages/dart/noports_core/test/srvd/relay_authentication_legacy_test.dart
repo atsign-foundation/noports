@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
@@ -32,19 +33,23 @@ void main() {
         'some other payload',
         rvdSessionNonce,
         'legacy_test_overflow',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
       Random r = Random();
-      Uint8List data = Uint8List.fromList(List.generate(
-          RelayAuthVerifier.maxAuthBufferLength + 1, (i) => r.nextInt(256)));
+      Uint8List data = Uint8List.fromList(
+        List.generate(
+          RelayAuthVerifier.maxAuthBufferLength + 1,
+          (i) => r.nextInt(256),
+        ),
+      );
 
       late Function(Uint8List data) socketOnDataFn;
       MockSocket mockSocket = MockSocket();
 
       when(
-            () => mockSocket.listen(
+        () => mockSocket.listen(
           any(),
           onError: any(named: "onError"),
           onDone: any(named: "onDone"),
@@ -80,7 +85,7 @@ void main() {
         jsonEncode(payload), // We'll verify the signature against this
         rvdSessionNonce,
         'test_for_success',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
@@ -123,7 +128,7 @@ void main() {
         'some other payload',
         rvdSessionNonce,
         'test_for_failure',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
@@ -167,7 +172,7 @@ void main() {
         jsonEncode(payload),
         rvdSessionNonce,
         'test_for_mismatch',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 

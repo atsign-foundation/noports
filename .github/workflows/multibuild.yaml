@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -81,7 +81,7 @@ jobs:
             platform: "windows"
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
@@ -239,7 +239,7 @@ jobs:
     steps:
       - name: Checkout multibuild branch
         if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup QEMU
@@ -270,11 +270,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup node-version
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: '24.2.0'
       - name: Build admin webapp
@@ -302,7 +302,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -335,7 +335,7 @@ jobs:
       attestations: write
     steps:
       - name: Checkout pubspec.lock
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
@@ -344,7 +344,7 @@ jobs:
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@57f1d33623e4774b7786af11c07fbf3fd9a8e8ac # v0.10
+        uses: sbomify/github-action@7906c48e206fe1a885df761bc7239ff3dcfef6b8 # v0.12
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
@@ -400,7 +400,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: multibuild-${{github.run_number}}
       - name: Delete workflow branch

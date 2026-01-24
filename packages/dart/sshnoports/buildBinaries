@@ -11,11 +11,12 @@ echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o bin
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o bin/npt &
 echo "Compiling npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o bin/npp_file &
 echo "Compiling npp_atserver"; dart compile exe --verbosity error bin/npp_atserver.dart -o bin/npp_atserver &
+echo "Compiling noports"; dart compile exe --verbosity error bin/noports.dart -o bin/noports &
 echo "Compiling demo/npa_always_deny"; dart compile exe --verbosity error bin/demo/npa_always_deny.dart -o bin/demo/npa_always_deny &
 echo "Compiling demo/npa_cli"; dart compile exe --verbosity error bin/demo/npa_cli.dart -o bin/demo/npa_cli &
 echo "Compiling npevents"; dart compile exe --verbosity error bin/npevents.dart -o bin/npevents &
 
 wait
 
-echo 
+echo
 echo Finished at $(date)

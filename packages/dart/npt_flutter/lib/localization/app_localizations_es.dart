@@ -22,6 +22,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get add => 'Agregar';
 
   @override
+  String get addAtsign => 'Agregar atSign';
+
+  @override
   String get addNew => 'Agregar Nuevo';
 
   @override
@@ -35,7 +38,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get allRightsReserved =>
-      '© 2025 Atsign, Todos los derechos reservados';
+      '© 2026 Atsign, Todos los derechos reservados';
 
   @override
   String get americas => 'Américas';
@@ -952,6 +955,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get validationErrorEmptyField => 'Este campo no puede quedar vacío';
 
   @override
+  String get validationErrorHostField =>
+      'El campo debe ser un nombre de host parcial o totalmente cualificado o una dirección IP';
+
+  @override
   String get validationErrorLocalPortField =>
       'El número debe estar entre 1024 y 65535';
 
@@ -961,10 +968,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get validationErrorRelayField => 'El relay debe ser un atSign válido';
-
-  @override
-  String get validationErrorHostField =>
-      'El campo debe ser un nombre de host parcial o totalmente cualificado o una dirección IP';
 
   @override
   String get validationErrorRemotePortField =>

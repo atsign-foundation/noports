@@ -21,6 +21,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get add => '添加';
 
   @override
+  String get addAtsign => '添加 atSign';
+
+  @override
   String get addNew => '添加新项';
 
   @override
@@ -33,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -896,6 +899,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorEmptyField => '此字段不能为空';
 
   @override
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+
+  @override
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
@@ -903,9 +909,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -949,6 +952,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get add => '添加';
 
   @override
+  String get addAtsign => '添加 atSign';
+
+  @override
   String get addNew => '添加新项';
 
   @override
@@ -961,7 +967,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -1798,6 +1804,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorEmptyField => '此字段不能为空';
 
   @override
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+
+  @override
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
@@ -1805,9 +1814,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -1851,6 +1857,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get add => '新增';
 
   @override
+  String get addAtsign => '新增 atSign';
+
+  @override
   String get addNew => '新增項目';
 
   @override
@@ -1863,7 +1872,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get alertDialogTitle => '您確定嗎？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign，保留所有權利';
+  String get allRightsReserved => '© 2026 Atsign，保留所有權利';
 
   @override
   String get americas => '美洲';
@@ -2699,6 +2708,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorEmptyField => '此欄位不得為空';
 
   @override
+  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
+
+  @override
   String get validationErrorLocalPortField => '數字必須介於 1024 和 65535 之間';
 
   @override
@@ -2706,9 +2718,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
 
   @override
   String get validationErrorRemotePortField => '數字必須介於 1 和 65535 之間';

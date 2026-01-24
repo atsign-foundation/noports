@@ -5,7 +5,7 @@ import 'package:path/path.dart' as path;
 
 Future<AtClient> createAtClientCli({
   required String atsign,
-  required String atKeysFilePath,
+  String? atKeysFilePath,
   String? passPhrase = '',
   required AtServiceFactory atServiceFactory,
   required String storagePath,
@@ -23,6 +23,7 @@ Future<AtClient> createAtClientCli({
     ..hiveStoragePath = storagePath
     ..namespace = namespace
     ..downloadPath = path.normalize('$storagePath/downloads')
+    // ignore: deprecated_member_use
     ..isLocalStoreRequired = true
     ..commitLogPath = path.normalize('$storagePath/commitLog')
     ..fetchOfflineNotifications = false
