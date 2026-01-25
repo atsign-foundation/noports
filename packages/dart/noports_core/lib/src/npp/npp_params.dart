@@ -111,6 +111,14 @@ class NPPParams {
     argParser.addFlag('help', defaultsTo: false, negatable: false, help: 'Show usage instructions');
     argParser.addFlag('version', defaultsTo: false, negatable: false, help: 'Show version');
 
+    argParser.addFlag(
+      'verbose',
+      abbr: 'v',
+      defaultsTo: false,
+      negatable: true,
+      help: 'Enable verbose logging'
+    );
+
     argParser.addOption(
       'root-domain',
       aliases: const ['root-server', 'rootDomain'],
