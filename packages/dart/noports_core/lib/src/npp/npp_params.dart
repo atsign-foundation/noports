@@ -84,6 +84,8 @@ class NPPParams {
     nppParams.storagePath = argResults['storage-path'];
     nppParams.eventLoggingAtSign = argResults['event-logging-atsign'];
     // -------------------
+
+    return nppParams;
   }
 
   static ArgParser _createArgParser() {
