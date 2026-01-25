@@ -9,7 +9,6 @@ import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
-import 'package:noports_core/admin_v2.dart' as admin_v2;
 
 late AtSignLogger logger;
 

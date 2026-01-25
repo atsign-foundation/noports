@@ -41,14 +41,14 @@ class NPPParams {
   String? storagePath;
   String? eventLoggingAtSign;
 
-  static final ArgParser _argParser = _createArgParser();
+  static final ArgParser argParser = _createArgParser();
 
   NPPParams._({
     required this.atSign,
   });
 
   factory NPPParams.fromArgs(List<String> args) {
-    ArgResults argResults = _argParser.parse(args);
+    ArgResults argResults = argParser.parse(args);
 
     // -------------------
     // Case 1:
@@ -173,9 +173,10 @@ class NPPParams {
       abbr: 's',
       mandatory: false,
       help:
-        'Path to atsign storage directory. Defaults to "~/.atsign/storage/<atSign>/sshnp/single/". '
-        'Running multiple CLI atClient programs with the same storage path is not supported. '
-        'An alternate storage directory can be passed through this argument when running multiple instances.',
+        'Path to atsign storage directory.'
+        ' Running multiple CLI atClient programs with the same storage path is'
+        ' not supported. An alternate storage directory can be passed through'
+        ' this argument when running multiple instances.',
     );
 
     return argParser;
