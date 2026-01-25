@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -34,12 +32,13 @@ class NPPParams {
   // -----------
   late String atKeysFilePath;
   late String allowList;
+  late String storagePath;
 
   // -----------
   // Case 3: Optional options
   // -----------
-  String? storagePath;
   String? eventLoggingAtSign;
+  String? policyDirectory;
 
   static final ArgParser argParser = _createArgParser();
 
@@ -74,15 +73,23 @@ class NPPParams {
 
     // -------------------
     // Case 2b:
-    nppParams.atKeysFilePath = argResults['key-file'] ?? getDefaultAtKeysFilePath(homeDirectory, atSign);
+    nppParams.atKeysFilePath = argResults['key-file'] ??
+      getDefaultAtKeysFilePath(homeDirectory, atSign);
     nppParams.allowList = argResults['allow-list'] ?? atSign;
+    nppParams.storagePath = argResults['storage-path'] ??
+      standardAtClientStoragePath(
+        baseDir: homeDirectory,
+        atSign: atSign,
+        progName: nppParams.baseNamespace,
+        uniqueID: 'single', // What does this mean?
+      );
     // -------------------
 
 
     // -------------------
     // Case 3:
-    nppParams.storagePath = argResults['storage-path'];
     nppParams.eventLoggingAtSign = argResults['event-logging-atsign'];
+    nppParams.policyDirectory = argResults['policy-directory'];
     // -------------------
 
     return nppParams;
@@ -91,8 +98,6 @@ class NPPParams {
   static ArgParser _createArgParser() {
     int? usageLineLength = stdout.hasTerminal ? stdout.terminalColumns : null;
     final ArgParser argParser = ArgParser(usageLineLength: usageLineLength);
-
-
 
     // ----- Case 1: -----
     argParser.addOption(
@@ -107,8 +112,8 @@ class NPPParams {
     argParser.addFlag('version', defaultsTo: false, negatable: false, help: 'Show version');
 
     argParser.addOption(
-      'root-server',
-      aliases: const ['root-domain'],
+      'root-domain',
+      aliases: const ['root-server', 'rootDomain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org:64',
       help: 'atDirectory root domain, defaults to root.atsign.org:64',
@@ -161,13 +166,6 @@ class NPPParams {
         ' e.g. "@alice"'
     );
 
-    // ----- Case 3: -----
-    argParser.addOption(
-      'event-logging-atsign',
-      mandatory: false,
-      help: 'atSign of a noports logging service.'
-    );
-
     argParser.addOption(
       'storage-path',
       abbr: 's',
@@ -177,6 +175,22 @@ class NPPParams {
         ' Running multiple CLI atClient programs with the same storage path is'
         ' not supported. An alternate storage directory can be passed through'
         ' this argument when running multiple instances.',
+    );
+
+    // ----- Case 3: -----
+    argParser.addOption(
+      'event-logging-atsign',
+      mandatory: false,
+      help: 'atSign of a noports logging service.'
+    );
+
+    argParser.addOption(
+      'policy-directory',
+      mandatory: false,
+      help:
+        'This option only applies when using --persistence-method="file".'
+        'Path to npp storage directory where policy rules are stored in '
+        'file format.'
     );
 
     return argParser;
