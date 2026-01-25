@@ -1,4 +1,4 @@
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 
 class PolicyDataOperation {
   final String operation; // e.g. "get", "put",

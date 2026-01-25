@@ -2,9 +2,8 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
-
 
 class PolicyRequestHandler implements NPARequestHandler {
   final PolicyCache policyCache;
@@ -59,8 +58,8 @@ class PolicyRequestHandler implements NPARequestHandler {
 }
 
 class PolicyServiceDefaults {
-  static const String domainNamespace = 'policy_v2';
   static const String baseNamespace = 'sshnp';
+  static const String domainNamespace = 'npp';
 }
 
 class PolicyService with AtClientBindings implements AtRpcCallbacks  {
@@ -84,13 +83,13 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
     // mandatroy
     required this.atClient,
     required this.policyCache,
-    required this.allowList,     // non-mandatory with defaults
+    required this.allowList,
+    // optional
     final String domainNamespace = PolicyServiceDefaults.domainNamespace,
     final String baseNamespace = PolicyServiceDefaults.baseNamespace,
-    // optional
-    String? homeDirectory,
     final String? eventLoggingAtSign,
     this.policyOperationHooks,
+    String? homeDirectory,
   }) {
     if(homeDirectory == null) {
       homeDirectory = getHomeDirectory();
@@ -107,7 +106,8 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       eventLoggingAtsign: eventLoggingAtSign);
 
     // RPC for handling other v2 policy operations
-    rpcListener = AtRpc(atClient: atClient,
+    rpcListener = AtRpc(
+      atClient: atClient,
       callbacks: this,
       isClient: false,
       isServer: true,

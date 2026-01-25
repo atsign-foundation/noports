@@ -1,4 +1,3 @@
-import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
 import './models.dart';

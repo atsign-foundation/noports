@@ -1,6 +1,6 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 
 class PolicyClient {
 
