@@ -126,7 +126,8 @@ class NPAParams {
     parser.addOption(
       'allow-list',
       mandatory: false,
-      help: 'This is a v2 feature. List of atSigns that can send policy data'
+      help: 
+        'This is a v2 feature. List of atSigns that can send policy data'
         ' operations (puts/gets) to the policy service API. E.g.'
         ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'
         ' e.g. "@alice"'
