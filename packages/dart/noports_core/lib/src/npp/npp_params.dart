@@ -75,7 +75,8 @@ class NPPParams {
     // Case 2b:
     nppParams.atKeysFilePath = argResults['key-file'] ??
       getDefaultAtKeysFilePath(homeDirectory, atSign);
-    nppParams.managerAllowList = argResults['manager-allow-list'] ?? atSign;
+    nppParams.managerAllowList = argResults['manager-allow-list'] ??
+      atSign;
     nppParams.storagePath = argResults['storage-path'] ??
       standardAtClientStoragePath(
         baseDir: homeDirectory,

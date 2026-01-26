@@ -88,7 +88,6 @@ class NPPCLIParams {
   static ArgParser _createArgParser() {
     final ArgParser argParser = ArgParser();
 
-    // Help and version flags
     argParser.addFlag(
       'help',
       abbr: 'h',

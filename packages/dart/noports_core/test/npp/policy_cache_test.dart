@@ -1,4 +1,4 @@
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -34,36 +34,36 @@ void main() {
       cg1 = ClientGroup(id: 'cg1', name: 'Engineers');
       cg2 = ClientGroup(id: 'cg2', name: 'Marketing');
 
-      cgm1 = ClientGroupMember(id: 'cgm1', clientId: c1.id, clientGroupId: cg1.id); 
-      cgm2 = ClientGroupMember(id: 'cgm2', clientId: c2.id, clientGroupId: cg1.id); 
-      cgm3 = ClientGroupMember(id: 'cgm3', clientId: c3.id, clientGroupId: cg1.id);
-      cgm4 = ClientGroupMember(id: 'cgm4', clientId: c4.id, clientGroupId: cg2.id);
-      cgm5 = ClientGroupMember(id: 'cgm5', clientId: c5.id, clientGroupId: cg2.id);
-      cgm6 = ClientGroupMember(id: 'cgm6', clientId: c6.id, clientGroupId: cg1.id);
-      cgm7 = ClientGroupMember(id: 'cgm7', clientId: c6.id, clientGroupId: cg2.id);
+      cgm1 = ClientGroupMember(id: 'cgm1', clientId: c1.id!, clientGroupId: cg1.id!); 
+      cgm2 = ClientGroupMember(id: 'cgm2', clientId: c2.id!, clientGroupId: cg1.id!); 
+      cgm3 = ClientGroupMember(id: 'cgm3', clientId: c3.id!, clientGroupId: cg1.id!);
+      cgm4 = ClientGroupMember(id: 'cgm4', clientId: c4.id!, clientGroupId: cg2.id!);
+      cgm5 = ClientGroupMember(id: 'cgm5', clientId: c5.id!, clientGroupId: cg2.id!);
+      cgm6 = ClientGroupMember(id: 'cgm6', clientId: c6.id!, clientGroupId: cg1.id!);
+      cgm7 = ClientGroupMember(id: 'cgm7', clientId: c6.id!, clientGroupId: cg2.id!);
 
       d1 = Daemon(id: 'd1', atSign: '@lxc');
       d2 = Daemon(id: 'd2', atSign: '@vps');
 
-      s1 = Service(id: 's1', daemonId: d1.id, deviceName: 'gcp', deviceGroupName: '__none__');
-      s2 = Service(id: 's2', daemonId: d1.id, deviceName: 'azure', deviceGroupName: '__none__');
-      s3 = Service(id: 's3', daemonId: d1.id, deviceName: 'oci', deviceGroupName: '__none__');
-      s4 = Service(id: 's4', daemonId: d2.id, deviceName: 'rv_am', deviceGroupName: 'relays');
-      s5 = Service(id: 's5', daemonId: d2.id, deviceName: 'rv_ap', deviceGroupName: 'relays');
-      s6 = Service(id: 's6', daemonId: d2.id, deviceName: 'rv_eu', deviceGroupName: 'relays');
+      s1 = Service(id: 's1', daemonId: d1.id!, deviceName: 'gcp', deviceGroupName: '__none__');
+      s2 = Service(id: 's2', daemonId: d1.id!, deviceName: 'azure', deviceGroupName: '__none__');
+      s3 = Service(id: 's3', daemonId: d1.id!, deviceName: 'oci', deviceGroupName: '__none__');
+      s4 = Service(id: 's4', daemonId: d2.id!, deviceName: 'rv_am', deviceGroupName: 'relays');
+      s5 = Service(id: 's5', daemonId: d2.id!, deviceName: 'rv_ap', deviceGroupName: 'relays');
+      s6 = Service(id: 's6', daemonId: d2.id!, deviceName: 'rv_eu', deviceGroupName: 'relays');
 
-      sa1 = ServiceACL(id: 'sa1', serviceId: s1.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa2 = ServiceACL(id: 'sa2', serviceId: s1.id, clientGroupId: cg1.id, permitOpen: 'localhost:3389');
-      sa3 = ServiceACL(id: 'sa3', serviceId: s2.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa4 = ServiceACL(id: 'sa4', serviceId: s2.id, clientGroupId: cg1.id, permitOpen: 'localhost:3389');
-      sa5 = ServiceACL(id: 'sa5', serviceId: s3.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa6 = ServiceACL(id: 'sa6', serviceId: s3.id, clientGroupId: cg1.id, permitOpen: 'localhost:3389');
-      sa7 = ServiceACL(id: 'sa7', serviceId: s4.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa8 = ServiceACL(id: 'sa8', serviceId: s5.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa9 = ServiceACL(id: 'sa9', serviceId: s6.id, clientGroupId: cg1.id, permitOpen: 'localhost:22');
-      sa10 = ServiceACL(id: 'sa10', serviceId: s4.id, clientGroupId: cg2.id, permitOpen: 'localhost:22');
-      sa11 = ServiceACL(id: 'sa11', serviceId: s5.id, clientGroupId: cg2.id, permitOpen: 'localhost:22');
-      sa12 = ServiceACL(id: 'sa12', serviceId: s6.id, clientGroupId: cg2.id, permitOpen: 'localhost:22');
+      sa1 = ServiceACL(id: 'sa1', serviceId: s1.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa2 = ServiceACL(id: 'sa2', serviceId: s1.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:3389');
+      sa3 = ServiceACL(id: 'sa3', serviceId: s2.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa4 = ServiceACL(id: 'sa4', serviceId: s2.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:3389');
+      sa5 = ServiceACL(id: 'sa5', serviceId: s3.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa6 = ServiceACL(id: 'sa6', serviceId: s3.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:3389');
+      sa7 = ServiceACL(id: 'sa7', serviceId: s4.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa8 = ServiceACL(id: 'sa8', serviceId: s5.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa9 = ServiceACL(id: 'sa9', serviceId: s6.id!, clientGroupId: cg1.id!, permitOpen: 'localhost:22');
+      sa10 = ServiceACL(id: 'sa10', serviceId: s4.id!, clientGroupId: cg2.id!, permitOpen: 'localhost:22');
+      sa11 = ServiceACL(id: 'sa11', serviceId: s5.id!, clientGroupId: cg2.id!, permitOpen: 'localhost:22');
+      sa12 = ServiceACL(id: 'sa12', serviceId: s6.id!, clientGroupId: cg2.id!, permitOpen: 'localhost:22');
 
       cache.putClient(c1);
       cache.putClient(c2);

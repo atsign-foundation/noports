@@ -103,7 +103,7 @@ class PolicyService with AtClientBindings {
       handler: PolicyRequestHandler(policyCache),
       atClient: atClient,
       homeDirectory: homeDirectory,
-      eventLoggingAtsign: eventLoggingAtSign);
+      eventLoggingAtsign: eventLoggingAtSign as Atsign?);
 
     // RPC for handling other v2 policy operations
     managerRpcListener = AtRpc(

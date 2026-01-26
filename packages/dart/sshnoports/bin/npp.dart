@@ -202,7 +202,6 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
 
   logger.info('Found ${allPolicyAtKeys.length} policy AtKeys from atServer');
 
-  // Counters for each entity type
   int clientsLoaded = 0;
   int clientGroupsLoaded = 0;
   int clientGroupMembersLoaded = 0;
@@ -210,14 +209,10 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
   int servicesLoaded = 0;
   int serviceACLsLoaded = 0;
 
-  // Process all AtKeys in a single loop
   for (final AtKey atKey in allPolicyAtKeys) {
     try {
-      // Extract entity type from the key field
-      // Key format: {id}.{entity_type}.{domain_namespace}
-      // Example: 1.client.npp
-      final String? keyValue = atKey.key;
-      if (keyValue == null || keyValue.isEmpty) {
+      final String keyValue = atKey.key;
+      if (keyValue.isEmpty) {
         logger.warning('AtKey has null or empty key: ${atKey.toString()}');
         continue;
       }
@@ -228,13 +223,10 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
         continue;
       }
 
-      // Entity type is the second-to-last part (before domain namespace)
-      // For "1.client.npp", parts are [1, client, npp], so entity type is at index 1
-      final String entityType = keyParts[keyParts.length - 2];
+      final String entityType = keyParts[keyParts.length - 2]; // e.g. "client"
 
-      logger.info('Processing AtKey: ${atKey.toString()}, entityType: $entityType');
+      logger.finer('Processing AtKey: ${atKey.toString()}, entityType: $entityType');
 
-      // Fetch the value
       final AtValue atValue = await atClient.get(
         atKey,
         getRequestOptions: GetRequestOptions()..useRemoteAtServer = true
@@ -247,36 +239,35 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
 
       final Map<String, dynamic> jsonData = jsonDecode(atValue.value);
 
-      // Process based on entity type (check most specific first)
       if (entityType == 'client_group_member') {
         final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(jsonData);
         policyCache.putClientGroupMember(clientGroupMember);
-        logger.info('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
+        logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
         clientGroupMembersLoaded++;
       } else if (entityType == 'client_group') {
         final ClientGroup clientGroup = ClientGroup.fromJson(jsonData);
         policyCache.putClientGroup(clientGroup);
-        logger.info('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
+        logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
         clientGroupsLoaded++;
       } else if (entityType == 'client') {
         final Client client = Client.fromJson(jsonData);
         policyCache.putClient(client);
-        logger.info('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
+        logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
         clientsLoaded++;
       } else if (entityType == 'daemon') {
         final Daemon daemon = Daemon.fromJson(jsonData);
         policyCache.putDaemon(daemon);
-        logger.info('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
+        logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
         daemonsLoaded++;
       } else if (entityType == 'service_acl') {
         final ServiceACL serviceACL = ServiceACL.fromJson(jsonData);
         policyCache.putServiceACL(serviceACL);
-        logger.info('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
+        logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
         serviceACLsLoaded++;
       } else if (entityType == 'service') {
         final Service service = Service.fromJson(jsonData);
         policyCache.putService(service);
-        logger.info('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
+        logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
         servicesLoaded++;
       } else {
         logger.warning('Skipping atKey with unrecognized entity type: $entityType (atKey: ${atKey.toString()})');
@@ -287,7 +278,6 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
     }
   }
 
-  // Log summary
   logger.info('Loaded $clientsLoaded Clients into cache');
   logger.info('Loaded $clientGroupsLoaded ClientGroups into cache');
   logger.info('Loaded $clientGroupMembersLoaded ClientGroupMembers into cache');
@@ -388,6 +378,7 @@ Future<PolicyCache> _generatePolicyCacheFromFiles({
   logger.info('Loaded ${policyCache.daemons.length} Daemons into cache');
   logger.info('Loaded ${policyCache.services.length} Services into cache');
   logger.info('Loaded ${policyCache.serviceACLs.length} ServiceACLs into cache');
+
   return policyCache;
 }
 

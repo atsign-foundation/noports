@@ -27,7 +27,6 @@ class PolicyCache {
     _services = {},
     _serviceACLs = {};
 
-
   // *.client.policy.sshnp --> a client (e.g. "@colin", "Colin")
   // *.client_group.policy.sshnp --> a client group (e.g. client.id, "Atsign Engineers")
   // *.client_group_members.policy.sshnp --> maps client to a client group (e.g. client.id, client_group.id)
@@ -43,13 +42,13 @@ class PolicyCache {
     // Set of services that match the given daemonAtSign + deviceName and/or deviceGroupName
     Service? matchedService = findMatchedService(daemonAtSign: daemonAtSign, deviceName: deviceName, deviceGroupName: deviceGroupName);
     if(matchedService == null) {
-      print('No matched services were found for $daemonAtSign | $deviceName | $deviceGroupName');
+      logger.info('No matched services were found for $daemonAtSign | $deviceName | $deviceGroupName');
       return {};
     }
     // Set of ClientGroups that this clientAtSign is part of.
     Set<ClientGroup> matchedClientGroups = findMatchedClientGroups(clientAtSign: clientAtSign);
     if(matchedClientGroups.isEmpty) {
-      print('No matched client groups were found for $clientAtSign');
+      logger.info('No matched client groups were found for $clientAtSign');
       return {};
     }
 
