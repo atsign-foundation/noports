@@ -209,7 +209,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
         // Doesn't seem like enroll throws an `AtException`.
-        if (e.toString().contains('AT0011')) {
+        if (e.toString().contains('AT0022')) {
           App.log('Invalid OTP'.loggable);
           Navigator.of(
             context,

@@ -4,6 +4,7 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
+import 'package:npt_flutter/util/general_extensions.dart';
 
 class ProfileDeviceAtSignTextField extends StatefulWidget {
   const ProfileDeviceAtSignTextField({super.key});
@@ -38,12 +39,14 @@ class _ProfileDeviceAtSignTextFieldState
           },
           builder: (BuildContext context, String? state) {
             if (state == null) return gap0;
-            Future.microtask(
-              () => controller.value = TextEditingValue(
-                text: state,
-                selection: TextSelection.collapsed(offset: state.length),
-              ),
-            );
+            if (controller.text != state) {
+              Future.microtask(
+                () => controller.value = TextEditingValue(
+                  text: state,
+                  selection: TextSelection.collapsed(offset: state.length),
+                ),
+              );
+            }
             return SizedBox(
               width: Sizes.p300,
               height: Sizes.p80,
@@ -52,12 +55,8 @@ class _ProfileDeviceAtSignTextFieldState
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: FormValidator.validateRequiredAtsignField,
                 onChanged: (value) {
-                  if (!value.startsWith('@')) {
-                    value = '@$value';
-                  }
-                  setState(() {
-                    value = value.trim();
-                  });
+                  value = value.atsignify();
+                  setState(() {});
 
                   var bloc = context.read<ProfileBloc>();
                   bloc.add(
