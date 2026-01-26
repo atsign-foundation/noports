@@ -70,12 +70,12 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
   final AtSignLogger logger = AtSignLogger('PolicyService');
 
   final PolicyCache policyCache;
-
   final PolicyOperationHooks? policyOperationHooks;
 
   // services
   late NPA npa; // responds to policy requests
   late AtRpc rpcListener; // policy api (put/get)
+  late AtRpc pingRpcListener; // ping API
 
   final Set<String> allowList; // set of atSigns who can talk to policy api rpc (put/get policy rules)
 
@@ -115,11 +115,21 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       allowList: allowList, 
       baseNameSpace: baseNamespace,
       domainNameSpace: domainNamespace);
+    
+    pingRpcListener = AtRpc(
+      atClient: atClient,
+      callbacks: PingRpcCallbacks(),
+      isClient: false,
+      isServer: true,
+      allowAll: true, // anyone should be able to ping the policy service
+      baseNameSpace: baseNamespace,
+      domainNameSpace: domainNamespace);  
   }
 
   Future<void> start() async {
     await npa.run();
     rpcListener.start();
+    pingRpcListener.start();
   }
 
   String _generateId(Set<PolicyEntry> entities) {
@@ -163,7 +173,7 @@ class PolicyService with AtClientBindings implements AtRpcCallbacks  {
       case 'get':
         switch(target) {
           case 'allClients': {
-            final Set<Client> clients = policyCache.clients;
+            finOhal Set<Client> clients = policyCache.clients;
             final Set<Map<String, dynamic>> clientsAsJson = clients.map((client) => client.toJson()).toSet();
             final int amount = clientsAsJson.length;
             responsePayload['amount'] = amount;

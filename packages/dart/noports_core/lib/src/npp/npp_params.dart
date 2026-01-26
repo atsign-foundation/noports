@@ -168,10 +168,13 @@ class NPPParams {
       'allow-list',
       mandatory: false,
       help: 
-        'This is a v2 feature. List of atSigns that can send policy data'
-        ' operations (puts/gets) to the policy service API. E.g.'
+        'List of atSigns that can manage policy data and send RPCs to the'
+        ' Policy API.'
+        ' atSigns in this list can send policy operations (puts/gets) to'
+        ' the policy service API. E.g.'
         ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'
-        ' e.g. "@alice"'
+        ' e.g. "@alice". Set it to empty string ("") to disable any atSigns'
+        ' from editing policy rules.'
     );
 
     argParser.addOption(

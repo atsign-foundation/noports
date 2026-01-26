@@ -69,9 +69,22 @@ Future<void> main(List<String> args) async {
     AtSignLogger.root_level = 'SHOUT';
   }
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  logger = AtSignLogger('npp');
 
-  logger = AtSignLogger('  npp  ');
+  // 3d. Sanitize allowList
+  final Set<String> allowList;
+  if(nppParams.allowList.trim().isEmpty) {
+    allowList = <String>{};
+  } else {
+    allowList = nppParams.allowList
+      .split(',')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toSet();
+  }
 
+
+  // 4. Set up AtClient instance
   final AtClient atClient;
   try {
     atClient = await createAtClientCli(
@@ -87,6 +100,8 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  // 5. Set up PolicyService
+  // 5a. Set up PolicyCache and PolicyOperationHooks
   final PolicyCache policyCache;
   PolicyOperationHooks? policyOperationHooks;
   switch(nppParams.persistenceMethod) {
@@ -103,6 +118,7 @@ Future<void> main(List<String> args) async {
         baseNamespace: nppParams.baseNamespace,
         domainNamespace: nppParams.domainNamespace,
       );
+      logger.info('Successfully loaded policy cache from atServer');
       break;
     }
     case 'file': {
@@ -121,9 +137,10 @@ Future<void> main(List<String> args) async {
       policyOperationHooks = _generatePolicyOperationHooksForFiles(
         policyDirectory: policyDirectory,
       );
+      logger.info('Successfully loaded policy cache from files in ${policyDirectory.path}');
     }
     case 'none': {
-      logger.info('Using persistence method: "none"');
+      logger.info('Using persistence method: "none". Instantiating empty PolicyCache');
       policyCache = PolicyCache();
     }
     default: {
@@ -132,9 +149,10 @@ Future<void> main(List<String> args) async {
     }
   }
 
+  // 5b. Create PolicyService
   final PolicyService policyService = PolicyService(
     atClient: atClient,
-    allowList: nppParams.allowList.split(',').toSet(),
+    allowList: allowList,
     policyCache: policyCache,
     policyOperationHooks: policyOperationHooks,
   );
@@ -142,7 +160,7 @@ Future<void> main(List<String> args) async {
   await policyService.start();
 }
 
-/// Populate the policy cache by fetching AtKeys from the atServer.
+/// Generate policy cache by fetching AtKeys from the atServer.
 /// 1) *.client.policy_v2.sshnp --> a client (e.g. "@alice", "Alice")
 /// 2) *.client_group.policy_v2.sshnp --> a client group (e.g. client.id, "Atsign Engineers")
 /// 3) *.client_group_member.policy_v2.sshnp --> maps client to a client group (e.g. client.id, client_group.id)
@@ -256,7 +274,7 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
   return policyCache;
 }
 
-/// Populate the policy cache by fetching JSON files from a directory.
+/// Generate policy cache by fetching JSON files from a directory.
 /// directoryPath ideally should be ~/.atsign/npp/<@atsign>/*.json
 /// 1) *_client.json
 /// 2) *_client_group.json
@@ -344,27 +362,6 @@ Future<PolicyCache> _generatePolicyCacheFromFiles({
   logger.info('Loaded ${policyCache.services.length} Services into cache');
   logger.info('Loaded ${policyCache.serviceACLs.length} ServiceACLs into cache');
   return policyCache;
-}
-
-Directory getDefaultPolicyDirectoryPath({
-  required final String atSign,
-  String? baseDir,
-}) {
-  if(baseDir == null) {
-    String? homeDirectory = getHomeDirectory();
-    if(homeDirectory == null) {
-      stderr.writeln('homeDirectory could not be resolved');
-      exit(1);
-    }
-    baseDir = homeDirectory;
-  }
-
-  // append /.atsign/npp/<atsign>
-  return Directory(path.normalize(
-    '$baseDir'
-    '/.atsign'
-    '/npp'
-    '/$atSign').replaceAll('/', Platform.pathSeparator));
 }
 
 PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
@@ -537,3 +534,25 @@ PolicyOperationHooks _generatePolicyOperationHooksForFiles({
 
   return policyOperationHooks;
 }
+
+Directory getDefaultPolicyDirectoryPath({
+  required final String atSign,
+  String? baseDir,
+}) {
+  if(baseDir == null) {
+    String? homeDirectory = getHomeDirectory();
+    if(homeDirectory == null) {
+      stderr.writeln('homeDirectory could not be resolved');
+      exit(1);
+    }
+    baseDir = homeDirectory;
+  }
+
+  // append /.atsign/npp/<atsign>
+  return Directory(path.normalize(
+    '$baseDir'
+    '/.atsign'
+    '/npp'
+    '/$atSign').replaceAll('/', Platform.pathSeparator));
+}
+
