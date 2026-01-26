@@ -7,6 +7,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/version.dart' as binaries_version;
 import 'package:path/path.dart' as path;
 
 late AtSignLogger logger;
@@ -71,12 +72,12 @@ Future<void> main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   logger = AtSignLogger('npp');
 
-  // 3d. Sanitize allowList
-  final Set<String> allowList;
-  if(nppParams.allowList.trim().isEmpty) {
-    allowList = <String>{};
+  // 3d. Sanitize managerAllowList
+  final Set<String> managerAllowList;
+  if(nppParams.managerAllowList.trim().isEmpty) {
+    managerAllowList = <String>{};
   } else {
-    allowList = nppParams.allowList
+    managerAllowList = nppParams.managerAllowList
       .split(',')
       .map((e) => e.trim())
       .where((e) => e.isNotEmpty)
@@ -127,10 +128,18 @@ Future<void> main(List<String> args) async {
       if(nppParams.policyDirectory == null) {
         policyDirectory = getDefaultPolicyDirectoryPath(
           baseDir: getHomeDirectory(),
-          atSign: nppParams.atSign); 
+          atSign: nppParams.atSign);
       } else {
         policyDirectory = Directory(nppParams.policyDirectory!);
       }
+
+      // Create the directory if it doesn't exist
+      if(!await policyDirectory.exists()) {
+        logger.info('Policy directory does not exist. Creating: ${policyDirectory.path}');
+        await policyDirectory.create(recursive: true);
+        logger.info('Successfully created policy directory: ${policyDirectory.path}');
+      }
+
       policyCache = await _generatePolicyCacheFromFiles(
         policyDirectory: policyDirectory,
       );
@@ -152,9 +161,10 @@ Future<void> main(List<String> args) async {
   // 5b. Create PolicyService
   final PolicyService policyService = PolicyService(
     atClient: atClient,
-    allowList: allowList,
+    managerAllowList: managerAllowList,
     policyCache: policyCache,
     policyOperationHooks: policyOperationHooks,
+    binariesVersion: binaries_version.packageVersion,
   );
 
   await policyService.start();
@@ -203,12 +213,26 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
   // Process all AtKeys in a single loop
   for (final AtKey atKey in allPolicyAtKeys) {
     try {
-      // Determine entity type from namespace
-      final String? namespace = atKey.namespace;
-      if (namespace == null) {
-        logger.warning('AtKey has null namespace: ${atKey.toString()}');
+      // Extract entity type from the key field
+      // Key format: {id}.{entity_type}.{domain_namespace}
+      // Example: 1.client.npp
+      final String? keyValue = atKey.key;
+      if (keyValue == null || keyValue.isEmpty) {
+        logger.warning('AtKey has null or empty key: ${atKey.toString()}');
         continue;
       }
+
+      final List<String> keyParts = keyValue.split('.');
+      if (keyParts.length < 2) {
+        logger.warning('AtKey has unexpected key format: ${atKey.toString()}');
+        continue;
+      }
+
+      // Entity type is the second-to-last part (before domain namespace)
+      // For "1.client.npp", parts are [1, client, npp], so entity type is at index 1
+      final String entityType = keyParts[keyParts.length - 2];
+
+      logger.info('Processing AtKey: ${atKey.toString()}, entityType: $entityType');
 
       // Fetch the value
       final AtValue atValue = await atClient.get(
@@ -224,38 +248,38 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
       final Map<String, dynamic> jsonData = jsonDecode(atValue.value);
 
       // Process based on entity type (check most specific first)
-      if (namespace.startsWith('client_group_member.')) {
+      if (entityType == 'client_group_member') {
         final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(jsonData);
         policyCache.putClientGroupMember(clientGroupMember);
-        logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
+        logger.info('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
         clientGroupMembersLoaded++;
-      } else if (namespace.startsWith('client_group.')) {
+      } else if (entityType == 'client_group') {
         final ClientGroup clientGroup = ClientGroup.fromJson(jsonData);
         policyCache.putClientGroup(clientGroup);
-        logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
+        logger.info('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
         clientGroupsLoaded++;
-      } else if (namespace.startsWith('client.')) {
+      } else if (entityType == 'client') {
         final Client client = Client.fromJson(jsonData);
         policyCache.putClient(client);
-        logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
+        logger.info('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
         clientsLoaded++;
-      } else if (namespace.startsWith('daemon.')) {
+      } else if (entityType == 'daemon') {
         final Daemon daemon = Daemon.fromJson(jsonData);
         policyCache.putDaemon(daemon);
-        logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
+        logger.info('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
         daemonsLoaded++;
-      } else if (namespace.startsWith('service_acl.')) {
+      } else if (entityType == 'service_acl') {
         final ServiceACL serviceACL = ServiceACL.fromJson(jsonData);
         policyCache.putServiceACL(serviceACL);
-        logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
+        logger.info('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
         serviceACLsLoaded++;
-      } else if (namespace.startsWith('service.')) {
+      } else if (entityType == 'service') {
         final Service service = Service.fromJson(jsonData);
         policyCache.putService(service);
-        logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
+        logger.info('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
         servicesLoaded++;
       } else {
-        logger.finer('Skipping atKey with unrecognized namespace: $namespace');
+        logger.warning('Skipping atKey with unrecognized entity type: $entityType (atKey: ${atKey.toString()})');
       }
 
     } catch (e, s) {
@@ -285,15 +309,18 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
 Future<PolicyCache> _generatePolicyCacheFromFiles({
   required Directory policyDirectory, // directory path where JSON files are stored e.g. "~/.atsign/npp/@jeremy"
 }) async {
-  // First, let's see if the directory exists
   final PolicyCache policyCache = PolicyCache();
   if(!(await policyDirectory.exists())) {
-    logger.warning('Directory $policyDirectory does not exist. Returning an empty PolicyCache()');
+    logger.info('Directory $policyDirectory does not exist. Returning an empty PolicyCache()');
     return policyCache;
   }
 
   final List<FileSystemEntity> files = policyDirectory.listSync();
-  logger.info('Found ${files.length} files in directory $policyDirectory');
+  if(files.isEmpty) {
+    logger.info('No files found in directory $policyDirectory. Starting with empty PolicyCache()');
+  } else {
+    logger.info('Found ${files.length} files in directory $policyDirectory');
+  }
   for(final FileSystemEntity file in files) {
     logger.finer('Processing file: ${file.path}');
     logger.finer('File type: ${file.runtimeType}');

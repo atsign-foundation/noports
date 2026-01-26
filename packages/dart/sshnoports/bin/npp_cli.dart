@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
+import 'package:sshnoports/src/print_version.dart';
 
 import 'cli_menu_helper.dart';
 
@@ -14,13 +15,41 @@ late AtSignLogger logger;
 Future<void> main(List<String> args) async {
   logger = AtSignLogger('  policy_cli  ');
 
-  final PolicyCLIParams policyCLIParams = PolicyCLIParams.fromArgs(args);
+  // Handle --help and --version flags before parsing
+  try {
+    final argResults = NPPCLIParams.argParser.parse(args);
+    if (argResults['help']) {
+      print(NPPCLIParams.argParser.usage);
+      exit(0);
+    }
+    if (argResults['version']) {
+      printVersion();
+      exit(0);
+    }
+  } on FormatException catch (e) {
+    stderr.writeln('Error: ${e.message}');
+    stderr.writeln('\nUsage:');
+    stderr.writeln(NPPCLIParams.argParser.usage);
+    exit(1);
+  } catch (e) {
+    // Continue to fromArgs which will handle other errors
+  }
+
+  final NPPCLIParams nppCLIParams;
+  try {
+    nppCLIParams = NPPCLIParams.fromArgs(args);
+  } catch (e) {
+    stderr.writeln('Error: $e');
+    stderr.writeln('\nUsage:');
+    stderr.writeln(NPPCLIParams.argParser.usage);
+    exit(1);
+  }
   AtSignLogger.root_level = 'severe';
-  if (policyCLIParams.verbose) {
+  if (nppCLIParams.verbose) {
     AtSignLogger.root_level = 'info';
   }
-  final AtOnboardingPreference atOnboardingPreference = generateAtOnboardingPreference(policyCLIParams);
-  final AtOnboardingService atOnboardingService = AtOnboardingServiceImpl(policyCLIParams.atSign, atOnboardingPreference);
+  final AtOnboardingPreference atOnboardingPreference = generateAtOnboardingPreference(nppCLIParams);
+  final AtOnboardingService atOnboardingService = AtOnboardingServiceImpl(nppCLIParams.atSign, atOnboardingPreference);
   final bool authSuccess = await atOnboardingService.authenticate();
   if(!authSuccess) {
     print('Auth Success: $authSuccess');
@@ -31,81 +60,102 @@ Future<void> main(List<String> args) async {
 
   final AtRpcClient atRpcClient = AtRpcClient(
     atClient: atClient,
-    serverAtsign: policyCLIParams.policyAtSign,
-    baseNameSpace: policyCLIParams.baseNamespace,
-    domainNameSpace: 'policy_v2',
+    serverAtsign: nppCLIParams.policyAtSign,
+    baseNameSpace: nppCLIParams.baseNamespace,
+    domainNameSpace: nppCLIParams.domainNamespace!,
   );
 
-  final PolicyClient policyClient = 
-  PolicyClient.fromAtRpcClient(atRpcClient: atRpcClient);
+  final PolicyClient policyClient = PolicyClient.fromAtRpcClient(
+    atRpcClient: atRpcClient,
+    atClient: atClient,
+    serverAtSign: nppCLIParams.policyAtSign,
+    baseNameSpace: nppCLIParams.baseNamespace,
+  );
 
 
   while(true) {
   final String option = showMenuAndGetSelection();
   switch(option) {
-    case '1': { // getAllClients
+    case '1': { // ping
+      print(chalk.blue('\nSending ping request...'));
+      try {
+        final Map<String, dynamic> pingResponse = await policyClient.ping();
+        print(chalk.green('\n✓ Ping successful!'));
+        print('  ${chalk.cyan('status')}: ${pingResponse['status']}');
+        if (pingResponse.containsKey('binariesVersion')) {
+          print('  ${chalk.cyan('binariesVersion')}: ${pingResponse['binariesVersion']}');
+        }
+        print('  ${chalk.cyan('coreVersion')}: ${pingResponse['coreVersion']}');
+        print('  ${chalk.cyan('features')}: ${(pingResponse['features'] as List).join(', ')}');
+        print('  ${chalk.cyan('timestamp')}: ${pingResponse['timestamp']}');
+      } catch (e) {
+        print(chalk.red('\n✗ Ping failed: $e'));
+      }
+      break;
+    }
+    case '2': { // getAllClients
       final Set<Client> allClients = await policyClient.getAllClients();
       print(chalk.green('\n✓ Obtained ${allClients.length} clients:'));
       for(int i = 0; i < allClients.length; i++) {
       final Client client = allClients.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(client.id ?? 'N/A')} | name: ${client.name} | atSign: ${client.atSign}');
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(client.id ?? 'N/A')}) | name: ${client.name} | atSign: ${client.atSign}');
     }
       break;
     }
-    case '2': { // getAllClientGroups
+    case '3': { // getAllClientGroups
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       print(chalk.green('\n✓ Obtained ${allClientGroups.length} client groups:'));
       for(int i = 0; i < allClientGroups.length; i++) {
       final ClientGroup clientGroup = allClientGroups.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(clientGroup.id ?? 'N/A')} | '
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(clientGroup.id ?? 'N/A')}) | '
         'name: ${clientGroup.name}');
     }
       break;
     }
-    case '3': { // getAllClientGroupMembers
+    case '4': { // getAllClientGroupMembers
       final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
-      print('Obtained ${allClientGroupMembers.length} client group members:');
+      print(chalk.green('\n✓ Obtained ${allClientGroupMembers.length} client group members:'));
       for(int i = 0; i < allClientGroupMembers.length; i++) {
       final ClientGroupMember clientGroupMember = allClientGroupMembers.elementAt(i);
-      print('[$i]: clientGroupMember.id: ${clientGroupMember.id} | '
-        'clientGroupId ${clientGroupMember.clientGroupId} | '
-        'clientGroupMember.clientId: ${clientGroupMember.clientId}');
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(clientGroupMember.id ?? 'N/A')}) | '
+        'clientGroupId: (${clientGroupMember.clientGroupId}) | '
+        'clientId: (${clientGroupMember.clientId})');
     }
       break;
     }
-    case '4': { // getAllDaemons
+    case '5': { // getAllDaemons
       final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
-      print('Obtained ${allDaemons.length} daemons:');
+      print(chalk.green('\n✓ Obtained ${allDaemons.length} daemons:'));
       for(int i = 0; i < allDaemons.length; i++) {
       final Daemon daemon = allDaemons.elementAt(i);
-      print('[$i]: daemon.id: ${daemon.id} | daemon.atSign: ${daemon.atSign}');
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(daemon.id ?? 'N/A')}) | atSign: ${daemon.atSign}');
     }
       break;
     }
-    case '5': { // getAllServices
+    case '6': { // getAllServices
       final Set<Service> allServices = await policyClient.getAllServices();
-      print('Obtained ${allServices.length} services:');
+      print(chalk.green('\n✓ Obtained ${allServices.length} services:'));
       for(int i = 0; i < allServices.length; i++) {
       final Service service = allServices.elementAt(i);
-      print('[$i]: service.id: ${service.id} | '
-        'service.deviceName: ${service.deviceName} | '
-        'service.daemonId: ${service.daemonId}');
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(service.id ?? 'N/A')}) | '
+        'deviceName: ${service.deviceName} | '
+        'daemonId: (${service.daemonId})');
     }
       break;
     }
-    case '6': { // getAllServiceACLs
+    case '7': { // getAllServiceACLs
       final Set<ServiceACL> allServiceACLs = await policyClient.getAllServiceACLs();
-      print('Obtained ${allServiceACLs.length} service ACLs:');
+      print(chalk.green('\n✓ Obtained ${allServiceACLs.length} service ACLs:'));
       for(int i = 0; i < allServiceACLs.length; i++) {
       final ServiceACL serviceACL = allServiceACLs.elementAt(i);
-      print('[$i]: serviceACL.id: ${serviceACL.id} | '
-        'serviceACL.serviceId: ${serviceACL.serviceId} | '
-        'serviceACL.clientGroupId: ${serviceACL.clientGroupId} | '
-        'serviceACL.permitOpen: ${serviceACL.permitOpen}');
+      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(serviceACL.id ?? 'N/A')}) | '
+        'serviceId: (${serviceACL.serviceId}) | '
+        'clientGroupId: (${serviceACL.clientGroupId}) | '
+        'permitOpen: ${serviceACL.permitOpen}');
     }
       break;
     }
-    case '7': { // putClient
+    case '8': { // putClient
       stdout.write(chalk.white('\nEnter client name: '));
       final String? clientName = stdin.readLineSync();
       if(clientName == null || clientName.isEmpty) {
@@ -135,7 +185,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client with generated id: $clientId'));
       break;
     }
-    case '8': { // putClientGroup
+    case '9': { // putClientGroup
       stdout.write(chalk.white('\nEnter client group name (e.g. "RDP Users"): '));
       final String? clientGroupName = stdin.readLineSync();
       if(clientGroupName == null || clientGroupName.isEmpty) {
@@ -157,11 +207,11 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client group with generated id: $clientGroupId'));
       break;
     }
-    case '9': { // putClientGroupMember
+    case '10': { // putClientGroupMember
       print(chalk.blue('Fetching available clients...'));
       final Set<Client> allClients = await policyClient.getAllClients();
       if(allClients.isEmpty) {
-        print(chalk.red('No clients found. Please create a client first (option 7).'));
+        print(chalk.red('No clients found. Please create a client first (option 8).'));
         break;
       }
 
@@ -177,7 +227,7 @@ Future<void> main(List<String> args) async {
       print(chalk.blue('\nFetching available client groups...'));
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
-        print(chalk.red('No client groups found. Please create a client group first (option 8).'));
+        print(chalk.red('No client groups found. Please create a client group first (option 9).'));
         break;
       }
 
@@ -206,7 +256,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client group member with generated id: $clientGroupMemberId'));
       break;
     }
-    case '10': { // putDaemon
+    case '11': { // putDaemon
       stdout.write(chalk.white('\nEnter daemon atSign: '));
       final String? daemonAtSign = stdin.readLineSync();
       if(daemonAtSign == null || daemonAtSign.isEmpty) {
@@ -228,11 +278,11 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put daemon with generated id: $daemonId'));
       break;
     }
-    case '11': { // putService
+    case '12': { // putService
       print(chalk.blue('Fetching available daemons...'));
       final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
       if(allDaemons.isEmpty) {
-        print(chalk.red('No daemons found. Please create a daemon first (option 10).'));
+        print(chalk.red('No daemons found. Please create a daemon first (option 11).'));
         break;
       }
 
@@ -283,11 +333,11 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put service with generated id: $serviceId'));
       break;
     }
-    case '12': { // putServiceACL
+    case '13': { // putServiceACL
       print(chalk.blue('Fetching available services...'));
       final Set<Service> allServices = await policyClient.getAllServices();
       if(allServices.isEmpty) {
-        print(chalk.red('No services found. Please create a service first (option 11).'));
+        print(chalk.red('No services found. Please create a service first (option 12).'));
         break;
       }
 
@@ -303,7 +353,7 @@ Future<void> main(List<String> args) async {
       print(chalk.blue('\nFetching available client groups...'));
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
-        print(chalk.red('No client groups found. Please create a client group first (option 8).'));
+        print(chalk.red('No client groups found. Please create a client group first (option 9).'));
         break;
       }
 
@@ -356,18 +406,19 @@ String showMenuAndGetSelection() {
   print(chalk.bold.blue('╚════════════════════════════════════════╝'));
 
   final List<String> menuItems = [
-    chalk.cyan('1. ') + 'getAllClients',
-    chalk.cyan('2. ') + 'getAllClientGroups',
-    chalk.cyan('3. ') + 'getAllClientGroupMembers',
-    chalk.cyan('4. ') + 'getAllDaemons',
-    chalk.cyan('5. ') + 'getAllServices',
-    chalk.cyan('6. ') + 'getAllServiceACLs',
-    chalk.green('7. ') + 'putClient',
-    chalk.green('8. ') + 'putClientGroup',
-    chalk.green('9. ') + 'putClientGroupMember',
-    chalk.green('10. ') + 'putDaemon',
-    chalk.green('11. ') + 'putService',
-    chalk.green('12. ') + 'putServiceACL',
+    chalk.magenta('1. ') + 'ping',
+    chalk.cyan('2. ') + 'getAllClients',
+    chalk.cyan('3. ') + 'getAllClientGroups',
+    chalk.cyan('4. ') + 'getAllClientGroupMembers',
+    chalk.cyan('5. ') + 'getAllDaemons',
+    chalk.cyan('6. ') + 'getAllServices',
+    chalk.cyan('7. ') + 'getAllServiceACLs',
+    chalk.green('8. ') + 'putClient',
+    chalk.green('9. ') + 'putClientGroup',
+    chalk.green('10. ') + 'putClientGroupMember',
+    chalk.green('11. ') + 'putDaemon',
+    chalk.green('12. ') + 'putService',
+    chalk.green('13. ') + 'putServiceACL',
   ];
 
   print(chalk.white('\nSelect an option (use arrow keys):'));
@@ -377,15 +428,15 @@ String showMenuAndGetSelection() {
 }
 
 AtOnboardingPreference generateAtOnboardingPreference(
-  PolicyCLIParams policyCLIParams
+  NPPCLIParams nppCLIParams
 ) {
   final AtOnboardingPreference atOnboardingPreference = AtOnboardingPreference()
-  ..rootDomain = policyCLIParams.rootServer.split(':')[0]
-  ..rootPort = int.parse(policyCLIParams.rootServer.split(':')[1])
-  ..atKeysFilePath = policyCLIParams.atKeysFilePath;
+  ..rootDomain = nppCLIParams.rootServer.split(':')[0]
+  ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1])
+  ..atKeysFilePath = nppCLIParams.atKeysFilePath;
 
-  if(policyCLIParams.storagePath != null) {
-    atOnboardingPreference.hiveStoragePath = policyCLIParams.storagePath;
+  if(nppCLIParams.storagePath != null) {
+    atOnboardingPreference.hiveStoragePath = nppCLIParams.storagePath;
   }
 
   return atOnboardingPreference;

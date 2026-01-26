@@ -138,7 +138,7 @@ void main(List<String> args) async {
         baseNamespace: DefaultArgs.namespace,
         ),
       atClient: atClient,
-      allowList: p.allowList.split(',').toSet(),
+      managerAllowList: p.managerAllowList.split(',').toSet(),
       policyCache: policyCache,
       );
 

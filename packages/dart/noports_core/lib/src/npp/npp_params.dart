@@ -31,7 +31,7 @@ class NPPParams {
   // Case 2b: Non-mandatory options with run-time defaults
   // -----------
   late String atKeysFilePath;
-  late String allowList;
+  late String managerAllowList;
   late String storagePath;
 
   // -----------
@@ -75,7 +75,7 @@ class NPPParams {
     // Case 2b:
     nppParams.atKeysFilePath = argResults['key-file'] ??
       getDefaultAtKeysFilePath(homeDirectory, atSign);
-    nppParams.allowList = argResults['allow-list'] ?? atSign;
+    nppParams.managerAllowList = argResults['manager-allow-list'] ?? atSign;
     nppParams.storagePath = argResults['storage-path'] ??
       standardAtClientStoragePath(
         baseDir: homeDirectory,
@@ -165,11 +165,11 @@ class NPPParams {
     );
 
     argParser.addOption(
-      'allow-list',
+      'manager-allow-list',
       mandatory: false,
-      help: 
+      help:
         'List of atSigns that can manage policy data and send RPCs to the'
-        ' Policy API.'
+        ' Policy Manager API.'
         ' atSigns in this list can send policy operations (puts/gets) to'
         ' the policy service API. E.g.'
         ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'

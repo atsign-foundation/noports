@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:chalkdart/chalk.dart';
-import 'package:noports_core/admin_v2.dart';
+import 'package:noports_core/npp.dart';
 
 class CliMenuHelper {
   static Future<String?> selectClientId(List<Client> clients) async {

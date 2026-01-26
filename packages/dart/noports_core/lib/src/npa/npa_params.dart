@@ -13,7 +13,7 @@ class NPAParams {
   final String? eventLoggingAtsign;
   final String? storagePath;
   final String policyVersion;
-  final String allowList;
+  final String managerAllowList;
   final String persistenceMethod;
 
   // Non param variables
@@ -27,7 +27,7 @@ class NPAParams {
     required this.homeDirectory,
     required this.eventLoggingAtsign,
     required this.policyVersion,
-    required this.allowList,
+    required this.managerAllowList,
     required this.persistenceMethod,
     this.storagePath,
   });
@@ -49,7 +49,7 @@ class NPAParams {
       eventLoggingAtsign: r['event-logging-atsign'],
       policyVersion: r['policy-version'],
       storagePath: r['storage-path'],
-      allowList: r['allow-list'] ?? policyAtsign,
+      managerAllowList: r['manager-allow-list'] ?? policyAtsign,
       persistenceMethod: r['persistence-method'], // defaults to 'atserver'
     );
   }
@@ -124,9 +124,9 @@ class NPAParams {
     );
 
     parser.addOption(
-      'allow-list',
+      'manager-allow-list',
       mandatory: false,
-      help: 
+      help:
         'This is a v2 feature. List of atSigns that can send policy data'
         ' operations (puts/gets) to the policy service API. E.g.'
         ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'

@@ -7,13 +7,24 @@ class PolicyClient {
   static final AtSignLogger logger = AtSignLogger('PolicyClient');
 
   late AtRpcClient _atRpcClient;
+  late AtClient _atClient;
+  late String _serverAtSign;
+  late String _baseNameSpace;
 
   PolicyClient._();
 
   factory PolicyClient.fromAtRpcClient({
-    required final AtRpcClient atRpcClient}) {
+    required final AtRpcClient atRpcClient,
+    required final AtClient atClient,
+    required final String serverAtSign,
+    required final String baseNameSpace,
+  }) {
     PolicyClient policyClient = PolicyClient._();
     policyClient._atRpcClient = atRpcClient;
+    // Store for ping operations
+    policyClient._atClient = atClient;
+    policyClient._serverAtSign = serverAtSign;
+    policyClient._baseNameSpace = baseNameSpace;
     return policyClient;
   }
 
@@ -23,6 +34,9 @@ class PolicyClient {
     required final String baseNameSpace,
     required final String domainNameSpace,
   }) {
+    _atClient = atClient;
+    _serverAtSign = serverAtSign;
+    _baseNameSpace = baseNameSpace;
     _atRpcClient = AtRpcClient(
       serverAtsign: serverAtSign,
       atClient: atClient,
@@ -222,6 +236,35 @@ class PolicyClient {
     final String serviceACLId = response['serviceACLId'];
     return serviceACLId;
   }
-  
+
+  /// Send a ping request to the policy service and return the response
+  /// Returns a map containing status, coreVersion, optional binariesVersion, features, and timestamp
+  Future<Map<String, dynamic>> ping() async {
+    // Create a separate AtRpcClient for ping with 'ping' domain namespace
+    final AtRpcClient pingRpcClient = AtRpcClient(
+      serverAtsign: _serverAtSign,
+      atClient: _atClient,
+      baseNameSpace: _baseNameSpace,
+      domainNameSpace: 'ping',
+    );
+
+    final Map<String, dynamic> response = await pingRpcClient.call({});
+
+    if(!response.containsKey('status')) {
+      throw Exception('status key not found in ping response: $response');
+    }
+    if(!response.containsKey('coreVersion')) {
+      throw Exception('coreVersion key not found in ping response: $response');
+    }
+    if(!response.containsKey('features')) {
+      throw Exception('features key not found in ping response: $response');
+    }
+    if(!response.containsKey('timestamp')) {
+      throw Exception('timestamp key not found in ping response: $response');
+    }
+
+    return response;
+  }
+
 }
 

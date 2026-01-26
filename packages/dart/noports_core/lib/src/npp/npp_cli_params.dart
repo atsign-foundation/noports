@@ -37,6 +37,9 @@ class NPPCLIParams {
 
   static final ArgParser _argParser = _createArgParser();
 
+  // Public getter for argParser to allow early help/version checks
+  static ArgParser get argParser => _argParser;
+
   // private constructor, please use `.fromArgs` factory to instantiate
   NPPCLIParams._({
     required String atSign,
@@ -66,7 +69,7 @@ class NPPCLIParams {
 
     // Case 2a: gets value or default from ArgParser
     p._verbose = argResults['verbose'];
-    p._rootServer = argResults['root-server'];
+    p._rootServer = argResults['root-domain'];
     p._baseNamespace = argResults['base-namespace'];
     p._domainNamespace = argResults['domain-namespace'];
 
@@ -85,22 +88,36 @@ class NPPCLIParams {
   static ArgParser _createArgParser() {
     final ArgParser argParser = ArgParser();
 
+    // Help and version flags
+    argParser.addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show usage instructions',
+    );
+
+    argParser.addFlag(
+      'version',
+      negatable: false,
+      help: 'Show version information',
+    );
+
     // Case 1: Manatory options
     argParser.addOption(
       'atsign',
       abbr: 'a',
       mandatory: true,
-      help: 'policy atSign',
+      help: 'atSign to authenticate as (your atSign)',
     );
 
     // Case 2a: Non-mandatory, but has defaultsTo:
     // Be sure to use PolicyCLIParamsDefaults
     argParser.addOption(
-      'root-server',
+      'root-domain',
       mandatory: false,
       defaultsTo: NPPCLIParamsDefaults.rootServer,
       help: 'host:port of the atDirectory',
-      aliases: const ['root-domain'],
+      aliases: const ['root-server'],
     );
 
     argParser.addFlag(
@@ -138,7 +155,8 @@ class NPPCLIParams {
     argParser.addOption(
       'policy-atsign',
       mandatory: false,
-      help: 'Policy atSign, defaults to the specified -a atSign'
+      help: 'atSign of the policy service to connect to. '
+        'Defaults to the -a atSign (connects to your own policy service)'
     );
 
     // Case 3: Non-mandatory 
