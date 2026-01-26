@@ -216,7 +216,7 @@ jobs:
           COMPONENT_ID: 'Y6pppn8rC4'
           LOCK_FILE: './packages/c/conan.lock'
           COMPONENT_NAME: 'csshnpd'
-          COMPONENT_VERSION: ${{github.ref_name}}
+          COMPONENT_VERSION: ${{github.ref_name}}-gha${{github.run_number}}
           OUTPUT_FILE: 'tarballs/csshnpd-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true

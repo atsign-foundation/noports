@@ -349,7 +349,7 @@ jobs:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
           LOCK_FILE: './packages/dart/sshnoports/pubspec.lock'
-          COMPONENT_VERSION: ${{github.ref_name}}
+          COMPONENT_VERSION: ${{github.ref_name}}-gha${{github.run_number}}
           OUTPUT_FILE: 'tarballs/noports_dart-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
