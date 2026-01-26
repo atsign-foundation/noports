@@ -81,6 +81,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     );
   }
 
+  /// Returns true if the user completed the selection and wants to proceed with onboarding. Returns false if the user cancelled the selection.
+  /// Displays the onboarding dialog for the user to select an atsign. If there are no atsigns available, the atsign field will be blank.
+  /// If there is an atsign available, it will be pre-selected along with its associated root domain.
   Future<bool> selectAtsign() async {
     var options = await getAtsignEntries();
     if (!mounted) return false;
