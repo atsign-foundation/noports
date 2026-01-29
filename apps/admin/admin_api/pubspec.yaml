@@ -11,7 +11,7 @@ environment:
 dependencies:
   alfred: 1.1.2+1
   at_client: ^3.10.0
-  json_annotation: 4.9.0
+  json_annotation: 4.10.0
   at_cli_commons: ^3.0.1
   args: 2.7.0
   meta: 1.18.1
