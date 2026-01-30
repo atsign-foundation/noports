@@ -2,7 +2,7 @@ import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
 
 void main() {
-  late PolicyCache cache;
+  late NppCache cache;
   late Client c1;
   late Client c2;
   late Client c3;
@@ -22,7 +22,7 @@ void main() {
   late ServiceACL sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8, sa9, sa10, sa11, sa12;
 
   setUpAll(() {
-      cache = PolicyCache();
+      cache = NppCache();
 
       c1 = Client(id: 'c1', name: 'Alice', atSign: '@alice');
       c2 = Client(id: 'c2', name: 'Bob', atSign: '@bob');
