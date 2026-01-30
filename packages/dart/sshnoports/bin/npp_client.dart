@@ -7,8 +7,7 @@ import 'package:noports_core/npp.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
-
-import 'cli_menu_helper.dart';
+import 'package:sshnoports/src/cli_menu_helper.dart';
 
 late AtSignLogger logger;
 
