@@ -6,38 +6,20 @@ class PolicyClient {
 
   static final AtSignLogger logger = AtSignLogger('PolicyClient');
 
-  late AtRpcClient _atRpcClient;
-  late AtClient _atClient;
-  late String _serverAtSign;
-  late String _baseNameSpace;
+  final AtClient atClient;
+  final String serverAtSign;
+  final String baseNameSpace;
+  final String domainNameSpace;
 
-  PolicyClient._();
-
-  factory PolicyClient.fromAtRpcClient({
-    required final AtRpcClient atRpcClient,
-    required final AtClient atClient,
-    required final String serverAtSign,
-    required final String baseNameSpace,
-  }) {
-    PolicyClient policyClient = PolicyClient._();
-    policyClient._atRpcClient = atRpcClient;
-    // Store for ping operations
-    policyClient._atClient = atClient;
-    policyClient._serverAtSign = serverAtSign;
-    policyClient._baseNameSpace = baseNameSpace;
-    return policyClient;
-  }
+  late AtRpcClient atRpcClient;
 
   PolicyClient({
-    required final AtClient atClient,
-    required final String serverAtSign,
-    required final String baseNameSpace,
-    required final String domainNameSpace,
+    required this.atClient,
+    required this.serverAtSign,
+    required this.baseNameSpace,
+    required this.domainNameSpace,
   }) {
-    _atClient = atClient;
-    _serverAtSign = serverAtSign;
-    _baseNameSpace = baseNameSpace;
-    _atRpcClient = AtRpcClient(
+    atRpcClient = AtRpcClient(
       serverAtsign: serverAtSign,
       atClient: atClient,
       baseNameSpace: baseNameSpace,
@@ -47,7 +29,7 @@ class PolicyClient {
 
 
   Future<dynamic> executePolicyDataOperation(final PolicyDataOperation policyDataOperation) async {
-    final Map<String, dynamic> response = await _atRpcClient.call(policyDataOperation.atRpcPayload);
+    final Map<String, dynamic> response = await atRpcClient.call(policyDataOperation.atRpcPayload);
     return response;
   }
 
@@ -240,7 +222,6 @@ class PolicyClient {
   Future<bool> deleteClient(String clientId) async {
     final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClient(clientId);
     final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
-    // Response will have 'success' key from manager_rpc_callbacks
     return response['success'] ?? false;
   }
 
@@ -274,19 +255,9 @@ class PolicyClient {
     return response['success'] ?? false;
   }
 
-  /// Send a ping request to the policy service and return the response
-  /// Returns a map containing status, coreVersion, optional binariesVersion, features, and timestamp
   Future<Map<String, dynamic>> ping() async {
-    // Create a separate AtRpcClient for ping with 'ping' domain namespace
-    final AtRpcClient pingRpcClient = AtRpcClient(
-      serverAtsign: _serverAtSign,
-      atClient: _atClient,
-      baseNameSpace: _baseNameSpace,
-      domainNameSpace: 'ping',
-    );
-
-    final Map<String, dynamic> response = await pingRpcClient.call({});
-
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.ping();
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
     if(!response.containsKey('status')) {
       throw Exception('status key not found in ping response: $response');
     }
@@ -299,7 +270,6 @@ class PolicyClient {
     if(!response.containsKey('timestamp')) {
       throw Exception('timestamp key not found in ping response: $response');
     }
-
     return response;
   }
 

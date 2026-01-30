@@ -3,9 +3,15 @@ import 'package:noports_core/npp.dart';
 class PolicyDataOperation {
   final Map<String, dynamic> atRpcPayload;
 
-  PolicyDataOperation({
-    required this.atRpcPayload});
+  PolicyDataOperation({required this.atRpcPayload});
 
+  factory PolicyDataOperation.ping() {
+    return PolicyDataOperation(
+      atRpcPayload: {
+        'operation': 'ping',
+      },
+    );
+  }
 
   factory PolicyDataOperation.getAllClients() {
     return PolicyDataOperation(
@@ -66,6 +72,7 @@ class PolicyDataOperation {
       atRpcPayload: {
         'operation': 'put',
         'target': 'Client',
+        'value': client.toJson(),
       },
     );
   }

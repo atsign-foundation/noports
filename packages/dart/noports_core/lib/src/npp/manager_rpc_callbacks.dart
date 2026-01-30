@@ -4,7 +4,6 @@ import 'package:noports_core/npp.dart';
 import 'package:noports_core/src/version.dart' as core_version;
 
 /// Callbacks for handling policy manager RPC requests
-/// This handles get/put operations for policy entities like Clients, Daemons, Services, etc.
 class ManagerRpcCallbacks implements AtRpcCallbacks {
   final AtClient atClient;
   final PolicyCache policyCache;
@@ -49,20 +48,29 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       return AtRpcResp(
         reqId: reqId,
         respType: AtRpcRespType.error,
-        message: 'operation, target, or value JSON keys was not found in the '
-            'payload.',
+        message: 'operation JSON key was not found in the payload.',
         payload: {},
       );
     }
     final String operation = requestPayload['operation'];
-    final String target = requestPayload['target'];
+    final String? target = requestPayload['target'];
     late String message;
     late bool success;
     switch (operation) {
+      case 'ping': {
+        logger.info('Received ping request from $fromAtSign');
+        responsePayload['status'] = 'alive';
+        responsePayload['coreVersion'] = core_version.packageVersion;
+        responsePayload['binariesVersion'] = binariesVersion;
+        responsePayload['timestamp'] = DateTime.now().toIso8601String();
+        success = true;
+        message = 'pong';
+        break;
+      }
       case 'get': {
-        if(!requestPayload.containsKey('target')) {
+        if(target == null) {
           success = false;
-          message = 'target or value JSON keys was not found in the payload.';
+          message = 'target JSON key was not found in the payload.';
           break;
         }
         switch (target) {
@@ -130,20 +138,22 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final Set<Map<String, dynamic>> serviceACLsAsJson =
                 serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
             final int amount = serviceACLsAsJson.length;
-            responsePayload['amount'] = serviceACLsAsJson.length;
+            responsePayload['amount'] = amount;
             responsePayload['list'] = serviceACLsAsJson.toList();
             message = '$amount ServiceACLs found.';
             success = true;
             break;
           }
           default: {
+            success = false;
+            message = 'Unknown target for get operation: $target';
             break;
           }
         }
         break;
       }
       case 'put': {
-        if(!requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
+        if(target == null || !requestPayload.containsKey('value')) {
           success = false;
           message = 'target or value JSON keys was not found in the payload.';
           break;
@@ -382,7 +392,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         break;
       }
       case 'delete': {
-        if(!requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
+        if(target == null || !requestPayload.containsKey('value')) {
           success = false;
           message = 'target or value JSON keys was not found in the payload.';
           break;
@@ -392,16 +402,18 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
             success = policyCache.deleteClient(clientId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'Client with id $clientId deleted successfully.';
             } else {
-              message = 'Failed to delete client with atSign $clientId.';
+              message = 'Failed to delete client with id $clientId.';
             }
             break;
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
             success = policyCache.deleteClientGroup(clientGroupId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'ClientGroup with id $clientGroupId deleted successfully.';
             } else {
@@ -412,6 +424,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ClientGroupMember': {
             final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
             success = policyCache.deleteClientGroupMember(clientGroupMemberId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'ClientGroupMember with id $clientGroupMemberId deleted successfully.';
             } else {
@@ -422,6 +435,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
             success = policyCache.deleteDaemon(daemonId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'Daemon with id $daemonId deleted successfully.';
             } else {
@@ -432,6 +446,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
             success = policyCache.deleteService(serviceId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'Service with id $serviceId deleted successfully.';
             } else {
@@ -442,6 +457,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
             success = policyCache.deleteServiceACL(serviceACLId);
+            responsePayload['success'] = success;
             if (success) {
               message = 'ServiceACL with id $serviceACLId deleted successfully.';
             } else {
@@ -455,13 +471,6 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             break;
           }
         }
-      }
-      case 'ping': {
-        logger.info('Received ping request from $fromAtSign');
-        responsePayload['status'] = 'alive';
-        responsePayload['coreVersion'] = core_version.packageVersion;
-        responsePayload['binariesVersion'] = binariesVersion;
-        responsePayload['timestamp'] = DateTime.now().toIso8601String();
       }
       default: {
         success = false;

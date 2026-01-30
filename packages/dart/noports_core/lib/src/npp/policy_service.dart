@@ -1,6 +1,5 @@
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
@@ -67,6 +66,7 @@ class PolicyServiceDefaults {
 class PolicyService {
   @override
   final AtClient atClient;
+
   @override
   final AtSignLogger logger = AtSignLogger('PolicyService');
 
@@ -75,20 +75,20 @@ class PolicyService {
 
   // services
   late NPA npa; // responds to policy requests
-  late AtRpc managerRpcListener; // policy api (put/get)
-  late AtRpc pingRpcListener; // ping API
+  late AtRpc managerRpcListener; // policy api (put/get/delete/ping)
 
   final Set<String> managerAllowList; // set of atSigns who can talk to policy manager api rpc (put/get policy rules)
 
+  final String baseNamespace;
+  final String domainNamespace;
+
   PolicyService({
-    // mandatroy
     required this.atClient,
     required this.policyCache,
     required this.managerAllowList,
     required String binariesVersion,
-    // optional
-    final String domainNamespace = PolicyServiceDefaults.domainNamespace,
-    final String baseNamespace = PolicyServiceDefaults.baseNamespace,
+    this.baseNamespace = PolicyServiceDefaults.baseNamespace,
+    this.domainNamespace = PolicyServiceDefaults.domainNamespace,
     final String? eventLoggingAtSign,
     this.policyOperationHooks,
     String? homeDirectory,
@@ -100,14 +100,12 @@ class PolicyService {
       }
     }
 
-    // RPC for handling incoming policy detail requests
     npa = NPAImpl(
       handler: PolicyRequestHandler(policyCache: policyCache),
       atClient: atClient,
       homeDirectory: homeDirectory,
       eventLoggingAtsign: eventLoggingAtSign as Atsign?);
 
-    // RPC for handling other v2 policy operations
     managerRpcListener = AtRpc(
       atClient: atClient,
       callbacks: ManagerRpcCallbacks(
@@ -122,22 +120,11 @@ class PolicyService {
       allowList: managerAllowList,
       baseNameSpace: baseNamespace,
       domainNameSpace: domainNamespace);
-    
-    pingRpcListener = AtRpc(
-      atClient: atClient,
-      callbacks: PingRpcCallbacks(binariesVersion: binariesVersion),
-      isClient: false,
-      isServer: true,
-      allowAll: false, // only people on the managerAllowList can ping (prevents version info leakage)
-      allowList: managerAllowList,
-      baseNameSpace: baseNamespace,
-      domainNameSpace: 'ping');
   }
 
   Future<void> start() async {
     await npa.run();
     managerRpcListener.start();
-    pingRpcListener.start();
   }
 }
 
