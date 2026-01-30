@@ -24,18 +24,21 @@ class _AtsignSelectorState extends State<AtsignSelector> {
       width: double.infinity,
       child: BlocBuilder<OnboardingCubit, OnboardingState>(
         builder: (context, state) {
-          controller.value = TextEditingValue(
-            text: state.atSign,
-            selection: TextSelection.collapsed(offset: state.atSign.length),
-          );
+          // Only update controller if the state value is different (e.g., from dropdown selection)
+          if (controller.text != state.atSign) {
+            controller.value = TextEditingValue(
+              text: state.atSign,
+              selection: TextSelection.collapsed(offset: state.atSign.length),
+            );
+          }
           return TextFormField(
             controller: controller,
             onChanged: (atsign) {
               atsign = atsign.atsignify();
-              controller.value = TextEditingValue(
-                text: atsign,
-                selection: TextSelection.collapsed(offset: atsign.length),
-              );
+              // controller.value = TextEditingValue(
+              //   text: atsign,
+              //   selection: TextSelection.collapsed(offset: atsign.length),
+              // );
               context.read<OnboardingCubit>().setState(
                 atSign: atsign,
                 rootDomain: widget.options[atsign]?.rootDomain,

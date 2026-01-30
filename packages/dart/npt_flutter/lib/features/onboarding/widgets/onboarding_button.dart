@@ -174,9 +174,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         final backupKeyCubit = App.navState.currentContext!
             .read<BackupKeyCubit>();
 
-        await backupKeyCubit.putBackupKeyStatus(
-          await backupKeyCubit.getBackupKeyStatus(),
-        );
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
 
         App.log('atsign result is:$result'.loggable);
 
