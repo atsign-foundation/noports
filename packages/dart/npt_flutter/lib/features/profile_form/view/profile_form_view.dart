@@ -83,6 +83,9 @@ class ProfileFormView extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            // gapH10,
+                            const ProfileConnectUriFields(),
+                            gapH40,
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Sizes.p50,
@@ -101,8 +104,6 @@ class ProfileFormView extends StatelessWidget {
                                   const Profile443Checkbox(),
                                   gapH10,
                                   const ProfileKeepAliveCheckbox(),
-                                  gapH10,
-                                  const ProfileConnectUriFields(),
                                 ],
                               ),
                             ),

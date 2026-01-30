@@ -23,70 +23,71 @@ class ProfileConnectUriFields extends StatelessWidget {
       builder: (BuildContext context, ProfileState state) {
         if (state is! ProfileLoadedState) return const SizedBox.shrink();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section header
-            Text(
-              strings.autoStartApplication,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            gapH20,
-            // Protocol dropdown
-            Text(strings.connectUriProtocol),
-            gapH4,
-            Text(
-              strings.connectUriProtocolDescription,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            gapH14,
-            _ProtocolDropdown(
-              key: ValueKey('connectUriProtocol_${state.profile.uuid}'),
-              protocol: state.profile.connectUriProtocol ?? '',
-              onChanged: (value) {
-                var bloc = context.read<ProfileBloc>();
-                bloc.add(
-                  ProfileEditEvent(
-                    profile: state.profile.copyWith(
-                      connectUriProtocol: value,
-                      connectUri: null,
-                    ),
-                  ),
-                );
-              },
-            ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section header
+              Text(
+                strings.autoStartApplication,
+                // style: Theme.of(context).textTheme.titleMedium,
+              ),
 
-            // Username field (only show if protocol is selected)
-            if (state.profile.connectUriProtocol != null &&
-                state.profile.connectUriProtocol!.isNotEmpty) ...[
-              gapH20,
-              Text(strings.connectUriUsername),
               gapH4,
               Text(
-                strings.connectUriUsernameDescription,
+                strings.connectUriProtocolDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              gapH14,
-              SizedBox(
-                width: double.infinity,
-                child: TextFormField(
-                  key: ValueKey('connectUriUsername_${state.profile.uuid}'),
-                  initialValue: state.profile.connectUriUsername ?? '',
-                  decoration: const InputDecoration(hintText: 'username'),
-                  onChanged: (value) {
-                    var bloc = context.read<ProfileBloc>();
-                    bloc.add(
-                      ProfileEditEvent(
-                        profile: state.profile.copyWith(
-                          connectUriUsername: value.isEmpty ? null : value,
-                        ),
+              gapH20,
+              _ProtocolDropdown(
+                key: ValueKey('connectUriProtocol_${state.profile.uuid}'),
+                protocol: state.profile.connectUriProtocol ?? '',
+                onChanged: (value) {
+                  var bloc = context.read<ProfileBloc>();
+                  bloc.add(
+                    ProfileEditEvent(
+                      profile: state.profile.copyWith(
+                        connectUriProtocol: value,
+                        connectUri: null,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
+
+              // Username field (only show if protocol is selected)
+              if (state.profile.connectUriProtocol != null &&
+                  state.profile.connectUriProtocol!.isNotEmpty) ...[
+                gapH20,
+                Text(strings.connectUriUsername),
+                gapH4,
+                Text(
+                  strings.connectUriUsernameDescription,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                gapH14,
+                SizedBox(
+                  width: double.infinity,
+                  child: TextFormField(
+                    key: ValueKey('connectUriUsername_${state.profile.uuid}'),
+                    initialValue: state.profile.connectUriUsername ?? '',
+                    decoration: const InputDecoration(hintText: 'username'),
+                    onChanged: (value) {
+                      var bloc = context.read<ProfileBloc>();
+                      bloc.add(
+                        ProfileEditEvent(
+                          profile: state.profile.copyWith(
+                            connectUriUsername: value.isEmpty ? null : value,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         );
       },
     );
