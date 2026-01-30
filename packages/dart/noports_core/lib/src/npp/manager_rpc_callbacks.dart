@@ -6,16 +6,16 @@ import 'package:noports_core/src/version.dart' as core_version;
 /// Callbacks for handling policy manager RPC requests
 class ManagerRpcCallbacks implements AtRpcCallbacks {
   final AtClient atClient;
-  final PolicyCache policyCache;
-  final PolicyOperationHooks? policyOperationHooks;
+  final NppCache nppCache;
+  final NppOperationHooks? nppOperationHooks;
   final String binariesVersion;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
   ManagerRpcCallbacks({
     required this.atClient,
-    required this.policyCache,
+    required this.nppCache,
     required this.binariesVersion,
-    this.policyOperationHooks,
+    this.nppOperationHooks,
   });
 
   String _generateId(Set<PolicyEntry> entities) {
@@ -75,7 +75,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         }
         switch (target) {
           case 'allClients': {
-            final Set<Client> clients = policyCache.clients;
+            final Set<Client> clients = nppCache.clients;
             final Set<Map<String, dynamic>> clientsAsJson =
                 clients.map((client) => client.toJson()).toSet();
             final int amount = clientsAsJson.length;
@@ -86,7 +86,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             break;
           }
           case 'allClientGroups': {
-            final Set<ClientGroup> clientGroups = policyCache.clientGroups;
+            final Set<ClientGroup> clientGroups = nppCache.clientGroups;
             final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups
                 .map((clientGroup) => clientGroup.toJson())
                 .toSet();
@@ -99,7 +99,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'allClientGroupMembers': {
             final Set<ClientGroupMember> clientGroupMembers =
-                policyCache.clientGroupMembers;
+                nppCache.clientGroupMembers;
             final Set<Map<String, dynamic>> clientGroupMembersAsJson =
                 clientGroupMembers
                     .map((clientGroupMember) => clientGroupMember.toJson())
@@ -112,7 +112,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             break;
           }
           case 'allDaemons': {
-            final Set<Daemon> daemons = policyCache.daemons;
+            final Set<Daemon> daemons = nppCache.daemons;
             final Set<Map<String, dynamic>> daemonsAsJson =
                 daemons.map((daemon) => daemon.toJson()).toSet();
             final int amount = daemonsAsJson.length;
@@ -123,7 +123,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             break;
           }
           case 'allServices': {
-            final Set<Service> services = policyCache.services;
+            final Set<Service> services = nppCache.services;
             final Set<Map<String, dynamic>> servicesAsJson =
                 services.map((service) => service.toJson()).toSet();
             final int amount = servicesAsJson.length;
@@ -134,7 +134,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             break;
           }
           case 'allServiceACLs': {
-            final Set<ServiceACL> serviceACLs = policyCache.serviceACLs;
+            final Set<ServiceACL> serviceACLs = nppCache.serviceACLs;
             final Set<Map<String, dynamic>> serviceACLsAsJson =
                 serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
             final int amount = serviceACLsAsJson.length;
@@ -162,10 +162,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         switch (target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
-            client.id ??= _generateId(policyCache.clients);
-            if (policyOperationHooks?.prePutClient != null) {
+            client.id ??= _generateId(nppCache.clients);
+            if (nppOperationHooks?.prePutClient != null) {
               try {
-                await policyOperationHooks!.prePutClient!(client);
+                await nppOperationHooks!.prePutClient!(client);
               } catch (e, s) {
                 logger.severe(
                     'prePutClient hook failed for client ${client.atSign}',
@@ -176,14 +176,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putClient(client);
+            success = nppCache.putClient(client);
             if (!success) {
               message = 'Failed to store client with atSign: ${client.atSign}';
               break;
             }
-            if (policyOperationHooks?.postPutClient != null) {
+            if (nppOperationHooks?.postPutClient != null) {
               try {
-                await policyOperationHooks!.postPutClient!(client);
+                await nppOperationHooks!.postPutClient!(client);
               } catch (e, s) {
                 logger.severe(
                     'postPutClient hook failed for client ${client.id}', e, s);
@@ -197,10 +197,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-            clientGroup.id ??= _generateId(policyCache.clientGroups);
-            if (policyOperationHooks?.prePutClientGroup != null) {
+            clientGroup.id ??= _generateId(nppCache.clientGroups);
+            if (nppOperationHooks?.prePutClientGroup != null) {
               try {
-                await policyOperationHooks!.prePutClientGroup!(clientGroup);
+                await nppOperationHooks!.prePutClientGroup!(clientGroup);
               } catch (e, s) {
                 logger.severe(
                     'prePutClientGroup hook failed for client group ${clientGroup.name}',
@@ -211,15 +211,15 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putClientGroup(clientGroup);
+            success = nppCache.putClientGroup(clientGroup);
             if (!success) {
               message =
                   'Failed to store client group with name: ${clientGroup.name}';
               break;
             }
-            if (policyOperationHooks?.postPutClientGroup != null) {
+            if (nppOperationHooks?.postPutClientGroup != null) {
               try {
-                await policyOperationHooks!.postPutClientGroup!(clientGroup);
+                await nppOperationHooks!.postPutClientGroup!(clientGroup);
               } catch (e, s) {
                 logger.severe(
                     'postPutClientGroup hook failed for client group ${clientGroup.id}',
@@ -237,10 +237,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final ClientGroupMember clientGroupMember =
                 ClientGroupMember.fromJson(valueAsMap);
             clientGroupMember.id ??=
-                _generateId(policyCache.clientGroupMembers);
-            if (policyOperationHooks?.prePutClientGroupMember != null) {
+                _generateId(nppCache.clientGroupMembers);
+            if (nppOperationHooks?.prePutClientGroupMember != null) {
               try {
-                await policyOperationHooks!
+                await nppOperationHooks!
                     .prePutClientGroupMember!(clientGroupMember);
               } catch (e, s) {
                 logger.severe(
@@ -250,16 +250,16 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putClientGroupMember(clientGroupMember);
+            success = nppCache.putClientGroupMember(clientGroupMember);
             if (!success) {
               message = 'Failed to store client group member: '
                   'clientId=${clientGroupMember.clientId} '
                   'clientGroupId=${clientGroupMember.clientGroupId}';
               break;
             }
-            if (policyOperationHooks?.postPutClientGroupMember != null) {
+            if (nppOperationHooks?.postPutClientGroupMember != null) {
               try {
-                await policyOperationHooks!
+                await nppOperationHooks!
                     .postPutClientGroupMember!(clientGroupMember);
               } catch (e, s) {
                 logger.severe(
@@ -276,10 +276,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
-            daemon.id ??= _generateId(policyCache.daemons);
-            if (policyOperationHooks?.prePutDaemon != null) {
+            daemon.id ??= _generateId(nppCache.daemons);
+            if (nppOperationHooks?.prePutDaemon != null) {
               try {
-                await policyOperationHooks!.prePutDaemon!(daemon);
+                await nppOperationHooks!.prePutDaemon!(daemon);
               } catch (e, s) {
                 logger.severe(
                     'prePutDaemon hook failed for daemon ${daemon.atSign}',
@@ -290,14 +290,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putDaemon(daemon);
+            success = nppCache.putDaemon(daemon);
             if (!success) {
               message = 'Failed to store daemon with atSign: ${daemon.atSign}';
               break;
             }
-            if (policyOperationHooks?.postPutDaemon != null) {
+            if (nppOperationHooks?.postPutDaemon != null) {
               try {
-                await policyOperationHooks!.postPutDaemon!(daemon);
+                await nppOperationHooks!.postPutDaemon!(daemon);
               } catch (e, s) {
                 logger.severe(
                     'postPutDaemon hook failed for daemon ${daemon.id}', e, s);
@@ -311,10 +311,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
-            service.id ??= _generateId(policyCache.services);
-            if (policyOperationHooks?.prePutService != null) {
+            service.id ??= _generateId(nppCache.services);
+            if (nppOperationHooks?.prePutService != null) {
               try {
-                await policyOperationHooks!.prePutService!(service);
+                await nppOperationHooks!.prePutService!(service);
               } catch (e, s) {
                 logger.severe('prePutService hook failed for service', e, s);
                 success = false;
@@ -322,16 +322,16 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putService(service);
+            success = nppCache.putService(service);
             if (!success) {
               message = 'Failed to store service: '
                   'deviceName=${service.deviceName} '
                   'daemonId=${service.daemonId}';
               break;
             }
-            if (policyOperationHooks?.postPutService != null) {
+            if (nppOperationHooks?.postPutService != null) {
               try {
-                await policyOperationHooks!.postPutService!(service);
+                await nppOperationHooks!.postPutService!(service);
               } catch (e, s) {
                 logger.severe(
                     'postPutService hook failed for service ${service.id}',
@@ -347,10 +347,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-            serviceACL.id ??= _generateId(policyCache.serviceACLs);
-            if (policyOperationHooks?.prePutServiceACL != null) {
+            serviceACL.id ??= _generateId(nppCache.serviceACLs);
+            if (nppOperationHooks?.prePutServiceACL != null) {
               try {
-                await policyOperationHooks!.prePutServiceACL!(serviceACL);
+                await nppOperationHooks!.prePutServiceACL!(serviceACL);
               } catch (e, s) {
                 logger.severe(
                     'prePutServiceACL hook failed for service ACL', e, s);
@@ -359,7 +359,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 break;
               }
             }
-            success = policyCache.putServiceACL(serviceACL);
+            success = nppCache.putServiceACL(serviceACL);
             if (!success) {
               message = 'Failed to store service ACL: '
                   'serviceId=${serviceACL.serviceId} '
@@ -367,9 +367,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                   'permitOpen=${serviceACL.permitOpen}';
               break;
             }
-            if (policyOperationHooks?.postPutServiceACL != null) {
+            if (nppOperationHooks?.postPutServiceACL != null) {
               try {
-                await policyOperationHooks!.postPutServiceACL!(serviceACL);
+                await nppOperationHooks!.postPutServiceACL!(serviceACL);
               } catch (e, s) {
                 logger.severe(
                     'postPutServiceACL hook failed for service ACL ${serviceACL.id}',
@@ -401,7 +401,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         switch(target) {
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
-            success = policyCache.deleteClient(clientId);
+            success = nppCache.deleteClient(clientId);
             responsePayload['success'] = success;
             if (success) {
               message = 'Client with id $clientId deleted successfully.';
@@ -412,7 +412,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
-            success = policyCache.deleteClientGroup(clientGroupId);
+            success = nppCache.deleteClientGroup(clientGroupId);
             responsePayload['success'] = success;
             if (success) {
               message = 'ClientGroup with id $clientGroupId deleted successfully.';
@@ -423,7 +423,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroupMember': {
             final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
-            success = policyCache.deleteClientGroupMember(clientGroupMemberId);
+            success = nppCache.deleteClientGroupMember(clientGroupMemberId);
             responsePayload['success'] = success;
             if (success) {
               message = 'ClientGroupMember with id $clientGroupMemberId deleted successfully.';
@@ -434,7 +434,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
-            success = policyCache.deleteDaemon(daemonId);
+            success = nppCache.deleteDaemon(daemonId);
             responsePayload['success'] = success;
             if (success) {
               message = 'Daemon with id $daemonId deleted successfully.';
@@ -445,7 +445,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
-            success = policyCache.deleteService(serviceId);
+            success = nppCache.deleteService(serviceId);
             responsePayload['success'] = success;
             if (success) {
               message = 'Service with id $serviceId deleted successfully.';
@@ -456,7 +456,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
-            success = policyCache.deleteServiceACL(serviceACLId);
+            success = nppCache.deleteServiceACL(serviceACLId);
             responsePayload['success'] = success;
             if (success) {
               message = 'ServiceACL with id $serviceACLId deleted successfully.';

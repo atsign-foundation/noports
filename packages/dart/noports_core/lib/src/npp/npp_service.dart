@@ -4,11 +4,11 @@ import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
 
-class PolicyRequestHandler implements NPARequestHandler {
-  final PolicyCache policyCache;
+class NppRequestHandler implements NPARequestHandler {
+  final NppCache nppCache;
 
-  PolicyRequestHandler({
-    required this.policyCache
+  NppRequestHandler({
+    required this.nppCache
   });
 
   @override
@@ -18,8 +18,8 @@ class PolicyRequestHandler implements NPARequestHandler {
     final String deviceName = authCheckRequest.daemonDeviceName;
     final String deviceGroupName = authCheckRequest.daemonDeviceGroupName;
 
-    final Set<ServiceACL> matchedServiceACLs = 
-      policyCache.findMatchedServiceACLs(
+    final Set<ServiceACL> matchedServiceACLs =
+      nppCache.findMatchedServiceACLs(
         clientAtSign: clientAtSign,
         daemonAtSign: daemonAtSign,
         deviceName: deviceName,
@@ -58,20 +58,20 @@ class PolicyRequestHandler implements NPARequestHandler {
   }
 }
 
-class PolicyServiceDefaults {
+class NppServiceDefaults {
   static const String baseNamespace = 'sshnp';
   static const String domainNamespace = 'npp';
 }
 
-class PolicyService {
+class NppService {
   @override
   final AtClient atClient;
 
   @override
-  final AtSignLogger logger = AtSignLogger('PolicyService');
+  final AtSignLogger logger = AtSignLogger('NppService');
 
-  final PolicyCache policyCache;
-  final PolicyOperationHooks? policyOperationHooks;
+  final NppCache nppCache;
+  final NppOperationHooks? nppOperationHooks;
 
   // services
   late NPA npa; // responds to policy requests
@@ -82,15 +82,15 @@ class PolicyService {
   final String baseNamespace;
   final String domainNamespace;
 
-  PolicyService({
+  NppService({
     required this.atClient,
-    required this.policyCache,
+    required this.nppCache,
     required this.managerAllowList,
     required String binariesVersion,
-    this.baseNamespace = PolicyServiceDefaults.baseNamespace,
-    this.domainNamespace = PolicyServiceDefaults.domainNamespace,
+    this.baseNamespace = NppServiceDefaults.baseNamespace,
+    this.domainNamespace = NppServiceDefaults.domainNamespace,
     final String? eventLoggingAtSign,
-    this.policyOperationHooks,
+    this.nppOperationHooks,
     String? homeDirectory,
   }) {
     if(homeDirectory == null) {
@@ -101,7 +101,7 @@ class PolicyService {
     }
 
     npa = NPAImpl(
-      handler: PolicyRequestHandler(policyCache: policyCache),
+      handler: NppRequestHandler(nppCache: nppCache),
       atClient: atClient,
       homeDirectory: homeDirectory,
       eventLoggingAtsign: eventLoggingAtSign as Atsign?);
@@ -110,8 +110,8 @@ class PolicyService {
       atClient: atClient,
       callbacks: ManagerRpcCallbacks(
         atClient: atClient,
-        policyCache: policyCache,
-        policyOperationHooks: policyOperationHooks,
+        nppCache: nppCache,
+        nppOperationHooks: nppOperationHooks,
         binariesVersion: binariesVersion,
       ),
       isClient: false,
@@ -127,4 +127,3 @@ class PolicyService {
     managerRpcListener.start();
   }
 }
-

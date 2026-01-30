@@ -3,7 +3,7 @@ import './models.dart';
 /// Pre- hooks are called before the entity is put into the cached.
 /// This is typically a good time to persist the entity into a database.
 /// If the persistence is successful, the hook should complete normally and no exceptions should be thrown.
-/// If the persistence fails, the hook should throw an exception to prevent the entity from being cached into the policy service's PolicyCache.
+/// If the persistence fails, the hook should throw an exception to prevent the entity from being cached into the policy service's NppCache.
 typedef PrePutClientHook = Future<void> Function(Client client);
 typedef PrePutClientGroupHook = Future<void> Function(ClientGroup clientGroup);
 typedef PrePutClientGroupMemberHook = Future<void> Function(ClientGroupMember clientGroupMember);
@@ -21,7 +21,7 @@ typedef PostPutServiceHook = Future<void> Function(Service service);
 typedef PostPutServiceACLHook = Future<void> Function(ServiceACL serviceACL);
 
 /// If the hook is null, then it is simply not called and no action is taken.
-class PolicyOperationHooks {
+class NppOperationHooks {
   PrePutClientHook? prePutClient; // This is called before the policy service is about to put the Client into the cache.
   PrePutClientGroupHook? prePutClientGroup; // This is called before the policy service is about to put the ClientGroup into the cache.
   PrePutClientGroupMemberHook? prePutClientGroupMember; // This is called before the policy service is about to put the ClientGroupMember into the cache.
@@ -36,7 +36,7 @@ class PolicyOperationHooks {
   PostPutServiceHook? postPutService; // This is called after the policy service has put the Service into the cache.
   PostPutServiceACLHook? postPutServiceACL; // This is called after the policy service has put the ServiceACL into the cache.
 
-  PolicyOperationHooks({
+  NppOperationHooks({
     this.prePutClient,
     this.prePutClientGroup,
     this.prePutClientGroupMember,

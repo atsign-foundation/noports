@@ -101,20 +101,20 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
-  // 5. Set up PolicyService
-  // 5a. Set up PolicyCache and PolicyOperationHooks
-  final PolicyCache policyCache;
-  PolicyOperationHooks? policyOperationHooks;
+  // 5. Set up NppService
+  // 5a. Set up NppCache and NppOperationHooks
+  final NppCache nppCache;
+  NppOperationHooks? nppOperationHooks;
   switch(nppParams.persistenceMethod) {
     case 'atserver': {
       logger.info('Using persistence method: "atserver"');
-      policyCache = await _generatePolicyCacheFromAtServer(
+      nppCache = await _generateNppCacheFromAtServer(
         atClient: atClient,
         baseNamespace: nppParams.baseNamespace,
         domainNamespace: nppParams.domainNamespace,
       );
 
-      policyOperationHooks = _generatePolicyOperationHooksForAtServer(
+      nppOperationHooks = _generateNppOperationHooksForAtServer(
         atClient: atClient,
         baseNamespace: nppParams.baseNamespace,
         domainNamespace: nppParams.domainNamespace,
@@ -140,17 +140,17 @@ Future<void> main(List<String> args) async {
         logger.info('Successfully created policy directory: ${policyDirectory.path}');
       }
 
-      policyCache = await _generatePolicyCacheFromFiles(
+      nppCache = await _generateNppCacheFromFiles(
         policyDirectory: policyDirectory,
       );
-      policyOperationHooks = _generatePolicyOperationHooksForFiles(
+      nppOperationHooks = _generateNppOperationHooksForFiles(
         policyDirectory: policyDirectory,
       );
       logger.info('Successfully loaded policy cache from files in ${policyDirectory.path}');
     }
     case 'none': {
-      logger.info('Using persistence method: "none". Instantiating empty PolicyCache');
-      policyCache = PolicyCache();
+      logger.info('Using persistence method: "none". Instantiating empty NppCache');
+      nppCache = NppCache();
     }
     default: {
       stderr.writeln('${nppParams.persistenceMethod} is not a valid type');
@@ -158,16 +158,16 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  // 5b. Create PolicyService
-  final PolicyService policyService = PolicyService(
+  // 5b. Create NppService
+  final NppService nppService = NppService(
     atClient: atClient,
     managerAllowList: managerAllowList,
-    policyCache: policyCache,
-    policyOperationHooks: policyOperationHooks,
+    nppCache: nppCache,
+    nppOperationHooks: nppOperationHooks,
     binariesVersion: binaries_version.packageVersion,
   );
 
-  await policyService.start();
+  await nppService.start();
 }
 
 /// Generate policy cache by fetching AtKeys from the atServer.
@@ -177,7 +177,7 @@ Future<void> main(List<String> args) async {
 /// 4) *.daemon.policy_v2.sshnp --> a daemon (e.g. "@device")
 /// 5) *.service.policy_v2.sshnp --> a device (e.g. daemon.id, "deviceName")
 /// 6) *.service_acl.policy_v2.sshnp --> a service ACL (e.g. service.id, client_group.id, "localhost:22")
-Future<PolicyCache> _generatePolicyCacheFromAtServer({
+Future<NppCache> _generateNppCacheFromAtServer({
   // assuming that this is an authenticated atClient which has AtKeys that we need to go out and fetch.
   required final AtClient atClient,
   required final String baseNamespace,
@@ -189,7 +189,7 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
       'function.');
   }
 
-  final PolicyCache policyCache = PolicyCache();
+  final NppCache nppCache = NppCache();
 
   // Fetch all policy-related AtKeys in a single call
   final String allPolicyRegex = r'.*\.' '$domainNamespace' r'\.' '$baseNamespace';
@@ -241,32 +241,32 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
 
       if (entityType == 'client_group_member') {
         final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(jsonData);
-        policyCache.putClientGroupMember(clientGroupMember);
+        nppCache.putClientGroupMember(clientGroupMember);
         logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
         clientGroupMembersLoaded++;
       } else if (entityType == 'client_group') {
         final ClientGroup clientGroup = ClientGroup.fromJson(jsonData);
-        policyCache.putClientGroup(clientGroup);
+        nppCache.putClientGroup(clientGroup);
         logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
         clientGroupsLoaded++;
       } else if (entityType == 'client') {
         final Client client = Client.fromJson(jsonData);
-        policyCache.putClient(client);
+        nppCache.putClient(client);
         logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
         clientsLoaded++;
       } else if (entityType == 'daemon') {
         final Daemon daemon = Daemon.fromJson(jsonData);
-        policyCache.putDaemon(daemon);
+        nppCache.putDaemon(daemon);
         logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
         daemonsLoaded++;
       } else if (entityType == 'service_acl') {
         final ServiceACL serviceACL = ServiceACL.fromJson(jsonData);
-        policyCache.putServiceACL(serviceACL);
+        nppCache.putServiceACL(serviceACL);
         logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
         serviceACLsLoaded++;
       } else if (entityType == 'service') {
         final Service service = Service.fromJson(jsonData);
-        policyCache.putService(service);
+        nppCache.putService(service);
         logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
         servicesLoaded++;
       } else {
@@ -285,7 +285,7 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
   logger.info('Loaded $servicesLoaded Services into cache');
   logger.info('Loaded $serviceACLsLoaded ServiceACLs into cache');
 
-  return policyCache;
+  return nppCache;
 }
 
 /// Generate policy cache by fetching JSON files from a directory.
@@ -296,18 +296,18 @@ Future<PolicyCache> _generatePolicyCacheFromAtServer({
 /// 4) *_daemon.json
 /// 5) *_service.json
 /// 6) *_service_acl.json
-Future<PolicyCache> _generatePolicyCacheFromFiles({
+Future<NppCache> _generateNppCacheFromFiles({
   required Directory policyDirectory, // directory path where JSON files are stored e.g. "~/.atsign/npp/@jeremy"
 }) async {
-  final PolicyCache policyCache = PolicyCache();
+  final NppCache nppCache = NppCache();
   if(!(await policyDirectory.exists())) {
-    logger.info('Directory $policyDirectory does not exist. Returning an empty PolicyCache()');
-    return policyCache;
+    logger.info('Directory $policyDirectory does not exist. Returning an empty NppCache()');
+    return nppCache;
   }
 
   final List<FileSystemEntity> files = policyDirectory.listSync();
   if(files.isEmpty) {
-    logger.info('No files found in directory $policyDirectory. Starting with empty PolicyCache()');
+    logger.info('No files found in directory $policyDirectory. Starting with empty NppCache()');
   } else {
     logger.info('Found ${files.length} files in directory $policyDirectory');
   }
@@ -340,27 +340,27 @@ Future<PolicyCache> _generatePolicyCacheFromFiles({
         // Check most specific suffixes first to avoid mismatches
         if(fileName.endsWith('_client_group_member.json')) {
           final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(jsonData);
-          policyCache.putClientGroupMember(clientGroupMember);
+          nppCache.putClientGroupMember(clientGroupMember);
           logger.finer('Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}');
         } else if(fileName.endsWith('_client_group.json')) {
           final ClientGroup clientGroup = ClientGroup.fromJson(jsonData);
-          policyCache.putClientGroup(clientGroup);
+          nppCache.putClientGroup(clientGroup);
           logger.finer('Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}');
         } else if(fileName.endsWith('_client.json')) {
           final Client client = Client.fromJson(jsonData);
-          policyCache.putClient(client);
+          nppCache.putClient(client);
           logger.finer('Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}');
         } else if(fileName.endsWith('_service_acl.json')) {
           final ServiceACL serviceACL = ServiceACL.fromJson(jsonData);
-          policyCache.putServiceACL(serviceACL);
+          nppCache.putServiceACL(serviceACL);
           logger.finer('Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}');
         } else if(fileName.endsWith('_service.json')) {
           final Service service = Service.fromJson(jsonData);
-          policyCache.putService(service);
+          nppCache.putService(service);
           logger.finer('Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}');
         } else if(fileName.endsWith('_daemon.json')) {
           final Daemon daemon = Daemon.fromJson(jsonData);
-          policyCache.putDaemon(daemon);
+          nppCache.putDaemon(daemon);
           logger.finer('Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}');
         }
       } catch (e, s) {
@@ -371,25 +371,25 @@ Future<PolicyCache> _generatePolicyCacheFromFiles({
       logger.finer('Skipping non-file entity: ${file.path}');
     }
   }
-  logger.info('Finished populating PolicyCache from files in ${policyDirectory.path}');
-  logger.info('Loaded ${policyCache.clients.length} Clients into cache');
-  logger.info('Loaded ${policyCache.clientGroups.length} ClientGroups into cache');
-  logger.info('Loaded ${policyCache.clientGroupMembers.length} ClientGroupMembers into cache');
-  logger.info('Loaded ${policyCache.daemons.length} Daemons into cache');
-  logger.info('Loaded ${policyCache.services.length} Services into cache');
-  logger.info('Loaded ${policyCache.serviceACLs.length} ServiceACLs into cache');
+  logger.info('Finished populating NppCache from files in ${policyDirectory.path}');
+  logger.info('Loaded ${nppCache.clients.length} Clients into cache');
+  logger.info('Loaded ${nppCache.clientGroups.length} ClientGroups into cache');
+  logger.info('Loaded ${nppCache.clientGroupMembers.length} ClientGroupMembers into cache');
+  logger.info('Loaded ${nppCache.daemons.length} Daemons into cache');
+  logger.info('Loaded ${nppCache.services.length} Services into cache');
+  logger.info('Loaded ${nppCache.serviceACLs.length} ServiceACLs into cache');
 
-  return policyCache;
+  return nppCache;
 }
 
-PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
+NppOperationHooks _generateNppOperationHooksForAtServer({
   required final AtClient atClient,
   required final String domainNamespace, // e.g. 'policy_v2'
   required final String baseNamespace, // e.g 'sshnp'
 }) {
-  PolicyOperationHooks policyOperationHooks = PolicyOperationHooks();
+  NppOperationHooks nppOperationHooks = NppOperationHooks();
 
-  policyOperationHooks.prePutClient = (Client client) async {
+  nppOperationHooks.prePutClient = (Client client) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${client.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -407,7 +407,7 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for Client: ${client.toJson()}, success: $success');
   };
 
-  policyOperationHooks.prePutClientGroup = (ClientGroup clientGroup) async {
+  nppOperationHooks.prePutClientGroup = (ClientGroup clientGroup) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${clientGroup.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -424,7 +424,7 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for ClientGroup: ${clientGroup.toJson()}, success: $success');
   };
 
-  policyOperationHooks.prePutClientGroupMember = (ClientGroupMember clientGroupMember) async {
+  nppOperationHooks.prePutClientGroupMember = (ClientGroupMember clientGroupMember) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${clientGroupMember.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -441,7 +441,7 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for ClientGroupMember: ${clientGroupMember.toJson()}, success: $success');
   };
 
-  policyOperationHooks.prePutDaemon = (Daemon daemon) async {
+  nppOperationHooks.prePutDaemon = (Daemon daemon) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${daemon.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -458,7 +458,7 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for Daemon: ${daemon.toJson()}, success: $success');
   };
 
-  policyOperationHooks.prePutService = (Service service) async {
+  nppOperationHooks.prePutService = (Service service) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${service.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -475,7 +475,7 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for Service: ${service.toJson()}, success: $success');
   };
 
-  policyOperationHooks.prePutServiceACL = (ServiceACL serviceACL) async {
+  nppOperationHooks.prePutServiceACL = (ServiceACL serviceACL) async {
     final bool success = await atClient.put(
       AtKey()
         ..key = '${serviceACL.id}' // e.g. '1' (assigned before pre-hook is called)
@@ -492,10 +492,10 @@ PolicyOperationHooks _generatePolicyOperationHooksForAtServer({
     logger.info('Pre-put hook for ServiceACL: ${serviceACL.toJson()}, success: $success');
   };
 
-  return policyOperationHooks;
+  return nppOperationHooks;
 }
 
-PolicyOperationHooks _generatePolicyOperationHooksForFiles({
+NppOperationHooks _generateNppOperationHooksForFiles({
   required Directory policyDirectory,
 }) {
 
@@ -506,51 +506,51 @@ PolicyOperationHooks _generatePolicyOperationHooksForFiles({
 
   final String directoryPath = policyDirectory.path;
 
-  PolicyOperationHooks policyOperationHooks = PolicyOperationHooks();
+  NppOperationHooks nppOperationHooks = NppOperationHooks();
 
-  policyOperationHooks.prePutClient = (Client client) async {
+  nppOperationHooks.prePutClient = (Client client) async {
     final file = File('$directoryPath/${client.id}_client.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(client.toJson()));
     logger.info('Pre-put hook for Client: wrote to ${file.path}');
   };
 
-  policyOperationHooks.prePutClientGroup = (ClientGroup clientGroup) async {
+  nppOperationHooks.prePutClientGroup = (ClientGroup clientGroup) async {
     final file = File('$directoryPath/${clientGroup.id}_client_group.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(clientGroup.toJson()));
     logger.info('Pre-put hook for ClientGroup: wrote to ${file.path}');
   };
 
-  policyOperationHooks.prePutClientGroupMember = (ClientGroupMember clientGroupMember) async {
+  nppOperationHooks.prePutClientGroupMember = (ClientGroupMember clientGroupMember) async {
     final file = File('$directoryPath/${clientGroupMember.id}_client_group_member.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(clientGroupMember.toJson()));
     logger.info('Pre-put hook for ClientGroupMember: wrote to ${file.path}');
   };
 
-  policyOperationHooks.prePutDaemon = (Daemon daemon) async {
+  nppOperationHooks.prePutDaemon = (Daemon daemon) async {
     final file = File('$directoryPath/${daemon.id}_daemon.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(daemon.toJson()));
     logger.info('Pre-put hook for Daemon: wrote to ${file.path}');
   };
 
-  policyOperationHooks.prePutService = (Service service) async {
+  nppOperationHooks.prePutService = (Service service) async {
     final file = File('$directoryPath/${service.id}_service.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(service.toJson()));
     logger.info('Pre-put hook for Service: wrote to ${file.path}');
   };
 
-  policyOperationHooks.prePutServiceACL = (ServiceACL serviceACL) async {
+  nppOperationHooks.prePutServiceACL = (ServiceACL serviceACL) async {
     final file = File('$directoryPath/${serviceACL.id}_service_acl.json');
     await file.parent.create(recursive: true);
     await file.writeAsString(jsonEncode(serviceACL.toJson()));
     logger.info('Pre-put hook for ServiceACL: wrote to ${file.path}');
   };
 
-  return policyOperationHooks;
+  return nppOperationHooks;
 }
 
 Directory getDefaultPolicyDirectoryPath({

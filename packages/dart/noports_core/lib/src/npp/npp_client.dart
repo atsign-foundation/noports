@@ -2,9 +2,9 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
 
-class PolicyClient {
+class NppClient {
 
-  static final AtSignLogger logger = AtSignLogger('PolicyClient');
+  static final AtSignLogger logger = AtSignLogger('NppClient');
 
   final AtClient atClient;
   final String serverAtSign;
@@ -13,7 +13,7 @@ class PolicyClient {
 
   late AtRpcClient atRpcClient;
 
-  PolicyClient({
+  NppClient({
     required this.atClient,
     required this.serverAtSign,
     required this.baseNameSpace,
@@ -28,14 +28,14 @@ class PolicyClient {
   }
 
 
-  Future<dynamic> executePolicyDataOperation(final PolicyDataOperation policyDataOperation) async {
-    final Map<String, dynamic> response = await atRpcClient.call(policyDataOperation.atRpcPayload);
+  Future<dynamic> executeNppDataOperation(final NppDataOperation nppDataOperation) async {
+    final Map<String, dynamic> response = await atRpcClient.call(nppDataOperation.atRpcPayload);
     return response;
   }
 
   Future<Set<Client>> getAllClients() async {
-    final PolicyDataOperation operation = PolicyDataOperation.getAllClients();
-    final Map<String, dynamic> response = await executePolicyDataOperation(operation);
+    final NppDataOperation operation = NppDataOperation.getAllClients();
+    final Map<String, dynamic> response = await executeNppDataOperation(operation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -52,8 +52,8 @@ class PolicyClient {
   }
 
   Future<Set<ClientGroup>> getAllClientGroups() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.getAllClientGroups();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.getAllClientGroups();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -70,8 +70,8 @@ class PolicyClient {
   }
 
   Future<Set<ClientGroupMember>> getAllClientGroupMembers() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.getAllClientGroupMembers();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.getAllClientGroupMembers();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -88,8 +88,8 @@ class PolicyClient {
   }
 
   Future<Set<Daemon>> getAllDaemons() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.getAllDaemons();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.getAllDaemons();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -106,8 +106,8 @@ class PolicyClient {
   }
 
   Future<Set<Service>> getAllServices() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.getAllServices();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.getAllServices();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -124,8 +124,8 @@ class PolicyClient {
   }
 
   Future<Set<ServiceACL>> getAllServiceACLs() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.getAllServiceACLs();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.getAllServiceACLs();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('amount')) {
       throw Exception('amount key not found in response map: $response');
     }
@@ -142,8 +142,8 @@ class PolicyClient {
   }
 
   Future<String> putClient(Client client) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClient(client);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putClient(client);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -155,8 +155,8 @@ class PolicyClient {
   }
 
   Future<String> putClientGroup(ClientGroup clientGroup) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClientGroup(clientGroup);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putClientGroup(clientGroup);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -168,8 +168,8 @@ class PolicyClient {
   }
 
   Future<String> putClientGroupMember(ClientGroupMember clientGroupMember) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putClientGroupMember(clientGroupMember);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putClientGroupMember(clientGroupMember);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -181,8 +181,8 @@ class PolicyClient {
   }
 
   Future<String> putDaemon(Daemon daemon) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putDaemon(daemon);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putDaemon(daemon);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -194,8 +194,8 @@ class PolicyClient {
   }
 
   Future<String> putService(Service service) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putService(service);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putService(service);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -207,8 +207,8 @@ class PolicyClient {
   }
 
   Future<String> putServiceACL(ServiceACL serviceACL) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.putServiceACL(serviceACL);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.putServiceACL(serviceACL);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('success')) {
       throw Exception('success key not found in response map: $response');
     }
@@ -220,44 +220,44 @@ class PolicyClient {
   }
 
   Future<bool> deleteClient(String clientId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClient(clientId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteClient(clientId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<bool> deleteClientGroup(String clientGroupId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClientGroup(clientGroupId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteClientGroup(clientGroupId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<bool> deleteClientGroupMember(String clientGroupMemberId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClientGroupMember(clientGroupMemberId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteClientGroupMember(clientGroupMemberId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<bool> deleteDaemon(String daemonId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteDaemon(daemonId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteDaemon(daemonId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<bool> deleteService(String serviceId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteService(serviceId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteService(serviceId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<bool> deleteServiceACL(String serviceACLId) async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteServiceACL(serviceACLId);
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.deleteServiceACL(serviceACLId);
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     return response['success'] ?? false;
   }
 
   Future<Map<String, dynamic>> ping() async {
-    final PolicyDataOperation policyDataOperation = PolicyDataOperation.ping();
-    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    final NppDataOperation nppDataOperation = NppDataOperation.ping();
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
     if(!response.containsKey('status')) {
       throw Exception('status key not found in ping response: $response');
     }
@@ -274,4 +274,3 @@ class PolicyClient {
   }
 
 }
-

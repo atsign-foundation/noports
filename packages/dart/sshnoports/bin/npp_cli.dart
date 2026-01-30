@@ -58,18 +58,11 @@ Future<void> main(List<String> args) async {
 
   final AtClient atClient = atOnboardingService.atClient!;
 
-  final AtRpcClient atRpcClient = AtRpcClient(
-    atClient: atClient,
-    serverAtsign: nppCLIParams.policyAtSign,
-    baseNameSpace: nppCLIParams.baseNamespace,
-    domainNameSpace: nppCLIParams.domainNamespace!,
-  );
-
-  final PolicyClient policyClient = PolicyClient.fromAtRpcClient(
-    atRpcClient: atRpcClient,
+  final NppClient nppClient = NppClient(
     atClient: atClient,
     serverAtSign: nppCLIParams.policyAtSign,
     baseNameSpace: nppCLIParams.baseNamespace,
+    domainNameSpace: nppCLIParams.domainNamespace!,
   );
 
 
@@ -79,7 +72,7 @@ Future<void> main(List<String> args) async {
     case '1': { // ping
       print(chalk.blue('\nSending ping request...'));
       try {
-        final Map<String, dynamic> pingResponse = await policyClient.ping();
+        final Map<String, dynamic> pingResponse = await nppClient.ping();
         print(chalk.green('\n✓ Ping successful!'));
         print('  ${chalk.cyan('status')}: ${pingResponse['status']}');
         print('  ${chalk.cyan('binariesVersion')}: ${pingResponse['binariesVersion']}');
@@ -91,7 +84,7 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '2': { // getAllClients
-      final Set<Client> allClients = await policyClient.getAllClients();
+      final Set<Client> allClients = await nppClient.getAllClients();
       print(chalk.green('\n✓ Obtained ${allClients.length} clients:'));
       for(int i = 0; i < allClients.length; i++) {
         final Client client = allClients.elementAt(i);
@@ -100,7 +93,7 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '3': { // getAllClientGroups
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       print(chalk.green('\n✓ Obtained ${allClientGroups.length} client groups:'));
       for(int i = 0; i < allClientGroups.length; i++) {
         final ClientGroup clientGroup = allClientGroups.elementAt(i);
@@ -110,9 +103,9 @@ Future<void> main(List<String> args) async {
     }
     case '4': { // getAllClientGroupMembers
       // Fetch all data for lookups
-      final Set<Client> allClients = await policyClient.getAllClients();
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-      final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
+      final Set<Client> allClients = await nppClient.getAllClients();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
+      final Set<ClientGroupMember> allClientGroupMembers = await nppClient.getAllClientGroupMembers();
 
       // Build lookup maps
       final Map<String, Client> clientsById = {for (var c in allClients) if (c.id != null) c.id!: c};
@@ -130,7 +123,7 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '5': { // getAllDaemons
-      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       print(chalk.green('\n✓ Obtained ${allDaemons.length} daemons:'));
       for(int i = 0; i < allDaemons.length; i++) {
         final Daemon daemon = allDaemons.elementAt(i);
@@ -140,8 +133,8 @@ Future<void> main(List<String> args) async {
     }
     case '6': { // getAllServices
       // Fetch all data for lookups
-      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
-      final Set<Service> allServices = await policyClient.getAllServices();
+      final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
+      final Set<Service> allServices = await nppClient.getAllServices();
 
       // Build lookup map
       final Map<String, Daemon> daemonsById = {for (var d in allDaemons) if (d.id != null) d.id!: d};
@@ -159,9 +152,9 @@ Future<void> main(List<String> args) async {
     }
     case '7': { // getAllServiceACLs
       // Fetch all data for lookups
-      final Set<Service> allServices = await policyClient.getAllServices();
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-      final Set<ServiceACL> allServiceACLs = await policyClient.getAllServiceACLs();
+      final Set<Service> allServices = await nppClient.getAllServices();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
+      final Set<ServiceACL> allServiceACLs = await nppClient.getAllServiceACLs();
 
       // Build lookup maps
       final Map<String, Service> servicesById = {for (var s in allServices) if (s.id != null) s.id!: s};
@@ -203,7 +196,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String clientId = await policyClient.putClient(Client(
+      final String clientId = await nppClient.putClient(Client(
           name: clientName,
           atSign: clientAtSign));
       print(chalk.green('✓ Put client with generated id: $clientId'));
@@ -226,14 +219,14 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String clientGroupId = await policyClient.putClientGroup(ClientGroup(
+      final String clientGroupId = await nppClient.putClientGroup(ClientGroup(
         name: clientGroupName));
       print(chalk.green('✓ Put client group with generated id: $clientGroupId'));
       break;
     }
     case '10': { // putClientGroupMember
       print(chalk.blue('Fetching available clients...'));
-      final Set<Client> allClients = await policyClient.getAllClients();
+      final Set<Client> allClients = await nppClient.getAllClients();
       if(allClients.isEmpty) {
         print(chalk.red('No clients found. Please create a client first (option 8).'));
         break;
@@ -249,7 +242,7 @@ Future<void> main(List<String> args) async {
       final Client selectedClient = clientsList.firstWhere((c) => c.id == clientId);
 
       print(chalk.blue('\nFetching available client groups...'));
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
         print(chalk.red('No client groups found. Please create a client group first (option 9).'));
         break;
@@ -274,7 +267,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String clientGroupMemberId = await policyClient.putClientGroupMember(ClientGroupMember(
+      final String clientGroupMemberId = await nppClient.putClientGroupMember(ClientGroupMember(
         clientGroupId: clientGroupId,
         clientId: clientId));
       print(chalk.green('✓ Put client group member with generated id: $clientGroupMemberId'));
@@ -297,14 +290,14 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String daemonId = await policyClient.putDaemon(Daemon(
+      final String daemonId = await nppClient.putDaemon(Daemon(
         atSign: daemonAtSign));
       print(chalk.green('✓ Put daemon with generated id: $daemonId'));
       break;
     }
     case '12': { // putService
       print(chalk.blue('Fetching available daemons...'));
-      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       if(allDaemons.isEmpty) {
         print(chalk.red('No daemons found. Please create a daemon first (option 11).'));
         break;
@@ -350,7 +343,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String serviceId = await policyClient.putService(Service(
+      final String serviceId = await nppClient.putService(Service(
         daemonId: daemonId,
         deviceName: deviceName,
         deviceGroupName: deviceGroupName));
@@ -359,7 +352,7 @@ Future<void> main(List<String> args) async {
     }
     case '13': { // putServiceACL
       print(chalk.blue('Fetching available services...'));
-      final Set<Service> allServices = await policyClient.getAllServices();
+      final Set<Service> allServices = await nppClient.getAllServices();
       if(allServices.isEmpty) {
         print(chalk.red('No services found. Please create a service first (option 12).'));
         break;
@@ -375,7 +368,7 @@ Future<void> main(List<String> args) async {
       final Service selectedService = servicesList.firstWhere((s) => s.id == serviceId);
 
       print(chalk.blue('\nFetching available client groups...'));
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
         print(chalk.red('No client groups found. Please create a client group first (option 9).'));
         break;
@@ -408,7 +401,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final String serviceACLId = await policyClient.putServiceACL(ServiceACL(
+      final String serviceACLId = await nppClient.putServiceACL(ServiceACL(
         serviceId: serviceId,
         clientGroupId: clientGroupId,
         permitOpen: permitOpen));
@@ -417,7 +410,7 @@ Future<void> main(List<String> args) async {
     }
     case '14': { // deleteClient
       print(chalk.blue('Fetching available clients...'));
-      final Set<Client> allClients = await policyClient.getAllClients();
+      final Set<Client> allClients = await nppClient.getAllClients();
       if(allClients.isEmpty) {
         print(chalk.red('No clients found.'));
         break;
@@ -443,7 +436,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteClient(clientId);
+      final bool success = await nppClient.deleteClient(clientId);
       if(success) {
         print(chalk.green('✓ Deleted client with id: $clientId'));
       } else {
@@ -453,7 +446,7 @@ Future<void> main(List<String> args) async {
     }
     case '15': { // deleteClientGroup
       print(chalk.blue('Fetching available client groups...'));
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
         print(chalk.red('No client groups found.'));
         break;
@@ -478,7 +471,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteClientGroup(clientGroupId);
+      final bool success = await nppClient.deleteClientGroup(clientGroupId);
       if(success) {
         print(chalk.green('✓ Deleted client group with id: $clientGroupId'));
       } else {
@@ -488,9 +481,9 @@ Future<void> main(List<String> args) async {
     }
     case '16': { // deleteClientGroupMember
       print(chalk.blue('Fetching available client group members...'));
-      final Set<Client> allClients = await policyClient.getAllClients();
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-      final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
+      final Set<Client> allClients = await nppClient.getAllClients();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
+      final Set<ClientGroupMember> allClientGroupMembers = await nppClient.getAllClientGroupMembers();
 
       if(allClientGroupMembers.isEmpty) {
         print(chalk.red('No client group members found.'));
@@ -529,7 +522,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteClientGroupMember(selectedCgm.id!);
+      final bool success = await nppClient.deleteClientGroupMember(selectedCgm.id!);
       if(success) {
         print(chalk.green('✓ Deleted client group member with id: ${selectedCgm.id}'));
       } else {
@@ -539,7 +532,7 @@ Future<void> main(List<String> args) async {
     }
     case '17': { // deleteDaemon
       print(chalk.blue('Fetching available daemons...'));
-      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       if(allDaemons.isEmpty) {
         print(chalk.red('No daemons found.'));
         break;
@@ -564,7 +557,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteDaemon(daemonId);
+      final bool success = await nppClient.deleteDaemon(daemonId);
       if(success) {
         print(chalk.green('✓ Deleted daemon with id: $daemonId'));
       } else {
@@ -574,8 +567,8 @@ Future<void> main(List<String> args) async {
     }
     case '18': { // deleteService
       print(chalk.blue('Fetching available services...'));
-      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
-      final Set<Service> allServices = await policyClient.getAllServices();
+      final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
+      final Set<Service> allServices = await nppClient.getAllServices();
       if(allServices.isEmpty) {
         print(chalk.red('No services found.'));
         break;
@@ -606,7 +599,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteService(serviceId);
+      final bool success = await nppClient.deleteService(serviceId);
       if(success) {
         print(chalk.green('✓ Deleted service with id: $serviceId'));
       } else {
@@ -616,9 +609,9 @@ Future<void> main(List<String> args) async {
     }
     case '19': { // deleteServiceACL
       print(chalk.blue('Fetching available service ACLs...'));
-      final Set<Service> allServices = await policyClient.getAllServices();
-      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
-      final Set<ServiceACL> allServiceACLs = await policyClient.getAllServiceACLs();
+      final Set<Service> allServices = await nppClient.getAllServices();
+      final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
+      final Set<ServiceACL> allServiceACLs = await nppClient.getAllServiceACLs();
 
       if(allServiceACLs.isEmpty) {
         print(chalk.red('No service ACLs found.'));
@@ -658,7 +651,7 @@ Future<void> main(List<String> args) async {
         break;
       }
 
-      final bool success = await policyClient.deleteServiceACL(selectedAcl.id!);
+      final bool success = await nppClient.deleteServiceACL(selectedAcl.id!);
       if(success) {
         print(chalk.green('✓ Deleted service ACL with id: ${selectedAcl.id}'));
       } else {

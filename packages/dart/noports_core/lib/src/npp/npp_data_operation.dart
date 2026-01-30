@@ -1,20 +1,20 @@
 import 'package:noports_core/npp.dart';
 
-class PolicyDataOperation {
+class NppDataOperation {
   final Map<String, dynamic> atRpcPayload;
 
-  PolicyDataOperation({required this.atRpcPayload});
+  NppDataOperation({required this.atRpcPayload});
 
-  factory PolicyDataOperation.ping() {
-    return PolicyDataOperation(
+  factory NppDataOperation.ping() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'ping',
       },
     );
   }
 
-  factory PolicyDataOperation.getAllClients() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllClients() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allClients',
@@ -22,53 +22,53 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.getAllClientGroups() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllClientGroups() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allClientGroups',
       },
     );
-  } 
+  }
 
-  factory PolicyDataOperation.getAllClientGroupMembers() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllClientGroupMembers() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allClientGroupMembers',
       },
     );
-  } 
+  }
 
-  factory PolicyDataOperation.getAllDaemons() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllDaemons() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allDaemons',
       },
     );
-  } 
+  }
 
-  factory PolicyDataOperation.getAllServices() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllServices() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allServices',
       },
     );
-  } 
+  }
 
-  factory PolicyDataOperation.getAllServiceACLs() {
-    return PolicyDataOperation(
+  factory NppDataOperation.getAllServiceACLs() {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'get',
         'target': 'allServiceACLs',
       },
     );
-  } 
+  }
 
-  factory PolicyDataOperation.putClient(final Client client) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putClient(final Client client) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'Client',
@@ -77,8 +77,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.putClientGroup(final ClientGroup clientGroup) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putClientGroup(final ClientGroup clientGroup) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroup',
@@ -87,8 +87,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.putClientGroupMember(final ClientGroupMember clientGroupMember) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putClientGroupMember(final ClientGroupMember clientGroupMember) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'ClientGroupMember',
@@ -97,8 +97,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.putDaemon(final Daemon daemon) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putDaemon(final Daemon daemon) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'Daemon',
@@ -107,8 +107,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.putService(final Service service) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putService(final Service service) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'Service',
@@ -117,8 +117,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.putServiceACL(final ServiceACL serviceACL) {
-    return PolicyDataOperation(
+  factory NppDataOperation.putServiceACL(final ServiceACL serviceACL) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'put',
         'target': 'ServiceACL',
@@ -127,8 +127,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteClient(final String clientId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteClient(final String clientId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'Client',
@@ -137,8 +137,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteClientGroup(final String clientGroupId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteClientGroup(final String clientGroupId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'ClientGroup',
@@ -147,8 +147,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteClientGroupMember(final String clientGroupMemberId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteClientGroupMember(final String clientGroupMemberId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'ClientGroupMember',
@@ -157,8 +157,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteDaemon(final String daemonId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteDaemon(final String daemonId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'Daemon',
@@ -167,8 +167,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteService(final String serviceId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteService(final String serviceId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'Service',
@@ -177,8 +177,8 @@ class PolicyDataOperation {
     );
   }
 
-  factory PolicyDataOperation.deleteServiceACL(final String serviceACLId) {
-    return PolicyDataOperation(
+  factory NppDataOperation.deleteServiceACL(final String serviceACLId) {
+    return NppDataOperation(
       atRpcPayload: {
         'operation': 'delete',
         'target': 'ServiceACL',
@@ -187,4 +187,3 @@ class PolicyDataOperation {
     );
   }
 }
-

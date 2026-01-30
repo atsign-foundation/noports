@@ -2,14 +2,14 @@ import 'package:at_utils/at_utils.dart';
 
 import './models.dart';
 
-class PolicyCache {
-  static final AtSignLogger logger = AtSignLogger('PolicyCache');
+class NppCache {
+  static final AtSignLogger logger = AtSignLogger('NppCache');
 
-  final Set<Client> _clients; // Client.atSign must be unique across all clients  
-  final Set<ClientGroup> _clientGroups; 
-  final Set<ClientGroupMember> _clientGroupMembers; 
+  final Set<Client> _clients; // Client.atSign must be unique across all clients
+  final Set<ClientGroup> _clientGroups;
+  final Set<ClientGroupMember> _clientGroupMembers;
   final Set<Daemon> _daemons; // Daemon.atSign must be unique across all daemons
-  final Set<Service> _services; 
+  final Set<Service> _services;
   final Set<ServiceACL> _serviceACLs;
 
   Set<Client> get clients => _clients;
@@ -19,7 +19,7 @@ class PolicyCache {
   Set<Service> get services => _services;
   Set<ServiceACL> get serviceACLs => _serviceACLs;
 
-  PolicyCache() :
+  NppCache() :
     _clients = {},
     _clientGroups = {},
     _clientGroupMembers = {},
@@ -85,7 +85,7 @@ class PolicyCache {
   Set<ClientGroup> findMatchedClientGroups({required final String clientAtSign}) {
     Client? client = getClientByAtSign(clientAtSign);
     if(client == null) {
-      print('$clientAtSign is not a registered client in PolicyCache');
+      print('$clientAtSign is not a registered client in NppCache');
       return {};
     }
     if(client.id == null) {
@@ -101,7 +101,7 @@ class PolicyCache {
     return matchedClientGroups;
   }
 
-  /// get* from PolicyCache
+  /// get* from NppCache
   Set<ServiceACL> getServiceACLsByServiceID(final String serviceId) {
     return _serviceACLs.where((serviceACL) => serviceACL.serviceId == serviceId).toSet();
   }
@@ -124,11 +124,11 @@ class PolicyCache {
     }
     return candidates.first;
   }
-  
+
   Set<ClientGroupMember> getClientGroupMembersByClientId(final String clientId) {
     return _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientId == clientId).toSet();
   }
-  
+
   Set<ClientGroupMember> getClientGroupMembersByClientGroupId(final String clientGroupId) {
     return _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientGroupId == clientGroupId).toSet();
   }
@@ -140,7 +140,7 @@ class PolicyCache {
   Set<Service> getServicesByDaemonAtSign(final String daemonAtSign) {
     Daemon? daemon = getDaemonByAtSign(daemonAtSign);
     if(daemon == null) {
-      print('No daemon found in PolicyCache with atSign $daemonAtSign');
+      print('No daemon found in NppCache with atSign $daemonAtSign');
       return {};
     }
     if(daemon.id == null) {
@@ -186,7 +186,7 @@ class PolicyCache {
     return _serviceACLs.where((serviceACL) => serviceACL.id == serviceACLId).first;
   }
 
-  /// put* object into PolicyCache
+  /// put* object into NppCache
   bool putClient(final Client client) {
     // ensure no other clients exist with the same atSign
     for(final Client c in _clients) {
@@ -251,12 +251,12 @@ class PolicyCache {
   bool putService(final Service service) {
     // ensure no duplicate services
     for(final Service s in _services) {
-      if(s.daemonId == service.daemonId && 
-        s.deviceName == service.deviceName && 
+      if(s.daemonId == service.daemonId &&
+        s.deviceName == service.deviceName &&
         s.deviceGroupName == service.deviceGroupName) {
         throw Exception('Found duplicate service daemonId: ${service.daemonId} '
           'deviceName: ${service.deviceName} '
-          'deviceGroupName: ${service.deviceGroupName}'); 
+          'deviceGroupName: ${service.deviceGroupName}');
       }
       if(service.id != null && s.id == service.id) {
         throw Exception('Found duplicate service id ${service.id}');
@@ -282,7 +282,7 @@ class PolicyCache {
       if(sa.id == serviceACL.id) {
         throw Exception('Found duplicate service ACL id ${serviceACL.id}');
       }
-    } 
+    }
     serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
     return _serviceACLs.add(serviceACL);
   }
@@ -333,4 +333,3 @@ class PolicyCache {
   }
 
 }
-
