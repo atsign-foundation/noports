@@ -8,7 +8,9 @@ import 'package:noports_core/npa.dart';
 class PolicyRequestHandler implements NPARequestHandler {
   final PolicyCache policyCache;
 
-  PolicyRequestHandler(this.policyCache);
+  PolicyRequestHandler({
+    required this.policyCache
+  });
 
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(NPAAuthCheckRequest authCheckRequest) async {
@@ -62,7 +64,7 @@ class PolicyServiceDefaults {
   static const String domainNamespace = 'npp';
 }
 
-class PolicyService with AtClientBindings {
+class PolicyService {
   @override
   final AtClient atClient;
   @override
@@ -83,11 +85,11 @@ class PolicyService with AtClientBindings {
     required this.atClient,
     required this.policyCache,
     required this.managerAllowList,
+    required String binariesVersion,
     // optional
     final String domainNamespace = PolicyServiceDefaults.domainNamespace,
     final String baseNamespace = PolicyServiceDefaults.baseNamespace,
     final String? eventLoggingAtSign,
-    final String? binariesVersion,
     this.policyOperationHooks,
     String? homeDirectory,
   }) {
@@ -100,7 +102,7 @@ class PolicyService with AtClientBindings {
 
     // RPC for handling incoming policy detail requests
     npa = NPAImpl(
-      handler: PolicyRequestHandler(policyCache),
+      handler: PolicyRequestHandler(policyCache: policyCache),
       atClient: atClient,
       homeDirectory: homeDirectory,
       eventLoggingAtsign: eventLoggingAtSign as Atsign?);
@@ -112,6 +114,7 @@ class PolicyService with AtClientBindings {
         atClient: atClient,
         policyCache: policyCache,
         policyOperationHooks: policyOperationHooks,
+        binariesVersion: binariesVersion,
       ),
       isClient: false,
       isServer: true,

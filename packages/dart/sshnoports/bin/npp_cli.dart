@@ -82,11 +82,8 @@ Future<void> main(List<String> args) async {
         final Map<String, dynamic> pingResponse = await policyClient.ping();
         print(chalk.green('\n✓ Ping successful!'));
         print('  ${chalk.cyan('status')}: ${pingResponse['status']}');
-        if (pingResponse.containsKey('binariesVersion')) {
-          print('  ${chalk.cyan('binariesVersion')}: ${pingResponse['binariesVersion']}');
-        }
+        print('  ${chalk.cyan('binariesVersion')}: ${pingResponse['binariesVersion']}');
         print('  ${chalk.cyan('coreVersion')}: ${pingResponse['coreVersion']}');
-        print('  ${chalk.cyan('features')}: ${(pingResponse['features'] as List).join(', ')}');
         print('  ${chalk.cyan('timestamp')}: ${pingResponse['timestamp']}');
       } catch (e) {
         print(chalk.red('\n✗ Ping failed: $e'));
@@ -97,62 +94,89 @@ Future<void> main(List<String> args) async {
       final Set<Client> allClients = await policyClient.getAllClients();
       print(chalk.green('\n✓ Obtained ${allClients.length} clients:'));
       for(int i = 0; i < allClients.length; i++) {
-      final Client client = allClients.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(client.id ?? 'N/A')}) | name: ${client.name} | atSign: ${client.atSign}');
-    }
+        final Client client = allClients.elementAt(i);
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(client.id ?? 'N/A')} | atSign: ${client.atSign} | name: ${client.name}');
+      }
       break;
     }
     case '3': { // getAllClientGroups
       final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       print(chalk.green('\n✓ Obtained ${allClientGroups.length} client groups:'));
       for(int i = 0; i < allClientGroups.length; i++) {
-      final ClientGroup clientGroup = allClientGroups.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(clientGroup.id ?? 'N/A')}) | '
-        'name: ${clientGroup.name}');
-    }
+        final ClientGroup clientGroup = allClientGroups.elementAt(i);
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(clientGroup.id ?? 'N/A')} | name: ${clientGroup.name}');
+      }
       break;
     }
     case '4': { // getAllClientGroupMembers
+      // Fetch all data for lookups
+      final Set<Client> allClients = await policyClient.getAllClients();
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
+
+      // Build lookup maps
+      final Map<String, Client> clientsById = {for (var c in allClients) if (c.id != null) c.id!: c};
+      final Map<String, ClientGroup> groupsById = {for (var g in allClientGroups) if (g.id != null) g.id!: g};
+
       print(chalk.green('\n✓ Obtained ${allClientGroupMembers.length} client group members:'));
       for(int i = 0; i < allClientGroupMembers.length; i++) {
-      final ClientGroupMember clientGroupMember = allClientGroupMembers.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(clientGroupMember.id ?? 'N/A')}) | '
-        'clientGroupId: (${clientGroupMember.clientGroupId}) | '
-        'clientId: (${clientGroupMember.clientId})');
-    }
+        final ClientGroupMember cgm = allClientGroupMembers.elementAt(i);
+        final Client? client = clientsById[cgm.clientId];
+        final ClientGroup? group = groupsById[cgm.clientGroupId];
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(cgm.id ?? 'N/A')} | '
+          'clientId: ${cgm.clientId} (${client?.atSign ?? '?'}) | '
+          'clientGroupId: ${cgm.clientGroupId} (${group?.name ?? '?'})');
+      }
       break;
     }
     case '5': { // getAllDaemons
       final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
       print(chalk.green('\n✓ Obtained ${allDaemons.length} daemons:'));
       for(int i = 0; i < allDaemons.length; i++) {
-      final Daemon daemon = allDaemons.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(daemon.id ?? 'N/A')}) | atSign: ${daemon.atSign}');
-    }
+        final Daemon daemon = allDaemons.elementAt(i);
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(daemon.id ?? 'N/A')} | atSign: ${daemon.atSign}');
+      }
       break;
     }
     case '6': { // getAllServices
+      // Fetch all data for lookups
+      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
       final Set<Service> allServices = await policyClient.getAllServices();
+
+      // Build lookup map
+      final Map<String, Daemon> daemonsById = {for (var d in allDaemons) if (d.id != null) d.id!: d};
+
       print(chalk.green('\n✓ Obtained ${allServices.length} services:'));
       for(int i = 0; i < allServices.length; i++) {
-      final Service service = allServices.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(service.id ?? 'N/A')}) | '
-        'deviceName: ${service.deviceName} | '
-        'daemonId: (${service.daemonId})');
-    }
+        final Service service = allServices.elementAt(i);
+        final Daemon? daemon = daemonsById[service.daemonId];
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(service.id ?? 'N/A')} | '
+          'deviceName: ${service.deviceName} | '
+          'deviceGroupName: ${service.deviceGroupName} | '
+          'daemonId: ${service.daemonId} (${daemon?.atSign ?? '?'})');
+      }
       break;
     }
     case '7': { // getAllServiceACLs
+      // Fetch all data for lookups
+      final Set<Service> allServices = await policyClient.getAllServices();
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
       final Set<ServiceACL> allServiceACLs = await policyClient.getAllServiceACLs();
+
+      // Build lookup maps
+      final Map<String, Service> servicesById = {for (var s in allServices) if (s.id != null) s.id!: s};
+      final Map<String, ClientGroup> groupsById = {for (var g in allClientGroups) if (g.id != null) g.id!: g};
+
       print(chalk.green('\n✓ Obtained ${allServiceACLs.length} service ACLs:'));
       for(int i = 0; i < allServiceACLs.length; i++) {
-      final ServiceACL serviceACL = allServiceACLs.elementAt(i);
-      print('  ${chalk.cyan('[$i]')}: id: (${chalk.yellow(serviceACL.id ?? 'N/A')}) | '
-        'serviceId: (${serviceACL.serviceId}) | '
-        'clientGroupId: (${serviceACL.clientGroupId}) | '
-        'permitOpen: ${serviceACL.permitOpen}');
-    }
+        final ServiceACL acl = allServiceACLs.elementAt(i);
+        final Service? service = servicesById[acl.serviceId];
+        final ClientGroup? group = groupsById[acl.clientGroupId];
+        print('  ${chalk.cyan('[$i]')}: id: ${chalk.yellow(acl.id ?? 'N/A')} | '
+          'serviceId: ${acl.serviceId} (${service?.deviceName ?? '?'}) | '
+          'clientGroupId: ${acl.clientGroupId} (${group?.name ?? '?'}) | '
+          'permitOpen: ${acl.permitOpen}');
+      }
       break;
     }
     case '8': { // putClient
@@ -391,6 +415,257 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put service ACL with generated id: $serviceACLId'));
       break;
     }
+    case '14': { // deleteClient
+      print(chalk.blue('Fetching available clients...'));
+      final Set<Client> allClients = await policyClient.getAllClients();
+      if(allClients.isEmpty) {
+        print(chalk.red('No clients found.'));
+        break;
+      }
+
+      final List<Client> clientsList = allClients.toList();
+      final String? clientId = await CliMenuHelper.selectClientId(clientsList);
+      if(clientId == null || clientId.isEmpty) {
+        print(chalk.yellow('Cancelled client selection'));
+        break;
+      }
+
+      final Client selectedClient = clientsList.firstWhere((c) => c.id == clientId);
+
+      print(chalk.bold.red('\nConfirm deletion of Client:'));
+      print('  ${chalk.cyan('id')}: $clientId');
+      print('  ${chalk.cyan('atSign')}: ${selectedClient.atSign}');
+      print('  ${chalk.cyan('name')}: ${selectedClient.name}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this Client?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of Client'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteClient(clientId);
+      if(success) {
+        print(chalk.green('✓ Deleted client with id: $clientId'));
+      } else {
+        print(chalk.red('✗ Failed to delete client with id: $clientId'));
+      }
+      break;
+    }
+    case '15': { // deleteClientGroup
+      print(chalk.blue('Fetching available client groups...'));
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      if(allClientGroups.isEmpty) {
+        print(chalk.red('No client groups found.'));
+        break;
+      }
+
+      final List<ClientGroup> clientGroupsList = allClientGroups.toList();
+      final String? clientGroupId = await CliMenuHelper.selectClientGroupId(clientGroupsList);
+      if(clientGroupId == null || clientGroupId.isEmpty) {
+        print(chalk.yellow('Cancelled client group selection'));
+        break;
+      }
+
+      final ClientGroup selectedClientGroup = clientGroupsList.firstWhere((cg) => cg.id == clientGroupId);
+
+      print(chalk.bold.red('\nConfirm deletion of ClientGroup:'));
+      print('  ${chalk.cyan('id')}: $clientGroupId');
+      print('  ${chalk.cyan('name')}: ${selectedClientGroup.name}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this ClientGroup?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of ClientGroup'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteClientGroup(clientGroupId);
+      if(success) {
+        print(chalk.green('✓ Deleted client group with id: $clientGroupId'));
+      } else {
+        print(chalk.red('✗ Failed to delete client group with id: $clientGroupId'));
+      }
+      break;
+    }
+    case '16': { // deleteClientGroupMember
+      print(chalk.blue('Fetching available client group members...'));
+      final Set<Client> allClients = await policyClient.getAllClients();
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ClientGroupMember> allClientGroupMembers = await policyClient.getAllClientGroupMembers();
+
+      if(allClientGroupMembers.isEmpty) {
+        print(chalk.red('No client group members found.'));
+        break;
+      }
+
+      // Build lookup maps
+      final Map<String, Client> clientsById = {for (var c in allClients) if (c.id != null) c.id!: c};
+      final Map<String, ClientGroup> groupsById = {for (var g in allClientGroups) if (g.id != null) g.id!: g};
+
+      // Let user select from list
+      final List<ClientGroupMember> cgmList = allClientGroupMembers.toList();
+      print(chalk.white('\nSelect a client group member to delete:'));
+      final List<String> menuItems = [];
+      for(int i = 0; i < cgmList.length; i++) {
+        final ClientGroupMember cgm = cgmList[i];
+        final Client? client = clientsById[cgm.clientId];
+        final ClientGroup? group = groupsById[cgm.clientGroupId];
+        menuItems.add('${i + 1}. id: ${cgm.id} | client: ${client?.atSign ?? '?'} | group: ${group?.name ?? '?'}');
+      }
+      final menu = Menu(menuItems);
+      final result = menu.choose();
+      final ClientGroupMember selectedCgm = cgmList[result.index];
+
+      final Client? client = clientsById[selectedCgm.clientId];
+      final ClientGroup? group = groupsById[selectedCgm.clientGroupId];
+
+      print(chalk.bold.red('\nConfirm deletion of ClientGroupMember:'));
+      print('  ${chalk.cyan('id')}: ${selectedCgm.id}');
+      print('  ${chalk.cyan('client')}: ${client?.atSign ?? '?'}');
+      print('  ${chalk.cyan('group')}: ${group?.name ?? '?'}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this ClientGroupMember?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of ClientGroupMember'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteClientGroupMember(selectedCgm.id!);
+      if(success) {
+        print(chalk.green('✓ Deleted client group member with id: ${selectedCgm.id}'));
+      } else {
+        print(chalk.red('✗ Failed to delete client group member with id: ${selectedCgm.id}'));
+      }
+      break;
+    }
+    case '17': { // deleteDaemon
+      print(chalk.blue('Fetching available daemons...'));
+      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      if(allDaemons.isEmpty) {
+        print(chalk.red('No daemons found.'));
+        break;
+      }
+
+      final List<Daemon> daemonsList = allDaemons.toList();
+      final String? daemonId = await CliMenuHelper.selectDaemonId(daemonsList);
+      if(daemonId == null || daemonId.isEmpty) {
+        print(chalk.yellow('Cancelled daemon selection'));
+        break;
+      }
+
+      final Daemon selectedDaemon = daemonsList.firstWhere((d) => d.id == daemonId);
+
+      print(chalk.bold.red('\nConfirm deletion of Daemon:'));
+      print('  ${chalk.cyan('id')}: $daemonId');
+      print('  ${chalk.cyan('atSign')}: ${selectedDaemon.atSign}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this Daemon?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of Daemon'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteDaemon(daemonId);
+      if(success) {
+        print(chalk.green('✓ Deleted daemon with id: $daemonId'));
+      } else {
+        print(chalk.red('✗ Failed to delete daemon with id: $daemonId'));
+      }
+      break;
+    }
+    case '18': { // deleteService
+      print(chalk.blue('Fetching available services...'));
+      final Set<Daemon> allDaemons = await policyClient.getAllDaemons();
+      final Set<Service> allServices = await policyClient.getAllServices();
+      if(allServices.isEmpty) {
+        print(chalk.red('No services found.'));
+        break;
+      }
+
+      // Build lookup map
+      final Map<String, Daemon> daemonsById = {for (var d in allDaemons) if (d.id != null) d.id!: d};
+
+      final List<Service> servicesList = allServices.toList();
+      final String? serviceId = await CliMenuHelper.selectServiceId(servicesList);
+      if(serviceId == null || serviceId.isEmpty) {
+        print(chalk.yellow('Cancelled service selection'));
+        break;
+      }
+
+      final Service selectedService = servicesList.firstWhere((s) => s.id == serviceId);
+      final Daemon? daemon = daemonsById[selectedService.daemonId];
+
+      print(chalk.bold.red('\nConfirm deletion of Service:'));
+      print('  ${chalk.cyan('id')}: $serviceId');
+      print('  ${chalk.cyan('daemon')}: ${daemon?.atSign ?? '?'}');
+      print('  ${chalk.cyan('deviceName')}: ${selectedService.deviceName}');
+      print('  ${chalk.cyan('deviceGroupName')}: ${selectedService.deviceGroupName}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this Service?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of Service'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteService(serviceId);
+      if(success) {
+        print(chalk.green('✓ Deleted service with id: $serviceId'));
+      } else {
+        print(chalk.red('✗ Failed to delete service with id: $serviceId'));
+      }
+      break;
+    }
+    case '19': { // deleteServiceACL
+      print(chalk.blue('Fetching available service ACLs...'));
+      final Set<Service> allServices = await policyClient.getAllServices();
+      final Set<ClientGroup> allClientGroups = await policyClient.getAllClientGroups();
+      final Set<ServiceACL> allServiceACLs = await policyClient.getAllServiceACLs();
+
+      if(allServiceACLs.isEmpty) {
+        print(chalk.red('No service ACLs found.'));
+        break;
+      }
+
+      // Build lookup maps
+      final Map<String, Service> servicesById = {for (var s in allServices) if (s.id != null) s.id!: s};
+      final Map<String, ClientGroup> groupsById = {for (var g in allClientGroups) if (g.id != null) g.id!: g};
+
+      // Let user select from list
+      final List<ServiceACL> aclList = allServiceACLs.toList();
+      print(chalk.white('\nSelect a service ACL to delete:'));
+      final List<String> menuItems = [];
+      for(int i = 0; i < aclList.length; i++) {
+        final ServiceACL acl = aclList[i];
+        final Service? service = servicesById[acl.serviceId];
+        final ClientGroup? group = groupsById[acl.clientGroupId];
+        menuItems.add('${i + 1}. id: ${acl.id} | service: ${service?.deviceName ?? '?'} | group: ${group?.name ?? '?'} | permitOpen: ${acl.permitOpen}');
+      }
+      final menu = Menu(menuItems);
+      final result = menu.choose();
+      final ServiceACL selectedAcl = aclList[result.index];
+
+      final Service? service = servicesById[selectedAcl.serviceId];
+      final ClientGroup? group = groupsById[selectedAcl.clientGroupId];
+
+      print(chalk.bold.red('\nConfirm deletion of ServiceACL:'));
+      print('  ${chalk.cyan('id')}: ${selectedAcl.id}');
+      print('  ${chalk.cyan('service')}: ${service?.deviceName ?? '?'}');
+      print('  ${chalk.cyan('group')}: ${group?.name ?? '?'}');
+      print('  ${chalk.cyan('permitOpen')}: ${selectedAcl.permitOpen}');
+
+      final bool confirmed = CliMenuHelper.confirm('Delete this ServiceACL?');
+      if(!confirmed) {
+        print(chalk.yellow('Cancelled deletion of ServiceACL'));
+        break;
+      }
+
+      final bool success = await policyClient.deleteServiceACL(selectedAcl.id!);
+      if(success) {
+        print(chalk.green('✓ Deleted service ACL with id: ${selectedAcl.id}'));
+      } else {
+        print(chalk.red('✗ Failed to delete service ACL with id: ${selectedAcl.id}'));
+      }
+      break;
+    }
     default: {
       print(chalk.red('✗ Invalid option: $option'));
       break;
@@ -419,6 +694,12 @@ String showMenuAndGetSelection() {
     chalk.green('11. ') + 'putDaemon',
     chalk.green('12. ') + 'putService',
     chalk.green('13. ') + 'putServiceACL',
+    chalk.red('14. ') + 'deleteClient',
+    chalk.red('15. ') + 'deleteClientGroup',
+    chalk.red('16. ') + 'deleteClientGroupMember',
+    chalk.red('17. ') + 'deleteDaemon',
+    chalk.red('18. ') + 'deleteService',
+    chalk.red('19. ') + 'deleteServiceACL',
   ];
 
   print(chalk.white('\nSelect an option (use arrow keys):'));

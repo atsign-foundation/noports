@@ -287,6 +287,36 @@ class PolicyCache {
     return _serviceACLs.add(serviceACL);
   }
 
+  bool deleteClient(final String clientId) {
+    final Client client = getClientById(clientId);
+    return _clients.remove(client);
+  }
+
+  bool deleteClientGroup(final String clientGroupId) {
+    final ClientGroup clientGroup = getClientGroupById(clientGroupId);
+    return _clientGroups.remove(clientGroup);
+  }
+
+  bool deleteClientGroupMember(final String clientGroupMemberId) {
+    final ClientGroupMember clientGroupMember = getClientGroupMemberById(clientGroupMemberId);
+    return _clientGroupMembers.remove(clientGroupMember);
+  }
+
+  bool deleteDaemon(final String daemonId) {
+    final Daemon daemon = getDaemonById(daemonId);
+    return _daemons.remove(daemon);
+  }
+
+  bool deleteService(final String serviceId) {
+    final Service service = getServiceById(serviceId);
+    return _services.remove(service);
+  }
+
+  bool deleteServiceACL(final String serviceACLId) {
+    final ServiceACL serviceACL = getServiceACLById(serviceACLId);
+    return _serviceACLs.remove(serviceACL);
+  }
+
   int _maxId(final Set<PolicyEntry> entries) {
     int maxId = 0;
     for(final PolicyEntry entry in entries) {

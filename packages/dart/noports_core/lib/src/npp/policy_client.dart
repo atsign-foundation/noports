@@ -237,6 +237,43 @@ class PolicyClient {
     return serviceACLId;
   }
 
+  Future<bool> deleteClient(String clientId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClient(clientId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    // Response will have 'success' key from manager_rpc_callbacks
+    return response['success'] ?? false;
+  }
+
+  Future<bool> deleteClientGroup(String clientGroupId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClientGroup(clientGroupId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    return response['success'] ?? false;
+  }
+
+  Future<bool> deleteClientGroupMember(String clientGroupMemberId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteClientGroupMember(clientGroupMemberId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    return response['success'] ?? false;
+  }
+
+  Future<bool> deleteDaemon(String daemonId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteDaemon(daemonId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    return response['success'] ?? false;
+  }
+
+  Future<bool> deleteService(String serviceId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteService(serviceId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    return response['success'] ?? false;
+  }
+
+  Future<bool> deleteServiceACL(String serviceACLId) async {
+    final PolicyDataOperation policyDataOperation = PolicyDataOperation.deleteServiceACL(serviceACLId);
+    final Map<String, dynamic> response = await executePolicyDataOperation(policyDataOperation);
+    return response['success'] ?? false;
+  }
+
   /// Send a ping request to the policy service and return the response
   /// Returns a map containing status, coreVersion, optional binariesVersion, features, and timestamp
   Future<Map<String, dynamic>> ping() async {
@@ -256,8 +293,8 @@ class PolicyClient {
     if(!response.containsKey('coreVersion')) {
       throw Exception('coreVersion key not found in ping response: $response');
     }
-    if(!response.containsKey('features')) {
-      throw Exception('features key not found in ping response: $response');
+    if(!response.containsKey('binariesVersion')) {
+      throw Exception('binariesVersion key not found in ping response: $response');
     }
     if(!response.containsKey('timestamp')) {
       throw Exception('timestamp key not found in ping response: $response');

@@ -1,6 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/src/version.dart' as core_version;
 
 /// Callbacks for handling policy manager RPC requests
 /// This handles get/put operations for policy entities like Clients, Daemons, Services, etc.
@@ -8,11 +9,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   final AtClient atClient;
   final PolicyCache policyCache;
   final PolicyOperationHooks? policyOperationHooks;
+  final String binariesVersion;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
   ManagerRpcCallbacks({
     required this.atClient,
     required this.policyCache,
+    required this.binariesVersion,
     this.policyOperationHooks,
   });
 
@@ -42,9 +45,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     }
     final Map<String, dynamic> requestPayload = request.payload;
     final Map<String, dynamic> responsePayload = {};
-    if (!requestPayload.containsKey('operation') ||
-        !requestPayload.containsKey('target') ||
-        !requestPayload.containsKey('value')) {
+    if (!requestPayload.containsKey('operation')) {
       return AtRpcResp(
         reqId: reqId,
         respType: AtRpcRespType.error,
@@ -55,337 +56,418 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     }
     final String operation = requestPayload['operation'];
     final String target = requestPayload['target'];
-    final Map<String, dynamic> valueAsMap = requestPayload['value'];
     late String message;
     late bool success;
     switch (operation) {
-      case 'get':
+      case 'get': {
+        if(!requestPayload.containsKey('target')) {
+          success = false;
+          message = 'target or value JSON keys was not found in the payload.';
+          break;
+        }
         switch (target) {
-          case 'allClients':
-            {
-              final Set<Client> clients = policyCache.clients;
-              final Set<Map<String, dynamic>> clientsAsJson =
-                  clients.map((client) => client.toJson()).toSet();
-              final int amount = clientsAsJson.length;
-              responsePayload['amount'] = amount;
-              responsePayload['list'] = clientsAsJson.toList();
-              message = '$amount Clients found.';
-              success = true;
-              break;
-            }
-          case 'allClientGroups':
-            {
-              final Set<ClientGroup> clientGroups = policyCache.clientGroups;
-              final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups
-                  .map((clientGroup) => clientGroup.toJson())
-                  .toSet();
-              final int amount = clientGroupsAsJson.length;
-              responsePayload['amount'] = amount;
-              responsePayload['list'] = clientGroupsAsJson.toList();
-              message = '$amount ClientGroups found.';
-              success = true;
-              break;
-            }
-          case 'allClientGroupMembers':
-            {
-              final Set<ClientGroupMember> clientGroupMembers =
-                  policyCache.clientGroupMembers;
-              final Set<Map<String, dynamic>> clientGroupMembersAsJson =
-                  clientGroupMembers
-                      .map((clientGroupMember) => clientGroupMember.toJson())
-                      .toSet();
-              final int amount = clientGroupMembersAsJson.length;
-              responsePayload['amount'] = amount;
-              responsePayload['list'] = clientGroupMembersAsJson.toList();
-              message = '$amount ClientGroupMembers found.';
-              success = true;
-              break;
-            }
-          case 'allDaemons':
-            {
-              final Set<Daemon> daemons = policyCache.daemons;
-              final Set<Map<String, dynamic>> daemonsAsJson =
-                  daemons.map((daemon) => daemon.toJson()).toSet();
-              final int amount = daemonsAsJson.length;
-              responsePayload['amount'] = amount;
-              responsePayload['list'] = daemonsAsJson.toList();
-              message = '$amount daemons found.';
-              success = true;
-              break;
-            }
-          case 'allServices':
-            {
-              final Set<Service> services = policyCache.services;
-              final Set<Map<String, dynamic>> servicesAsJson =
-                  services.map((service) => service.toJson()).toSet();
-              final int amount = servicesAsJson.length;
-              responsePayload['amount'] = amount;
-              responsePayload['list'] = servicesAsJson.toList();
-              message = '$amount services found.';
-              success = true;
-              break;
-            }
-          case 'allServiceACLs':
-            {
-              final Set<ServiceACL> serviceACLs = policyCache.serviceACLs;
-              final Set<Map<String, dynamic>> serviceACLsAsJson =
-                  serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
-              final int amount = serviceACLsAsJson.length;
-              responsePayload['amount'] = serviceACLsAsJson.length;
-              responsePayload['list'] = serviceACLsAsJson.toList();
-              message = '$amount ServiceACLs found.';
-              success = true;
-              break;
-            }
-          default:
-            {
-              break;
-            }
+          case 'allClients': {
+            final Set<Client> clients = policyCache.clients;
+            final Set<Map<String, dynamic>> clientsAsJson =
+                clients.map((client) => client.toJson()).toSet();
+            final int amount = clientsAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = clientsAsJson.toList();
+            message = '$amount Clients found.';
+            success = true;
+            break;
+          }
+          case 'allClientGroups': {
+            final Set<ClientGroup> clientGroups = policyCache.clientGroups;
+            final Set<Map<String, dynamic>> clientGroupsAsJson = clientGroups
+                .map((clientGroup) => clientGroup.toJson())
+                .toSet();
+            final int amount = clientGroupsAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = clientGroupsAsJson.toList();
+            message = '$amount ClientGroups found.';
+            success = true;
+            break;
+          }
+          case 'allClientGroupMembers': {
+            final Set<ClientGroupMember> clientGroupMembers =
+                policyCache.clientGroupMembers;
+            final Set<Map<String, dynamic>> clientGroupMembersAsJson =
+                clientGroupMembers
+                    .map((clientGroupMember) => clientGroupMember.toJson())
+                    .toSet();
+            final int amount = clientGroupMembersAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = clientGroupMembersAsJson.toList();
+            message = '$amount ClientGroupMembers found.';
+            success = true;
+            break;
+          }
+          case 'allDaemons': {
+            final Set<Daemon> daemons = policyCache.daemons;
+            final Set<Map<String, dynamic>> daemonsAsJson =
+                daemons.map((daemon) => daemon.toJson()).toSet();
+            final int amount = daemonsAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = daemonsAsJson.toList();
+            message = '$amount daemons found.';
+            success = true;
+            break;
+          }
+          case 'allServices': {
+            final Set<Service> services = policyCache.services;
+            final Set<Map<String, dynamic>> servicesAsJson =
+                services.map((service) => service.toJson()).toSet();
+            final int amount = servicesAsJson.length;
+            responsePayload['amount'] = amount;
+            responsePayload['list'] = servicesAsJson.toList();
+            message = '$amount services found.';
+            success = true;
+            break;
+          }
+          case 'allServiceACLs': {
+            final Set<ServiceACL> serviceACLs = policyCache.serviceACLs;
+            final Set<Map<String, dynamic>> serviceACLsAsJson =
+                serviceACLs.map((serviceACL) => serviceACL.toJson()).toSet();
+            final int amount = serviceACLsAsJson.length;
+            responsePayload['amount'] = serviceACLsAsJson.length;
+            responsePayload['list'] = serviceACLsAsJson.toList();
+            message = '$amount ServiceACLs found.';
+            success = true;
+            break;
+          }
+          default: {
+            break;
+          }
         }
         break;
-      case 'put':
+      }
+      case 'put': {
+        if(!requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
+          success = false;
+          message = 'target or value JSON keys was not found in the payload.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = requestPayload['value'];
         switch (target) {
-          case 'Client':
-            {
-              final Client client = Client.fromJson(valueAsMap);
-              client.id ??= _generateId(policyCache.clients);
-              if (policyOperationHooks?.prePutClient != null) {
-                try {
-                  await policyOperationHooks!.prePutClient!(client);
-                } catch (e, s) {
-                  logger.severe(
-                      'prePutClient hook failed for client ${client.atSign}',
-                      e,
-                      s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
-              }
-              success = policyCache.putClient(client);
-              if (!success) {
-                message = 'Failed to store client with atSign: ${client.atSign}';
+          case 'Client': {
+            final Client client = Client.fromJson(valueAsMap);
+            client.id ??= _generateId(policyCache.clients);
+            if (policyOperationHooks?.prePutClient != null) {
+              try {
+                await policyOperationHooks!.prePutClient!(client);
+              } catch (e, s) {
+                logger.severe(
+                    'prePutClient hook failed for client ${client.atSign}',
+                    e,
+                    s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutClient != null) {
-                try {
-                  await policyOperationHooks!.postPutClient!(client);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutClient hook failed for client ${client.id}', e, s);
-                }
-              }
-              responsePayload['success'] = success;
-              responsePayload['clientId'] =
-                  client.id!; // client.id is non-null after ID generation
-              message = 'Client stored successfully.';
+            }
+            success = policyCache.putClient(client);
+            if (!success) {
+              message = 'Failed to store client with atSign: ${client.atSign}';
               break;
             }
-          case 'ClientGroup':
-            {
-              final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-              clientGroup.id ??= _generateId(policyCache.clientGroups);
-              if (policyOperationHooks?.prePutClientGroup != null) {
-                try {
-                  await policyOperationHooks!.prePutClientGroup!(clientGroup);
-                } catch (e, s) {
-                  logger.severe(
-                      'prePutClientGroup hook failed for client group ${clientGroup.name}',
-                      e,
-                      s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
+            if (policyOperationHooks?.postPutClient != null) {
+              try {
+                await policyOperationHooks!.postPutClient!(client);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutClient hook failed for client ${client.id}', e, s);
               }
-              success = policyCache.putClientGroup(clientGroup);
-              if (!success) {
-                message =
-                    'Failed to store client group with name: ${clientGroup.name}';
+            }
+            responsePayload['success'] = success;
+            responsePayload['clientId'] =
+                client.id!; // client.id is non-null after ID generation
+            message = 'Client stored successfully.';
+            break;
+          }
+          case 'ClientGroup': {
+            final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
+            clientGroup.id ??= _generateId(policyCache.clientGroups);
+            if (policyOperationHooks?.prePutClientGroup != null) {
+              try {
+                await policyOperationHooks!.prePutClientGroup!(clientGroup);
+              } catch (e, s) {
+                logger.severe(
+                    'prePutClientGroup hook failed for client group ${clientGroup.name}',
+                    e,
+                    s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutClientGroup != null) {
-                try {
-                  await policyOperationHooks!.postPutClientGroup!(clientGroup);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutClientGroup hook failed for client group ${clientGroup.id}',
-                      e,
-                      s);
-                }
-              }
-              responsePayload['success'] = success;
-              responsePayload['clientGroupId'] =
-                  clientGroup.id!; // clientGroup.id is non-null after ID generation
-              message = 'Client group stored successfully.';
+            }
+            success = policyCache.putClientGroup(clientGroup);
+            if (!success) {
+              message =
+                  'Failed to store client group with name: ${clientGroup.name}';
               break;
             }
-          case 'ClientGroupMember':
-            {
-              final ClientGroupMember clientGroupMember =
-                  ClientGroupMember.fromJson(valueAsMap);
-              clientGroupMember.id ??=
-                  _generateId(policyCache.clientGroupMembers);
-              if (policyOperationHooks?.prePutClientGroupMember != null) {
-                try {
-                  await policyOperationHooks!
-                      .prePutClientGroupMember!(clientGroupMember);
-                } catch (e, s) {
-                  logger.severe(
-                      'prePutClientGroupMember hook failed', e, s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
+            if (policyOperationHooks?.postPutClientGroup != null) {
+              try {
+                await policyOperationHooks!.postPutClientGroup!(clientGroup);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutClientGroup hook failed for client group ${clientGroup.id}',
+                    e,
+                    s);
               }
-              success = policyCache.putClientGroupMember(clientGroupMember);
-              if (!success) {
-                message = 'Failed to store client group member: '
-                    'clientId=${clientGroupMember.clientId} '
-                    'clientGroupId=${clientGroupMember.clientGroupId}';
+            }
+            responsePayload['success'] = success;
+            responsePayload['clientGroupId'] =
+                clientGroup.id!; // clientGroup.id is non-null after ID generation
+            message = 'Client group stored successfully.';
+            break;
+          }
+          case 'ClientGroupMember': {
+            final ClientGroupMember clientGroupMember =
+                ClientGroupMember.fromJson(valueAsMap);
+            clientGroupMember.id ??=
+                _generateId(policyCache.clientGroupMembers);
+            if (policyOperationHooks?.prePutClientGroupMember != null) {
+              try {
+                await policyOperationHooks!
+                    .prePutClientGroupMember!(clientGroupMember);
+              } catch (e, s) {
+                logger.severe(
+                    'prePutClientGroupMember hook failed', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutClientGroupMember != null) {
-                try {
-                  await policyOperationHooks!
-                      .postPutClientGroupMember!(clientGroupMember);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutClientGroupMember hook failed for client group member ${clientGroupMember.id}',
-                      e,
-                      s);
-                }
-              }
-              responsePayload['success'] = success;
-              responsePayload['clientGroupMemberId'] =
-                  clientGroupMember.id!; // clientGroupMember.id is non-null after ID generation
-              message = 'Client group member stored successfully.';
+            }
+            success = policyCache.putClientGroupMember(clientGroupMember);
+            if (!success) {
+              message = 'Failed to store client group member: '
+                  'clientId=${clientGroupMember.clientId} '
+                  'clientGroupId=${clientGroupMember.clientGroupId}';
               break;
             }
-          case 'Daemon':
-            {
-              final Daemon daemon = Daemon.fromJson(valueAsMap);
-              daemon.id ??= _generateId(policyCache.daemons);
-              if (policyOperationHooks?.prePutDaemon != null) {
-                try {
-                  await policyOperationHooks!.prePutDaemon!(daemon);
-                } catch (e, s) {
-                  logger.severe(
-                      'prePutDaemon hook failed for daemon ${daemon.atSign}',
-                      e,
-                      s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
+            if (policyOperationHooks?.postPutClientGroupMember != null) {
+              try {
+                await policyOperationHooks!
+                    .postPutClientGroupMember!(clientGroupMember);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutClientGroupMember hook failed for client group member ${clientGroupMember.id}',
+                    e,
+                    s);
               }
-              success = policyCache.putDaemon(daemon);
-              if (!success) {
-                message = 'Failed to store daemon with atSign: ${daemon.atSign}';
+            }
+            responsePayload['success'] = success;
+            responsePayload['clientGroupMemberId'] =
+                clientGroupMember.id!; // clientGroupMember.id is non-null after ID generation
+            message = 'Client group member stored successfully.';
+            break;
+          }
+          case 'Daemon': {
+            final Daemon daemon = Daemon.fromJson(valueAsMap);
+            daemon.id ??= _generateId(policyCache.daemons);
+            if (policyOperationHooks?.prePutDaemon != null) {
+              try {
+                await policyOperationHooks!.prePutDaemon!(daemon);
+              } catch (e, s) {
+                logger.severe(
+                    'prePutDaemon hook failed for daemon ${daemon.atSign}',
+                    e,
+                    s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutDaemon != null) {
-                try {
-                  await policyOperationHooks!.postPutDaemon!(daemon);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutDaemon hook failed for daemon ${daemon.id}', e, s);
-                }
-              }
-              responsePayload['success'] = success;
-              responsePayload['daemonId'] =
-                  daemon.id!; // daemon.id is non-null after ID generation
-              message = 'Daemon stored successfully.';
+            }
+            success = policyCache.putDaemon(daemon);
+            if (!success) {
+              message = 'Failed to store daemon with atSign: ${daemon.atSign}';
               break;
             }
-          case 'Service':
-            {
-              final Service service = Service.fromJson(valueAsMap);
-              service.id ??= _generateId(policyCache.services);
-              if (policyOperationHooks?.prePutService != null) {
-                try {
-                  await policyOperationHooks!.prePutService!(service);
-                } catch (e, s) {
-                  logger.severe('prePutService hook failed for service', e, s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
+            if (policyOperationHooks?.postPutDaemon != null) {
+              try {
+                await policyOperationHooks!.postPutDaemon!(daemon);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutDaemon hook failed for daemon ${daemon.id}', e, s);
               }
-              success = policyCache.putService(service);
-              if (!success) {
-                message = 'Failed to store service: '
-                    'deviceName=${service.deviceName} '
-                    'daemonId=${service.daemonId}';
+            }
+            responsePayload['success'] = success;
+            responsePayload['daemonId'] =
+                daemon.id!; // daemon.id is non-null after ID generation
+            message = 'Daemon stored successfully.';
+            break;
+          }
+          case 'Service': {
+            final Service service = Service.fromJson(valueAsMap);
+            service.id ??= _generateId(policyCache.services);
+            if (policyOperationHooks?.prePutService != null) {
+              try {
+                await policyOperationHooks!.prePutService!(service);
+              } catch (e, s) {
+                logger.severe('prePutService hook failed for service', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutService != null) {
-                try {
-                  await policyOperationHooks!.postPutService!(service);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutService hook failed for service ${service.id}',
-                      e,
-                      s);
-                }
-              }
-              responsePayload['success'] = success;
-              responsePayload['serviceId'] =
-                  service.id!; // service.id is non-null after ID generation
-              message = 'Service stored successfully.';
+            }
+            success = policyCache.putService(service);
+            if (!success) {
+              message = 'Failed to store service: '
+                  'deviceName=${service.deviceName} '
+                  'daemonId=${service.daemonId}';
               break;
             }
-          case 'ServiceACL':
-            {
-              final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-              serviceACL.id ??= _generateId(policyCache.serviceACLs);
-              if (policyOperationHooks?.prePutServiceACL != null) {
-                try {
-                  await policyOperationHooks!.prePutServiceACL!(serviceACL);
-                } catch (e, s) {
-                  logger.severe(
-                      'prePutServiceACL hook failed for service ACL', e, s);
-                  success = false;
-                  message = 'Pre-operation hook failed: $e';
-                  break;
-                }
+            if (policyOperationHooks?.postPutService != null) {
+              try {
+                await policyOperationHooks!.postPutService!(service);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutService hook failed for service ${service.id}',
+                    e,
+                    s);
               }
-              success = policyCache.putServiceACL(serviceACL);
-              if (!success) {
-                message = 'Failed to store service ACL: '
-                    'serviceId=${serviceACL.serviceId} '
-                    'clientGroupId=${serviceACL.clientGroupId} '
-                    'permitOpen=${serviceACL.permitOpen}';
+            }
+            responsePayload['success'] = success;
+            responsePayload['serviceId'] =
+                service.id!; // service.id is non-null after ID generation
+            message = 'Service stored successfully.';
+            break;
+          }
+          case 'ServiceACL': {
+            final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
+            serviceACL.id ??= _generateId(policyCache.serviceACLs);
+            if (policyOperationHooks?.prePutServiceACL != null) {
+              try {
+                await policyOperationHooks!.prePutServiceACL!(serviceACL);
+              } catch (e, s) {
+                logger.severe(
+                    'prePutServiceACL hook failed for service ACL', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
                 break;
               }
-              if (policyOperationHooks?.postPutServiceACL != null) {
-                try {
-                  await policyOperationHooks!.postPutServiceACL!(serviceACL);
-                } catch (e, s) {
-                  logger.severe(
-                      'postPutServiceACL hook failed for service ACL ${serviceACL.id}',
-                      e,
-                      s);
-                }
+            }
+            success = policyCache.putServiceACL(serviceACL);
+            if (!success) {
+              message = 'Failed to store service ACL: '
+                  'serviceId=${serviceACL.serviceId} '
+                  'clientGroupId=${serviceACL.clientGroupId} '
+                  'permitOpen=${serviceACL.permitOpen}';
+              break;
+            }
+            if (policyOperationHooks?.postPutServiceACL != null) {
+              try {
+                await policyOperationHooks!.postPutServiceACL!(serviceACL);
+              } catch (e, s) {
+                logger.severe(
+                    'postPutServiceACL hook failed for service ACL ${serviceACL.id}',
+                    e,
+                    s);
               }
-              responsePayload['success'] = success;
-              responsePayload['serviceACLId'] =
-                  serviceACL.id!; // serviceACL.id is non-null after ID generation
-              message = 'Service ACL stored successfully.';
-              break;
             }
-          default:
-            {
-              success = false;
-              message = 'Unknown target for put operation: $target';
-              break;
-            }
+            responsePayload['success'] = success;
+            responsePayload['serviceACLId'] =
+                serviceACL.id!; // serviceACL.id is non-null after ID generation
+            message = 'Service ACL stored successfully.';
+            break;
+          }
+          default: {
+            success = false;
+            message = 'Unknown target for put operation: $target';
+            break;
+          }
         }
         break;
-      default:
+      }
+      case 'delete': {
+        if(!requestPayload.containsKey('target') || !requestPayload.containsKey('value')) {
+          success = false;
+          message = 'target or value JSON keys was not found in the payload.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        switch(target) {
+          case 'Client': {
+            final String clientId = valueAsMap['clientId'];
+            success = policyCache.deleteClient(clientId);
+            if (success) {
+              message = 'Client with id $clientId deleted successfully.';
+            } else {
+              message = 'Failed to delete client with atSign $clientId.';
+            }
+            break;
+          }
+          case 'ClientGroup': {
+            final String clientGroupId = valueAsMap['clientGroupId'];
+            success = policyCache.deleteClientGroup(clientGroupId);
+            if (success) {
+              message = 'ClientGroup with id $clientGroupId deleted successfully.';
+            } else {
+              message = 'Failed to delete ClientGroup with id $clientGroupId.';
+            }
+            break;
+          }
+          case 'ClientGroupMember': {
+            final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
+            success = policyCache.deleteClientGroupMember(clientGroupMemberId);
+            if (success) {
+              message = 'ClientGroupMember with id $clientGroupMemberId deleted successfully.';
+            } else {
+              message = 'Failed to delete ClientGroupMember with id $clientGroupMemberId.';
+            }
+            break;
+          }
+          case 'Daemon': {
+            final String daemonId = valueAsMap['daemonId'];
+            success = policyCache.deleteDaemon(daemonId);
+            if (success) {
+              message = 'Daemon with id $daemonId deleted successfully.';
+            } else {
+              message = 'Failed to delete Daemon with id $daemonId.';
+            }
+            break;
+          }
+          case 'Service': {
+            final String serviceId = valueAsMap['serviceId'];
+            success = policyCache.deleteService(serviceId);
+            if (success) {
+              message = 'Service with id $serviceId deleted successfully.';
+            } else {
+              message = 'Failed to delete Service with id $serviceId.';
+            }
+            break;
+          }
+          case 'ServiceACL': {
+            final String serviceACLId = valueAsMap['serviceACLId'];
+            success = policyCache.deleteServiceACL(serviceACLId);
+            if (success) {
+              message = 'ServiceACL with id $serviceACLId deleted successfully.';
+            } else {
+              message = 'Failed to delete ServiceACL with id $serviceACLId.';
+            }
+            break;
+          }
+          default: {
+            success = false;
+            message = 'Unknown target for delete operation: $target';
+            break;
+          }
+        }
+      }
+      case 'ping': {
+        logger.info('Received ping request from $fromAtSign');
+        responsePayload['status'] = 'alive';
+        responsePayload['coreVersion'] = core_version.packageVersion;
+        responsePayload['binariesVersion'] = binariesVersion;
+        responsePayload['timestamp'] = DateTime.now().toIso8601String();
+      }
+      default: {
         success = false;
         message = 'Unknown operation: $operation';
         break;
+      }
     }
     return AtRpcResp(
       reqId: reqId,

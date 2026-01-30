@@ -5,9 +5,9 @@ import 'package:noports_core/src/version.dart' as core_version;
 /// Callbacks for handling ping RPC requests to the policy service
 class PingRpcCallbacks implements AtRpcCallbacks {
   final AtSignLogger logger = AtSignLogger('PingRpcCallbacks');
-  final String? binariesVersion;
+  final String binariesVersion;
 
-  PingRpcCallbacks({this.binariesVersion});
+  PingRpcCallbacks({required this.binariesVersion});
 
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
@@ -16,21 +16,9 @@ class PingRpcCallbacks implements AtRpcCallbacks {
     final Map<String, dynamic> payload = {
       'status': 'alive',
       'coreVersion': core_version.packageVersion,
-      'features': [
-        'policyManagement',
-        'authorizationCheck',
-        'clientManagement',
-        'daemonManagement',
-        'serviceACL',
-        'policyHooks'
-      ],
+      'binariesVersion': binariesVersion,
       'timestamp': DateTime.now().toIso8601String(),
     };
-
-    // Add binariesVersion if provided
-    if (binariesVersion != null) {
-      payload['binariesVersion'] = binariesVersion;
-    }
 
     return AtRpcResp(
       reqId: request.reqId,
