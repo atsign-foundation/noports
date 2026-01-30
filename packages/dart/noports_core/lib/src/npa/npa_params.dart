@@ -12,9 +12,6 @@ class NPAParams {
   final String homeDirectory;
   final String? eventLoggingAtsign;
   final String? storagePath;
-  final String policyVersion;
-  final String managerAllowList;
-  final String persistenceMethod;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -26,9 +23,6 @@ class NPAParams {
     required this.rootDomain,
     required this.homeDirectory,
     required this.eventLoggingAtsign,
-    required this.policyVersion,
-    required this.managerAllowList,
-    required this.persistenceMethod,
     this.storagePath,
   });
 
@@ -41,16 +35,14 @@ class NPAParams {
 
     return NPAParams(
       policyAtsign: policyAtsign,
-      atKeysFilePath: r['key-file'] ??
+      atKeysFilePath:
+          r['key-file'] ??
           getDefaultAtKeysFilePath(homeDirectory, policyAtsign),
       verbose: r['verbose'],
       rootDomain: r['root-server'] ?? 'root.atsign.org',
       homeDirectory: homeDirectory,
       eventLoggingAtsign: r['event-logging-atsign'],
-      policyVersion: r['policy-version'],
       storagePath: r['storage-path'],
-      managerAllowList: r['manager-allow-list'] ?? policyAtsign,
-      persistenceMethod: r['persistence-method'], // defaults to 'atserver'
     );
   }
 
@@ -105,15 +97,6 @@ class NPAParams {
     );
 
     parser.addOption(
-      'policy-version',
-      mandatory: false,
-      help: 'Version of policy to use. Defaults to "v1". '
-        'Using v1 uses legacy policy rules. v2 includes more policy features',
-      defaultsTo: 'v1',
-      hide: false,
-    );
-
-    parser.addOption(
       'storage-path',
       abbr: 's',
       mandatory: false,
@@ -121,29 +104,6 @@ class NPAParams {
           'Path to atsign storage directory. Defaults to "~/.atsign/storage/<atSign>/sshnp/single/". '
           'Running multiple CLI atClient programs with the same storage path is not supported. '
           'An alternate storage directory can be passed through this argument when running multiple instances.',
-    );
-
-    parser.addOption(
-      'manager-allow-list',
-      mandatory: false,
-      help:
-        'This is a v2 feature. List of atSigns that can send policy data'
-        ' operations (puts/gets) to the policy service API. E.g.'
-        ' "@alice,@bob,@meow". Defaults to atSign specified by `-a` option'
-        ' e.g. "@alice"'
-    );
-
-    parser.addOption(
-      'persistence-method',
-      mandatory: false,
-      defaultsTo: 'atserver',
-      help: 'This is a v2 feature.'
-        ' Method to use for persistence of policy data. Options are:'
-        ' "atserver" (default), "file" or "none". "atserver" uses the'
-        ' atSign\'s'
-        ' atServer for persistence of policy data. "file" uses local file'
-        ' storage for policy data persistence. "none" means that policy data'
-        ' will not be saved anywhere and will be lost when the service stops.',
     );
 
     return parser;
