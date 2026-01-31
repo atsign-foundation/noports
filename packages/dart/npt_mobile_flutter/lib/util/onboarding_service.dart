@@ -255,13 +255,13 @@ class AtKeysFileUploadService {
 
             // Store encryption public key (must use UpdateVerbBuilder like the auth service does)
             var updateBuilder = UpdateVerbBuilder()
-              ..atKey = AtKey.public('publickey', sharedBy: atsignToUse).build();
+              ..atKey = AtKey.public(
+                'publickey',
+                sharedBy: atsignToUse,
+              ).build();
             updateBuilder.atKey.metadata.ttr = -1;
             updateBuilder.value = encryptionPublicKey;
-            await localStorage.executeVerb(
-              updateBuilder,
-              sync: true,
-            );
+            await localStorage.executeVerb(updateBuilder, sync: true);
 
             // Store self encryption key
             await localStorage.putValue(
@@ -384,7 +384,7 @@ class OnboardingService {
       // Ensure the keys are in the keychain before attempting to switch
       final keyChainManager = KeyChainManager.getInstance();
       final atsignKey = await keyChainManager.readAtsign(name: atsign);
-      
+
       if (atsignKey == null) {
         return AtOnboardingResult.error(
           message: 'AtSign keys not found in keychain for $atsign',

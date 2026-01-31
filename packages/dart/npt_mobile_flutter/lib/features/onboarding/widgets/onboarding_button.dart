@@ -177,7 +177,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         final atsign = onboardingResult?.atsign ?? '';
-        
+
         // Check if atClient is initialized, if not initialize it
         // This happens after file upload - keys are in keychain but atClient not initialized
         try {
@@ -197,7 +197,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             App.log('Failed to initialize atClient: $initError'.loggable);
           }
         }
-        
+
         await custom_onboarding.initializeContactsService(context, atsign);
 
         // Add sync listener and start sync if AtClient is initialized
