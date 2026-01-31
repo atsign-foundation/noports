@@ -166,6 +166,7 @@ Future<void> main(List<String> args) async {
     nppOperationHooks: nppOperationHooks,
     binariesVersion: binaries_version.packageVersion,
   );
+  nppService.init();
 
   await nppService.start();
 }

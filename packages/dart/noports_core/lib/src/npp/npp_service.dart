@@ -64,38 +64,40 @@ class NppServiceDefaults {
 }
 
 class NppService {
-  @override
+  // mandatory
   final AtClient atClient;
-
-  @override
-  final AtSignLogger logger = AtSignLogger('NppService');
-
   final NppCache nppCache;
-  final NppOperationHooks? nppOperationHooks;
-
-  // services
-  late NPA npa; // responds to policy requests
-  late AtRpc managerRpcListener; // policy api (put/get/delete/ping)
-
   final Set<String> managerAllowList; // set of atSigns who can talk to policy manager api rpc (put/get policy rules)
+  final String binariesVersion;
 
+  // optional
+  final String? eventLoggingAtSign;
   final String baseNamespace;
   final String domainNamespace;
+  final String? homeDirectory;
+  final NppOperationHooks? nppOperationHooks;
+
+  // instantiated from init()
+  late NPA npa; // responds to policy requests
+  late AtRpc managerRpcListener; // policy api (put/get/delete/ping)
 
   NppService({
     required this.atClient,
     required this.nppCache,
     required this.managerAllowList,
-    required String binariesVersion,
+    required this.binariesVersion,
+    this.eventLoggingAtSign,
     this.baseNamespace = NppServiceDefaults.baseNamespace,
     this.domainNamespace = NppServiceDefaults.domainNamespace,
-    final String? eventLoggingAtSign,
+    this.homeDirectory,
     this.nppOperationHooks,
-    String? homeDirectory,
-  }) {
-    if(homeDirectory == null) {
-      homeDirectory = getHomeDirectory();
-      if(homeDirectory == null) {
+  });
+
+  void init() {
+    String? homeDir = homeDirectory;
+    if(homeDir == null) {
+      homeDir = getHomeDirectory();
+      if(homeDir == null) {
         throw Exception('Home directory could not be resolved.');
       }
     }
@@ -103,7 +105,7 @@ class NppService {
     npa = NPAImpl(
       handler: NppRequestHandler(nppCache: nppCache),
       atClient: atClient,
-      homeDirectory: homeDirectory,
+      homeDirectory: homeDir,
       eventLoggingAtsign: eventLoggingAtSign as Atsign?);
 
     managerRpcListener = AtRpc(
