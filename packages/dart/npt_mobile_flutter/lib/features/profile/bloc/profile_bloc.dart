@@ -9,6 +9,7 @@ import 'package:npt_mobile_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_mobile_flutter/features/settings/settings.dart';
 import 'package:npt_mobile_flutter/home_wrapper_widget.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
+import 'package:npt_mobile_flutter/util/background_service.dart';
 import 'package:npt_mobile_flutter/util/uri_handler_service.dart';
 import 'package:socket_connector/socket_connector.dart';
 
@@ -111,8 +112,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
     if (res) {
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-            uuid,
-          );
+        uuid,
+      );
 
       var listBloc = App.navState.currentContext?.read<ProfileListBloc>();
       if (listBloc != null && listBloc.state is ProfileListLoaded) {
@@ -128,8 +129,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       emit(ProfileLoaded(uuid, profile: event.profile));
     } else {
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-            uuid,
-          );
+        uuid,
+      );
       emit(ProfileFailedSave(uuid, profile: event.profile));
     }
   }
@@ -156,13 +157,14 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     if (atSign == null) {
       emit(ProfileFailedStart(uuid, profile: profile));
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-            uuid,
-          );
+        uuid,
+      );
       return;
     }
 
-    SettingsState? currentSettingsState =
-        App.navState.currentContext?.read<SettingsBloc>().state;
+    SettingsState? currentSettingsState = App.navState.currentContext
+        ?.read<SettingsBloc>()
+        .state;
     if (currentSettingsState is! SettingsLoadedState) {
       emit(
         ProfileFailedStart(
@@ -172,8 +174,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         ),
       );
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-            uuid,
-          );
+        uuid,
+      );
       return;
     }
     var settings = currentSettingsState.settings;
@@ -222,8 +224,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ),
         );
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-              uuid,
-            );
+          uuid,
+        );
         return;
       }
 
@@ -237,13 +239,20 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           ),
         );
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-              uuid,
-            );
+          uuid,
+        );
         return;
       }
 
       // Save the socket connector to state so it can be used to stop npt later
       App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
+
+      // Start background service to keep network connection alive
+      await BackgroundService.start();
+      await BackgroundService.updateStatus(
+        'Connected to ${profile.displayName}',
+      );
+
       emit(ProfileStarted(uuid, profile: profile));
 
       // Launch the connection URI if provided
@@ -261,15 +270,15 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         ),
       );
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-            uuid,
-          );
+        uuid,
+      );
     } finally {
       if (npt != null) {
         await npt.done;
         cancel?.call();
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-              uuid,
-            );
+          uuid,
+        );
 
         // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
         // retry the connection after a delay
@@ -365,9 +374,16 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       } else {
         // Success - cache the connector and emit started state
         App.navState.currentContext?.read<ProfilesRunningCubit>().cache(
-              uuid,
-              sc,
-            );
+          uuid,
+          sc,
+        );
+
+        // Ensure background service is running for reconnection
+        await BackgroundService.start();
+        await BackgroundService.updateStatus(
+          'Reconnected to ${profile.displayName}',
+        );
+
         emit(ProfileStarted(uuid, profile: profile));
 
         // Launch the connection URI if provided
@@ -390,8 +406,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         await npt.done;
         cancel?.call();
         App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-              uuid,
-            );
+          uuid,
+        );
 
         // Continue retrying if keep-alive is still enabled and profile is still "started"
         if (profile.keepAlive && state is ProfileStarted) {
@@ -411,6 +427,17 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     var profile = (state as ProfileStarted).profile;
     emit(ProfileStopping(uuid, profile: profile));
     App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
+
+    // Check if there are any other running connections
+    final runningCubit = App.navState.currentContext
+        ?.read<ProfilesRunningCubit>();
+    final hasOtherConnections =
+        runningCubit?.state.socketConnectors.isNotEmpty ?? false;
+
+    // Only stop background service if this is the last connection
+    if (!hasOtherConnections) {
+      await BackgroundService.stop();
+    }
   }
 }
 
