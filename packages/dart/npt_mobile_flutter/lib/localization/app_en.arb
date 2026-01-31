@@ -161,7 +161,7 @@
    "onboardingButtonStatusPicking": "Waiting for file to be picked",
    "onboardingButtonStatusProcessingFile": "Processing file",
    "onboardingError": "An error has occurred",
-   "onboardingSubTitle": "to NoPorts Desktop",
+   "onboardingSubTitle": "to NoPorts Mobile",
    "onboardingTitle": "Welcome",
    "or": "Or",
    "overrideAllProfile": "Override all profiles with default relay selection",

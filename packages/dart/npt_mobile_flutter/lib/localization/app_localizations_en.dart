@@ -534,7 +534,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingError => 'An error has occurred';
 
   @override
-  String get onboardingSubTitle => 'to NoPorts Desktop';
+  String get onboardingSubTitle => 'to NoPorts Mobile';
 
   @override
   String get onboardingTitle => 'Welcome';

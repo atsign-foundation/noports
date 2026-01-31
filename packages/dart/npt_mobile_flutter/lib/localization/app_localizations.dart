@@ -1088,7 +1088,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSubTitle.
   ///
   /// In en, this message translates to:
-  /// **'to NoPorts Desktop'**
+  /// **'to NoPorts Mobile'**
   String get onboardingSubTitle;
 
   /// No description provided for @onboardingTitle.
