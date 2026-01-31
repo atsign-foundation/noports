@@ -76,6 +76,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                           ? Row(
                               children: [
                                 Expanded(
+                                  flex: 2,
                                   child: SizedBox(
                                     height: 44,
                                     child: const ProfileListAddButton(),
@@ -83,15 +84,20 @@ class _ProfileListViewState extends State<ProfileListView> {
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
+                                  flex: 2,
                                   child: SizedBox(
                                     height: 44,
                                     child: const ProfileListImportButton(),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const ProfileSelectedExportButton(),
+                                Flexible(
+                                  child: const ProfileSelectedExportButton(),
+                                ),
                                 const SizedBox(width: 8),
-                                const ProfileSelectedDeleteButton(),
+                                Flexible(
+                                  child: const ProfileSelectedDeleteButton(),
+                                ),
                               ],
                             )
                           : Row(
