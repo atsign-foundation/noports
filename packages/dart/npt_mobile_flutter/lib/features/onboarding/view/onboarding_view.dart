@@ -22,41 +22,55 @@ class OnboardingView extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
-        Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(top: Sizes.p44, left: Sizes.p44),
-            child: SvgPicture.asset(
-              'assets/noports_logo.svg',
-              width: Sizes.p200,
-            ),
-          ),
+        Positioned(
+          bottom: 60,
+          left: Sizes.p44,
+          child: SvgPicture.asset('assets/noports_logo.svg', width: Sizes.p200),
         ),
         Align(
-          child: Column(
-            children: [
-              gapH108,
-              Text(
-                strings.onboardingTitle,
-                style: textTheme.headlineLarge!.copyWith(color: Colors.black),
-              ),
-              Text(strings.onboardingSubTitle, style: textTheme.headlineMedium),
-              gapH20,
-              const OnboardingButton(),
-            ],
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: Sizes.p200,
+              left: Sizes.p20,
+              right: Sizes.p20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  strings.onboardingTitle,
+                  style: textTheme.headlineLarge!.copyWith(color: Colors.black),
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+                gapH12,
+                Text(
+                  strings.onboardingSubTitle,
+                  style: textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+                gapH20,
+                const OnboardingButton(),
+              ],
+            ),
           ),
         ),
         const Align(
           alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.only(top: Sizes.p44, right: 120),
+            padding: EdgeInsets.only(top: Sizes.p44, right: Sizes.p150),
             child: CustomTextButton.resetAtsign(),
           ),
         ),
         const Align(
           alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.only(top: Sizes.p44, right: 20),
+            padding: EdgeInsets.only(top: Sizes.p44, right: Sizes.p44),
             child: ExportLogsButton(),
           ),
         ),
@@ -64,17 +78,12 @@ class OnboardingView extends StatelessWidget {
           future: PackageInfo.fromPlatform(),
           builder: (_, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
-              return Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: Sizes.p44,
-                    left: Sizes.p44,
-                  ),
-                  child: Text(
-                    'v${snapshot.data?.version}',
-                    style: textTheme.bodySmall,
-                  ),
+              return Positioned(
+                bottom: Sizes.p20,
+                right: Sizes.p44,
+                child: Text(
+                  'v${snapshot.data?.version}',
+                  style: textTheme.bodySmall,
                 ),
               );
             }

@@ -13,6 +13,9 @@ class ApkamChoiceDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 600;
+    
     return EnrollmentDialog(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,11 +39,9 @@ class ApkamChoiceDialog extends StatelessWidget {
               border: Border.all(color: Colors.grey),
             ),
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: isNarrow
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
                         strings.uploadKey,
@@ -48,37 +49,74 @@ class ApkamChoiceDialog extends StatelessWidget {
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
+                      gapH4,
                       Text(
                         strings.uploadKeyDescription,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
+                      gapH12,
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          textStyle: const TextStyle(fontSize: Sizes.p18),
+                          foregroundColor: Theme.of(context).primaryColor,
+                          side: BorderSide(color: Theme.of(context).primaryColor),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Sizes.p16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(Sizes.p8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop(APKAMFlow.atKeys);
+                        },
+                        child: Text(strings.selectKey),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.uploadKey,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            Text(
+                              strings.uploadKeyDescription,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      gapW16,
+                      SizedBox(
+                        width: _kButtonWidth,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: Sizes.p18),
+                            foregroundColor: Theme.of(context).primaryColor,
+                            side: BorderSide(color: Theme.of(context).primaryColor),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Sizes.p32,
+                              vertical: Sizes.p20,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Sizes.p8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop(APKAMFlow.atKeys);
+                          },
+                          child: Text(strings.selectKey),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                gapW16,
-                SizedBox(
-                  width: _kButtonWidth,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      textStyle: const TextStyle(fontSize: Sizes.p18),
-                      foregroundColor: Theme.of(context).primaryColor,
-                      side: BorderSide(color: Theme.of(context).primaryColor),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Sizes.p32,
-                        vertical: Sizes.p20,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(Sizes.p8),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop(APKAMFlow.atKeys);
-                    },
-                    child: Text(strings.selectKey),
-                  ),
-                ),
-              ],
-            ),
           ),
           gapH16,
           Container(
@@ -87,11 +125,9 @@ class ApkamChoiceDialog extends StatelessWidget {
               color: Colors.white,
             ),
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: isNarrow
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
                         strings.enrollWithAuthenticator,
@@ -99,35 +135,70 @@ class ApkamChoiceDialog extends StatelessWidget {
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
+                      gapH4,
                       Text(
                         strings.enrollWithAuthenticatorDescription,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
+                      gapH12,
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          textStyle: const TextStyle(fontSize: Sizes.p18),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Sizes.p16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(Sizes.p8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop(APKAMFlow.apkam);
+                        },
+                        child: Text(strings.enroll),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.enrollWithAuthenticator,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            Text(
+                              strings.enrollWithAuthenticatorDescription,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      gapH16,
+                      SizedBox(
+                        width: _kButtonWidth,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: Sizes.p18),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Sizes.p32,
+                              vertical: Sizes.p20,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Sizes.p8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop(APKAMFlow.apkam);
+                          },
+                          child: Text(strings.enroll),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                gapH16,
-                SizedBox(
-                  width: _kButtonWidth,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      textStyle: const TextStyle(fontSize: Sizes.p18),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Sizes.p32,
-                        vertical: Sizes.p20,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(Sizes.p8),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop(APKAMFlow.apkam);
-                    },
-                    child: Text(strings.enroll),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
