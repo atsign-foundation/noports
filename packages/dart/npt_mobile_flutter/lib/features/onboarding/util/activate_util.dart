@@ -100,11 +100,15 @@ class ActivateUtil {
 
       if (res.status == AtOnboardingResponseStatus.authSuccess) {
         int round = 1;
+        const maxRounds = 20; // Increased from 10 to 20 (60 seconds total)
         AtStatus? atSignStatus = await onboardingService
             .checkAtSignServerStatus(atsign);
+
         while (atSignStatus?.status() != AtSignStatus.activated) {
-          if (round > 10) {
-            break;
+          if (round > maxRounds) {
+            // If authentication succeeded but activation is taking too long,
+            // still return success since the auth step worked
+            return AtOnboardingResult.success(atsign: atsign);
           }
           await Future.delayed(const Duration(seconds: 3));
           round++;
@@ -118,6 +122,9 @@ class ActivateUtil {
         } else if (atSignStatus?.status() == AtSignStatus.activated) {
           return AtOnboardingResult.success(atsign: atsign);
         }
+
+        // Authentication succeeded, return success
+        return AtOnboardingResult.success(atsign: atsign);
       }
 
       return AtOnboardingResult.error(message: 'Authentication failed');

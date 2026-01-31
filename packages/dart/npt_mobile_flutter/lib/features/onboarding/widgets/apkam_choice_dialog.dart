@@ -15,7 +15,7 @@ class ApkamChoiceDialog extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final isNarrow = screenWidth < 600;
-    
+
     return EnrollmentDialog(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +59,9 @@ class ApkamChoiceDialog extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           textStyle: const TextStyle(fontSize: Sizes.p18),
                           foregroundColor: Theme.of(context).primaryColor,
-                          side: BorderSide(color: Theme.of(context).primaryColor),
+                          side: BorderSide(
+                            color: Theme.of(context).primaryColor,
+                          ),
                           padding: const EdgeInsets.symmetric(
                             vertical: Sizes.p16,
                           ),
@@ -82,9 +84,10 @@ class ApkamChoiceDialog extends StatelessWidget {
                           children: [
                             Text(
                               strings.uploadKey,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).primaryColor,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
                             ),
                             Text(
                               strings.uploadKeyDescription,
@@ -100,7 +103,9 @@ class ApkamChoiceDialog extends StatelessWidget {
                           style: OutlinedButton.styleFrom(
                             textStyle: const TextStyle(fontSize: Sizes.p18),
                             foregroundColor: Theme.of(context).primaryColor,
-                            side: BorderSide(color: Theme.of(context).primaryColor),
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: Sizes.p32,
                               vertical: Sizes.p20,
@@ -166,9 +171,10 @@ class ApkamChoiceDialog extends StatelessWidget {
                           children: [
                             Text(
                               strings.enrollWithAuthenticator,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).primaryColor,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
                             ),
                             Text(
                               strings.enrollWithAuthenticatorDescription,

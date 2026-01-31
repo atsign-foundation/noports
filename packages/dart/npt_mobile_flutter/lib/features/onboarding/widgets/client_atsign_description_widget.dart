@@ -97,8 +97,7 @@ class _ClientAtsignDescriptionWidgetState
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            strings.myNoPortsMsg +
-                                StringConst.managementPortal,
+                            strings.myNoPortsMsg + StringConst.managementPortal,
                             textAlign: TextAlign.center,
                             softWrap: true,
                             overflow: TextOverflow.visible,

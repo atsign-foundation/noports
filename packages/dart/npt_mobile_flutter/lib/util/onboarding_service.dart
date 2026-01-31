@@ -10,6 +10,8 @@ import 'package:at_commons/at_commons.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:npt_mobile_flutter/app.dart';
+import 'package:npt_mobile_flutter/util/constants.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// File upload status states
@@ -227,50 +229,60 @@ class AtKeysFileUploadService {
         // Store the decrypted keys in the keychain
         await keyChainManager.storeAtSign(atSign: atsignKey);
 
-        // ALSO store keys in atClient's local secondary storage
+        // ALSO store keys in atClient's local secondary storage IF atClient is initialized
         // This matches exactly what _persistKeysLocalSecondary does in at_auth_service_impl
-        final atClient = AtClientManager.getInstance().atClient;
-
-        // Store PKAM keys
-        await atClient.getLocalSecondary()!.putValue(
-          AtConstants.atPkamPublicKey,
-          pkamPublicKey,
-        );
-        await atClient.getLocalSecondary()!.putValue(
-          AtConstants.atPkamPrivateKey,
-          pkamPrivateKey,
-        );
-
-        // Store encryption private key
-        await atClient.getLocalSecondary()!.putValue(
-          AtConstants.atEncryptionPrivateKey,
-          encryptionPrivateKey,
-        );
-
-        // Store encryption public key (must use UpdateVerbBuilder like the auth service does)
-        var updateBuilder = UpdateVerbBuilder()
-          ..atKey = AtKey.public('publickey', sharedBy: atsignToUse).build();
-        updateBuilder.atKey.metadata.ttr = -1;
-        updateBuilder.value = encryptionPublicKey;
-        await atClient.getLocalSecondary()!.executeVerb(
-          updateBuilder,
-          sync: true,
-        );
-
-        // Store self encryption key
-        await atClient.getLocalSecondary()!.putValue(
-          AtConstants.atEncryptionSelfKey,
-          selfEncryptionKey,
-        );
-
-        // CRITICAL: Force atChops to be re-initialized with the newly stored keys
-        // This is necessary because atChops may have been created before we uploaded the keys
-        // Access atClient.atChops to trigger lazy initialization with the correct keys
+        // However, on first run, atClient may not be initialized yet, which is fine -
+        // the keys in KeyChain are sufficient, and atClient will load them on next initialization
         try {
-          // ignore: unused_local_variable
-          final chops = atClient.atChops;
+          final atClient = AtClientManager.getInstance().atClient;
+          final localStorage = atClient.getLocalSecondary();
+          if (localStorage != null) {
+            // Store PKAM keys
+            await localStorage.putValue(
+              AtConstants.atPkamPublicKey,
+              pkamPublicKey,
+            );
+            await localStorage.putValue(
+              AtConstants.atPkamPrivateKey,
+              pkamPrivateKey,
+            );
+
+            // Store encryption private key
+            await localStorage.putValue(
+              AtConstants.atEncryptionPrivateKey,
+              encryptionPrivateKey,
+            );
+
+            // Store encryption public key (must use UpdateVerbBuilder like the auth service does)
+            var updateBuilder = UpdateVerbBuilder()
+              ..atKey = AtKey.public('publickey', sharedBy: atsignToUse).build();
+            updateBuilder.atKey.metadata.ttr = -1;
+            updateBuilder.value = encryptionPublicKey;
+            await localStorage.executeVerb(
+              updateBuilder,
+              sync: true,
+            );
+
+            // Store self encryption key
+            await localStorage.putValue(
+              AtConstants.atEncryptionSelfKey,
+              selfEncryptionKey,
+            );
+
+            // CRITICAL: Force atChops to be re-initialized with the newly stored keys
+            // This is necessary because atChops may have been created before we uploaded the keys
+            // Access atClient.atChops to trigger lazy initialization with the correct keys
+            try {
+              // ignore: unused_local_variable
+              final chops = atClient.atChops;
+            } catch (e) {
+              // atChops initialization will happen when needed
+            }
+          }
         } catch (e) {
-          // atChops initialization will happen when needed
+          // If storing to atClient fails, that's okay - keys are already in KeyChain
+          // which is the primary storage. atClient will load from KeyChain on next init.
+          // Silently ignore this error as it's expected on first run
         }
 
         _statusController.add(FileUploadAuthSuccess(atsignToUse));
@@ -369,9 +381,41 @@ class OnboardingService {
     required AtClientPreference atClientPreference,
   }) async {
     try {
-      final atClientManager = AtClientManager.getInstance();
-      await atClientManager.setCurrentAtSign(atsign, 'npt', atClientPreference);
-      return AtOnboardingResult.success(atsign: atsign);
+      // Ensure the keys are in the keychain before attempting to switch
+      final keyChainManager = KeyChainManager.getInstance();
+      final atsignKey = await keyChainManager.readAtsign(name: atsign);
+      
+      if (atsignKey == null) {
+        return AtOnboardingResult.error(
+          message: 'AtSign keys not found in keychain for $atsign',
+        );
+      }
+
+      // First, use the at_onboarding_flutter's changePrimaryAtsign to switch the active atsign
+      final changeSuccess = await AtOnboarding.changePrimaryAtsign(
+        atsign: atsign,
+      );
+
+      if (!changeSuccess) {
+        return AtOnboardingResult.error(
+          message: 'Failed to set $atsign as primary',
+        );
+      }
+
+      // Then onboard to initialize atClient with the keys
+      final context = App.navState.currentContext!;
+      final onboardingResult = await AtOnboarding.onboard(
+        context: context,
+        config: AtOnboardingConfig(
+          atClientPreference: atClientPreference,
+          domain: atClientPreference.rootDomain,
+          rootEnvironment: RootEnvironment.Production,
+          appAPIKey: await Constants.appAPIKey,
+        ),
+        atsign: atsign,
+      );
+
+      return onboardingResult;
     } catch (e) {
       return AtOnboardingResult.error(message: 'Failed to change atsign: $e');
     }

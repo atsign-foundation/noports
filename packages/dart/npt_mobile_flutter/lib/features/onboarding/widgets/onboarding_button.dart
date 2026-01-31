@@ -177,6 +177,27 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         final atsign = onboardingResult?.atsign ?? '';
+        
+        // Check if atClient is initialized, if not initialize it
+        // This happens after file upload - keys are in keychain but atClient not initialized
+        try {
+          final atClientManager = AtClientManager.getInstance();
+          final atClient = atClientManager.atClient;
+          // Try to access atClient - if it throws, we need to initialize
+        } catch (e) {
+          // AtClient not initialized - initialize it now with keys from keychain
+          try {
+            final atClientManager = AtClientManager.getInstance();
+            await atClientManager.setCurrentAtSign(
+              atsign,
+              'npt',
+              config.atClientPreference,
+            );
+          } catch (initError) {
+            App.log('Failed to initialize atClient: $initError'.loggable);
+          }
+        }
+        
         await custom_onboarding.initializeContactsService(context, atsign);
 
         // Add sync listener and start sync if AtClient is initialized
@@ -186,7 +207,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           atClient.syncService.addProgressListener(ProfileProgressListener());
           atClient.syncService.sync();
         } catch (e) {
-          // AtClient not initialized yet - this is OK for new uploads
+          // AtClient not ready for sync
           App.log('AtClient not ready for sync: $e'.loggable);
         }
 
