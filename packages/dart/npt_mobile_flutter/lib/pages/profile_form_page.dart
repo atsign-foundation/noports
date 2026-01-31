@@ -1,0 +1,20 @@
+import 'package:flutter/material.dart';
+import 'package:npt_mobile_flutter/features/profile_form/profile_form.dart';
+import 'package:npt_mobile_flutter/features/profile/models/profile.dart';
+
+class ProfileFormPageArguments {
+  final String uuid;
+  final Profile? copyFrom;
+  ProfileFormPageArguments(this.uuid, {this.copyFrom});
+}
+
+class ProfileFormPage extends StatelessWidget {
+  const ProfileFormPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as ProfileFormPageArguments;
+    return ProfileFormView(args.uuid, copyFrom: args.copyFrom);
+  }
+}

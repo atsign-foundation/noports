@@ -1,0 +1,312 @@
+import 'package:flutter/material.dart';
+import 'package:npt_mobile_flutter/app.dart';
+
+/// Constant sizes to be used in the app (paddings, gaps, rounded corners etc.)
+class Sizes {
+  static const p10n = -10.0;
+  static const p0 = 0.0;
+  static const p1 = 1.0;
+  static const p2 = 2.0;
+  // static const p3 = 3.0;
+  static const p4 = 4.0;
+  static const p6 = 6.0;
+  static const p8 = 8.0;
+  static const p10 = 10.0;
+  static const p11 = 11.0;
+  static const p12 = 12.0;
+  static const p13 = 13.0;
+  static const p14 = 14.0;
+  static const p15 = 15.0;
+  static const p16 = 16.0;
+  static const p18 = 18.0;
+  static const p20 = 20.0;
+  // static const p21 = 21.0;
+  // static const p28 = 28.0;
+  static const p24 = 24.0;
+  static const p25 = 25.0;
+  static const p27 = 27.0;
+  static const p28 = 28.0;
+  static const p30 = 30.0;
+  static const p32 = 32.0;
+  static const p33 = 33.0;
+  // static const p34 = 34.0;
+  // static const p36 = 36.0;
+  static const p38 = 38.0;
+  static const p40 = 40.0;
+  static const p42 = 42.0;
+  static const p44 = 44.0;
+  // static const p46 = 46.0;
+  // static const p48 = 48.0;
+  static const p43 = 43.0;
+  static const p50 = 50.0;
+  static const p54 = 54.0;
+  static const p56 = 56.0;
+  static const p70 = 70.0;
+  static const p80 = 80.0;
+  static const p90 = 90.0;
+  static const p100 = 100.0;
+  static const p103 = 103.0;
+  static const p108 = 108.0;
+  static const p110 = 110.0;
+  static const p143 = 143.0;
+  static const p150 = 150.0;
+  static const p175 = 175.0;
+  static const p177 = 177.0;
+  // static const p185 = 185.0;
+  static const p192 = 192.0;
+  static const p200 = 200.0;
+  static const p210 = 210.0;
+  static const p180 = 180.0;
+  static const p240 = 240.0;
+  // static const p247 = 247.0;
+  static const p280 = 280.0;
+  static const p295 = 295.0;
+  static const p300 = 300.0;
+  static const p322 = 322.0;
+  static const p400 = 400.0;
+  static const p436 = 436.0;
+  static const p450 = 450.0;
+  static const p470 = 470.0;
+  static const p500 = 500.0;
+  static const p537 = 537.0;
+  static const p600 = 600.0;
+  static const p654 = 654.0;
+  static const p664 = 664.0;
+  static const p743 = 743.0;
+  static const p853 = 853.0;
+  static const p941 = 941.0;
+  static const p1000 = 1000.0;
+  // The below size factors are constants that are used to determine the height or width based on the device size.
+  static const dashboardCardHeightFactor = 489 / 600;
+  static const dashboardCardWidthFactor = 941 / 1053;
+  static const dashboardCardEmptyWidthFactor = 853 / 450;
+  static const profileFieldsWidthFactor = 136 / 1053;
+  static const statusFieldsWidthFactor = 150 / 1053;
+  static const statusFieldsWidthFactorMinimalView = 300 / 1053;
+  static const profileFieldsWidthFactorMinimalView = 300 / 1053;
+  static const settingsCardWidthFactor = 654 / 1053;
+  static const settingsCardHeightFactor = 438 / 691;
+  static const settingsIconPaddingFactor = 89 / 1053;
+  static const dashboardIconPaddingFactor = 40 / 1053;
+}
+
+const gap0 = SizedBox();
+
+/// Constant gap widths
+const gapW4 = SizedBox(width: Sizes.p4);
+const gapW8 = SizedBox(width: Sizes.p8);
+const gapW10 = SizedBox(width: Sizes.p10);
+const gapW12 = SizedBox(width: Sizes.p12);
+const gapW14 = SizedBox(width: Sizes.p14);
+const gapW16 = SizedBox(width: Sizes.p16);
+const gapW20 = SizedBox(width: Sizes.p20);
+// const gapW24 = SizedBox(width: Sizes.p24);
+const gapW27 = SizedBox(width: Sizes.p27);
+// const gapW34 = SizedBox(width: Sizes.p34);
+const gapW38 = SizedBox(width: Sizes.p38);
+const gapW40 = SizedBox(width: Sizes.p40);
+const gapW103 = SizedBox(width: Sizes.p103);
+const gapW143 = SizedBox(width: Sizes.p143);
+
+// /// Constant gap heights
+const gapH4 = SizedBox(height: Sizes.p4);
+const gapH8 = SizedBox(height: Sizes.p8);
+const gapH10 = SizedBox(height: Sizes.p10);
+const gapH12 = SizedBox(height: Sizes.p12);
+const gapH13 = SizedBox(height: Sizes.p13);
+const gapH14 = SizedBox(height: Sizes.p14);
+const gapH16 = SizedBox(height: Sizes.p16);
+const gapH18 = SizedBox(height: Sizes.p18);
+const gapH20 = SizedBox(height: Sizes.p20);
+const gapH24 = SizedBox(height: Sizes.p24);
+const gapH25 = SizedBox(height: Sizes.p25);
+const gapH30 = SizedBox(height: Sizes.p30);
+// const gapH32 = SizedBox(height: Sizes.p32);
+// const gapH36 = SizedBox(height: Sizes.p36);
+const gapH40 = SizedBox(height: Sizes.p40);
+const gapH56 = SizedBox(height: Sizes.p56);
+
+const gapH108 = SizedBox(height: Sizes.p108);
+
+const kWindowsMinWindowSize = Size(684, 541);
+const kAppMinWindowSize = Size(1053, 663);
+
+/// A class defined to get dimensions for the screen size displayed,
+/// using the proportion of the designed screen size.
+class SizeConfig {
+  SizeConfig._();
+
+  static final SizeConfig _instance = SizeConfig._();
+
+  static double setDashboardWidth({double? widthFactor}) {
+    final calculation =
+        MediaQuery.of(App.navState.currentContext!).size.width *
+        (widthFactor ?? Sizes.dashboardCardWidthFactor);
+
+    if (calculation > 1351) {
+      return 1351;
+    } else {
+      return calculation;
+    }
+  }
+
+  static double setProfileFieldWidth({
+    bool statusField = false,
+    BuildContext? context,
+  }) {
+    final mediaQuery = context != null
+        ? MediaQuery.of(context)
+        : MediaQuery.of(App.navState.currentContext!);
+    final calculation =
+        mediaQuery.size.width *
+        (statusField
+            ? Sizes.statusFieldsWidthFactor
+            : Sizes.profileFieldsWidthFactor);
+
+    if (calculation > 252) {
+      return 252;
+    } else {
+      return calculation;
+    }
+  }
+
+  static double setProfileFieldWidthMinimalView({
+    bool statusField = false,
+    BuildContext? context,
+  }) {
+    final mediaQuery = context != null
+        ? MediaQuery.of(context)
+        : MediaQuery.of(App.navState.currentContext!);
+    final calculation =
+        mediaQuery.size.width *
+        (statusField
+            ? Sizes.statusFieldsWidthFactorMinimalView
+            : Sizes.profileFieldsWidthFactorMinimalView);
+
+    if (calculation > 500) {
+      return 500;
+    } else {
+      return calculation;
+    }
+  }
+
+  factory SizeConfig() => _instance;
+  late MediaQueryData _mediaQueryData;
+  late double screenWidth;
+  late double screenHeight;
+  late double blockSizeHorizontal;
+  late double blockSizeVertical;
+  late double deviceTextFactor;
+
+  late double _safeAreaHorizontal;
+  late double _safeAreaVertical;
+  late double safeBlockHorizontal;
+  late double safeBlockVertical;
+
+  double? profileDrawerWidth;
+  late double refHeight;
+  late double refWidth;
+
+  double textFactor = 1.0;
+
+  bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 700;
+
+  bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 700 &&
+      MediaQuery.of(context).size.width < 1200;
+  bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1200;
+
+  void init() {
+    _mediaQueryData = MediaQuery.of(App.navState.currentContext!);
+    screenWidth = _mediaQueryData.size.width;
+    screenHeight = _mediaQueryData.size.height;
+    refHeight = 505;
+    refWidth = 671;
+
+    deviceTextFactor = _mediaQueryData.textScaler.scale(20) / 20;
+
+    if (screenHeight < 1200) {
+      blockSizeHorizontal = screenWidth / 100;
+      blockSizeVertical = screenHeight / 100;
+
+      _safeAreaHorizontal =
+          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical =
+          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 100;
+      safeBlockVertical = (screenHeight - _safeAreaVertical) / 100;
+    } else {
+      blockSizeHorizontal = screenWidth / 120;
+      blockSizeVertical = screenHeight / 120;
+
+      _safeAreaHorizontal =
+          _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+      _safeAreaVertical =
+          _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+      safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 120;
+      safeBlockVertical = (screenHeight - _safeAreaVertical) / 120;
+    }
+    if (screenWidth > 700) {
+      textFactor = 0.8;
+    }
+  }
+
+  double getWidthRatio(double val) {
+    // if (screenWidth >= 1200 || (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
+    //   return val;
+    // }
+    double res = (val / refWidth) * 100;
+    double temp = res * blockSizeHorizontal;
+
+    return temp;
+  }
+
+  double getHeightRatio(double val) {
+    // if (screenWidth >= 1200 || (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
+    //   return val;
+    // }
+    double res = (val / refHeight) * 100;
+    double temp = res * blockSizeVertical;
+    return temp;
+  }
+
+  double getFontRatio(double val) {
+    // if (screenWidth >= 1200 || (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
+    //   return val;
+    // }
+    double res = (val / refWidth) * 100;
+    double temp = 0.0;
+    if (screenWidth > screenHeight) {
+      temp = res * safeBlockHorizontal + (val * 0.150521609538003) * textFactor;
+    } else {
+      temp = res * safeBlockVertical + (val * 0.2473919523099851) * textFactor;
+    }
+
+    final maxSize = val + Sizes.p4;
+    if (temp > maxSize) {
+      return maxSize;
+    } else {
+      return temp;
+    }
+
+    // var heightScale = (_mediaQueryData.size.height / refHeight);
+    // var widthScale = (_mediaQueryData.size.width / refWidth);
+
+    // if (_mediaQueryData.size.height > refHeight || _mediaQueryData.size.width > refWidth) {
+    //   heightScale = heightScale * 0.9;
+    //   widthScale = widthScale * 0.9;
+    // }
+    // return val * heightScale * widthScale;
+  }
+}
+
+/// A shorthand usage of the functions defined in [SizeConfig].
+extension SizeUtils on num {
+  double get toWidth => SizeConfig().getWidthRatio(toDouble());
+
+  double get toHeight => SizeConfig().getHeightRatio(toDouble());
+
+  double get toFont => SizeConfig().getFontRatio(toDouble());
+}

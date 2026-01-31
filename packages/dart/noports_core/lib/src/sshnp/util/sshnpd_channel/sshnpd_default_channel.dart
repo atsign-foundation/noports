@@ -27,8 +27,10 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? errorReceived;
 
   @visibleForTesting
-  // disable publickey cache on windows
-  FileSystem? fs = Platform.isWindows ? null : LocalFileSystem();
+  // disable publickey cache on windows and android (use atClient local storage instead)
+  FileSystem? fs = (Platform.isWindows || Platform.isAndroid || Platform.isIOS)
+      ? null
+      : LocalFileSystem();
 
   @override
   Future<void> initialize() async {

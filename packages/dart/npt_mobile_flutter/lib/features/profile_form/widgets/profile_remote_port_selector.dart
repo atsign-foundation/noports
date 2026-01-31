@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_mobile_flutter/features/profile/profile.dart';
+import 'package:npt_mobile_flutter/localization/app_localizations.dart';
+import 'package:npt_mobile_flutter/styles/sizes.dart';
+import 'package:npt_mobile_flutter/util/form_validator.dart';
+import 'package:npt_mobile_flutter/util/port.dart';
+
+class ProfileRemotePortSelector extends StatelessWidget {
+  const ProfileRemotePortSelector({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(strings.remotePort),
+        gapH4,
+        Text(
+          '${strings.remotePortDescription}\n', // Extra newline for spacing consistency with remote host field.
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        gapH14,
+        BlocSelector<ProfileBloc, ProfileState, int?>(
+          selector: (ProfileState state) {
+            if (state is ProfileLoadedState) return state.profile.remotePort;
+            return null;
+          },
+          builder: (BuildContext context, int? state) {
+            if (state == null) return gap0;
+            return SizedBox(
+              height: Sizes.p100,
+              width: Sizes.p300,
+              child: TextFormField(
+                initialValue: state.toString(),
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: FormValidator.validateRemotePortField,
+                decoration: const InputDecoration(errorMaxLines: 2),
+                onChanged: (value) {
+                  var bloc = context.read<ProfileBloc>();
+                  bloc.add(
+                    ProfileEditEvent(
+                      profile: (bloc.state as ProfileLoadedState).profile
+                          .copyWith(remotePort: Port.fromString(value)),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
