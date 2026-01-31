@@ -133,7 +133,6 @@ Future<void> main(List<String> args) async {
         policyDirectory = Directory(nppParams.policyDirectory!);
       }
 
-      // Create the directory if it doesn't exist
       if(!await policyDirectory.exists()) {
         logger.info('Policy directory does not exist. Creating: ${policyDirectory.path}');
         await policyDirectory.create(recursive: true);
