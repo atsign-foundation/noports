@@ -11,6 +11,8 @@ import 'package:npt_mobile_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 import 'package:npt_mobile_flutter/widgets/custom_snack_bar.dart';
 import 'package:npt_mobile_flutter/widgets/import_type_paste_dialog.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_writer/yaml_writer.dart';
 
@@ -54,24 +56,51 @@ class Export {
     ExportableProfileFiletype filetype,
     FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles,
   ) async {
-    var f = await pickAndCreateFile(filetype);
-    if (f == null) return;
-
     /// Explicit type safety
     List exportableProfileList = (await exportableProfiles).toList();
 
     /// Wrapping like this allows us the ability to expand the file type spec
     /// if we need to in the future
     Map<String, List> json = {profilesKey: exportableProfileList};
+
+    String fileContent;
     switch (filetype) {
       case ExportableProfileFiletype.json:
-        f.writeAsString(jsonEncode(json));
+        fileContent = jsonEncode(json);
       case ExportableProfileFiletype.yaml:
-        f.writeAsString(YamlWriter().convert(json));
+        fileContent = YamlWriter().convert(json);
     }
-    CustomSnackBar.success(
-      content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
-    );
+
+    // On mobile, use share functionality
+    if (Platform.isIOS || Platform.isAndroid) {
+      // Create temporary file
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'profiles_export.${filetype.filetype}';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsString(fileContent);
+
+      // Share the file
+      final result = await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Exported profiles');
+
+      if (result.status == ShareResultStatus.success) {
+        CustomSnackBar.success(
+          content: AppLocalizations.of(
+            App.navState.currentContext!,
+          )!.fileSaved,
+        );
+      }
+    } else {
+      // Desktop: use file picker
+      var f = await pickAndCreateFile(filetype);
+      if (f == null) return;
+
+      await f.writeAsString(fileContent);
+      CustomSnackBar.success(
+        content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
+      );
+    }
   }
 
   /// A closure function which returns a void Function() that prompts the user

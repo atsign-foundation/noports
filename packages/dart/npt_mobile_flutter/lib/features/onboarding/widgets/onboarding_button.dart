@@ -15,6 +15,7 @@ import 'package:npt_mobile_flutter/routes.dart';
 import 'package:npt_mobile_flutter/styles/sizes.dart';
 import 'package:npt_mobile_flutter/util/at_client_methods.dart';
 import 'package:npt_mobile_flutter/util/constants.dart';
+import 'package:npt_mobile_flutter/widgets/loading_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
@@ -45,7 +46,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               bool shouldOnboard = await selectAtsign();
               if (shouldOnboard && context.mounted) {
                 var atsignInformation = context.read<OnboardingCubit>().state;
-                onboard(
+                await onboard(
                   atsign: atsignInformation.atSign,
                   rootDomain: atsignInformation.rootDomain,
                 );
@@ -114,6 +115,15 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     required String rootDomain,
     bool isFromInitState = false,
   }) async {
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => const LoadingDialog(),
+      );
+    }
+
     var atSigns = await KeyChainManager.getInstance()
         .getAtSignListFromKeychain();
     var apiKey = await Constants.appAPIKey;
@@ -173,6 +183,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     setState(() {
       buttonStatus = _OnboardingButtonStatus.ready;
     });
+
     if (!mounted) return;
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
@@ -231,11 +242,21 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         App.log('atsign result is:$result'.loggable);
 
         if (!mounted) return;
+
+        // Dismiss loading dialog before navigation
+        Navigator.of(context, rootNavigator: true).pop();
+
         Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
 
         break;
       case AtOnboardingResultStatus.error:
         if (isFromInitState) break;
+
+        // Dismiss loading dialog on error
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red,
@@ -247,6 +268,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         );
         break;
       case AtOnboardingResultStatus.cancel:
+        // Dismiss loading dialog on cancel
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
         break;
     }
   }
