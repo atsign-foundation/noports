@@ -5,7 +5,6 @@ import 'package:npt_mobile_flutter/features/profile_form/profile_form.dart';
 import 'package:npt_mobile_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 import 'package:npt_mobile_flutter/styles/sizes.dart';
-import 'package:npt_mobile_flutter/widgets/custom_card.dart';
 
 class ProfileFormView extends StatelessWidget {
   final String uuid;

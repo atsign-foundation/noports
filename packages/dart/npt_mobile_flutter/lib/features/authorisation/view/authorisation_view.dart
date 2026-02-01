@@ -1,7 +1,4 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_mobile_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 
 // TODO: Authorization features are not available on mobile (server-only feature)
 // Stubbed out until mobile support is added
@@ -9,7 +6,6 @@ class AuthorisationView extends StatelessWidget {
   const AuthorisationView({super.key});
   @override
   Widget build(BuildContext context) {
-    final atSign = context.watch<OnboardingCubit>().getAtSign();
     // final authorisationService = context.watch<AuthorisationService>();
 
     return Padding(

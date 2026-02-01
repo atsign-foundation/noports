@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:npt_mobile_flutter/features/profile/profile.dart';
-import 'package:npt_mobile_flutter/styles/sizes.dart';
 
 class ProfileViewMinimal extends StatelessWidget {
   const ProfileViewMinimal({super.key});

@@ -44,17 +44,14 @@ class PolicyStatusLight extends StatelessWidget {
       );
     }
 
-    return const _StatusIndicatorData(
-      color: AppColor.greyColor,
-      tooltip: '',
-    );
+    return const _StatusIndicatorData(color: AppColor.greyColor, tooltip: '');
   }
 
   String _defaultMessage(LightState lightState) {
     return switch (lightState) {
       LightState.green => 'Heartbeat healthy',
       LightState.red => 'Heartbeat unavailable',
-      LightState.clear => 'Heartbeat unknown'
+      LightState.clear => 'Heartbeat unknown',
     };
   }
 }

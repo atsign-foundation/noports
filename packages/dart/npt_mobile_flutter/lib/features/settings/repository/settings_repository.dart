@@ -17,13 +17,12 @@ class SettingsRepository {
       AtKey.self('settings', namespace: Constants.namespace).build();
 
   Settings get defaultSettings => Settings(
-        relayAtsign: RelayOptions.am.relayAtsign,
-        viewLayout: PreferredViewLayout.minimal,
-        overrideRelay: false,
-        // set the default language to the device's language
-        language:
-            LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)),
-      );
+    relayAtsign: RelayOptions.am.relayAtsign,
+    viewLayout: PreferredViewLayout.minimal,
+    overrideRelay: false,
+    // set the default language to the device's language
+    language: LanguageUtil.getLanguageFromLocale(Locale(Platform.localeName)),
+  );
 
   Future<Settings?> getSettings() async {
     AtClient atClient = _client;

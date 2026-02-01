@@ -182,8 +182,8 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         // This happens after file upload - keys are in keychain but atClient not initialized
         try {
           final atClientManager = AtClientManager.getInstance();
-          final atClient = atClientManager.atClient;
           // Try to access atClient - if it throws, we need to initialize
+          atClientManager.atClient;
         } catch (e) {
           // AtClient not initialized - initialize it now with keys from keychain
           try {

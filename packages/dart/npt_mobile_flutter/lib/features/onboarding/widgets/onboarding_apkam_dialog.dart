@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_mobile_flutter/util/onboarding_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';

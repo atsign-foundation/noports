@@ -26,7 +26,7 @@ final class PolicyStatusLightInitial extends PolicyStatusLightState {
   String toString() => 'PolicyStatusLightInitial()';
 }
 
-final class PolicyStatusLightLoading extends PolicyStatusLightState {  
+final class PolicyStatusLightLoading extends PolicyStatusLightState {
   final LightState lightState = LightState.clear;
 
   const PolicyStatusLightLoading();
@@ -44,7 +44,7 @@ final class PolicyStatusLightLoaded extends PolicyStatusLightState {
 
   const PolicyStatusLightLoaded({
     this.lightState = LightState.red,
-    this.message
+    this.message,
   });
 
   @override

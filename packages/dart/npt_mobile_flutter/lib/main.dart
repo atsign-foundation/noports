@@ -9,7 +9,7 @@ Future<void> main() async {
 
   // Initialize background service for maintaining network connections
   await BackgroundService.init();
-  
+
   // Initialize app lifecycle manager for iOS background handling
   AppLifecycleManager().init();
 

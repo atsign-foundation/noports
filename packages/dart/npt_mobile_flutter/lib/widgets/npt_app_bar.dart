@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_mobile_flutter/features/onboarding/cubit/onboarding_cubit.dart';
-import 'package:npt_mobile_flutter/home_wrapper_widget.dart';
-import 'package:npt_mobile_flutter/localization/app_localizations.dart';
-import 'package:npt_mobile_flutter/pages/pages.dart';
 import 'package:npt_mobile_flutter/pages/sub_nav_cubit.dart';
-import 'package:npt_mobile_flutter/routes.dart';
 import 'package:npt_mobile_flutter/styles/app_color.dart';
-import 'package:npt_mobile_flutter/styles/sizes.dart';
 import 'package:npt_mobile_flutter/util/constants.dart';
 import 'package:npt_mobile_flutter/widgets/switch_atsign_button.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
   const NptAppBar({super.key});
@@ -23,25 +16,13 @@ class NptAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _NptAppBarState extends State<NptAppBar> {
-  String _version = '';
-
   @override
   void initState() {
     super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      _version = 'v${packageInfo.version}';
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final atsign = context.watch<OnboardingCubit>().getAtSign();
-    final strings = AppLocalizations.of(context)!;
     return BlocBuilder<SubNavCubit, String>(
       builder: (context, state) {
         return AppBar(

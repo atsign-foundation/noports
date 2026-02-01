@@ -284,7 +284,7 @@ class NoPortsOnboardingUtil {
           result = AtOnboardingResult.cancelled();
           break;
         case FileUploadAuthSuccess _:
-          result = AtOnboardingResult.success(atsign: status.atSign ?? atsign);
+          result = AtOnboardingResult.success(atsign: status.atSign);
           break;
         // Progress states - notify caller via callback
         case FilePickingInProgress():

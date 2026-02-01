@@ -12,7 +12,7 @@ sealed class PolicyFormState extends Loggable {
 
   @override
   List<Object?> get props => [];
-  
+
   // Convenience getters that work across all states
   RoleInProgress? get currentRole => switch (this) {
     PolicyFormEditingExistingRole(:final currentRole) => currentRole,
@@ -31,7 +31,8 @@ sealed class PolicyFormState extends Loggable {
     _ => false,
   };
 
-  bool get isEditingState => this is PolicyFormEditingExistingRole || this is PolicyFormEditingNewRole;
+  bool get isEditingState =>
+      this is PolicyFormEditingExistingRole || this is PolicyFormEditingNewRole;
 }
 
 final class PolicyFormLoading extends PolicyFormState {
@@ -41,7 +42,7 @@ final class PolicyFormLoading extends PolicyFormState {
 
   @override
   String toString() {
-    return operation != null 
+    return operation != null
         ? 'PolicyFormLoading(operation: $operation)'
         : 'PolicyFormLoading';
   }
@@ -51,9 +52,7 @@ final class PolicyFormViewingRole extends PolicyFormState {
   @override
   final FetchedRole currentRole;
 
-  const PolicyFormViewingRole({
-    required this.currentRole,
-  });
+  const PolicyFormViewingRole({required this.currentRole});
 
   @override
   List<Object?> get props => [currentRole];
@@ -92,7 +91,8 @@ final class PolicyFormEditingNewRole extends PolicyFormState {
   bool get canCancel => !isSaving;
 
   @override
-  String toString() => 'PolicyFormEditingNewRole(roleInProgress: ${roleInProgress.name}, isSaving: $isSaving)';
+  String toString() =>
+      'PolicyFormEditingNewRole(roleInProgress: ${roleInProgress.name}, isSaving: $isSaving)';
 }
 
 final class PolicyFormEditingExistingRole extends PolicyFormState {
@@ -130,17 +130,15 @@ final class PolicyFormEditingExistingRole extends PolicyFormState {
   bool get canCancel => !isSaving;
 
   @override
-  String toString() => 'PolicyFormEditingExistingRole(currentRole: ${currentRole.name}, isSaving: $isSaving)';
+  String toString() =>
+      'PolicyFormEditingExistingRole(currentRole: ${currentRole.name}, isSaving: $isSaving)';
 }
 
 final class PolicyFormError extends PolicyFormState {
   final String message;
   final PolicyFormState? previousState;
 
-  const PolicyFormError({
-    required this.message,
-    this.previousState,
-  });
+  const PolicyFormError({required this.message, this.previousState});
 
   @override
   List<Object?> get props => [message, previousState];

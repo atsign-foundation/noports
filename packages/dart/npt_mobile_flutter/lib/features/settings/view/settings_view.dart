@@ -6,10 +6,7 @@ import 'package:npt_mobile_flutter/features/settings/settings.dart';
 import 'package:npt_mobile_flutter/features/settings/widgets/advance_section.dart';
 import 'package:npt_mobile_flutter/features/settings/widgets/default_relay_section.dart';
 import 'package:npt_mobile_flutter/features/settings/widgets/language_section.dart';
-import 'package:npt_mobile_flutter/home_wrapper_widget.dart';
 import 'package:npt_mobile_flutter/routes.dart';
-import 'package:npt_mobile_flutter/widgets/custom_card.dart';
-import 'package:npt_mobile_flutter/widgets/custom_text_button.dart';
 import 'package:npt_mobile_flutter/widgets/spinner.dart';
 import 'package:npt_mobile_flutter/widgets/custom_snack_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,7 +53,9 @@ class SettingsView extends StatelessWidget {
                         title: const Text('Backup Your Key'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          context.read<BackupKeyCubit>().backUpKeys(popDialog: false);
+                          context.read<BackupKeyCubit>().backUpKeys(
+                            popDialog: false,
+                          );
                         },
                       ),
                       const Divider(height: 1),
@@ -65,7 +64,9 @@ class SettingsView extends StatelessWidget {
                         title: const Text('FAQ'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
-                          final Uri url = Uri.parse('https://docs.noports.com/ssh-no-ports/faq');
+                          final Uri url = Uri.parse(
+                            'https://docs.noports.com/ssh-no-ports/faq',
+                          );
                           if (!await launchUrl(url)) {
                             if (context.mounted) {
                               CustomSnackBar.notification(
@@ -81,7 +82,10 @@ class SettingsView extends StatelessWidget {
                         title: const Text('Email Support'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
-                          Uri emailUri = Uri(scheme: 'mailto', path: 'info@noports.com');
+                          Uri emailUri = Uri(
+                            scheme: 'mailto',
+                            path: 'info@noports.com',
+                          );
                           if (!await launchUrl(emailUri)) {
                             if (context.mounted) {
                               final strings = AppLocalizations.of(context)!;
@@ -98,7 +102,9 @@ class SettingsView extends StatelessWidget {
                         title: const Text('Discord'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
-                          final Uri url = Uri.parse('https://discord.gg/atsign-778383211214536722');
+                          final Uri url = Uri.parse(
+                            'https://discord.gg/atsign-778383211214536722',
+                          );
                           if (!await launchUrl(url)) {
                             if (context.mounted) {
                               CustomSnackBar.notification(
@@ -135,7 +141,9 @@ class SettingsView extends StatelessWidget {
                         title: const Text('Privacy Policy'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
-                          final Uri url = Uri.parse('https://atsign.com/privacy-policy/');
+                          final Uri url = Uri.parse(
+                            'https://atsign.com/privacy-policy/',
+                          );
                           if (!await launchUrl(url)) {
                             if (context.mounted) {
                               CustomSnackBar.notification(
@@ -149,13 +157,16 @@ class SettingsView extends StatelessWidget {
                   ),
                 ),
                 gapH25,
-                
+
                 // Sign out and account management
                 Card(
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.logout_outlined, color: Colors.orange),
+                        leading: const Icon(
+                          Icons.logout_outlined,
+                          color: Colors.orange,
+                        ),
                         title: const Text('Sign Out'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
@@ -165,7 +176,9 @@ class SettingsView extends StatelessWidget {
                             context: context,
                             builder: (dialogContext) => AlertDialog(
                               title: Text(strings.signout),
-                              content: const Text('Are you sure you want to sign out?'),
+                              content: const Text(
+                                'Are you sure you want to sign out?',
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(dialogContext),
@@ -177,14 +190,21 @@ class SettingsView extends StatelessWidget {
                                     // Perform sign out
                                     await preSignout();
                                     if (context.mounted) {
-                                      Navigator.of(context, rootNavigator: true)
-                                        .pushNamedAndRemoveUntil(
-                                          Routes.onboarding, 
-                                          (route) => false,
-                                        );
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      ).pushNamedAndRemoveUntil(
+                                        Routes.onboarding,
+                                        (route) => false,
+                                      );
                                     }
                                   },
-                                  child: Text(strings.signout, style: const TextStyle(color: Colors.orange)),
+                                  child: Text(
+                                    strings.signout,
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

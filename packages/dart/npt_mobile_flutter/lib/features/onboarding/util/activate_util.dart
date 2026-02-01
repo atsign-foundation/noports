@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart' hide Response;
 import 'package:at_onboarding_flutter/utils/at_onboarding_response_status.dart';
 import 'package:at_server_status/at_server_status.dart';

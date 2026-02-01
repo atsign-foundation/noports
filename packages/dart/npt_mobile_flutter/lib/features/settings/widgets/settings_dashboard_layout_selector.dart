@@ -37,7 +37,7 @@ class SettingsDashboardLayoutSelector extends StatelessWidget {
                 ),
                 gapW20,
                 Switch(
-                  activeColor: Colors.black,
+                  activeThumbColor: Colors.black,
                   activeTrackColor: AppColor.primaryColor,
                   value: viewLayout == PreferredViewLayout.minimal
                       ? false

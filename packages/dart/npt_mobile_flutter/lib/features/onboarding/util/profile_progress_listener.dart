@@ -15,8 +15,8 @@ class ProfileProgressListener extends SyncProgressListener {
     final context = App.navState.currentContext!;
     //unawaited to allow profile reload to occur without waiting for sync check to complete
     unawaited(context.read<SyncCubit>().checkSync());
-    final profileListBlock =
-        App.navState.currentContext!.read<ProfileListBloc>();
+    final profileListBlock = App.navState.currentContext!
+        .read<ProfileListBloc>();
     // Reload occurs when sync is successful and profile list is empty to prevent breaking the app when a profile is running
     if (syncProgress.syncStatus == SyncStatus.success &&
         (profileListBlock.state is ProfileListLoaded &&
@@ -27,8 +27,8 @@ class ProfileProgressListener extends SyncProgressListener {
       );
       unawaited(
         context.read<SyncCubit>().checkSync().whenComplete(
-              () => context.read<BackupKeyCubit>().getBackupKeyStatus(),
-            ),
+          () => context.read<BackupKeyCubit>().getBackupKeyStatus(),
+        ),
       );
     }
   }

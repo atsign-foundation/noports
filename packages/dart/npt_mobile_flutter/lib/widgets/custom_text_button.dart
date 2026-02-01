@@ -1,5 +1,4 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_mobile_flutter/features/back_up_key/cubit/backup_key_cubit.dart';

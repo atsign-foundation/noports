@@ -37,7 +37,7 @@ final class PolicyLoading extends PolicyState {
 
   @override
   String toString() {
-    return operation != null 
+    return operation != null
         ? 'PolicyLoading(operation: $operation)'
         : 'PolicyLoading';
   }
@@ -67,10 +67,7 @@ final class PolicyBrowsingRoles extends PolicyLoaded {
 final class PolicyViewingRole extends PolicyLoaded {
   final FetchedRole selectedRole;
 
-  const PolicyViewingRole({
-    required super.roles,
-    required this.selectedRole,
-  });
+  const PolicyViewingRole({required super.roles, required this.selectedRole});
 
   @override
   List<Object?> get props => [roles, selectedRole];
@@ -79,16 +76,14 @@ final class PolicyViewingRole extends PolicyLoaded {
   String get viewModeDisplayName => 'Viewing Role';
 
   @override
-  String toString() => 'PolicyViewingRole(roles: ${roles.length}, role: ${selectedRole.name})';
+  String toString() =>
+      'PolicyViewingRole(roles: ${roles.length}, role: ${selectedRole.name})';
 }
 
 final class PolicyEditingRole extends PolicyLoaded {
   final FetchedRole selectedRole;
 
-  const PolicyEditingRole({
-    required super.roles,
-    required this.selectedRole,
-  });
+  const PolicyEditingRole({required super.roles, required this.selectedRole});
 
   @override
   List<Object?> get props => [roles, selectedRole];
@@ -97,13 +92,12 @@ final class PolicyEditingRole extends PolicyLoaded {
   String get viewModeDisplayName => 'Editing Role';
 
   @override
-  String toString() => 'PolicyEditingRole(roles: ${roles.length}, role: ${selectedRole.name})';
+  String toString() =>
+      'PolicyEditingRole(roles: ${roles.length}, role: ${selectedRole.name})';
 }
 
 final class PolicyCreatingRole extends PolicyLoaded {
-  const PolicyCreatingRole({
-    required super.roles,
-  });
+  const PolicyCreatingRole({required super.roles});
 
   @override
   String get viewModeDisplayName => 'Creating Role';
@@ -127,11 +121,7 @@ final class PolicyError extends PolicyState {
   final PolicyLoaded? previousState;
   final String? operation;
 
-  const PolicyError(
-    this.message, {
-    this.previousState,
-    this.operation,
-  });
+  const PolicyError(this.message, {this.previousState, this.operation});
 
   @override
   List<Object?> get props => [message, previousState, operation];

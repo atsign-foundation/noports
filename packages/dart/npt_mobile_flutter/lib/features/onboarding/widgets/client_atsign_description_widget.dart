@@ -39,7 +39,6 @@ class _ClientAtsignDescriptionWidgetState
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final width = MediaQuery.of(context).size.width * 0.60;
     final bodyMedium = Theme.of(context).textTheme.bodyMedium;
     return CustomContainer.background(
       width: widget.width,

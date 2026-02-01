@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:at_client/at_client.dart' show EncryptionUtil;
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
-import 'package:at_commons/at_commons.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

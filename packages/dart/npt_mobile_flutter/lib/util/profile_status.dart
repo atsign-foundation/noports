@@ -3,7 +3,15 @@ import 'dart:io';
 import 'package:npt_mobile_flutter/app.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 
-enum ProfileStatus { off, starting, on, stopping, loading, failedToStart, failedToLoad }
+enum ProfileStatus {
+  off,
+  starting,
+  on,
+  stopping,
+  loading,
+  failedToStart,
+  failedToLoad,
+}
 
 extension ProfileStatusExtension on ProfileStatus {
   String get message {

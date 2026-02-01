@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/policy.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
+
 class PolicyDialogs {
   PolicyDialogs._();
 
@@ -83,10 +84,7 @@ class PolicyDialogs {
               const SizedBox(height: 8),
               const Text(
                 'This action cannot be undone.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.red, fontSize: 12),
               ),
             ],
           ),
@@ -129,10 +127,7 @@ class PolicyDialogs {
                 const SizedBox(height: 8),
                 Text(
                   warningText,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
                 ),
               ],
             ],

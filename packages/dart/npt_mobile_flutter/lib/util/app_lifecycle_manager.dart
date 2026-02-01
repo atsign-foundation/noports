@@ -31,7 +31,7 @@ class AppLifecycleManager extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     App.log('App lifecycle changed to: $state'.loggable);
 
     switch (state) {
@@ -55,20 +55,24 @@ class AppLifecycleManager extends WidgetsBindingObserver {
 
   void _onAppResumed() {
     App.log('App resumed to foreground'.loggable);
-    
+
     if (_backgroundTime != null) {
       final duration = DateTime.now().difference(_backgroundTime!);
-      App.log('App was in background for ${duration.inSeconds} seconds'.loggable);
-      
+      App.log(
+        'App was in background for ${duration.inSeconds} seconds'.loggable,
+      );
+
       // If iOS killed connections while in background, we might need to reconnect
       if (Platform.isIOS && duration.inSeconds > 30) {
-        App.log('Long background duration on iOS - checking connections'.loggable);
+        App.log(
+          'Long background duration on iOS - checking connections'.loggable,
+        );
         // TODO: Trigger connection health check
       }
-      
+
       _backgroundTime = null;
     }
-    
+
     // Ensure background service is still running
     if (BackgroundService.isRunning) {
       BackgroundService.updateStatus('Active - Foreground');
@@ -83,12 +87,14 @@ class AppLifecycleManager extends WidgetsBindingObserver {
   void _onAppPaused() {
     _backgroundTime = DateTime.now();
     App.log('App paused (moved to background)'.loggable);
-    
+
     // iOS: Aggressively try to stay alive
     if (Platform.isIOS && BackgroundService.isRunning) {
-      App.log('iOS app backgrounded - activating keep-alive strategies'.loggable);
+      App.log(
+        'iOS app backgrounded - activating keep-alive strategies'.loggable,
+      );
       BackgroundService.updateStatus('Active - Background');
-      
+
       // Schedule immediate background task to show we're still working
       _scheduleIOSBackgroundWork();
     }
@@ -105,11 +111,11 @@ class AppLifecycleManager extends WidgetsBindingObserver {
   /// iOS-specific: Schedule background work to keep app alive
   void _scheduleIOSBackgroundWork() {
     if (!Platform.isIOS) return;
-    
+
     // This is a placeholder - actual implementation would use
     // BGTaskScheduler or similar iOS-specific APIs via platform channels
     App.log('Scheduling iOS background tasks'.loggable);
-    
+
     // The combination of:
     // 1. Foreground notification (from FlutterForegroundTask)
     // 2. Wakelock (from WakelockPlus)

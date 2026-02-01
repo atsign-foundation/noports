@@ -76,7 +76,8 @@ final class PolicyStatusLightCubit
 
       final Object? intervalObject = payload['interval'];
       if (intervalObject is! int || intervalObject <= 0) {
-        final String msg = 'Heartbeat payload missing or invalid interval: $payload';
+        final String msg =
+            'Heartbeat payload missing or invalid interval: $payload';
         emit(PolicyStatusLightLoaded(lightState: LightState.red, message: msg));
         logger.severe(msg);
         return;
@@ -91,7 +92,9 @@ final class PolicyStatusLightCubit
       // e.g. if interval is 60 seconds, then heartbeat is fresh if last heartbeat was within the last 60 seconds
       bool isFresh = !delta.isNegative && delta <= interval;
 
-      logger.info('Heartbeat check: nowUtc=$nowUtc, heartbeatUtc=$heartbeatUtc, delta=$delta, interval=$interval, isFresh=$isFresh');
+      logger.info(
+        'Heartbeat check: nowUtc=$nowUtc, heartbeatUtc=$heartbeatUtc, delta=$delta, interval=$interval, isFresh=$isFresh',
+      );
 
       final LightState lightState = isFresh ? LightState.green : LightState.red;
       final String message = _buildMessage(delta, heartbeatUtc);
@@ -130,10 +133,19 @@ final class PolicyStatusLightCubit
     final Future<Map<String, dynamic>> rpcFuture = rpc.call({});
 
     const int timeoutSeconds = 10;
-    rpcFuture.timeout(const Duration(seconds: timeoutSeconds), onTimeout: () {
-      emit(const PolicyStatusLightLoaded(lightState: LightState.clear, message: 'Heartbeat RPC call timed out after $timeoutSeconds seconds...'));
-      return {'success': false};
-    });
+    rpcFuture.timeout(
+      const Duration(seconds: timeoutSeconds),
+      onTimeout: () {
+        emit(
+          const PolicyStatusLightLoaded(
+            lightState: LightState.clear,
+            message:
+                'Heartbeat RPC call timed out after $timeoutSeconds seconds...',
+          ),
+        );
+        return {'success': false};
+      },
+    );
 
     final Map<String, dynamic> response = await rpcFuture;
 

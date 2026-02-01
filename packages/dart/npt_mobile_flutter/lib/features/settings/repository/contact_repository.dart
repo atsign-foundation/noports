@@ -17,7 +17,7 @@ class ContactsService {
   factory ContactsService.getInstance() {
     return _singleton;
   }
-  final AtSignLogger _logger = AtSignLogger(Constants.namespace!);
+  final AtSignLogger _logger = AtSignLogger(Constants.namespace);
 
   AtClient? atClient;
   var atClientManager = AtClientManager.getInstance();

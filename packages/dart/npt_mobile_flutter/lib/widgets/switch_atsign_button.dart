@@ -271,7 +271,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         case AtOnboardingResultStatus.success:
           await preSignout();
 
-          await initializeContactsService(currentContext, newAtSign ?? '');
+          await initializeContactsService(currentContext, newAtSign);
           AtClientManager.getInstance().atClient.syncService
               .addProgressListener(ProfileProgressListener());
           AtClientManager.getInstance().atClient.syncService.sync();

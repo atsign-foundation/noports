@@ -111,7 +111,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (isClosed) return;
 
         if (success) {
-          onSuccess?.call('Role saved successfully', currentState.currentRole.id);
+          onSuccess?.call(
+            'Role saved successfully',
+            currentState.currentRole.id,
+          );
           if (!isClosed) {
             emit(const PolicyFormLoading());
           }

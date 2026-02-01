@@ -11,9 +11,7 @@ class RoleRepository {
     final AtClient atClient = AtClientManager.getInstance().atClient;
     String? currentAtSign = atClient.getCurrentAtSign();
     if (currentAtSign == null) {
-      App.log(
-        '[ERROR] fetchRoles: Current atSign is null'.loggable,
-      );
+      App.log('[ERROR] fetchRoles: Current atSign is null'.loggable);
       return [];
     }
     if (!currentAtSign.startsWith('@')) {
@@ -21,10 +19,13 @@ class RoleRepository {
     }
     final String regex = 'groups\\.policy\\.sshnp$currentAtSign';
 
-    final List<String> groupAtKeyStrs =
-        await atClient.getKeys(regex: regex, useRemoteAtServer: true);
-    final List<AtKey> groupAtKeys =
-        groupAtKeyStrs.map((key) => AtKey.fromString(key)).toList();
+    final List<String> groupAtKeyStrs = await atClient.getKeys(
+      regex: regex,
+      useRemoteAtServer: true,
+    );
+    final List<AtKey> groupAtKeys = groupAtKeyStrs
+        .map((key) => AtKey.fromString(key))
+        .toList();
 
     for (final AtKey atKey in groupAtKeys) {
       final GetRequestOptions gro = GetRequestOptions()
@@ -34,8 +35,9 @@ class RoleRepository {
         atValue = await atClient.get(atKey, getRequestOptions: gro);
       } catch (e) {
         App.log(
-            '[ERROR] fetchRoles: Failed to get value for key $atKey: $e ... Continuing anyways :/'
-                .loggable);
+          '[ERROR] fetchRoles: Failed to get value for key $atKey: $e ... Continuing anyways :/'
+              .loggable,
+        );
         continue;
       }
       if (atValue.value == null) {
@@ -66,9 +68,7 @@ class RoleRepository {
     String? currentAtSign = atClient.getCurrentAtSign();
 
     if (currentAtSign == null) {
-      App.log(
-        '[ERROR] updateExistingRole: Current atSign is null'.loggable,
-      );
+      App.log('[ERROR] updateExistingRole: Current atSign is null'.loggable);
       return null;
     }
 
@@ -81,7 +81,9 @@ class RoleRepository {
     final int newId = maxId + 1;
 
     FetchedRole newRole = FetchedRole.fromRoleInProgress(
-        id: newId.toString(), roleInProgress: roleInProgress);
+      id: newId.toString(),
+      roleInProgress: roleInProgress,
+    );
 
     final String atKeyStr =
         '${newRole.id}.$groupsPolicyNamespace$currentAtSign';
@@ -100,13 +102,11 @@ class RoleRepository {
         try {
           AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
           notifKey.metadata.namespaceAware = false;
-          App.log('[INFO] putNewRole: Sending UPDATE notification $notifKey'
-              .loggable);
+          App.log(
+            '[INFO] putNewRole: Sending UPDATE notification $notifKey'.loggable,
+          );
           await atClient.notificationService.notify(
-            NotificationParams.forUpdate(
-              notifKey,
-              value: jsonEncode(newRole),
-            ),
+            NotificationParams.forUpdate(notifKey, value: jsonEncode(newRole)),
           );
         } catch (notifyError) {
           App.log(
@@ -124,9 +124,7 @@ class RoleRepository {
 
   Future<bool> updateExistingRole(final FetchedRole role) async {
     if (role.id.isEmpty) {
-      App.log(
-        '[ERROR] updateRole: Role ID is required for update'.loggable,
-      );
+      App.log('[ERROR] updateRole: Role ID is required for update'.loggable);
       return false;
     }
 
@@ -134,9 +132,7 @@ class RoleRepository {
     String? currentAtSign = atClient.getCurrentAtSign();
 
     if (currentAtSign == null) {
-      App.log(
-        '[ERROR] updateExistingRole: Current atSign is null'.loggable,
-      );
+      App.log('[ERROR] updateExistingRole: Current atSign is null'.loggable);
       return false;
     }
 
@@ -162,13 +158,11 @@ class RoleRepository {
           AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
           notifKey.metadata.namespaceAware = false;
           App.log(
-              '[INFO] updateExistingRole: Sending UPDATE notification $notifKey'
-                  .loggable);
+            '[INFO] updateExistingRole: Sending UPDATE notification $notifKey'
+                .loggable,
+          );
           await atClient.notificationService.notify(
-            NotificationParams.forUpdate(
-              notifKey,
-              value: jsonEncode(role),
-            ),
+            NotificationParams.forUpdate(notifKey, value: jsonEncode(role)),
           );
         } catch (notifyError) {
           App.log(
@@ -194,9 +188,7 @@ class RoleRepository {
     String? currentAtSign = atClient.getCurrentAtSign();
 
     if (currentAtSign == null) {
-      App.log(
-        '[ERROR] deleteRole: Current atSign is null'.loggable,
-      );
+      App.log('[ERROR] deleteRole: Current atSign is null'.loggable);
       return false;
     }
 
@@ -217,12 +209,11 @@ class RoleRepository {
         try {
           AtKey notifKey = AtKey.fromString('$currentAtSign:$atKeyStr');
           notifKey.metadata.namespaceAware = false;
-          App.log('[INFO] deleteRole: Sending DELETE notification $notifKey'
-              .loggable);
+          App.log(
+            '[INFO] deleteRole: Sending DELETE notification $notifKey'.loggable,
+          );
           await atClient.notificationService.notify(
-            NotificationParams.forDelete(
-              notifKey,
-            ),
+            NotificationParams.forDelete(notifKey),
           );
         } catch (notifyError) {
           App.log(

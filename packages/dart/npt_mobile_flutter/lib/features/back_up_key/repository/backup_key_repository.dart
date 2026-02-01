@@ -18,14 +18,7 @@ class BackUpKeyRepository {
   /// If it is already backed up or if there is an error, it returns true, if not, it returns false.
   Future<bool> getBackupKeyStatus() async {
     try {
-      AtClient? atClient = AtClientManager.getInstance().atClient;
-      if (atClient == null) {
-        App.log(
-          '[INFO] atClient is null, returning default backup status true'
-              .loggable,
-        );
-        return true;
-      }
+      AtClient atClient = AtClientManager.getInstance().atClient;
 
       String? atSign = atClient.getCurrentAtSign();
       var key = AtKey.self(
@@ -46,11 +39,7 @@ class BackUpKeyRepository {
   /// This method is used to update the backup key status in the atClient.
   Future<bool> putBackupKeyStatus(bool status) async {
     try {
-      AtClient? atClient = AtClientManager.getInstance().atClient;
-      if (atClient == null) {
-        App.log('[INFO] atClient is null, cannot save backup status'.loggable);
-        return false;
-      }
+      AtClient atClient = AtClientManager.getInstance().atClient;
 
       String? atSign = atClient.getCurrentAtSign();
       var key = AtKey.self(

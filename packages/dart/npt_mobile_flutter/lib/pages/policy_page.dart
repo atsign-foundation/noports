@@ -12,7 +12,8 @@ class PolicyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PolicyPageArguments args = ModalRoute.of(context)!.settings.arguments as PolicyPageArguments;
+    final PolicyPageArguments args =
+        ModalRoute.of(context)!.settings.arguments as PolicyPageArguments;
     return PolicyView(atSign: args.atSign);
   }
 }

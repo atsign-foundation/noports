@@ -25,9 +25,7 @@ class PolicyRolesSidebar extends StatelessWidget {
                 const SidebarHeaderWidget(),
                 const SidebarActionButtonsWidget(),
                 gapH16,
-                Expanded(
-                  child: RolesListWidget(state: state),
-                ),
+                Expanded(child: RolesListWidget(state: state)),
               ],
             ),
           ),
