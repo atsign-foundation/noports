@@ -18,11 +18,11 @@ class Routes {
 class HomeRoutes {
   static const dashboard = '/dashboard';
   static const settings = '/settings';
-  // authorisation feature is desktop-only
+  // Policy and Authorization features are desktop-only
   // static const authorisation = '/authorization';
   static const profileForm = '/profile';
   static const loadingPage = '/loading';
-  static const policyManager = '/policy-manager';
+  // static const policyManager = '/policy-manager';
 
   static final Map<String, WidgetBuilder> routes = {
     '/': (_) => const SizedBox.shrink(),
@@ -31,7 +31,7 @@ class HomeRoutes {
     // authorisation: (_) => const AuthorisationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
-    policyManager: (_) => const PolicyPage(),
+    // policyManager: (_) => const PolicyPage(),
   };
 }
 
@@ -45,14 +45,14 @@ String routeName(String route) {
       return strings.dashboard;
     case 'Settings':
       return strings.settings;
-    // case 'Authorisation':
-    //   return 'Authorization';
+    // case 'Authorization':
+    //   return strings.authorisation;
     case 'Profile':
       return strings.profile;
     case 'Loading':
       return strings.loading;
-    case 'Policy-manager':
-      return strings.policyManager;
+    // case 'Policy-manager':
+    //   return strings.policyManager;
     case 'Manage-atsign':
       return strings.manageAtsigns;
     default:
