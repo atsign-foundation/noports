@@ -99,6 +99,18 @@
 		<string>fetch</string>
 		<string>processing</string>
 		<string>remote-notification</string>
+		<string>audio</string>
+		<string>voip</string>
+		<string>external-accessory</string>
+	</array>
+	<!-- Prevent app from being killed when backgrounded -->
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
+	<!-- Background task identifier for network tasks -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.atsign.npt.networkRefresh</string>
+		<string>com.atsign.npt.keepAlive</string>
 	</array>
 </dict>
 </plist>

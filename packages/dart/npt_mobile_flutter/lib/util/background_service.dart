@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:npt_mobile_flutter/app.dart';
@@ -7,6 +8,7 @@ import 'package:npt_mobile_flutter/app.dart';
 class BackgroundService {
   static bool _isInitialized = false;
   static bool _isRunning = false;
+  static Timer? _iosKeepAliveTimer;
 
   /// Initialize the foreground service (call once on app startup)
   static Future<void> init() async {
@@ -22,11 +24,30 @@ class BackgroundService {
           priority: NotificationPriority.LOW,
         ),
         iosNotificationOptions: const IOSNotificationOptions(
-          showNotification: false,
+          showNotification: true,  // Changed to true for better iOS visibility
           playSound: false,
         ),
         foregroundTaskOptions: ForegroundTaskOptions(
           eventAction: ForegroundTaskEventAction.repeat(5000),
+          autoRunOnBoot: false,
+          autoRunOnMyPackageReplaced: false,
+          allowWakeLock: true,
+          allowWifiLock: true,
+        ),
+      );
+    } else if (Platform.isIOS) {
+      // iOS-specific initialization
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'noport_service',
+          channelName: 'NoPort Network Service',
+        ),
+        iosNotificationOptions: const IOSNotificationOptions(
+          showNotification: true,
+          playSound: false,
+        ),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(2000), // More frequent on iOS
           autoRunOnBoot: false,
           autoRunOnMyPackageReplaced: false,
           allowWakeLock: true,
@@ -66,9 +87,25 @@ class BackgroundService {
 
         App.log('Android foreground service started'.loggable);
       } else if (Platform.isIOS) {
-        // iOS: Enable wakelock to prevent suspension
+        // iOS: Multi-layered approach to stay alive
+        
+        // 1. Enable wakelock
         await WakelockPlus.enable();
         App.log('iOS wakelock enabled'.loggable);
+        
+        // 2. Start foreground task with notification
+        final serviceStarted = await FlutterForegroundTask.startService(
+          serviceId: 256,
+          notificationTitle: 'NoPort Active',
+          notificationText: 'Network tunnel is running',
+        );
+        
+        if (serviceStarted == true) {
+          App.log('iOS foreground service started'.loggable);
+        }
+        
+        // 3. Start periodic keep-alive timer to prevent suspension
+        _startIOSKeepAlive();
       }
 
       _isRunning = true;
@@ -90,8 +127,13 @@ class BackgroundService {
         final serviceStopped = await FlutterForegroundTask.stopService();
         App.log('Android foreground service stopped: $serviceStopped'.loggable);
       } else if (Platform.isIOS) {
+        // Stop all iOS keep-alive mechanisms
+        _iosKeepAliveTimer?.cancel();
+        _iosKeepAliveTimer = null;
+        
+        await FlutterForegroundTask.stopService();
         await WakelockPlus.disable();
-        App.log('iOS wakelock disabled'.loggable);
+        App.log('iOS background services stopped'.loggable);
       }
 
       _isRunning = false;
@@ -118,6 +160,32 @@ class BackgroundService {
 
   /// Check if the service is currently running
   static bool get isRunning => _isRunning;
+  
+  /// iOS-specific: Start periodic keep-alive timer
+  /// This sends regular signals to prevent iOS from suspending the app
+  static void _startIOSKeepAlive() {
+    if (!Platform.isIOS) return;
+    
+    _iosKeepAliveTimer?.cancel();
+    
+    // Send a keep-alive signal every 10 seconds
+    _iosKeepAliveTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      // Update notification to show app is alive
+      final now = DateTime.now();
+      final timeStr = '${now.hour.toString().padLeft(2, '0')}:'
+                     '${now.minute.toString().padLeft(2, '0')}:'
+                     '${now.second.toString().padLeft(2, '0')}';
+      
+      updateStatus('Active - $timeStr');
+      
+      // Log to show activity
+      if (now.second % 30 == 0) { // Log every 30 seconds
+        App.log('iOS keep-alive heartbeat: $timeStr'.loggable);
+      }
+    });
+    
+    App.log('iOS keep-alive timer started'.loggable);
+  }
 }
 
 /// Callback function for the foreground task
