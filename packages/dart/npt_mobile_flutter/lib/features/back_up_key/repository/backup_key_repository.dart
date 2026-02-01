@@ -7,6 +7,8 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:npt_mobile_flutter/app.dart';
 import 'package:npt_mobile_flutter/util/constants.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class BackUpKeyRepository {
   bool _fromJson(Map<String, dynamic> json) => json['status'];
@@ -65,24 +67,43 @@ class BackUpKeyRepository {
   }
 
   /// This method is used to save the atKeys to a file.
+  /// On mobile platforms (iOS/Android), it saves to a temporary directory and uses the share sheet.
+  /// On other platforms, it uses the file picker to save directly.
   Future<bool> saveAtKeysToPath({
     required Uint8List data,
     required String dialogTitle,
     required String fileName,
   }) async {
-    // Get file path to write to
-    String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: dialogTitle,
-      fileName: fileName,
-    );
-    if (outputFile == null) return false;
-    // Create and write the file
     try {
-      var f = File(outputFile);
-      await f.create(recursive: true);
-      await f.writeAsBytes(data);
-      return true;
+      // Check if we're on a mobile platform
+      if (Platform.isIOS || Platform.isAndroid) {
+        // Mobile: Save to temp directory and share
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(data);
+
+        // Share the file using the native share sheet
+        final result = await Share.shareXFiles([
+          XFile(file.path),
+        ], subject: 'Backup atKeys');
+
+        // Consider it successful if the user didn't cancel
+        return result.status != ShareResultStatus.dismissed;
+      } else {
+        // Desktop: Use file picker
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: dialogTitle,
+          fileName: fileName,
+        );
+        if (outputFile == null) return false;
+
+        var f = File(outputFile);
+        await f.create(recursive: true);
+        await f.writeAsBytes(data);
+        return true;
+      }
     } catch (e) {
+      App.log('[ERROR] saveAtKeysToPath() failed: $e'.loggable);
       rethrow;
     }
   }

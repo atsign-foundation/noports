@@ -48,6 +48,7 @@ dependencies:
   flutter_foreground_task: ^8.11.0
   yaml: ^3.1.2
   yaml_writer: ^2.0.0
+  share_plus: ^11.1.0
 
 dev_dependencies:
   build_runner: ^2.4.12
@@ -66,6 +67,7 @@ dependency_overrides:
   file_picker: ^10.3.3
   intl: 0.20.2
   device_info_plus: 11.3.3
+  at_backupkey_flutter: ^4.1.0  # Force newer version to avoid Android build issues
 
   at_auth: ^2.4.0  # Override at_client_flutter's at_auth ^3.0.0 requirement
 flutter:

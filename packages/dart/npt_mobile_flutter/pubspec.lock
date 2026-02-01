@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "2.4.0"
   at_backupkey_flutter:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: at_backupkey_flutter
       sha256: b50dcc65c9938b027e24e0ef4943aa5699c60e4127c58302de5def9a258f0be7
@@ -1204,7 +1204,7 @@ packages:
     source: hosted
     version: "0.2.1"
   share_plus:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: share_plus
       sha256: d7dc0630a923883c6328ca31b89aa682bacbf2f8304162d29f7c6aaff03a27a1
