@@ -155,6 +155,17 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
+
+    // For dashboard cards on mobile, use full width
+    final effectiveWidth =
+        (width != null &&
+            isMobile &&
+            (width == Sizes.p941 || width == Sizes.p853 || width == Sizes.p664))
+        ? null // Let it expand naturally
+        : width;
+
     return Container(
       decoration: BoxDecoration(
         color: color,
@@ -167,7 +178,7 @@ class CustomCard extends StatelessWidget {
         ),
       ),
       height: height,
-      width: width,
+      width: effectiveWidth,
       child: Padding(
         padding: EdgeInsets.only(
           left: leftPadding,

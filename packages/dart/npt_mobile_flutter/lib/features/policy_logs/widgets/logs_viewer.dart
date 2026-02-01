@@ -11,88 +11,186 @@ class LogsViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
+    
     return BlocBuilder<PolicyLogsCubit, PolicyLogsState>(
       builder: (context, state) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: state.isMonitoring
-                        ? Colors.green.shade100
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: state.isMonitoring
-                          ? Colors.green.shade300
-                          : Colors.grey.shade300,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: state.isMonitoring
-                              ? Colors.green
-                              : Colors.grey,
-                          shape: BoxShape.circle,
+                              ? Colors.green.shade100
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: state.isMonitoring
+                                ? Colors.green.shade300
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: state.isMonitoring
+                                    ? Colors.green
+                                    : Colors.grey,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                state.isMonitoring
+                                    ? strings.monitoringActive
+                                    : strings.monitoringInactive,
+                                style:
+                                    Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          color: state.isMonitoring
+                                              ? Colors.green.shade700
+                                              : Colors.grey.shade700,
+                                        ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        state.isMonitoring
-                            ? strings.monitoringActive
-                            : strings.monitoringInactive,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: state.isMonitoring
-                              ? Colors.green.shade700
-                              : Colors.grey.shade700,
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: !state.isMonitoring
+                                ? ElevatedButton.icon(
+                                    onPressed: () => context
+                                        .read<PolicyLogsCubit>()
+                                        .startGlobalMonitoring(),
+                                    icon: const Icon(Icons.play_arrow, size: 16),
+                                    label: Text(strings.monitoringStart),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  )
+                                : ElevatedButton.icon(
+                                    onPressed: () => context
+                                        .read<PolicyLogsCubit>()
+                                        .stopMonitoring(),
+                                    icon: const Icon(Icons.stop, size: 16),
+                                    label: Text(strings.monitoringStop),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  context.read<PolicyLogsCubit>().clearLogs(),
+                              icon: const Icon(Icons.clear_all, size: 16),
+                              label: Text(strings.logsClear),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
                         ),
+                        decoration: BoxDecoration(
+                          color: state.isMonitoring
+                              ? Colors.green.shade100
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: state.isMonitoring
+                                ? Colors.green.shade300
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: state.isMonitoring
+                                    ? Colors.green
+                                    : Colors.grey,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              state.isMonitoring
+                                  ? strings.monitoringActive
+                                  : strings.monitoringInactive,
+                              style:
+                                  Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        color: state.isMonitoring
+                                            ? Colors.green.shade700
+                                            : Colors.grey.shade700,
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      if (!state.isMonitoring)
+                        ElevatedButton.icon(
+                          onPressed: () => context
+                              .read<PolicyLogsCubit>()
+                              .startGlobalMonitoring(),
+                          icon: const Icon(Icons.play_arrow, size: 16),
+                          label: Text(strings.monitoringStart),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      if (state.isMonitoring)
+                        ElevatedButton.icon(
+                          onPressed: () =>
+                              context.read<PolicyLogsCubit>().stopMonitoring(),
+                          icon: const Icon(Icons.stop, size: 16),
+                          label: Text(strings.monitoringStop),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.read<PolicyLogsCubit>().clearLogs(),
+                        icon: const Icon(Icons.clear_all, size: 16),
+                        label: Text(strings.logsClear),
                       ),
                     ],
                   ),
-                ),
-                const Spacer(),
-                if (!state.isMonitoring)
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        context.read<PolicyLogsCubit>().startGlobalMonitoring(),
-                    icon: const Icon(Icons.play_arrow, size: 16),
-                    label: Text(strings.monitoringStart),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                if (state.isMonitoring)
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        context.read<PolicyLogsCubit>().stopMonitoring(),
-                    icon: const Icon(Icons.stop, size: 16),
-                    label: Text(strings.monitoringStop),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () => context.read<PolicyLogsCubit>().clearLogs(),
-                  icon: const Icon(Icons.clear_all, size: 16),
-                  label: Text(strings.logsClear),
-                ),
-              ],
-            ),
             const SizedBox(height: 16),
             Expanded(
               child: Container(
@@ -102,97 +200,112 @@ class LogsViewer extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(8),
+                    if (!isMobile)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(8),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                strings.timestamp,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                strings.atsignFrom,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                strings.atsignTo,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                strings.logType,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                strings.deviceName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                strings.deviceGroup,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                strings.servicesAllowed,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w300),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              strings.timestamp,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              strings.atsignFrom,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              strings.atsignTo,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              strings.logType,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              strings.deviceName,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              strings.deviceGroup,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              strings.servicesAllowed,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w300),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 8,
                         ),
-                        child: _buildLogsList(state, strings),
+                        child: _buildLogsList(state, strings, isMobile),
                       ),
                     ),
                   ],
@@ -205,7 +318,8 @@ class LogsViewer extends StatelessWidget {
     );
   }
 
-  Widget _buildLogsList(PolicyLogsState state, AppLocalizations strings) {
+  Widget _buildLogsList(
+      PolicyLogsState state, AppLocalizations strings, bool isMobile) {
     if (state.logs.isEmpty) {
       return Center(
         child: Column(
@@ -238,6 +352,7 @@ class LogsViewer extends StatelessWidget {
           deviceGroup: log.deviceGroup,
           allowedServices: log.allowedServices,
           policyPayload: log.policyPayload,
+          isMobile: isMobile,
         );
       },
     );

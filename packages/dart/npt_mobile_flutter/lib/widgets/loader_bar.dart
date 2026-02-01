@@ -5,6 +5,8 @@ class LoaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(width: 400, child: LinearProgressIndicator());
+    final screenWidth = MediaQuery.of(context).size.width;
+    final width = screenWidth < 700 ? screenWidth * 0.8 : 400.0;
+    return SizedBox(width: width, child: const LinearProgressIndicator());
   }
 }

@@ -13,19 +13,26 @@ class PolicyRolesSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
+
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         return SizedBox(
-          width: 255,
-          height: MediaQuery.of(context).size.height,
+          width: isMobile ? double.infinity : 255,
+          height: isMobile ? null : MediaQuery.of(context).size.height,
           child: CustomCard.settingsRail(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
               children: [
                 const SidebarHeaderWidget(),
                 const SidebarActionButtonsWidget(),
                 gapH16,
-                Expanded(child: RolesListWidget(state: state)),
+                if (isMobile)
+                  RolesListWidget(state: state)
+                else
+                  Expanded(child: RolesListWidget(state: state)),
               ],
             ),
           ),

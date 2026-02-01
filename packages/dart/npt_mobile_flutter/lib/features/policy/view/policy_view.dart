@@ -33,28 +33,49 @@ class PolicyContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
+    final isMobile = deviceSize.width < 700;
+    
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         return Scaffold(
-          body: Row(
-            children: [
-              const PolicyRolesSidebar(),
-              Expanded(
-                child: Column(
+          body: isMobile
+              ? Column(
                   children: [
+                    // Mobile: Show selector/menu at top instead of sidebar
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: AppColor.cardColorDark,
+                      child: const PolicyRolesSidebar(),
+                    ),
                     Expanded(
-                      child: CustomCard.dashboardContent(
-                        height:
-                            deviceSize.height * Sizes.dashboardCardHeightFactor,
-                        width: SizeConfig.setDashboardWidth(),
-                        child: _buildMainContent(state, context),
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: _buildMainContent(state, context),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    const PolicyRolesSidebar(),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: CustomCard.dashboardContent(
+                              height: deviceSize.height *
+                                  Sizes.dashboardCardHeightFactor,
+                              width: SizeConfig.setDashboardWidth(),
+                              child: _buildMainContent(state, context),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
         );
       },
     );

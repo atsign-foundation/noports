@@ -52,6 +52,35 @@ class ProfileHeaderView extends StatelessWidget {
               builder: (BuildContext context, PreferredViewLayout? viewLayout) {
                 return LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final isMobile = screenWidth < 700;
+
+                    // On mobile, always use minimal view for the header
+                    // since we stack fields vertically in the profile cards
+                    if (isMobile) {
+                      return CustomCard.profileHeader(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Sizes.p10,
+                            horizontal: Sizes.p16,
+                          ),
+                          child: Row(
+                            children: [
+                              const ProfileSelectAllBox(),
+                              gapW10,
+                              Expanded(
+                                child: ProfileHeaderColumn(
+                                  title: strings.profileName,
+                                  width: double.infinity,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Desktop layout
                     final width = SizeConfig.setProfileFieldWidth();
                     return switch (viewLayout) {
                       null => const Center(child: Spinner()),

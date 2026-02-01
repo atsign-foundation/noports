@@ -73,30 +73,40 @@ class _ProfileListViewState extends State<ProfileListView> {
                         vertical: 12,
                       ),
                       child: isFullProfile
-                          ? Row(
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: SizedBox(
-                                    height: 44,
-                                    child: const ProfileListAddButton(),
-                                  ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 44,
+                                        child: const ProfileListAddButton(),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 44,
+                                        child: const ProfileListImportButton(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 2,
-                                  child: SizedBox(
-                                    height: 44,
-                                    child: const ProfileListImportButton(),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: const ProfileSelectedExportButton(),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: const ProfileSelectedDeleteButton(),
+                                // Selected actions on separate row for better mobile UX
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child:
+                                          const ProfileSelectedExportButton(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child:
+                                          const ProfileSelectedDeleteButton(),
+                                    ),
+                                  ],
                                 ),
                               ],
                             )
