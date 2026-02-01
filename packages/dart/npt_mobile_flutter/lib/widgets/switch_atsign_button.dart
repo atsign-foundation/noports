@@ -262,13 +262,25 @@ Future<void> _handleAddAtsign(BuildContext context) async {
       );
 
       final util = NoPortsOnboardingUtil(config);
+      App.log(
+        '[SwitchAtsign] Calling handleAtsignByStatus for $newAtSign'.loggable,
+      );
       final onboardingResult = await util.handleAtsignByStatus(
         context: currentContext,
         atsign: newAtSign,
       );
 
+      App.log(
+        '[SwitchAtsign] handleAtsignByStatus returned with status: ${onboardingResult?.status}'
+            .loggable,
+      );
+
       switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
         case AtOnboardingResultStatus.success:
+          App.log(
+            '[SwitchAtsign] Success case - atsign: ${onboardingResult?.atsign}'
+                .loggable,
+          );
           await preSignout();
 
           await initializeContactsService(currentContext, newAtSign);
@@ -276,11 +288,18 @@ Future<void> _handleAddAtsign(BuildContext context) async {
               .addProgressListener(ProfileProgressListener());
           AtClientManager.getInstance().atClient.syncService.sync();
           postOnboard(onboardingResult!.atsign!, rootDomain);
+          App.log(
+            '[SwitchAtsign] Calling saveAtsignInformation for ${onboardingResult.atsign}'
+                .loggable,
+          );
           final result = await saveAtsignInformation(
             AtsignInformation(
               atSign: onboardingResult.atsign!,
               rootDomain: rootDomain,
             ),
+          );
+          App.log(
+            '[SwitchAtsign] saveAtsignInformation result: $result'.loggable,
           );
           final backupKeyCubit = App.navState.currentContext!
               .read<BackupKeyCubit>();

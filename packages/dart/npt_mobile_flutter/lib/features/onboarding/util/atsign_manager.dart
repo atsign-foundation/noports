@@ -50,33 +50,65 @@ class AtsignInformation extends Loggable {
 // correctly
 
 Future<Map<String, AtsignInformation>> getAtsignEntries() async {
+  App.log('[AtsignManager] Getting atsign entries'.loggable);
+
   var keychainAtSigns = await KeychainUtil.getAtsignList() ?? [];
+  App.log(
+    '[AtsignManager] Keychain contains ${keychainAtSigns.length} atsigns: $keychainAtSigns'
+        .loggable,
+  );
+
   var atSignInfo = <AtsignInformation>[];
   try {
     atSignInfo = await _getAtsignInformationFromFile();
+    App.log(
+      '[AtsignManager] Information file contains ${atSignInfo.length} atsigns'
+          .loggable,
+    );
   } catch (e) {
     App.log(
-      "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
+      "[ERROR] Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
           .loggable,
     );
     return {};
   }
+
   var atSignMap = <String, AtsignInformation>{};
   for (var item in atSignInfo) {
     if (keychainAtSigns.contains(item.atSign)) {
       atSignMap[item.atSign] = item;
+      App.log(
+        '[AtsignManager] Added ${item.atSign} to map (in both keychain and file)'
+            .loggable,
+      );
+    } else {
+      App.log(
+        '[AtsignManager] Skipped ${item.atSign} - not in keychain'.loggable,
+      );
     }
   }
+
+  App.log(
+    '[AtsignManager] Returning ${atSignMap.length} atsign entries'.loggable,
+  );
   return atSignMap;
 }
 
 // This class will allow you to store atSign information
 // you need to call this after onboarding a NEW atSign
 Future<bool> saveAtsignInformation(AtsignInformation info) async {
+  App.log(
+    '[AtsignManager] Saving atsign information for ${info.atSign}'.loggable,
+  );
+
   var f = await _getAtsignInformationFile();
   final List<AtsignInformation> atSignInfo;
   try {
     atSignInfo = await _getAtsignInformationFromFile(f);
+    App.log(
+      '[AtsignManager] Current atsign list has ${atSignInfo.length} entries'
+          .loggable,
+    );
   } catch (e) {
     // We only end up here if we failed to create, get, or read the file
     // we don't want to overwrite it in that scenario, so return false
@@ -84,9 +116,13 @@ Future<bool> saveAtsignInformation(AtsignInformation info) async {
     // We won't end up here if it was a json parse error, such as invalid
     // json, we do want to overwrite that so that the app can recover as best
     // as possible
+    App.log('[ERROR] Failed to get atsign information from file: $e'.loggable);
     return false;
   }
-  if (f == null) return false;
+  if (f == null) {
+    App.log('[ERROR] Atsign information file is null'.loggable);
+    return false;
+  }
 
   // Replace the existing entry with the new one if it exists
   bool found = false;
@@ -94,18 +130,23 @@ Future<bool> saveAtsignInformation(AtsignInformation info) async {
     if (atSignInfo[i].atSign == info.atSign) {
       found = true;
       atSignInfo[i] = info;
+      App.log(
+        '[AtsignManager] Updated existing entry for ${info.atSign}'.loggable,
+      );
     }
   }
   // Otherwise add it as a new entry
   if (!found) {
     atSignInfo.add(info);
+    App.log('[AtsignManager] Added new entry for ${info.atSign}'.loggable);
   }
   try {
-    f.writeAsString(
+    await f.writeAsString(
       jsonEncode(atSignInfo.map((e) => e.toJson()).toList()),
       mode: FileMode.writeOnly,
       flush: true,
     );
+    App.log('[AtsignManager] Successfully saved atsign information'.loggable);
     return true;
   } catch (e) {
     App.log(

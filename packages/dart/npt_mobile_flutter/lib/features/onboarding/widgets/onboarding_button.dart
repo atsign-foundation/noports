@@ -223,12 +223,18 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         }
 
         await postOnboard(onboardingResult!.atsign!, rootDomain);
+
+        App.log(
+          '[Onboarding] Saving atsign information for ${onboardingResult.atsign}'
+              .loggable,
+        );
         final result = await saveAtsignInformation(
           AtsignInformation(
             atSign: onboardingResult.atsign!,
             rootDomain: rootDomain,
           ),
         );
+        App.log('[Onboarding] Atsign information saved: $result'.loggable);
 
         try {
           final backupKeyCubit = App.navState.currentContext!

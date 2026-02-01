@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_mobile_flutter/features/favorite/favorite.dart';
 import 'package:npt_mobile_flutter/features/profile/profile.dart';
+import 'package:npt_mobile_flutter/features/profile_list/profile_list.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../styles/sizes.dart';
@@ -35,6 +36,14 @@ class ProfileFavoriteButton extends StatelessWidget {
                   context.read<FavoriteBloc>().add(
                     FavoriteAddEvent(FavoriteProfile(uuid: profile.uuid)),
                   );
+                }
+
+                // Trigger profile list re-sort after favorite change
+                final profileListBloc = context.read<ProfileListBloc>();
+                if (profileListBloc.state is ProfileListLoaded) {
+                  final currentProfiles =
+                      (profileListBloc.state as ProfileListLoaded).profiles;
+                  profileListBloc.add(ProfileListUpdateEvent(currentProfiles));
                 }
               },
               icon: PhosphorIcon(

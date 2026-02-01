@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:at_auth/at_auth.dart';
 import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
@@ -425,8 +426,22 @@ class OnboardingService {
     required String otp,
     required AtClientPreference atClientPreference,
   }) async {
-    // TODO: Implement enrollment if needed for APKAM
-    return AtOnboardingResult.error(message: 'Enrollment not yet implemented');
+    try {
+      final authService = AtAuthServiceImpl(atsign, atClientPreference);
+
+      final enrollmentRequest = EnrollmentRequest(
+        appName: appName,
+        deviceName: deviceName,
+        otp: otp,
+        namespaces: {appName: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      );
+
+      await authService.enroll(enrollmentRequest);
+
+      return AtOnboardingResult.success(atsign: atsign);
+    } catch (e) {
+      return AtOnboardingResult.error(message: 'Enrollment failed: $e');
+    }
   }
 }
 

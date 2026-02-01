@@ -168,40 +168,38 @@ class _ProfileListViewState extends State<ProfileListView> {
                                 ),
                               ],
                             )
-                          : Expanded(
-                              child: Center(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const DemoProfileInfoWidget(),
-                                      const SizedBox(height: 32),
-                                      SvgPicture.asset(
-                                        'assets/empty_state_profile_bg.svg',
-                                        height: 160,
+                          : Center(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const DemoProfileInfoWidget(),
+                                    const SizedBox(height: 32),
+                                    SvgPicture.asset(
+                                      'assets/empty_state_profile_bg.svg',
+                                      height: 160,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      'No profiles found',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      strings.emptyProfileMessage,
+                                      style: bodyMedium?.copyWith(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
                                       ),
-                                      const SizedBox(height: 24),
-                                      Text(
-                                        'No profiles found',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        strings.emptyProfileMessage,
-                                        style: bodyMedium?.copyWith(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

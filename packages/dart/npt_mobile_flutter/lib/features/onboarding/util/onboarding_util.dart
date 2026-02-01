@@ -223,13 +223,22 @@ class NoPortsOnboardingUtil {
           atClientPreference: atClientPreference,
         ),
       );
+      App.log(
+        '[OnboardingUtil] APKAM dialog returned result: ${result?.status}'
+            .loggable,
+      );
     }
 
     // When onboarding via APKAM or uploading atKeys, set backup status to true.
     if (context.mounted && result?.status == AtOnboardingResultStatus.success) {
+      App.log(
+        '[OnboardingUtil] Setting backup key status to true for ${result?.atsign}'
+            .loggable,
+      );
       context.read<BackupKeyCubit>().setBackupKeyStatus(true);
     }
 
+    App.log('[OnboardingUtil] Returning result: ${result?.status}'.loggable);
     return result;
   }
 

@@ -14,12 +14,17 @@ class EnrollmentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 700),
+        constraints: BoxConstraints(
+          maxWidth: isMobile ? screenWidth * 0.95 : 700,
+        ),
         child: Dialog(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(isMobile ? 12.0 : 24.0),
             child: AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
@@ -29,7 +34,7 @@ class EnrollmentDialog extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   color: const Color(0xFFF3F3F3),
                 ),
-                padding: const EdgeInsets.all(32),
+                padding: EdgeInsets.all(isMobile ? 16 : 32),
                 child: child,
               ),
             ),

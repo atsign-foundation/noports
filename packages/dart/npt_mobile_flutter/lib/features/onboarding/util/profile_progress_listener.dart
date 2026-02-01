@@ -17,10 +17,12 @@ class ProfileProgressListener extends SyncProgressListener {
     unawaited(context.read<SyncCubit>().checkSync());
     final profileListBlock = App.navState.currentContext!
         .read<ProfileListBloc>();
-    // Reload occurs when sync is successful and profile list is empty to prevent breaking the app when a profile is running
-    if (syncProgress.syncStatus == SyncStatus.success &&
-        (profileListBlock.state is ProfileListLoaded &&
-            (profileListBlock.state as ProfileListLoaded).profiles.isEmpty)) {
+    // Reload profiles on every successful sync to ensure APKAM-enrolled profiles load
+    // Previously only reloaded when empty, but APKAM needs reload after sync completes
+    if (syncProgress.syncStatus == SyncStatus.success) {
+      log(
+        'ProfileProgressListener: Sync successful, triggering ProfileListLoadEvent',
+      );
       profileListBlock.add(const ProfileListLoadEvent());
       log(
         'ProfileProgressListener: ProfileListLoadEvent triggered to reload profiles',
