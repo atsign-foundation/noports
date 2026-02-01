@@ -34,7 +34,7 @@ class PolicyContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
     final isMobile = deviceSize.width < 700;
-    
+
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
         return Scaffold(
@@ -65,7 +65,8 @@ class PolicyContent extends StatelessWidget {
                         children: [
                           Expanded(
                             child: CustomCard.dashboardContent(
-                              height: deviceSize.height *
+                              height:
+                                  deviceSize.height *
                                   Sizes.dashboardCardHeightFactor,
                               width: SizeConfig.setDashboardWidth(),
                               child: _buildMainContent(state, context),

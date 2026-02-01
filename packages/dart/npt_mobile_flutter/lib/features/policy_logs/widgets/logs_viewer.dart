@@ -13,7 +13,7 @@ class LogsViewer extends StatelessWidget {
     final strings = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 700;
-    
+
     return BlocBuilder<PolicyLogsCubit, PolicyLogsState>(
       builder: (context, state) {
         return Column(
@@ -58,13 +58,13 @@ class LogsViewer extends StatelessWidget {
                                 state.isMonitoring
                                     ? strings.monitoringActive
                                     : strings.monitoringInactive,
-                                style:
-                                    Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          color: state.isMonitoring
-                                              ? Colors.green.shade700
-                                              : Colors.grey.shade700,
-                                        ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: state.isMonitoring
+                                          ? Colors.green.shade700
+                                          : Colors.grey.shade700,
+                                    ),
                               ),
                             ),
                           ],
@@ -79,7 +79,10 @@ class LogsViewer extends StatelessWidget {
                                     onPressed: () => context
                                         .read<PolicyLogsCubit>()
                                         .startGlobalMonitoring(),
-                                    icon: const Icon(Icons.play_arrow, size: 16),
+                                    icon: const Icon(
+                                      Icons.play_arrow,
+                                      size: 16,
+                                    ),
                                     label: Text(strings.monitoringStart),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
@@ -147,13 +150,13 @@ class LogsViewer extends StatelessWidget {
                               state.isMonitoring
                                   ? strings.monitoringActive
                                   : strings.monitoringInactive,
-                              style:
-                                  Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                        color: state.isMonitoring
-                                            ? Colors.green.shade700
-                                            : Colors.grey.shade700,
-                                      ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    color: state.isMonitoring
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade700,
+                                  ),
                             ),
                           ],
                         ),
@@ -218,9 +221,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 2,
                               child: Text(
                                 strings.timestamp,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -230,9 +231,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 2,
                               child: Text(
                                 strings.atsignFrom,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -242,9 +241,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 2,
                               child: Text(
                                 strings.atsignTo,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -254,9 +251,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 1,
                               child: Text(
                                 strings.logType,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -266,9 +261,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 1,
                               child: Text(
                                 strings.deviceName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -278,9 +271,7 @@ class LogsViewer extends StatelessWidget {
                               flex: 1,
                               child: Text(
                                 strings.deviceGroup,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -289,9 +280,7 @@ class LogsViewer extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 strings.servicesAllowed,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w300),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -319,7 +308,10 @@ class LogsViewer extends StatelessWidget {
   }
 
   Widget _buildLogsList(
-      PolicyLogsState state, AppLocalizations strings, bool isMobile) {
+    PolicyLogsState state,
+    AppLocalizations strings,
+    bool isMobile,
+  ) {
     if (state.logs.isEmpty) {
       return Center(
         child: Column(

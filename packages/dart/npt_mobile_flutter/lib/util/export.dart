@@ -86,9 +86,7 @@ class Export {
 
       if (result.status == ShareResultStatus.success) {
         CustomSnackBar.success(
-          content: AppLocalizations.of(
-            App.navState.currentContext!,
-          )!.fileSaved,
+          content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
         );
       }
     } else {
