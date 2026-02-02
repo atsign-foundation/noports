@@ -180,13 +180,14 @@ class SshnpdImpl
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
+    void Function()? versionCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback);
+        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback, versionCallback: versionCallback);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }

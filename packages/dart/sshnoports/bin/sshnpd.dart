@@ -35,6 +35,10 @@ void main(List<String> args) async {
         stderr.writeln(SshnpdOption.usage);
         exit(0);
       },
+      versionCallback: () {
+        printVersion();
+        exit(0);
+      },
       version: packageVersion,
     );
   } on ArgumentError catch (_) {
