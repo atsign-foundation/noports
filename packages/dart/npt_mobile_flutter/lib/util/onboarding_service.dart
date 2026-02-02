@@ -428,6 +428,11 @@ class OnboardingService {
   }) async {
     try {
       App.log('[OnboardingService] Starting enrollment for $atsign'.loggable);
+      App.log(
+        '[OnboardingService] appName: $appName, deviceName: $deviceName'
+            .loggable,
+      );
+      App.log('[OnboardingService] atSign for enrollment: $atsign'.loggable);
 
       // Create the auth service for enrollment
       final authService = AtAuthServiceImpl(atsign, atClientPreference);
@@ -439,11 +444,20 @@ class OnboardingService {
         namespaces: {appName: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
       );
 
+      App.log(
+        '[OnboardingService] EnrollmentRequest details - appName: ${enrollmentRequest.appName}, deviceName: ${enrollmentRequest.deviceName}, namespaces: ${enrollmentRequest.namespaces}'
+            .loggable,
+      );
       App.log('[OnboardingService] Calling authService.enroll()'.loggable);
+
       final enrollResponse = await authService.enroll(enrollmentRequest);
 
       App.log(
-        '[OnboardingService] Enrollment response: ${enrollResponse.enrollmentId}'
+        '[OnboardingService] Enrollment SUCCESS! EnrollmentId: ${enrollResponse.enrollmentId}'
+            .loggable,
+      );
+      App.log(
+        '[OnboardingService] Enrollment request should now be visible on desktop app for approval'
             .loggable,
       );
 

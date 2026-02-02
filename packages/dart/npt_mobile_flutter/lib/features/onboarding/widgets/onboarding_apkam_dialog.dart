@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
+// ignore: implementation_imports
+import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_mobile_flutter/util/onboarding_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_mobile_flutter/features/onboarding/widgets/enrollment_dialog.dart';
-import 'package:npt_mobile_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 import 'package:npt_mobile_flutter/styles/sizes.dart';
 import 'package:npt_mobile_flutter/util/constants.dart';
@@ -54,6 +55,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   Timer? _statusCheckTimer;
   int _pollCount = 0;
   static const _maxPollAttempts = 100; // 5 minutes at 3 second intervals
+  String? enrollmentId; // Track the enrollment ID from the server
 
   @override
   void initState() {
@@ -133,6 +135,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     final sentEnrollRequest = await authService.getSentEnrollmentRequest();
     App.log('Sent enroll request: ${sentEnrollRequest?.toJson()}'.loggable);
     if (sentEnrollRequest != null) {
+      enrollmentId = sentEnrollRequest.enrollmentId;
+      App.log('[APKAM] Found existing enrollment ID: $enrollmentId'.loggable);
+
       if (DateTime.now()
               .toUtc()
               .difference(
@@ -226,63 +231,110 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   Future<void> onApproved() async {
     _statusCheckTimer?.cancel();
+
+    App.log('[APKAM] Enrollment approved for $atsign'.loggable);
+
+    // The enrollment is approved, but we need to authenticate to get the keys
+    // and store them in KeyChain before showing success
+    try {
+      // Authenticate with the APKAM enrollment to fetch the keys
+      App.log(
+        '[APKAM] Authenticating with enrollmentId: $enrollmentId'.loggable,
+      );
+
+      final atAuthRequest = AtAuthRequest(atsign)
+        ..authMode = PkamAuthMode.apkam
+        ..enrollmentId = enrollmentId
+        ..rootDomain = atClientPreference.rootDomain
+        ..rootPort = atClientPreference.rootPort;
+
+      final authResponse = await authService.authenticate(atAuthRequest);
+
+      if (authResponse.atAuthKeys == null) {
+        throw Exception('Authentication succeeded but no keys were returned');
+      }
+
+      App.log(
+        '[APKAM] Authentication successful, storing keys in KeyChain'.loggable,
+      );
+
+      // Now extract and store keys in KeyChain
+      final atClient = AtClientManager.getInstance().atClient;
+      final keyChainManager = KeyChainManager.getInstance();
+      final atChops = atClient.atChops;
+
+      if (atChops == null) {
+        throw Exception('atChops is null after authentication');
+      }
+
+      App.log('[APKAM] Extracting keys to store in KeyChain'.loggable);
+
+      // Extract all the keys from atChops
+      final pkamPublicKey =
+          atChops.atChopsKeys.atPkamKeyPair?.atPublicKey.publicKey;
+      final pkamPrivateKey =
+          atChops.atChopsKeys.atPkamKeyPair?.atPrivateKey.privateKey;
+      final encryptionPublicKey =
+          atChops.atChopsKeys.atEncryptionKeyPair?.atPublicKey.publicKey;
+      final encryptionPrivateKey =
+          atChops.atChopsKeys.atEncryptionKeyPair?.atPrivateKey.privateKey;
+      final selfEncryptionKey = atChops.atChopsKeys.selfEncryptionKey?.key;
+
+      if (pkamPublicKey == null ||
+          pkamPrivateKey == null ||
+          encryptionPrivateKey == null ||
+          encryptionPublicKey == null ||
+          selfEncryptionKey == null) {
+        throw Exception('Missing keys from atChops after authentication');
+      }
+
+      // Create AtsignKey and store in KeyChain
+      final atsignKey = AtsignKey(
+        atSign: atsign,
+        pkamPublicKey: pkamPublicKey,
+        pkamPrivateKey: pkamPrivateKey,
+        encryptionPublicKey: encryptionPublicKey,
+        encryptionPrivateKey: encryptionPrivateKey,
+        selfEncryptionKey: selfEncryptionKey,
+      );
+
+      await keyChainManager.storeAtSign(atSign: atsignKey);
+
+      // Verify storage
+      final keysInKeyChain = await keyChainManager.getAtSignListFromKeychain();
+      if (!keysInKeyChain.contains(atsign)) {
+        throw Exception('Keys not found in KeyChain after storage');
+      }
+
+      App.log('[APKAM] Keys stored in KeyChain successfully'.loggable);
+    } catch (e, stackTrace) {
+      App.log('[APKAM] ERROR: $e'.loggable);
+      App.log('[APKAM] Stack trace: $stackTrace'.loggable);
+
+      if (mounted) {
+        setState(() {
+          onboardingStatus = OnboardingStatus.otpRequired;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to store keys: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show success
     setState(() {
       onboardingStatus = OnboardingStatus.success;
     });
 
-    // Wait a bit to show the success message
+    // Wait to show success message
     await Future.delayed(const Duration(milliseconds: 2000));
 
-    if (!mounted) return;
-
-    App.log('[APKAM] Starting onboard process for $atsign'.loggable);
-
-    // Now onboard to initialize the atClient with the enrolled keys
-    try {
-      final onboardingResult = await AtOnboarding.onboard(
-        context: context,
-        config: AtOnboardingConfig(
-          atClientPreference: atClientPreference,
-          domain: atClientPreference.rootDomain,
-          rootEnvironment: RootEnvironment.Production,
-          appAPIKey: await Constants.appAPIKey,
-        ),
-        atsign: atsign,
-      );
-
-      App.log('[APKAM] AtOnboarding.onboard completed successfully'.loggable);
-
-      // AtOnboarding should have already set up all keys in both
-      // the keychain and local storage during onboarding
-      App.log('[APKAM] Keys should be set up by AtOnboarding'.loggable);
-
-      // CRITICAL: Save atsign to information file so it appears in dropdown
-      App.log('[APKAM] Saving atsign information for $atsign'.loggable);
-      final saveResult = await saveAtsignInformation(
-        AtsignInformation(
-          atSign: atsign,
-          rootDomain: atClientPreference.rootDomain,
-        ),
-      );
-      App.log('[APKAM] Save atsign information result: $saveResult'.loggable);
-
-      App.log(
-        '[APKAM] Returning result with status: ${onboardingResult.status}'
-            .loggable,
-      );
-
-      if (mounted) {
-        Navigator.of(context).pop(onboardingResult);
-      }
-    } catch (e) {
-      App.log('[ERROR] APKAM onboarding error: $e'.loggable);
-      if (mounted) {
-        Navigator.of(context).pop(
-          AtOnboardingResult.error(
-            message: 'Failed to complete onboarding: $e',
-          ),
-        );
-      }
+    if (mounted) {
+      Navigator.of(context).pop(AtOnboardingResult.success(atsign: atsign));
     }
   }
 
@@ -325,7 +377,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
     );
 
-    App.log('About to enroll with $enrollmentRequest'.loggable);
+    App.log(
+      '[APKAM] About to enroll with: appName=${Constants.namespace}, deviceName=$deviceName, namespaces=${enrollmentRequest.namespaces}'
+          .loggable,
+    );
+    App.log('[APKAM] EnrollmentRequest details: $enrollmentRequest'.loggable);
 
     try {
       App.log(
@@ -339,11 +395,23 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         otp: otp,
         atClientPreference: widget.atClientPreference,
       );
-      App.log('Enroll response: $enrollResponse'.loggable);
+      App.log('[APKAM] Enroll response: $enrollResponse'.loggable);
       App.log(
         '[APKAM] Enroll response status: ${enrollResponse.status}, message: ${enrollResponse.message}'
             .loggable,
       );
+
+      // CRITICAL: Get the enrollment ID from the sent request after successful enrollment
+      final sentRequest = await authService.getSentEnrollmentRequest();
+      if (sentRequest != null) {
+        enrollmentId = sentRequest.enrollmentId;
+        App.log('[APKAM] Captured enrollment ID: $enrollmentId'.loggable);
+      } else {
+        App.log(
+          '[APKAM] WARNING: No sent enrollment request found after enroll()'
+              .loggable,
+        );
+      }
 
       // Check if enrollment failed
       if (enrollResponse.status == AtOnboardingResultStatus.error) {
@@ -817,6 +885,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
             ],
           ),
           OnboardingStatus.success => Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 key: const Key('success'),
@@ -845,6 +914,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
             ],
           ),
           OnboardingStatus.denied => Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 key: const Key('denied'),
