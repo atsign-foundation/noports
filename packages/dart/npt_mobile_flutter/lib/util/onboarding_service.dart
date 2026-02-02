@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:at_auth/at_auth.dart';
 import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
@@ -425,8 +426,35 @@ class OnboardingService {
     required String otp,
     required AtClientPreference atClientPreference,
   }) async {
-    // TODO: Implement enrollment if needed for APKAM
-    return AtOnboardingResult.error(message: 'Enrollment not yet implemented');
+    try {
+      App.log('[OnboardingService] Starting enrollment for $atsign'.loggable);
+
+      // Create the auth service for enrollment
+      final authService = AtAuthServiceImpl(atsign, atClientPreference);
+
+      final enrollmentRequest = EnrollmentRequest(
+        appName: appName,
+        deviceName: deviceName,
+        otp: otp,
+        namespaces: {appName: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      );
+
+      App.log('[OnboardingService] Calling authService.enroll()'.loggable);
+      final enrollResponse = await authService.enroll(enrollmentRequest);
+
+      App.log(
+        '[OnboardingService] Enrollment response: ${enrollResponse.enrollmentId}'
+            .loggable,
+      );
+
+      // Convert AtEnrollmentResponse to AtOnboardingResult
+      // If we got here without an exception, enrollment succeeded
+      return AtOnboardingResult.success(atsign: atsign);
+    } catch (e, st) {
+      App.log('[OnboardingService] Error during enrollment: $e'.loggable);
+      App.log(st.toString().loggable);
+      return AtOnboardingResult.error(message: 'Enrollment failed: $e');
+    }
   }
 }
 

@@ -17,7 +17,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
         horizontal: Sizes.p16,
         vertical: Sizes.p10,
       ),
-      width: MediaQuery.of(context).size.width * 0.75,
+      width: MediaQuery.of(context).size.width * 0.90,
       decoration: BoxDecoration(
         color: AppColor.primaryColorBackground,
         borderRadius: BorderRadius.circular(Sizes.p10),
@@ -31,11 +31,13 @@ class DemoProfileInfoWidget extends StatelessWidget {
             ),
             padding: const EdgeInsets.all(Sizes.p8),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 PhosphorIcon(
                   PhosphorIcons.lightbulbFilament(),
                   color: AppColor.primaryColor,
                 ),
+                gapW4,
                 Text(
                   strings.demo,
                   style: const TextStyle(color: AppColor.primaryColor),
@@ -43,11 +45,16 @@ class DemoProfileInfoWidget extends StatelessWidget {
               ],
             ),
           ),
-          gapW16,
-          Text(
-            strings.demoDescription,
-            style: const TextStyle(color: Colors.black),
+          gapW8,
+          Expanded(
+            child: Text(
+              strings.demoDescription,
+              style: const TextStyle(color: Colors.black),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
           ),
+          gapW4,
           TextButton(
             onPressed: () async {
               // Show a progress indicator before fetching the demo profile
