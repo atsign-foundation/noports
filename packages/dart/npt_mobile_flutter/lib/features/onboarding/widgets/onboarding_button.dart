@@ -10,6 +10,7 @@ import 'package:npt_mobile_flutter/features/onboarding/util/atsign_manager.dart'
 import 'package:npt_mobile_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_mobile_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_mobile_flutter/features/onboarding/widgets/onboarding_dialog.dart';
+import 'package:npt_mobile_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 import 'package:npt_mobile_flutter/routes.dart';
 import 'package:npt_mobile_flutter/styles/sizes.dart';
@@ -19,6 +20,7 @@ import 'package:npt_mobile_flutter/widgets/loading_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
+import 'package:at_chops/at_chops.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
@@ -197,15 +199,25 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         try {
           final atClientManager = AtClientManager.getInstance();
           
-          // First, check if atClient exists - if not, initialize it
-          bool alreadyInitialized = false;
+          // First, check if atClient exists - if so, stop all running profiles
           try {
             atClientManager.atClient;
-            alreadyInitialized = true;
             App.log(
-              '[OnboardingButton] AtClient already initialized - will reinitialize with new keys'
+              '[OnboardingButton] AtClient already initialized - stopping profiles before reinit'
                   .loggable,
             );
+
+            // CRITICAL: Stop all running profiles to release connections
+            // This is what makes logout/login work - we need the same cleanup
+            if (context.mounted) {
+              context.read<ProfilesRunningCubit>().stopAllAndClear();
+              App.log(
+                '[OnboardingButton] All profiles stopped'.loggable,
+              );
+            }
+
+            // Give connections time to close cleanly
+            await Future.delayed(const Duration(milliseconds: 500));
           } catch (e) {
             App.log(
               '[OnboardingButton] AtClient not initialized, initializing now: $e'
@@ -227,19 +239,51 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           await _ensureKeysInLocalStorage(atsign);
 
           App.log(
-            '[OnboardingButton] Keys stored - ${alreadyInitialized ? 're' : ''}initializing atClient to recreate atChops'
+            '[OnboardingButton] Keys stored - manually creating AtChops with signing keys'
                 .loggable,
           );
 
-          // ALWAYS call setCurrentAtSign() after storing keys to force atChops recreation
-          await atClientManager.setCurrentAtSign(
-            atsign,
-            'npt',
-            config.atClientPreference,
-          );
+          // CRITICAL: Manually create and assign new AtChops instance with the keys
+          // setCurrentAtSign() won't recreate atChops if atClient already exists
+          try {
+            await _recreateAtChops(atsign);
+          } catch (chopsError) {
+            App.log(
+              '[OnboardingButton] Failed to recreate AtChops: $chopsError'
+                  .loggable,
+            );
+            rethrow;
+          }
 
           App.log(
-            '[OnboardingButton] atClient initialized with keys - ready to use'
+            '[OnboardingButton] AtChops recreated - restarting services'
+                .loggable,
+          );
+
+          // CRITICAL: Give services time to pick up the new AtChops, then restart them
+          try {
+            // Trigger sync
+            AtClientManager.getInstance().syncService.sync();
+            
+            // Restart notification service to use new AtChops
+            final notificationService = AtClientManager.getInstance().notificationService;
+            notificationService.stopAllSubscriptions();
+            await Future.delayed(const Duration(milliseconds: 500));
+            await notificationService.subscribe(shouldDecrypt: true);
+            
+            App.log('[OnboardingButton] Services restarted with new AtChops'.loggable);
+            
+            // Give everything a moment to stabilize
+            await Future.delayed(const Duration(milliseconds: 1000));
+          } catch (syncError) {
+            App.log(
+              '[OnboardingButton] Service restart failed (non-critical): $syncError'
+                  .loggable,
+            );
+          }
+
+          App.log(
+            '[OnboardingButton] atClient fully initialized - ready to use'
                 .loggable,
           );
         } catch (initError, stackTrace) {
@@ -397,6 +441,51 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       App.log(
         '[OnboardingButton] ERROR copying keys to localStorage: $e'.loggable,
       );
+      App.log('[OnboardingButton] Stack trace: $s'.loggable);
+      rethrow;
+    }
+  }
+
+  /// Manually recreate AtChops with keys from KeyChain
+  /// This is necessary because setCurrentAtSign() won't recreate atChops if atClient exists
+  Future<void> _recreateAtChops(String atsign) async {
+    try {
+      // Load keys from KeyChain
+      final keyChainManager = KeyChainManager.getInstance();
+      final atsignKey = await keyChainManager.readAtsign(name: atsign);
+
+      if (atsignKey == null) {
+        throw Exception('No keys found in KeyChain for $atsign');
+      }
+
+      // Create AtChopsKeys from the AtsignKey
+      final atEncryptionKeyPair = AtEncryptionKeyPair.create(
+        atsignKey.encryptionPublicKey ?? '',
+        atsignKey.encryptionPrivateKey ?? '',
+      );
+
+      final atPkamKeyPair = AtPkamKeyPair.create(
+        atsignKey.pkamPublicKey ?? '',
+        atsignKey.pkamPrivateKey ?? '',
+      );
+
+      final atChopsKeys = AtChopsKeys.create(
+        atEncryptionKeyPair,
+        atPkamKeyPair,
+      );
+      if (atsignKey.selfEncryptionKey != null) {
+        atChopsKeys.selfEncryptionKey = AESKey(atsignKey.selfEncryptionKey!);
+      }
+
+      // Create new AtChops instance
+      final atChops = AtChopsImpl(atChopsKeys);
+
+      // Assign it to atClient
+      AtClientManager.getInstance().atClient.atChops = atChops;
+
+      App.log('[OnboardingButton] AtChops successfully recreated'.loggable);
+    } catch (e, s) {
+      App.log('[OnboardingButton] ERROR recreating AtChops: $e'.loggable);
       App.log('[OnboardingButton] Stack trace: $s'.loggable);
       rethrow;
     }
