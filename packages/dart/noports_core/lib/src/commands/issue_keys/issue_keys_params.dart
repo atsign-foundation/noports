@@ -77,7 +77,7 @@ class IssueKeysParams {
     p.addOption(
       'root-server',
       abbr: 'r',
-      aliases: const ['root-domain'],
+      aliases: const ['root-domain', 'rootDomain'],
       mandatory: false,
       defaultsTo: 'root.atsign.org',
       help: 'atDirectory (aka root) server domain (e.g., root.atsign.org)',
