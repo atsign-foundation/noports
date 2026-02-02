@@ -86,6 +86,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authorisation => 'Authorisation';
 
   @override
+  String get autoStartApplication => 'Auto-Start Client Application';
+
+  @override
   String get back => 'Back';
 
   @override
@@ -133,6 +136,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionTimedOut => 'Connection timed out, will retry...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'This setting automatically launches the appropriate application after a connection is established, based on the selected protocol. If no protocol is selected, no application will be launched. Select the protocol to use for the connection.';
+
+  @override
+  String get connectUriProtocolNone => 'None';
+
+  @override
+  String get connectUriUsername => 'Username';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Optional username for protocols like SSH (e.g., user in ssh://user@host)';
 
   @override
   String get couldNotLoadPreviousState => 'Could not load previous state error';
@@ -703,33 +720,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get remotePortDescription =>
       'The port that will be used on the remote machine';
-
-  @override
-  String get connectUri => 'Connection URI';
-
-  @override
-  String get connectUriDescription =>
-      'Optional URI to automatically open when connection is established (e.g., http://localhost:8080 or rdp://localhost:3389)';
-
-  @override
-  String get autoStartApplication => 'Auto Start Application on Connect';
-
-  @override
-  String get connectUriProtocol => 'Protocol';
-
-  @override
-  String get connectUriProtocolDescription =>
-      'Select the protocol to use for the connection (uses Local Host and Local Port)';
-
-  @override
-  String get connectUriUsername => 'Username';
-
-  @override
-  String get connectUriUsernameDescription =>
-      'Optional username for protocols like SSH (e.g., user in ssh://user@host)';
-
-  @override
-  String get connectUriProtocolNone => 'None';
 
   @override
   String get removeAtsign => 'Remove atSign';

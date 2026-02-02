@@ -170,6 +170,10 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     key: const Key("NoPortsActivateCancelButton"),
     child: Text(strings.cancel),
     onPressed: () {
+      // Unfocus the field before closing the dialog
+      if (pinFocusNode.hasFocus) {
+        pinFocusNode.unfocus();
+      }
       Navigator.of(context).pop(AtOnboardingResult.cancelled());
     },
   );
@@ -208,6 +212,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               setState(() {
                 pinController =
                     TextEditingController(); // controller was disposed, make a new one
+                pinFocusNode =
+                    FocusNode(); // focus node was disposed, make a new one
                 status = ActivationStatus.otpWait;
               });
               return;

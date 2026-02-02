@@ -86,6 +86,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get authorisation => 'Autorização';
 
   @override
+  String get autoStartApplication =>
+      'Iniciar Aplicação do Cliente Automaticamente';
+
+  @override
   String get back => 'Voltar';
 
   @override
@@ -135,6 +139,20 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get connectionTimedOut =>
       'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Esta definição lança automaticamente a aplicação apropriada após uma ligação ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhuma aplicação será lançada. Selecione o protocolo a utilizar para a ligação.';
+
+  @override
+  String get connectUriProtocolNone => 'Nenhum';
+
+  @override
+  String get connectUriUsername => 'Nome de Usuário';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -714,34 +732,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'A porta que será usada na máquina remota';
 
   @override
-  String get connectUri => 'URI de Conexão';
-
-  @override
-  String get connectUriDescription =>
-      'URI opcional para abrir automaticamente quando a conexão for estabelecida (ex., http://localhost:8080 ou rdp://localhost:3389)';
-
-  @override
-  String get autoStartApplication =>
-      'Iniciar Aplicativo Automaticamente ao Conectar';
-
-  @override
-  String get connectUriProtocol => 'Protocolo';
-
-  @override
-  String get connectUriProtocolDescription =>
-      'Selecione o protocolo para a conexão (usa Host Local e Porta Local)';
-
-  @override
-  String get connectUriUsername => 'Nome de usuário';
-
-  @override
-  String get connectUriUsernameDescription =>
-      'Nome de usuário opcional para protocolos como SSH (ex., usuário em ssh://usuário@host)';
-
-  @override
-  String get connectUriProtocolNone => 'Nenhum';
-
-  @override
   String get removeAtsign => 'Remover atSign';
 
   @override
@@ -1079,6 +1069,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get authorisation => 'Autorização';
 
   @override
+  String get autoStartApplication =>
+      'Iniciar Aplicação do Cliente Automaticamente';
+
+  @override
   String get back => 'Voltar';
 
   @override
@@ -1128,6 +1122,20 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get connectionTimedOut =>
       'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.';
+
+  @override
+  String get connectUriProtocolNone => 'Nenhum';
+
+  @override
+  String get connectUriUsername => 'Nome de Usuário';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
 
   @override
   String get couldNotLoadPreviousState =>
