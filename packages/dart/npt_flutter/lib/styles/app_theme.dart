@@ -82,7 +82,17 @@ class AppTheme {
           minimumSize: WidgetStateProperty.all<Size>(const Size(102, 60)),
           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Sizes.p10),
+              borderRadius: BorderRadius.circular(Sizes.p6),
+            ),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: WidgetStateProperty.all<Size>(const Size(102, 60)),
+          shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Sizes.p6),
             ),
           ),
         ),

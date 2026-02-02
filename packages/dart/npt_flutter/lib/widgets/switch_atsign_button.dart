@@ -14,7 +14,7 @@ import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
-import 'package:npt_flutter/features/onboarding/widgets/onboarding_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/activation_dialog.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
@@ -210,7 +210,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final shouldOnboard = await showDialog<bool>(
     barrierDismissible: false,
     context: context,
-    builder: (BuildContext context) => OnboardingDialog(options: options),
+    builder: (BuildContext context) => const ActivationDialog(),
   );
 
   if (shouldOnboard != true) {
@@ -260,7 +260,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         appAPIKey: apiKey,
       );
 
-      final util = NoPortsOnboardingUtil(config);
+      final util = await NoPortsOnboardingUtil.create(currentContext);
       final onboardingResult = await util.handleAtsignByStatus(
         context: currentContext,
         atsign: newAtSign,

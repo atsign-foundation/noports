@@ -4,21 +4,21 @@ import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/widgets/at_directory_selector.dart';
 import 'package:npt_flutter/features/onboarding/widgets/atsign_selector.dart';
-import 'package:npt_flutter/features/onboarding/widgets/client_atsign_description_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 
-class OnboardingDialog extends StatefulWidget {
-  const OnboardingDialog({required this.options, super.key});
+class SignInDialog extends StatefulWidget {
+  const SignInDialog({required this.options, super.key});
   final Map<String, AtsignInformation> options;
 
   @override
-  State<OnboardingDialog> createState() => _OnboardingDialogState();
+  State<SignInDialog> createState() => _SignInDialogState();
 }
 
-class _OnboardingDialogState extends State<OnboardingDialog> {
+class _SignInDialogState extends State<SignInDialog> {
   bool visibility = false;
 
   @override
@@ -38,7 +38,12 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
           child: Column(
             spacing: Sizes.p10,
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                strings.signIn,
+                style: titleStyle!.copyWith(color: Colors.black),
+              ),
               CustomContainer.background(
                 width: width,
                 child: Column(
@@ -47,7 +52,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   children: [
                     Text(
                       strings.selectorTitleAtsign,
-                      style: titleStyle!.copyWith(color: Colors.black),
+                      style: titleStyle.copyWith(color: Colors.black),
                     ),
                     Text(strings.selectorSubTitleAtsign),
                     gapH16,
@@ -55,7 +60,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   ],
                 ),
               ),
-              ClientAtsignDescriptionWidget(width: width),
+
               CustomContainer.background(
                 width: width,
                 child: Column(
@@ -72,34 +77,36 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   ],
                 ),
               ),
+              const Divider(color: AppColor.dividerColor),
               BlocBuilder<OnboardingCubit, OnboardingState>(
                 builder: (context, state) {
                   return SizedBox(
                     width: width,
-                    child: CustomContainer.background(
-                      child: Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(false);
-                            },
-                            child: Text(strings.cancel),
+                    child: Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(false);
+                          },
+                          child: Text(strings.cancel),
+                        ),
+                        const Spacer(),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(Sizes.p80, Sizes.p40),
                           ),
-                          const Spacer(),
-                          ElevatedButton(
-                            onPressed:
-                                FormValidator.validateRequiredAtsignField(
-                                      state.atSign,
-                                    ) ==
-                                    null
-                                ? () {
-                                    Navigator.of(context).pop(true);
-                                  }
-                                : null,
-                            child: Text(strings.next),
-                          ),
-                        ],
-                      ),
+                          onPressed:
+                              FormValidator.validateRequiredAtsignField(
+                                    state.atSign,
+                                  ) ==
+                                  null
+                              ? () {
+                                  Navigator.of(context).pop(true);
+                                }
+                              : null,
+                          child: Text(strings.onboard),
+                        ),
+                      ],
                     ),
                   );
                 },

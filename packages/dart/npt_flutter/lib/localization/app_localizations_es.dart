@@ -116,10 +116,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
-  String get clientAtsignDescription =>
-      'Un atSign es una dirección resoluble\nasignada a un dispositivo.';
-
-  @override
   String get confirm => 'Confirmar';
 
   @override
@@ -480,9 +476,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get monitoringStop => 'Detener Monitoreo';
 
   @override
-  String get myNoPortsMsg => 'Recupera el tuyo en ';
-
-  @override
   String get name => 'Nombre';
 
   @override
@@ -530,9 +523,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingTitle => 'Bienvenido';
-
-  @override
-  String get or => 'O';
 
   @override
   String get overrideAllProfile =>
@@ -980,9 +970,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get whatAreAtKeys => '¿Qué son las atKeys?';
 
   @override
-  String get whatIsClientAtsign => '¿Qué es un atSign de NoPorts?';
-
-  @override
   String get whereToAccept => '¿Dónde aceptar?';
 
   @override
@@ -991,6 +978,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get activate => 'Activate';
+
+  @override
+  String get activateButtonDescription => 'Activate and set up a new atSign';
+
+  @override
+  String get signIn => 'Sign In';
+
+  @override
+  String get signInButtonDescription => 'Sign in with an activated atSign';
+
+  @override
+  String get whatIsAnAtsign => 'What is an atSign?';
+
+  @override
+  String get whatIsAnAtsignDescription =>
+      'An atSign is a resolvable\naddress assigned to a device.';
+
+  @override
+  String get or => 'O';
+
+  @override
+  String get myNoPortsMsg => 'Recupera el tuyo en ';
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';

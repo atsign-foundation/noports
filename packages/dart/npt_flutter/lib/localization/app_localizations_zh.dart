@@ -110,9 +110,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
-  String get clientAtsignDescription => 'atSign 是分配给设备的\n可解析地址。';
-
-  @override
   String get confirm => '确认';
 
   @override
@@ -450,9 +447,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get monitoringStop => '停止监控';
 
   @override
-  String get myNoPortsMsg => '在以下位置检索您的：';
-
-  @override
   String get name => '名称';
 
   @override
@@ -499,9 +493,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingTitle => '欢迎';
-
-  @override
-  String get or => '或';
 
   @override
   String get overrideAllProfile => '使用默认 Relay 选择覆盖所有配置文件';
@@ -920,9 +911,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get whatAreAtKeys => '什么是 atKeys？';
 
   @override
-  String get whatIsClientAtsign => '什么是 NoPorts atSign？';
-
-  @override
   String get whereToAccept => '在哪里接受？';
 
   @override
@@ -930,6 +918,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get activate => 'Activate';
+
+  @override
+  String get activateButtonDescription => 'Activate and set up a new atSign';
+
+  @override
+  String get signIn => 'Sign In';
+
+  @override
+  String get signInButtonDescription => 'Sign in with an activated atSign';
+
+  @override
+  String get whatIsAnAtsign => 'What is an atSign?';
+
+  @override
+  String get whatIsAnAtsignDescription =>
+      'An atSign is a resolvable\naddress assigned to a device.';
+
+  @override
+  String get or => '或';
+
+  @override
+  String get myNoPortsMsg => '在以下位置检索您的：';
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
@@ -1039,9 +1052,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get cancel => '取消';
-
-  @override
-  String get clientAtsignDescription => 'atSign 是分配给设备的\n可解析地址。';
 
   @override
   String get confirm => '确认';
@@ -1381,9 +1391,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get monitoringStop => '停止监控';
 
   @override
-  String get myNoPortsMsg => '在以下位置检索您的：';
-
-  @override
   String get name => '名称';
 
   @override
@@ -1430,9 +1437,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get onboardingTitle => '欢迎';
-
-  @override
-  String get or => '或';
 
   @override
   String get overrideAllProfile => '使用默认 Relay 选择覆盖所有配置文件';
@@ -1825,9 +1829,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get whatAreAtKeys => '什么是 atKeys？';
 
   @override
-  String get whatIsClientAtsign => '什么是 NoPorts atSign？';
-
-  @override
   String get whereToAccept => '在哪里接受？';
 
   @override
@@ -1835,6 +1836,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get or => '或';
+
+  @override
+  String get myNoPortsMsg => '在以下位置检索您的：';
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
@@ -1944,9 +1951,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get cancel => '取消';
-
-  @override
-  String get clientAtsignDescription => 'atSign 是分配給裝置的\n可解析位址。';
 
   @override
   String get confirm => '確認';
@@ -2286,9 +2290,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get monitoringStop => '停止監控';
 
   @override
-  String get myNoPortsMsg => '在以下位置檢索您的：';
-
-  @override
   String get name => '名稱';
 
   @override
@@ -2335,9 +2336,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get onboardingTitle => '歡迎';
-
-  @override
-  String get or => '或';
 
   @override
   String get overrideAllProfile => '使用預設 Relay 選取覆寫所有設定檔';
@@ -2729,9 +2727,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get whatAreAtKeys => '什麼是 atKeys？';
 
   @override
-  String get whatIsClientAtsign => '什麼是 NoPorts atSign？';
-
-  @override
   String get whereToAccept => '在哪裡接受？';
 
   @override
@@ -2739,6 +2734,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get or => '或';
+
+  @override
+  String get myNoPortsMsg => '在以下位置檢索您的：';
 
   @override
   String get yamlRecommended => 'YAML (推薦)';

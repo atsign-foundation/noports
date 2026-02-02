@@ -7,8 +7,8 @@ import 'package:npt_flutter/util/constants.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtDirectorySelector extends StatefulWidget {
-  const AtDirectorySelector({required this.options, super.key});
-  final Map<String, AtsignInformation> options;
+  const AtDirectorySelector({this.options, super.key});
+  final Map<String, AtsignInformation>? options;
 
   @override
   State<AtDirectorySelector> createState() => _AtDirectorySelectorState();
@@ -30,7 +30,7 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
             selection: TextSelection.collapsed(offset: state.rootDomain.length),
           );
           return TextFormField(
-            enabled: !widget.options.containsKey(state.atSign),
+            enabled: !(widget.options?.containsKey(state.atSign) ?? false),
             controller: controller,
             onChanged: (rootDomain) {
               context.read<OnboardingCubit>().setRootDomain(rootDomain);

@@ -311,12 +311,6 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
-  /// No description provided for @clientAtsignDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'An atSign is a resolvable address\nassigned to a device.'**
-  String get clientAtsignDescription;
-
   /// No description provided for @confirm.
   ///
   /// In en, this message translates to:
@@ -965,12 +959,6 @@ abstract class AppLocalizations {
   /// **'Stop Monitoring'**
   String get monitoringStop;
 
-  /// No description provided for @myNoPortsMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrieve yours in '**
-  String get myNoPortsMsg;
-
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
@@ -1066,12 +1054,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome'**
   String get onboardingTitle;
-
-  /// No description provided for @or.
-  ///
-  /// In en, this message translates to:
-  /// **'Or'**
-  String get or;
 
   /// No description provided for @overrideAllProfile.
   ///
@@ -1859,12 +1841,6 @@ abstract class AppLocalizations {
   /// **'What are atKeys?'**
   String get whatAreAtKeys;
 
-  /// No description provided for @whatIsClientAtsign.
-  ///
-  /// In en, this message translates to:
-  /// **'What is a NoPorts atSign?'**
-  String get whatIsClientAtsign;
-
   /// No description provided for @whereToAccept.
   ///
   /// In en, this message translates to:
@@ -1882,6 +1858,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML'**
   String get yaml;
+
+  /// No description provided for @activate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get activate;
+
+  /// No description provided for @activateButtonDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate and set up a new atSign'**
+  String get activateButtonDescription;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get signIn;
+
+  /// No description provided for @signInButtonDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with an activated atSign'**
+  String get signInButtonDescription;
+
+  /// No description provided for @whatIsAnAtsign.
+  ///
+  /// In en, this message translates to:
+  /// **'What is an atSign?'**
+  String get whatIsAnAtsign;
+
+  /// No description provided for @whatIsAnAtsignDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An atSign is a resolvable\naddress assigned to a device.'**
+  String get whatIsAnAtsignDescription;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get or;
+
+  /// No description provided for @myNoPortsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrieve yours in My NoPorts →'**
+  String get myNoPortsMsg;
 
   /// No description provided for @yamlRecommended.
   ///

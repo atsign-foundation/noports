@@ -1,4 +1,22 @@
 {
+  "es": [
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
+  ],
+
+  "pt": [
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
+  ],
+
   "pt_BR": [
     "connectUri",
     "connectUriDescription",
@@ -7,7 +25,22 @@
     "connectUriProtocolDescription",
     "connectUriUsername",
     "connectUriUsernameDescription",
-    "connectUriProtocolNone"
+    "connectUriProtocolNone",
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
+  ],
+
+  "zh": [
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
   ],
 
   "zh_Hans_CH": [
@@ -18,7 +51,13 @@
     "connectUriProtocolDescription",
     "connectUriUsername",
     "connectUriUsernameDescription",
-    "connectUriProtocolNone"
+    "connectUriProtocolNone",
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
   ],
 
   "zh_Hant_HK": [
@@ -29,6 +68,12 @@
     "connectUriProtocolDescription",
     "connectUriUsername",
     "connectUriUsernameDescription",
-    "connectUriProtocolNone"
+    "connectUriProtocolNone",
+    "activate",
+    "activateButtonDescription",
+    "signIn",
+    "signInButtonDescription",
+    "whatIsAnAtsign",
+    "whatIsAnAtsignDescription"
   ]
 }

@@ -8,8 +8,8 @@ import 'package:npt_flutter/util/general_extensions.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtsignSelector extends StatefulWidget {
-  const AtsignSelector({required this.options, super.key});
-  final Map<String, AtsignInformation> options;
+  const AtsignSelector({this.options, super.key});
+  final Map<String, AtsignInformation>? options;
   @override
   State<AtsignSelector> createState() => _AtsignSelectorState();
 }
@@ -38,7 +38,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
               );
               context.read<OnboardingCubit>().setState(
                 atSign: atsign,
-                rootDomain: widget.options[atsign]?.rootDomain,
+                rootDomain: widget.options?[atsign]?.rootDomain,
               );
             },
             validator: FormValidator.validateRequiredAtsignField,
@@ -46,7 +46,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
             decoration: InputDecoration(
               /// This menuAnchor is a dropdown button that allows you to quickly select
               /// existing values from [options]
-              suffixIcon: widget.options.isNotEmpty
+              suffixIcon: widget.options?.isNotEmpty ?? false
                   ? Directionality(
                       textDirection: TextDirection.rtl,
                       child: MenuAnchor(
@@ -54,21 +54,23 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                           alignment: AlignmentDirectional.bottomStart,
                         ),
                         childFocusNode: focusNode,
-                        menuChildren: widget.options.keys.map((atsign) {
-                          return Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: MenuItemButton(
-                              child: Text(atsign),
-                              onPressed: () {
-                                context.read<OnboardingCubit>().setState(
-                                  atSign: atsign,
-                                  rootDomain:
-                                      widget.options[atsign]?.rootDomain,
-                                );
-                              },
-                            ),
-                          );
-                        }).toList(),
+                        menuChildren:
+                            widget.options?.keys.map((atsign) {
+                              return Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: MenuItemButton(
+                                  child: Text(atsign),
+                                  onPressed: () {
+                                    context.read<OnboardingCubit>().setState(
+                                      atSign: atsign,
+                                      rootDomain:
+                                          widget.options?[atsign]?.rootDomain,
+                                    );
+                                  },
+                                ),
+                              );
+                            }).toList() ??
+                            [],
                         builder:
                             (
                               BuildContext context,

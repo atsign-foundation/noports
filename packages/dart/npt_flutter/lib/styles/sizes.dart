@@ -65,6 +65,7 @@ class Sizes {
   static const p322 = 322.0;
   static const p400 = 400.0;
   static const p436 = 436.0;
+  static const p440 = 440.0;
   static const p450 = 450.0;
   static const p470 = 470.0;
   static const p500 = 500.0;

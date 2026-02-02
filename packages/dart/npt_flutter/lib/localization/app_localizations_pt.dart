@@ -114,10 +114,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
-  String get clientAtsignDescription =>
-      'Um atSign é um endereço resolvível\natribuído a um dispositivo.';
-
-  @override
   String get confirm => 'Confirmar';
 
   @override
@@ -479,9 +475,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get monitoringStop => 'Parar Monitoramento';
 
   @override
-  String get myNoPortsMsg => 'Recupere o seu em ';
-
-  @override
   String get name => 'Nome';
 
   @override
@@ -529,9 +522,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get onboardingTitle => 'Bem-vindo';
-
-  @override
-  String get or => 'Ou';
 
   @override
   String get overrideAllProfile =>
@@ -981,9 +971,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get whatAreAtKeys => 'O que são atKeys?';
 
   @override
-  String get whatIsClientAtsign => 'O que é um atSign NoPorts?';
-
-  @override
   String get whereToAccept => 'Onde aceitar?';
 
   @override
@@ -992,6 +979,31 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get activate => 'Activate';
+
+  @override
+  String get activateButtonDescription => 'Activate and set up a new atSign';
+
+  @override
+  String get signIn => 'Sign In';
+
+  @override
+  String get signInButtonDescription => 'Sign in with an activated atSign';
+
+  @override
+  String get whatIsAnAtsign => 'What is an atSign?';
+
+  @override
+  String get whatIsAnAtsignDescription =>
+      'An atSign is a resolvable\naddress assigned to a device.';
+
+  @override
+  String get or => 'Ou';
+
+  @override
+  String get myNoPortsMsg => 'Recupere o seu em ';
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
@@ -1105,10 +1117,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get cancel => 'Cancelar';
-
-  @override
-  String get clientAtsignDescription =>
-      'Um atSign é um endereço resolvível\natribuído a um dispositivo.';
 
   @override
   String get confirm => 'Confirmar';
@@ -1472,9 +1480,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get monitoringStop => 'Parar Monitoramento';
 
   @override
-  String get myNoPortsMsg => 'Recupere o seu em ';
-
-  @override
   String get name => 'Nome';
 
   @override
@@ -1522,9 +1527,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get onboardingTitle => 'Bem-vindo';
-
-  @override
-  String get or => 'Ou';
 
   @override
   String get overrideAllProfile =>
@@ -1946,9 +1948,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get whatAreAtKeys => 'O que são atKeys?';
 
   @override
-  String get whatIsClientAtsign => 'O que é um atSign NoPorts?';
-
-  @override
   String get whereToAccept => 'Onde aceitar?';
 
   @override
@@ -1957,6 +1956,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get yaml => 'YAML';
+
+  @override
+  String get or => 'Ou';
+
+  @override
+  String get myNoPortsMsg => 'Recupere o seu em ';
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
