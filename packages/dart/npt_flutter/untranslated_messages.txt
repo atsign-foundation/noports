@@ -18,14 +18,6 @@
   ],
 
   "pt_BR": [
-    "connectUri",
-    "connectUriDescription",
-    "autoStartApplication",
-    "connectUriProtocol",
-    "connectUriProtocolDescription",
-    "connectUriUsername",
-    "connectUriUsernameDescription",
-    "connectUriProtocolNone",
     "activate",
     "activateButtonDescription",
     "signIn",
@@ -44,14 +36,6 @@
   ],
 
   "zh_Hans_CH": [
-    "connectUri",
-    "connectUriDescription",
-    "autoStartApplication",
-    "connectUriProtocol",
-    "connectUriProtocolDescription",
-    "connectUriUsername",
-    "connectUriUsernameDescription",
-    "connectUriProtocolNone",
     "activate",
     "activateButtonDescription",
     "signIn",
@@ -61,14 +45,6 @@
   ],
 
   "zh_Hant_HK": [
-    "connectUri",
-    "connectUriDescription",
-    "autoStartApplication",
-    "connectUriProtocol",
-    "connectUriProtocolDescription",
-    "connectUriUsername",
-    "connectUriUsernameDescription",
-    "connectUriProtocolNone",
     "activate",
     "activateButtonDescription",
     "signIn",

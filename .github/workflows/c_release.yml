@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -67,13 +67,13 @@ jobs:
             compiler: "clang"
             flags: "-Wno-error -pthread"
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
 
         # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
         with:
           cmake-version: "3.31.6"
       - name: Compile binaries
@@ -133,7 +133,7 @@ jobs:
     ## 20240806: Clang and CMake that we use aren't packaged for
     ## armv7 or riscv64 (also no Debian 11 for RISC-V)
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -158,12 +158,12 @@ jobs:
     name: Generate source tarball
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
         # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
         with:
           cmake-version: "3.31.6"
       - name: Create tarball
@@ -189,7 +189,7 @@ jobs:
       attestations: write
     steps:
       - name: Get lockfile
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: |
             packages/c/conan.lock
@@ -210,13 +210,13 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@7906c48e206fe1a885df761bc7239ff3dcfef6b8 # v0.12
+        uses: sbomify/github-action@e344ec6e6916948ce49720a9ac5bafafb7119d47 # v0.13
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
           LOCK_FILE: './packages/c/conan.lock'
           COMPONENT_NAME: 'csshnpd'
-          COMPONENT_VERSION: ${{github.ref_name}}
+          COMPONENT_VERSION: ${{github.ref_name}}-gha${{github.run_number}}
           OUTPUT_FILE: 'tarballs/csshnpd-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
@@ -235,7 +235,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
+      - uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
         with:
           subject-path: "tarballs/**"
 
