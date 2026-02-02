@@ -7,6 +7,7 @@ class AppColor {
   static const primaryColorButtonBackgroundAlt = Color(0xFFFFD6CD);
   static const surfaceColor = Color(0xFFF2F2F2);
   static const dividerColor = Color(0xFFC4C4C4);
+  static const dividerColorAlt = Color(0xFFE5E7EB);
   static const onSurfaceColor = Color(0xFF747474);
   static const cardColorDark = Color(0xFFEAEAEA);
   static const successColor = Color(0xFFA4CC4F);

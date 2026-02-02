@@ -13,6 +13,7 @@ class OnboardingButton extends StatefulWidget {
   State<OnboardingButton> createState() => _OnboardingButtonState();
 }
 
+// TODO: Confirm BackUpKey logic works for activating new atSign and for onboarding existing atSign
 enum _OnboardingButtonStatus { ready, loading }
 
 class _OnboardingButtonState extends State<OnboardingButton> {

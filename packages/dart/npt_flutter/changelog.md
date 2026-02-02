@@ -1,3 +1,8 @@
+## 1.9.0+27
+
+- FEAT: Get Started Dialog Added
+- FEAT: Sign In Dialog Added
+
 ## 1.8.1+26
 
 - FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.

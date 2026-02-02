@@ -77,7 +77,7 @@ class _SignInDialogState extends State<SignInDialog> {
                   ],
                 ),
               ),
-              const Divider(color: AppColor.dividerColor),
+              const Divider(color: AppColor.dividerColorAlt),
               BlocBuilder<OnboardingCubit, OnboardingState>(
                 builder: (context, state) {
                   return SizedBox(
