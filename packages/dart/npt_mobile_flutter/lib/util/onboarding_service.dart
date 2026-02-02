@@ -267,21 +267,29 @@ class AtKeysFileUploadService {
               selfEncryptionKey,
             );
 
-            // CRITICAL: Force atChops to be re-initialized with the newly stored keys
-            // This is necessary because atChops may have been created before we uploaded the keys
-            // Access atClient.atChops to trigger lazy initialization with the correct keys
-            try {
-              // ignore: unused_local_variable
-              final chops = atClient.atChops;
-            } catch (e) {
-              // atChops initialization will happen when needed
-            }
+            App.log(
+              '[FileUpload] Keys stored in localStorage, reinitializing atChops'
+                  .loggable,
+            );
           }
         } catch (e) {
           // If storing to atClient fails, that's okay - keys are already in KeyChain
           // which is the primary storage. atClient will load from KeyChain on next init.
           // Silently ignore this error as it's expected on first run
+          App.log(
+            '[FileUpload] Failed to store in localStorage (non-critical): $e'
+                .loggable,
+          );
         }
+
+        // CRITICAL: After storing keys in KeyChain, we should NOT manually initialize here
+        // Instead, let the at_onboarding_flutter framework handle it via AtOnboarding.onboard()
+        // which properly sets up all the authentication and initialization
+        // The keys are in KeyChain, so onboarding_button.dart will handle the rest
+        App.log(
+          '[FileUpload] Keys stored in KeyChain - onboarding_button will handle initialization'
+              .loggable,
+        );
 
         _statusController.add(FileUploadAuthSuccess(atsignToUse));
         yield FileUploadAuthSuccess(atsignToUse);

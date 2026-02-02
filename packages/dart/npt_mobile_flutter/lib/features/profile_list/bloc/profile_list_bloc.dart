@@ -28,7 +28,9 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     Iterable<String>? profiles;
     try {
       profiles = await _repo.getProfileUuids();
-    } catch (_) {
+    } catch (e, stackTrace) {
+      App.log('[ProfileListBloc] Failed to load profiles: $e'.loggable);
+      App.log('[ProfileListBloc] Stack trace: $stackTrace'.loggable);
       profiles = null;
     }
 

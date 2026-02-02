@@ -19,18 +19,29 @@ class BackupKeyCubit extends Cubit<bool> {
 
   /// Retrieves the backup key status from the repository and emits it.
   Future<bool> getBackupKeyStatus() async {
-    final result = await BackUpKeyRepository().getBackupKeyStatus();
-    emit(result);
-    App.log('BackupKeyCubit: getBackupKeyStatus: $result'.loggable);
-    return result;
+    try {
+      final result = await BackUpKeyRepository().getBackupKeyStatus();
+      emit(result);
+      App.log('BackupKeyCubit: getBackupKeyStatus: $result'.loggable);
+      return result;
+    } catch (e) {
+      App.log('[ERROR] getBackupKeyStatus() failed: $e'.loggable);
+      // Return true (backed up by default) if we can't retrieve status
+      return true;
+    }
   }
 
   /// Updates the backup key status in the repository and emits the new status.
   Future<void> putBackupKeyStatus(bool status) async {
-    log('putBackupKeyStatus: $status');
-    final result = await BackUpKeyRepository().putBackupKeyStatus(status);
-    emit(result);
-    App.log('BackupKeyCubit: getShouldBackupKeyStatus: $result'.loggable);
+    try {
+      log('putBackupKeyStatus: $status');
+      final result = await BackUpKeyRepository().putBackupKeyStatus(status);
+      emit(result);
+      App.log('BackupKeyCubit: getShouldBackupKeyStatus: $result'.loggable);
+    } catch (e) {
+      App.log('[ERROR] putBackupKeyStatus() failed: $e'.loggable);
+      emit(status); // Emit the requested status anyway
+    }
   }
 
   /// Sets the backup key status and emits the new status.

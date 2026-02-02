@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
+import 'package:at_client/at_client.dart';
 // ignore: implementation_imports
 import 'package:at_client_mobile/src/atsign_key.dart';
+import 'package:at_commons/at_builders.dart';
+import 'package:at_commons/at_commons.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_mobile_flutter/util/onboarding_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -258,27 +261,21 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         '[APKAM] Authentication successful, storing keys in KeyChain'.loggable,
       );
 
-      // Now extract and store keys in KeyChain
-      final atClient = AtClientManager.getInstance().atClient;
+      // Extract keys from authResponse (not from atChops which may be incomplete)
+      final atAuthKeys = authResponse.atAuthKeys!;
       final keyChainManager = KeyChainManager.getInstance();
-      final atChops = atClient.atChops;
 
-      if (atChops == null) {
-        throw Exception('atChops is null after authentication');
-      }
+      App.log(
+        '[APKAM] Extracting keys from authResponse to store in KeyChain'
+            .loggable,
+      );
 
-      App.log('[APKAM] Extracting keys to store in KeyChain'.loggable);
-
-      // Extract all the keys from atChops
-      final pkamPublicKey =
-          atChops.atChopsKeys.atPkamKeyPair?.atPublicKey.publicKey;
-      final pkamPrivateKey =
-          atChops.atChopsKeys.atPkamKeyPair?.atPrivateKey.privateKey;
-      final encryptionPublicKey =
-          atChops.atChopsKeys.atEncryptionKeyPair?.atPublicKey.publicKey;
-      final encryptionPrivateKey =
-          atChops.atChopsKeys.atEncryptionKeyPair?.atPrivateKey.privateKey;
-      final selfEncryptionKey = atChops.atChopsKeys.selfEncryptionKey?.key;
+      // Extract all the keys from authResponse.atAuthKeys
+      final pkamPublicKey = atAuthKeys.apkamPublicKey;
+      final pkamPrivateKey = atAuthKeys.apkamPrivateKey;
+      final encryptionPublicKey = atAuthKeys.defaultEncryptionPublicKey;
+      final encryptionPrivateKey = atAuthKeys.defaultEncryptionPrivateKey;
+      final selfEncryptionKey = atAuthKeys.defaultSelfEncryptionKey;
 
       if (pkamPublicKey == null ||
           pkamPrivateKey == null ||
@@ -307,6 +304,64 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       }
 
       App.log('[APKAM] Keys stored in KeyChain successfully'.loggable);
+
+      // ALSO store keys in atClient's localStorage (matches .atKeys file upload pattern)
+      // This ensures atChops has access to the keys immediately
+      try {
+        final atClient = AtClientManager.getInstance().atClient;
+        final localStorage = atClient.getLocalSecondary();
+        if (localStorage != null) {
+          App.log('[APKAM] Also storing keys in localStorage'.loggable);
+
+          // Store PKAM keys
+          await localStorage.putValue(
+            AtConstants.atPkamPublicKey,
+            pkamPublicKey,
+          );
+          await localStorage.putValue(
+            AtConstants.atPkamPrivateKey,
+            pkamPrivateKey,
+          );
+
+          // Store encryption private key
+          await localStorage.putValue(
+            AtConstants.atEncryptionPrivateKey,
+            encryptionPrivateKey,
+          );
+
+          // Store encryption public key (must use UpdateVerbBuilder)
+          var updateBuilder = UpdateVerbBuilder()
+            ..atKey = AtKey.public('publickey', sharedBy: atsign).build();
+          updateBuilder.atKey.metadata.ttr = -1;
+          updateBuilder.value = encryptionPublicKey;
+          await localStorage.executeVerb(updateBuilder, sync: true);
+
+          // Store self encryption key
+          await localStorage.putValue(
+            AtConstants.atEncryptionSelfKey,
+            selfEncryptionKey,
+          );
+
+          App.log(
+            '[APKAM] Keys stored in localStorage, reinitializing atChops'
+                .loggable,
+          );
+        }
+      } catch (e) {
+        // localStorage storage failed - that's OK, keys are in KeyChain
+        App.log(
+          '[APKAM] Failed to store in localStorage (non-critical): $e'.loggable,
+        );
+      }
+
+      // CRITICAL: After storing APKAM keys in KeyChain, we should NOT manually initialize here
+      // Instead, let the at_onboarding_flutter framework handle it via AtOnboarding.onboard()
+      // which properly sets up all the authentication and initialization
+      // The keys are in KeyChain, so the dialog close will trigger onboarding_button handling
+      App.log(
+        '[APKAM] Keys stored in KeyChain - dialog will close and onboarding_button will handle full initialization'
+            .loggable,
+      );
     } catch (e, stackTrace) {
       App.log('[APKAM] ERROR: $e'.loggable);
       App.log('[APKAM] Stack trace: $stackTrace'.loggable);

@@ -17,6 +17,8 @@ import 'package:npt_mobile_flutter/util/at_client_methods.dart';
 import 'package:npt_mobile_flutter/util/constants.dart';
 import 'package:npt_mobile_flutter/widgets/loading_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
@@ -189,24 +191,63 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       case AtOnboardingResultStatus.success:
         final atsign = onboardingResult?.atsign ?? '';
 
-        // Check if atClient is initialized, if not initialize it
-        // This happens after file upload - keys are in keychain but atClient not initialized
+        // After successful onboarding/file upload, keys are now in KeyChain
+        // CRITICAL: We must ALWAYS reinitialize atClient after file upload to ensure
+        // atChops has access to the signing keys from localStorage
         try {
           final atClientManager = AtClientManager.getInstance();
-          // Try to access atClient - if it throws, we need to initialize
-          atClientManager.atClient;
-        } catch (e) {
-          // AtClient not initialized - initialize it now with keys from keychain
+          
+          // First, check if atClient exists - if not, initialize it
+          bool alreadyInitialized = false;
           try {
-            final atClientManager = AtClientManager.getInstance();
+            atClientManager.atClient;
+            alreadyInitialized = true;
+            App.log(
+              '[OnboardingButton] AtClient already initialized - will reinitialize with new keys'
+                  .loggable,
+            );
+          } catch (e) {
+            App.log(
+              '[OnboardingButton] AtClient not initialized, initializing now: $e'
+                  .loggable,
+            );
             await atClientManager.setCurrentAtSign(
               atsign,
               'npt',
               config.atClientPreference,
             );
-          } catch (initError) {
-            App.log('Failed to initialize atClient: $initError'.loggable);
           }
+
+          App.log(
+            '[OnboardingButton] Ensuring keys from KeyChain are in localStorage'
+                .loggable,
+          );
+
+          // CRITICAL: Copy keys from KeyChain to localStorage so atChops can access them
+          await _ensureKeysInLocalStorage(atsign);
+
+          App.log(
+            '[OnboardingButton] Keys stored - ${alreadyInitialized ? 're' : ''}initializing atClient to recreate atChops'
+                .loggable,
+          );
+
+          // ALWAYS call setCurrentAtSign() after storing keys to force atChops recreation
+          await atClientManager.setCurrentAtSign(
+            atsign,
+            'npt',
+            config.atClientPreference,
+          );
+
+          App.log(
+            '[OnboardingButton] atClient initialized with keys - ready to use'
+                .loggable,
+          );
+        } catch (initError, stackTrace) {
+          App.log(
+            '[OnboardingButton] Initialization failed: $initError'.loggable,
+          );
+          App.log('[OnboardingButton] Stack trace: $stackTrace'.loggable);
+          rethrow;
         }
 
         await custom_onboarding.initializeContactsService(context, atsign);
@@ -273,6 +314,91 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           Navigator.of(context, rootNavigator: true).pop();
         }
         break;
+    }
+  }
+
+  /// Ensures keys from KeyChain are properly stored in localStorage for atChops to use
+  Future<void> _ensureKeysInLocalStorage(String atsign) async {
+    try {
+      // Load keys from KeyChain
+      final keyChainManager = KeyChainManager.getInstance();
+      final atsignKey = await keyChainManager.readAtsign(name: atsign);
+
+      if (atsignKey == null) {
+        App.log(
+          '[OnboardingButton] No keys found in KeyChain for $atsign'.loggable,
+        );
+        return;
+      }
+
+      // Get localStorage
+      final atClient = AtClientManager.getInstance().atClient;
+      final localStorage = atClient.getLocalSecondary();
+
+      if (localStorage == null) {
+        throw Exception('localStorage is null');
+      }
+
+      App.log(
+        '[OnboardingButton] Copying keys from KeyChain to localStorage'
+            .loggable,
+      );
+
+      // Store PKAM keys
+      if (atsignKey.pkamPublicKey != null) {
+        await localStorage.putValue(
+          AtConstants.atPkamPublicKey,
+          atsignKey.pkamPublicKey!,
+        );
+        App.log('[OnboardingButton] ✓ Stored PKAM public key'.loggable);
+      }
+      if (atsignKey.pkamPrivateKey != null) {
+        await localStorage.putValue(
+          AtConstants.atPkamPrivateKey,
+          atsignKey.pkamPrivateKey!,
+        );
+        App.log('[OnboardingButton] ✓ Stored PKAM private key'.loggable);
+      }
+
+      // Store encryption private key
+      if (atsignKey.encryptionPrivateKey != null) {
+        await localStorage.putValue(
+          AtConstants.atEncryptionPrivateKey,
+          atsignKey.encryptionPrivateKey!,
+        );
+        App.log(
+            '[OnboardingButton] ✓ Stored encryption private key'.loggable);
+      }
+
+      // Store encryption PUBLIC key using UpdateVerbBuilder (not putValue - would fail)
+      if (atsignKey.encryptionPublicKey != null) {
+        var updateBuilder = UpdateVerbBuilder()
+          ..atKey = AtKey.public('publickey', sharedBy: atsign).build();
+        updateBuilder.atKey.metadata.ttr = -1;
+        updateBuilder.value = atsignKey.encryptionPublicKey;
+        await localStorage.executeVerb(updateBuilder, sync: true);
+        App.log('[OnboardingButton] ✓ Stored encryption public key'.loggable);
+      }
+
+      // Store self encryption key
+      if (atsignKey.selfEncryptionKey != null) {
+        await localStorage.putValue(
+          AtConstants.atEncryptionSelfKey,
+          atsignKey.selfEncryptionKey!,
+        );
+        App.log('[OnboardingButton] ✓ Stored self encryption key'.loggable);
+      }
+
+      App.log(
+        '[OnboardingButton] All keys successfully copied to localStorage'
+            .loggable,
+      );
+    } catch (e, s) {
+      App.log(
+        '[OnboardingButton] ERROR copying keys to localStorage: $e'.loggable,
+      );
+      App.log('[OnboardingButton] Stack trace: $s'.loggable);
+      rethrow;
     }
   }
 }
