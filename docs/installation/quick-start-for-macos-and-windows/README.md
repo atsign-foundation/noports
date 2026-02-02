@@ -58,8 +58,8 @@ Your atKeys (cryptographic keys) will be used to pair your atSign with this and 
 Both the atSigns are activated on the machine you are connecting from. Later, you’ll grant your remote machine access to the keys stored on this machine.
 {% endhint %}
 
-1. You'll need to switch atSigns. To sign out from the client atSign, click on **your atSign** at the top right of the screen, then select **Sign Out**.
-2. Click **Get Started** and enter your **device atSign** into the text field (e.g., @example02\_np). Leave the root domain as is, and then click **Next**.
+1. You'll need to add your device atSign. To do this, click on **your atSign** at the top right of the screen, then select **+ Add atSign**.
+2. Enter your **device atSign** into the text field (e.g., @example02\_np). Leave the root domain as is, and then click **Next**.
 3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
 
 ### <mark style="color:orange;">Step 6:</mark> Save a copy of your device atKeys&#x20;

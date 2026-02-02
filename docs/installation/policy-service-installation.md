@@ -24,9 +24,9 @@ Before you begin the installation, please ensure the following steps are complet
 
 ### Step 1: Activate your policy atSign (in NoPorts Desktop)
 
-1\) If you were already signed in with another atSign, click on Settings and then Sign Out.
+1\) If you were already signed in with another atSign, click on your atSign at the top right of the screen and then click + Add atSign.
 
-2\) Click Get Started and then enter your policy atSign.
+2\) Enter your policy atSign.
 
 3\) You'll receive an OTP via email and after entering it, you'll be prompted to save your keys.
 
@@ -180,5 +180,5 @@ Nov 10 23:54:17 atsign sshnpd[124155]: INFO|2025-11-10 23:54:17.310764| sshnpd |
 
 ### Step 8
 
-You're now ready to use the Policy Service. You can find instructions in the NoPorts desktop application [here](../usage/noports-desktop-usage/policy-service.md).
+You're now ready to use the Policy Service. You can find instructions in the NoPorts desktop application [here](../usage/policy-service.md).
 
