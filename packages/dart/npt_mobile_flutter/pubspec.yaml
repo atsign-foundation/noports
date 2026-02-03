@@ -9,11 +9,11 @@ environment:
 
 dependencies:
   adaptive_theme: ^3.6.0
-  at_auth: ^2.4.0
   at_client_mobile: ^3.2.24
   at_client: ^3.8.0
   at_contact: ^3.0.8
   at_onboarding_flutter: ^6.1.12
+  at_auth: ^2.4.0
   at_server_status: ^1.1.1
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
@@ -69,7 +69,6 @@ dependency_overrides:
   device_info_plus: 11.3.3
   at_backupkey_flutter: ^4.1.0  # Force newer version to avoid Android build issues
 
-  at_auth: ^2.4.0  # Override at_client_flutter's at_auth ^3.0.0 requirement
 flutter:
   uses-material-design: true
   generate: true

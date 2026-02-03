@@ -5,7 +5,6 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
-import 'package:at_commons/at_builders.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_mobile_flutter/app.dart';
@@ -227,61 +226,15 @@ class AtKeysFileUploadService {
         // Store the decrypted keys in the keychain
         await keyChainManager.storeAtSign(atSign: atsignKey);
 
-        // ALSO store keys in atClient's local secondary storage IF atClient is initialized
-        // This matches exactly what _persistKeysLocalSecondary does in at_auth_service_impl
-        // However, on first run, atClient may not be initialized yet, which is fine -
-        // the keys in KeyChain are sufficient, and atClient will load them on next initialization
-        try {
-          final atClient = AtClientManager.getInstance().atClient;
-          final localStorage = atClient.getLocalSecondary();
-          if (localStorage != null) {
-            // Store PKAM keys
-            await localStorage.putValue(
-              AtConstants.atPkamPublicKey,
-              pkamPublicKey,
-            );
-            await localStorage.putValue(
-              AtConstants.atPkamPrivateKey,
-              pkamPrivateKey,
-            );
+        App.log(
+          '[FileUpload] Keys stored in KeyChain - login will handle localStorage'
+              .loggable,
+        );
 
-            // Store encryption private key
-            await localStorage.putValue(
-              AtConstants.atEncryptionPrivateKey,
-              encryptionPrivateKey,
-            );
-
-            // Store encryption public key (must use UpdateVerbBuilder like the auth service does)
-            var updateBuilder = UpdateVerbBuilder()
-              ..atKey = AtKey.public(
-                'publickey',
-                sharedBy: atsignToUse,
-              ).build();
-            updateBuilder.atKey.metadata.ttr = -1;
-            updateBuilder.value = encryptionPublicKey;
-            await localStorage.executeVerb(updateBuilder, sync: true);
-
-            // Store self encryption key
-            await localStorage.putValue(
-              AtConstants.atEncryptionSelfKey,
-              selfEncryptionKey,
-            );
-
-            // CRITICAL: Force atChops to be re-initialized with the newly stored keys
-            // This is necessary because atChops may have been created before we uploaded the keys
-            // Access atClient.atChops to trigger lazy initialization with the correct keys
-            try {
-              // ignore: unused_local_variable
-              final chops = atClient.atChops;
-            } catch (e) {
-              // atChops initialization will happen when needed
-            }
-          }
-        } catch (e) {
-          // If storing to atClient fails, that's okay - keys are already in KeyChain
-          // which is the primary storage. atClient will load from KeyChain on next init.
-          // Silently ignore this error as it's expected on first run
-        }
+        App.log(
+          '[FileUpload] Keys stored in KeyChain - onboarding_button will handle initialization'
+              .loggable,
+        );
 
         _statusController.add(FileUploadAuthSuccess(atsignToUse));
         yield FileUploadAuthSuccess(atsignToUse);
@@ -428,6 +381,11 @@ class OnboardingService {
   }) async {
     try {
       App.log('[OnboardingService] Starting enrollment for $atsign'.loggable);
+      App.log(
+        '[OnboardingService] appName: $appName, deviceName: $deviceName'
+            .loggable,
+      );
+      App.log('[OnboardingService] atSign for enrollment: $atsign'.loggable);
 
       // Create the auth service for enrollment
       final authService = AtAuthServiceImpl(atsign, atClientPreference);
@@ -436,14 +394,28 @@ class OnboardingService {
         appName: appName,
         deviceName: deviceName,
         otp: otp,
-        namespaces: {appName: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+        namespaces: {
+          '*': 'rw',
+          appName: 'rw',
+          'sshnp': 'rw',
+          'sshrvd': 'rw',
+        },
       );
 
+      App.log(
+        '[OnboardingService] EnrollmentRequest details - appName: ${enrollmentRequest.appName}, deviceName: ${enrollmentRequest.deviceName}, namespaces: ${enrollmentRequest.namespaces}'
+            .loggable,
+      );
       App.log('[OnboardingService] Calling authService.enroll()'.loggable);
+
       final enrollResponse = await authService.enroll(enrollmentRequest);
 
       App.log(
-        '[OnboardingService] Enrollment response: ${enrollResponse.enrollmentId}'
+        '[OnboardingService] Enrollment SUCCESS! EnrollmentId: ${enrollResponse.enrollmentId}'
+            .loggable,
+      );
+      App.log(
+        '[OnboardingService] Enrollment request should now be visible on desktop app for approval'
             .loggable,
       );
 
