@@ -66,10 +66,10 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
                   backgroundColor: AppColor.primaryColor,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(strings.activate),
+                child: Text(strings.activationComplete),
               ),
               Text(
-                strings.activateButtonDescription,
+                strings.activationButtonDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               Row(

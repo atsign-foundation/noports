@@ -8,7 +8,6 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
-import 'package:npt_flutter/widgets/custom_container.dart';
 
 class SignInDialog extends StatefulWidget {
   const SignInDialog({required this.options, super.key});
@@ -44,38 +43,32 @@ class _SignInDialogState extends State<SignInDialog> {
                 strings.signIn,
                 style: titleStyle!.copyWith(color: Colors.black),
               ),
-              CustomContainer.background(
-                width: width,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.selectorTitleAtsign,
-                      style: titleStyle.copyWith(color: Colors.black),
-                    ),
-                    Text(strings.selectorSubTitleAtsign),
-                    gapH16,
-                    AtsignSelector(options: widget.options),
-                  ],
-                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.selectorTitleAtsign,
+                    style: titleStyle.copyWith(color: Colors.black),
+                  ),
+                  Text(strings.selectorSubTitleAtsign),
+                  gapH16,
+                  AtsignSelector(options: widget.options),
+                ],
               ),
 
-              CustomContainer.background(
-                width: width,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.selectorTitleRootDomain,
-                      style: titleStyle.copyWith(color: Colors.black),
-                    ),
-                    Text(strings.selectorSubTitleRootDomain),
-                    gapH16,
-                    AtDirectorySelector(options: widget.options),
-                  ],
-                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.selectorTitleRootDomain,
+                    style: titleStyle.copyWith(color: Colors.black),
+                  ),
+                  Text(strings.selectorSubTitleRootDomain),
+                  gapH16,
+                  AtDirectorySelector(options: widget.options),
+                ],
               ),
               const Divider(color: AppColor.dividerColorAlt),
               BlocBuilder<OnboardingCubit, OnboardingState>(

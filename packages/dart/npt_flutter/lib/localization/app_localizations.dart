@@ -1841,17 +1841,53 @@ abstract class AppLocalizations {
   /// **'YAML'**
   String get yaml;
 
-  /// No description provided for @activate.
+  /// No description provided for @activationComplete.
   ///
   /// In en, this message translates to:
-  /// **'Activate'**
-  String get activate;
+  /// **'Complete Activation'**
+  String get activationComplete;
 
-  /// No description provided for @activateButtonDescription.
+  /// No description provided for @activationFileBased.
   ///
   /// In en, this message translates to:
-  /// **'Activate and set up a new atSign'**
-  String get activateButtonDescription;
+  /// **'File-based Activation'**
+  String get activationFileBased;
+
+  /// No description provided for @activationFileBasedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload the file saved from your Management Portal. \nYou’ll only need to do this once.'**
+  String get activationFileBasedDescription;
+
+  /// No description provided for @activationLinkText.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to find this →'**
+  String get activationLinkText;
+
+  /// No description provided for @activationButtonDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Activation and set up a new atSign'**
+  String get activationButtonDescription;
+
+  /// No description provided for @activationDragDropDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OR drag and drop your .YAML file'**
+  String get activationDragDropDescription;
+
+  /// No description provided for @activationFileUploadDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload one-time activation file'**
+  String get activationFileUploadDescription;
+
+  /// No description provided for @activationManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Activation'**
+  String get activationManual;
 
   /// No description provided for @signIn.
   ///

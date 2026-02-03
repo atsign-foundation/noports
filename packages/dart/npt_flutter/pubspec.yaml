@@ -40,8 +40,8 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.4.0
   at_backupkey_flutter: ^4.0.16
-  at_client_mobile: ^3.2.24
   at_client: ^3.8.0
+  at_client_mobile: ^3.2.24
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_onboarding_flutter:
@@ -51,7 +51,9 @@ dependencies:
   at_server_status: ^1.1.1
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
+  desktop_drop: ^0.7.0
   device_info_plus: ^11.3.3
+  dotted_border: ^3.1.0
   equatable: ^2.0.5
   file_picker: ^10.3.3
   flutter:
@@ -74,6 +76,7 @@ dependencies:
   phosphor_flutter: ^2.1.0
   pin_code_fields: ^8.0.1
   socket_connector: ^2.4.1
+  super_tooltip: ^2.1.0
   toml: ^0.16.0
   tray_manager: ^0.5.1
   url_launcher: ^6.3.0
@@ -82,8 +85,8 @@ dependencies:
   window_manager: ^0.4.2
   yaml: ^3.1.2
   yaml_writer: ^2.0.0
-  super_tooltip: ^2.1.0
 dev_dependencies:
+  bloc_test: ^9.1.7
   build_runner: ^2.4.12
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
@@ -91,7 +94,6 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   mockito: ^5.5.0
-  bloc_test: ^9.1.7
   msix: ^3.16.8
 
 dependency_overrides:

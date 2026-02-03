@@ -911,10 +911,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get yaml => 'YAML';
 
   @override
-  String get activate => 'Activate';
+  String get activationComplete => 'Complete Activation';
 
   @override
-  String get activateButtonDescription => 'Activate and set up a new atSign';
+  String get activationFileBased => 'File-based Activation';
+
+  @override
+  String get activationFileBasedDescription =>
+      'Please upload the file saved from your Management Portal. \nYou’ll only need to do this once.';
+
+  @override
+  String get activationLinkText => 'Where to find this →';
+
+  @override
+  String get activationButtonDescription =>
+      'Complete Activation and set up a new atSign';
+
+  @override
+  String get activationDragDropDescription =>
+      'OR drag and drop your .YAML file';
+
+  @override
+  String get activationFileUploadDescription =>
+      'Upload one-time activation file';
+
+  @override
+  String get activationManual => 'Manual Activation';
 
   @override
   String get signIn => 'Sign In';
