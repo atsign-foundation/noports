@@ -2,7 +2,6 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart'
     hide OnboardingStatus;
 import 'package:npt_mobile_flutter/util/onboarding_service.dart'
     as custom_onboarding;
-import 'package:at_commons/at_builders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_mobile_flutter/app.dart';
@@ -21,6 +20,7 @@ import 'package:npt_mobile_flutter/util/constants.dart';
 import 'package:npt_mobile_flutter/widgets/loading_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_commons.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
@@ -49,7 +49,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               });
               bool shouldOnboard = await selectAtsign();
               if (shouldOnboard && context.mounted) {
-                var atsignInformation = context.read<app_onboarding.OnboardingCubit>().state;
+                var atsignInformation = context
+                    .read<app_onboarding.OnboardingCubit>()
+                    .state;
                 await onboard(
                   atsign: atsignInformation.atSign,
                   rootDomain: atsignInformation.rootDomain,
@@ -149,7 +151,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       // AtSign already exists in KeyChain - keys were uploaded via file
       // Just return success - DO NOT call changePrimaryAtsign or any other method
       // that might delete the KeyChain entry
-      App.log('[OnboardingButton] Atsign exists in KeyChain, returning success'.loggable);
+      App.log(
+        '[OnboardingButton] Atsign exists in KeyChain, returning success'
+            .loggable,
+      );
       onboardingResult = AtOnboardingResult.success(atsign: atsign);
     } else {
       // Use the shared util method with progress callback
@@ -195,15 +200,15 @@ class _OnboardingButtonState extends State<OnboardingButton> {
                 rootDomain: rootDomain,
                 status: app_onboarding.OnboardingStatus.offboarded,
               );
-              App.log('[OnboardingButton] State set to offboarded - ready for login'.loggable);
+              App.log(
+                '[OnboardingButton] State set to offboarded - ready for login'
+                    .loggable,
+              );
             }
 
             // Save atsign to dropdown
             await saveAtsignInformation(
-              AtsignInformation(
-                atSign: atsign,
-                rootDomain: rootDomain,
-              ),
+              AtsignInformation(atSign: atsign, rootDomain: rootDomain),
             );
 
             if (!mounted) return;
@@ -231,12 +236,12 @@ class _OnboardingButtonState extends State<OnboardingButton> {
               '[OnboardingButton] Key storage failed: $initError'.loggable,
             );
             App.log('[OnboardingButton] Stack trace: $stackTrace'.loggable);
-            
+
             if (!mounted) return;
-            
+
             // Dismiss loading dialog on error
             Navigator.of(context, rootNavigator: true).pop();
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 backgroundColor: Colors.red,
@@ -247,77 +252,110 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           }
         }
 
-        // NORMAL LOGIN FLOW - atsign was already in keychain  
+        // NORMAL LOGIN FLOW - atsign was already in keychain
         // Keys are in KeyChain (APKAM keys from file upload or enrollment).
-        // APKAM keys use PKAM authentication, not CRAM, so we must:
-        // 1. Copy keys from KeyChain to localStorage manually
-        // 2. Call setCurrentAtSign to initialize with those keys
-        App.log('[OnboardingButton] Loading APKAM keys from KeyChain to localStorage'.loggable);
-        
+        // APKAM keys use PKAM authentication, not CRAM.
+        App.log(
+          '[OnboardingButton] Loading APKAM keys from KeyChain to localStorage'
+              .loggable,
+        );
+
         try {
           // Get keys from KeyChain
           final keyChainManager = KeyChainManager.getInstance();
           final atsignKey = await keyChainManager.readAtsign(name: atsign);
-          
+
           if (atsignKey == null) {
             throw Exception('Keys not found in KeyChain for $atsign');
           }
-          
+
           final pkamPublicKey = atsignKey.pkamPublicKey;
           final pkamPrivateKey = atsignKey.pkamPrivateKey;
           final encryptionPublicKey = atsignKey.encryptionPublicKey;
           final encryptionPrivateKey = atsignKey.encryptionPrivateKey;
           final selfEncryptionKey = atsignKey.selfEncryptionKey;
-          
-          if (pkamPublicKey == null || pkamPrivateKey == null || 
-              encryptionPublicKey == null || encryptionPrivateKey == null || 
+
+          if (pkamPublicKey == null ||
+              pkamPrivateKey == null ||
+              encryptionPublicKey == null ||
+              encryptionPrivateKey == null ||
               selfEncryptionKey == null) {
             throw Exception('Incomplete keys in KeyChain for $atsign');
           }
-          
-          App.log('[OnboardingButton] Got keys from KeyChain, initializing atClient'.loggable);
-          
-          // Initialize atClient first
+
+          // Step 1: Call setCurrentAtSign to create atClient instance
+          App.log(
+            '[OnboardingButton] Calling setCurrentAtSign to create atClient'
+                .loggable,
+          );
           final atClientManager = AtClientManager.getInstance();
           await atClientManager.setCurrentAtSign(
             atsign,
             'npt',
             config.atClientPreference,
           );
-          
-          App.log('[OnboardingButton] atClient initialized, copying keys to localStorage'.loggable);
-          
-          // Now store keys in localStorage
+
+          // Step 2: Now populate localStorage with keys from KeyChain
+          App.log(
+            '[OnboardingButton] Copying keys from KeyChain to localStorage'
+                .loggable,
+          );
           final atClient = atClientManager.atClient;
           final localStorage = atClient.getLocalSecondary();
-          
+
           if (localStorage != null) {
             // Store PKAM keys
-            await localStorage.putValue(AtConstants.atPkamPublicKey, pkamPublicKey);
-            await localStorage.putValue(AtConstants.atPkamPrivateKey, pkamPrivateKey);
-            
+            await localStorage.putValue(
+              AtConstants.atPkamPublicKey,
+              pkamPublicKey,
+            );
+            await localStorage.putValue(
+              AtConstants.atPkamPrivateKey,
+              pkamPrivateKey,
+            );
+
             // Store encryption private key
-            await localStorage.putValue(AtConstants.atEncryptionPrivateKey, encryptionPrivateKey);
-            
-            // Store encryption public key
-            final updateBuilder = UpdateVerbBuilder()
+            await localStorage.putValue(
+              AtConstants.atEncryptionPrivateKey,
+              encryptionPrivateKey,
+            );
+
+            // Store encryption public key (must use UpdateVerbBuilder)
+            var updateBuilder = UpdateVerbBuilder()
               ..atKey = AtKey.public('publickey', sharedBy: atsign).build();
             updateBuilder.atKey.metadata.ttr = -1;
             updateBuilder.value = encryptionPublicKey;
             await localStorage.executeVerb(updateBuilder, sync: true);
-            
+
             // Store self encryption key
-            await localStorage.putValue(AtConstants.atEncryptionSelfKey, selfEncryptionKey);
-            
-            App.log('[OnboardingButton] Keys copied to localStorage successfully'.loggable);
+            await localStorage.putValue(
+              AtConstants.atEncryptionSelfKey,
+              selfEncryptionKey,
+            );
+
+            App.log(
+              '[OnboardingButton] Keys copied to localStorage successfully'
+                  .loggable,
+            );
           }
-          
-          App.log('[OnboardingButton] Onboarding completed successfully'.loggable);
+
+          // Step 3: Call setCurrentAtSign again to reinitialize atChops with the new keys
+          App.log(
+            '[OnboardingButton] Reinitializing atClient to load keys from localStorage'
+                .loggable,
+          );
+          await atClientManager.setCurrentAtSign(
+            atsign,
+            'npt',
+            config.atClientPreference,
+          );
+
+          App.log('[OnboardingButton] Login complete with APKAM keys'.loggable);
         } catch (e, st) {
           App.log('[OnboardingButton] Onboarding failed: $e\n$st'.loggable);
           rethrow;
         }
-        
+
         // After successful login, complete the setup
         await custom_onboarding.initializeContactsService(context, atsign);
 
@@ -332,12 +370,9 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         }
 
         await postOnboard(atsign, rootDomain);
-        
+
         final result = await saveAtsignInformation(
-          AtsignInformation(
-            atSign: atsign,
-            rootDomain: rootDomain,
-          ),
+          AtsignInformation(atSign: atsign, rootDomain: rootDomain),
         );
 
         App.log('atsign login result: $result'.loggable);

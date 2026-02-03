@@ -225,8 +225,11 @@ class AtKeysFileUploadService {
 
         // Store the decrypted keys in the keychain
         await keyChainManager.storeAtSign(atSign: atsignKey);
-        
-        App.log('[FileUpload] Keys stored in KeyChain - login will handle localStorage'.loggable);
+
+        App.log(
+          '[FileUpload] Keys stored in KeyChain - login will handle localStorage'
+              .loggable,
+        );
 
         App.log(
           '[FileUpload] Keys stored in KeyChain - onboarding_button will handle initialization'
