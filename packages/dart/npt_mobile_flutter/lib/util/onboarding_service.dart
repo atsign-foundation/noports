@@ -5,7 +5,6 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client_mobile/src/atsign_key.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
-import 'package:at_commons/at_builders.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_mobile_flutter/app.dart';
@@ -226,66 +225,9 @@ class AtKeysFileUploadService {
 
         // Store the decrypted keys in the keychain
         await keyChainManager.storeAtSign(atSign: atsignKey);
+        
+        App.log('[FileUpload] Keys stored in KeyChain - login will handle localStorage'.loggable);
 
-        // ALSO store keys in atClient's local secondary storage IF atClient is initialized
-        // This matches exactly what _persistKeysLocalSecondary does in at_auth_service_impl
-        // However, on first run, atClient may not be initialized yet, which is fine -
-        // the keys in KeyChain are sufficient, and atClient will load them on next initialization
-        try {
-          final atClient = AtClientManager.getInstance().atClient;
-          final localStorage = atClient.getLocalSecondary();
-          if (localStorage != null) {
-            // Store PKAM keys
-            await localStorage.putValue(
-              AtConstants.atPkamPublicKey,
-              pkamPublicKey,
-            );
-            await localStorage.putValue(
-              AtConstants.atPkamPrivateKey,
-              pkamPrivateKey,
-            );
-
-            // Store encryption private key
-            await localStorage.putValue(
-              AtConstants.atEncryptionPrivateKey,
-              encryptionPrivateKey,
-            );
-
-            // Store encryption public key (must use UpdateVerbBuilder like the auth service does)
-            var updateBuilder = UpdateVerbBuilder()
-              ..atKey = AtKey.public(
-                'publickey',
-                sharedBy: atsignToUse,
-              ).build();
-            updateBuilder.atKey.metadata.ttr = -1;
-            updateBuilder.value = encryptionPublicKey;
-            await localStorage.executeVerb(updateBuilder, sync: true);
-
-            // Store self encryption key
-            await localStorage.putValue(
-              AtConstants.atEncryptionSelfKey,
-              selfEncryptionKey,
-            );
-
-            App.log(
-              '[FileUpload] Keys stored in localStorage, reinitializing atChops'
-                  .loggable,
-            );
-          }
-        } catch (e) {
-          // If storing to atClient fails, that's okay - keys are already in KeyChain
-          // which is the primary storage. atClient will load from KeyChain on next init.
-          // Silently ignore this error as it's expected on first run
-          App.log(
-            '[FileUpload] Failed to store in localStorage (non-critical): $e'
-                .loggable,
-          );
-        }
-
-        // CRITICAL: After storing keys in KeyChain, we should NOT manually initialize here
-        // Instead, let the at_onboarding_flutter framework handle it via AtOnboarding.onboard()
-        // which properly sets up all the authentication and initialization
-        // The keys are in KeyChain, so onboarding_button.dart will handle the rest
         App.log(
           '[FileUpload] Keys stored in KeyChain - onboarding_button will handle initialization'
               .loggable,
