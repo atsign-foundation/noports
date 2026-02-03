@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_mobile_flutter/app.dart';
 import 'package:path/path.dart' as p;
@@ -9,10 +10,19 @@ import 'package:path_provider/path_provider.dart';
 class AtsignInformation extends Loggable {
   final String atSign;
   final String rootDomain;
+  final String? enrollmentId; // For APKAM authentication
 
-  const AtsignInformation({required this.atSign, required this.rootDomain});
+  const AtsignInformation({
+    required this.atSign,
+    required this.rootDomain,
+    this.enrollmentId,
+  });
 
-  Map<String, String> toJson() => {"atsign": atSign, "root-domain": rootDomain};
+  Map<String, dynamic> toJson() => {
+    "atsign": atSign,
+    "root-domain": rootDomain,
+    if (enrollmentId != null) "enrollmentId": enrollmentId,
+  };
 
   static AtsignInformation? fromJson(Map json) {
     if (json["atsign"] is! String || json["root-domain"] is! String) {
@@ -21,15 +31,16 @@ class AtsignInformation extends Loggable {
     return AtsignInformation(
       atSign: json["atsign"],
       rootDomain: json["root-domain"],
+      enrollmentId: json["enrollmentId"] as String?,
     );
   }
 
   @override
-  List<Object?> get props => [atSign, rootDomain];
+  List<Object?> get props => [atSign, rootDomain, enrollmentId];
 
   @override
   String toString() {
-    return 'AtsignInformation($atSign, $rootDomain)';
+    return 'AtsignInformation($atSign, $rootDomain, enrollmentId: $enrollmentId)';
   }
 }
 
@@ -51,9 +62,31 @@ class AtsignInformation extends Loggable {
 
 Future<Map<String, AtsignInformation>> getAtsignEntries() async {
   var keychainAtSigns = await KeychainUtil.getAtsignList() ?? [];
+  App.log(
+    '[AtsignManager] KeychainUtil.getAtsignList() returned: $keychainAtSigns'
+        .loggable,
+  );
+
+  // Also check KeyChainManager for comparison
+  try {
+    final keyChainManager = KeyChainManager.getInstance();
+    final keyChainManagerList = await keyChainManager
+        .getAtSignListFromKeychain();
+    App.log(
+      '[AtsignManager] KeyChainManager.getAtSignListFromKeychain() returned: $keyChainManagerList'
+          .loggable,
+    );
+  } catch (e) {
+    App.log('[AtsignManager] KeyChainManager check failed: $e'.loggable);
+  }
+
   var atSignInfo = <AtsignInformation>[];
   try {
     atSignInfo = await _getAtsignInformationFromFile();
+    App.log(
+      '[AtsignManager] AtsignInformation from file: ${atSignInfo.map((e) => e.atSign).toList()}'
+          .loggable,
+    );
   } catch (e) {
     App.log(
       "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
@@ -65,6 +98,11 @@ Future<Map<String, AtsignInformation>> getAtsignEntries() async {
   for (var item in atSignInfo) {
     if (keychainAtSigns.contains(item.atSign)) {
       atSignMap[item.atSign] = item;
+    } else {
+      App.log(
+        '[AtsignManager] Atsign ${item.atSign} in file but NOT in keychain, skipping'
+            .loggable,
+      );
     }
   }
   return atSignMap;

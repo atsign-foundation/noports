@@ -11,6 +11,7 @@ import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_mobile_flutter/util/onboarding_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:npt_mobile_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_mobile_flutter/features/onboarding/widgets/enrollment_dialog.dart';
 import 'package:npt_mobile_flutter/localization/app_localizations.dart';
 import 'package:npt_mobile_flutter/styles/sizes.dart';
@@ -277,6 +278,29 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       final encryptionPrivateKey = atAuthKeys.defaultEncryptionPrivateKey;
       final selfEncryptionKey = atAuthKeys.defaultSelfEncryptionKey;
 
+      // Debug: Log which keys we got
+      App.log('[APKAM] Keys from atAuthKeys:'.loggable);
+      App.log(
+        '[APKAM]   apkamPublicKey: ${pkamPublicKey != null ? "${pkamPublicKey.substring(0, 30)}..." : "NULL"}'
+            .loggable,
+      );
+      App.log(
+        '[APKAM]   apkamPrivateKey: ${pkamPrivateKey != null ? "${pkamPrivateKey.substring(0, 30)}..." : "NULL"}'
+            .loggable,
+      );
+      App.log(
+        '[APKAM]   defaultEncryptionPublicKey: ${encryptionPublicKey != null ? "${encryptionPublicKey.substring(0, 30)}..." : "NULL"}'
+            .loggable,
+      );
+      App.log(
+        '[APKAM]   defaultEncryptionPrivateKey: ${encryptionPrivateKey != null ? "${encryptionPrivateKey.substring(0, 30)}..." : "NULL"}'
+            .loggable,
+      );
+      App.log(
+        '[APKAM]   defaultSelfEncryptionKey: ${selfEncryptionKey != null ? "${selfEncryptionKey.substring(0, 30)}..." : "NULL"}'
+            .loggable,
+      );
+
       if (pkamPublicKey == null ||
           pkamPrivateKey == null ||
           encryptionPrivateKey == null ||
@@ -286,6 +310,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       }
 
       // Create AtsignKey and store in KeyChain
+      App.log('[APKAM] Creating AtsignKey object'.loggable);
       final atsignKey = AtsignKey(
         atSign: atsign,
         pkamPublicKey: pkamPublicKey,
@@ -295,10 +320,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         selfEncryptionKey: selfEncryptionKey,
       );
 
+      App.log('[APKAM] Calling keyChainManager.storeAtSign()'.loggable);
       await keyChainManager.storeAtSign(atSign: atsignKey);
 
       // Verify storage
+      App.log('[APKAM] Verifying KeyChain storage'.loggable);
       final keysInKeyChain = await keyChainManager.getAtSignListFromKeychain();
+      App.log('[APKAM] KeyChain contains: $keysInKeyChain'.loggable);
       if (!keysInKeyChain.contains(atsign)) {
         throw Exception('Keys not found in KeyChain after storage');
       }
@@ -342,6 +370,19 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
             selfEncryptionKey,
           );
 
+          // CRITICAL: Store enrollmentId in localStorage for APKAM authentication
+          // Without this, after hot restart PKAM auth will fail
+          if (enrollmentId != null) {
+            await localStorage.putValue(
+              'local:enrollmentId$atsign',
+              enrollmentId!,
+            );
+            App.log(
+              '[APKAM] Stored enrollmentId in localStorage: $enrollmentId'
+                  .loggable,
+            );
+          }
+
           App.log(
             '[APKAM] Keys stored in localStorage, reinitializing atChops'
                 .loggable,
@@ -353,6 +394,21 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           '[APKAM] Failed to store in localStorage (non-critical): $e'.loggable,
         );
       }
+
+      // Save atsign information to dropdown file so it appears in the list
+      // Include enrollmentId for APKAM authentication
+      App.log(
+        '[APKAM] Saving atsign to dropdown file with enrollmentId: $enrollmentId'
+            .loggable,
+      );
+      await saveAtsignInformation(
+        AtsignInformation(
+          atSign: atsign,
+          rootDomain: widget.atClientPreference.rootDomain,
+          enrollmentId: enrollmentId,
+        ),
+      );
+      App.log('[APKAM] Atsign saved to dropdown file'.loggable);
 
       // CRITICAL: After storing APKAM keys in KeyChain, we should NOT manually initialize here
       // Instead, let the at_onboarding_flutter framework handle it via AtOnboarding.onboard()
@@ -429,7 +485,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       appName: Constants.namespace,
       deviceName: deviceName,
       otp: otp,
-      namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      namespaces: {
+        Constants.namespace: 'rw',
+        'sshnp': 'rw',
+        'sshrvd': 'rw',
+      },
     );
 
     App.log(
@@ -961,7 +1021,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 width: isMobile ? double.infinity : 200,
                 child: FilledButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    // Pop with success result - the user is tapping Done
+                    Navigator.of(
+                      context,
+                    ).pop(AtOnboardingResult.success(atsign: atsign));
                   },
                   child: Text(strings.done),
                 ),
@@ -990,7 +1053,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 width: isMobile ? double.infinity : 200,
                 child: FilledButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(
+                      AtOnboardingResult.error(
+                        message: strings.enrollRequestDenied,
+                      ),
+                    );
                   },
                   child: Text(strings.done),
                 ),

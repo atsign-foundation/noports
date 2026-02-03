@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:at_chops/at_chops.dart';
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -336,38 +338,125 @@ Future<void> _handleSwitchToAtsign(
 
   log('change primary atsign called: $targetAtSign');
 
-  final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtSign,
-  );
+  // Check if this is an APKAM atsign
+  final atsignEntries = await getAtsignEntries();
+  final atsignInfo = atsignEntries[targetAtSign];
+  final isApkamAtsign = atsignInfo?.enrollmentId != null;
 
-  if (!changeSuccess) return;
+  if (!isApkamAtsign) {
+    // Regular atsign - use standard flow
+    final changeSuccess = await AtOnboarding.changePrimaryAtsign(
+      atsign: targetAtSign,
+    );
+
+    if (!changeSuccess) return;
+  }
+  // For APKAM atsigns, skip changePrimaryAtsign and let _performOnboarding handle it
 
   final currentContext = App.navState.currentContext!;
   await _performOnboarding(currentContext, targetAtSign);
 }
 
 /// Performs the onboarding process for the given atsign
+/// Handles both regular atKeys and APKAM atsigns
 Future<void> _performOnboarding(BuildContext context, String atsign) async {
   final rootDomain = context.read<OnboardingCubit>().getRootDomain();
   final atClientPreference = await AtClientMethods.loadAtClientPreference(
     rootDomain,
   );
 
-  final onboardingResult = await AtOnboarding.onboard(
-    atsign: atsign,
-    context: context,
-    config: AtOnboardingConfig(
-      atClientPreference: atClientPreference,
-      domain: rootDomain,
-      rootEnvironment: RootEnvironment.Production,
-      appAPIKey: await Constants.appAPIKey,
-    ),
-  );
+  // Check if this is an APKAM atsign (has enrollmentId in AtsignInformation)
+  final atsignEntries = await getAtsignEntries();
+  final atsignInfo = atsignEntries[atsign];
+  final enrollmentId = atsignInfo?.enrollmentId;
 
-  if (onboardingResult.status == AtOnboardingResultStatus.success) {
+  if (enrollmentId != null) {
+    // APKAM atsign - need to set up atClient manually with enrollmentId
+    App.log(
+      '[SwitchAtsign] APKAM atsign detected with enrollmentId: $enrollmentId'
+          .loggable,
+    );
+
+    // Read keys from KeyChain
+    final keyChainManager = KeyChainManager.getInstance();
+    final atsignKey = await keyChainManager.readAtsign(name: atsign);
+
+    if (atsignKey == null) {
+      App.log('[SwitchAtsign] Keys not found in KeyChain for $atsign'.loggable);
+      return;
+    }
+
+    final pkamPublicKey = atsignKey.pkamPublicKey;
+    final pkamPrivateKey = atsignKey.pkamPrivateKey;
+    final encryptionPublicKey = atsignKey.encryptionPublicKey;
+    final encryptionPrivateKey = atsignKey.encryptionPrivateKey;
+    final selfEncryptionKey = atsignKey.selfEncryptionKey;
+
+    if (pkamPublicKey == null ||
+        pkamPrivateKey == null ||
+        encryptionPublicKey == null ||
+        encryptionPrivateKey == null ||
+        selfEncryptionKey == null) {
+      App.log('[SwitchAtsign] Missing keys for $atsign'.loggable);
+      return;
+    }
+
+    // Create AtChops with the keys
+    final atEncryptionKeyPair = AtEncryptionKeyPair.create(
+      encryptionPublicKey,
+      encryptionPrivateKey,
+    );
+    final atPkamKeyPair = AtPkamKeyPair.create(pkamPublicKey, pkamPrivateKey);
+    final atChopsKeys = AtChopsKeys.create(atEncryptionKeyPair, atPkamKeyPair);
+    atChopsKeys.selfEncryptionKey = AESKey(selfEncryptionKey);
+    final atChops = AtChopsImpl(atChopsKeys);
+
+    final atClientManager = AtClientManager.getInstance();
+
+    // Set up atClient with enrollmentId
+    await atClientManager.setCurrentAtSign(
+      atsign,
+      'npt',
+      atClientPreference,
+      atChops: atChops,
+      enrollmentId: enrollmentId,
+    );
+
+    App.log('[SwitchAtsign] APKAM atClient set up successfully'.loggable);
+
+    // Initialize services and sync
+    await initializeContactsService(context, atsign);
+    atClientManager.atClient.syncService.addProgressListener(
+      ProfileProgressListener(),
+    );
+    atClientManager.atClient.syncService.sync();
+
     await BackupKeyUtils().backupKeyStatusCheck();
-    log("postOnbarding called");
+    log("postOnboarding called for APKAM atsign");
     await postOnboard(atsign, rootDomain);
+  } else {
+    // Regular atKeys atsign - use standard SDK flow
+    App.log(
+      '[SwitchAtsign] Regular atKeys atsign, using AtOnboarding.onboard()'
+          .loggable,
+    );
+
+    final onboardingResult = await AtOnboarding.onboard(
+      atsign: atsign,
+      context: context,
+      config: AtOnboardingConfig(
+        atClientPreference: atClientPreference,
+        domain: rootDomain,
+        rootEnvironment: RootEnvironment.Production,
+        appAPIKey: await Constants.appAPIKey,
+      ),
+    );
+
+    if (onboardingResult.status == AtOnboardingResultStatus.success) {
+      await BackupKeyUtils().backupKeyStatusCheck();
+      log("postOnboarding called");
+      await postOnboard(atsign, rootDomain);
+    }
   }
 }
 

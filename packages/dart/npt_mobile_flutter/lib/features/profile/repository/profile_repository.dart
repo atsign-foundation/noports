@@ -21,21 +21,48 @@ class ProfileRepository {
     AtClient atClient = _client;
 
     String namespace = Constants.namespace;
+    String regex = '.${Uuid.profilesSubNamespace}.$namespace';
+    App.log('[ProfileRepo] Looking for keys with regex: $regex'.loggable);
+    App.log(
+      '[ProfileRepo] atClient.getCurrentAtSign(): ${atClient.getCurrentAtSign()}'
+          .loggable,
+    );
+
+    // Debug: List ALL keys in the keystore to see what's there
+    try {
+      final allKeys = await atClient.getAtKeys();
+      App.log(
+        '[ProfileRepo] Total keys in keystore: ${allKeys.length}'.loggable,
+      );
+      for (var key in allKeys) {
+        App.log('[ProfileRepo]   ALL KEY: ${key.key}'.loggable);
+      }
+    } catch (e) {
+      App.log('[ProfileRepo] Failed to list all keys: $e'.loggable);
+    }
+
     List<AtKey> keys;
     try {
-      keys = await atClient.getAtKeys(
-        regex: '.${Uuid.profilesSubNamespace}.$namespace',
-      );
-    } catch (e) {
+      keys = await atClient.getAtKeys(regex: regex);
+      App.log('[ProfileRepo] Found ${keys.length} profile keys'.loggable);
+      for (var key in keys) {
+        App.log('[ProfileRepo]   Key: ${key.key}'.loggable);
+      }
+    } catch (e, st) {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
+      App.log('[ERROR] Stack trace: $st'.loggable);
       keys = [];
     }
-    return keys.map(
-      (key) => key.key.substring(
-        0,
-        key.key.indexOf('.${Uuid.profilesSubNamespace}'),
-      ),
-    );
+    final uuids = keys
+        .map(
+          (key) => key.key.substring(
+            0,
+            key.key.indexOf('.${Uuid.profilesSubNamespace}'),
+          ),
+        )
+        .toList();
+    App.log('[ProfileRepo] Returning ${uuids.length} UUIDs: $uuids'.loggable);
+    return uuids;
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {

@@ -394,7 +394,12 @@ class OnboardingService {
         appName: appName,
         deviceName: deviceName,
         otp: otp,
-        namespaces: {appName: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+        namespaces: {
+          '*': 'rw',
+          appName: 'rw',
+          'sshnp': 'rw',
+          'sshrvd': 'rw',
+        },
       );
 
       App.log(

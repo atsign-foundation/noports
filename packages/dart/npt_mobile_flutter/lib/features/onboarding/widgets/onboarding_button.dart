@@ -150,7 +150,11 @@ class _OnboardingButtonState extends State<OnboardingButton> {
     if (!mounted) return;
 
     if (atSigns.contains(atsign)) {
-      // AtSign already exists in KeyChain - keys were uploaded via file
+      // AtSign already exists in KeyChain - keys were uploaded via file or APKAM
+      // Dismiss the loading dialog first
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
       // Just return success - DO NOT call changePrimaryAtsign or any other method
       // that might delete the KeyChain entry
       App.log(
@@ -159,6 +163,12 @@ class _OnboardingButtonState extends State<OnboardingButton> {
       );
       onboardingResult = AtOnboardingResult.success(atsign: atsign);
     } else {
+      // Dismiss loading dialog before showing onboarding flow dialogs
+      // (APKAM or file picker will show their own UI)
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
       // Use the shared util method with progress callback
       onboardingResult = await util.handleAtsignByStatus(
         context: context,
@@ -173,25 +183,53 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           }
         },
       );
+
+      // For NEW onboarding (APKAM or file upload), don't show loading dialog
+      // Just let the flow continue to show success message
+      // Only show loading dialog for existing atsign login
+      // NOTE: atSigns was captured BEFORE APKAM, so atsign won't be in it for new enrollments
+      final isNewEnrollment = !atSigns.contains(onboardingResult?.atsign ?? '');
+      if (mounted &&
+          onboardingResult?.status == AtOnboardingResultStatus.success &&
+          !isNewEnrollment) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => const LoadingDialog(),
+        );
+      }
     }
     setState(() {
       buttonStatus = _OnboardingButtonStatus.ready;
     });
 
     if (!mounted) return;
+    App.log(
+      '[OnboardingButton] onboardingResult status: ${onboardingResult?.status}'
+          .loggable,
+    );
+    App.log(
+      '[OnboardingButton] onboardingResult atsign: ${onboardingResult?.atsign}'
+          .loggable,
+    );
     switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
       case AtOnboardingResultStatus.success:
         final atsign = onboardingResult?.atsign ?? '';
+        App.log('[OnboardingButton] SUCCESS case - atsign: $atsign'.loggable);
 
-        // Check if this was a file upload (atsign not in keychain before)
+        // Check if this was a file upload or APKAM enrollment (atsign not in keychain before)
         // vs a normal login (atsign already in keychain)
-        final wasFileUpload = !atSigns.contains(atsign);
+        final wasNewOnboarding = !atSigns.contains(atsign);
+        App.log(
+          '[OnboardingButton] wasNewOnboarding: $wasNewOnboarding, atSigns: $atSigns'
+              .loggable,
+        );
 
-        if (wasFileUpload) {
-          // FILE UPLOAD FLOW - Don't log in, just prepare for login screen
+        if (wasNewOnboarding) {
+          // NEW ONBOARDING FLOW (file upload or APKAM) - Don't log in, just prepare for login screen
           try {
             App.log(
-              '[OnboardingButton] File uploaded successfully - keys are in KeyChain'
+              '[OnboardingButton] New onboarding completed - keys are in KeyChain'
                   .loggable,
             );
 
@@ -215,16 +253,18 @@ class _OnboardingButtonState extends State<OnboardingButton> {
 
             if (!mounted) return;
 
-            // Dismiss loading dialog
-            Navigator.of(context, rootNavigator: true).pop();
+            // Note: No loading dialog was shown for new onboarding, so no need to dismiss
 
             // Show success message
+            App.log(
+              '[OnboardingButton] About to show success snackbar'.loggable,
+            );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Colors.green,
                   content: Text(
-                    'Keys uploaded successfully! Please select $atsign from the dropdown to log in.',
+                    'Setup complete! Please tap Get Started to log in as $atsign.',
                   ),
                   duration: const Duration(seconds: 4),
                 ),
@@ -232,6 +272,10 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             }
 
             // IMPORTANT: Return here - don't continue to normal login flow
+            App.log(
+              '[OnboardingButton] Returning from new onboarding flow - user can now tap Get Started'
+                  .loggable,
+            );
             return;
           } catch (initError, stackTrace) {
             App.log(
@@ -241,8 +285,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
 
             if (!mounted) return;
 
-            // Dismiss loading dialog on error
-            Navigator.of(context, rootNavigator: true).pop();
+            // Note: No loading dialog was shown for new onboarding, so no need to dismiss
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -277,6 +320,29 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           final encryptionPrivateKey = atsignKey.encryptionPrivateKey;
           final selfEncryptionKey = atsignKey.selfEncryptionKey;
 
+          // Debug: Log which keys we got from KeyChain
+          App.log('[OnboardingButton] Keys from KeyChain:'.loggable);
+          App.log(
+            '[OnboardingButton]   pkamPublicKey: ${pkamPublicKey != null ? "${pkamPublicKey.substring(0, 30)}..." : "NULL"}'
+                .loggable,
+          );
+          App.log(
+            '[OnboardingButton]   pkamPrivateKey: ${pkamPrivateKey != null ? "${pkamPrivateKey.substring(0, 30)}..." : "NULL"}'
+                .loggable,
+          );
+          App.log(
+            '[OnboardingButton]   encryptionPublicKey: ${encryptionPublicKey != null ? "${encryptionPublicKey.substring(0, 30)}..." : "NULL"}'
+                .loggable,
+          );
+          App.log(
+            '[OnboardingButton]   encryptionPrivateKey: ${encryptionPrivateKey != null ? "${encryptionPrivateKey.substring(0, 30)}..." : "NULL"}'
+                .loggable,
+          );
+          App.log(
+            '[OnboardingButton]   selfEncryptionKey: ${selfEncryptionKey != null ? "${selfEncryptionKey.substring(0, 30)}..." : "NULL"}'
+                .loggable,
+          );
+
           if (pkamPublicKey == null ||
               pkamPrivateKey == null ||
               encryptionPublicKey == null ||
@@ -286,7 +352,6 @@ class _OnboardingButtonState extends State<OnboardingButton> {
           }
 
           // Create AtChops with the keys from KeyChain
-          // This ensures setCurrentAtSign gets properly initialized atChops
           App.log(
             '[OnboardingButton] Creating AtChops with keys from KeyChain'
                 .loggable,
@@ -305,46 +370,90 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             atEncryptionKeyPair,
             atPkamKeyPair,
           );
-          atChopsKeys.selfEncryptionKey =
-              AESKey(selfEncryptionKey);
+          atChopsKeys.selfEncryptionKey = AESKey(selfEncryptionKey);
           final atChops = AtChopsImpl(atChopsKeys);
 
-          // Force switch to a temporary atsign first to ensure full reinitialization
-          // The SDK caches atClient and won't reinitialize if same atsign
-          App.log(
-            '[OnboardingButton] Forcing atClient reinitialization'
-                .loggable,
-          );
           final atClientManager = AtClientManager.getInstance();
-          
-          // Switch to dummy atsign first (if there's a cached client for our atsign)
+
+          // Check if atClient already exists for this atsign
+          // If so, we need to update its atChops directly
+          // If not, we call setCurrentAtSign normally
+          bool atClientExists = false;
           try {
-            await atClientManager.setCurrentAtSign(
-              '@_temp_switch_atsign_',
-              'npt',
-              config.atClientPreference,
-            );
+            final existingClient = atClientManager.atClient;
+            atClientExists = existingClient.getCurrentAtSign() == atsign;
           } catch (_) {
-            // Ignore errors from dummy atsign - just need to clear the cache
+            // atClient doesn't exist yet
+            atClientExists = false;
           }
 
-          // Now call setCurrentAtSign with our atChops that has the keys
-          App.log(
-            '[OnboardingButton] Calling setCurrentAtSign with pre-initialized AtChops'
-                .loggable,
-          );
-          await atClientManager.setCurrentAtSign(
-            atsign,
-            'npt',
-            config.atClientPreference,
-            atChops: atChops,
-          );
+          // Get enrollmentId from AtsignInformation file (stored during APKAM approval)
+          // This is more reliable than localStorage since atClient might not be initialized yet
+          String? enrollmentId;
+          try {
+            final atsignEntries = await getAtsignEntries();
+            final atsignInfo = atsignEntries[atsign];
+            if (atsignInfo?.enrollmentId != null) {
+              enrollmentId = atsignInfo!.enrollmentId;
+              App.log(
+                '[OnboardingButton] Found enrollmentId in AtsignInformation: $enrollmentId'
+                    .loggable,
+              );
+            } else {
+              App.log(
+                '[OnboardingButton] No enrollmentId in AtsignInformation for $atsign'
+                    .loggable,
+              );
+            }
+          } catch (e) {
+            App.log(
+              '[OnboardingButton] Could not read enrollmentId from AtsignInformation: $e'
+                  .loggable,
+            );
+          }
+
+          if (atClientExists) {
+            // atClient already exists for this atsign - just update atChops
+            App.log(
+              '[OnboardingButton] atClient exists, updating atChops directly'
+                  .loggable,
+            );
+            atClientManager.atClient.atChops = atChops;
+            // Also set enrollmentId for APKAM authentication
+            if (enrollmentId != null) {
+              atClientManager.atClient.enrollmentId = enrollmentId;
+              atClientManager.atClient
+                      .getRemoteSecondary()
+                      ?.atLookUp
+                      .enrollmentId =
+                  enrollmentId;
+              App.log(
+                '[OnboardingButton] Set enrollmentId on existing atClient: $enrollmentId'
+                    .loggable,
+              );
+            }
+          } else {
+            // atClient doesn't exist or is for different atsign - create normally
+            App.log(
+              '[OnboardingButton] Creating new atClient with AtChops'.loggable,
+            );
+            if (enrollmentId != null) {
+              App.log(
+                '[OnboardingButton] Passing enrollmentId to setCurrentAtSign: $enrollmentId'
+                    .loggable,
+              );
+            }
+            await atClientManager.setCurrentAtSign(
+              atsign,
+              'npt',
+              config.atClientPreference,
+              atChops: atChops,
+              enrollmentId: enrollmentId,
+            );
+          }
 
           // Also populate localStorage for any operations that read from there
-          App.log(
-            '[OnboardingButton] Copying keys to localStorage'
-                .loggable,
-          );
+          App.log('[OnboardingButton] Copying keys to localStorage'.loggable);
           final atClient = atClientManager.atClient;
           final localStorage = atClient.getLocalSecondary();
 
