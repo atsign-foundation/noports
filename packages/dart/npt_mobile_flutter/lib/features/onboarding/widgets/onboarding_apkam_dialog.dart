@@ -485,11 +485,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       appName: Constants.namespace,
       deviceName: deviceName,
       otp: otp,
-      namespaces: {
-        Constants.namespace: 'rw',
-        'sshnp': 'rw',
-        'sshrvd': 'rw',
-      },
+      namespaces: {Constants.namespace: 'rw', 'sshnp': 'rw', 'sshrvd': 'rw'},
     );
 
     App.log(
