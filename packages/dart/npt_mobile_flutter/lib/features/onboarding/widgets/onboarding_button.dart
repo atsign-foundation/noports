@@ -20,7 +20,9 @@ import 'package:npt_mobile_flutter/util/constants.dart';
 import 'package:npt_mobile_flutter/widgets/loading_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:at_commons/at_commons.dart';
+import 'package:at_chops/at_chops.dart';
 
 final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
@@ -256,7 +258,7 @@ class _OnboardingButtonState extends State<OnboardingButton> {
         // Keys are in KeyChain (APKAM keys from file upload or enrollment).
         // APKAM keys use PKAM authentication, not CRAM.
         App.log(
-          '[OnboardingButton] Loading APKAM keys from KeyChain to localStorage'
+          '[OnboardingButton] Loading APKAM keys from KeyChain for login'
               .loggable,
         );
 
@@ -283,21 +285,64 @@ class _OnboardingButtonState extends State<OnboardingButton> {
             throw Exception('Incomplete keys in KeyChain for $atsign');
           }
 
-          // Step 1: Call setCurrentAtSign to create atClient instance
+          // Create AtChops with the keys from KeyChain
+          // This ensures setCurrentAtSign gets properly initialized atChops
           App.log(
-            '[OnboardingButton] Calling setCurrentAtSign to create atClient'
+            '[OnboardingButton] Creating AtChops with keys from KeyChain'
+                .loggable,
+          );
+
+          // Create key pairs for AtChops
+          final atEncryptionKeyPair = AtEncryptionKeyPair.create(
+            encryptionPublicKey,
+            encryptionPrivateKey,
+          );
+          final atPkamKeyPair = AtPkamKeyPair.create(
+            pkamPublicKey,
+            pkamPrivateKey,
+          );
+          final atChopsKeys = AtChopsKeys.create(
+            atEncryptionKeyPair,
+            atPkamKeyPair,
+          );
+          atChopsKeys.selfEncryptionKey =
+              AESKey(selfEncryptionKey);
+          final atChops = AtChopsImpl(atChopsKeys);
+
+          // Force switch to a temporary atsign first to ensure full reinitialization
+          // The SDK caches atClient and won't reinitialize if same atsign
+          App.log(
+            '[OnboardingButton] Forcing atClient reinitialization'
                 .loggable,
           );
           final atClientManager = AtClientManager.getInstance();
+          
+          // Switch to dummy atsign first (if there's a cached client for our atsign)
+          try {
+            await atClientManager.setCurrentAtSign(
+              '@_temp_switch_atsign_',
+              'npt',
+              config.atClientPreference,
+            );
+          } catch (_) {
+            // Ignore errors from dummy atsign - just need to clear the cache
+          }
+
+          // Now call setCurrentAtSign with our atChops that has the keys
+          App.log(
+            '[OnboardingButton] Calling setCurrentAtSign with pre-initialized AtChops'
+                .loggable,
+          );
           await atClientManager.setCurrentAtSign(
             atsign,
             'npt',
             config.atClientPreference,
+            atChops: atChops,
           );
 
-          // Step 2: Now populate localStorage with keys from KeyChain
+          // Also populate localStorage for any operations that read from there
           App.log(
-            '[OnboardingButton] Copying keys from KeyChain to localStorage'
+            '[OnboardingButton] Copying keys to localStorage'
                 .loggable,
           );
           final atClient = atClientManager.atClient;
@@ -338,17 +383,6 @@ class _OnboardingButtonState extends State<OnboardingButton> {
                   .loggable,
             );
           }
-
-          // Step 3: Call setCurrentAtSign again to reinitialize atChops with the new keys
-          App.log(
-            '[OnboardingButton] Reinitializing atClient to load keys from localStorage'
-                .loggable,
-          );
-          await atClientManager.setCurrentAtSign(
-            atsign,
-            'npt',
-            config.atClientPreference,
-          );
 
           App.log('[OnboardingButton] Login complete with APKAM keys'.loggable);
         } catch (e, st) {
