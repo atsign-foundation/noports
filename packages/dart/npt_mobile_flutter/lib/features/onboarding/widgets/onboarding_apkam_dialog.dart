@@ -60,6 +60,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   int _pollCount = 0;
   static const _maxPollAttempts = 100; // 5 minutes at 3 second intervals
   String? enrollmentId; // Track the enrollment ID from the server
+  bool _hasPopped = false; // Prevent double-pop on success
 
   @override
   void initState() {
@@ -441,10 +442,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       onboardingStatus = OnboardingStatus.success;
     });
 
-    // Wait to show success message
+    // Wait to show success message, then auto-pop if user hasn't already clicked Done
     await Future.delayed(const Duration(milliseconds: 2000));
 
-    if (mounted) {
+    if (mounted && !_hasPopped) {
+      _hasPopped = true;
       Navigator.of(context).pop(AtOnboardingResult.success(atsign: atsign));
     }
   }
@@ -453,9 +455,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     setState(() {
       onboardingStatus = OnboardingStatus.denied;
     });
-    // Wait for a bit to show the error message
+    // Wait for a bit to show the error message, then auto-pop if user hasn't already clicked Done
     await Future.delayed(const Duration(milliseconds: 3000));
-    if (mounted) {
+    if (mounted && !_hasPopped) {
+      _hasPopped = true;
       final strings = AppLocalizations.of(context)!;
       Navigator.of(
         context,
@@ -1017,6 +1020,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 width: isMobile ? double.infinity : 200,
                 child: FilledButton(
                   onPressed: () {
+                    // Prevent double-pop (auto-pop after 2 seconds also tries to pop)
+                    if (_hasPopped) return;
+                    _hasPopped = true;
                     // Pop with success result - the user is tapping Done
                     Navigator.of(
                       context,
@@ -1049,6 +1055,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 width: isMobile ? double.infinity : 200,
                 child: FilledButton(
                   onPressed: () {
+                    // Prevent double-pop (auto-pop after 3 seconds also tries to pop)
+                    if (_hasPopped) return;
+                    _hasPopped = true;
                     Navigator.of(context).pop(
                       AtOnboardingResult.error(
                         message: strings.enrollRequestDenied,
