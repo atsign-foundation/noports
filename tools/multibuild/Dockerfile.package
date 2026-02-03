@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM dart:3.10.8@sha256:538a59844eff5c6f6b8c761a974f1f035bb115f68710f6a90c32430af01c2241 AS build
+FROM dart:3.10.8@sha256:7d0c34b508131e209d8a44f442a311d039a90b9aac2d671cd73e1270f993c016 AS build
 WORKDIR /noports
 
 COPY . .
