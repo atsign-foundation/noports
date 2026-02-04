@@ -56,8 +56,12 @@ access:
   # When policy is empty: "localhost:22" (ssh) and "localhost:3389" (rdp)
   # When policy is non-empty: "*:*" (defer to policy for restriction)
   permitopen:
-    - localhost:22
-    - localhost:3389
+    # When policy is empty:
+    # - localhost:22
+    # - localhost:3389
+
+    # When policy is non-empty:
+    # - '*:*'
 
 # Additional device configuration
 device:
