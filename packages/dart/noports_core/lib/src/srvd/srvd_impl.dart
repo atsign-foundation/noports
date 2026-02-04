@@ -1,28 +1,37 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
+import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
+import 'package:noports_core/src/srvd/srvd_util_mixin.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 import 'isolates/types.dart';
 import 'srvd_session_params.dart';
 
 @protected
-class SrvdImpl implements Srvd {
+class SrvdImpl
+    with AtClientBindings, AtEventLogger, SrvdUtilMixin
+    implements Srvd {
   @override
   final AtSignLogger logger = AtSignLogger(' srvd main ');
   @override
   AtClient atClient;
   @override
-  final String atSign;
+  final Atsign atSign;
   @override
   final String homeDirectory;
   @override
@@ -44,9 +53,7 @@ class SrvdImpl implements Srvd {
   @visibleForTesting
   bool initialized = false;
 
-  static final String subscriptionRegex = '\\.${Srvd.namespace}@';
-
-  late final SrvdUtil srvdUtil;
+  Map<String, SessionInfo> sessions = {};
 
   Isolate? isolate443;
   SendPort? toIsolate443;
@@ -61,11 +68,9 @@ class SrvdImpl implements Srvd {
     required this.ipAddress,
     required this.logTraffic,
     required this.verbose,
-    SrvdUtil? srvdUtil,
     required this.bind443,
     required this.localBindPort443,
   }) {
-    this.srvdUtil = srvdUtil ?? SrvdUtil(atClient);
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -104,7 +109,7 @@ class SrvdImpl implements Srvd {
 
       var srvd = SrvdImpl(
         atClient: atClient,
-        atSign: p.atSign,
+        atSign: p.atSign.toAtsign(),
         homeDirectory: p.homeDirectory,
         atKeysFilePath: p.atKeysFilePath,
         managerAtsign: p.managerAtsign,
@@ -145,34 +150,6 @@ class SrvdImpl implements Srvd {
     initialized = true;
   }
 
-  Future<void> sendNack({
-    required String sessionId,
-    required String requestingAtsign,
-    required String message,
-  }) async {
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true;
-
-    var atKey = AtKey()
-      ..key = 'nack.$sessionId'
-      ..sharedBy = atSign
-      ..sharedWith = requestingAtsign
-      ..namespace = Srvd.namespace
-      ..metadata = metaData;
-
-    await atClient.notificationService.notify(
-      NotificationParams.forUpdate(
-        atKey,
-        value: message,
-        notificationExpiry: Duration(minutes: 1),
-      ),
-      waitForFinalDeliveryStatus: false,
-      checkForFinalDeliveryStatus: false,
-    );
-  }
-
   @override
   Future<void> run() async {
     if (!initialized) {
@@ -182,19 +159,138 @@ class SrvdImpl implements Srvd {
 
     handlePublicKeyChangedEvent(atClient, atSign);
 
+    const String subscriptionRegex = '\\.${Srvd.namespace}@';
+
     notificationService
         .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
-        .listen(_notificationHandler);
+        .listen(notificationHandler);
   }
 
-  void _notificationHandler(AtNotification notification) async {
-    if (!srvdUtil.accept(notification)) {
+  Future<void> notificationHandler(AtNotification n) async {
+    try {
+      if (!wellFormedRequest(n)) {
+        logger.shout('Un-handled notification key: ${n.key}');
+        return;
+      }
+
+      logger.shout('Notification key: ${n.key}');
+      String topic;
+      String messageType;
+      try {
+        final topicParts = n.key
+            .replaceAll('${n.to}:', '')
+            .replaceAll('.${Srvd.namespace}${n.from}', '')
+            .toLowerCase()
+            .split('.');
+        messageType = topicParts.removeLast();
+        topic = topicParts.join('.');
+      } catch (e) {
+        logger.warning('malformed notification key ${n.key}');
+        return;
+      }
+
+      logger.info(
+        '$messageType received from ${n.from}:'
+        ' ${n.value}',
+      );
+      switch (messageType) {
+        case 'request_ports':
+          return await handleRequestPorts(n);
+        case 'sessions':
+          return await handleSessionMessages(topic, n);
+        default:
+          logger.warning(
+            'unknown "$messageType" request received from ${n.from}'
+            ' ( ${n.value} )',
+          );
+      }
+    } catch (e, st) {
+      logger.shout(
+        'Exception $e while handling notification $n\nStack Trace:\n$st',
+      );
+    }
+  }
+
+  Future<void> handleSessionMessages(String topic, AtNotification n) async {
+    final parts = topic.split('.');
+    if (parts.length != 2) {
+      logger.warning('Invalid sessions sub-topic $topic');
+      return;
+    }
+    String sessionsMessageType = parts[0];
+    String sessionId = parts[1];
+
+    if (sessions[sessionId] == null) {
+      logger.info('This relay does not know about session $sessionId');
       return;
     }
 
-    late SrvdSessionParams sessionParams;
+    final SessionInfo sessionInfo = sessions[sessionId]!;
+
+    // Is the atSign who sent this message one of the participants in the session?
+    if (n.from != sessionInfo.atSignA && n.from != sessionInfo.atSignB) {
+      logger.shout('Received ${n.from} is not a participant in $sessionId');
+      return;
+    }
+
+    switch (sessionsMessageType) {
+      case 'logging':
+        if (sessionInfo.eventLoggingConfig != null) {
+          logger.warning(
+            'We already have session logging config for $sessionId',
+          );
+          return;
+        }
+        final elc = AtEventConfig.fromJson(jsonDecode(n.value!));
+        if (!await validAtsign(elc.atSign)) {
+          logger.warning('Invalid eventLoggingAtsign ${elc.atSign}');
+          return;
+        }
+        sessionInfo.eventLoggingConfig = elc;
+
+        // The first connection will usually already have happened before
+        // the relay receives the eventLoggingConfig, in which case we need
+        // to now send the "connected" event
+        if (sessionInfo.stats != null) {
+          await logEvent(
+            sessionInfo.eventLoggingConfig!,
+            SessionEvent.connected(
+              sessionId: sessionId,
+              stats: sessionInfo.stats!,
+            ),
+          );
+        }
+
+        break;
+      default:
+        logger.warning(
+          'unknown "$sessionsMessageType" sessions received from ${n.from}'
+          ' ( ${n.value} )',
+        );
+    }
+  }
+
+  Future<bool> validAtsign(String? atSign) async {
+    if (atSign == null || !(atSign.startsWith('@'))) {
+      return false;
+    }
     try {
-      sessionParams = await srvdUtil.getParams(notification);
+      final addr = await atClient
+          .getRemoteSecondary()
+          ?.atLookUp
+          .secondaryAddressFinder
+          .findSecondary(atSign);
+      return addr != null;
+    } catch (e) {
+      logger.warning('$e while looking up address for atSign $atSign');
+      return false;
+    }
+  }
+
+  Future<void> handleRequestPorts(AtNotification n) async {
+    SrvdSessionParams sessionParams;
+    try {
+      sessionParams = await srvdSessionParamsFromNotification(n.value!);
 
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
         logger.shout(
@@ -232,18 +328,21 @@ class SrvdImpl implements Srvd {
     if (sessionParams.multipleAcksOk) {
       // client can handle multiple acks, no need to lock a mutex
       logger.shout(
-        '😎 Will handle request from ${notification.from}'
+        '😎 Will handle request from ${n.from}'
         ' which can handle multiple acks (no mutex required)',
       );
     } else {
       // client cannot handle multiple acks, so we need to lock a mutex
-      var mutexKey = AtKey.fromString(
-        '${sessionParams.sessionId}'
-        '.session_mutexes.${Srvd.namespace}'
-        '${atClient.getCurrentAtSign()!}',
-      )..metadata = (Metadata()
-        ..immutable = true // only one srvd will succeed in doing this
-        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+      var mutexKey =
+          AtKey.fromString(
+              '${sessionParams.sessionId}'
+              '.session_mutexes.${Srvd.namespace}'
+              '${atClient.getCurrentAtSign()!}',
+            )
+            ..metadata = (Metadata()
+              ..immutable =
+                  true // only one srvd will succeed in doing this
+              ..ttl = 30000); // expire after 30 seconds to keep datastore clean
       PutRequestOptions pro = PutRequestOptions()
         ..shouldEncrypt = false
         ..useRemoteAtServer = true;
@@ -251,13 +350,13 @@ class SrvdImpl implements Srvd {
       try {
         await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
         logger.shout(
-          '😎 Will handle request from ${notification.from}'
+          '😎 Will handle request from ${n.from}'
           '; acquired mutex $mutexKey',
         );
       } catch (err) {
         if (err.toString().toLowerCase().contains('immutable')) {
           logger.shout(
-            '🤷‍♂️ Will not handle request from ${notification.from}'
+            '🤷‍♂️ Will not handle request from ${n.from}'
             '; did not acquire mutex $mutexKey',
           );
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
@@ -272,14 +371,15 @@ class SrvdImpl implements Srvd {
 
     if (sessionParams.only443) {
       if (!bind443) {
-        var message = 'Client requested port 443'
+        var message =
+            'Client requested port 443'
             ' but this relay is not bound to port 443';
         logger.shout(message);
         if (sessionParams.multipleAcksOk) {
           try {
             await sendNack(
               sessionId: sessionParams.sessionId,
-              requestingAtsign: notification.from,
+              requestingAtsign: n.from,
               message: message,
             );
           } catch (e) {
@@ -291,6 +391,11 @@ class SrvdImpl implements Srvd {
         toIsolate443!.send(IIRequest.create('start', sessionParams));
       }
     }
+
+    sessions[sessionParams.sessionId] = SessionInfo(
+      params: sessionParams,
+      connector: null,
+    );
 
     var (portA, portB) = ports;
     logger.shout(
@@ -308,23 +413,28 @@ class SrvdImpl implements Srvd {
     var atKey = AtKey()
       ..key = sessionParams.sessionId
       ..sharedBy = atSign
-      ..sharedWith = notification.from
+      ..sharedWith = n.from
       ..namespace = Srvd.namespace
       ..metadata = metaData;
 
-    String data = '$ipAddress,$portA,$portB,${sessionParams.rvdNonce}';
+    String responseVal = createResponseValue(
+      ipAddress,
+      portA,
+      portB,
+      sessionParams,
+    );
 
     logger.shout(
       'Sending response data'
       ' for requested session ${sessionParams.sessionId} :'
-      ' [$data]',
+      ' [$responseVal]',
     );
 
     try {
       await atClient.notificationService.notify(
         NotificationParams.forUpdate(
           atKey,
-          value: data,
+          value: responseVal,
           notificationExpiry: Duration(minutes: 1),
         ),
         waitForFinalDeliveryStatus: false,
@@ -337,7 +447,7 @@ class SrvdImpl implements Srvd {
     preFetched[sessionParams.sessionId] = {};
     for (final s in sessionParams.preFetch) {
       try {
-        final AtValue value = await _lookup(AtKey.fromString(s));
+        final AtValue value = await _atClientLookup(AtKey.fromString(s));
         preFetched[sessionParams.sessionId]![s] = value.value;
       } catch (e) {
         logger.shout('$e while preFetching $s');
@@ -352,7 +462,7 @@ class SrvdImpl implements Srvd {
 
   Map<String, Map<String, dynamic>> preFetched = {};
 
-  Future<AtValue> _lookup(AtKey atKey) async {
+  Future<AtValue> _atClientLookup(AtKey atKey) async {
     logger.info('Looking up $atKey on atServer');
     return await atClient.get(
       atKey,
@@ -372,7 +482,7 @@ class SrvdImpl implements Srvd {
         value = AtValue()..value = preFetched[sessionId]?[key];
         fromPreFetch = ' (pre-fetched)';
       } else {
-        value = await _lookup(AtKey.fromString(key));
+        value = await _atClientLookup(AtKey.fromString(key));
       }
       logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
       toSpawned.send(
@@ -382,6 +492,52 @@ class SrvdImpl implements Srvd {
       logger.info('request: "lookup" : error $err');
       toSpawned.send(
         IIResponse(id: msg.id, isError: true, payload: err.toString()),
+      );
+    }
+  }
+
+  Future<void> _handleSessionComplete(IIRequest msg) async {
+    final sessionId = msg.payload['sessionId'];
+    logger.info('_handleSessionComplete $sessionId');
+    SessionInfo? si = sessions[sessionId];
+    logger.info(
+      'sessionInfo:'
+      ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',
+    );
+    if (si != null && si.eventLoggingConfig != null) {
+      await logEvent(
+        si.eventLoggingConfig!,
+        SessionEvent.done(
+          sessionId: sessionId,
+          stats: msg.payload['stats'] as Stats,
+        ),
+      );
+    }
+    sessions.remove(sessionId);
+  }
+
+  Future<void> _handleNewConnection(IIRequest msg) async {
+    final sessionId = msg.payload['sessionId'];
+    logger.info('_handleNewConnection $sessionId');
+    SessionInfo? si = sessions[sessionId];
+    if (si == null) {
+      return;
+    }
+    // If we've already got stats then this isn't the first connection, and we
+    // only really care about the first connection in order to send the
+    // "connected" event.
+    if (si.stats != null) {
+      return;
+    }
+    si.stats = msg.payload['stats'];
+
+    // If we already have received an eventLoggingConfig then let's send the
+    // "connected" event. If the eventLoggingConfig arrives later than the
+    // first connection, then the "connected" event is sent at that time.
+    if (si.eventLoggingConfig != null) {
+      await logEvent(
+        si.eventLoggingConfig!,
+        SessionEvent.connected(sessionId: sessionId, stats: si.stats!),
       );
     }
   }
@@ -451,6 +607,12 @@ class SrvdImpl implements Srvd {
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'newConnection':
+            await _handleNewConnection(msg);
+            break;
+          case 'sessionComplete':
+            await _handleSessionComplete(msg);
             break;
           default:
             toSpawned.send(
@@ -574,6 +736,12 @@ class SrvdImpl implements Srvd {
           case 'lookup':
             await lookup(msg, toSpawned);
             break;
+          case 'newConnection':
+            await _handleNewConnection(msg);
+            break;
+          case 'sessionComplete':
+            await _handleSessionComplete(msg);
+            break;
           case 'handleIsolateFailure':
             logger.shout('');
             logger.shout('Single-port isolate failed: ${msg.payload}');
@@ -615,5 +783,33 @@ class SrvdImpl implements Srvd {
     }
 
     return (portPair443, spawned, toSpawned);
+  }
+
+  Future<void> sendNack({
+    required String sessionId,
+    required String requestingAtsign,
+    required String message,
+  }) async {
+    var metaData = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = true;
+
+    var atKey = AtKey()
+      ..key = 'nack.$sessionId'
+      ..sharedBy = atSign
+      ..sharedWith = requestingAtsign
+      ..namespace = Srvd.namespace
+      ..metadata = metaData;
+
+    await atClient.notificationService.notify(
+      NotificationParams.forUpdate(
+        atKey,
+        value: message,
+        notificationExpiry: Duration(minutes: 1),
+      ),
+      waitForFinalDeliveryStatus: false,
+      checkForFinalDeliveryStatus: false,
+    );
   }
 }

@@ -18,7 +18,7 @@ class ProfileLocalPortSelector extends StatelessWidget {
         Text(strings.localPort),
         gapH4,
         Text(
-          strings.localPortDescription,
+          '${strings.localPortDescription}\n', // Extra newline for spacing consistency with local host field.
           style: Theme.of(context).textTheme.bodySmall,
         ),
         gapH14,

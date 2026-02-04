@@ -174,7 +174,8 @@ abstract class Srv<T> {
     List<String> pathList = Platform.resolvedExecutable.split(
       Platform.pathSeparator,
     );
-    bool isExe = (pathList.last == 'sshnp$postfix' ||
+    bool isExe =
+        (pathList.last == 'sshnp$postfix' ||
         pathList.last == 'sshnpd$postfix' ||
         pathList.last == 'npt$postfix');
 

@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -67,13 +67,13 @@ jobs:
             compiler: "clang"
             flags: "-Wno-error -pthread"
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
 
         # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
         with:
           cmake-version: "3.31.6"
       - name: Compile binaries
@@ -87,7 +87,7 @@ jobs:
         name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ matrix.output-name }}_${{ matrix.compiler
             }}-${{  github.ref_name
@@ -133,11 +133,11 @@ jobs:
     ## 20240806: Clang and CMake that we use aren't packaged for
     ## armv7 or riscv64 (also no Debian 11 for RISC-V)
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Build tarballs in Docker
         run: |
           docker buildx build -t atsigncompany/sshnpdc \
@@ -146,7 +146,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - name: Upload tarballs
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{
             matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
@@ -158,19 +158,19 @@ jobs:
     name: Generate source tarball
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: c_release-${{github.run_number}}
         # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
         with:
           cmake-version: "3.31.6"
       - name: Create tarball
         working-directory: ./packages/c
         run: |
           cmake --workflow --preset package-source
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
@@ -189,13 +189,13 @@ jobs:
       attestations: write
     steps:
       - name: Get lockfile
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: |
             packages/c/conan.lock
           sparse-checkout-cone-mode: false
       - name: Download all the tarballs
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: tarballs/
       - name: Move packages for signing
@@ -210,13 +210,13 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@c34242c23d6df06a646c680abb1793fb334621bf # v0.6
+        uses: sbomify/github-action@e344ec6e6916948ce49720a9ac5bafafb7119d47 # v0.13
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
           LOCK_FILE: './packages/c/conan.lock'
           COMPONENT_NAME: 'csshnpd'
-          COMPONENT_VERSION: ${{github.ref_name}}
+          COMPONENT_VERSION: ${{github.ref_name}}-gha${{github.run_number}}
           OUTPUT_FILE: 'tarballs/csshnpd-${{github.ref_name}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
@@ -235,7 +235,7 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+      - uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
         with:
           subject-path: "tarballs/**"
 

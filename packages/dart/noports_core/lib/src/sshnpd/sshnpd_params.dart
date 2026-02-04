@@ -16,6 +16,7 @@ class SshnpdParams {
   final String passPhrase;
   final String deviceAtsign;
   final bool verbose;
+  final bool debug;
   final bool makeDeviceInfoVisible;
   final bool addSshPublicKeys;
   final SupportedSshClient sshClient;
@@ -40,6 +41,7 @@ class SshnpdParams {
     required this.passPhrase,
     required this.deviceAtsign,
     required this.verbose,
+    required this.debug,
     required this.makeDeviceInfoVisible,
     required this.addSshPublicKeys,
     required this.sshClient,
@@ -62,6 +64,7 @@ class SshnpdParams {
   static Future<SshnpdParams> fromArgs(
     List<String> args, {
     void Function()? helpCallback,
+    void Function()? versionCallback,
   }) async {
     // Arg check
     final Configuration c = Configuration<SshnpdOption>.resolveNoExcept(
@@ -69,6 +72,10 @@ class SshnpdParams {
       args: args,
       configBroker: SshnpdConfigBroker(),
     );
+
+    if (c.value(SshnpdOption.version)) {
+      versionCallback?.call();
+    }
 
     if (c.value(SshnpdOption.help)) {
       helpCallback?.call();
@@ -139,6 +146,7 @@ class SshnpdParams {
       passPhrase: c.optionalValue(SshnpdOption.passPhrase) ?? "",
       deviceAtsign: deviceAtsign,
       verbose: c.value(SshnpdOption.verbose),
+      debug: c.value(SshnpdOption.debug),
       makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: c.value(SshnpdOption.addSshPublicKey),
       sshClient: c.value(SshnpdOption.sshClient),

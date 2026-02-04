@@ -307,7 +307,8 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     FlagOption(
       argName: 'strict',
       configKey: '/runtime/strict',
-      helpText: 'Explicitly set strict request verification. By default,'
+      helpText:
+          'Explicitly set strict request verification. By default,'
           ' strict mode is only enabled when using a policy service. NOTE: If'
           ' strict mode is enabled when you are not using a policy service'
           ' then, if a requesting atSign\'s public key has changed since a'
@@ -324,7 +325,17 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       configKey: '/runtime/verbose',
       argAbbrev: 'v',
       defaultsTo: false,
-      helpText: 'More logging',
+      helpText: 'More logging (INFO and above)',
+      group: runtimeGroup,
+    ),
+  ),
+
+  debug(
+    FlagOption(
+      argName: 'debug',
+      configKey: '/runtime/debug',
+      defaultsTo: false,
+      helpText: 'All logging (FINEST and above)',
       group: runtimeGroup,
     ),
   ),
@@ -334,6 +345,15 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       argName: 'help',
       defaultsTo: false,
       helpText: 'Show usage',
+      group: runtimeGroup,
+    ),
+  ),
+
+  version(
+    FlagOption(
+      argName: 'version',
+      defaultsTo: false,
+      helpText: 'Show version',
       group: runtimeGroup,
     ),
   );

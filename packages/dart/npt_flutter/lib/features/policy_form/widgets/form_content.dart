@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/form_validator.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../styles/app_color.dart';
 import '../../../styles/sizes.dart';
@@ -14,9 +16,14 @@ import 'role_description_field.dart';
 import 'role_name_field.dart';
 import 'user_at_signs_field.dart';
 
-class FormContent extends StatelessWidget {
+class FormContent extends StatefulWidget {
   const FormContent({super.key});
 
+  @override
+  State<FormContent> createState() => _FormContentState();
+}
+
+class _FormContentState extends State<FormContent> {
   void _showDeleteConfirmation(
     BuildContext context,
     RoleInProgress currentRole,
@@ -35,7 +42,8 @@ class FormContent extends StatelessWidget {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(strings.cancel),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
+              icon: PhosphorIcon(PhosphorIcons.trash()),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 formCubit.deleteCurrentRole(strings);
@@ -44,7 +52,7 @@ class FormContent extends StatelessWidget {
                 backgroundColor: AppColor.errorColor,
                 foregroundColor: Colors.white,
               ),
-              child: Text(strings.delete),
+              label: Text(strings.delete),
             ),
           ],
         );
@@ -52,6 +60,7 @@ class FormContent extends StatelessWidget {
     );
   }
 
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
@@ -84,44 +93,22 @@ class FormContent extends StatelessWidget {
           final canDelete = formState.canDelete;
 
           return Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(Sizes.p8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.only(right: Sizes.p8),
                   child: Row(
                     children: [
                       const Spacer(),
                       if (isEditing) ...[
-                        if (canDelete) ...[
-                          ElevatedButton(
-                            onPressed: () =>
-                                _showDeleteConfirmation(context, currentRole),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColor.errorColor,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(strings.delete),
-                          ),
-                          const SizedBox(width: Sizes.p8),
-                        ],
-                        TextButton(
+                        ElevatedButton.icon(
+                          icon: PhosphorIcon(PhosphorIcons.floppyDiskBack()),
                           onPressed: isSaving
                               ? null
                               : () {
-                                  context
-                                      .read<PolicyFormCubit>()
-                                      .cancelEditing();
-                                  context.read<PolicyCubit>().cancelEditing();
-                                },
-                          child: Text(strings.cancel),
-                        ),
-                        const SizedBox(width: Sizes.p8),
-                        ElevatedButton(
-                          onPressed: isSaving
-                              ? null
-                              : () {
+                                  if (!formKey.currentState!.validate()) return;
                                   context.read<PolicyFormCubit>().saveRole(
                                     strings,
                                   );
@@ -130,12 +117,12 @@ class FormContent extends StatelessWidget {
                             backgroundColor: AppColor.primaryColor,
                             foregroundColor: Colors.white,
                           ),
-                          child: isSaving
+                          label: isSaving
                               ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
+                                  width: Sizes.p16,
+                                  height: Sizes.p16,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: Sizes.p2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                       Colors.white,
                                     ),
@@ -143,9 +130,37 @@ class FormContent extends StatelessWidget {
                                 )
                               : Text(strings.save),
                         ),
+                        gapW8,
+                        TextButton.icon(
+                          icon: PhosphorIcon(PhosphorIcons.prohibit()),
+                          onPressed: isSaving
+                              ? null
+                              : () {
+                                  context
+                                      .read<PolicyFormCubit>()
+                                      .cancelEditing();
+                                  context.read<PolicyCubit>().cancelEditing();
+                                },
+                          label: Text(strings.cancel),
+                        ),
+                        gapW38,
+                        if (canDelete) ...[
+                          ElevatedButton.icon(
+                            icon: PhosphorIcon(PhosphorIcons.trash()),
+                            onPressed: () =>
+                                _showDeleteConfirmation(context, currentRole),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.errorColor,
+                              foregroundColor: Colors.white,
+                            ),
+                            label: Text(strings.delete),
+                          ),
+                          const SizedBox(width: Sizes.p8),
+                        ],
                       ] else ...[
                         if (currentRole is FetchedRole)
-                          ElevatedButton(
+                          ElevatedButton.icon(
+                            icon: PhosphorIcon(PhosphorIcons.pencil()),
                             onPressed: () {
                               final roleId = currentRole.id;
                               context.read<PolicyCubit>().startEditingRole(
@@ -155,11 +170,7 @@ class FormContent extends StatelessWidget {
                                   .read<PolicyFormCubit>()
                                   .initializeFormExisting(roleId, strings);
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColor.primaryColor,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text(strings.edit),
+                            label: Text(strings.edit),
                           ),
                       ],
                     ],
@@ -172,38 +183,56 @@ class FormContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Form(
+                          key: formKey,
+                          child: Row(
+                            spacing: Sizes.p40,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: RoleNameField(
+                                  role: currentRole,
+                                  isEditing: isEditing,
+                                  onChanged: (value) {
+                                    context.read<PolicyFormCubit>().updateName(
+                                      value,
+                                    );
+                                  },
+                                  validator:
+                                      FormValidator.validateRequiredField,
+                                ),
+                              ),
+
+                              Expanded(
+                                child: RoleDescriptionField(
+                                  role: currentRole,
+                                  isEditing: isEditing,
+                                  onChanged: (value) {
+                                    context
+                                        .read<PolicyFormCubit>()
+                                        .updateDescription(value);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        gapH40,
                         Row(
+                          spacing: Sizes.p40,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: RoleNameField(
-                                role: currentRole,
-                                isEditing: isEditing,
-                                onChanged: (value) {
-                                  context.read<PolicyFormCubit>().updateName(
-                                    value,
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: Sizes.p16),
-                            Expanded(
-                              child: RoleDescriptionField(
+                              child: UserAtSignsField(
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
                                   context
                                       .read<PolicyFormCubit>()
-                                      .updateDescription(value);
+                                      .updateUserAtSigns(value);
                                 },
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: Sizes.p24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
                             Expanded(
                               child: DaemonAtSignsField(
                                 role: currentRole,
@@ -215,7 +244,13 @@ class FormContent extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: Sizes.p16),
+                          ],
+                        ),
+                        gapH40,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: Sizes.p40,
+                          children: [
                             Expanded(
                               child: DeviceListWidget(
                                 label: strings.devices,
@@ -229,7 +264,7 @@ class FormContent extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: Sizes.p16),
+
                             Expanded(
                               child: DeviceGroupListWidget(
                                 label: strings.deviceGroups,
@@ -240,23 +275,6 @@ class FormContent extends StatelessWidget {
                                   context
                                       .read<PolicyFormCubit>()
                                       .updateDeviceGroups(value);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Sizes.p24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: UserAtSignsField(
-                                role: currentRole,
-                                isEditing: isEditing,
-                                onChanged: (value) {
-                                  context
-                                      .read<PolicyFormCubit>()
-                                      .updateUserAtSigns(value);
                                 },
                               ),
                             ),

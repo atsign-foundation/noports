@@ -21,6 +21,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get add => 'Adicionar';
 
   @override
+  String get addAtsign => 'Adicionar atSign';
+
+  @override
   String get addNew => 'Adicionar Novo';
 
   @override
@@ -33,7 +36,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -81,6 +84,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get authorisation => 'Autorização';
+
+  @override
+  String get autoStartApplication =>
+      'Iniciar Aplicação do Cliente Automaticamente';
 
   @override
   String get back => 'Voltar';
@@ -132,6 +139,20 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get connectionTimedOut =>
       'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Esta definição lança automaticamente a aplicação apropriada após uma ligação ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhuma aplicação será lançada. Selecione o protocolo a utilizar para a ligação.';
+
+  @override
+  String get connectUriProtocolNone => 'Nenhum';
+
+  @override
+  String get connectUriUsername => 'Nome de Usuário';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -925,6 +946,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Este campo não pode ser deixado em branco';
 
   @override
+  String get validationErrorHostField =>
+      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
+
+  @override
   String get validationErrorLocalPortField =>
       'O número deve estar entre 1024 e 65535';
 
@@ -934,10 +959,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um atSign válido';
-
-  @override
-  String get validationErrorHostField =>
-      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
 
   @override
   String get validationErrorRemotePortField =>
@@ -983,6 +1004,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get add => 'Adicionar';
 
   @override
+  String get addAtsign => 'Adicionar atSign';
+
+  @override
   String get addNew => 'Adicionar Novo';
 
   @override
@@ -995,7 +1019,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get alertDialogTitle => 'Você tem certeza?';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, Todos os Direitos Reservados';
+  String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
 
   @override
   String get americas => 'Américas';
@@ -1043,6 +1067,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get authorisation => 'Autorização';
+
+  @override
+  String get autoStartApplication =>
+      'Iniciar Aplicação do Cliente Automaticamente';
 
   @override
   String get back => 'Voltar';
@@ -1094,6 +1122,20 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get connectionTimedOut =>
       'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      'Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.';
+
+  @override
+  String get connectUriProtocolNone => 'Nenhum';
+
+  @override
+  String get connectUriUsername => 'Nome de Usuário';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -1887,6 +1929,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Este campo não pode ser deixado em branco';
 
   @override
+  String get validationErrorHostField =>
+      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
+
+  @override
   String get validationErrorLocalPortField =>
       'O número deve estar entre 1024 e 65535';
 
@@ -1896,10 +1942,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um atSign válido';
-
-  @override
-  String get validationErrorHostField =>
-      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
 
   @override
   String get validationErrorRemotePortField =>

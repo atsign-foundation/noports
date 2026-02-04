@@ -31,25 +31,24 @@ void main() {
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
     notifyInvocation() => notifyStub(
-          any(),
-          any(),
-          checkForFinalDeliveryStatus:
-              any(named: 'checkForFinalDeliveryStatus'),
-          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
-          ttln: any(named: 'ttln'),
-          maxTries: any(named: 'maxTries'),
-        );
+      any(),
+      any(),
+      checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+      waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+      ttln: any(named: 'ttln'),
+      maxTries: any(named: 'maxTries'),
+    );
     subscribeInvocation() => subscribeStub(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
+      regex: any(named: 'regex'),
+      shouldDecrypt: any(named: 'shouldDecrypt'),
+    );
     srvGeneratorInvocation() => srvGeneratorStub(
-          any(),
-          any(),
-          localPort: any(named: 'localPort'),
-          bindLocalPort: any(named: 'bindLocalPort'),
-          relayAuthenticator: any(named: 'relayAuthenticator'),
-        );
+      any(),
+      any(),
+      localPort: any(named: 'localPort'),
+      bindLocalPort: any(named: 'bindLocalPort'),
+      relayAuthenticator: any(named: 'relayAuthenticator'),
+    );
     srvRunInvocation() => mockSrv.run();
 
     setUp(() {
@@ -108,13 +107,14 @@ void main() {
       expect(
         stubbedSrvdChannel.srvGenerator,
         isA<
-            Srv<String> Function(
-              String,
-              int, {
-              required int localPort,
-              required bool bindLocalPort,
-              RelayAuthenticator? relayAuthenticator,
-            })>(),
+          Srv<String> Function(
+            String,
+            int, {
+            required int localPort,
+            required bool bindLocalPort,
+            RelayAuthenticator? relayAuthenticator,
+          })
+        >(),
       );
       expect(stubbedSrvdChannel.atClient, mockAtClient);
       expect(stubbedSrvdChannel.params, mockParams);
@@ -169,30 +169,29 @@ void main() {
 
       verifyInOrder([
         () => subscribeStub(
-              regex: '$sessionId.${Srvd.namespace}@',
-              shouldDecrypt: true,
-            ),
+          regex: '$sessionId.${Srvd.namespace}@',
+          shouldDecrypt: true,
+        ),
         () => notifyStub(
-              any<AtKey>(
-                that: predicate(
-                  // Predicate matching specifically the srvdIdKey format
-                  (AtKey key) =>
-                      key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
-                      key.sharedBy == '@client' &&
-                      key.sharedWith == '@srvd' &&
-                      key.metadata.namespaceAware == false &&
-                      key.metadata.ttl == 10000,
-                ),
-              ),
-              any(),
-              checkForFinalDeliveryStatus: any(
-                named: 'checkForFinalDeliveryStatus',
-              ),
-              waitForFinalDeliveryStatus:
-                  any(named: 'waitForFinalDeliveryStatus'),
-              ttln: any(named: 'ttln'),
-              maxTries: any(named: 'maxTries'),
+          any<AtKey>(
+            that: predicate(
+              // Predicate matching specifically the srvdIdKey format
+              (AtKey key) =>
+                  key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
+                  key.sharedBy == '@client' &&
+                  key.sharedWith == '@srvd' &&
+                  key.metadata.namespaceAware == false &&
+                  key.metadata.ttl == 10000,
             ),
+          ),
+          any(),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          ttln: any(named: 'ttln'),
+          maxTries: any(named: 'maxTries'),
+        ),
       ]);
 
       verifyNever(subscribeInvocation);
@@ -302,10 +301,10 @@ void main() {
         );
         SrvdDartBindPortChannel srvdDartBindPortChannel =
             SrvdDartBindPortChannel(
-          atClient: mockAtClient,
-          params: srvdChannelParams,
-          sessionId: sessionId,
-        );
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
         await srvdDartBindPortChannel.getHostAndPortFromSrvd();
         expect(srvdDartBindPortChannel.rvdHost, '127.0.0.1');
         expect(srvdDartBindPortChannel.clientPort, 98878);
@@ -427,7 +426,15 @@ void main() {
           ),
         ),
       );
-      expect(srvdDartBindPortChannel.rvdNonce, isNull);
+      expect(
+        () => srvdDartBindPortChannel.rvdNonce,
+        throwsA(
+          predicate(
+            (dynamic e) =>
+                e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
       expect(srvdDartBindPortChannel.fetched, false);
     });
 
@@ -489,10 +496,10 @@ void main() {
 
         SrvdDartBindPortChannel srvdDartBindPortChannel =
             SrvdDartBindPortChannel(
-          atClient: mockAtClient,
-          params: srvdChannelParams,
-          sessionId: sessionId,
-        );
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
 
         expect(
           () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(

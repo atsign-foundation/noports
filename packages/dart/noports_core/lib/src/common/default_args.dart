@@ -46,10 +46,13 @@ class DefaultArgs {
   /// Heartbeats are an attempt to persuade over-zealous network
   /// intermediaries that the control channel shouldn't be closed due to lack
   /// of activity.
-  static const int controlChannelHeartbeatIntervalMins = 30;
+  static const int controlChannelHeartbeatIntervalMins = 5;
   static const Duration controlChannelHeartbeatInterval = Duration(
     minutes: controlChannelHeartbeatIntervalMins,
   );
+
+  /// namespace for event logging
+  static const String eventLoggingNamespace = 'events.logging.sshnp';
 }
 
 class DefaultSshnpArgs {

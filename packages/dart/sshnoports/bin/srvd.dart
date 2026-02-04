@@ -23,6 +23,11 @@ void main(List<String> args) async {
     exit(0);
   }
 
+  if (r.wasParsed('version')) {
+    printVersion();
+    exit(0);
+  }
+
   if (r.wasParsed('help')) {
     printVersion();
     stderr.writeln(SrvdParams.parser.usage);

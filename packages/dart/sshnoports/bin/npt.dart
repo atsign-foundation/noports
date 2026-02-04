@@ -180,6 +180,8 @@ void main(List<String> args) async {
       );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
+      parser.addFlag('version',
+          defaultsTo: false, negatable: false, help: 'Print version');
 
       parser.addFlag(
         'ipv4',
@@ -287,6 +289,11 @@ void main(List<String> args) async {
 
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
+
+      if (parsedArgs['version'] == true) {
+        printVersion();
+        exit(0);
+      }
 
       if (parsedArgs['help'] == true) {
         print(parser.usage);
@@ -542,8 +549,10 @@ void main(List<String> args) async {
               ' will wait 5 seconds and retry');
           await Future.delayed(Duration(seconds: 5));
         } else {
+          if (inline) {
+            logProgress('Session ended');
+          }
           // not keeping alive - break out of the "while (true)"
-          logProgress('Session ended');
           break;
         }
       }

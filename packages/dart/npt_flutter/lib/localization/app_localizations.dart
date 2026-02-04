@@ -137,6 +137,12 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get add;
 
+  /// No description provided for @addAtsign.
+  ///
+  /// In en, this message translates to:
+  /// **'Add atSign'**
+  String get addAtsign;
+
   /// No description provided for @addNew.
   ///
   /// In en, this message translates to:
@@ -164,7 +170,7 @@ abstract class AppLocalizations {
   /// No description provided for @allRightsReserved.
   ///
   /// In en, this message translates to:
-  /// **'© 2025 Atsign, All Rights Reserved'**
+  /// **'© 2026 Atsign, All Rights Reserved'**
   String get allRightsReserved;
 
   /// No description provided for @americas.
@@ -257,6 +263,12 @@ abstract class AppLocalizations {
   /// **'Authorisation'**
   String get authorisation;
 
+  /// No description provided for @autoStartApplication.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Start Client Application'**
+  String get autoStartApplication;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:
@@ -346,6 +358,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connection timed out, will retry...'**
   String get connectionTimedOut;
+
+  /// No description provided for @connectUriProtocolDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting automatically launches the appropriate application after a connection is established, based on the selected protocol. If no protocol is selected, no application will be launched. Select the protocol to use for the connection.'**
+  String get connectUriProtocolDescription;
+
+  /// No description provided for @connectUriProtocolNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get connectUriProtocolNone;
+
+  /// No description provided for @connectUriUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get connectUriUsername;
+
+  /// No description provided for @connectUriUsernameDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional username for protocols like SSH (e.g., user in ssh://user@host)'**
+  String get connectUriUsernameDescription;
 
   /// No description provided for @couldNotLoadPreviousState.
   ///
@@ -1763,6 +1799,12 @@ abstract class AppLocalizations {
   /// **'This field cannot be left blank'**
   String get validationErrorEmptyField;
 
+  /// No description provided for @validationErrorHostField.
+  ///
+  /// In en, this message translates to:
+  /// **'Field must be partially or fully qualified hostname or an IP address'**
+  String get validationErrorHostField;
+
   /// No description provided for @validationErrorLocalPortField.
   ///
   /// In en, this message translates to:
@@ -1780,12 +1822,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Relay must be a valid atsign'**
   String get validationErrorRelayField;
-
-  /// No description provided for @validationErrorHostField.
-  ///
-  /// In en, this message translates to:
-  /// **'Field must be partially or fully qualified hostname or an IP address'**
-  String get validationErrorHostField;
 
   /// No description provided for @validationErrorRemotePortField.
   ///

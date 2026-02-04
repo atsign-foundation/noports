@@ -29,10 +29,10 @@ class IIRequest {
   IIRequest({required this.id, required this.type, required this.payload});
 
   factory IIRequest.create(String type, dynamic payload) => IIRequest(
-        id: DateTime.now().microsecondsSinceEpoch,
-        type: type,
-        payload: payload,
-      );
+    id: DateTime.now().microsecondsSinceEpoch,
+    type: type,
+    payload: payload,
+  );
 
   @override
   String toString() {

@@ -7,19 +7,19 @@ import 'package:npt_flutter/features/features.dart';
 // Returns: a boolean, true = success, false = failed
 Future<bool> preSignout() async {
   App.log("Resetting all application state before signout".loggable);
+  final context = App.navState.currentContext;
   // We need to do the following before "signing out"
   // - Wipe all application state
-  App.navState.currentContext?.read<ProfilesRunningCubit>().stopAllAndClear();
-  App.navState.currentContext?.read<ProfileCacheCubit>().clear();
-  App.navState.currentContext?.read<ProfilesSelectedCubit>().deselectAll();
-  App.navState.currentContext?.read<FavoriteBloc>().clearAll();
-  App.navState.currentContext?.read<ProfileListBloc>().clearAll();
-  App.navState.currentContext?.read<SettingsBloc>().clear();
-  App.navState.currentContext?.read<OnboardingCubit>().setStatus(
-    OnboardingStatus.offboarded,
-  );
+  context?.read<ProfilesRunningCubit>().stopAllAndClear();
+  context?.read<ProfileCacheCubit>().clear();
+  context?.read<ProfilesSelectedCubit>().deselectAll();
+  context?.read<FavoriteBloc>().clearAll();
+  context?.read<ProfileListBloc>().clearAll();
+  context?.read<SettingsBloc>().clear();
+  context?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon
-  App.navState.currentContext?.read<TrayCubit>().initialize();
-  await App.navState.currentContext?.read<AuthorisationService>().dispose();
+  context?.read<TrayCubit>().initialize();
+  await context?.read<AuthorisationService>().dispose();
+
   return true;
 }

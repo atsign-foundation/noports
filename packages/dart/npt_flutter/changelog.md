@@ -1,6 +1,30 @@
+## 1.8.1+26
+
+- FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.
+- FIX: Properly dispose of pin controller and focus node in ActivateAtsignDialog.
+- FIX: update error handling for invalid OTP in OnboardingApkamDialog.
+- FIX: cursor doesn't jump to the end of the text field unless "@" was auto add to the atsign field.
+- FIX: updated and completed localization strings for profile_connect_uri_field strings, removed legacy code.
+
 ## 1.8.0+25
 
 - FEAT: App now supports IPv6 and IPv4 numeric entries for local and remote host.
+- FIX: Local port and Remote port are aligned correctly.
+- FIX: Info SnackBar prefix text now visible.
+- FIX: No Error SnackBar is shown when user cancels backing up their key.
+- FIX: Policy Screen layout update for better spacing.
+- FIX: Standardize widget styles, enhance form validation and improve layout consistency across policy forms.
+- FIX: enrollment appName set to `noports` to be consistent with noPorts cli tools.
+- FIX: Enrollment Dialog cannot be dismissed once the enrollment process starts
+- FIX: Policy and Authorization Screen refreshes after switching atsign.
+- FIX: Added a default tool tip to prevent garbled tool tips on the Windows tray Icon
+- FEAT: Added auto start of application via URI in configuration of connections
+- FEAT: User can Add atsign from the switch atsign button.
+- FIX: On Windows the tool tray now has Icons to indicate status (Windows cannot do color in tool tray)
+- FIX: In the tool tray now when you click settings you get to the app and the settings page
+- FEAT: On Windows clicking the tool tray Icon for a favourite will open the app and connect, if already connected will simply disconnect
+- FIX: Updated copyright year to 2026.
+- FEAT: Demo Profile uses http as the default protocol.
 
 ## 1.7.0+24
 

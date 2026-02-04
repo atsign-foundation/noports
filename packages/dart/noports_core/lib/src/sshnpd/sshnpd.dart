@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/types.dart';
@@ -85,6 +86,9 @@ abstract class Sshnpd {
   /// The version of whatever program is using this library.
   abstract final String version;
 
+  /// Sent by the policy atSign when using policy service
+  abstract AtEventConfig? elc;
+
   /// Pre-process the received notification
   abstract final Future<void> Function(AtNotification)? notifPreProcessor;
 
@@ -99,13 +103,13 @@ abstract class Sshnpd {
   /// policy service is being used, and false otherwise.
   abstract final bool strict;
 
-
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
+    void Function()? versionCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
@@ -115,6 +119,7 @@ abstract class Sshnpd {
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
       helpCallback: helpCallback,
+      versionCallback: versionCallback,
       version: version,
       notifPreProcessor: notifPreProcessor,
     );

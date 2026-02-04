@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
@@ -18,6 +20,58 @@ void main() {
 
       atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
     });
+
+    test('too much data', () async {
+      String rvdSessionNonce = DateTime.now().toIso8601String();
+      Map payload = {
+        'sessionId': Uuid().v4().toString(),
+        'rvdNonce': rvdSessionNonce,
+      };
+
+      RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
+        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        'some other payload',
+        rvdSessionNonce,
+        'legacy_test_overflow',
+        '@alice'.toAtsign(),
+        payload['sessionId'],
+      );
+
+      Random r = Random();
+      Uint8List data = Uint8List.fromList(
+        List.generate(
+          RelayAuthVerifier.maxAuthBufferLength + 1,
+          (i) => r.nextInt(256),
+        ),
+      );
+
+      late Function(Uint8List data) socketOnDataFn;
+      MockSocket mockSocket = MockSocket();
+
+      when(
+        () => mockSocket.listen(
+          any(),
+          onError: any(named: "onError"),
+          onDone: any(named: "onDone"),
+        ),
+      ).thenAnswer((Invocation invocation) {
+        socketOnDataFn = invocation.positionalArguments[0];
+
+        socketOnDataFn(data);
+
+        return MockStreamSubscription<Uint8List>();
+      });
+
+      bool somethingThrown = false;
+      try {
+        await sa.verifySocketAuth(mockSocket);
+      } catch (e) {
+        print('Caught $e as expected');
+        somethingThrown = true;
+      }
+      expect(somethingThrown, true);
+    });
+
     test('signature verification success', () async {
       String rvdSessionNonce = DateTime.now().toIso8601String();
       Map payload = {'sessionId': Uuid().v4(), 'rvdNonce': rvdSessionNonce};
@@ -31,7 +85,7 @@ void main() {
         jsonEncode(payload), // We'll verify the signature against this
         rvdSessionNonce,
         'test_for_success',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
@@ -74,7 +128,7 @@ void main() {
         'some other payload',
         rvdSessionNonce,
         'test_for_failure',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
@@ -118,7 +172,7 @@ void main() {
         jsonEncode(payload),
         rvdSessionNonce,
         'test_for_mismatch',
-        '@alice',
+        '@alice'.toAtsign(),
         payload['sessionId'],
       );
 
@@ -175,14 +229,15 @@ bool verifySignature(AtChops atChops, String requestingAtsign, Map envelope) {
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   final pk = atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey;
-  AtSigningVerificationInput input = AtSigningVerificationInput(
-    jsonEncode(payload),
-    base64Decode(signature),
-    pk,
-  )
-    ..signingMode = AtSigningMode.data
-    ..signingAlgoType = signingAlgo
-    ..hashingAlgoType = hashingAlgo;
+  AtSigningVerificationInput input =
+      AtSigningVerificationInput(
+          jsonEncode(payload),
+          base64Decode(signature),
+          pk,
+        )
+        ..signingMode = AtSigningMode.data
+        ..signingAlgoType = signingAlgo
+        ..hashingAlgoType = hashingAlgo;
 
   AtSigningResult svr = atChops.verify(input);
   return svr.result;

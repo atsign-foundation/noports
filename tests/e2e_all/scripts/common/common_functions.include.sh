@@ -478,6 +478,13 @@ buildCurrentDartBinaries() {
     dart compile exe --verbosity "$compileVerbosity" bin/npt.dart -o "$binaryOutputDir/npt"
   fi
 
+  if [ -f "$binaryOutputDir/npevents" ]; then
+    logInfo "        $binaryOutputDir/npevents has already been compiled"
+  else
+    logInfo "        Compiling npevents"
+    dart compile exe --verbosity "$compileVerbosity" bin/npevents.dart -o "$binaryOutputDir/npevents"
+  fi
+
   cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
 }
 

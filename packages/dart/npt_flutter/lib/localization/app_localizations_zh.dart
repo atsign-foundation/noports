@@ -21,6 +21,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get add => '添加';
 
   @override
+  String get addAtsign => '添加 atSign';
+
+  @override
   String get addNew => '添加新项';
 
   @override
@@ -33,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -81,6 +84,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get authorisation => '授权';
 
   @override
+  String get autoStartApplication => '自动启动客户端应用程序';
+
+  @override
   String get back => '返回';
 
   @override
@@ -126,6 +132,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
+
+  @override
+  String get connectUriProtocolNone => '无';
+
+  @override
+  String get connectUriUsername => '用户名';
+
+  @override
+  String get connectUriUsernameDescription =>
+      'SSH 等协议的可选用户名（例如 ssh://user@host 中的 user）';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -870,6 +890,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorEmptyField => '此字段不能为空';
 
   @override
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+
+  @override
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
@@ -877,9 +900,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -923,6 +943,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get add => '添加';
 
   @override
+  String get addAtsign => '添加 atSign';
+
+  @override
   String get addNew => '添加新项';
 
   @override
@@ -935,7 +958,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get alertDialogTitle => '你确定吗？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign, 版权所有';
+  String get allRightsReserved => '© 2026 Atsign, 版权所有';
 
   @override
   String get americas => '美洲';
@@ -983,6 +1006,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get authorisation => '授权';
 
   @override
+  String get autoStartApplication => '自动启动客户端应用程序';
+
+  @override
   String get back => '返回';
 
   @override
@@ -1028,6 +1054,20 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
+
+  @override
+  String get connectUriProtocolNone => '无';
+
+  @override
+  String get connectUriUsername => '用户名';
+
+  @override
+  String get connectUriUsernameDescription =>
+      '协议（如 SSH）的可选用户名（例如，ssh://user@host 中的 user）';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -1772,6 +1812,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorEmptyField => '此字段不能为空';
 
   @override
+  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
+
+  @override
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
@@ -1779,9 +1822,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '字段必须是部分或完全限定的主机名或 IP 地址';
 
   @override
   String get validationErrorRemotePortField => '数字必须介于 1 和 65535 之间';
@@ -1825,6 +1865,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get add => '新增';
 
   @override
+  String get addAtsign => '新增 atSign';
+
+  @override
   String get addNew => '新增項目';
 
   @override
@@ -1837,7 +1880,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get alertDialogTitle => '您確定嗎？';
 
   @override
-  String get allRightsReserved => '© 2025 Atsign，保留所有權利';
+  String get allRightsReserved => '© 2026 Atsign，保留所有權利';
 
   @override
   String get americas => '美洲';
@@ -1885,6 +1928,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get authorisation => '授權';
 
   @override
+  String get autoStartApplication => '自動啟動用戶端應用程式';
+
+  @override
   String get back => '返回';
 
   @override
@@ -1930,6 +1976,20 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get connectionTimedOut => '連線逾時，將重試...';
+
+  @override
+  String get connectUriProtocolDescription =>
+      '此設定會根據所選的通訊協定，在建立連線後自動啟動適當的應用程式。如果未選取通訊協定，則不會啟動任何應用程式。選取用於連線的通訊協定。';
+
+  @override
+  String get connectUriProtocolNone => '無';
+
+  @override
+  String get connectUriUsername => '使用者名稱';
+
+  @override
+  String get connectUriUsernameDescription =>
+      '通訊協定（如 SSH）的可選使用者名稱 (例如，ssh://user@host 中的 user)';
 
   @override
   String get couldNotLoadPreviousState => '無法載入先前狀態錯誤';
@@ -2673,6 +2733,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorEmptyField => '此欄位不得為空';
 
   @override
+  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
+
+  @override
   String get validationErrorLocalPortField => '數字必須介於 1024 和 65535 之間';
 
   @override
@@ -2680,9 +2743,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';
-
-  @override
-  String get validationErrorHostField => '欄位必須是部分或完整限定的主機名稱或 IP 位址';
 
   @override
   String get validationErrorRemotePortField => '數字必須介於 1 和 65535 之間';

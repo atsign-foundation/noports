@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM dart:3.9.4@sha256:9db24325a8df958f4aa64e0880d8254ba304602c1d85ecee326b2c576883cc3a AS build
+FROM dart:3.10.8@sha256:538a59844eff5c6f6b8c761a974f1f035bb115f68710f6a90c32430af01c2241 AS build
 WORKDIR /noports
 
 COPY . .
@@ -23,6 +23,7 @@ RUN set -eux; \
   dart compile exe bin/srv.dart -v -o /sshnp/srv; \
   dart compile exe bin/srvd.dart -v -o /sshnp/srvd; \
   dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o /sshnp/debug/srvd; \
+  dart compile exe bin/npevents.dart -v -o /sshnp/npevents; \
   cp -r bundles/core/* /sshnp/; \
   cp -r bundles/shell/* /sshnp/; \
   cp LICENSE /sshnp/;

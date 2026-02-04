@@ -255,8 +255,32 @@ class _NptImpl extends NptBase
     if (sshnpdChannel.twinKeys) {
       logger.info('Session will use twinned keys');
     }
+    final sessionRequest = NptSessionRequest(
+      sessionId: sessionId,
+      rvdHost: _srvdChannel.rvdHost,
+      rvdPort: _srvdChannel.daemonPort,
+      authenticateToRvd: params.authenticateDeviceToRvd,
+      relayAuthMode: params.relayAuthMode,
+      relayAuthAesKey: _srvdChannel.relayAuthAesKey,
+      clientNonce: _srvdChannel.clientNonce,
+      rvdNonce: _srvdChannel.rvdNonce,
+      encryptRvdTraffic: params.encryptRvdTraffic,
+      clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+      clientEphemeralPKType: params.sessionKPType.name,
+      requestedPort: params.remotePort,
+      requestedHost: params.remoteHost,
+      timeout: params.timeout,
+      twinKeys: sshnpdChannel.twinKeys,
+      relayAtsign: _srvdChannel.supportsEventLogging
+          ? params.srvdAtSign.toAtsign()
+          : null,
+    );
+    final notifyPayload = signAndWrapAndJsonEncode(
+      atClient,
+      sessionRequest.toJson(),
+    );
+    logger.info('Sending: $notifyPayload');
 
-    /// Send an ssh request to sshnpd
     await notify(
       AtKey()
         ..key = 'npt_request'
@@ -264,26 +288,7 @@ class _NptImpl extends NptBase
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-        atClient,
-        NptSessionRequest(
-          sessionId: sessionId,
-          rvdHost: _srvdChannel.rvdHost,
-          rvdPort: _srvdChannel.daemonPort,
-          authenticateToRvd: params.authenticateDeviceToRvd,
-          relayAuthMode: params.relayAuthMode,
-          relayAuthAesKey: _srvdChannel.relayAuthAesKey,
-          clientNonce: _srvdChannel.clientNonce,
-          rvdNonce: _srvdChannel.rvdNonce!,
-          encryptRvdTraffic: params.encryptRvdTraffic,
-          clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-          clientEphemeralPKType: params.sessionKPType.name,
-          requestedPort: params.remotePort,
-          requestedHost: params.remoteHost,
-          timeout: params.timeout,
-          twinKeys: sshnpdChannel.twinKeys,
-        ).toJson(),
-      ),
+      notifyPayload,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),

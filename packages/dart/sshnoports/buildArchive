@@ -20,16 +20,26 @@ echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o b
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &
 echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o build/sshnp/sshnp &
 echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
+echo "Compiling npevents"; dart compile exe --verbosity error bin/npevents.dart -o build/sshnp/npevents &
+
 
 wait
 echo "$(date) : Compilation complete"
 
 echo "Compiling policy binaries"
-echo "Compiling npp_file.dart to npp_file"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
-echo "Compiling npp_atserver (BETA)"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
+echo "Compiling npp_file (DEMO)"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
+echo "Compiling npp_atserver"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
 
 wait
 echo "$(date) : Compilation complete"
+
+wait
+echo "$(date) : Compilation complete"
+
+echo "$(date) : Copying bundles"
+cp -r bundles/core/* build/sshnp/
+cp -r bundles/shell/* build/sshnp/
+cp LICENSE build/sshnp
 
 echo "Building admin API and webapp - BETA";
 pushd ../../../apps/admin/admin_api || exit 1
@@ -46,11 +56,6 @@ echo
 echo "$(date) : Build complete"
 
 popd
-
-echo "$(date) : Copying bundles"
-cp -r bundles/core/* build/sshnp/
-cp -r bundles/shell/* build/sshnp/
-cp LICENSE build/sshnp
 
 echo "$(date) : Copying webapp files - BETA"
 cp -r ../../../apps/admin/webapp/dist/* build/sshnp/web/admin/
