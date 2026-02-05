@@ -5,13 +5,10 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:file/memory.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as path;
 
 import '../../sshnp_core_constants.dart';
 import '../../sshnp_mocks.dart';
@@ -129,9 +126,6 @@ void main() {
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
 
-      // manually disable public key cache
-      stubbedSshnpdDefaultChannel.fs = null;
-
       // Return the testing encryption public key when it's requested
       when(
         () => mockAtClient.get(
@@ -178,29 +172,12 @@ void main() {
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
 
-      // manually disable public key cache
-      FileSystem fs = MemoryFileSystem();
-      stubbedSshnpdDefaultChannel.fs = fs;
-
       String? homeDirPath = getHomeDirectory();
 
       if (homeDirPath == null) {
         stderr.writeln('Could not complete test on the current platform.');
         return;
       }
-
-      File cacheFile = fs.file(
-        path.join(
-          homeDirPath,
-          '.atsign',
-          'sshnp',
-          'cached_pks',
-          mockParams.sshnpdAtSign.substring(1),
-        ),
-      );
-
-      await cacheFile.create(recursive: true);
-      await cacheFile.writeAsString(encryptionKeyPair.atPublicKey.publicKey);
 
       Future<SshnpdAck> ack = stubbedSshnpdDefaultChannel.handleSshnpdPayload(
         notification,
@@ -241,9 +218,6 @@ void main() {
 
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
-
-      // manually disable public key cache
-      stubbedSshnpdDefaultChannel.fs = null;
 
       // Return the testing encryption public key when it's requested
       when(
