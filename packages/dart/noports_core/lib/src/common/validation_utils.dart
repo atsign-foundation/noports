@@ -120,14 +120,13 @@ Future<void> verifyEnvelopeSignature(
   AtClient atClient,
   String requestingAtsign,
   AtSignLogger logger,
-  Map envelope, {
-  FileSystem? fs,
-}) async {
+  Map envelope) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
+  // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
+  final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
   AtSigningVerificationInput input = AtSigningVerificationInput(
     jsonEncode(payload),
     base64Decode(signature),
@@ -178,6 +177,20 @@ Future<void> clearLocallyCachedPKs({
   }
 }
 
+Future<String> getRemotePK({
+  required AtClient atClient,
+  required String atSign,
+}) async {
+  atSign = AtUtils.fixAtSign(atSign);
+  var s = 'public:publickey$atSign';
+  final AtValue av = await atClient.get(AtKey.fromString(s));
+  if (av.value == null) {
+    throw AtPublicKeyNotFoundException('Failed to retrieve $s');
+  }
+  return av.value;
+}
+
+/// Feb 5, 2026 - Decided that we should no longer cache public key locally
 /// If the PK for [atSign] is in the sshnp local cache, then return it.
 /// If it is not, then fetch it via the [atClient], and store it.
 ///
@@ -188,87 +201,87 @@ Future<void> clearLocallyCachedPKs({
 ///   `~/.atsign/sshnp/cached_pks/alice`
 ///
 /// Note that for storage, the leading `@` in the atSign is stripped off.
-Future<String> getLocallyCachedPK(
-  AtClient atClient,
-  String atSign, {
-  FileSystem? fs,
-}) async {
-  atSign = AtUtils.fixAtSign(atSign);
-
-  String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, fs: fs);
-  if (cachedPK != null) {
-    return cachedPK;
-  }
-
-  var s = 'public:publickey$atSign';
-  final AtValue av = await atClient.get(AtKey.fromString(s));
-  if (av.value == null) {
-    throw AtPublicKeyNotFoundException('Failed to retrieve $s');
-  }
-
-  await _storeToLocalPKCache(av.value, atClient, atSign, fs: fs);
-
-  return av.value;
-}
-
-Future<String?> _fetchFromLocalPKCache(
-  AtClient atClient,
-  String atSign, {
-  FileSystem? fs,
-}) async {
-  String dontAtMe = atSign.substring(1);
-  if (fs != null) {
-    String fn = path.normalize(
-      '${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe',
-    );
-    File f = fs.file(fn);
-    if (await f.exists()) {
-      return (await f.readAsString()).trim();
-    } else {
-      return null;
-    }
-  } else {
-    late final AtValue av;
-    try {
-      av = await atClient.get(
-        AtKey.fromString(
-          'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
-        ),
-      );
-      return av.value;
-    } on AtKeyNotFoundException catch (_) {
-      return null;
-    }
-  }
-}
-
-Future<bool> _storeToLocalPKCache(
-  String pk,
-  AtClient atClient,
-  String atSign, {
-  FileSystem? fs,
-}) async {
-  String dontAtMe = atSign.substring(1);
-  if (fs != null) {
-    String dirName = path.normalize(
-      '${getHomeDirectory()}/.atsign/sshnp/cached_pks',
-    );
-    String fileName = path.normalize('$dirName/$dontAtMe');
-
-    File f = fs.file(fileName);
-    if (!await f.exists()) {
-      await f.create(recursive: true);
-      await Process.run('chmod', ['-R', 'go-rwx', dirName]);
-    }
-    await f.writeAsString('$pk\n');
-    return true;
-  } else {
-    await atClient.put(
-      AtKey.fromString(
-        'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
-      ),
-      pk,
-    );
-    return true;
-  }
-}
+// Future<String> getLocallyCachedPK(
+//   AtClient atClient,
+//   String atSign, {
+//   FileSystem? fs,
+// }) async {
+//   atSign = AtUtils.fixAtSign(atSign);
+//
+//   String? cachedPK = await _fetchFromLocalPKCache(atClient, atSign, fs: fs);
+//   if (cachedPK != null) {
+//     return cachedPK;
+//   }
+//
+//   var s = 'public:publickey$atSign';
+//   final AtValue av = await atClient.get(AtKey.fromString(s));
+//   if (av.value == null) {
+//     throw AtPublicKeyNotFoundException('Failed to retrieve $s');
+//   }
+//
+//   await _storeToLocalPKCache(av.value, atClient, atSign, fs: fs);
+//
+//   return av.value;
+// }
+//
+// Future<String?> _fetchFromLocalPKCache(
+//   AtClient atClient,
+//   String atSign, {
+//   FileSystem? fs,
+// }) async {
+//   String dontAtMe = atSign.substring(1);
+//   if (fs != null) {
+//     String fn = path.normalize(
+//       '${getHomeDirectory()}/.atsign/sshnp/cached_pks/$dontAtMe',
+//     );
+//     File f = fs.file(fn);
+//     if (await f.exists()) {
+//       return (await f.readAsString()).trim();
+//     } else {
+//       return null;
+//     }
+//   } else {
+//     late final AtValue av;
+//     try {
+//       av = await atClient.get(
+//         AtKey.fromString(
+//           'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+//         ),
+//       );
+//       return av.value;
+//     } on AtKeyNotFoundException catch (_) {
+//       return null;
+//     }
+//   }
+// }
+//
+// Future<bool> _storeToLocalPKCache(
+//   String pk,
+//   AtClient atClient,
+//   String atSign, {
+//   FileSystem? fs,
+// }) async {
+//   String dontAtMe = atSign.substring(1);
+//   if (fs != null) {
+//     String dirName = path.normalize(
+//       '${getHomeDirectory()}/.atsign/sshnp/cached_pks',
+//     );
+//     String fileName = path.normalize('$dirName/$dontAtMe');
+//
+//     File f = fs.file(fileName);
+//     if (!await f.exists()) {
+//       await f.create(recursive: true);
+//       await Process.run('chmod', ['-R', 'go-rwx', dirName]);
+//     }
+//     await f.writeAsString('$pk\n');
+//     return true;
+//   } else {
+//     await atClient.put(
+//       AtKey.fromString(
+//         'local:$dontAtMe.cached_pks.sshnp@${atClient.getCurrentAtSign()!}',
+//       ),
+//       pk,
+//     );
+//     return true;
+//   }
+// }

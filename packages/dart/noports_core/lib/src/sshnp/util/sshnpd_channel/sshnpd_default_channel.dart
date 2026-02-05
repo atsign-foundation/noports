@@ -26,10 +26,6 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ivD2C;
   String? errorReceived;
 
-  @visibleForTesting
-  // disable publickey cache on windows
-  FileSystem? fs = Platform.isWindows ? null : LocalFileSystem();
-
   @override
   Future<void> initialize() async {
     await super.initialize();
@@ -66,8 +62,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           atClient,
           params.sshnpdAtSign,
           logger,
-          envelope,
-          fs: fs,
+          envelope
         );
       } catch (e) {
         logger.shout(
