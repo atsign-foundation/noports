@@ -103,7 +103,7 @@ void main() {
       await expectLater(stubbedSshnpdDefaultChannel.initialized, completes);
     }); // test Initialization completes
 
-    test('handleSshnpdPayload - no public key cache', () async {
+    test('handleSshnpdPayload - fetches public key from remote', () async {
       // Create an AtChops instance for testing
       AtEncryptionKeyPair encryptionKeyPair =
           AtChopsUtil.generateAtEncryptionKeyPair();
@@ -130,7 +130,7 @@ void main() {
       when(
         () => mockAtClient.get(
           any<AtKey>(
-            that: predicate((AtKey key) => key.key.contains('cached_pks')),
+            that: predicate((AtKey key) => key.key.contains('publickey')),
           ),
         ),
       ).thenAnswer(
@@ -147,9 +147,9 @@ void main() {
         stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
         TestingKeyPair.private,
       );
-    }); // test handleSshnpdPayload - no public key cache
+    }); // test handleSshnpdPayload - fetches public key from remote
 
-    test('handleSshnpdPayload - with in-memory public key cache', () async {
+    test('handleSshnpdPayload - successful payload handling', () async {
       // Create an AtChops instance for testing
       AtEncryptionKeyPair encryptionKeyPair =
           AtChopsUtil.generateAtEncryptionKeyPair();
@@ -172,12 +172,16 @@ void main() {
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
 
-      String? homeDirPath = getHomeDirectory();
-
-      if (homeDirPath == null) {
-        stderr.writeln('Could not complete test on the current platform.');
-        return;
-      }
+      // Return the testing encryption public key when it's requested
+      when(
+        () => mockAtClient.get(
+          any<AtKey>(
+            that: predicate((AtKey key) => key.key.contains('publickey')),
+          ),
+        ),
+      ).thenAnswer(
+        (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,
+      );
 
       Future<SshnpdAck> ack = stubbedSshnpdDefaultChannel.handleSshnpdPayload(
         notification,
@@ -189,9 +193,9 @@ void main() {
         stubbedSshnpdDefaultChannel.ephemeralPrivateKey,
         TestingKeyPair.private,
       );
-    }); // test handleSshnpdPayload - with in-memory public key cache
+    }); // test handleSshnpdPayload - successful payload handling
 
-    test('handleSshnpdPayload - bad signature', () async {
+    test('handleSshnpdPayload - rejects invalid signature', () async {
       // Create an AtChops instance for testing
       AtEncryptionKeyPair encryptionKeyPair =
           AtChopsUtil.generateAtEncryptionKeyPair();
@@ -223,7 +227,7 @@ void main() {
       when(
         () => mockAtClient.get(
           any<AtKey>(
-            that: predicate((AtKey key) => key.key.contains('cached_pks')),
+            that: predicate((AtKey key) => key.key.contains('publickey')),
           ),
         ),
       ).thenAnswer(
@@ -237,6 +241,6 @@ void main() {
       await expectLater(ack, completes);
       expect(await ack, SshnpdAck.acknowledgedWithErrors);
       expect(stubbedSshnpdDefaultChannel.ephemeralPrivateKey, null);
-    }); // test handleSshnpdPayload - bad signature
+    }); // test handleSshnpdPayload - rejects invalid signature
   }); // group SshnpDefaultChannel
 }
