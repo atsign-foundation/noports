@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/events.dart';
-import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
