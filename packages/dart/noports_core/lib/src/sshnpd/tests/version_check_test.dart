@@ -3,7 +3,7 @@ import 'dart:convert';
 import '../diagnostic_test.dart';
 import 'package:noports_core/version.dart';
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
-import 'package:sshnoports/src/version.dart' as binaries;
+
 
 class VersionCheckTest extends DiagnosticTest {
 
