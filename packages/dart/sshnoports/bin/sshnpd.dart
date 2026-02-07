@@ -39,6 +39,10 @@ void main(List<String> args) async {
         printVersion();
         exit(0);
       },
+      doctorCallback: () async {
+        await SshnpdDoctor().run();
+        exit(0);
+      },
       version: packageVersion,
     );
   } on ArgumentError catch (_) {

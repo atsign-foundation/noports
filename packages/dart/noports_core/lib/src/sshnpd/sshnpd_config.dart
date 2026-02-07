@@ -356,6 +356,14 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       helpText: 'Show version',
       group: runtimeGroup,
     ),
+  ),
+  doctor(
+    FlagOption(
+      argName: 'doctor',
+      defaultsTo: false,
+      helpText: 'Run the doctor',
+      group: runtimeGroup,
+    ),
   );
 
   const SshnpdOption(this.option);
