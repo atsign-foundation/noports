@@ -49,6 +49,9 @@ abstract class PlatformUtils {
 
   /// Get recent logs for the service
   Future<String> getServiceLogs(String serviceName, {int lines = 50});
+
+  /// Get the system architecture (e.g. x64, arm64)
+  Future<String> getArchitecture();
 }
 
 /// MacOS Implementation
@@ -144,6 +147,15 @@ class MacOSUtils implements PlatformUtils {
       return 'Error running log command: $e';
     }
   }
+
+  @override
+  Future<String> getArchitecture() async {
+    final result = await Process.run('uname', ['-m']);
+    String arch = result.stdout.toString().trim();
+    if (arch == 'x86_64') return 'x64';
+    if (arch == 'arm64') return 'arm64';
+    return arch;
+  }
 }
 
 /// Linux Implementation (Very similar to MacOS)
@@ -219,6 +231,16 @@ class LinuxUtils implements PlatformUtils {
     } catch (e) {
       return 'Error running journalctl: $e';
     }
+  }
+
+  @override
+  Future<String> getArchitecture() async {
+    final result = await Process.run('uname', ['-m']);
+    String arch = result.stdout.toString().trim();
+    if (arch == 'x86_64') return 'x64';
+    if (arch == 'aarch64' || arch == 'arm64') return 'arm64';
+    if (arch.startsWith('arm')) return 'arm';
+    return arch;
   }
 }
 
@@ -299,5 +321,13 @@ class WindowsUtils implements PlatformUtils {
     } catch (e) {
       return 'Error running PowerShell: $e';
     }
+  }
+
+  @override
+  Future<String> getArchitecture() async {
+    String arch = Platform.environment['PROCESSOR_ARCHITECTURE'] ?? 'unknown';
+    if (arch == 'AMD64') return 'x64';
+    if (arch == 'ARM64') return 'arm64';
+    return arch;
   }
 }
