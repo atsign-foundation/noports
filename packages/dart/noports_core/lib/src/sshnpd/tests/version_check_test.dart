@@ -45,13 +45,23 @@ class VersionCheckTest extends DiagnosticTest {
       String cleanLatest = latestTag.replaceAll('v', '').trim();
       
       // 2. COMPARAISON
-      if (cleanCurrent == cleanLatest) {
-        return TestResult(
-          testName: name,
-          status: TestStatus.pass,
-          message: 'Software is up to date (v$cleanCurrent).',
-          duration: DateTime.now().difference(start),
-        );
+      int comparison = cleanCurrent.compareTo(cleanLatest);
+      if (comparison >= 0) {
+        if (comparison == 0) {
+          return TestResult(
+            testName: name,
+            status: TestStatus.pass,
+            message: 'Software is up to date (v$cleanCurrent).',
+            duration: DateTime.now().difference(start),
+          );
+        } else {
+          return TestResult(
+            testName: name,
+            status: TestStatus.warning,
+            message: 'Your version is higher than the latest version (v$cleanCurrent). Please consider downgrading to an official release.',
+            duration: DateTime.now().difference(start),
+          );
+        }
       } else {
         // 3. INTERACTION
         print('\n🚀A NEW UPDATE IS AVAILABLE !');
@@ -161,3 +171,4 @@ class VersionCheckTest extends DiagnosticTest {
     }
   }
 }
+
