@@ -280,7 +280,7 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<String> getCurrentVersion() async {
-    final result = await Process.run('sshnpd', ['--version']);
+    final result = await Process.run('sshnpd', ['version']);
     var output = result.stdout.toString();
     if (output.isEmpty || !output.contains('Version')) {
       output = result.stderr.toString();

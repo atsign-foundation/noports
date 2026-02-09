@@ -64,11 +64,11 @@ class VersionCheckTest extends DiagnosticTest {
         }
       } else {
         // 3. INTERACTION
-        print('\n🚀A NEW UPDATE IS AVAILABLE !');
+        print('\n A NEW UPDATE IS AVAILABLE !');
         print('    Current version: $cleanCurrent');
         print('   New version: $cleanLatest');
 
-        stdout.write('👉 Do you want to download the update now? (y/n) : ');
+        stdout.write(' Do you want to download the update now? (y/n) : ');
 
         String? answer = stdin.readLineSync();
 
@@ -94,8 +94,8 @@ class VersionCheckTest extends DiagnosticTest {
           }
           
           if (targetAsset == null) {
-             print('❌ No suitable asset found for your system ($os $arch).');
-             print('   Please check manually at: https://github.com/atsign-foundation/noports/releases/latest');
+             print(' No suitable asset found for your system ($os $arch).');
+             print(' Please check manually at: https://github.com/atsign-foundation/noports/releases/latest');
              return TestResult(
                testName: name,
                status: TestStatus.warning, 
@@ -151,7 +151,7 @@ class VersionCheckTest extends DiagnosticTest {
       final response = await request.close();
 
       if (response.statusCode != 200) {
-        print('❌ Download failed with status code: ${response.statusCode}');
+        print(' Download failed with status code: ${response.statusCode}');
         return false;
       }
 
@@ -161,12 +161,12 @@ class VersionCheckTest extends DiagnosticTest {
       
       await response.pipe(sink); // Pipe closes the sink
       
-      print('✅ Download completed: $path');
-      print('👉 Please unzip/untar this file and replace your existing binary.');
+      print(' Download completed: $path');
+      print(' Please unzip/untar this file and replace your existing binary.');
       print('   Installation requires manual steps properly suited for your specific setup.');
       return true;
     } catch (e) {
-      print('❌ Download error: $e');
+      print(' Download error: $e');
       return false;
     }
   }
