@@ -240,6 +240,8 @@ class SshnpdImpl
 
       if (p.clearCachedPKs) {
         sshnpd.logger.shout('Clearing cached public keys');
+        sshnpd.logger.shout('Note: locally cached public keys are no longer'
+          ' used by sshnpd');
         await clearLocallyCachedPKs(
           logger: sshnpd.logger,
           fs: LocalFileSystem(),

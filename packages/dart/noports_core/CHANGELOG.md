@@ -1,3 +1,7 @@
+# 6.11.0
+
+- feat: remove persistent caching of public keys
+
 # 6.10.4
 
 - build(deps): take up at_client 3.10.0
