@@ -43,7 +43,7 @@ class ActivateParams {
     this.otp,
     this.deviceName,
     this.atKeysFilePath,
-    this.rootDomain = 'root.atsign.org',
+    required this.rootDomain,
     this.verbose = false,
     this.debug = false,
   });
@@ -80,7 +80,7 @@ class ActivateParams {
       otp: _parseOtp(activationString),
       deviceName: _parseDeviceName(activationString),
       atKeysFilePath: keyfile,
-      rootDomain: results['root-server'] ?? 'root.atsign.org',
+      rootDomain: results['root-server'],
       verbose: results['verbose'],
       debug: results['debug'],
     );

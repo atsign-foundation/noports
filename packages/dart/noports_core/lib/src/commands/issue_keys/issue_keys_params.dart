@@ -24,7 +24,7 @@ class IssueKeysParams {
     this.otp,
     this.atKeysFilePath,
     this.passPhrase,
-    this.rootDomain = 'root.atsign.org',
+    required this.rootDomain,
     this.verbose = false,
     this.debug = false,
   });
@@ -41,7 +41,7 @@ class IssueKeysParams {
       device: r['device'],
       atKeysFilePath: r['key-file'],
       passPhrase: r['pass-phrase'],
-      rootDomain: r['root-server'] ?? 'root.atsign.org',
+      rootDomain: r['root-server'],
       verbose: r['verbose'],
       debug: r['debug'],
     );
