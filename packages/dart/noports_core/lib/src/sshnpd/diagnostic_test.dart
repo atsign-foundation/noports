@@ -33,9 +33,8 @@ class TestResult {
 
   @override
   String toString() {
-    final icon = status.icon;
     final statusStr = status.name.toUpperCase();
-    return '$icon [$statusStr] $testName: $message';
+    return '[$statusStr] $testName: $message';
   }
 
   /// Detailed output including any additional details
@@ -55,13 +54,12 @@ class TestResult {
 
 /// Status of a test
 enum TestStatus {
-  pass('✓', 'PASS'),
-  fail('✗', 'FAIL'),
-  warning('⚠', 'WARN'),
-  skip('○', 'SKIP');
+  pass('PASS'),
+  fail('FAIL'),
+  warning('WARN'),
+  skip('SKIP');
 
-  final String icon;
   final String displayName;
 
-  const TestStatus(this.icon, this.displayName);
+  const TestStatus(this.displayName);
 }

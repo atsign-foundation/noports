@@ -13,7 +13,7 @@ class DiagnosticRunner {
 
     for (final test in tests) {
       if (verbose) {
-        print('\n🔍 Running: ${test.name}');
+        print('\n Running: ${test.name}');
         print('   ${test.description}');
       }
 
@@ -67,6 +67,13 @@ class DiagnosticRunner {
       }
     } else {
       buffer.writeln('\n SUCCESS : Everything seems ready to use sshnpd !');
+    }
+
+    if (passed > 0) {
+      buffer.writeln('\nPassed Tests :');
+      for (final result in results.where((r) => r.passed)) {
+        buffer.writeln('  • ${result.testName}: ${result.message}');
+      }
     }
 
     // 4. Durée totale

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import '../diagnostic_test.dart';
-import 'package:noports_core/version.dart';
+import 'package:sshnoports/src/version.dart' as pkg;
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
 
 
@@ -11,13 +11,17 @@ class VersionCheckTest extends DiagnosticTest {
   String get name => 'Version Check';
 
   @override
+  String get packageVersion => pkg.packageVersion;
+
+  @override
   String get description =>
       'Checks if a new version of sshnpd is available and offers to update';
+
 
   @override
   Future<TestResult> run() async {
     final start = DateTime.now();
-    String currentVersion = await PlatformUtils.instance.getCurrentVersion();
+    String currentVersion = packageVersion;
 
     try {
       // 2. OBTENIR LA DERNIÈRE VERSION DEPUIS GITHUB
@@ -41,31 +45,30 @@ class VersionCheckTest extends DiagnosticTest {
       Map<String, dynamic> data = jsonDecode(result.stdout.toString());
       String latestTag = data['tag_name'] ?? 'unknown';
 
-      String cleanCurrent = currentVersion.replaceAll('v', '').trim();
       String cleanLatest = latestTag.replaceAll('v', '').trim();
       
       // 2. COMPARAISON
-      int comparison = cleanCurrent.compareTo(cleanLatest);
+      int comparison = currentVersion.compareTo(cleanLatest);
       if (comparison >= 0) {
         if (comparison == 0) {
           return TestResult(
             testName: name,
             status: TestStatus.pass,
-            message: 'Software is up to date (v$cleanCurrent).',
+            message: 'Software is up to date (v$currentVersion).',
             duration: DateTime.now().difference(start),
           );
         } else {
           return TestResult(
             testName: name,
             status: TestStatus.warning,
-            message: 'Your version is higher than the latest version (v$cleanCurrent). Please consider downgrading to an official release.',
+            message: 'Your version is higher than the latest version (v$currentVersion). Please consider downgrading to an official release.',
             duration: DateTime.now().difference(start),
           );
         }
       } else {
         // 3. INTERACTION
         print('\n A NEW UPDATE IS AVAILABLE !');
-        print('    Current version: $cleanCurrent');
+        print('    Current version: $currentVersion');
         print('   New version: $cleanLatest');
 
         stdout.write(' Do you want to download the update now? (y/n) : ');
@@ -81,7 +84,7 @@ class VersionCheckTest extends DiagnosticTest {
           // Construct expected asset name pattern, e.g., sshnp-macos-arm64.zip
           String expectedAssetStart = 'sshnp-$os-$arch';
           
-          print('🔍 Looking for asset matching: $expectedAssetStart...$extension');
+          print(' Looking for asset matching: $expectedAssetStart...$extension');
 
           Map<String, dynamic>? targetAsset;
           
@@ -126,7 +129,7 @@ class VersionCheckTest extends DiagnosticTest {
           return TestResult(
             testName: name,
             status: TestStatus.warning,
-            message: 'Update ignored by user (v$cleanCurrent).',
+            message: 'Update ignored by user (v$currentVersion).',
             duration: DateTime.now().difference(start),
           );
         }
