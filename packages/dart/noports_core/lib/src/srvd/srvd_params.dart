@@ -179,6 +179,12 @@ class SrvdParams {
       negatable: false,
       help: 'Print usage',
     );
+    parser.addFlag(
+      'version',
+      defaultsTo: false,
+      negatable: false,
+      help: 'Print version',
+    );
     return parser;
   }
 }

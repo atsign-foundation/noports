@@ -189,10 +189,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: b4d854962a32fd9f8efc0b76f98214790b833af8b2e9b2df6bfc927c0415a072
+      sha256: ac78098de97893812b7aff1154f29008fa2464cad9e8e7044d39bc905dad4fbc
       url: "https://pub.dev"
     source: hosted
-    version: "2.10.5"
+    version: "2.11.0"
   build_version:
     dependency: "direct dev"
     description:
@@ -249,6 +249,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  cli_menu:
+    dependency: "direct main"
+    description:
+      name: cli_menu
+      sha256: "8e2ad533d6fa657bf944d943b948862f2c0cfcf1fa6568be9b65eef5573394bf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0+1"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      sha256: ff6785f7e9e3c38ac98b2fb035701789de90154024a75b6cb926445e83197d1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.2"
   clock:
     dependency: transitive
     description:
@@ -584,7 +600,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.10.5"
+    version: "6.11.0"
   openssh_ed25519:
     dependency: transitive
     description:
