@@ -72,7 +72,7 @@ void main() {
       params = ActivateParams(
         atsign: testAtsign,
         type: ActivateType.cram,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -84,7 +84,7 @@ void main() {
         atsign: testAtsign,
         type: ActivateType.cram,
         cramSecret: testCramSecret,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -100,7 +100,7 @@ void main() {
         atsign: testAtsign,
         type: ActivateType.cram,
         cramSecret: testCramSecret,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -120,7 +120,7 @@ void main() {
         atsign: testAtsign,
         type: ActivateType.enroll,
         deviceName: testDeviceName,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -134,7 +134,7 @@ void main() {
         otp: testOtp,
         deviceName: testDeviceName,
         atKeysFilePath: 'dummy_keys_file',
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -164,7 +164,7 @@ void main() {
         otp: testOtp,
         deviceName: testDeviceName,
         atKeysFilePath: 'dummy_keys_file',
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
       activate = Activate(mockOnboardingService, params);
 
@@ -195,7 +195,7 @@ void main() {
         type: ActivateType.cram,
         cramSecret: testCramSecret,
         atKeysFilePath: null,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
 
       activate = Activate(mockOnboardingService, params);
@@ -210,7 +210,7 @@ void main() {
         type: ActivateType.enroll,
         otp: testOtp,
         atKeysFilePath: testKeysPath,
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
 
       activate = Activate(mockOnboardingService, params);

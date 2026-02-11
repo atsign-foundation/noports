@@ -43,7 +43,7 @@ void main() {
         atsign: testAtsign,
         device: testDevice,
         passPhrase: 'test-passphrase',
-        rootDomain: 'root.atsign.org',
+        rootDomain: 'root.test.com',
       );
 
       issueKeys = IssueKeysTest.test(
@@ -108,7 +108,7 @@ void main() {
         final localParams = IssueKeysParams(
           atsign: testAtsign,
           device: null,
-          rootDomain: 'root.atsign.org',
+          rootDomain: 'root.test.com',
         );
         final localIssueKeys = IssueKeysTest.test(
           localParams,
@@ -133,7 +133,7 @@ void main() {
       test('ensure fallback device name uses provided OTP', () {
         final params = IssueKeysParams(
           atsign: testAtsign,
-          rootDomain: 'root.atsign.org',
+          rootDomain: 'root.test.com',
         )..otp = 'XYZ123';
         final issueKeys = IssueKeysTest.test(
           params,
