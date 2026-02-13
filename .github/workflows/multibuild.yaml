@@ -41,6 +41,7 @@ jobs:
         run: git push --set-upstream origin multibuild-${{github.run_number}}
       - name: Extract Version from pubspec.yaml
         id: extract_version
+        working-directory: ./packages/dart/sshnoports
         run: |
           VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1 | xargs)
           echo "Detected version: $VERSION"
