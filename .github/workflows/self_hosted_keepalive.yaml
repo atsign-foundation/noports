@@ -1,9 +1,6 @@
 name: Self Hosted Runner Keepalive 
 
 on:
-  push:
-    branches:
-      - self-hosted-keepalive
   schedule:
     - cron: '54 6 * * 1'
   workflow_dispatch:
