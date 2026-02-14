@@ -14,15 +14,11 @@ class KeysCheckTest extends DiagnosticTest {
   Future<TestResult> run() async {
     final start = DateTime.now();
 
-    // 1. Trouver le dossier HOME de l'utilisateur via PlatformUtils
     String home = PlatformUtils.instance.homeDirectory;
     
-    // 2. Construire le chemin standard
-    // On utilise le séparateur de l'OS
     String keysPath = '$home${Platform.pathSeparator}.atsign${Platform.pathSeparator}keys';
     var directory = Directory(keysPath);
 
-    // 3. Vérifier si le DOSSIER existe
     if (!await directory.exists()) {
       return TestResult(
         testName: name,
@@ -33,16 +29,12 @@ class KeysCheckTest extends DiagnosticTest {
       );
     }
 
-    // 4. Vérifier le CONTENU du dossier
     try {
-      // On liste les fichiers et on ne garde que ceux qui finissent par ".atKeys"
       List<FileSystemEntity> files = directory.listSync();
       var keyFiles =
           files.where((file) => file.path.endsWith('.atKeys')).toList();
 
       if (keyFiles.isNotEmpty) {
-        // Succès : On a trouvé des clés !
-        // On crée une liste propre des noms de fichiers trouvés pour l'info
         var keyNames = keyFiles.map((f) => f.uri.pathSegments.last).join(', ');
 
         return TestResult(
@@ -53,7 +45,7 @@ class KeysCheckTest extends DiagnosticTest {
           duration: DateTime.now().difference(start),
         );
       } else {
-        // Le dossier est là, mais il est vide (ou pas de .atKeys)
+        // The keys directory exists but contains no .atKeys files.
         return TestResult(
           testName: name,
           status: TestStatus.warning,

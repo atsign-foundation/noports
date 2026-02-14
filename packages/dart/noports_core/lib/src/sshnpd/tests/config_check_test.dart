@@ -14,19 +14,16 @@ class ConfigCheckTest extends DiagnosticTest {
   Future<TestResult> run() async {
     final start = DateTime.now();
 
-    // Liste des endroits potentiels où chercher le fichier, fournie par PlatformUtils
+    //potential paths for config file
     List<String> potentialPaths = PlatformUtils.instance.getPotentialConfigPaths();
 
     for (var path in potentialPaths) {
       File configFile = File(path);
 
       if (await configFile.exists()) {
-        // On a trouvé le fichier ! On va lire les premières lignes pour info
         try {
           String content = await configFile.readAsString();
-
-          // Petite astuce : on extrait juste les lignes importantes pour l'affichage
-          // On cherche les lignes qui contiennent "manager" ou "device"
+          //get important lines
           var importantLines = content
               .split('\n')
               .where(
@@ -50,12 +47,11 @@ class ConfigCheckTest extends DiagnosticTest {
         }
       }
     }
-
-    // Si on sort de la boucle sans rien trouver
+    
     return TestResult(
       testName: name,
       status: TestStatus
-          .warning, // Orange, car on peut lancer sshnpd sans fichier (avec des arguments)
+          .warning, //warning because it's not a problem if you are using CLI arguments
       message:
           'No sshnpd.yaml file found (this is not a problem if you are using CLI arguments).',
       duration: DateTime.now().difference(start),

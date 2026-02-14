@@ -22,22 +22,18 @@ class SshnpdDoctor {
   final runner = DiagnosticRunner(
     verbose: true,
     tests: [
-      PrerequisitesTest(), // Test 1 : Outils
-      KeysCheckTest(), // Test 2 : Clés (NOUVEAU)
-      ServiceStatusTest(), // Test 3 : Statut du service
-      ServiceLogsTest(), // Test : Logs du service
-      ConfigCheckTest(), // Test 4 : Configuration
-      VersionCheckTest(), // Test 5 : Version
-      ConnectivityTest(), // Test 6 : Connectivité
+      PrerequisitesTest(), 
+      KeysCheckTest(), 
+      ServiceStatusTest(), 
+      ServiceLogsTest(), 
+      ConfigCheckTest(), 
+      VersionCheckTest(), 
     ],
   );
-// ÉTAPE 1 : On lance les tests et on RÉCUPÈRE les résultats dans une variable
   final results = await runner.runAll();
 
-  // ÉTAPE 2 : On demande au runner de générer le texte du résumé
   String summary = runner.generateSummary(results);
 
-  // ÉTAPE 2.5 : On ajoute les informations système
   final platform = PlatformUtils.instance;
   final os = platform.name;
   final arch = await platform.getArchitecture();
@@ -59,9 +55,7 @@ ${'-' * 60}
 
   summary = systemInfo + summary;
 
-  // ÉTAPE 3 : On AFFICHE le tout dans la console !
   print(summary);
-  // Create a file to save the summary
   final file = File('doctor_summary.txt');
   await file.writeAsString(summary);
   print('Summary saved to doctor_summary.txt');

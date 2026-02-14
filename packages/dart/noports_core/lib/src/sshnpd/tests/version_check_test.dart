@@ -24,7 +24,7 @@ class VersionCheckTest extends DiagnosticTest {
     String currentVersion = packageVersion;
 
     try {
-      // 2. OBTENIR LA DERNIÈRE VERSION DEPUIS GITHUB
+      // Get the latest version from GitHub
       print('Checking for latest version on GitHub...');
 
       var result = await Process.run('curl', [
@@ -47,7 +47,7 @@ class VersionCheckTest extends DiagnosticTest {
 
       String cleanLatest = latestTag.replaceAll('v', '').trim();
       
-      // 2. COMPARAISON
+      // Comparison
       int comparison = currentVersion.compareTo(cleanLatest);
       if (comparison >= 0) {
         if (comparison == 0) {
@@ -66,19 +66,22 @@ class VersionCheckTest extends DiagnosticTest {
           );
         }
       } else {
-        // 3. INTERACTION
+        // Interaction
+        String os = Platform.operatingSystem;
+        String arch = await PlatformUtils.instance.getArchitecture();
+
         print('\n A NEW UPDATE IS AVAILABLE !');
         print('    Current version: $currentVersion');
         print('   New version: $cleanLatest');
-
-        stdout.write(' Do you want to download the update now? (y/n) : ');
+        print('Detected OS: $os');
+        print('Detected Architecture: $arch');
+        print('If OS or Architecture is not correct, please download the update manually');
+        stdout.write('Do you want to download the update now? (y/n) : ');
 
         String? answer = stdin.readLineSync();
 
         if (answer != null && answer.toLowerCase().startsWith('y')) {
           
-          String os = Platform.operatingSystem;
-          String arch = await PlatformUtils.instance.getArchitecture();
           String extension = (Platform.isWindows || Platform.isMacOS) ? 'zip' : 'tgz';
           
           // Construct expected asset name pattern, e.g., sshnp-macos-arm64.zip
@@ -144,7 +147,7 @@ class VersionCheckTest extends DiagnosticTest {
     }
   }
 
-  // --- Fonction privée pour gérer le téléchargement ---
+  // Function to download the update
   Future<bool> _performUpdate(String downloadUrl, String fileName) async {
     print('\n⬇️  Downloading $fileName from GitHub...');
     
