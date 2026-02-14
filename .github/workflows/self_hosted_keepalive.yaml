@@ -1,0 +1,19 @@
+name: Self Hosted Runner Keepalive
+
+on:
+  schedule:
+    - cron: '54 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  Keepalive:
+    runs-on: [self-hosted, linux, x64, K8s]
+
+    steps:
+      - name: Runner heartbeat
+        run: |
+          echo "Self Hosted Runner Keepalive - Running"
+          echo "Runner Name: $RUNNER_NAME"
