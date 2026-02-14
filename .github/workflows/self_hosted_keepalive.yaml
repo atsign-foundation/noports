@@ -1,4 +1,4 @@
-name: Self Hosted Runner Keepalive
+name: Self Hosted Runner Keepalive 
 
 on:
   schedule:
