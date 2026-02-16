@@ -43,6 +43,7 @@ void main() {
         atsign: testAtsign,
         device: testDevice,
         passPhrase: 'test-passphrase',
+        rootDomain: 'root.test.com',
       );
 
       issueKeys = IssueKeysTest.test(
@@ -104,7 +105,11 @@ void main() {
 
       test('generates correct command without device name', () async {
         // create a new instance to ensure device name is null
-        final localParams = IssueKeysParams(atsign: testAtsign, device: null);
+        final localParams = IssueKeysParams(
+          atsign: testAtsign,
+          device: null,
+          rootDomain: 'root.test.com',
+        );
         final localIssueKeys = IssueKeysTest.test(
           localParams,
           atClient: mockAtClient,
@@ -126,7 +131,10 @@ void main() {
       });
 
       test('ensure fallback device name uses provided OTP', () {
-        final params = IssueKeysParams(atsign: testAtsign)..otp = 'XYZ123';
+        final params = IssueKeysParams(
+          atsign: testAtsign,
+          rootDomain: 'root.test.com',
+        )..otp = 'XYZ123';
         final issueKeys = IssueKeysTest.test(
           params,
           atClient: mockAtClient,

@@ -116,6 +116,7 @@ class IssueKeys {
     _atClient ??= await createAtClient(
       atSign: params.atsign,
       atKeysFilePath: params.atKeysFilePath,
+      rootDomain: params.rootDomain,
     );
     stderr.writeln('\n');
 
