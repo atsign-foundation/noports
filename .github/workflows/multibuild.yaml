@@ -108,6 +108,7 @@ jobs:
             platform: "windows"
     env:
       ARCH: ${{ matrix.arch }}
+      BINS: "at_activate noports npevents npp_atserver npp_file npt srv sshnp sshnpd"
       CROSS: ${{ matrix.cross }}
       EXT: ${{ matrix.ext }}
       VERSION: ${{ needs.verify_tags.outputs.version }}
@@ -129,26 +130,28 @@ jobs:
         run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
-          dart compile exe $CROSS bin/activate_cli.dart -v -o sshnp/at_activate$EXT
-          dart compile exe $CROSS bin/sshnp.dart -v -o sshnp/sshnp$EXT
-          dart compile exe $CROSS bin/npt.dart -v -o sshnp/npt$EXT
-          dart compile exe $CROSS bin/npp_file.dart -v -o sshnp/npa_file$EXT
-          dart compile exe $CROSS bin/npp_file.dart -v -o sshnp/npp_file$EXT
-          dart compile exe $CROSS bin/sshnpd.dart -v -o sshnp/sshnpd$EXT
-          dart compile exe $CROSS bin/srv.dart -v -o sshnp/srv$EXT
-          dart compile exe $CROSS bin/npp_atserver.dart -v -o sshnp/npp_atserver$EXT
-          dart compile exe $CROSS bin/npevents.dart -v -o sshnp/npevents$EXT
-          dart compile exe $CROSS bin/noports.dart -v -o sshnp/noports$EXT
+          for BINARY in $BINS; do \
+            dart compile exe ${CROSS} bin/${BINARY}.dart -v -o sshnp/${BINARY}${EXT};
+          done
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
-          dart compile exe $CROSS bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin$EXT
+          dart compile exe ${CROSS} bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${EXT}
       - name: Compile debug binaries (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}
         run: |
-          dart compile exe $CROSS bin/srvd.dart -v -o sshnp/srvd$EXT
-          dart compile exe $CROSS bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd$EXT
+          dart compile exe ${CROSS} bin/srvd.dart -v -o sshnp/srvd
+      - name: Generate man pages and CHANGELOG (Linux)
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          DBINS="${BINS} srvd"
+          for BINARY in ${DBINS}; do \
+            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1
+            gzip -n9 sshnp/${BINARY}.1
+          done
+          cp CHANGELOG.md sshnp/
+          gzip -n9 sshnp/CHANGELOG.md
       - name: Build Windows Services (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
@@ -163,17 +166,10 @@ jobs:
           WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           source ../../../../tools/codesign_windows.sh
-          sign_file "sshnpd.exe"
-          sign_file "at_activate.exe"
-          sign_file "sshnp.exe"
-          sign_file "npp_atserver.exe"
-          sign_file "npp_file.exe"
-          sign_file "npa_file.exe"
-          sign_file "npt.exe"
-          sign_file "srv.exe"
+          for BINARY in $BINS; do \
+            sign_file "$BINARY.exe";
+          done
           sign_file "sshnpdService.exe"
-          sign_file "np_admin.exe"
-          sign_file "noports.exe"
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
