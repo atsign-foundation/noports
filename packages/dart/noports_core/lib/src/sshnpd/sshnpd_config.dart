@@ -364,6 +364,15 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       helpText: 'Run the doctor',
       group: runtimeGroup,
     ),
+  ),
+  output(
+    StringOption(
+      argName: 'output',
+      argAbbrev: 'o',
+      mandatory: false,
+      helpText: 'Match output flag for doctor usage',
+      group: runtimeGroup,
+    ),
   );
 
   const SshnpdOption(this.option);

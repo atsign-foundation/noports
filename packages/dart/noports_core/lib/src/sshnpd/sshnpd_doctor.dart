@@ -12,7 +12,7 @@ import 'package:noports_core/src/sshnpd/tests/connectivity_check.dart';
 import 'package:sshnoports/src/version.dart';
 
 class SshnpdDoctor {
-  Future<void> run() async {
+  Future<void> run(List<String> args) async {
 
     print('-' * 60) ;
     print('Welcome to the SSHNPD Doctor - Diagnostic Tool');
@@ -56,8 +56,11 @@ ${'-' * 60}
   summary = systemInfo + summary;
 
   print(summary);
-  final file = File('doctor_summary.txt');
-  await file.writeAsString(summary);
-  print('Summary saved to doctor_summary.txt');
+  if (args.contains('-o')) {
+    final outputName = args.elementAt(args.indexOf('-o') + 1);
+    final file = File(outputName);
+    await file.writeAsString(summary);
+    print('Summary saved to $outputName');
+  }
   }
 }
