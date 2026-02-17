@@ -2,7 +2,7 @@ import 'dart:io';
 import '../diagnostic_test.dart';
 import '../utils/platform_utils.dart';
 
-class ConfigCheckTest extends DiagnosticTest {
+class ConfigCheck extends DiagnosticTest {
   @override
   String get name => 'Config Check (sshnpd.yaml)';
 

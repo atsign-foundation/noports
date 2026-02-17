@@ -1,7 +1,7 @@
 import '../diagnostic_test.dart';
 import '../utils/platform_utils.dart';
 
-class PrerequisitesTest extends DiagnosticTest {
+class PrerequisitesCheck extends DiagnosticTest {
   @override
   String get name => 'Prerequisites Check';
 
@@ -13,8 +13,7 @@ class PrerequisitesTest extends DiagnosticTest {
     final start = DateTime.now();
     List<String> missingTools = [];
 
-    // Liste des commandes à vérifier
-    var tools = ['curl', 'ssh', 'unzip'];
+    var tools = ['curl', 'ssh'];
 
     for (var tool in tools) {
       bool available = await PlatformUtils.instance.isCommandAvailable(tool);

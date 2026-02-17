@@ -2,7 +2,7 @@ import 'dart:io';
 import '../diagnostic_test.dart';
 import '../utils/platform_utils.dart';
 
-class KeysCheckTest extends DiagnosticTest {
+class KeysCheck extends DiagnosticTest {
   @override
   String get name => 'Keys Check (.atKeys)';
 

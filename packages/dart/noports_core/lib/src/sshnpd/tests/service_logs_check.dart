@@ -1,7 +1,7 @@
 import '../diagnostic_test.dart';
 import '../utils/platform_utils.dart';
 
-class ServiceLogsTest extends DiagnosticTest {
+class ServiceLogsCheck extends DiagnosticTest {
   @override
   String get name => 'Service Logs';
 

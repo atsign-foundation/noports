@@ -3,15 +3,16 @@ import 'dart:convert';
 import '../diagnostic_test.dart';
 import 'package:sshnoports/src/version.dart' as pkg;
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
+import 'package:version/version.dart';
 
 
-class VersionCheckTest extends DiagnosticTest {
+class VersionCheck extends DiagnosticTest {
 
   @override
   String get name => 'Version Check';
 
   @override
-  String get packageVersion => pkg.packageVersion;
+  Version get packageVersion => Version.parse(pkg.packageVersion);
 
   @override
   String get description =>
@@ -21,7 +22,7 @@ class VersionCheckTest extends DiagnosticTest {
   @override
   Future<TestResult> run() async {
     final start = DateTime.now();
-    String currentVersion = packageVersion;
+    Version currentVersion = packageVersion;
 
     try {
       // Get the latest version from GitHub
@@ -45,12 +46,10 @@ class VersionCheckTest extends DiagnosticTest {
       Map<String, dynamic> data = jsonDecode(result.stdout.toString());
       String latestTag = data['tag_name'] ?? 'unknown';
 
-      String cleanLatest = latestTag.replaceAll('v', '').trim();
+      Version cleanLatest = Version.parse(latestTag.replaceAll('v', '').trim());
       
-      // Comparison
-      int comparison = currentVersion.compareTo(cleanLatest);
-      if (comparison >= 0) {
-        if (comparison == 0) {
+      if (cleanLatest <= currentVersion) {
+        if (cleanLatest == currentVersion) {
           return TestResult(
             testName: name,
             status: TestStatus.pass,

@@ -1,7 +1,7 @@
 import 'dart:io';
 import '../diagnostic_test.dart';
 
-class ConnectivityTest extends DiagnosticTest {
+class ConnectivityCheck extends DiagnosticTest {
   @override
   String get name => 'Connectivity Check';
 

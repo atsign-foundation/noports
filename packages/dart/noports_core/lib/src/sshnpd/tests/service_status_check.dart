@@ -1,7 +1,7 @@
 import '../diagnostic_test.dart';
 import '../utils/platform_utils.dart';
 
-class ServiceStatusTest extends DiagnosticTest {
+class ServiceStatusCheck extends DiagnosticTest {
   @override
   String get name => 'Service Status (Daemon)';
 
