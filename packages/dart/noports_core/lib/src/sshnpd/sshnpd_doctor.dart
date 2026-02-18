@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:noports_core/src/sshnpd/sshnpd_config.dart';
 import 'package:noports_core/src/sshnpd/diagnostic_runner.dart';
 import 'package:noports_core/src/sshnpd/diagnostic_test.dart';
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
@@ -56,11 +57,24 @@ ${'-' * 60}
   summary = systemInfo + summary;
 
   print(summary);
-  if (args.contains('-o')) {
-    final outputName = args.elementAt(args.indexOf('-o') + 1);
-    final file = File(outputName);
-    await file.writeAsString(summary);
-    print('Summary saved to $outputName');
+  print(summary);
+  try {
+    final results = SshnpdOption.argParser.parse(args);
+    if (results.wasParsed('output')) {
+      String outputName = 'sshnpd_doctor_log.txt';
+      if (results.rest.isNotEmpty) {
+        // If there's a remaining argument that looks like a filename, use it
+        // We assume the filename would be the next argument if it was intended as such
+        // However, with arg parser, rest contains all non-option arguments.
+        // If the user typed `sshnpd --doctor -o mylog.txt`, `mylog.txt` will be in rest.
+        outputName = results.rest.first;
+      }
+      final file = File(outputName);
+      await file.writeAsString(summary);
+      print('Summary saved to $outputName');
+    }
+  } catch (e) {
+    // Ignore error if parsing fails, as it's just for output file
   }
   }
 }

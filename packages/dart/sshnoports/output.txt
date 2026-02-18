@@ -1,0 +1,37 @@
+------------------------------------------------------------
+SYSTEM INFORMATION
+------------------------------------------------------------
+Platform     : MacOS
+Architecture : arm64
+Version      : 5.14.6
+Home Dir     : /Users/lilian
+Keys Path    : /Users/lilian/.atsign/keys
+------------------------------------------------------------
+
+============================================================
+DIAGNOSTIC SUMMARY
+============================================================
+Total Tests: 6
+Success:   4
+Failures:  0
+Warnings:  2
+Skipped:   0
+
+  WARNING : sshnpd may work, but check the items above.
+
+Warnings :
+  • Config Check (sshnpd.yaml): No sshnpd.yaml file found (this is not a problem if you are using CLI arguments).
+  • Version Check: Your version is higher than the latest version (v5.14.6). Please consider downgrading to an official release.
+
+Passed Tests :
+  • Prerequisites Check: Every required tool is present (curl, ssh, unzip).
+  • Keys Check (.atKeys): Directory valid. Found 2 key file(s): @star310_client_key.atKeys, @star310_device_key.atKeys
+  • Service Status (Daemon): The service process is ACTIVE.
+      System Service: Installed
+      Service Status: Running
+  • Service Logs: Client Logs:
+Timestamp               Ty Process[PID:TID]
+
+
+Total duration: 2042ms
+============================================================

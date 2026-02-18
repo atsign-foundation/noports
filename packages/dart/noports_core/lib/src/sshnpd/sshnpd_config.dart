@@ -366,11 +366,13 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
   output(
-    StringOption(
+    FlagOption(
       argName: 'output',
       argAbbrev: 'o',
-      mandatory: false,
-      helpText: 'Match output flag for doctor usage',
+      defaultsTo: false,
+      helpText:
+          'Output file for doctor usage. Only valid when used with --doctor.'
+          ' If no file name is provided, defaults to sshnpd_doctor_log.txt',
       group: runtimeGroup,
     ),
   );
