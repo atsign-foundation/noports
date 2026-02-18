@@ -86,6 +86,12 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
+  // Manually check if the version flag is set and print version
+  if (args.contains('--version')) {
+    printVersion();
+    exitProgram();
+  }
+
   // Manually check if the help flag is set and print usage
   Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
   if (args.toSet().intersection(helpSet).isNotEmpty) {

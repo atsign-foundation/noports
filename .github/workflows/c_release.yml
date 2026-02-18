@@ -210,7 +210,7 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@7906c48e206fe1a885df761bc7239ff3dcfef6b8 # v0.12
+        uses: sbomify/github-action@e344ec6e6916948ce49720a9ac5bafafb7119d47 # v0.13
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'

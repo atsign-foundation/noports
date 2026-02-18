@@ -189,10 +189,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: b4d854962a32fd9f8efc0b76f98214790b833af8b2e9b2df6bfc927c0415a072
+      sha256: "39ad4ca8a2876779737c60e4228b4bcd35d4352ef7e14e47514093edc012c734"
       url: "https://pub.dev"
     source: hosted
-    version: "2.10.5"
+    version: "2.11.1"
   build_version:
     dependency: "direct dev"
     description:
@@ -249,6 +249,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  cli_menu:
+    dependency: "direct main"
+    description:
+      name: cli_menu
+      sha256: "8e2ad533d6fa657bf944d943b948862f2c0cfcf1fa6568be9b65eef5573394bf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0+1"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      sha256: ff6785f7e9e3c38ac98b2fb035701789de90154024a75b6cb926445e83197d1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.2"
   clock:
     dependency: transitive
     description:
@@ -277,10 +293,10 @@ packages:
     dependency: "direct main"
     description:
       name: config
-      sha256: a4ca96d4bc3c44c1ec35976dbadf1a60635519d74688413485d2f808b2185a6e
+      sha256: "7ab448e904baf3991878881be208b4298b2c1737852529238340dc780c575bda"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.3"
+    version: "0.8.4"
   convert:
     dependency: transitive
     description:
@@ -510,10 +526,10 @@ packages:
     dependency: "direct dev"
     description:
       name: lints
-      sha256: a5e2b223cb7c9c8efdc663ef484fdd95bb243bff242ef5b13e26883547fce9a0
+      sha256: "12f842a479589fea194fe5c5a3095abc7be0c1f2ddfa9a0e76aed1dbd26a87df"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0"
+    version: "6.1.0"
   logging:
     dependency: "direct main"
     description:
@@ -584,7 +600,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.10.5"
+    version: "6.11.0"
   openssh_ed25519:
     dependency: transitive
     description:

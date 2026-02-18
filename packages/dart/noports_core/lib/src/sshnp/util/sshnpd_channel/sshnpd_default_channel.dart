@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/events.dart';
-import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
@@ -25,10 +23,6 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? aesD2C;
   String? ivD2C;
   String? errorReceived;
-
-  @visibleForTesting
-  // disable publickey cache on windows
-  FileSystem? fs = Platform.isWindows ? null : LocalFileSystem();
 
   @override
   Future<void> initialize() async {
@@ -66,8 +60,7 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           atClient,
           params.sshnpdAtSign,
           logger,
-          envelope,
-          fs: fs,
+          envelope
         );
       } catch (e) {
         logger.shout(
