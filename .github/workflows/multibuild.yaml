@@ -119,12 +119,17 @@ jobs:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
-      - name: Setup Go
+      - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
           go-version: '1.25.6'
           cache: true
+      - name: Set up QEMU (Linux riscv64 and armv7 only)
+        if: ${{ matrix.arch == 'riscv64' || matrix.arch == 'armv7' }}
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+        with:
+          platforms: {{ matrix.arch }}
       - name: Create directories
         run: |
           mkdir sshnp
@@ -148,9 +153,10 @@ jobs:
         if: ${{ matrix.platform != 'windows' }}
         run: |
           dart compile exe ${CROSS} bin/srvd.dart -v -o sshnp/srvd
-      - name: Generate man pages and CHANGELOG (Linux)
+      - name: Generate man pages and CHANGELOG (Linux only)
         if: ${{ matrix.platform == 'linux' }}
         run: |
+          sudo apt-get update && sudo apt-get install -y help2man
           DBINS="${BINS} srvd"
           for BINARY in ${DBINS}; do \
             help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1
@@ -158,7 +164,7 @@ jobs:
           done
           cp CHANGELOG.md sshnp/
           gzip -n9 sshnp/CHANGELOG.md
-      - name: Install nfpm and create Linux packages
+      - name: Install nfpm and create packages (Linux Only)
         if: ${{ matrix.platform == 'linux' }}
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@be6fd83eed6f241359ae3e7d340a13f197ae6463
