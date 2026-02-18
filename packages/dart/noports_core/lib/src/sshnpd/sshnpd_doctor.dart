@@ -10,7 +10,6 @@ import 'package:noports_core/src/sshnpd/tests/config_check.dart';
 import 'package:noports_core/src/sshnpd/tests/version_check.dart';
 import 'package:noports_core/src/sshnpd/tests/service_logs_check.dart';
 import 'package:noports_core/src/sshnpd/tests/connectivity_check.dart';
-import 'package:sshnoports/src/version.dart';
 
 class SshnpdDoctor {
   Future<void> run(List<String> args) async {
@@ -39,7 +38,7 @@ class SshnpdDoctor {
   final platform = PlatformUtils.instance;
   final os = platform.name;
   final arch = await platform.getArchitecture();
-  final version = packageVersion;
+  final version = VersionCheck().packageVersion;
   final home = platform.homeDirectory;
   final keysPath = '$home${Platform.pathSeparator}.atsign${Platform.pathSeparator}keys';
 
