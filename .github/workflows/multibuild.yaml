@@ -394,6 +394,8 @@ jobs:
       - name: Move packages for signing
         run: |
           cd tarballs
+          mv */*.deb .
+          mv */*.rpm .
           mv */*.sh .
           mv */*.tgz .
           mv */*.zip .
