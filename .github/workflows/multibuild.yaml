@@ -167,7 +167,9 @@ jobs:
               ;;
             arm7)
               sudo apt-get install -y libc6-armhf-cross
+              sudo ln -s /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/ld-linux-armhf.so.3
               export QEMU_LD_PREFIX="/usr/arm-linux-gnueabihf"
+              readelf -l sshnp/at_activate
               ;;
             *)
               ;;
