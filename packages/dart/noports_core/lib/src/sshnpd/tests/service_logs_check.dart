@@ -39,7 +39,7 @@ class ServiceLogsCheck extends DiagnosticTest {
     
     // Truncate if too long (although we requested 50 lines)
     if (logs.length > 2000) {
-      logs = logs.substring(0, 2000) + '\n... (truncated)';
+      logs = '${logs.substring(0, 2000)}\n... (truncated)';
     }
 
     if (logs.trim().isEmpty) {
