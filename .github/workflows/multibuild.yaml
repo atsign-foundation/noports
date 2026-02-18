@@ -158,6 +158,19 @@ jobs:
         if: ${{ matrix.platform == 'linux' }}
         run: |
           sudo apt-get update && sudo apt-get install -y help2man
+          # Conditionally install the cross-libraries based on arch
+          case "${{ matrix.arch }}" in
+            riscv64)
+              sudo apt-get install -y libc6-riscv64-cross
+              export QEMU_LD_PREFIX="/usr/riscv64-linux-gnu"
+              ;;
+            armv7)
+              sudo apt-get install -y libc6-armhf-cross
+              export QEMU_LD_PREFIX="PREFIX=/usr/arm-linux-gnueabihf"
+              ;;
+            *)
+              ;;
+          esac
           DBINS="${BINS} srvd"
           for BINARY in ${DBINS}; do \
             help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
