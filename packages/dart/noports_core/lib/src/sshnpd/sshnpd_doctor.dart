@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:noports_core/src/sshnpd/sshnpd_config.dart';
 import 'package:noports_core/src/sshnpd/diagnostic_runner.dart';
-import 'package:noports_core/src/sshnpd/diagnostic_test.dart';
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
 import 'package:noports_core/src/sshnpd/tests/keys_check.dart';
 import 'package:noports_core/src/sshnpd/tests/prerequisites_check.dart';
