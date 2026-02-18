@@ -164,7 +164,7 @@ jobs:
               sudo apt-get install -y libc6-riscv64-cross
               export QEMU_LD_PREFIX="/usr/riscv64-linux-gnu"
               ;;
-            armv7)
+            arm7)
               sudo apt-get install -y libc6-armhf-cross
               export QEMU_LD_PREFIX="PREFIX=/usr/arm-linux-gnueabihf"
               ;;
