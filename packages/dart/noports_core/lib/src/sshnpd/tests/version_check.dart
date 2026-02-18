@@ -11,7 +11,6 @@ class VersionCheck extends DiagnosticTest {
   @override
   String get name => 'Version Check';
 
-  @override
   Version get packageVersion => Version.parse(pkg.packageVersion);
 
   @override
