@@ -153,31 +153,32 @@ jobs:
         if: ${{ matrix.platform != 'windows' }}
         run: |
           dart compile exe ${CROSS} bin/srvd.dart -v -o sshnp/srvd
+          dart compile exe ${CROSS} bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd
       - name: Generate man pages and CHANGELOG (Linux only)
         if: ${{ matrix.platform == 'linux' }}
         run: |
           sudo apt-get update && sudo apt-get install -y help2man
           DBINS="${BINS} srvd"
           for BINARY in ${DBINS}; do \
-            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1
-            gzip -n9 sshnp/${BINARY}.1
+            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
+            gzip -n9 sshnp/${BINARY}.1;
           done
           cp CHANGELOG.md sshnp/
           gzip -n9 sshnp/CHANGELOG.md
-      - name: Install nfpm and create packages (Linux Only)
+      - name: Install nfpm and create packages (Linux only)
         if: ${{ matrix.platform == 'linux' }}
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@be6fd83eed6f241359ae3e7d340a13f197ae6463
           nfpm -v
           nfpm pkg --packager deb -t tarball
           nfpm pkg --packager rpm -t tarball
-      - name: Build Windows Services (Windows Only)
+      - name: Build Windows Services (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
-      - name: Codesign Windows Binaries (Windows Only)
+      - name: Codesign Windows Binaries (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
         env:
@@ -189,7 +190,7 @@ jobs:
             sign_file "$BINARY.exe";
           done
           sign_file "sshnpdService.exe"
-      - name: Build and Sign Windows Installer (Windows Only)
+      - name: Build and Sign Windows Installer (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
         env:
@@ -233,15 +234,18 @@ jobs:
           security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           # codesign
-          /usr/bin/codesign \
-            --force \
-            -s "$MACOS_SIGNING_IDENTITY" \
-            --options=runtime \
-            --entitlements ./tools/templates/entitlements.plist \
-            --prefix "com.atsign." \
-            --timestamp \
-            -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin,npevents}
+          DBINS="${BINS} srvd debug/srvd"
+          for BINARY in ${DBINS}; do \
+            /usr/bin/codesign \
+              --force \
+              -s "$MACOS_SIGNING_IDENTITY" \
+              --options=runtime \
+              --entitlements ./tools/templates/entitlements.plist \
+              --prefix "com.atsign." \
+              --timestamp \
+              -v \
+              sshnp/${BINARY};
+          done
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         run:
@@ -249,7 +253,7 @@ jobs:
       - name: Compress to tgz (Linux only)
         if: ${{ matrix.platform == 'linux' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - name: Compress to zip (Windows Only)
+      - name: Compress to zip (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         run:
           powershell -c 'Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip'
