@@ -171,6 +171,8 @@ jobs:
             *)
               ;;
           esac
+          # Debug - show help for at_activate
+          sshnp/at_activate --help
           DBINS="${BINS} srvd"
           for BINARY in ${DBINS}; do \
             help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
