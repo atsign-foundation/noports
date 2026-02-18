@@ -55,6 +55,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports
         shell: bash
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
