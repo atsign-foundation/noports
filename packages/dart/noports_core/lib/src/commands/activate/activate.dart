@@ -27,7 +27,8 @@ class Activate {
 
     final preference = AtOnboardingPreference()
       ..cramSecret = params.cramSecret
-      ..atKeysFilePath = params.atKeysFilePath;
+      ..atKeysFilePath = params.atKeysFilePath
+      ..rootDomain = params.rootDomain;
     AtOnboardingService service = AtOnboardingServiceImpl(
       params.atsign,
       preference,

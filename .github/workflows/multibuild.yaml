@@ -106,6 +106,7 @@ jobs:
           dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
           dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
           dart compile exe bin/npevents.dart -v -o sshnp/npevents${{ matrix.ext }}
+          dart compile exe bin/noports.dart -v -o sshnp/noports${{ matrix.ext }}
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
@@ -140,6 +141,7 @@ jobs:
           sign_file "srv.exe"
           sign_file "sshnpdService.exe"
           sign_file "np_admin.exe"
+          sign_file "noports.exe"
       - name: Build and Sign Windows Installer (Windows Only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi

@@ -3,7 +3,7 @@
 set -uex
 umask 0077
 
-ZLIB_VERSION=1.3.1
+ZLIB_VERSION=1.3.2
 OPENSSL_VERSION=3.2.1
 OPENSSH_VERSION=V_9_6_P1
 
@@ -24,7 +24,7 @@ mkdir -p "$root" "$build" "$dist"
 if [ ! -f "build/zlib-$ZLIB_VERSION/minigzip" ]; then
 echo "---- Building ZLIB -----"
 if [ ! -f "$dist/zlib-$ZLIB_VERSION.tar.gz" ]; then
-curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://zlib.net/zlib-$ZLIB_VERSION.tar.gz
+curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
 gzip -dc $dist/zlib-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/zlib-*

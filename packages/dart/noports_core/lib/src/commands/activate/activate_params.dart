@@ -26,8 +26,8 @@ class ActivateParams {
   final String? deviceName;
   final appName = defaultAppName;
   final namespaces = defaultEnrollmentNamespaces;
-
   String? atKeysFilePath;
+  final String rootDomain;
 
   // Logging
   bool verbose = false;
@@ -43,6 +43,7 @@ class ActivateParams {
     this.otp,
     this.deviceName,
     this.atKeysFilePath,
+    required this.rootDomain,
     this.verbose = false,
     this.debug = false,
   });
@@ -79,6 +80,7 @@ class ActivateParams {
       otp: _parseOtp(activationString),
       deviceName: _parseDeviceName(activationString),
       atKeysFilePath: keyfile,
+      rootDomain: results['root-server'],
       verbose: results['verbose'],
       debug: results['debug'],
     );
@@ -91,6 +93,15 @@ class ActivateParams {
       abbr: 't',
       mandatory: false,
       help: 'Destination path for atKeys file',
+    );
+
+    p.addOption(
+      'root-server',
+      abbr: 'r',
+      aliases: const ['root-domain', 'rootDomain'],
+      mandatory: false,
+      defaultsTo: 'root.atsign.org',
+      help: 'atDirectory (aka root) server domain (e.g., root.atsign.org)',
     );
 
     p.addFlag(

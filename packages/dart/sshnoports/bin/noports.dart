@@ -30,6 +30,7 @@ Future<void> main(List<String> args) async {
 
   if (args.isEmpty) {
     logger.shout('At least one argument is required');
+    stderr.writeln('\n');
     printUsage();
     exit(1);
   }
@@ -44,6 +45,7 @@ Future<void> main(List<String> args) async {
   final command = NoPortsCommand.tryParse(args[0]);
   if (command == null) {
     logger.shout('Invalid command: ${args[0]}');
+    stderr.writeln('\n');
     printUsage();
     exit(1);
   }
@@ -68,6 +70,7 @@ Future<void> main(List<String> args) async {
     exit(0);
   } on ArgumentError catch (e) {
     logger.shout(e.message);
+    stderr.writeln('\n');
     printUsage(command: command);
     exit(1);
   } catch (e) {
@@ -90,6 +93,7 @@ void printUsage({NoPortsCommand? command}) {
     }
   }
   printVersion();
+  stderr.write('\n');
   return;
 }
 
