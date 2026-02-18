@@ -24,6 +24,7 @@ class SshnpdDoctor {
     verbose: true,
     tests: [
       PrerequisitesCheck(), 
+      ConnectivityCheck(), 
       KeysCheck(), 
       ServiceStatusCheck(), 
       ServiceLogsCheck(), 

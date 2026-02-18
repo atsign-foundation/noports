@@ -6,7 +6,7 @@ class PrerequisitesCheck extends DiagnosticTest {
   String get name => 'Prerequisites Check';
 
   @override
-  String get description => 'Checks for the presence of curl, ssh, and unzip';
+  String get description => 'Checks for the presence of curl and ssh';
 
   @override
   Future<TestResult> run() async {
