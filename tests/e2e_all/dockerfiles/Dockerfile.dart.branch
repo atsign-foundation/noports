@@ -23,7 +23,8 @@ RUN set -eux ; \
     dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
     dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
     dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents
+    dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npp.dart -o ${OUTPUT_DIR}/npp ;
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:dedf382e6dbdd2ca99dc37d18a8b1469de03fa3366f0dd30f3089a3789151c1c AS runtime
 
