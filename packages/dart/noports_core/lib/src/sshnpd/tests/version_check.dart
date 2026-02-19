@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import '../diagnostic_test.dart';
-import 'package:sshnoports/src/version.dart' as pkg;
+
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
 import 'package:version/version.dart';
 
@@ -11,7 +11,11 @@ class VersionCheck extends DiagnosticTest {
   @override
   String get name => 'Version Check';
 
-  Version get packageVersion => Version.parse(pkg.packageVersion);
+  final String packageVersionString;
+
+  VersionCheck(this.packageVersionString);
+
+  Version get packageVersion => Version.parse(packageVersionString);
 
   @override
   String get description =>

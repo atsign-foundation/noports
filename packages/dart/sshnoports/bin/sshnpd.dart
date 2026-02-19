@@ -40,7 +40,7 @@ void main(List<String> args) async {
         exit(0);
       },
       doctorCallback: () async {
-        await SshnpdDoctor().run(args);
+        await SshnpdDoctor().run(args, packageVersion: packageVersion);
         exit(0);
       },
       version: packageVersion,

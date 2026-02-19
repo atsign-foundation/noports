@@ -11,7 +11,7 @@ import 'package:noports_core/src/sshnpd/tests/service_logs_check.dart';
 import 'package:noports_core/src/sshnpd/tests/connectivity_check.dart';
 
 class SshnpdDoctor {
-  Future<void> run(List<String> args) async {
+  Future<void> run(List<String> args, {required String packageVersion}) async {
 
     print('-' * 60) ;
     print('Welcome to the SSHNPD Doctor - Diagnostic Tool');
@@ -27,7 +27,7 @@ class SshnpdDoctor {
       ServiceStatusCheck(), 
       ServiceLogsCheck(), 
       ConfigCheck(), 
-      VersionCheck(), 
+      VersionCheck(packageVersion), 
     ],
   );
   final results = await runner.runAll();
@@ -37,7 +37,7 @@ class SshnpdDoctor {
   final platform = PlatformUtils.instance;
   final os = platform.name;
   final arch = await platform.getArchitecture();
-  final version = VersionCheck().packageVersion;
+  final version = VersionCheck(packageVersion).packageVersion;
   final home = platform.homeDirectory;
   final keysPath = '$home${Platform.pathSeparator}.atsign${Platform.pathSeparator}keys';
 
