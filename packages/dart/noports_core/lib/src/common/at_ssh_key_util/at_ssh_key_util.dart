@@ -2,19 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dartssh2/dartssh2.dart';
-import 'package:noports_core/sshnp.dart';
-import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 
 export 'dart_ssh_key_util.dart';
 export 'local_ssh_key_util.dart';
 
 abstract interface class AtSshKeyUtil {
-  FutureOr<AtSshKeyPair> generateKeyPair({
-    required String identifier,
-    SupportedSshAlgorithm algorithm,
-  });
-
   FutureOr<AtSshKeyPair> getKeyPair({required String identifier});
 
   FutureOr<dynamic> addKeyPair({
@@ -34,10 +27,12 @@ class AtSshKeyPair {
     required String identifier,
     String? directory,
     String? passphrase,
-  })  : identifier =
-            directory == null ? identifier : path.join(directory, identifier),
-        keyPair = SSHKeyPair.fromPem(pemText, passphrase).firstOrNull ??
-            (throw ArgumentError.value(pemText, 'pemText', 'Invalid PEM text'));
+  }) : identifier = directory == null
+           ? identifier
+           : path.join(directory, identifier),
+       keyPair =
+           SSHKeyPair.fromPem(pemText, passphrase).firstOrNull ??
+           (throw ArgumentError.value(pemText, 'pemText', 'Invalid PEM text'));
 
   String get type => keyPair.type;
 

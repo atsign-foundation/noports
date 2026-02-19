@@ -41,8 +41,6 @@ void main() {
         addSshPublicKeys: false,
         localSshdPort: 22,
         sshPublicKeyPermissions: '',
-        ephemeralPermissions: '',
-        sshAlgorithm: SupportedSshAlgorithm.rsa,
         deviceGroup: 'default',
         version: '1.0.0',
         permitOpen: ['*:*'],
@@ -54,7 +52,7 @@ void main() {
     });
 
     test(
-      'extractSessionId should extract session ID from ssh_request notification',
+      'extractSessionId should extract session ID from npt_request notification',
       () async {
         // Arrange
         final mockNotification = MockAtNotification();
@@ -77,48 +75,11 @@ void main() {
         // Act
         final result = await sshnpd.extractSessionId(
           mockNotification,
-          'ssh_request',
+          'npt_request',
         );
 
         // Assert
         expect(result, equals(sessionId));
-      },
-    );
-
-    test(
-      'extractSessionId should extract session ID from legacy sshd notification with session ID',
-      () async {
-        // Arrange
-        final mockNotification = MockAtNotification();
-        final sessionId = 'legacy-session-456';
-        final legacyPayload = '8080 22 testuser example.com $sessionId';
-
-        when(() => mockNotification.value).thenReturn(legacyPayload);
-
-        // Act
-        final result = await sshnpd.extractSessionId(mockNotification, 'sshd');
-
-        // Assert
-        expect(result, equals(sessionId));
-      },
-    );
-
-    test(
-      'extractSessionId should generate session ID for legacy sshd notification without session ID',
-      () async {
-        // Arrange
-        final mockNotification = MockAtNotification();
-        final notificationId = 'notification-123';
-        final legacyPayload = '8080 22 testuser example.com'; // No session ID
-
-        when(() => mockNotification.value).thenReturn(legacyPayload);
-        when(() => mockNotification.id).thenReturn(notificationId);
-
-        // Act
-        final result = await sshnpd.extractSessionId(mockNotification, 'sshd');
-
-        // Assert
-        expect(result, equals('legacy_$notificationId'));
       },
     );
 
@@ -172,7 +133,7 @@ void main() {
         // Act
         final result = await sshnpd.tryAcquireSessionMutex(
           mockNotification,
-          'ssh_request',
+          'npt_request',
         );
 
         // Assert
@@ -221,7 +182,7 @@ void main() {
         // Act
         final result = await sshnpd.tryAcquireSessionMutex(
           mockNotification,
-          'ssh_request',
+          'npt_request',
         );
 
         // Assert
@@ -241,7 +202,7 @@ void main() {
         // Act
         final result = await sshnpd.tryAcquireSessionMutex(
           mockNotification,
-          'ssh_request',
+          'npt_request',
         );
 
         // Assert

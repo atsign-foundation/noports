@@ -64,19 +64,6 @@ abstract class Sshnpd {
   /// e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"
   abstract final String sshPublicKeyPermissions;
 
-  /// Permissions which are added to the authorized_keys file when adding
-  /// a newly-generated ephemeral public key.
-  /// e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"
-  ///
-  /// Note that PermitOpen="localhost:localSshdPort" will always be added
-  abstract final String ephemeralPermissions;
-
-  /// The algorithm to use for ssh encryption
-  /// Can be one of [SupportedSSHAlgorithm.values]:
-  /// - [SupportedSshAlgorithm.ed25519]
-  /// - [SupportedSshAlgorithm.rsa]
-  abstract final SupportedSshAlgorithm sshAlgorithm;
-
   /// The name of this device's "group".
   /// When delegated authorization is being used then the group name is sent
   //  to the authorizer service as well as the device name, this daemon's

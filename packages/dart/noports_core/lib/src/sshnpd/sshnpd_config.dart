@@ -253,32 +253,6 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
 
-  sshEphemeralPermissions(
-    MultiStringOption(
-      argName: 'ephemeral-permissions',
-      configKey: '/ssh/ephemeral-permissions',
-      mandatory: false,
-      defaultsTo: [],
-      helpText:
-          'The permissions which will be added to the authorized_keys file'
-          ' for the ephemeral public keys which are generated when a client'
-          ' is connecting via forward ssh'
-          ' e.g. PermitOpen="host-1:3389",PermitOpen="localhost:80"',
-      group: sshGroup,
-    ),
-  ),
-
-  sshAlgorithm(
-    EnumOption(
-      enumParser: EnumParser(SupportedSshAlgorithm.values),
-      argName: 'ssh-algorithm',
-      configKey: '/ssh/algorithm',
-      defaultsTo: DefaultArgs.sshAlgorithm,
-      helpText: 'Use RSA 4096 keys rather than the default ED25519 keys',
-      group: sshGroup,
-    ),
-  ),
-
   // Runtime Options
   storagePath(
     DirOption(
@@ -392,7 +366,6 @@ class SshnpdConfigBroker implements ConfigurationBroker {
       case '/access/managers':
       case '/access/permitopen':
       case '/ssh/publickey-permissions':
-      case '/ssh/ephemeral-permissions':
         if (value is YamlList) {
           value = List.from(value);
         }

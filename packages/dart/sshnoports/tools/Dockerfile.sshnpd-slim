@@ -3,11 +3,6 @@
 # --tag <YOUR DOCKERHUB ID>/sshnpd-slim-multi:latest  \
 # -f packages/dart/sshnoports/tools/Dockerfile.sshnpd-slim .
 
-# Note dart:beta needs to be used when using M1 mac as known bug causes
-# crash dump otherwise, can move back to standard builds if on Linux/Windows
-# crash still happens on arm build so remove that build on M1 too
-# as of 5th Feb 2024 - Will check state as 3.3 Stable is released
-#FROM dart:beta-sdk AS buildimage
 
 FROM dart:3.11.0@sha256:193a4d037dcef48b56f2a3544f053f4ef3b5e9865953f8f5ff2a284554da567a  AS buildimage
 ARG TARGETARCH
@@ -23,8 +18,10 @@ WORKDIR /app
 COPY . .
 RUN \
   set -eux ; \
-  mkdir -p $HOMEDIR/storage ; \
-  mkdir -p $HOMEDIR/config ; \
+  mkdir -p $HOMEDIR/.atsign/keys ; \
+  mkdir -p $HOMEDIR/.atsign/storage ; \
+  mkdir -p $HOMEDIR/.atsign/config ; \
+  mkdir -p /tmp ;\
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
   # build sshnpd
@@ -33,33 +30,26 @@ RUN \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
-  apt-get update && apt-get install -y adduser autoconf curl gcc make ; \
+  apt-get update && apt-get install -y adduser ; \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
-  # build static openssh binaries
-  cd ${WORKDIR}/${OPENSSH} ; \
-  ARCH=${TARGETARCH} ./static-openssh.sh ; \
-  cp build/openssh-portable*/ssh-keygen ${BINARYDIR}/ ; \ 
-  cp build/openssh-portable*/ssh ${BINARYDIR}/ ; \
-  chmod 755 ${BINARYDIR}/ssh-keygen ; \
-  chmod 755 ${BINARYDIR}/ssh 
+  mkdir -m 1777 /tmp_dir
 
 
 # Second stage of build FROM scratch
 FROM scratch
 ENV PATH=/usr/local/at
 ENV USER=atsign
-COPY --from=buildimage /atsign /atsign/
 COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
+COPY --from=buildimage --chown=atsign:atsign /atsign/ /atsign/
+COPY --from=buildimage --chown=atsign:atsign /tmp_dir /tmp
 COPY --from=buildimage /etc/cacert /etc/cacert
 WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
-COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
-COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
 USER atsign
 ENTRYPOINT ["/usr/local/at/sshnpd"]

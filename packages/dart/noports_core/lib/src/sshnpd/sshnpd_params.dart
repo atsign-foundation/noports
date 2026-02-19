@@ -23,8 +23,6 @@ class SshnpdParams {
   final String rootDomain;
   final int localSshdPort;
   final String sshPublicKeyPermissions;
-  final String ephemeralPermissions;
-  final SupportedSshAlgorithm sshAlgorithm;
   final String deviceGroup;
   final String storagePath;
   final String permitOpen;
@@ -48,8 +46,6 @@ class SshnpdParams {
     required this.rootDomain,
     required this.localSshdPort,
     required this.sshPublicKeyPermissions,
-    required this.ephemeralPermissions,
-    required this.sshAlgorithm,
     required this.deviceGroup,
     required this.storagePath,
     required this.permitOpen,
@@ -153,10 +149,6 @@ class SshnpdParams {
       rootDomain: c.value(SshnpdOption.rootServer),
       localSshdPort: c.value(SshnpdOption.localSshdPort),
       sshPublicKeyPermissions: normalizedPermissions,
-      ephemeralPermissions: c
-          .value(SshnpdOption.sshEphemeralPermissions)
-          .join(","),
-      sshAlgorithm: c.value(SshnpdOption.sshAlgorithm),
       deviceGroup: c.value(SshnpdOption.deviceGroup),
       storagePath:
           c.optionalValue(SshnpdOption.storagePath)?.path ??

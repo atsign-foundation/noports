@@ -8,7 +8,6 @@ import 'package:openssh_ed25519/openssh_ed25519.dart';
 class DartSshKeyUtil implements AtSshKeyUtil {
   static final Map<String, AtSshKeyPair> _keyPairCache = {};
 
-  @override
   Future<AtSshKeyPair> generateKeyPair({
     required String identifier,
     SupportedSshAlgorithm algorithm = DefaultArgs.sshAlgorithm,
@@ -31,9 +30,9 @@ class DartSshKeyUtil implements AtSshKeyUtil {
   }
 
   AtSshKeyPair _generateRSAKeyPair(String identifier) => AtSshKeyPair.fromPem(
-        AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
-        identifier: identifier,
-      );
+    AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
+    identifier: identifier,
+  );
 
   Future<AtSshKeyPair> _generateEd25519KeyPair(String identifier) async {
     var keyPair2 = await Ed25519().newKeyPair();
