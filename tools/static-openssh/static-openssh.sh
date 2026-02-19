@@ -24,7 +24,7 @@ mkdir -p "$root" "$build" "$dist"
 if [ ! -f "build/zlib-$ZLIB_VERSION/minigzip" ]; then
 echo "---- Building ZLIB -----"
 if [ ! -f "$dist/zlib-$ZLIB_VERSION.tar.gz" ]; then
-curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
+curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 gzip -dc $dist/zlib-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/zlib-*
