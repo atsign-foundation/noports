@@ -734,12 +734,70 @@ class SshnpdImpl
       ),
     );
 
+    // When encryptRvdTraffic is false, the client expects an ephemeral
+    // SSH private key to create a tunnel session through the relay.
+    // Generate one using pure Dart (no ssh-keygen) and authorize it.
+    String? ephemeralPrivateKey;
+    if (!req.encryptRvdTraffic) {
+      try {
+        final dartKeyUtil = DartSshKeyUtil();
+        final ephemeralKeyPair = await dartKeyUtil.generateKeyPair(
+          identifier: 'ephemeral_${req.sessionId}',
+        );
+        ephemeralPrivateKey = ephemeralKeyPair.privateKeyContents;
+
+        // Add ephemeral public key to authorized_keys
+        final authKeysPath = [
+          homeDirectory,
+          '.ssh',
+          'authorized_keys',
+        ].join(Platform.pathSeparator);
+        final authKeys = File(authKeysPath);
+        final authKeysContent = await authKeys.readAsString();
+        if (!authKeysContent.endsWith('\n')) {
+          await authKeys.writeAsString('\n', mode: FileMode.append);
+        }
+        final pubKey = ephemeralKeyPair.publicKeyContents;
+        if (!authKeysContent.contains(pubKey)) {
+          await authKeys.writeAsString(
+            'command="echo \\"ssh session complete\\";sleep 20"'
+            ',PermitOpen="localhost:$localSshdPort"'
+            ' '
+            '${pubKey.trim()}'
+            ' '
+            'sshnp_ephemeral_${req.sessionId}\n',
+            mode: FileMode.append,
+            flush: true,
+          );
+        }
+
+        // Remove the ephemeral key from authorized_keys after 15 seconds
+        Timer(const Duration(seconds: 15), () async {
+          try {
+            final file = File(authKeysPath);
+            final lines = await file.readAsLines();
+            lines.removeWhere((l) => l.contains(req.sessionId));
+            await file.writeAsString('${lines.join('\n')}\n');
+          } catch (e) {
+            logger.severe(
+              'Failed to remove ephemeral key from authorized_keys: $e',
+            );
+          }
+        });
+
+        logger.info('Generated ephemeral keypair for session ${req.sessionId}');
+      } catch (e) {
+        logger.severe('Failed to generate ephemeral keypair: $e');
+      }
+    }
+
     // Start our side of the tunnel with multi: false (single-connection mode for SSH)
     try {
       await startNpt(
         requestingAtsign: requestingAtsign,
         req: req,
         multi: false,
+        ephemeralPrivateKey: ephemeralPrivateKey,
       );
     } catch (e) {
       logger.severe('startNpt (ssh_request) failed with unexpected error : $e');
@@ -933,6 +991,7 @@ class SshnpdImpl
     required String requestingAtsign,
     required NptSessionRequest req,
     bool multi = true,
+    String? ephemeralPrivateKey,
   }) async {
     logger.info(
       'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}',
@@ -1036,6 +1095,7 @@ class SshnpdImpl
       value: signAndWrapAndJsonEncode(atClient, {
         'status': 'connected',
         'sessionId': req.sessionId,
+        'ephemeralPrivateKey': ephemeralPrivateKey,
         aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
         ivC2DName: c2dBundle?.ivEncrypted,
         'aesKeyD2C': d2cBundle?.aesKeyEncrypted,
