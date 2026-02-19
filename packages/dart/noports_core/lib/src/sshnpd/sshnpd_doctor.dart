@@ -56,7 +56,6 @@ ${'-' * 60}
   summary = systemInfo + summary;
 
   print(summary);
-  print(summary);
   try {
     final results = SshnpdOption.argParser.parse(args);
     if (results.wasParsed('output')) {

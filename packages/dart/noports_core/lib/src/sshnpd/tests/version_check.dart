@@ -56,14 +56,14 @@ class VersionCheck extends DiagnosticTest {
           return TestResult(
             testName: name,
             status: TestStatus.pass,
-            message: 'Software is up to date (v$currentVersion).',
+            message: 'Software is up to date (current version: $currentVersion).',
             duration: DateTime.now().difference(start),
           );
         } else {
           return TestResult(
             testName: name,
             status: TestStatus.warning,
-            message: 'Your version is higher than the latest version (v$currentVersion). Please consider downgrading to an official release.',
+            message: 'Your version is higher than the latest version (current version: $currentVersion, latest version: $cleanLatest). Please consider downgrading to an official release.',
             duration: DateTime.now().difference(start),
           );
         }
@@ -73,8 +73,8 @@ class VersionCheck extends DiagnosticTest {
         String arch = await PlatformUtils.instance.getArchitecture();
 
         print('\n A NEW UPDATE IS AVAILABLE !');
-        print('    Current version: $currentVersion');
-        print('   New version: $cleanLatest');
+        print('Current version: $currentVersion');
+        print('New version: $cleanLatest');
         print('Detected OS: $os');
         print('Detected Architecture: $arch');
         print('If OS or Architecture is not correct, please download the update manually');
@@ -151,7 +151,7 @@ class VersionCheck extends DiagnosticTest {
 
   // Function to download the update
   Future<bool> _performUpdate(String downloadUrl, String fileName) async {
-    print('\n⬇️  Downloading $fileName from GitHub...');
+    print('\n  Downloading $fileName from GitHub...');
     
     try {
       final httpClient = HttpClient();

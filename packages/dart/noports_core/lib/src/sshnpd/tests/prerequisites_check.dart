@@ -26,7 +26,7 @@ class PrerequisitesCheck extends DiagnosticTest {
       return TestResult(
         testName: name,
         status: TestStatus.pass,
-        message: 'Every required tool is present (curl, ssh, unzip).',
+        message: 'Every required tool is present (curl, ssh).',
         duration: DateTime.now().difference(start),
       );
     } else {
