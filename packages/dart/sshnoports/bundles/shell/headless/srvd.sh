@@ -9,6 +9,7 @@ v="-v"              # Comment to disable verbose logging
 # END METADATA
 
 sleep 10 # allow machine to bring up network
+while true; do
 export USER="$user"
     set -- -a "$atsign"
     [ -n "$internet_address" ] && set -- "$@" -i "$internet_address"
