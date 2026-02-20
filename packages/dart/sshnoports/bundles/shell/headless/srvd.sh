@@ -10,7 +10,9 @@ v="-v"              # Comment to disable verbose logging
 
 sleep 10 # allow machine to bring up network
 export USER="$user"
-while true; do
-	"$binary_path"/srvd -a "$atsign" -i "$internet_address" "$v"
-	sleep 10
+    set -- -a "$atsign"
+    [ -n "$internet_address" ] && set -- "$@" -i "$internet_address"
+    [ -n "$v" ] && set -- "$@" "$v"
+    "$binary_path"/srvd "$@"
+    sleep 10
 done
