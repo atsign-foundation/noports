@@ -34,13 +34,13 @@ class DiagnosticRunner {
   String generateSummary(List<TestResult> results) {
     final buffer = StringBuffer();
 
-    // 1. Les Compteurs
+  
     final passed = results.where((r) => r.passed).length;
     final failed = results.where((r) => r.failed).length;
     final warnings = results.where((r) => r.hasWarning).length;
     final skipped = results.where((r) => r.skipped).length;
 
-    // 2. L'En-tête
+
     buffer.writeln('\n${'=' * 60}');
     buffer.writeln('DIAGNOSTIC SUMMARY');
     buffer.writeln('=' * 60);
@@ -50,7 +50,7 @@ class DiagnosticRunner {
     buffer.writeln('Warnings:  $warnings');
     buffer.writeln('Skipped:   $skipped');
 
-    // 3. La Logique de Conclusion (Simple et efficace)
+
     if (failed > 0) {
       buffer.writeln(
           '\n PROBLEMS DETECTED : sshnpd cannot start correctly.');
@@ -76,7 +76,7 @@ class DiagnosticRunner {
       }
     }
 
-    // 4. Durée totale
+
     final totalDuration =
         results.fold<Duration>(Duration.zero, (sum, r) => sum + r.duration);
     buffer.writeln('\nTotal duration: ${totalDuration.inMilliseconds}ms');
