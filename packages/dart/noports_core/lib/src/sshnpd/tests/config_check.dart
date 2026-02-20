@@ -1,8 +1,8 @@
 import 'dart:io';
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
-class ConfigCheck extends DiagnosticTest {
+class ConfigCheck extends DiagnosticCheck {
   @override
   String get name => 'Config Check (sshnpd.yaml)';
 
@@ -11,7 +11,7 @@ class ConfigCheck extends DiagnosticTest {
       'Checks for the presence and content of the config file';
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
 
     //potential paths for config file
@@ -31,16 +31,16 @@ class ConfigCheck extends DiagnosticTest {
               .map((l) => l.trim())
               .join(', ');
 
-          return TestResult(
-            testName: name,
-            status: TestStatus.pass,
+          return CheckResult(
+            checkName: name,
+            status: CheckStatus.pass,
             message: 'File found at: $path\n      Preview: $importantLines',
             duration: DateTime.now().difference(start),
           );
         } catch (e) {
-          return TestResult(
-            testName: name,
-            status: TestStatus.warning,
+          return CheckResult(
+            checkName: name,
+            status: CheckStatus.warning,
             message: 'File found ($path) but impossible to read it: $e',
             duration: DateTime.now().difference(start),
           );
@@ -48,9 +48,9 @@ class ConfigCheck extends DiagnosticTest {
       }
     }
     
-    return TestResult(
-      testName: name,
-      status: TestStatus
+    return CheckResult(
+      checkName: name,
+      status: CheckStatus
           .warning, //warning because it's not a problem if you are using CLI arguments
       message:
           'No sshnpd.yaml file found (this is not a problem if you are using CLI arguments).',

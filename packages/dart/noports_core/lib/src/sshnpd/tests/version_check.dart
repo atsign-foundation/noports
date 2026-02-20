@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'dart:convert';
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
 import 'package:version/version.dart';
 
 
-class VersionCheck extends DiagnosticTest {
+class VersionCheck extends DiagnosticCheck {
 
   @override
   String get name => 'Version Check';
@@ -23,7 +23,7 @@ class VersionCheck extends DiagnosticTest {
 
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
     Version currentVersion = packageVersion;
 
@@ -37,9 +37,9 @@ class VersionCheck extends DiagnosticTest {
       ]);
 
       if (result.exitCode != 0) {
-        return TestResult(
-          testName: name,
-          status: TestStatus.warning,
+        return CheckResult(
+          checkName: name,
+          status: CheckStatus.warning,
           message:
               'Unable to check for updates (curl error: ${result.stderr}).',
           duration: DateTime.now().difference(start),
@@ -53,16 +53,16 @@ class VersionCheck extends DiagnosticTest {
       
       if (cleanLatest <= currentVersion) {
         if (cleanLatest == currentVersion) {
-          return TestResult(
-            testName: name,
-            status: TestStatus.pass,
+          return CheckResult(
+            checkName: name,
+            status: CheckStatus.pass,
             message: 'Software is up to date (current version: $currentVersion).',
             duration: DateTime.now().difference(start),
           );
         } else {
-          return TestResult(
-            testName: name,
-            status: TestStatus.warning,
+          return CheckResult(
+            checkName: name,
+            status: CheckStatus.warning,
             message: 'Your version is higher than the latest version (current version: $currentVersion, latest version: $cleanLatest). Please consider downgrading to an official release.',
             duration: DateTime.now().difference(start),
           );
@@ -104,9 +104,9 @@ class VersionCheck extends DiagnosticTest {
           if (targetAsset == null) {
              print(' No suitable asset found for your system ($os $arch).');
              print(' Please check manually at: https://github.com/atsign-foundation/noports/releases/latest');
-             return TestResult(
-               testName: name,
-               status: TestStatus.warning, 
+             return CheckResult(
+               checkName: name,
+               status: CheckStatus.warning, 
                message: 'Automatic update not available for $os-$arch.',
                duration: DateTime.now().difference(start),
              );
@@ -116,33 +116,33 @@ class VersionCheck extends DiagnosticTest {
           bool success = await _performUpdate(targetAsset['browser_download_url'], targetAsset['name']);
 
           if (success) {
-            return TestResult(
-              testName: name,
-              status: TestStatus.pass,
+            return CheckResult(
+              checkName: name,
+              status: CheckStatus.pass,
               message: 'Update downloaded successfully.',
               duration: DateTime.now().difference(start),
             );
           } else {
-            return TestResult(
-              testName: name,
-              status: TestStatus.fail,
+            return CheckResult(
+              checkName: name,
+              status: CheckStatus.fail,
               message: 'Download failed. Please try manually.',
               duration: DateTime.now().difference(start),
             );
           }
         } else {
-          return TestResult(
-            testName: name,
-            status: TestStatus.warning,
+          return CheckResult(
+            checkName: name,
+            status: CheckStatus.warning,
             message: 'Update ignored by user (v$currentVersion).',
             duration: DateTime.now().difference(start),
           );
         }
       }
     } catch (e) {
-      return TestResult(
-        testName: name,
-        status: TestStatus.fail,
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.fail,
         message: 'Technical error: $e',
         duration: DateTime.now().difference(start),
       );

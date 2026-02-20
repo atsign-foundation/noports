@@ -1,7 +1,7 @@
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
-class ServiceStatusCheck extends DiagnosticTest {
+class ServiceStatusCheck extends DiagnosticCheck {
   @override
   String get name => 'Service Status (Daemon)';
 
@@ -9,7 +9,7 @@ class ServiceStatusCheck extends DiagnosticTest {
   String get description => 'Checks if sshnpd is running in the background';
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
 
     // 1. Check Process (Is the binary executing?)
@@ -31,9 +31,9 @@ class ServiceStatusCheck extends DiagnosticTest {
         message += '\n      System Service: Not Installed (running manually?)';
       }
 
-      return TestResult(
-        testName: name,
-        status: TestStatus.pass,
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.pass,
         message: message,
         duration: DateTime.now().difference(start),
       );
@@ -45,9 +45,9 @@ class ServiceStatusCheck extends DiagnosticTest {
          message += '\n      System Service: Not Installed.';
       }
 
-      return TestResult(
-        testName: name,
-        status: TestStatus.warning,
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.warning,
         message: message,
         duration: DateTime.now().difference(start),
       );

@@ -1,7 +1,7 @@
 import 'dart:io';
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 
-class ConnectivityCheck extends DiagnosticTest {
+class ConnectivityCheck extends DiagnosticCheck {
   @override
   String get name => 'Connectivity Check';
 
@@ -9,7 +9,7 @@ class ConnectivityCheck extends DiagnosticTest {
   String get description => 'Checks internet access and AtSign root server reachability';
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
     var messages = <String>[];
     bool allPassed = true;
@@ -38,9 +38,9 @@ class ConnectivityCheck extends DiagnosticTest {
       allPassed = false;
     }
 
-    return TestResult(
-      testName: name,
-      status: allPassed ? TestStatus.pass : TestStatus.fail,
+    return CheckResult(
+      checkName: name,
+      status: allPassed ? CheckStatus.pass : CheckStatus.fail,
       message: messages.join('\n      '),
       duration: DateTime.now().difference(start),
     );

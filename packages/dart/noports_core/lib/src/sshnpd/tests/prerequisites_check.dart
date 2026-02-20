@@ -1,7 +1,7 @@
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
-class PrerequisitesCheck extends DiagnosticTest {
+class PrerequisitesCheck extends DiagnosticCheck {
   @override
   String get name => 'Prerequisites Check';
 
@@ -9,7 +9,7 @@ class PrerequisitesCheck extends DiagnosticTest {
   String get description => 'Checks for the presence of curl and ssh';
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
     List<String> missingTools = [];
 
@@ -23,16 +23,16 @@ class PrerequisitesCheck extends DiagnosticTest {
     }
 
     if (missingTools.isEmpty) {
-      return TestResult(
-        testName: name,
-        status: TestStatus.pass,
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.pass,
         message: 'Every required tool is present (curl, ssh).',
         duration: DateTime.now().difference(start),
       );
     } else {
-      return TestResult(
-        testName: name,
-        status: TestStatus.fail, // C'm bloquant !
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.fail, // C'm bloquant !
         message: 'Missing required tools: ${missingTools.join(', ')}',
         duration: DateTime.now().difference(start),
       );

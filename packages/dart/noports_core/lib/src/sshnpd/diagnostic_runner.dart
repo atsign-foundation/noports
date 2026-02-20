@@ -1,23 +1,23 @@
-import 'diagnostic_test.dart';
+import 'diagnostic_check.dart';
 
 /// Manages and runs a suite of diagnostic tests
 class DiagnosticRunner {
-  final List<DiagnosticTest> tests;
+  final List<DiagnosticCheck> checks;
   final bool verbose;
 
-  DiagnosticRunner({required this.tests, this.verbose = false});
+  DiagnosticRunner({required this.checks, this.verbose = false});
 
   /// Run all tests and return results
-  Future<List<TestResult>> runAll() async {
-    final results = <TestResult>[];
+  Future<List<CheckResult>> runAll() async {
+    final results = <CheckResult>[];
 
-    for (final test in tests) {
+    for (final check in checks) {
       if (verbose) {
-        print('\n Running: ${test.name}');
-        print('   ${test.description}');
+        print('\n Running: ${check.name}');
+        print('   ${check.description}');
       }
 
-      final result = await test.run();
+      final result = await check.run();
       results.add(result);
 
       if (verbose) {
@@ -31,7 +31,7 @@ class DiagnosticRunner {
   }
 
   /// Generate a summary report (Version Simplifiée pour sshnpd)
-  String generateSummary(List<TestResult> results) {
+  String generateSummary(List<CheckResult> results) {
     final buffer = StringBuffer();
 
   
@@ -56,14 +56,14 @@ class DiagnosticRunner {
           '\n PROBLEMS DETECTED : sshnpd cannot start correctly.');
       buffer.writeln('\nError details :');
       for (final result in results.where((r) => r.failed)) {
-        buffer.writeln('  • ${result.testName}: ${result.message}');
+        buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
     } else if (warnings > 0) {
       buffer.writeln(
           '\n  WARNING : sshnpd may work, but check the items above.');
       buffer.writeln('\nWarnings :');
       for (final result in results.where((r) => r.hasWarning)) {
-        buffer.writeln('  • ${result.testName}: ${result.message}');
+        buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
     } else {
       buffer.writeln('\n SUCCESS : Everything seems ready to use sshnpd !');
@@ -72,7 +72,7 @@ class DiagnosticRunner {
     if (passed > 0) {
       buffer.writeln('\nPassed Tests :');
       for (final result in results.where((r) => r.passed)) {
-        buffer.writeln('  • ${result.testName}: ${result.message}');
+        buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
     }
 
@@ -86,7 +86,7 @@ class DiagnosticRunner {
   }
 
   /// Register a new test dynamically
-  void addTest(DiagnosticTest test) {
-    tests.add(test);
+  void addTest(DiagnosticCheck test) {
+    checks.add(test);
   }
 }

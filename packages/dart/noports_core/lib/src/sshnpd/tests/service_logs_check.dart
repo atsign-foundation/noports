@@ -1,7 +1,7 @@
-import '../diagnostic_test.dart';
+import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
-class ServiceLogsCheck extends DiagnosticTest {
+class ServiceLogsCheck extends DiagnosticCheck {
   @override
   String get name => 'Service Logs';
 
@@ -9,7 +9,7 @@ class ServiceLogsCheck extends DiagnosticTest {
   String get description => 'Fetches recent logs from the system service manager (journalctl/EventLog/log)';
 
   @override
-  Future<TestResult> run() async {
+  Future<CheckResult> run() async {
     final start = DateTime.now();
 
     // Check if service is installed first, otherwise logs might be irrelevant or empty
@@ -19,17 +19,17 @@ class ServiceLogsCheck extends DiagnosticTest {
        // If service is not installed, but process is running, we should hint the user
        bool processRunning = await PlatformUtils.instance.isProcessRunning('sshnpd');
        if (processRunning) {
-         return TestResult(
-          testName: name,
-          status: TestStatus.warning, 
+         return CheckResult(
+          checkName: name,
+          status: CheckStatus.warning, 
           message: 'Service is not installed (running manually?), check your terminal for logs.',
           duration: DateTime.now().difference(start),
         );
        }
 
-       return TestResult(
-        testName: name,
-        status: TestStatus.warning,
+       return CheckResult(
+        checkName: name,
+        status: CheckStatus.warning,
         message: 'Service is not installed, cannot fetch system logs.',
         duration: DateTime.now().difference(start),
       );
@@ -43,17 +43,17 @@ class ServiceLogsCheck extends DiagnosticTest {
     }
 
     if (logs.trim().isEmpty) {
-      return TestResult(
-        testName: name,
-        status: TestStatus.warning,
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.warning,
         message: 'No logs found or empty log output.',
         duration: DateTime.now().difference(start),
       );
     }
 
-    return TestResult(
-      testName: name,
-      status: TestStatus.pass,
+    return CheckResult(
+      checkName: name,
+      status: CheckStatus.pass,
       message: 'Client Logs:\n$logs',
       duration: DateTime.now().difference(start),
     );

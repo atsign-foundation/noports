@@ -1,5 +1,5 @@
 /// Base class for all diagnostic tests
-abstract class DiagnosticTest {
+abstract class DiagnosticCheck {
   /// Name of the test
   String get name;
 
@@ -7,34 +7,34 @@ abstract class DiagnosticTest {
   String get description;
 
   /// Run the test and return the result
-  Future<TestResult> run();
+  Future<CheckResult> run();
 }
 
 /// Result of a diagnostic test
-class TestResult {
-  final String testName;
-  final TestStatus status;
+class CheckResult {
+  final String checkName;
+  final CheckStatus status;
   final String message;
   final Map<String, dynamic>? details;
   final Duration duration;
 
-  TestResult({
-    required this.testName,
+  CheckResult({
+    required this.checkName,
     required this.status,
     required this.message,
     this.details,
     required this.duration,
   });
 
-  bool get passed => status == TestStatus.pass;
-  bool get failed => status == TestStatus.fail;
-  bool get hasWarning => status == TestStatus.warning;
-  bool get skipped => status == TestStatus.skip;
+  bool get passed => status == CheckStatus.pass;
+  bool get failed => status == CheckStatus.fail;
+  bool get hasWarning => status == CheckStatus.warning;
+  bool get skipped => status == CheckStatus.skip;
 
   @override
   String toString() {
     final statusStr = status.name.toUpperCase();
-    return '[$statusStr] $testName: $message';
+    return '[$statusStr] $checkName: $message';
   }
 
   /// Detailed output including any additional details
@@ -53,7 +53,7 @@ class TestResult {
 }
 
 /// Status of a test
-enum TestStatus {
+enum CheckStatus {
   pass('PASS'),
   fail('FAIL'),
   warning('WARN'),
@@ -61,5 +61,5 @@ enum TestStatus {
 
   final String displayName;
 
-  const TestStatus(this.displayName);
+  const CheckStatus(this.displayName);
 }

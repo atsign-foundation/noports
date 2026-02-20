@@ -20,7 +20,7 @@ class SshnpdDoctor {
 
   final runner = DiagnosticRunner(
     verbose: true,
-    tests: [
+    checks: [
       PrerequisitesCheck(), 
       ConnectivityCheck(), 
       KeysCheck(), 
