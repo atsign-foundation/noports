@@ -38,9 +38,7 @@ abstract class PlatformUtils {
 
   /// Get list of potential config file paths
   List<String> getPotentialConfigPaths();
-
-  Future<String> getCurrentVersion();
-
+  
   /// Check if the service is installed/registered
   Future<bool> isServiceInstalled(String serviceName);
 
@@ -82,18 +80,6 @@ class MacOSUtils implements PlatformUtils {
       '$homeDirectory/.sshnpd/sshnpd.yaml',
       '/usr/local/etc/sshnpd.yaml'
     ];
-  }
-
-  @override
-  Future<String> getCurrentVersion() async{
-    final result = await Process.run('sshnpd', ['--version']);
-    // Process might crash and output to stderr, so check both or prioritize stderr where we saw it
-    var output = result.stdout.toString();
-    if (output.isEmpty || !output.contains('Version')) {
-      output = result.stderr.toString();
-    }
-    final match = RegExp(r'Version\s*:\s*(\S+)', caseSensitive: false).firstMatch(output);
-    return match?.group(1) ?? 'unknown';
   }
 
   @override
@@ -189,17 +175,6 @@ class LinuxUtils implements PlatformUtils {
   }
 
   @override
-  Future<String> getCurrentVersion() async {
-    final result = await Process.run('sshnpd', ['--version']);
-    var output = result.stdout.toString();
-    if (output.isEmpty || !output.contains('Version')) {
-      output = result.stderr.toString();
-    }
-    final match = RegExp(r'Version\s*:\s*(\S+)', caseSensitive: false).firstMatch(output);
-    return match?.group(1) ?? 'unknown';
-  }
-
-  @override
   Future<bool> isServiceInstalled(String serviceName) async {
     // systemctl list-unit-files | grep serviceName
     final result = await Process.run('systemctl', ['list-unit-files', '$serviceName.service']);
@@ -276,17 +251,6 @@ class WindowsUtils implements PlatformUtils {
       '$homeDirectory\\.atsign\\sshnpd.yaml',
       '$homeDirectory\\.sshnpd\\sshnpd.yaml',
     ];
-  }
-
-  @override
-  Future<String> getCurrentVersion() async {
-    final result = await Process.run('sshnpd', ['version']);
-    var output = result.stdout.toString();
-    if (output.isEmpty || !output.contains('Version')) {
-      output = result.stderr.toString();
-    }
-    final match = RegExp(r'Version\s*:\s*(\S+)', caseSensitive: false).firstMatch(output);
-    return match?.group(1) ?? 'unknown';
   }
 
   @override
