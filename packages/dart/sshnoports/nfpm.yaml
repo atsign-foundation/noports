@@ -63,9 +63,6 @@ overrides:
   deb:
     depends:
       - libc6
-      - libdl2
-      - libm6
-      - libpthread
 rpm:
   signature:
     key_file: ./gpg.key
