@@ -250,7 +250,7 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isServiceInstalled(String serviceName) async {
-    final result = await Process.run('sc', ['query', '$serviceName']);
+    final result = await Process.run('sc', ['query', serviceName]);
     return result.exitCode == 0;
   }
 
