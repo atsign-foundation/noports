@@ -175,7 +175,7 @@ jobs:
             *)
               ;;
           esac
-          DBINS="${BINS} srvd"
+          DBINS="${BINS} np_admin srvd"
           for BINARY in ${DBINS}; do \
             help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
             gzip -n9 sshnp/${BINARY}.1;
