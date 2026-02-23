@@ -76,9 +76,7 @@ class MacOSUtils implements PlatformUtils {
   @override
   List<String> getPotentialConfigPaths() {
     return [
-      '$homeDirectory/.atsign/sshnpd.yaml',
-      '$homeDirectory/.sshnpd/sshnpd.yaml',
-      '/usr/local/etc/sshnpd.yaml'
+        '$homeDirectory/Library/LaunchAgents/com.atsign.sshnpd.plist'
     ];
   }
 
@@ -260,9 +258,7 @@ class WindowsUtils implements PlatformUtils {
   @override
   Future<bool> isServiceRunning(String serviceName) async {
     final result = await Process.run('powershell', [
-      '-Command',
-      'Get-Service -Name $serviceName | Where-Object {\$_.Status -eq "Running"}'
-    ]);
+      '-Command', 'sc query "sshnpd"']);
     // If output is not empty, it's running
     return result.stdout.toString().trim().isNotEmpty;
   }
