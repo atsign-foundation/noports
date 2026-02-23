@@ -256,8 +256,7 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isServiceRunning(String serviceName) async {
-    final result = await Process.run('cmd', [
-      '/c', 'sc query "$serviceName"']);
+    final result = await Process.run('sc', ['query', serviceName]);
     print(result.stdout.toString());
     return result.stdout.toString().contains('RUNNING');
   }
