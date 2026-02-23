@@ -49,7 +49,7 @@ RUN set -eux ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
   dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
   dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
 FROM base AS runtime-branch
@@ -85,7 +85,7 @@ RUN set -eux ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
   dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
   dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
 FROM base AS runtime-local

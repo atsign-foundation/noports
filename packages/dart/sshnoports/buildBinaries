@@ -3,7 +3,7 @@
 echo Starting at $(date)
 echo
 
-echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o bin/at_activate &
+echo "Compiling at_activate"; dart compile exe --verbosity error bin/at_activate.dart -o bin/at_activate &
 echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o bin/srv &
 echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o bin/sshnpd &
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o bin/srvd &

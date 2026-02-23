@@ -9,7 +9,7 @@ RUN set -eux ; \
     mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
     cd ${REPO_DIR}/packages/dart/sshnoports ; \
     dart pub get ; \
-    dart compile exe bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ; \
+    dart compile exe bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
     dart compile exe bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
     dart compile exe bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
     dart compile exe bin/npt.dart -o ${OUTPUT_DIR}/npt ; \

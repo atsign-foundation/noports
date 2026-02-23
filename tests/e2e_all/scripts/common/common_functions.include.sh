@@ -423,7 +423,7 @@ buildCurrentDartBinaries() {
 
   if [ "$recompile" = "true" ]; then
     cd "$binaryOutputDir" || exit 1
-    rm -f activate_cli srv sshnpd srvd sshnp npt
+    rm -f at_activate srv sshnpd srvd sshnp npt
   fi
 
   binarySourceDir="$repoRootDir/packages/dart/sshnoports"
@@ -436,11 +436,11 @@ buildCurrentDartBinaries() {
   logInfo "    dart pub get"
   dart pub get || exit 1
 
-  if [ -f "$binaryOutputDir/activate_cli" ]; then
-    logInfo "        $binaryOutputDir/activate_cli has already been compiled"
+  if [ -f "$binaryOutputDir/at_activate" ]; then
+    logInfo "        $binaryOutputDir/at_activate has already been compiled"
   else
-    logInfo "        Compiling activate_cli"
-    dart compile exe --verbosity "$compileVerbosity" bin/activate_cli.dart -o "$binaryOutputDir/activate_cli"
+    logInfo "        Compiling at_activate"
+    dart compile exe --verbosity "$compileVerbosity" bin/at_activate.dart -o "$binaryOutputDir/at_activate"
   fi
 
   if [ -f "$binaryOutputDir/srv" ]; then
@@ -559,7 +559,7 @@ buildCurrentCBinaries() {
 
   if [[ "$recompile" = "true" ]]; then
     cd "$binaryOutputDir" || exit 1
-    rm -f activate_cli srv sshnpd srvd sshnp npt
+    rm -f at_activate srv sshnpd srvd sshnp npt
   fi
 
   binarySourceDir="$repoRootDir/packages/c"
