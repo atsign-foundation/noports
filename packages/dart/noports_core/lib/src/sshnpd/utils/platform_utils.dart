@@ -168,9 +168,7 @@ class LinuxUtils implements PlatformUtils {
   @override
   List<String> getPotentialConfigPaths() {
     return [
-      '$homeDirectory/.atsign/sshnpd.yaml',
-      '$homeDirectory/.sshnpd/sshnpd.yaml',
-      '/etc/sshnpd.yaml'
+      '/etc/systemd/system/sshnpd.service.d/override.conf'
     ];
   }
 
@@ -248,8 +246,7 @@ class WindowsUtils implements PlatformUtils {
   @override
   List<String> getPotentialConfigPaths() {
     return [
-      '$homeDirectory\\.atsign\\sshnpd.yaml',
-      '$homeDirectory\\.sshnpd\\sshnpd.yaml',
+      'C:\ProgramData\NoPorts\sshnpd.yaml',
     ];
   }
 

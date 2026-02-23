@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:noports_core/src/sshnpd/sshnpd_config.dart';
 import 'package:noports_core/src/sshnpd/diagnostic_runner.dart';
 import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
-import 'package:noports_core/src/sshnpd/tests/keys_check.dart';
-import 'package:noports_core/src/sshnpd/tests/prerequisites_check.dart';
-import 'package:noports_core/src/sshnpd/tests/service_status_check.dart';
-import 'package:noports_core/src/sshnpd/tests/config_check.dart';
-import 'package:noports_core/src/sshnpd/tests/version_check.dart';
-import 'package:noports_core/src/sshnpd/tests/service_logs_check.dart';
-import 'package:noports_core/src/sshnpd/tests/connectivity_check.dart';
+import 'package:noports_core/src/sshnpd/checks/keys_check.dart';
+import 'package:noports_core/src/sshnpd/checks/prerequisites_check.dart';
+import 'package:noports_core/src/sshnpd/checks/service_status_check.dart';
+import 'package:noports_core/src/sshnpd/checks/config_check.dart';
+import 'package:noports_core/src/sshnpd/checks/version_check.dart';
+import 'package:noports_core/src/sshnpd/checks/service_logs_check.dart';
+import 'package:noports_core/src/sshnpd/checks/connectivity_check.dart';
 
 class SshnpdDoctor {
   Future<void> run(List<String> args, {required String packageVersion}) async {

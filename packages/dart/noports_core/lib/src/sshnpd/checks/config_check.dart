@@ -24,6 +24,7 @@ class ConfigCheck extends DiagnosticCheck {
         try {
           String content = await configFile.readAsString();
           //get important lines
+          print(content);
           var importantLines = content
               .split('\n')
               .where(
