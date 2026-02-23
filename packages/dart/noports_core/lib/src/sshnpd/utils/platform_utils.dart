@@ -258,10 +258,10 @@ class WindowsUtils implements PlatformUtils {
   @override
   Future<bool> isServiceRunning(String serviceName) async {
     final result = await Process.run('cmd', [
-      '/c', 'sc query "sshnpd"']);
-    // If output is not empty, it's running
-    print(result.stdout.toString());
-    return result.stdout.toString().trim().isNotEmpty;
+      '/c', 'sc query "$serviceName"']);
+    // sc query outputs text even if the service is stopped or missing.
+    // We must check if the output specifically indicates the STATE is RUNNING.
+    return result.stdout.toString().contains('RUNNING');
   }
 
   @override
