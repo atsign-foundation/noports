@@ -16,8 +16,13 @@ delegate_policy=""
 sleep 10 # allow machine to bring up network
 export USER="$user"
 while true; do
-	# The line below runs the sshnpd service, with the options set above.
-	# You can edit this line to further customize the service to your needs.
-	"$binary_path"/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" "$delegate_policy" "$s" "$u" "$v"
+	# The lines below run the sshnpd service, with the options set above.
+	# You can edit this section to further customize the service to your needs.
+        set -- -a "$device_atsign" -m "$manager_atsign" -d "$device_name"
+        [ -n "$delegate_policy" ] && set -- "$@" -p "$delegate_policy"
+        [ -n "$s" ] && set -- "$@" "$s"
+        [ -n "$u" ] && set -- "$@" "$u"
+        [ -n "$v" ] && set -- "$@" "$v"
+        "$binary_path"/sshnpd "$@"
 	sleep 10
 done
