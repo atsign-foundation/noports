@@ -40,6 +40,8 @@ contents:
     dst: /usr/share/doc/noports/copyright
   - src: ./sshnp/at_activate.1.gz
     dst: /usr/share/man/man1/at_activate.1.gz
+  - src: ./sshnp/np_admin.1.gz
+    dst: /usr/share/man/man1/np_admin.1.gz
   - src: ./sshnp/npp_atserver.1.gz
     dst: /usr/share/man/man1/npp_atserver.1.gz
   - src: ./sshnp/npp_file.1.gz
