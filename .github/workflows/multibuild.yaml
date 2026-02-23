@@ -125,6 +125,7 @@ jobs:
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
           go-version: '1.25.6'
+          cache: false
       - name: Set up QEMU (Linux riscv64 and armv7 only)
         if: ${{ matrix.arch == 'riscv64' || matrix.arch == 'armv7' }}
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -186,7 +187,7 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@be6fd83eed6f241359ae3e7d340a13f197ae6463
           nfpm -v
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" > ./gpg.key
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > ./gpg.key
           nfpm pkg --packager deb -t tarball
           nfpm pkg --packager rpm -t tarball
       - name: Build Windows Services (Windows only)
