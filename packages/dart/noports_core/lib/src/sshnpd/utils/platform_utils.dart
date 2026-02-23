@@ -257,9 +257,10 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isServiceRunning(String serviceName) async {
-    final result = await Process.run('powershell', [
-      '-Command', 'sc query "sshnpd"']);
+    final result = await Process.run('cmd', [
+      '/c', 'sc query "sshnpd"']);
     // If output is not empty, it's running
+    print(result.stdout.toString());
     return result.stdout.toString().trim().isNotEmpty;
   }
 
