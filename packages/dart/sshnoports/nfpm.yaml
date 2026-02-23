@@ -6,11 +6,6 @@ section: "net"
 priority: "optional"
 provides:
   - noports
-depends:
-  - libc6
-  - libdl2
-  - libm6
-  - libpthread
 maintainer: "Chris Swan <chris@atsign.com>"
 description: |
   Connect to any device with no external
@@ -64,3 +59,10 @@ contents:
 scripts:
   postinstall: ./bundles/shell/systemd.nfpm/postinstall.sh
   preremove: ./bundles/shell/systemd.nfpm/preremove.sh
+overrides:
+  deb:
+    depends:
+      - libc6
+      - libdl2
+      - libm6
+      - libpthread
