@@ -250,17 +250,16 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isServiceInstalled(String serviceName) async {
-    // PowerShell Get-Service -Name serviceName
-    final result = await Process.run('powershell', ['-Command', 'Get-Service -Name $serviceName']);
-    return result.exitCode == 0; // successfully found
+    final result = await Process.run('cmd', [
+      '/c', 'sc query "$serviceName"']);
+    return result.exitCode == 0;
   }
 
   @override
   Future<bool> isServiceRunning(String serviceName) async {
     final result = await Process.run('cmd', [
       '/c', 'sc query "$serviceName"']);
-    // sc query outputs text even if the service is stopped or missing.
-    // We must check if the output specifically indicates the STATE is RUNNING.
+    print(result.stdout.toString());
     return result.stdout.toString().contains('RUNNING');
   }
 
