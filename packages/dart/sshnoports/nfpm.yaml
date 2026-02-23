@@ -20,6 +20,8 @@ homepage: "http://noports.com"
 contents:
   - src: ./sshnp/at_activate
     dst: /usr/bin/at_activate
+  - src: ./sshnp/np_admin
+    dst: /usr/bin/np_admin
   - src: ./sshnp/npp_atserver
     dst: /usr/bin/npp_atserver
   - src: ./sshnp/npp_file
