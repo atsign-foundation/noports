@@ -186,6 +186,7 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@be6fd83eed6f241359ae3e7d340a13f197ae6463
           nfpm -v
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" > ./gpg.key
           nfpm pkg --packager deb -t tarball
           nfpm pkg --packager rpm -t tarball
       - name: Build Windows Services (Windows only)
