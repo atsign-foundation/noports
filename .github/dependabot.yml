@@ -16,7 +16,6 @@ updates:
       - "/packages/dart/sshnoports/tools/"
       - "/tests/e2e_all/dockerfiles/"
       - "/tests/end2end_tests/image/"
-      - "/tools/multibuild/"
     schedule:
       interval: "daily"
     groups:

@@ -5,12 +5,6 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
-    inputs:
-      main_build_only:
-        description: "Run non-dockerx builds only"
-        required: true
-        default: false
-        type: boolean
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
@@ -20,6 +14,8 @@ jobs:
     permissions:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Create action branch
@@ -43,6 +39,13 @@ jobs:
           fi
       - name: Push changes to branch
         run: git push --set-upstream origin multibuild-${{github.run_number}}
+      - name: Extract Version from pubspec.yaml
+        id: extract_version
+        working-directory: ./packages/dart/sshnoports
+        run: |
+          VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1 | xargs)
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   main_build:
     needs: verify_tags
@@ -52,33 +55,64 @@ jobs:
         working-directory: ./packages/dart/sshnoports
         shell: bash
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             output-name: sshnp-linux-x64
+            arch: "amd64"
+            cross: ""
+            ext: ""
+            bundle: "shell"
+            platform: "linux"
+          - os: ubuntu-24.04-arm
+            output-name: sshnp-linux-arm
+            arch: "arm7"
+            cross: "--target-os=linux --target-arch=arm"
             ext: ""
             bundle: "shell"
             platform: "linux"
           - os: ubuntu-24.04-arm
             output-name: sshnp-linux-arm64
+            arch: "arm64"
+            cross: ""
+            ext: ""
+            bundle: "shell"
+            platform: "linux"
+          - os: ubuntu-24.04-arm
+            output-name: sshnp-linux-riscv64
+            arch: "riscv64"
+            cross: "--target-os=linux --target-arch=riscv64"
             ext: ""
             bundle: "shell"
             platform: "linux"
           - os: macos-15-intel
             output-name: sshnp-macos-x64
+            arch: "amd64"
+            cross: ""
             ext: ""
             bundle: "shell"
             platform: "macos"
           - os: macos-latest
             output-name: sshnp-macos-arm64
+            arch: "arm64"
+            cross: ""
             ext: ""
             bundle: "shell"
             platform: "macos"
           - os: windows-signer
             output-name: sshnp-windows-x64
+            arch: "amd64"
+            cross: ""
             ext: ".exe"
             bundle: "windows"
             platform: "windows"
+    env:
+      ARCH: ${{ matrix.arch }}
+      BINS: "at_activate noports npevents npp_atserver npp_file npt srv sshnp sshnpd"
+      CROSS: ${{ matrix.cross }}
+      EXT: ${{ matrix.ext }}
+      VERSION: ${{ needs.verify_tags.outputs.version }}
     steps:
       - name: Checkout multibuild branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -86,6 +120,17 @@ jobs:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+      - name: Setup Go (Linux only)
+        if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: '1.25.6'
+          cache: false
+      - name: Set up QEMU (Linux riscv64 and armv7 only)
+        if: ${{ matrix.arch == 'riscv64' || matrix.arch == 'armv7' }}
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+        with:
+          platforms: ${{ matrix.arch }}
       - name: Create directories
         run: |
           mkdir sshnp
@@ -97,33 +142,61 @@ jobs:
         run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
-          dart compile exe bin/activate_cli.dart -v -o sshnp/at_activate${{ matrix.ext }}
-          dart compile exe bin/sshnp.dart -v -o sshnp/sshnp${{ matrix.ext }}
-          dart compile exe bin/npt.dart -v -o sshnp/npt${{ matrix.ext }}
-          dart compile exe bin/npp_file.dart -v -o sshnp/npa_file${{ matrix.ext }}
-          dart compile exe bin/npp_file.dart -v -o sshnp/npp_file${{ matrix.ext }}
-          dart compile exe bin/sshnpd.dart -v -o sshnp/sshnpd${{ matrix.ext }}
-          dart compile exe bin/srv.dart -v -o sshnp/srv${{ matrix.ext }}
-          dart compile exe bin/npp_atserver.dart -v -o sshnp/npp_atserver${{ matrix.ext }}
-          dart compile exe bin/npevents.dart -v -o sshnp/npevents${{ matrix.ext }}
-          dart compile exe bin/noports.dart -v -o sshnp/noports${{ matrix.ext }}
+          for BINARY in $BINS; do \
+            dart compile exe ${CROSS} bin/${BINARY}.dart -v -o sshnp/${BINARY}${EXT};
+          done
       - name: Build admin API
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
-          dart compile exe bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${{ matrix.ext }}
+          dart compile exe ${CROSS} bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${EXT}
       - name: Compile debug binaries (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}
         run: |
-          dart compile exe bin/srvd.dart -v -o sshnp/srvd${{ matrix.ext }}
-          dart compile exe bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd${{ matrix.ext }}
-      - name: Build Windows Services (Windows Only)
+          dart compile exe ${CROSS} bin/srvd.dart -v -o sshnp/srvd
+          dart compile exe ${CROSS} bin/srvd.dart -D ENABLE_SNOOP=true -v -o sshnp/debug/srvd
+      - name: Generate man pages and CHANGELOG (Linux only)
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y help2man
+          # Conditionally install the cross-libraries based on arch
+          case "${{ matrix.arch }}" in
+            riscv64)
+              sudo apt-get install -y libc6-riscv64-cross
+              export QEMU_LD_PREFIX="/usr/riscv64-linux-gnu"
+              ;;
+            arm7)
+              sudo apt-get install -y libc6-armhf-cross
+              export QEMU_LD_PREFIX="/usr/arm-linux-gnueabihf"
+              # Arm7 needs more persuading to run in Qemu
+              sudo ln -s /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/ld-linux-armhf.so.3
+              export LD_LIBRARY_PATH="/usr/arm-linux-gnueabihf/lib:/usr/arm-linux-gnueabihf/lib/arm-linux-gnueabihf"
+              ;;
+            *)
+              ;;
+          esac
+          DBINS="${BINS} np_admin srvd"
+          for BINARY in ${DBINS}; do \
+            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
+            gzip -n9 sshnp/${BINARY}.1;
+          done
+          cp CHANGELOG.md sshnp/
+          gzip -n9 sshnp/CHANGELOG.md
+      - name: Install nfpm and create packages (Linux only)
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@be6fd83eed6f241359ae3e7d340a13f197ae6463
+          nfpm -v
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > ./gpg.key
+          nfpm pkg --packager deb -t tarball
+          nfpm pkg --packager rpm -t tarball
+      - name: Build Windows Services (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
-      - name: Codesign Windows Binaries (Windows Only)
+      - name: Codesign Windows Binaries (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/sshnoports/sshnp
         env:
@@ -131,18 +204,11 @@ jobs:
           WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           source ../../../../tools/codesign_windows.sh
-          sign_file "sshnpd.exe"
-          sign_file "at_activate.exe"
-          sign_file "sshnp.exe"
-          sign_file "npp_atserver.exe"
-          sign_file "npp_file.exe"
-          sign_file "npa_file.exe"
-          sign_file "npt.exe"
-          sign_file "srv.exe"
+          for BINARY in $BINS; do \
+            sign_file "$BINARY.exe";
+          done
           sign_file "sshnpdService.exe"
-          sign_file "np_admin.exe"
-          sign_file "noports.exe"
-      - name: Build and Sign Windows Installer (Windows Only)
+      - name: Build and Sign Windows Installer (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
         env:
@@ -160,7 +226,7 @@ jobs:
           # Sign the generated MSI
           source ../codesign_windows.sh
           sign_file "build/NoPorts.msi"
-          cp build/NoPorts.msi ../../packages/dart/sshnoports/sshnp/
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
@@ -186,15 +252,18 @@ jobs:
           security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           # codesign
-          /usr/bin/codesign \
-            --force \
-            -s "$MACOS_SIGNING_IDENTITY" \
-            --options=runtime \
-            --entitlements ./tools/templates/entitlements.plist \
-            --prefix "com.atsign." \
-            --timestamp \
-            -v \
-            sshnp/{sshnp,sshnpd,srv,srvd,at_activate,debug/srvd,npt,npa_file,npp_file,npp_atserver,np_admin,npevents}
+          DBINS="${BINS} srvd debug/srvd"
+          for BINARY in ${DBINS}; do \
+            /usr/bin/codesign \
+              --force \
+              -s "$MACOS_SIGNING_IDENTITY" \
+              --options=runtime \
+              --entitlements ./tools/templates/entitlements.plist \
+              --prefix "com.atsign." \
+              --timestamp \
+              -v \
+              sshnp/${BINARY};
+          done
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         run:
@@ -202,7 +271,7 @@ jobs:
       - name: Compress to tgz (Linux only)
         if: ${{ matrix.platform == 'linux' }}
         run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnp
-      - name: Compress to zip (Windows Only)
+      - name: Compress to zip (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         run:
           powershell -c 'Compress-Archive -Path sshnp -Destination tarball/${{ matrix.output-name }}.zip'
@@ -225,46 +294,6 @@ jobs:
             ${{ matrix.output-name
             }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/tarball
-          if-no-files-found: error
-
-  other_build:
-    needs: verify_tags
-    runs-on: ubuntu-24.04-arm
-    strategy:
-      matrix:
-        platform: [linux/arm/v7, linux/riscv64]
-        include:
-          - platform: linux/arm/v7
-            output-name: sshnp-linux-arm
-          - platform: linux/riscv64
-            output-name: sshnp-linux-riscv64
-    steps:
-      - name: Checkout multibuild branch
-        if: ${{ ! inputs.main_build_only }}
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: multibuild-${{github.run_number}}
-      - name: Setup QEMU
-        if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      - name: Setup Docker BuildX
-        if: ${{ ! inputs.main_build_only }}
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-      - name: Run build inside of Docker
-        if: ${{ ! inputs.main_build_only }}
-        run: |
-          docker buildx build -t atsigncompany/sshnptarball -f ./tools/multibuild/Dockerfile.package \
-          --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
-          mkdir tarballs
-          tar -xvf bins.tar -C tarballs
-      - name: Upload the build
-        if: ${{ ! inputs.main_build_only }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name:
-            ${{ matrix.output-name
-            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./tarballs/${{ matrix.output-name }}.tgz
           if-no-files-found: error
 
   web_build:
@@ -327,7 +356,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, other_build, web_build, universal_sh]
+    needs: [main_build, web_build, universal_sh]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -359,6 +388,9 @@ jobs:
       - name: Move packages for signing
         run: |
           cd tarballs
+          mv */*.deb .
+          mv */*.msi .
+          mv */*.rpm .
           mv */*.sh .
           mv */*.tgz .
           mv */*.zip .
@@ -397,7 +429,7 @@ jobs:
 
   cleanup:
     name: Clean up temporary branch
-    needs: [main_build, other_build]
+    needs: [main_build]
     runs-on: ubuntu-latest
     permissions:
       contents: write # Needed to delete workflow branch
