@@ -68,7 +68,7 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    // pgrep -f matches against the full command line (useful for 'dart run sshnpd')
+    
     final result = await Process.run('pgrep', ['-f', processName]);
     return result.exitCode == 0;
   }
@@ -108,20 +108,13 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    // log show --predicate 'process == "sshnpd"' --info --last 50
-    // Note: 'log' command might require permissions or might be noisy.
-    // Alternative: check standard log files if we knew where they were.
-    // Let's try 'log show' which is standard on modern macOS.
+    
     try {
       final result = await Process.run('log', [
-        'show',
-        '--predicate',
-        'process == "$serviceName"',
-        '--info',
-        '--last',
-        '$lines',
-        '--style',
-        'compact'
+        'show', 
+        '--predicate', 'process CONTAINS "sshnpd"', 
+        '--last', '10m',
+        '--style', 'syslog'
       ]);
       if (result.exitCode != 0) {
         return 'Error fetching logs: ${result.stderr}';
@@ -257,13 +250,12 @@ class WindowsUtils implements PlatformUtils {
   @override
   Future<bool> isServiceRunning(String serviceName) async {
     final result = await Process.run('sc', ['query', serviceName]);
-    print(result.stdout.toString());
     return result.stdout.toString().contains('RUNNING');
   }
 
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    // Get-EventLog -LogName Application -Source serviceName -Newest lines
+    
     try {
       final result = await Process.run('powershell', [
         '-Command',
