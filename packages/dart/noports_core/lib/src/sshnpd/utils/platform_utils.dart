@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 
 /// Abstract class defining platform-specific operations
@@ -255,38 +256,47 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    print("Fetching internal logs of sshnpd...");
+    StringBuffer logBuffer = StringBuffer();
+    logBuffer.writeln("Fetching internal logs of $serviceName...");
 
-  var serviceInfo = await Process.run('powershell', [
-    '-Command', 
-    '(Get-WmiObject win32_service | Where-Object {\$_.Name -eq "sshnpd"}).PathName'
-  ]);
+    var serviceInfo = await Process.run('powershell', [
+      '-Command', 
+      '(Get-WmiObject win32_service | Where-Object {\$_.Name -eq "$serviceName"}).PathName'
+    ]);
 
-  String fullCommand = serviceInfo.stdout.toString().trim();
-  
-  if (fullCommand.isEmpty) {
-    print("Sshnpd service not found");
-    return;
-  }
-
-  print("Service found: $fullCommand");
-
-  final executable = 'C:\\Program Files\\NoPorts\\sshnpd.exe';
-  
-  final process = await Process.start(executable, ['-v', '--list-devices']); 
-
-  process.stdout.transform(utf8.decoder).listen((data) {
-    if (data.contains('INFO') || data.contains('DEBUG')) {
-      print(' [INTERNAL LOG]: $data');
+    String fullCommand = serviceInfo.stdout.toString().trim();
+    
+    if (fullCommand.isEmpty) {
+      logBuffer.writeln("Service '$serviceName' not found");
+      return logBuffer.toString();
     }
-  });
 
-  process.stderr.transform(utf8.decoder).listen((data) {
-    print(' [INTERNAL ERROR]: $data');
-  });
-  await Future.delayed(Duration(seconds: 5));
-  process.kill();
-}
+    logBuffer.writeln("Service found: $fullCommand");
+
+    // Consider parsing the executable path from fullCommand if dynamic paths are needed.
+    final executable = 'C:\\Program Files\\NoPorts\\sshnpd.exe';
+    
+    try {
+      final process = await Process.start(executable, ['-v', '--list-devices']); 
+
+      process.stdout.transform(utf8.decoder).listen((data) {
+        if (data.contains('INFO') || data.contains('DEBUG')) {
+          logBuffer.write(' [INTERNAL LOG]: $data');
+        }
+      });
+
+      process.stderr.transform(utf8.decoder).listen((data) {
+        logBuffer.write(' [INTERNAL ERROR]: $data');
+      });
+      
+      await Future.delayed(Duration(seconds: 5));
+      process.kill();
+    } catch (e) {
+      logBuffer.writeln("Error running process: $e");
+    }
+
+    return logBuffer.toString();
+  }
 
   @override
   Future<String> getArchitecture() async {
