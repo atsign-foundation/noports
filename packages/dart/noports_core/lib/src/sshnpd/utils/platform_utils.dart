@@ -255,20 +255,38 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    
-    try {
-      final result = await Process.run('powershell', [
-        '-Command',
-        'Get-EventLog -LogName Application -Source $serviceName -Newest $lines | Format-Table -AutoSize'
-      ]);
-      if (result.exitCode != 0) {
-        return 'Error fetching logs (EventLog): ${result.stderr}';
-      }
-      return result.stdout.toString();
-    } catch (e) {
-      return 'Error running PowerShell: $e';
-    }
+    print("Fetching internal logs of sshnpd...");
+
+  var serviceInfo = await Process.run('powershell', [
+    '-Command', 
+    '(Get-WmiObject win32_service | Where-Object {\$_.Name -eq "sshnpd"}).PathName'
+  ]);
+
+  String fullCommand = serviceInfo.stdout.toString().trim();
+  
+  if (fullCommand.isEmpty) {
+    print("Sshnpd service not found");
+    return;
   }
+
+  print("Service found: $fullCommand");
+
+  final executable = 'C:\\Program Files\\NoPorts\\sshnpd.exe';
+  
+  final process = await Process.start(executable, ['-v', '--list-devices']); 
+
+  process.stdout.transform(utf8.decoder).listen((data) {
+    if (data.contains('INFO') || data.contains('DEBUG')) {
+      print(' [INTERNAL LOG]: $data');
+    }
+  });
+
+  process.stderr.transform(utf8.decoder).listen((data) {
+    print(' [INTERNAL ERROR]: $data');
+  });
+  await Future.delayed(Duration(seconds: 5));
+  process.kill();
+}
 
   @override
   Future<String> getArchitecture() async {
