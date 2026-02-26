@@ -15,6 +15,8 @@ homepage: "http://noports.com"
 contents:
   - src: ./sshnp/at_activate
     dst: /usr/bin/at_activate
+  - src: ./sshnp/noports
+    dst: /usr/bin/noports
   - src: ./sshnp/np_admin
     dst: /usr/bin/np_admin
   - src: ./sshnp/npp_atserver
@@ -40,6 +42,8 @@ contents:
     dst: /usr/share/doc/noports/copyright
   - src: ./sshnp/at_activate.1.gz
     dst: /usr/share/man/man1/at_activate.1.gz
+  - src: ./sshnp/noports.1.gz
+    dst: /usr/share/man/man1/noports.1.gz
   - src: ./sshnp/np_admin.1.gz
     dst: /usr/share/man/man1/np_admin.1.gz
   - src: ./sshnp/npp_atserver.1.gz
