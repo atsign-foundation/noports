@@ -93,11 +93,12 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: ef6490ce6a001fc38095bf6d53c1e98af1d9cb1242a87c9944890dfb9f9220d4
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.11.0"
+      path: "packages/at_client"
+      ref: "st/subservice-termination"
+      resolved-ref: "133b3b351b28fc42e8dcd1858f9591f45c8b1a2c"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.12.0"
   at_commons:
     dependency: transitive
     description:

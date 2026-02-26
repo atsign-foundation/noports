@@ -25,6 +25,11 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
+  at_client:
+    git:
+      ref: st/subservice-termination
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_client
   archive: ^4.0.7
   dartssh2:
     git:

@@ -100,11 +100,12 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: "0b2a044859a212d7c4e6bc5c9686b1b395e014d37b4d6c50e04d1d5d23a3e3e2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.10.0"
+      path: "packages/at_client"
+      ref: "st/subservice-termination"
+      resolved-ref: "133b3b351b28fc42e8dcd1858f9591f45c8b1a2c"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.12.0"
   at_client_mobile:
     dependency: "direct main"
     description:
