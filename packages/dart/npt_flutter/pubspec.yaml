@@ -83,7 +83,7 @@ dependencies:
   yaml: ^3.1.2
   yaml_writer: ^2.0.0
 dev_dependencies:
-  build_runner: ^2.4.12
+  build_runner: ^2.10.4
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
     sdk: flutter
