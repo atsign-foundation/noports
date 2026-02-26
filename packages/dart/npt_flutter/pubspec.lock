@@ -61,10 +61,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_auth
-      sha256: f1187ada26053b4a724fa169aa599aec8d88d9454dbfdad5700f4db3f2e41d35
+      sha256: "92cdf7958b44a665380a1fb44ae1ec6253a83550494df480d7f9b47fb5732689"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.0"
+    version: "3.0.1"
   at_backupkey_flutter:
     dependency: "direct main"
     description:
@@ -82,13 +82,13 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: at_chops
-      sha256: "99a2c3cdefd9b8da22944348e1dab7db012be38823b189861365fc9fde807dad"
+      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "3.0.0"
   at_cli_commons:
     dependency: transitive
     description:
@@ -158,10 +158,10 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: f69df4935f4fab50f6960dd0f0c45859bf0b9eb7d0e73b8e665101bdefe8b358
+      sha256: f3e88bfd5144cd5dce845adf3fa89aeb79c97a0e79f8c61aafd4a266ec3b1095
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.1"
+    version: "3.5.0"
   at_onboarding_cli:
     dependency: transitive
     description:
@@ -227,6 +227,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.0"
+  better_cryptography:
+    dependency: transitive
+    description:
+      name: better_cryptography
+      sha256: "67573ef169a3584710038f92e81b75c7790933af782a83ba8f71893496493de3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0+1"
   biometric_storage:
     dependency: transitive
     description:
@@ -1503,26 +1511,26 @@ packages:
     dependency: transitive
     description:
       name: test
-      sha256: "65e29d831719be0591f7b3b1a32a3cda258ec98c58c7b25f7b84241bc31215bb"
+      sha256: "75906bf273541b676716d1ca7627a17e4c4070a3a16272b7a3dc7da3b9f3f6b7"
       url: "https://pub.dev"
     source: hosted
-    version: "1.26.2"
+    version: "1.26.3"
   test_api:
     dependency: transitive
     description:
       name: test_api
-      sha256: "522f00f556e73044315fa4585ec3270f1808a4b186c936e612cab0b565ff1e00"
+      sha256: ab2726c1a94d3176a45960b6234466ec367179b87dd74f1611adb1f3b5fb9d55
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.6"
+    version: "0.7.7"
   test_core:
     dependency: transitive
     description:
       name: test_core
-      sha256: "80bf5a02b60af04b09e14f6fe68b921aad119493e26e490deaca5993fef1b05a"
+      sha256: "0cc24b5ff94b38d2ae73e1eb43cc302b77964fbf67abad1e296025b78deb53d0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.11"
+    version: "0.6.12"
   timing:
     dependency: transitive
     description:
