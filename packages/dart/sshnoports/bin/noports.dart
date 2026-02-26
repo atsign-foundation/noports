@@ -35,6 +35,13 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  if (args.contains('--version')) {
+    printVersion();
+    exit(0);
+  }
+
+  displayBanner();
+
   // Display help if requested
   if (isHelpFlag(args[0])) {
     printUsage();
@@ -98,7 +105,6 @@ void printUsage({NoPortsCommand? command}) {
 }
 
 AtSignLogger setupLogging() {
-  displayBanner();
   AtSignLogger.root_level = 'severe';
   return AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())
     ..level = 'info';
