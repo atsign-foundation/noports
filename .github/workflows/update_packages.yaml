@@ -10,8 +10,6 @@ permissions: # added using https://github.com/step-security/secure-repo
 jobs:
   Dispatch:
     runs-on: ubuntu-slim
-    permissions:
-      contents: write
     steps:
       - name: noports-apt trigger
         if: github.event.release.prerelease == false && startsWith(github.ref_name, 'v')
