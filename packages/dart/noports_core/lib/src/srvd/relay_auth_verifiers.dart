@@ -209,13 +209,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     var encryptionAlgo = AESEncryptionAlgo(AESKey(aesKey64));
     String envelope64;
     try {
-      envelope64 = atChops
+      envelope64 = (await atChops
           .decryptString(
             envelopeEncrypted64,
             EncryptionKeyType.aes256,
             encryptionAlgorithm: encryptionAlgo,
             iv: InitialisationVector(base64Decode(iv)),
-          )
+          ))
           .result;
     } catch (err) {
       throw RAVE(
