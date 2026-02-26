@@ -14,7 +14,7 @@ mkdir -p build/sshnp/web/admin
 dart pub get --enforce-lockfile || exit 1
 
 echo "Building core binaries"
-echo "Compiling at_activate"; dart compile exe --verbosity error bin/activate_cli.dart -o build/sshnp/at_activate &
+echo "Compiling at_activate"; dart compile exe --verbosity error bin/at_activate.dart -o build/sshnp/at_activate &
 echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o build/sshnp/srv &
 echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o build/sshnp/sshnpd &
 echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &

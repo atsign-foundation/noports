@@ -4,10 +4,15 @@
 
 ## v5.14.7
 
-* fix: Ensure SBOM tags are unique
+* build: Create .deb and .rpm packages
+* docs: Add CHANGELOG.md
 * feat: remove caching of public key client side in npt and sshnp
-* fix: allow policy default value to fallthrough
 * feat: npt, srv, srvd, sshnp, sshnpd --version
+* feat: next iteration of policy "npp"
+* fix: Ensure SBOM tags are unique
+* fix(actions): explicitly declare wix versions
+* fix: shell startup script error with arguments
+* fix: allow policy default value to fallthrough
 
 ## v5.14.6
 
