@@ -26,6 +26,12 @@ enum NoPortsCommand {
 }
 
 Future<void> main(List<String> args) async {
+  if (args.isNotEmpty && args.contains('--version')) {
+    printVersion();
+    exit(0);
+  }
+
+  displayBanner();
   final logger = setupLogging();
 
   if (args.isEmpty) {
@@ -34,13 +40,6 @@ Future<void> main(List<String> args) async {
     printUsage();
     exit(1);
   }
-
-  if (args.contains('--version')) {
-    printVersion();
-    exit(0);
-  }
-
-  displayBanner();
 
   // Display help if requested
   if (isHelpFlag(args[0])) {
