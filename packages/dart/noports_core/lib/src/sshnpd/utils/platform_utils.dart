@@ -1,5 +1,9 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:ffi';
+
+import 'package:win32/win32.dart';
+import 'package:ffi/ffi.dart';
 
 
 /// Abstract class defining platform-specific operations
@@ -255,47 +259,8 @@ class WindowsUtils implements PlatformUtils {
   }
 
   @override
-  Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    StringBuffer logBuffer = StringBuffer();
-    logBuffer.writeln("Fetching internal logs of $serviceName...");
-
-    var serviceInfo = await Process.run('powershell', [
-      '-Command', 
-      '(Get-WmiObject win32_service | Where-Object {\$_.Name -eq "$serviceName"}).PathName'
-    ]);
-
-    String fullCommand = serviceInfo.stdout.toString().trim();
+  Future<String> getServiceLogs(String serviceName) async {
     
-    if (fullCommand.isEmpty) {
-      logBuffer.writeln("Service '$serviceName' not found");
-      return logBuffer.toString();
-    }
-
-    logBuffer.writeln("Service found: $fullCommand");
-
-    // Consider parsing the executable path from fullCommand if dynamic paths are needed.
-    final executable = 'C:\\Program Files\\NoPorts\\sshnpd.exe';
-    
-    try {
-      final process = await Process.start(executable, ['-v', '--list-devices']); 
-
-      process.stdout.transform(utf8.decoder).listen((data) {
-        if (data.contains('INFO') || data.contains('DEBUG')) {
-          logBuffer.write(' [INTERNAL LOG]: $data');
-        }
-      });
-
-      process.stderr.transform(utf8.decoder).listen((data) {
-        logBuffer.write(' [INTERNAL ERROR]: $data');
-      });
-      
-      await Future.delayed(Duration(seconds: 5));
-      process.kill();
-    } catch (e) {
-      logBuffer.writeln("Error running process: $e");
-    }
-
-    return logBuffer.toString();
   }
 
   @override
