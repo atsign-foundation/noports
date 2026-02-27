@@ -2,6 +2,16 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.9
+
+* build: Ensure noports binary is packaged
+* fix: noports cli now accepts --version
+* ci: Add trigger for homebrew-tap
+
+## v5.14.8
+
+* ci: Workflow to trigger update of apt and rpm repos
+
 ## v5.14.7
 
 * build: Create .deb and .rpm packages
