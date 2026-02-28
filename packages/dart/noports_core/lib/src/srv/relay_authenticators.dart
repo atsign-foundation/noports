@@ -193,7 +193,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
                   receivedChallenge = true;
 
-                  socket.writeln(responseToChallenge(challenge));
+                  socket.writeln(await responseToChallenge(challenge));
                   await socket.flush();
                 } catch (e) {
                   completer.completeError(
