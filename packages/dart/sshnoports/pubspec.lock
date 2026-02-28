@@ -85,8 +85,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/at_client"
-      ref: "st/subservice-termination"
-      resolved-ref: "133b3b351b28fc42e8dcd1858f9591f45c8b1a2c"
+      ref: trunk
+      resolved-ref: a468b16fb65f5bb627e4969cc6a6dba7f2be8634
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
     version: "3.12.0"
