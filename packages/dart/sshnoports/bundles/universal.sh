@@ -993,6 +993,18 @@ EOF
   used_package_manager=true
 }
 
+install_via_brew() {
+  echo "Installing noports via brew..."
+  if ! check_cmd brew; then
+    >&2 echo "Error: brew is required for brew installation"
+    exit 1
+  fi
+
+  brew tap atsign-foundation/homebrew-tap
+  brew install noports
+  used_package_manager=true
+}
+
 install_via_apt() {
   echo "Installing noports via apt..."
   if ! check_cmd apt; then
@@ -1039,6 +1051,24 @@ main() {
     install_via_apt
   elif [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
+  elif [ "$platform_name" = "macos" ] && check_cmd brew; then
+    if [ "$quiet" = true ]; then
+      install_via_brew
+    else
+      echo "Homebrew detected."
+      printf "Would you like to install noports via Homebrew? [Y/n] "
+      read -r use_brew
+      case $use_brew in
+      [Nn]*)
+        download_url=$(get_download_url)
+        echo "$download_url" | download_archive
+        unpack_archive
+        ;;
+      *)
+        install_via_brew
+        ;;
+      esac
+    fi
   else
     download_url=$(get_download_url)
     echo "$download_url" | download_archive
