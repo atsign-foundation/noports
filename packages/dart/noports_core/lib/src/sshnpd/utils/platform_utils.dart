@@ -1,8 +1,5 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:ffi';
-
-import 'package:ffi/ffi.dart';
 
 
 /// Abstract class defining platform-specific operations
@@ -260,147 +257,29 @@ class WindowsUtils implements PlatformUtils {
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
     try {
-      final advapi32 = DynamicLibrary.open('advapi32.dll');
+      // Use PowerShell Get-WinEvent to query the Application event log
+      // filtered by ProviderName (source) matching sshnpd
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        'Get-WinEvent -FilterHashtable @{LogName=\'Application\'; ProviderName=\'$serviceName\'} -MaxEvents $lines | Format-List TimeCreated, Id, LevelDisplayName, Message',
+      ]);
 
-      // Lookup OpenEventLogW
-      final openEventLog = advapi32.lookupFunction<
-          IntPtr Function(Pointer<Utf16>, Pointer<Utf16>),
-          int Function(Pointer<Utf16>, Pointer<Utf16>)>('OpenEventLogW');
-
-      // Lookup ReadEventLogW
-      final readEventLog = advapi32.lookupFunction<
-          Int32 Function(IntPtr, Uint32, Uint32, Pointer<Uint8>, Uint32,
-              Pointer<Uint32>, Pointer<Uint32>),
-          int Function(int, int, int, Pointer<Uint8>, int, Pointer<Uint32>,
-              Pointer<Uint32>)>('ReadEventLogW');
-
-      // Lookup CloseEventLog
-      final closeEventLog = advapi32.lookupFunction<
-          Int32 Function(IntPtr),
-          int Function(int)>('CloseEventLog');
-
-      // Open the Application event log on local machine
-      final logName = 'Application'.toNativeUtf16();
-      final hEventLog = openEventLog(nullptr, logName);
-      calloc.free(logName);
-
-      if (hEventLog == 0) {
-        return 'Error: Could not open Application event log';
-      }
-
-      // Read flags: backwards + sequential (newest first)
-      const int EVENTLOG_BACKWARDS_READ = 0x0008;
-      const int EVENTLOG_SEQUENTIAL_READ = 0x0001;
-      final readFlags = EVENTLOG_BACKWARDS_READ | EVENTLOG_SEQUENTIAL_READ;
-
-      final bufferSize = 64 * 1024; // 64KB buffer
-      final buffer = calloc<Uint8>(bufferSize);
-      final bytesRead = calloc<Uint32>();
-      final minBytesNeeded = calloc<Uint32>();
-
-      final logEntries = <String>[];
-      var done = false;
-
-      try {
-        while (!done && logEntries.length < lines) {
-          final success = readEventLog(
-            hEventLog,
-            readFlags,
-            0, // dwRecordOffset (ignored for sequential)
-            buffer,
-            bufferSize,
-            bytesRead,
-            minBytesNeeded,
-          );
-
-          if (success == 0) {
-            // No more records or error
-            break;
-          }
-
-          // Parse EVENTLOGRECORD(s) from buffer
-          var offset = 0;
-          while (offset < bytesRead.value && logEntries.length < lines) {
-            // Read record length (first 4 bytes)
-            final recordLength = buffer.cast<Uint32>().elementAt(offset ~/ 4).value;
-            if (recordLength == 0) break;
-
-            // Parse fixed header fields
-            final recordPtr = buffer.elementAt(offset);
-            final timeGenerated = recordPtr.cast<Uint32>().elementAt(3).value; // offset 12
-            final eventId = recordPtr.cast<Uint32>().elementAt(5).value & 0xFFFF; // offset 20, lower 16 bits
-            final eventType = recordPtr.cast<Uint16>().elementAt(12).value; // offset 24
-            final numStrings = recordPtr.cast<Uint16>().elementAt(13).value; // offset 26
-            final stringOffset = recordPtr.cast<Uint32>().elementAt(9).value; // offset 36
-
-            // Read source name at offset 56 (null-terminated UTF-16)
-            final sourcePtr = recordPtr.elementAt(56).cast<Utf16>();
-            final sourceName = sourcePtr.toDartString();
-
-            if (sourceName.toLowerCase() == serviceName.toLowerCase()) {
-              // Format timestamp
-              final dateTime = DateTime.fromMillisecondsSinceEpoch(
-                timeGenerated * 1000,
-                isUtc: true,
-              ).toLocal();
-
-              // Read message strings
-              var message = '';
-              if (numStrings > 0 && stringOffset < recordLength) {
-                var strPtr = recordPtr.elementAt(stringOffset).cast<Utf16>();
-                final parts = <String>[];
-                for (var i = 0; i < numStrings; i++) {
-                  final str = strPtr.toDartString();
-                  parts.add(str);
-                  // Move past this string (length + null terminator, in UTF-16 code units)
-                  // Advance past this string + null terminator (each UTF-16 code unit = 2 bytes)
-                  strPtr = Pointer<Utf16>.fromAddress(
-                    strPtr.address + (str.length + 1) * 2,
-                  );
-                }
-                message = parts.join(' | ');
-              }
-
-              final typeStr = _eventTypeToString(eventType);
-              logEntries.add(
-                '[$dateTime] [$typeStr] EventID:$eventId - $message',
-              );
-            }
-
-            offset += recordLength;
-          }
+      if (result.exitCode != 0) {
+        final stderr = result.stderr.toString();
+        if (stderr.contains('No events were found')) {
+          return 'No event log entries found for source "$serviceName"';
         }
-      } finally {
-        calloc.free(buffer);
-        calloc.free(bytesRead);
-        calloc.free(minBytesNeeded);
-        closeEventLog(hEventLog);
+        return 'Error fetching logs: $stderr';
       }
 
-      if (logEntries.isEmpty) {
+      final output = result.stdout.toString().trim();
+      if (output.isEmpty) {
         return 'No event log entries found for source "$serviceName"';
       }
-      return logEntries.join('\n');
+      return output;
     } catch (e) {
       return 'Error reading Windows Event Log: $e';
-    }
-  }
-
-  /// Converts a numeric Windows event type to a human-readable string.
-  static String _eventTypeToString(int eventType) {
-    switch (eventType) {
-      case 0x0001:
-        return 'ERROR';
-      case 0x0002:
-        return 'WARNING';
-      case 0x0004:
-        return 'INFO';
-      case 0x0008:
-        return 'AUDIT_SUCCESS';
-      case 0x0010:
-        return 'AUDIT_FAILURE';
-      default:
-        return 'UNKNOWN($eventType)';
     }
   }
 
