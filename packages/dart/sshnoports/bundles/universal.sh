@@ -1019,6 +1019,38 @@ migrate_systemd_config_to_yaml() {
   echo "Migration complete."
 }
 
+remove_old_binaries() {
+  echo "Cleaning up old noports installation..."
+  # List of binaries and scripts to remove from non-package locations
+  binaries="sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_atserver npp_file"
+  # We check /usr/local/bin and the user's local bin
+  # Note: Package installs to /usr/bin, so those are safe.
+  for dir in "/usr/local/bin" "$user_home/.local/bin"; do
+    for bin in $binaries; do
+      if [ -f "$dir/$bin" ]; then
+        echo "Removing old binary: $dir/$bin"
+        rm -f "$dir/$bin"
+      fi
+    done
+    # Also remove the wrapper script if it exists
+    if [ -f "$dir/sshnpd.sh" ]; then
+      echo "Removing old script: $dir/sshnpd.sh"
+      rm -f "$dir/sshnpd.sh"
+    fi
+  done
+
+  # If we have an old systemd unit in /etc/systemd/system, it will override the package unit in /lib/systemd/system
+  # So we must remove/rename it after migration is confirmed.
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    echo "Disabling and removing old systemd unit /etc/systemd/system/sshnpd.service"
+    systemctl stop sshnpd 2>/dev/null || true
+    systemctl disable sshnpd 2>/dev/null || true
+    mv "/etc/systemd/system/sshnpd.service" "/etc/systemd/system/sshnpd.service.old"
+    [ -d "/etc/systemd/system/sshnpd.service.d" ] && mv "/etc/systemd/system/sshnpd.service.d" "/etc/systemd/system/sshnpd.service.d.old"
+    systemctl daemon-reload
+  fi
+}
+
 install_via_rpm() {
   echo "Installing noports via rpm..."
   if ! (check_cmd dnf || check_cmd yum); then
@@ -1051,6 +1083,7 @@ EOF
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
+  remove_old_binaries
   used_package_manager=true
 }
 
@@ -1097,6 +1130,7 @@ install_via_apt() {
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
+  remove_old_binaries
   used_package_manager=true
 }
 
