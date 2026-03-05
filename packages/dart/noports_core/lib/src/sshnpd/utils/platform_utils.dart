@@ -353,7 +353,10 @@ class WindowsUtils implements PlatformUtils {
                   final str = strPtr.toDartString();
                   parts.add(str);
                   // Move past this string (length + null terminator, in UTF-16 code units)
-                  strPtr = strPtr.elementAt(str.length + 1);
+                  // Advance past this string + null terminator (each UTF-16 code unit = 2 bytes)
+                  strPtr = Pointer<Utf16>.fromAddress(
+                    strPtr.address + (str.length + 1) * 2,
+                  );
                 }
                 message = parts.join(' | ');
               }
