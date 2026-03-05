@@ -54,6 +54,7 @@ unset download_url
 local_archive=""
 no_sudo=false
 quiet=false
+used_apt=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -747,13 +748,15 @@ validate_activation() {
 
 # CLIENT INSTALLATION #
 client() {
-  mkdir -p "$bin_path"
+  if [ "$used_apt" = false ]; then
+    mkdir -p "$bin_path"
 
-  # install the binaries
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+    # install the binaries
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+  fi
 
   # set PATH so it includes user's private bin if it exists
   if [ -d "$user_home/.local/bin" ] ; then
@@ -812,14 +815,18 @@ device() {
     device_install_type=$device_type
   fi
 
-  # install at_activate binary
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+  if [ "$used_apt" = false ]; then
+    # install at_activate binary
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
-  # install sshnpd binary and capture the installer output
-  install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+    # install sshnpd binary and capture the installer output
+    install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
 
-  if [ "$verbose" = true ]; then
-    echo "$install_output"
+    if [ "$verbose" = true ]; then
+      echo "$install_output"
+    fi
+  else
+    install_output=""
   fi
 
   # upgrade an existing installation if we find one
@@ -923,6 +930,47 @@ device() {
   fi
 }
 
+is_debian_like() {
+  if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "$ID" in
+    debian | ubuntu | mint | kali | raspbian) return 0 ;;
+    esac
+    case "${ID_LIKE:-}" in
+    *debian* | *ubuntu*) return 0 ;;
+    esac
+  elif [ -f /etc/debian_version ]; then
+    return 0
+  fi
+  return 1
+}
+
+install_via_apt() {
+  echo "Installing noports via apt..."
+  if ! check_cmd sudo; then
+    >&2 echo "Error: sudo is required for apt installation"
+    exit 1
+  fi
+
+  if ! check_cmd curl; then
+    >&2 echo "Error: curl is required for apt installation"
+    exit 1
+  fi
+
+  if ! check_cmd gpg; then
+    echo "gpg not found, installing gnupg..."
+    sudo apt update && sudo apt install -y gnupg
+  fi
+
+  sudo mkdir -p /usr/share/keyrings
+  curl -fsSL https://apt.noports.com/noports.pub.asc | sudo gpg --dearmor -o /usr/share/keyrings/noports-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | sudo tee /etc/apt/sources.list.d/noports.list
+  sudo apt update
+  sudo apt install -y noports
+  used_apt=true
+}
+
 main() {
   trap cleanup EXIT
   set -eu
@@ -934,12 +982,14 @@ main() {
   if [ -n "$local_archive" ]; then
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
+    unpack_archive
+  elif [ "$platform_name" = "linux" ] && is_debian_like && check_cmd apt-get; then
+    install_via_apt
   else
     download_url=$(get_download_url)
     echo "$download_url" | download_archive
+    unpack_archive
   fi
-
-  unpack_archive
 
   get_user_inputs
   case "$install_type" in
