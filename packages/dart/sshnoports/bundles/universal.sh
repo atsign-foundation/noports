@@ -54,7 +54,7 @@ unset download_url
 local_archive=""
 no_sudo=false
 quiet=false
-used_apt=false
+used_package_manager=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -748,7 +748,7 @@ validate_activation() {
 
 # CLIENT INSTALLATION #
 client() {
-  if [ "$used_apt" = false ]; then
+  if [ "$used_package_manager" = false ]; then
     mkdir -p "$bin_path"
 
     # install the binaries
@@ -815,7 +815,7 @@ device() {
     device_install_type=$device_type
   fi
 
-  if [ "$used_apt" = false ]; then
+  if [ "$used_package_manager" = false ]; then
     # install at_activate binary
     "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
@@ -946,6 +946,53 @@ is_debian_like() {
   return 1
 }
 
+is_redhat_like() {
+  if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "$ID" in
+    fedora | rhel | centos | amzn | rocky | almalinux) return 0 ;;
+    esac
+    case "${ID_LIKE:-}" in
+    *fedora* | *rhel* | *centos*) return 0 ;;
+    esac
+  elif [ -f /etc/redhat-release ]; then
+    return 0
+  fi
+  return 1
+}
+
+install_via_rpm() {
+  echo "Installing noports via rpm..."
+  if ! (check_cmd dnf || check_cmd yum); then
+    >&2 echo "Error: dnf or yum is required for rpm installation"
+    exit 1
+  fi
+
+  if ! check_cmd sudo; then
+    >&2 echo "Error: sudo is required for rpm installation"
+    exit 1
+  fi
+
+  # Create the repository file
+  sudo tee /etc/yum.repos.d/noports.repo <<EOF
+[noports]
+name=NoPorts Repository
+baseurl=https://rpm.noports.com/\$basearch/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://rpm.noports.com/noports.pub.asc
+EOF
+
+  if check_cmd dnf; then
+    sudo dnf install -y noports
+  else
+    sudo yum install -y noports
+  fi
+  used_package_manager=true
+}
+
 install_via_apt() {
   echo "Installing noports via apt..."
   if ! check_cmd apt; then
@@ -973,7 +1020,7 @@ install_via_apt() {
   echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | sudo tee /etc/apt/sources.list.d/noports.list
   sudo apt update
   sudo apt install -y noports
-  used_apt=true
+  used_package_manager=true
 }
 
 main() {
@@ -990,6 +1037,8 @@ main() {
     unpack_archive
   elif [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
+  elif [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+    install_via_rpm
   else
     download_url=$(get_download_url)
     echo "$download_url" | download_archive
