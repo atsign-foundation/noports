@@ -25,7 +25,7 @@ RUN set -eux ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:511830fef5315023ca5bcdf5c6cb6483dbabf18863eeda73c183ea25d4fab7a3 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:d4e224062007c238a2a7b241867cad21faa78640ea342953f4a1fd9e2ce5cc7e AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
