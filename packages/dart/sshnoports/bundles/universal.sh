@@ -948,14 +948,19 @@ is_debian_like() {
 
 install_via_apt() {
   echo "Installing noports via apt..."
+  if ! check_cmd apt; then
+    >&2 echo "Error: apt is required for apt installation"
+    exit 1
+  fi
+
   if ! check_cmd sudo; then
     >&2 echo "Error: sudo is required for apt installation"
     exit 1
   fi
 
   if ! check_cmd curl; then
-    >&2 echo "Error: curl is required for apt installation"
-    exit 1
+    echo "curl not found, installing curl..."
+    sudo apt update && sudo apt install -y curl
   fi
 
   if ! check_cmd gpg; then
@@ -983,7 +988,7 @@ main() {
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif [ "$platform_name" = "linux" ] && is_debian_like && check_cmd apt-get; then
+  elif [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
   else
     download_url=$(get_download_url)
