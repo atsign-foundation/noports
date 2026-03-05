@@ -97,7 +97,7 @@ class _SignInDialogState extends State<SignInDialog> {
                                   Navigator.of(context).pop(true);
                                 }
                               : null,
-                          child: Text(strings.onboard),
+                          child: Text(strings.signIn),
                         ),
                       ],
                     ),

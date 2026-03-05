@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/features/logging/logging.dart';
-import 'package:npt_flutter/features/onboarding/widgets/onboarding_button.dart';
+import 'package:npt_flutter/features/onboarding/widgets/get_started_button.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_text_button.dart';
@@ -42,7 +42,7 @@ class OnboardingView extends StatelessWidget {
               ),
               Text(strings.onboardingSubTitle, style: textTheme.headlineMedium),
               gapH20,
-              const OnboardingButton(),
+              const GetStartedButton(),
             ],
           ),
         ),

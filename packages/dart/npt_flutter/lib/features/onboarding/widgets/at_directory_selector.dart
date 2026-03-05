@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/styles/app_color.dart';
@@ -55,6 +56,15 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
                                 context.read<OnboardingCubit>().setRootDomain(
                                   e.key,
                                 );
+                                // Resetting the multiActivationCubitState will set the MultiActivationFileUploadState to idle allowing the "Next" button (manual activation button) to be visible in the dialog. This is only required when multiActivationCubitState is true.
+                                final multiActivationCubitState = context
+                                    .read<MultiActivationCubit>();
+                                if (multiActivationCubitState
+                                        .state
+                                        .uploadState ==
+                                    MultiActivationFileUploadState.error) {
+                                  multiActivationCubitState.reset();
+                                }
                               },
                             ),
                           );

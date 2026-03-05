@@ -14,7 +14,7 @@ import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
-import 'package:npt_flutter/features/onboarding/widgets/activation_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/get_started_dialog.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
@@ -192,40 +192,42 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final options = await getAtsignEntries();
 
   // Store the current atsign before showing the dialog
-  final currentContext = App.navState.currentContext!;
-  final originalAtsign = currentContext.read<OnboardingCubit>().state.atSign;
-  final originalRootDomain = currentContext
+
+  final originalAtsign = App.navState.currentContext!
+      .read<OnboardingCubit>()
+      .state
+      .atSign;
+  final originalRootDomain = App.navState.currentContext!
       .read<OnboardingCubit>()
       .state
       .rootDomain;
 
   // Clear the atsign field before showing the dialog
-  if (currentContext.mounted) {
-    currentContext.read<OnboardingCubit>().setState(
-      atSign: '',
-      rootDomain: originalRootDomain,
-    );
-  }
+  App.navState.currentContext!.read<OnboardingCubit>().setState(
+    atSign: '',
+    rootDomain: originalRootDomain,
+  );
 
   final shouldOnboard = await showDialog<bool>(
-    barrierDismissible: false,
-    context: context,
-    builder: (BuildContext context) => const ActivationDialog(),
+    barrierDismissible: true,
+    context: App.navState.currentContext!,
+    builder: (BuildContext context) =>
+        const GetStartedDialog(isMainSignInFlow: false),
   );
 
   if (shouldOnboard != true) {
     log('should Onboard is false or null');
     // User cancelled - revert to original atsign
-    if (currentContext.mounted) {
-      currentContext.read<OnboardingCubit>().setState(
-        atSign: originalAtsign,
-        rootDomain: originalRootDomain,
-      );
-    }
+
+    App.navState.currentContext!.read<OnboardingCubit>().setState(
+      atSign: originalAtsign,
+      rootDomain: originalRootDomain,
+    );
+
     return;
   }
 
-  final atsignInfo = currentContext.read<OnboardingCubit>().state;
+  final atsignInfo = App.navState.currentContext!.read<OnboardingCubit>().state;
   final newAtSign = atsignInfo.atSign;
   final rootDomain = atsignInfo.rootDomain;
 
@@ -233,21 +235,20 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final atSignList = await KeychainUtil.getAtsignList();
 
   // Show loading dialog
-  if (currentContext.mounted) {
-    showDialog(
-      context: currentContext,
-      barrierDismissible: false,
-      builder: (context) => const PopScope(
-        canPop: false,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    );
-  }
+
+  showDialog(
+    context: App.navState.currentContext!,
+    barrierDismissible: false,
+    builder: (context) => const PopScope(
+      canPop: false,
+      child: Center(child: CircularProgressIndicator()),
+    ),
+  );
 
   try {
     if (atSignList?.contains(newAtSign) ?? false) {
       // Atsign exists in keychain - use existing flow
-      await _performOnboarding(currentContext, newAtSign);
+      await _performOnboarding(App.navState.currentContext!, newAtSign);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
       final apiKey = await Constants.appAPIKey;
@@ -260,9 +261,11 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         appAPIKey: apiKey,
       );
 
-      final util = await NoPortsOnboardingUtil.create(currentContext);
+      final util = await NoPortsOnboardingUtil.create(
+        App.navState.currentContext!,
+      );
       final onboardingResult = await util.handleAtsignByStatus(
-        context: currentContext,
+        context: App.navState.currentContext!,
         atsign: newAtSign,
       );
 
@@ -286,43 +289,45 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
           await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
 
-          await BackupKeyUtils().backupKeyStatusCheck(context: context);
+          await BackupKeyUtils().backupKeyStatusCheck(
+            context: App.navState.currentContext!,
+          );
 
           App.log('atsign result is:$result'.loggable);
           return;
         case AtOnboardingResultStatus.error:
-          if (currentContext.mounted) {
-            currentContext.read<OnboardingCubit>().setState(
+          if (App.navState.currentContext!.mounted) {
+            App.navState.currentContext!.read<OnboardingCubit>().setState(
               atSign: originalAtsign,
               rootDomain: originalRootDomain,
             );
           }
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(App.navState.currentContext!).showSnackBar(
             SnackBar(
               backgroundColor: Colors.red,
               content: Text(
                 onboardingResult?.message ??
-                    AppLocalizations.of(context)!.onboardingError,
+                    AppLocalizations.of(
+                      App.navState.currentContext!,
+                    )!.onboardingError,
               ),
             ),
           );
 
           break;
         case AtOnboardingResultStatus.cancel:
-          if (currentContext.mounted) {
-            currentContext.read<OnboardingCubit>().setState(
-              atSign: originalAtsign,
-              rootDomain: originalRootDomain,
-            );
-          }
+          App.navState.currentContext!.read<OnboardingCubit>().setState(
+            atSign: originalAtsign,
+            rootDomain: originalRootDomain,
+          );
+
           break;
       }
     }
   } finally {
     // Dismiss loading dialog
-    if (currentContext.mounted) {
-      Navigator.of(currentContext).pop();
-    }
+
+    Navigator.of(App.navState.currentContext!).pop();
   }
 }
 

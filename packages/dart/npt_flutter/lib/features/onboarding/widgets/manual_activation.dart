@@ -34,7 +34,7 @@ class ManualActivation extends StatelessWidget {
             Text(strings.selectorTitleAtsign, style: titleMedium),
             Text(strings.selectorSubTitleAtsign, style: bodySmall),
             gapH16,
-            const AtsignSelector(),
+            const AtsignSelector(isInSignInFlow: false),
           ],
         ),
 

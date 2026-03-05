@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
-import 'package:npt_flutter/features/onboarding/widgets/activation_dialog.dart';
+import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -11,7 +11,9 @@ import 'package:super_tooltip/super_tooltip.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GetStartedDialog extends StatefulWidget {
-  const GetStartedDialog({super.key});
+  /// Follows the normal Sign in flow if true, otherwise follows the add new atsign flow.
+  final bool isMainSignInFlow;
+  const GetStartedDialog({this.isMainSignInFlow = true, super.key});
 
   @override
   State<GetStartedDialog> createState() => _GetStartedDialogState();
@@ -30,7 +32,6 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final width = MediaQuery.of(context).size.width * 0.70;
     final titleStyle = Theme.of(context).textTheme.titleMedium;
     final toolTipController = SuperTooltipController();
 
@@ -55,10 +56,12 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
 
               ElevatedButton(
                 onPressed: () async {
-                  Navigator.of(context).pop(true);
-                  final results = await showDialog(
+                  Navigator.of(context).pop();
+                  await showDialog(
+                    barrierDismissible: false,
                     context: context,
-                    builder: (BuildContext context) => const ActivationDialog(),
+                    builder: (BuildContext context) =>
+                        const ActivationDialogInitial(),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -95,21 +98,31 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
               ),
               OutlinedButton(
                 onPressed: () async {
-                  Navigator.of(context).pop(true);
+                  // TODO: Logic similar to [ManualActivationDialogButtons- Next], refactor to avoid code duplication with at_client_flutter migration.
                   final util = await NoPortsOnboardingUtil.create(context);
 
-                  bool shouldOnboard = await util.selectAtsign(context);
-                  if (shouldOnboard) {
-                    final atsignInformation = App.navState.currentContext!
-                        .read<OnboardingCubit>()
-                        .state;
-                    util.onboard(
-                      atsign: atsignInformation.atSign,
-                      rootDomain: atsignInformation.rootDomain,
-                      context: App.navState.currentContext!,
+                  if (widget.isMainSignInFlow) {
+                    Navigator.of(App.navState.currentContext!).pop(true);
+
+                    bool shouldOnboard = await util.selectAtsign(
+                      App.navState.currentContext!,
                     );
+                    if (shouldOnboard) {
+                      final atsignInformation = App.navState.currentContext!
+                          .read<OnboardingCubit>()
+                          .state;
+                      await util.onboard(
+                        atsign: atsignInformation.atSign,
+                        rootDomain: atsignInformation.rootDomain,
+                        context: App.navState.currentContext!,
+                      );
+                    }
+                  } else {
+                    final result = await util.selectAtsign(
+                      App.navState.currentContext!,
+                    );
+                    Navigator.of(App.navState.currentContext!).pop(result);
                   }
-                  print("should onbaord is $shouldOnboard");
                 },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(Sizes.p440, Sizes.p50),
@@ -124,7 +137,11 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
               GestureDetector(
                 onTap: () => toolTipController.showTooltip(),
                 child: SuperTooltip(
-                  popupDirection: TooltipDirection.right,
+                  constraints: const BoxConstraints(maxWidth: Sizes.p300),
+                  positionConfig: const PositionConfiguration(
+                    preferredDirection: TooltipDirection.right,
+                  ),
+                  // popupDirection: TooltipDirection.right,
                   controller: toolTipController,
                   content: Column(
                     mainAxisSize: MainAxisSize.min,

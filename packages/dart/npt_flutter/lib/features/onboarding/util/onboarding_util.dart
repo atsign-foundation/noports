@@ -136,7 +136,7 @@ class NoPortsOnboardingUtil {
     required AppLocalizations strings,
   }) async {
     // When onboarding from teapot, set backup status to false (atKeys not backed up)
-    // Value will be in atServer as true after onboarding and false if the user back up their key.
+    // False is initially saved in memory since access to the atServer is not available as yet.
     context.read<BackupKeyCubit>().setBackupKeyStatus(false);
 
     final apiKey = await Constants.appAPIKey;
@@ -249,6 +249,7 @@ class NoPortsOnboardingUtil {
     }
 
     // When onboarding via APKAM or uploading atKeys, set backup status to true.
+    // True is initially saved in memory since access to the atServer is not available as yet.
     if (context.mounted && result?.status == AtOnboardingResultStatus.success) {
       context.read<BackupKeyCubit>().setBackupKeyStatus(true);
     }
@@ -332,7 +333,7 @@ class NoPortsOnboardingUtil {
   Future<bool> selectAtsign(BuildContext context) async {
     var options = await getAtsignEntries();
 
-    final cubit = context.read<OnboardingCubit>();
+    final cubit = App.navState.currentContext!.read<OnboardingCubit>();
     String atsign = cubit.state.atSign;
     String? rootDomain = cubit.state.rootDomain;
 
@@ -344,12 +345,14 @@ class NoPortsOnboardingUtil {
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
-      rootDomain = Constants.getRootDomains(context).keys.first;
+      rootDomain = Constants.getRootDomains(
+        App.navState.currentContext!,
+      ).keys.first;
     }
 
     cubit.setState(atSign: atsign, rootDomain: rootDomain);
     final results = await showDialog(
-      context: context,
+      context: App.navState.currentContext!,
 
       builder: (BuildContext context) => SignInDialog(options: options),
     );
@@ -410,9 +413,7 @@ class NoPortsOnboardingUtil {
         final backupKeyCubit = App.navState.currentContext!
             .read<BackupKeyCubit>();
 
-        await backupKeyCubit.putBackupKeyStatus(
-          await backupKeyCubit.getBackupKeyStatus(),
-        );
+        await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
 
         App.log('atsign result is:$result'.loggable);
 
