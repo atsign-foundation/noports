@@ -113,11 +113,125 @@ abstract class AppLocalizations {
     ),
   ];
 
+  /// No description provided for @activate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get activate;
+
+  /// No description provided for @activating.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating'**
+  String get activating;
+
+  /// No description provided for @activationAtsignFileStorageLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a folder to save your .atKeys files'**
+  String get activationAtsignFileStorageLocation;
+
+  /// No description provided for @activationAtsignListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The following Atsigns will be activated:'**
+  String get activationAtsignListDescription;
+
+  /// No description provided for @activationButtonDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Activation and set up a new Atsign'**
+  String get activationButtonDescription;
+
+  /// No description provided for @activationComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Activation'**
+  String get activationComplete;
+
+  /// No description provided for @activationFileBased.
+  ///
+  /// In en, this message translates to:
+  /// **'File-based Activation'**
+  String get activationFileBased;
+
+  /// No description provided for @activationFileBasedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload your activation file (.yaml).\nThis file is downloaded from your Management Portal.'**
+  String get activationFileBasedDescription;
+
+  /// No description provided for @activationFileErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please use a valid activation file.'**
+  String get activationFileErrorMessage;
+
+  /// No description provided for @activationFileLoadingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing File...'**
+  String get activationFileLoadingMessage;
+
+  /// No description provided for @activationFileSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Activation file uploaded successfully!'**
+  String get activationFileSuccessMessage;
+
+  /// No description provided for @activationFileUploadDragDropDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload or drag & drop your one-time activation file (.yaml)'**
+  String get activationFileUploadDragDropDescription;
+
+  /// No description provided for @activationKeyStatusActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Activated'**
+  String get activationKeyStatusActivated;
+
+  /// No description provided for @activationKeyStatusActivating.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating'**
+  String get activationKeyStatusActivating;
+
+  /// No description provided for @activationKeyStatusAlreadyActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Activated'**
+  String get activationKeyStatusAlreadyActivated;
+
+  /// No description provided for @activationKeyStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get activationKeyStatusFailed;
+
+  /// No description provided for @activationKeyStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get activationKeyStatusWaiting;
+
+  /// No description provided for @activationManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Activation'**
+  String get activationManual;
+
   /// No description provided for @activationStatusActivating.
   ///
   /// In en, this message translates to:
   /// **'Activating'**
   String get activationStatusActivating;
+
+  /// No description provided for @activationStatusCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total} Atsigns activated:'**
+  String activationStatusCount(Object current, Object total);
 
   /// No description provided for @activationStatusOtpWait.
   ///
@@ -140,7 +254,7 @@ abstract class AppLocalizations {
   /// No description provided for @addAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Add atSign'**
+  /// **'Add Atsign'**
   String get addAtsign;
 
   /// No description provided for @addNew.
@@ -206,7 +320,7 @@ abstract class AppLocalizations {
   /// No description provided for @atsignDialogSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Please select your atSign'**
+  /// **'Please select your Atsign'**
   String get atsignDialogSubtitle;
 
   /// No description provided for @atsignDialogTitle.
@@ -218,31 +332,31 @@ abstract class AppLocalizations {
   /// No description provided for @atsignFrom.
   ///
   /// In en, this message translates to:
-  /// **'From atSign'**
+  /// **'From Atsign'**
   String get atsignFrom;
 
   /// No description provided for @atsignsUser.
   ///
   /// In en, this message translates to:
-  /// **'User atSigns'**
+  /// **'User Atsign'**
   String get atsignsUser;
 
   /// No description provided for @atsignsUserTooltip.
   ///
   /// In en, this message translates to:
-  /// **'An atSign like \"@alice\" that will be connecting to other devices'**
+  /// **'An Atsign like \"@alice\" that will be connecting to other devices'**
   String get atsignsUserTooltip;
 
   /// No description provided for @atsignTo.
   ///
   /// In en, this message translates to:
-  /// **'To atSign'**
+  /// **'To Atsign'**
   String get atsignTo;
 
   /// No description provided for @atsignUncreated.
   ///
   /// In en, this message translates to:
-  /// **'Don\'t have an atSign?'**
+  /// **'Don\'t have an Atsign?'**
   String get atsignUncreated;
 
   /// No description provided for @authenticate.
@@ -284,8 +398,8 @@ abstract class AppLocalizations {
   /// No description provided for @backUpAtKeysIntroMsgFirst.
   ///
   /// In en, this message translates to:
-  /// **'It is important to back up your atKeys so that you can access your data from any device. \n\nIf you lose your atKeys, you will lose access to your data.'**
-  String get backUpAtKeysIntroMsgFirst;
+  /// **'It is important to {saveOrBackup, select, save{save} other{backup}} your atKeys so that you can access your data from any device. \n\nIf you lose your atKeys, you will lose access to your data.'**
+  String backUpAtKeysIntroMsgFirst(String saveOrBackup);
 
   /// No description provided for @backUpAtKeysIntroMsgLast.
   ///
@@ -296,7 +410,7 @@ abstract class AppLocalizations {
   /// No description provided for @backUpAtKeysMainMsg.
   ///
   /// In en, this message translates to:
-  /// **'Your atKeys will be used to pair your atSign with this and other devices in the future.\n\natKeys are cryptographic keys that are used to secure your atSign. \n\nThey are unique to you and are used to encrypt and decrypt your data.'**
+  /// **'Your atKeys will be used to pair your Atsign with this and other devices in the future.\n\natKeys are cryptographic keys that are used to secure your Atsign. \n\nThey are unique to you and are used to encrypt and decrypt your data.'**
   String get backUpAtKeysMainMsg;
 
   /// No description provided for @backupKeyDialogTitle.
@@ -452,25 +566,25 @@ abstract class AppLocalizations {
   /// No description provided for @deviceAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Device atSign'**
+  /// **'Device Atsign'**
   String get deviceAtsign;
 
   /// No description provided for @deviceAtsignDescription.
   ///
   /// In en, this message translates to:
-  /// **'This is the atSign associated with your device.'**
+  /// **'This is the Atsign associated with your device.'**
   String get deviceAtsignDescription;
 
   /// No description provided for @deviceAtsignDescriptionTwo.
   ///
   /// In en, this message translates to:
-  /// **'An atSign like \"@bob_device\", that will be connected to. This is also known as the daemon or npd machine that is running the daemon process that will be receiving connection requests where connections will be established to this device.'**
+  /// **'An Atsign like \"@bob_device\", that will be connected to. This is also known as the daemon or npd machine that is running the daemon process that will be receiving connection requests where connections will be established to this device.'**
   String get deviceAtsignDescriptionTwo;
 
   /// No description provided for @deviceAtsigns.
   ///
   /// In en, this message translates to:
-  /// **'Device atSigns'**
+  /// **'Device Atsign'**
   String get deviceAtsigns;
 
   /// No description provided for @deviceEdit.
@@ -548,7 +662,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicesTooltip.
   ///
   /// In en, this message translates to:
-  /// **'A device name string like \"default\" that is under a device atSign. A device atSign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user atSigns to this device atSign/device name pair.'**
+  /// **'A device name string like \"default\" that is under a device Atsign. A device Atsign can have multiple device names, device names help distinguish individual device daemon processes. Adding a device name here will allow tunnels to be established from the user Atsign to this device Atsign/device name pair.'**
   String get devicesTooltip;
 
   /// No description provided for @disconnected.
@@ -590,7 +704,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyProfileMessage.
   ///
   /// In en, this message translates to:
-  /// **'No profiles found\nCreate or Import a profile to start using NoPorts.'**
+  /// **'No profiles found.\nCreate or Import a profile to start using NoPorts.'**
   String get emptyProfileMessage;
 
   /// No description provided for @enableLogging.
@@ -668,7 +782,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorAtKeysUploadedMismatch.
   ///
   /// In en, this message translates to:
-  /// **'The atKeys file you uploaded did not match the atSign requested'**
+  /// **'The atKeys file you uploaded did not match the Atsign requested'**
   String get errorAtKeysUploadedMismatch;
 
   /// No description provided for @errorAtServerUnavailable.
@@ -686,19 +800,19 @@ abstract class AppLocalizations {
   /// No description provided for @errorAtSignAlreadyPaired.
   ///
   /// In en, this message translates to:
-  /// **'The atSign {atsign} is already paired, please contact support.'**
+  /// **'The Atsign {atsign} is already paired, please contact support.'**
   String errorAtSignAlreadyPaired(Object atsign);
 
   /// No description provided for @errorAtSignNotExist.
   ///
   /// In en, this message translates to:
-  /// **'The atSign you have requested doesn\'t exist in this root domain.'**
+  /// **'The Atsign you have requested doesn\'t exist in this root domain.'**
   String get errorAtSignNotExist;
 
   /// No description provided for @errorAtSignUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'The atSign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.'**
+  /// **'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.'**
   String get errorAtSignUnavailable;
 
   /// No description provided for @errorAuthenticatinFailed.
@@ -746,7 +860,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorSwitchAtSignFailed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to switch atSigns after activation.'**
+  /// **'Failed to switch Atsign after activation.'**
   String get errorSwitchAtSignFailed;
 
   /// No description provided for @errorWithDetails.
@@ -778,6 +892,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FAQ'**
   String get faq;
+
+  /// No description provided for @fastest.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest'**
+  String get fastest;
 
   /// No description provided for @feedback.
   ///
@@ -812,7 +932,7 @@ abstract class AppLocalizations {
   /// No description provided for @findOtp.
   ///
   /// In en, this message translates to:
-  /// **'The request will be displayed in the Authenticator under Requests in any app connected to your atSign with manager keys.'**
+  /// **'The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.'**
   String get findOtp;
 
   /// No description provided for @getStarted.
@@ -956,7 +1076,7 @@ abstract class AppLocalizations {
   /// No description provided for @manageAtsigns.
   ///
   /// In en, this message translates to:
-  /// **'Manage atSigns'**
+  /// **'Manage Atsign'**
   String get manageAtsigns;
 
   /// No description provided for @minimal.
@@ -989,6 +1109,12 @@ abstract class AppLocalizations {
   /// **'Stop Monitoring'**
   String get monitoringStop;
 
+  /// No description provided for @myNoPortsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrieve yours in My NoPorts →'**
+  String get myNoPortsMsg;
+
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
@@ -1004,13 +1130,13 @@ abstract class AppLocalizations {
   /// No description provided for @noAtsign.
   ///
   /// In en, this message translates to:
-  /// **'No atSign'**
+  /// **'No Atsign'**
   String get noAtsign;
 
   /// No description provided for @noAtsignsAdded.
   ///
   /// In en, this message translates to:
-  /// **'No atSigns added yet'**
+  /// **'No Atsign added yet'**
   String get noAtsignsAdded;
 
   /// No description provided for @noDescription.
@@ -1084,6 +1210,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome'**
   String get onboardingTitle;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get or;
 
   /// No description provided for @overrideAllProfile.
   ///
@@ -1412,7 +1544,7 @@ abstract class AppLocalizations {
   /// No description provided for @removeAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Remove atSign'**
+  /// **'Remove Atsign'**
   String get removeAtsign;
 
   /// No description provided for @requestExpired.
@@ -1604,19 +1736,19 @@ abstract class AppLocalizations {
   /// No description provided for @selectorSubTitleAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Enter your NoPorts atSign below.'**
+  /// **'Enter your NoPorts Atsign below.'**
   String get selectorSubTitleAtsign;
 
   /// No description provided for @selectorSubTitleRootDomain.
   ///
   /// In en, this message translates to:
-  /// **'Enter the atDirectory domain (previously called root domain).'**
+  /// **'Enter the atDirectory domain.'**
   String get selectorSubTitleRootDomain;
 
   /// No description provided for @selectorTitleAtsign.
   ///
   /// In en, this message translates to:
-  /// **'NoPorts atSign'**
+  /// **'NoPorts Atsign'**
   String get selectorTitleAtsign;
 
   /// No description provided for @selectorTitleRootDomain.
@@ -1654,6 +1786,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show Window'**
   String get showWindow;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get signIn;
+
+  /// No description provided for @signInButtonDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with an activated Atsign'**
+  String get signInButtonDescription;
 
   /// No description provided for @signout.
   ///
@@ -1712,19 +1856,19 @@ abstract class AppLocalizations {
   /// No description provided for @switchAtSign.
   ///
   /// In en, this message translates to:
-  /// **'Switch atSign'**
+  /// **'Switch Atsign'**
   String get switchAtSign;
 
   /// No description provided for @switchAtSignDescription.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to switch atSigns?'**
+  /// **'Are you sure you want to switch Atsign?'**
   String get switchAtSignDescription;
 
   /// No description provided for @switchAtSignNote.
   ///
   /// In en, this message translates to:
-  /// **'Note: Switching atSigns ends all connections.'**
+  /// **'Note: Switching Atsign ends all connections.'**
   String get switchAtSignNote;
 
   /// No description provided for @syncCompleted.
@@ -1823,6 +1967,18 @@ abstract class AppLocalizations {
   /// **'What are atKeys?'**
   String get whatAreAtKeys;
 
+  /// No description provided for @whatIsAnAtsign.
+  ///
+  /// In en, this message translates to:
+  /// **'What is an Atsign?'**
+  String get whatIsAnAtsign;
+
+  /// No description provided for @whatIsAnAtsignDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An Atsign is both an address and a unique identifier for your device.'**
+  String get whatIsAnAtsignDescription;
+
   /// No description provided for @whereToAccept.
   ///
   /// In en, this message translates to:
@@ -1840,90 +1996,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML'**
   String get yaml;
-
-  /// No description provided for @activationComplete.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete Activation'**
-  String get activationComplete;
-
-  /// No description provided for @activationFileBased.
-  ///
-  /// In en, this message translates to:
-  /// **'File-based Activation'**
-  String get activationFileBased;
-
-  /// No description provided for @activationFileBasedDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Please upload the file saved from your Management Portal. \nYou’ll only need to do this once.'**
-  String get activationFileBasedDescription;
-
-  /// No description provided for @activationLinkText.
-  ///
-  /// In en, this message translates to:
-  /// **'Where to find this →'**
-  String get activationLinkText;
-
-  /// No description provided for @activationButtonDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete Activation and set up a new atSign'**
-  String get activationButtonDescription;
-
-  /// No description provided for @activationDragDropDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'OR drag and drop your .YAML file'**
-  String get activationDragDropDescription;
-
-  /// No description provided for @activationFileUploadDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload one-time activation file'**
-  String get activationFileUploadDescription;
-
-  /// No description provided for @activationManual.
-  ///
-  /// In en, this message translates to:
-  /// **'Manual Activation'**
-  String get activationManual;
-
-  /// No description provided for @signIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign In'**
-  String get signIn;
-
-  /// No description provided for @signInButtonDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in with an activated atSign'**
-  String get signInButtonDescription;
-
-  /// No description provided for @whatIsAnAtsign.
-  ///
-  /// In en, this message translates to:
-  /// **'What is an atSign?'**
-  String get whatIsAnAtsign;
-
-  /// No description provided for @whatIsAnAtsignDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'An atSign is a resolvable\naddress assigned to a device.'**
-  String get whatIsAnAtsignDescription;
-
-  /// No description provided for @or.
-  ///
-  /// In en, this message translates to:
-  /// **'OR'**
-  String get or;
-
-  /// No description provided for @myNoPortsMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrieve yours in My NoPorts →'**
-  String get myNoPortsMsg;
 
   /// No description provided for @yamlRecommended.
   ///

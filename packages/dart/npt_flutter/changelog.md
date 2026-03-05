@@ -2,6 +2,7 @@
 
 - FEAT: Get Started Dialog Added
 - FEAT: Sign In Dialog Added
+- FIX: Added and Updated descriptions for better clarity along with their language translations.
 
 ## 1.8.1+26
 
