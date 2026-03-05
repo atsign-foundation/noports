@@ -962,6 +962,63 @@ is_redhat_like() {
   return 1
 }
 
+migrate_systemd_config_to_yaml() {
+  yaml_file="/etc/noports/sshnpd.yaml"
+  if [ ! -f "$yaml_file" ]; then
+    echo "Warning: $yaml_file not found. Skipping migration."
+    return
+  fi
+
+  # Check if atsign is already set
+  # We look for the nested "atsign:" key (indented) followed by any non-whitespace value
+  if grep -E "^[[:space:]]+atsign:[[:space:]]*[^[:space:]#]" "$yaml_file" >/dev/null; then
+    echo "YAML config $yaml_file appears to be already populated, skipping migration."
+    return
+  fi
+
+  echo "Migrating existing systemd configuration to $yaml_file..."
+
+  # Extract values from systemd unit and override files
+  unit_file="/etc/systemd/system/sshnpd.service"
+  override_file="/etc/systemd/system/sshnpd.service.d/override.conf"
+
+  m_atsign=""
+  d_atsign=""
+  d_name=""
+  p_atsign=""
+
+  extract_val() {
+    val=$(grep -h "^Environment=$1=" "$override_file" "$unit_file" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+    echo "$val"
+  }
+
+  m_atsign=$(extract_val "manager_atsign")
+  d_atsign=$(extract_val "device_atsign")
+  d_name=$(extract_val "device_name")
+  delegate_policy=$(extract_val "delegate_policy")
+  if [ -n "$delegate_policy" ]; then
+    p_atsign=$(echo "$delegate_policy" | sed 's/-p //')
+  fi
+
+  [ -z "$d_name" ] && d_name="default"
+
+  # Update the template file using sedi
+  if [ -n "$d_atsign" ]; then
+    sedi "s|^\([[:space:]]\{2\}atsign:\)[[:space:]]*$|\1 '$(norm_atsign "$d_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$p_atsign" ]; then
+    sedi "s|^\([[:space:]]\{2\}policy:\)[[:space:]]*$|\1 '$(norm_atsign "$p_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$m_atsign" ]; then
+    sedi "s|^[[:space:]]*#[[:space:]]*- your_atsign_here$|    - '$(norm_atsign "$m_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$d_name" ]; then
+    sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*$|\1 '$d_name'|" "$yaml_file"
+  fi
+
+  echo "Migration complete."
+}
+
 install_via_rpm() {
   echo "Installing noports via rpm..."
   if ! (check_cmd dnf || check_cmd yum); then
@@ -989,6 +1046,10 @@ EOF
     sudo dnf install -y noports
   else
     sudo yum install -y noports
+  fi
+
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    migrate_systemd_config_to_yaml
   fi
   used_package_manager=true
 }
@@ -1032,6 +1093,10 @@ install_via_apt() {
   echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | sudo tee /etc/apt/sources.list.d/noports.list
   sudo apt update
   sudo apt install -y noports
+
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    migrate_systemd_config_to_yaml
+  fi
   used_package_manager=true
 }
 
