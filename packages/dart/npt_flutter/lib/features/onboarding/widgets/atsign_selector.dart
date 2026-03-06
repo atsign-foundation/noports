@@ -48,7 +48,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                 atSign: atsign,
                 rootDomain: widget.options?[atsign]?.rootDomain,
               );
-              // Resetting the multiActivationCubitState will set the MultiActivationFileUploadState to idle allowing the "Next" button (manual activation button) to be visible in the dialog. This is only required when multiActivationCubitState is true.
+              // Resetting the multiActivationCubitState will set the MultiActivationFileUploadState to idle allowing the "Next" button (manual activation button) to be visible in the dialog. This is only required when multiActivationCubitState is error.
               final multiActivationCubitState = context
                   .read<MultiActivationCubit>();
               if (multiActivationCubitState.state.uploadState ==
