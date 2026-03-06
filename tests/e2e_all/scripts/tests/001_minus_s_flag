@@ -115,7 +115,7 @@ else
 fi
 
 # 3a. Run against a daemon with the -s flag
-#   3b. Verify it succeeds
+# 3b. Verify it succeeds
 deviceName=$(getDeviceNameWithFlags "$commitId" "$daemonVersion")
 
 # We will capture daemon log from now until end of test
