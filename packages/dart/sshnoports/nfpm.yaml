@@ -36,6 +36,11 @@ contents:
   - src: ./bundles/core/config/sshnpd.yaml
     dst: /etc/noports/sshnpd.yaml
     type: config
+  - src: ./bundles/shell/systemd.nfpm/srvd.service
+    dst: /lib/systemd/system/srvd.service
+  - src: ./bundles/shell/systemd.nfpm/srvd.service.d/override.conf
+    dst: /lib/systemd/system/srvd.service.d/override.conf
+    type: config
   - src: ./bundles/shell/systemd.nfpm/sshnpd.service
     dst: /lib/systemd/system/sshnpd.service
   - src: ./LICENSE
