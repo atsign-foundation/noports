@@ -12,6 +12,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FileBasedActivation extends StatefulWidget {
+  /// A widget which shows the file based activation flow, allowing the user to upload an activation file and showing the Atsigns in the file, and allowing the user to click on it to re-upload the file when the file upload is in an idle or error state.
   const FileBasedActivation({super.key});
 
   @override
