@@ -389,6 +389,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
+  /// No description provided for @backUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Back Up'**
+  String get backUp;
+
   /// No description provided for @backUpAtKeys.
   ///
   /// In en, this message translates to:

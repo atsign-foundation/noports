@@ -68,7 +68,7 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                 child: Text.rich(
                   TextSpan(
                     text: strings.backUpAtKeysIntroMsgFirst(
-                      widget.isBackup ? 'backup' : 'save',
+                      widget.isBackup ? strings.backUp : strings.save,
                     ),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                     children: [

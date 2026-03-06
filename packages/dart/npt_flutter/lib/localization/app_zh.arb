@@ -45,6 +45,7 @@
   "authorisation": "授权",
   "autoStartApplication": "自动启动客户端应用程序",
   "back": "返回",
+  "backUp": "备份",
   "backUpAtKeys": "备份 atKeys",
   "backUpAtKeysIntroMsgFirst": "{saveOrBackup, select, save{保存} other{备份}}您的 atKeys 非常重要，这样您就可以从任何设备访问您的数据。\n\n如果您丢失了 atKeys，您将失去对您的数据的访问权限。",
   "backUpAtKeysIntroMsgLast": "\n\n您可以随时从“设置”菜单保存其他备份。",

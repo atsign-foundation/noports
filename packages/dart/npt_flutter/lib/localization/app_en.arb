@@ -45,6 +45,7 @@
    "authorisation": "Authorisation",
    "autoStartApplication": "Auto-Start Client Application",
    "back": "Back",
+   "backUp": "Back Up",
    "backUpAtKeys": "Back Up atKeys",
    "backUpAtKeysIntroMsgFirst": "It is important to {saveOrBackup, select, save{save} other{backup}} your atKeys so that you can access your data from any device. \n\nIf you lose your atKeys, you will lose access to your data.",
    "backUpAtKeysIntroMsgLast": "\n\nYou can save additional backups from the Settings menu anytime.",

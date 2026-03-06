@@ -45,6 +45,7 @@
   "authorisation": "Autorização",
   "autoStartApplication": "Iniciar Aplicação do Cliente Automaticamente",
   "back": "Voltar",
+  "backUp": "Fazer Backup",
   "backUpAtKeys": "Fazer Backup das atKeys",
   "backUpAtKeysIntroMsgFirst": "É importante {saveOrBackup, select, save{salvar} other{fazer backup de}} suas atKeys para que você possa acessar seus dados de qualquer dispositivo. \n\nSe você perder suas atKeys, você perderá o acesso aos seus dados.",
   "backUpAtKeysIntroMsgLast": "\n\nVocê pode salvar backups adicionais no menu de Configurações a qualquer momento.",

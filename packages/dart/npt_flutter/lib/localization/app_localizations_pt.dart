@@ -16,7 +16,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get activationAtsignFileStorageLocation =>
-      'Selecione uma pasta para guardar os seus ficheiros .atKeys';
+      'Selecione uma pasta para salvar seus arquivos .atKeys';
 
   @override
   String get activationAtsignListDescription =>
@@ -30,26 +30,26 @@ class AppLocalizationsPt extends AppLocalizations {
   String get activationComplete => 'Concluir Ativação';
 
   @override
-  String get activationFileBased => 'Ativação baseada em ficheiro';
+  String get activationFileBased => 'Ativação baseada em arquivo';
 
   @override
   String get activationFileBasedDescription =>
-      'Por favor, carregue o seu ficheiro de ativação (.yaml).\nEste ficheiro é transferido do seu Portal de Gestão.';
+      'Por favor, faça o upload do seu arquivo de ativação (.yaml).\nEste arquivo é baixado do seu Portal de Gerenciamento.';
 
   @override
   String get activationFileErrorMessage =>
-      'Por favor, use um ficheiro de ativação válido.';
+      'Por favor, use um arquivo de ativação válido.';
 
   @override
-  String get activationFileLoadingMessage => 'A Processar Ficheiro...';
+  String get activationFileLoadingMessage => 'Processando Arquivo...';
 
   @override
   String get activationFileSuccessMessage =>
-      'Ficheiro de ativação carregado com sucesso!';
+      'Arquivo de ativação enviado com sucesso!';
 
   @override
   String get activationFileUploadDragDropDescription =>
-      'Carregue ou arraste e largue o seu ficheiro de ativação de utilização única (.yaml)';
+      'Faça o upload ou arraste e solte seu arquivo de ativação de uso único (.yaml)';
 
   @override
   String get activationKeyStatusActivated => 'Ativado';
@@ -64,7 +64,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get activationKeyStatusFailed => 'Falhou';
 
   @override
-  String get activationKeyStatusWaiting => 'A aguardar';
+  String get activationKeyStatusWaiting => 'Aguardando';
 
   @override
   String get activationManual => 'Ativação Manual';
@@ -78,11 +78,10 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get activationStatusOtpWait =>
-      'Por favor, introduza o OTP do seu e-mail';
+  String get activationStatusOtpWait => 'Por favor, insira o OTP do seu e-mail';
 
   @override
-  String get activationStatusPreparing => 'A preparar a ativação';
+  String get activationStatusPreparing => 'Preparando para ativação';
 
   @override
   String get add => 'Adicionar';
@@ -97,10 +96,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get advanced => 'Avançado';
 
   @override
-  String get advancedSettings => 'Definições Avançadas';
+  String get advancedSettings => 'Configurações Avançadas';
 
   @override
-  String get alertDialogTitle => 'Tem a certeza?';
+  String get alertDialogTitle => 'Você tem certeza?';
 
   @override
   String get allRightsReserved => '© 2026 Atsign, Todos os Direitos Reservados';
@@ -110,7 +109,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get approveInstructions =>
-      'Por favor, aprove o pedido na aplicação com chaves de administrador';
+      'Por favor, aprove a solicitação no aplicativo com chaves de gerenciador';
 
   @override
   String get asiaPacific => 'Ásia-Pacífico';
@@ -119,10 +118,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get atDirectory => 'AtDirectory';
 
   @override
-  String get atDirectorySubtitle => 'Selecione o domínio que deseja usar';
+  String get atDirectorySubtitle => 'Selecione o domínio que você deseja usar';
 
   @override
-  String get atsignDialogSubtitle => 'Por favor, selecione o seu Atsign';
+  String get atsignDialogSubtitle => 'Por favor, selecione seu Atsign';
 
   @override
   String get atsignDialogTitle => 'AtSign';
@@ -131,11 +130,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get atsignFrom => 'De Atsign';
 
   @override
-  String get atsignsUser => 'Atsign de Utilizador';
+  String get atsignsUser => 'Atsign de Usuário';
 
   @override
   String get atsignsUserTooltip =>
-      'Um Atsign como \"@alice\" que se conectará a outros dispositivos';
+      'Um Atsign como \"@alice\" que estará se conectando a outros dispositivos';
 
   @override
   String get atsignTo => 'Para Atsign';
@@ -160,31 +159,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get back => 'Voltar';
 
   @override
-  String get backUpAtKeys => 'Guardar Cópia de Segurança das atKeys';
+  String get backUp => 'Fazer Backup';
+
+  @override
+  String get backUpAtKeys => 'Fazer Backup das atKeys';
 
   @override
   String backUpAtKeysIntroMsgFirst(String saveOrBackup) {
     String _temp0 = intl.Intl.selectLogic(saveOrBackup, {
-      'save': 'guardar',
-      'other': 'guardar cópias de segurança das',
+      'save': 'salvar',
+      'other': 'fazer backup de',
     });
-    return 'É importante $_temp0 suas atKeys para que possa aceder aos seus dados a partir de qualquer dispositivo. \n\nSe perder as suas atKeys, perderá o acesso aos seus dados.';
+    return 'É importante $_temp0 suas atKeys para que você possa acessar seus dados de qualquer dispositivo. \n\nSe você perder suas atKeys, você perderá o acesso aos seus dados.';
   }
 
   @override
   String get backUpAtKeysIntroMsgLast =>
-      '\n\nPode guardar cópias de segurança adicionais no menu de Definições a qualquer momento.';
+      '\n\nVocê pode salvar backups adicionais no menu de Configurações a qualquer momento.';
 
   @override
   String get backUpAtKeysMainMsg =>
-      'As suas atKeys serão usadas para emparelhar o seu Atsign com este e outros dispositivos no futuro.\n\nAs atKeys são chaves criptográficas que são usadas para proteger o seu Atsign. \n\nSão exclusivas para si e são usadas para encriptar e desencriptar os seus dados.';
+      'Suas atKeys serão usadas para emparelhar seu Atsign com este e outros dispositivos no futuro.\n\nAs atKeys são chaves criptográficas que são usadas para proteger seu Atsign. \n\nElas são exclusivas para você e são usadas para criptografar e descriptografar seus dados.';
 
   @override
   String get backupKeyDialogTitle =>
-      'Por favor, selecione um ficheiro para exportar para:';
+      'Por favor, selecione um arquivo para exportar para:';
 
   @override
-  String get backupYourKey => 'Guardar cópia de segurança da sua Chave';
+  String get backupYourKey => 'Backup da sua Chave';
 
   @override
   String get cancel => 'Cancelar';
@@ -196,32 +198,31 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connected => 'Conectado';
 
   @override
-  String get connectionClosed => 'Ligação fechada, tentará novamente...';
+  String get connectionClosed => 'Conexão fechada, tentará novamente...';
 
   @override
-  String get connectionRetrying =>
-      'A tentar novamente a ligação (keep-alive)...';
+  String get connectionRetrying => 'Reconectando (keep-alive)...';
 
   @override
-  String get connections => 'Ligações';
+  String get connections => 'Conexões';
 
   @override
   String get connectionTimedOut =>
-      'Tempo limite da ligação, tentará novamente...';
+      'Tempo limite da conexão, tentará novamente...';
 
   @override
   String get connectUriProtocolDescription =>
-      'Esta definição lança automaticamente a aplicação apropriada após uma ligação ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhuma aplicação será lançada. Selecione o protocolo a utilizar para a ligação.';
+      'Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.';
 
   @override
   String get connectUriProtocolNone => 'Nenhum';
 
   @override
-  String get connectUriUsername => 'Nome de Utilizador';
+  String get connectUriUsername => 'Nome de Usuário';
 
   @override
   String get connectUriUsernameDescription =>
-      'Nome de utilizador opcional para protocolos como SSH (por exemplo, utilizador em ssh://utilizador@host)';
+      'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -243,7 +244,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get defaultRelaySelection => 'Seleção de Relay Padrão';
 
   @override
-  String get delete => 'Eliminar';
+  String get delete => 'Excluir';
 
   @override
   String get demo => 'Demonstração';
@@ -269,7 +270,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get deviceAtsignDescriptionTwo =>
-      'Um Atsign como \"@bob_device\", ao qual se conectará. Isto também é conhecido como o daemon ou máquina npd que está a executar o processo daemon que receberá pedidos de ligação onde as ligações serão estabelecidas para este dispositivo.';
+      'Um Atsign como \"@bob_device\", que será conectado. Isso também é conhecido como o daemon ou máquina npd que está executando o processo daemon que receberá solicitações de conexão, onde as conexões serão estabelecidas para este dispositivo.';
 
   @override
   String get deviceAtsigns => 'Atsign do Dispositivo';
@@ -298,7 +299,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get deviceGroupTooltip =>
-      'Processos daemon que especificam a opção --dg com uma string permitirão ligações do utilizador para os host:portas especificados';
+      'Processos daemon que especificam a opção --dg com uma string permitirão conexões do usuário para os host:portas especificados';
 
   @override
   String get deviceName => 'Nome do Dispositivo';
@@ -315,7 +316,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get devicesTooltip =>
-      'Uma string de nome de dispositivo como \"default\" que está sob um Atsign de dispositivo. Um Atsign de dispositivo pode ter múltiplos nomes de dispositivo, os nomes de dispositivo ajudam a distinguir processos daemon de dispositivos individuais. Adicionar um nome de dispositivo aqui permitirá que túneis sejam estabelecidos do Atsign do utilizador para este par Atsign de dispositivo/nome de dispositivo.';
+      'Uma string de nome de dispositivo como \"default\" que está sob um Atsign de dispositivo. Um Atsign de dispositivo pode ter vários nomes de dispositivo, os nomes de dispositivo ajudam a distinguir processos daemon de dispositivos individuais. Adicionar um nome de dispositivo aqui permitirá que túneis sejam estabelecidos do Atsign do usuário para este par Atsign de dispositivo/nome de dispositivo.';
 
   @override
   String get disconnected => 'Desconectado';
@@ -340,69 +341,69 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhum perfil encontrado.\nCrie ou importe um perfil para começar a usar NoPorts.';
 
   @override
-  String get enableLogging => 'Ativar Log';
+  String get enableLogging => 'Habilitar Log';
 
   @override
   String get enroll => 'Inscrever-se';
 
   @override
-  String get enrollApproved => 'Pedido de inscrição aprovado';
+  String get enrollApproved => 'Solicitação de inscrição aprovada';
 
   @override
-  String get enrollDenied => 'Pedido de inscrição rejeitado';
+  String get enrollDenied => 'Solicitação de inscrição negada';
 
   @override
-  String get enrollRequestDenied => 'Pedido de inscrição rejeitado';
+  String get enrollRequestDenied => 'Solicitação de inscrição negada';
 
   @override
   String get enrollWithAuthenticator => 'Inscrever-se com o Authenticator';
 
   @override
   String get enrollWithAuthenticatorDescription =>
-      'Autenticar através da aplicação com chaves de administrador';
+      'Autenticar através do aplicativo com chaves de gerenciador';
 
   @override
-  String get enterOtp => 'Introduzir OTP';
+  String get enterOtp => 'Inserir OTP';
 
   @override
   String get error => 'Erro';
 
   @override
   String errorAtKeySaveFailed(Object error) {
-    return 'Falha ao guardar o ficheiro atKeys: $error';
+    return 'Falha ao salvar o arquivo atKeys: $error';
   }
 
   @override
   String get errorAtKeysFileProcessFailed =>
-      'Falha ao processar o ficheiro atKeys';
+      'Falha ao processar o arquivo atKeys';
 
   @override
-  String get errorAtKeysInvalid => 'Ficheiro atKeys inválido detetado';
+  String get errorAtKeysInvalid => 'Arquivo atKeys inválido detectado';
 
   @override
   String get errorAtKeysUploadedMismatch =>
-      'O ficheiro atKeys que carregou não corresponde ao Atsign solicitado';
+      'O arquivo atKeys que você carregou não corresponde ao Atsign solicitado';
 
   @override
   String get errorAtServerUnavailable =>
-      'Falha ao recuperar o estado do atServer, verifique se tem uma ligação de internet estável.';
+      'Falha ao recuperar o status do atServer, verifique se você tem uma conexão de internet estável.';
 
   @override
   String get errorAtServerUnreachable =>
-      'Não é possível conectar ao atServer, verifique se tem uma ligação de internet estável.';
+      'Não é possível conectar ao atServer, verifique se você tem uma conexão de internet estável.';
 
   @override
   String errorAtSignAlreadyPaired(Object atsign) {
-    return 'O Atsign $atsign já está emparelhado, entre em contacto com o suporte.';
+    return 'O Atsign $atsign já está emparelhado, entre em contato com o suporte.';
   }
 
   @override
   String get errorAtSignNotExist =>
-      'O Atsign que solicitou não existe neste domínio raiz.';
+      'O Atsign que você solicitou não existe neste domínio raiz.';
 
   @override
   String get errorAtSignUnavailable =>
-      'O Atsign está indisponível. Certifique-se de que clicou em \"Ativar\" no seu painel e que tem uma ligação de internet estável.';
+      'O Atsign está indisponível. Certifique-se de ter pressionado \"Ativar\" no seu painel e ter uma conexão de internet estável.';
 
   @override
   String get errorAuthenticatinFailed => 'Falha na autenticação.';
@@ -413,16 +414,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
-    return 'Erro durante o arranque: $errorMessage';
+    return 'Erro durante a inicialização: $errorMessage';
   }
 
   @override
   String get errorOtpRequestFailed =>
-      'Falha ao solicitar um OTP, tente reenviar ou contacte o suporte se o problema persistir.';
+      'Falha ao solicitar um OTP, tente reenviar ou entre em contato com o suporte se o problema persistir.';
 
   @override
   String get errorOtpVerificationFailed =>
-      'Falha ao verificar o OTP com o servidor de ativação, por favor tente novamente. Contacte o suporte se o problema persistir.';
+      'Falha ao verificar o OTP com o servidor de ativação, tente novamente. Entre em contato com o suporte se o problema persistir.';
 
   @override
   String get errorProfileLoadFailed => 'Falha ao carregar este perfil';
@@ -433,7 +434,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorSwitchAtSignFailed =>
-      'Falha ao mudar de Atsign após a ativação.';
+      'Falha ao trocar de Atsign após a ativação.';
 
   @override
   String errorWithDetails(Object errorMessage) {
@@ -460,21 +461,21 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get fileFormatInvalid =>
-      'O formato do documento é inválido. Por favor, carregue um ficheiro válido.';
+      'O formato do documento é inválido. Por favor, carregue um arquivo válido.';
 
   @override
   String get fileFormatInvalidDetails =>
-      'A secção de perfis está ausente ou formatada incorretamente. Por favor, verifique o documento.';
+      'A seção de perfis está ausente ou formatada incorretamente. Por favor, verifique o documento.';
 
   @override
-  String get fileImported => 'Ficheiro Importado';
+  String get fileImported => 'Arquivo Importado';
 
   @override
-  String get fileSaved => 'Ficheiro Guardado';
+  String get fileSaved => 'Arquivo Salvo';
 
   @override
   String get findOtp =>
-      'O pedido será exibido no Authenticator em Pedidos em qualquer aplicação ligada ao seu Atsign com chaves de administrador.';
+      'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
 
   @override
   String get getStarted => 'Começar';
@@ -489,7 +490,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get import => 'Importar';
 
   @override
-  String get importFile => 'Importar Ficheiro';
+  String get importFile => 'Importar Arquivo';
 
   @override
   String get info => 'Informação';
@@ -508,27 +509,27 @@ class AppLocalizationsPt extends AppLocalizations {
       'Payload JSON copiado para a área de transferência';
 
   @override
-  String get keys => 'Carregar atKeys';
+  String get keys => 'Enviar atKeys';
 
   @override
   String get language => 'Idioma';
 
   @override
-  String get loading => 'A carregar';
+  String get loading => 'Carregando';
 
   @override
   String get localHost => 'Host Local';
 
   @override
   String get localHostDescription =>
-      'O nome de anfitrião ou endereço IP para vincular à sua máquina local';
+      'O nome do host ou endereço IP para vincular à sua máquina local';
 
   @override
   String get localPort => 'Porta Local';
 
   @override
   String get localPortDescription =>
-      'A porta que vai usar na sua máquina local';
+      'A porta que você usará em sua máquina local';
 
   @override
   String get logs => 'Logs';
@@ -538,35 +539,35 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get logsNotAvailable =>
-      'Nenhum log disponível ainda.\nA atividade aparecerá aqui quando os pedidos de política forem feitos.';
+      'Nenhum log disponível ainda.\nA atividade aparecerá aqui quando as solicitações de política forem feitas.';
 
   @override
   String get logsNotAvailableStartMonitoring =>
-      'Nenhum log disponível.\nInicie a monitorização a partir do Gestor de Políticas para ver a atividade.';
+      'Nenhum log disponível.\nInicie o monitoramento do Gerenciador de Políticas para ver a atividade.';
 
   @override
-  String get logsView => 'Ver Logs';
+  String get logsView => 'Visualizar Logs';
 
   @override
   String get logType => 'Tipo de Log';
 
   @override
-  String get manageAtsigns => 'Gerir Atsign';
+  String get manageAtsigns => 'Gerenciar Atsign';
 
   @override
   String get minimal => 'Simples';
 
   @override
-  String get monitoringActive => 'Monitorização Ativa';
+  String get monitoringActive => 'Monitoramento Ativo';
 
   @override
-  String get monitoringInactive => 'Monitorização Inativa';
+  String get monitoringInactive => 'Monitoramento Inativo';
 
   @override
-  String get monitoringStart => 'Iniciar Monitorização';
+  String get monitoringStart => 'Iniciar Monitoramento';
 
   @override
-  String get monitoringStop => 'Parar Monitorização';
+  String get monitoringStop => 'Parar Monitoramento';
 
   @override
   String get myNoPortsMsg => 'Recupere o seu em My NoPorts →';
@@ -575,7 +576,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get name => 'Nome';
 
   @override
-  String get next => 'Seguinte';
+  String get next => 'Próximo';
 
   @override
   String get noAtsign => 'Sem Atsign';
@@ -596,7 +597,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Tempo limite de arranque Npt excedido';
+  String get nptStartupTimedout =>
+      'Tempo limite de inicialização do Npt excedido';
 
   @override
   String get ok => 'OK';
@@ -605,10 +607,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboard => 'Integrar';
 
   @override
-  String get onboardingButtonStatusPicking => 'A aguardar seleção do ficheiro';
+  String get onboardingButtonStatusPicking => 'Aguardando a seleção do arquivo';
 
   @override
-  String get onboardingButtonStatusProcessingFile => 'A processar ficheiro';
+  String get onboardingButtonStatusProcessingFile => 'Processando arquivo';
 
   @override
   String get onboardingError => 'Ocorreu um erro';
@@ -651,13 +653,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get policyLogs => 'Logs de Política';
 
   @override
-  String get policyManager => 'Gestor de Políticas';
+  String get policyManager => 'Gerenciador de Políticas';
 
   @override
-  String get policyRequestPayload => 'Payload do Pedido de Política';
+  String get policyRequestPayload => 'Payload da Solicitação de Política';
 
   @override
-  String get preview => 'Pré-visualizar';
+  String get preview => 'Visualizar';
 
   @override
   String get privacyPolicy => 'Política de Privacidade';
@@ -667,32 +669,32 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileDeleteMessage =>
-      'Este perfil será eliminado permanentemente.';
+      'Este perfil será excluído permanentemente.';
 
   @override
   String get profileDeleteSecondaryMessage =>
-      'Alguns perfis estão em execução e não serão eliminados, pare primeiro esses perfis para os eliminar.';
+      'Alguns perfis estão em execução e não serão excluídos, pare esses perfis primeiro para excluí-los.';
 
   @override
   String get profileDeleteSelectedMessage =>
-      'Os perfis selecionados serão eliminados permanentemente.';
+      'Os perfis selecionados serão excluídos permanentemente.';
 
   @override
-  String get profileExportDialogTitle => 'Escolha o Tipo de Ficheiro';
+  String get profileExportDialogTitle => 'Escolha o Tipo de Arquivo';
 
   @override
   String get profileExportMessage =>
-      'Qual tipo de ficheiro gostaria de exportar?';
+      'Qual tipo de arquivo você gostaria de exportar?';
 
   @override
   String get profileExportSelectedMessage =>
-      'Qual tipo de ficheiro gostaria de exportar os perfis selecionados?';
+      'Qual tipo de arquivo você gostaria de exportar os perfis selecionados?';
 
   @override
   String get profileFailedLoaded => 'Falha ao carregar o perfil';
 
   @override
-  String get profileFailedSaveMessage => 'Falha ao guardar o perfil';
+  String get profileFailedSaveMessage => 'Falha ao salvar o perfil';
 
   @override
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
@@ -701,25 +703,25 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
-  String get profileImportFailed => 'Falha ao importar o ficheiro';
+  String get profileImportFailed => 'Falha ao importar o arquivo';
 
   @override
   String get profileImportSelectedMessage =>
-      'Como gostaria de importar um perfil?';
+      'Como você gostaria de importar um perfil?';
 
   @override
-  String get profileKeepAlive => '🕺 Manter Activo';
+  String get profileKeepAlive => '🕺 Manter Ativo';
 
   @override
   String get profileKeepAliveDescription =>
-      'Manter ativo. Se uma sessão terminar, crie uma nova sessão e volte a ligar à porta local. As sessões podem terminar devido a não serem usadas após um tempo limite ou a problemas de rede.';
+      'Manter ativo. Se uma sessão terminar, crie uma nova sessão e religue à porta local. As sessões podem terminar devido a não serem usadas após um tempo limite ou por problemas de rede.';
 
   @override
   String get profileName => 'Nome do Perfil';
 
   @override
   String get profileNameDescription =>
-      'Este será o nome das suas configurações.';
+      'Este será o nome de suas configurações.';
 
   @override
   String get profilePort443 => 'Usar Porta 443';
@@ -743,7 +745,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
-  String get profileStatusFailedSave => 'Falha ao Guardar';
+  String get profileStatusFailedSave => 'Falha ao Salvar';
 
   @override
   String get profileStatusFailedStart => 'Falha ao iniciar';
@@ -755,19 +757,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileStatusLoadedMessage => 'Atualmente Desconectado';
 
   @override
-  String get profileStatusLoading => 'A carregar';
+  String get profileStatusLoading => 'Carregando';
 
   @override
   String get profileStatusStarted => 'Conectado';
 
   @override
-  String get profileStatusStartedMessage => 'Ligação bem-sucedida';
+  String get profileStatusStartedMessage => 'Conexão bem-sucedida';
 
   @override
-  String get profileStatusStarting => 'A Iniciar';
+  String get profileStatusStarting => 'Iniciando';
 
   @override
-  String get profileStatusStopping => 'A Desligar';
+  String get profileStatusStopping => 'Desligando';
 
   @override
   String get quit => 'Sair';
@@ -776,14 +778,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get refresh => 'Atualizar';
 
   @override
-  String get register => 'Registar';
+  String get register => 'Registrar';
 
   @override
   String get relay => 'Relay';
 
   @override
   String get relayDescription =>
-      'Escolha entre os nossos relays existentes ou crie um novo.';
+      'Escolha entre nossos relays existentes ou crie um novo.';
 
   @override
   String get reload => 'Recarregar';
@@ -793,7 +795,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get remoteHostDescription =>
-      'O nome de anfitrião ou endereço IP do serviço ao qual se está a conectar na máquina remota';
+      'O nome do host ou endereço IP do serviço ao qual você está se conectando na máquina remota';
 
   @override
   String get remotePort => 'Porta Remota';
@@ -807,7 +809,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get requestExpired =>
-      'O pedido original expirou. Por favor, envie novamente';
+      'A solicitação original expirou. Por favor, envie novamente';
 
   @override
   String get required => 'Obrigatório';
@@ -817,79 +819,79 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String retryFailedWithDetails(Object errorMessage) {
-    return 'A tentativa falhou: $errorMessage, tentará novamente...';
+    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
   }
 
   @override
-  String get roleAddNew => 'Adicionar Novo Papel';
+  String get roleAddNew => 'Adicionar Nova Função';
 
   @override
-  String get roleCreatingFailed => 'Falha ao criar o papel';
+  String get roleCreatingFailed => 'Falha ao criar a função';
 
   @override
   String roleCreatingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao criar o papel: $errorMessage';
+    return 'Falha ao criar a função: $errorMessage';
   }
 
   @override
-  String get roleDelete => 'Eliminar Papel';
+  String get roleDelete => 'Excluir Função';
 
   @override
   String roleDeleteConfirmation(Object roleName) {
-    return 'Tem a certeza que deseja eliminar o papel \"$roleName\"? Esta ação não pode ser desfeita.';
+    return 'Tem certeza de que deseja excluir a função \"$roleName\"? Esta ação não pode ser desfeita.';
   }
 
   @override
-  String get roleDeletedSuccessfully => 'Papel excluído com sucesso!';
+  String get roleDeletedSuccessfully => 'Função excluída com sucesso!';
 
   @override
-  String get roleDeletingFailed => 'Falha ao eliminar o papel';
+  String get roleDeletingFailed => 'Falha ao excluir a função';
 
   @override
   String roleDeletingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao eliminar o papel: $errorMessage';
+    return 'Falha ao excluir a função: $errorMessage';
   }
 
   @override
   String roleLoadingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao carregar o papel: $errorMessage';
+    return 'Falha ao carregar a função: $errorMessage';
   }
 
   @override
-  String get roleNotFound => 'Nenhum papel encontrado';
+  String get roleNotFound => 'Nenhuma função encontrada';
 
   @override
-  String get roleNotLoaded => 'Nenhum papel carregado';
+  String get roleNotLoaded => 'Nenhuma função carregada';
 
   @override
-  String get roles => 'Papéis';
+  String get roles => 'Funções';
 
   @override
-  String get roleSaveFailed => 'Falha ao guardar o papel';
+  String get roleSaveFailed => 'Falha ao salvar a função';
 
   @override
   String roleSaveFailedWithDetails(Object errorMessage) {
-    return 'Falha ao guardar o papel: $errorMessage';
+    return 'Falha ao salvar a função: $errorMessage';
   }
 
   @override
   String get roleSelectToViewDetails =>
-      'Selecione um papel para ver os detalhes';
+      'Selecione uma função para ver os detalhes';
 
   @override
   String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao carregar os papéis: $errorMessage';
+    return 'Falha ao carregar as funções: $errorMessage';
   }
 
   @override
-  String get rolesRefresh => 'Atualizar Papéis';
+  String get rolesRefresh => 'Atualizar Funções';
 
   @override
-  String get roleUpdatingFailed => 'Falha ao atualizar o papel';
+  String get roleUpdatingFailed => 'Falha ao atualizar a função';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao atualizar o papel: $errorMessage';
+    return 'Falha ao atualizar a função: $errorMessage';
   }
 
   @override
@@ -899,30 +901,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get rootDomainDemo => 'Demonstração (VE)';
 
   @override
-  String get save => 'Guardar';
+  String get save => 'Salvar';
 
   @override
-  String get saveAtKeys => 'Guardar atKeys';
+  String get saveAtKeys => 'Salvar atKeys';
 
   @override
-  String get saveLater => 'Guardar Mais Tarde';
+  String get saveLater => 'Salvar Mais Tarde';
 
   @override
-  String get selectEnrollMethod => 'Selecione o seu método de inscrição';
+  String get selectEnrollMethod => 'Selecione seu método de inscrição';
 
   @override
   String get selectExportFile =>
-      'Por favor, selecione um ficheiro para exportar para:';
+      'Por favor, selecione um arquivo para exportar para:';
 
   @override
   String get selectKey => 'Selecionar atKey';
 
   @override
-  String get selectorSubTitleAtsign =>
-      'Introduza o seu Atsign do NoPorts abaixo.';
+  String get selectorSubTitleAtsign => 'Insira seu Atsign do NoPorts abaixo.';
 
   @override
-  String get selectorSubTitleRootDomain => 'Introduza o domínio atDirectory.';
+  String get selectorSubTitleRootDomain => 'Insira o domínio atDirectory.';
 
   @override
   String get selectorTitleAtsign => 'Atsign do NoPorts';
@@ -937,19 +938,20 @@ class AppLocalizationsPt extends AppLocalizations {
   String get servicesAllowed => 'Serviços Permitidos';
 
   @override
-  String get settings => 'Definições';
+  String get settings => 'Configurações';
 
   @override
-  String get settingsCouldNotFetch => 'Não foi possível obter as definições';
+  String get settingsCouldNotFetch =>
+      'Não foi possível buscar as configurações';
 
   @override
   String get showWindow => 'Mostrar Janela';
 
   @override
-  String get signIn => 'Iniciar Sessão';
+  String get signIn => 'Entrar';
 
   @override
-  String get signInButtonDescription => 'Inicie sessão com um Atsign ativado';
+  String get signInButtonDescription => 'Entre com um Atsign ativado';
 
   @override
   String get signout => 'Sair';
@@ -962,13 +964,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sshStyle => 'Avançado';
 
   @override
-  String get starting => 'A Iniciar';
+  String get starting => 'Iniciando';
 
   @override
-  String get status => 'Estado';
+  String get status => 'Status';
 
   @override
-  String get stopping => 'A Parar';
+  String get stopping => 'Desligando';
 
   @override
   String get submit => 'Enviar';
@@ -984,11 +986,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get switchAtSignDescription =>
-      'Tem a certeza que deseja mudar de Atsign?';
+      'Tem certeza de que deseja mudar de Atsign?';
 
   @override
   String get switchAtSignNote =>
-      'Nota: Mudar de Atsign encerra todas as ligações.';
+      'Nota: Mudar de Atsign encerra todas as conexões.';
 
   @override
   String get syncCompleted =>
@@ -996,7 +998,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get syncInProgress =>
-      'Sincronização em curso. Alguns perfis podem ainda estar a carregar.';
+      'Sincronização em andamento. Alguns perfis ainda podem estar carregando.';
 
   @override
   String get timestamp => 'Timestamp';
@@ -1005,10 +1007,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get unknownError => 'Ocorreu um erro desconhecido';
 
   @override
-  String get uploadKey => 'Carregar atKey';
+  String get uploadKey => 'Enviar atKey';
 
   @override
-  String get uploadKeyDescription => 'Selecione um ficheiro .atkey local';
+  String get uploadKeyDescription => 'Selecione um arquivo .atkey local';
 
   @override
   String get validationErrorAtsignField => 'O campo deve ser um Atsign válido';
@@ -1023,7 +1025,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorHostField =>
-      'O campo deve ser um nome de anfitrião parcial ou totalmente qualificado ou um endereço IP';
+      'O campo deve ser um nome de host parcial ou totalmente qualificado ou um endereço IP';
 
   @override
   String get validationErrorLocalPortField =>
@@ -1041,7 +1043,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'O número deve estar entre 1 e 65535';
 
   @override
-  String get waitingForApproval => 'A aguardar aprovação...';
+  String get waitingForApproval => 'Aguardando aprovação...';
 
   @override
   String get whatAreAtKeys => 'O que são atKeys?';
@@ -1058,7 +1060,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get whereToAcceptDescription =>
-      'Por favor, aprove o pedido numa aplicação com uma chave de administrador.';
+      'Por favor, aprove a solicitação em um aplicativo com uma chave de gerenciador.';
 
   @override
   String get yaml => 'YAML';
@@ -1220,6 +1222,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get back => 'Voltar';
+
+  @override
+  String get backUp => 'Fazer Backup';
 
   @override
   String get backUpAtKeys => 'Fazer Backup das atKeys';

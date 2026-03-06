@@ -45,6 +45,7 @@
   "authorisation": "授權",
   "autoStartApplication": "自動啟動用戶端應用程式",
   "back": "返回",
+  "backUp": "備份",
   "backUpAtKeys": "備份 atKeys",
   "backUpAtKeysIntroMsgFirst": "{saveOrBackup, select, save{儲存} other{備份}}您的 atKeys 非常重要，這樣您就可以從任何裝置存取您的資料。\n\n如果您遺失了 atKeys，您將失去對您的資料的存取權。",
   "backUpAtKeysIntroMsgLast": "\n\n您可以隨時從「設定」選單儲存其他備份。",

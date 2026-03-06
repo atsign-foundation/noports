@@ -161,6 +161,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get back => 'Atrás';
 
   @override
+  String get backUp => 'Respaldar';
+
+  @override
   String get backUpAtKeys => 'Respaldar atKeys';
 
   @override

@@ -158,6 +158,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
+  String get backUp => 'Back Up';
+
+  @override
   String get backUpAtKeys => 'Back Up atKeys';
 
   @override

@@ -151,6 +151,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get back => '返回';
 
   @override
+  String get backUp => '备份';
+
+  @override
   String get backUpAtKeys => '备份 atKeys';
 
   @override
@@ -1148,6 +1151,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get back => '返回';
 
   @override
+  String get backUp => '备份';
+
+  @override
   String get backUpAtKeys => '备份 atKeys';
 
   @override
@@ -2143,6 +2149,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get back => '返回';
+
+  @override
+  String get backUp => '備份';
 
   @override
   String get backUpAtKeys => '備份 atKeys';
