@@ -22,7 +22,6 @@ policyLatestAtKeysFile="$HOME/.atsign/keys/"$policyLatestAtSign"_key.atKeys"
 eventsAtKeysFile="$HOME/.atsign/keys/"$eventsAtSign"_key.atKeys"
 singletonAtKeysFile="$HOME/.atsign/keys/"$singletonAtSign"_key.atKeys"
 
-
 cp $daemonAtKeysFile $testAtKeysDir
 logInfo "Copied $daemonAtKeysFile to $testAtKeysDir"
 
