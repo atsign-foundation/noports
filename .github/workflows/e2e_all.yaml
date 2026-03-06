@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup dart
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
-      - name: Set stuff up 
+      - name: Set stuff up
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
@@ -46,7 +46,7 @@ jobs:
       - name: Install expect
         run: |
           sudo apt-get install -y expect
-      - name: Ensure blank known hosts 
+      - name: Ensure blank known hosts
         run: |
           rm -f ~/.ssh/known_hosts
           mkdir -p ~/.ssh
@@ -58,7 +58,7 @@ jobs:
           start_time=$(date +%s)
           tests/e2e_all/scripts/main.sh \
             @npe2e_client \
-            @npe2e_daemon \ 
+            @npe2e_daemon \
             @rv_dev \
             @npe2e_relay_latest \
             @npe2e_policy \
@@ -77,4 +77,4 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: tmp_e2e_all_artifacts
-          path: tmp_e2e_all_artifacts.zip 
+          path: tmp_e2e_all_artifacts.zip
