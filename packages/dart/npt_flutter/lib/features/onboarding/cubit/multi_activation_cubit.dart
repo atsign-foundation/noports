@@ -20,10 +20,10 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:yaml/yaml.dart';
 
-/// state of the file based activation flow
+/// state of the file based activation flow.
 enum MultiActivationFileUploadState { idle, loading, success, error }
 
-/// keeps track of the state of the file based activation flow including the content of the file and the current upload state
+/// keeps track of the state of the file based activation flow including the content of the file and the current upload state.
 class MultiActivationState {
   final MultiActivationFileUploadState uploadState;
   final MultiActivationFileContent fileContent;
@@ -41,7 +41,7 @@ class MultiActivationState {
   }
 }
 
-/// A cubit which tracks the state of the file based activation flow
+/// A cubit which tracks the state of the file based activation flow.
 class MultiActivationCubit extends Cubit<MultiActivationState> {
   MultiActivationCubit()
     : super(
@@ -51,8 +51,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         ),
       );
 
-  /// A function which prompts the user to select some files and imports them
-  /// asynchronously
+  /// Read the activation file and update the state with the content of the file and the upload state.
   Future<void> processFile(String filePath, String fileName) async {
     try {
       File f = File(filePath);
@@ -73,7 +72,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     return;
   }
 
-  /// A function to get the file path from the file picker
+  /// Get the activation file path from the file picker.
   Future<void> getFilePickerPath() async {
     emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
 
@@ -90,19 +89,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     await processFile(result.files.single.path!, result.files.single.name);
   }
 
-  /// A function get the file path from the drag and drop
+  /// Get the activation file path from the drag and drop.
   Future<void> getDragAndDropPath(DropDoneDetails details) async {
     emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
 
     await processFile(details.files.single.path, details.files.single.name);
   }
 
-  /// A function to set the new state of the file upload flow
+  /// Set the new state of the file upload flow.
   void setActivationFileUploadState(MultiActivationFileUploadState newState) {
     emit(state.copyWith(uploadState: newState));
   }
 
-  /// A function to reset the file upload flow to the initial state (idle with empty file content)
+  /// Reset the file upload flow to the initial state (idle with empty file content).
   void reset() {
     emit(
       MultiActivationState(
@@ -112,6 +111,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     );
   }
 
+  /// Get the atsign that is currently being activated.
   String? getActivatingAtsign() {
     try {
       final ActivationKeyPair activationKeyPair = state.fileContent.entries
@@ -125,6 +125,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
+  /// Activate all Atsigns in the activation file.
   Future<void> activateAll() async {
     //0. Prompt to atKeys file location to save files.
     final context = App.navState.currentContext!;
@@ -276,12 +277,14 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
+  /// Check if any Atsign has a failed activation status.
   bool isAnyFailedStatus() {
     return state.fileContent.entries.any(
       (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed,
     );
   }
 
+  /// Check if any Atsign has an activated or already activated status.
   bool isAnyActivatedStatus() {
     return state.fileContent.entries.any(
       (entry) =>
@@ -290,11 +293,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     );
   }
 
+  // Back Up the atKeys for the activated Atsign.
   Future<void> backUpActivatedAtsigns(
     String fileLocation,
     String atsign,
   ) async {
-    // Back up the atKeys for the activated atSign
+    //
     // TODO: Refactor so that it user BackupKeyCubit. Can't be used now because it is tightly coupled with the OnboardingCubit/Single Atsign Activation flow. This will be refactored when we migrate to at_client_flutter.
     var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
 
