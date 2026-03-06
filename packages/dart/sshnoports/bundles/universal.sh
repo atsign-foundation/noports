@@ -1116,7 +1116,7 @@ EOF
   p_atsign=""
 
   extract_val() {
-    val=$(grep -h "^Environment=$1=" "$override_file" "$unit_file" 2>/dev/null | tail -n 1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+    val=$(grep -h "^Environment=$1=" "$override_file" "$unit_file" 2>/dev/null | tail -n 1 | cut -d= -f3- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
     echo "$val"
   }
 
