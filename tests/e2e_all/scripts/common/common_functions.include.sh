@@ -89,10 +89,6 @@ backUpAuthorizedKeys() {
   fi
 }
 
-backupAuthorizedKeys() {
-  backUpAuthorizedKeys
-}
-
 restoreAuthorizedKeys() {
   authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
   if test -f "$authKeysFileBackup"; then
