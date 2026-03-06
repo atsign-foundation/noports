@@ -320,14 +320,6 @@ rm -f "${identityFilename}" "${identityFilename}.pub"
 
 reportFile=$(getReportFile)
 
-echo
-logInfo "Calling common/cleanup_tmp_files.sh"
-"$testScriptsDir/common/cleanup_tmp_files.sh"
-retCode=$?
-if test "$retCode" != 0; then
-  log "cleanup_tmp_files failed with exit status $retCode"
-fi
-
 logInfo ""
 logInfo "Tests completed. Report follows. (Can also be found at ${reportFile}) : "
 echo
