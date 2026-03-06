@@ -830,6 +830,12 @@ device() {
       # Manually install the nfpm style systemd unit
       mkdir -p /lib/systemd/system
       cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
+      
+      # Install the override file and customize the User
+      mkdir -p /etc/systemd/system/sshnpd.service.d
+      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service.d/override.conf" /etc/systemd/system/sshnpd.service.d/override.conf
+      customize_systemd_user
+
       # If we are root, we should also ensure /etc/noports exists and has the config
       mkdir -p /etc/noports
       if [ ! -f /etc/noports/sshnpd.yaml ]; then
@@ -865,7 +871,7 @@ device() {
          if [ "$used_package_manager" = false ]; then
            systemctl daemon-reload
            systemctl restart sshnpd
-           echo "sshnpd restarted. To see logs use: journalctl -u sshnpd -f"
+           print_systemd_summary restart
            return
          fi
        fi
@@ -978,8 +984,7 @@ device() {
       systemctl start sshnpd
     fi
 
-    echo "sshnpd installed with systemd. To see logs use:"
-    echo "  journalctl -u sshnpd -f"
+    print_systemd_summary
     ;;
   tmux | headless)
     shell_script="$bin_path"/sshnpd.sh
@@ -1184,6 +1189,28 @@ EOF
   echo "Migration complete."
 }
 
+customize_systemd_user() {
+  # This covers both sshnpd and srvd as they both have overrides in nfpm
+  for service in "sshnpd" "srvd"; do
+    override_file="/etc/systemd/system/${service}.service.d/override.conf"
+    if [ -f "$override_file" ]; then
+      echo "Customizing systemd user for ${service} in $override_file..."
+      sedi "s/^User=1000$/User=$user/" "$override_file"
+    fi
+  done
+}
+
+print_systemd_summary() {
+  verb="installed with"
+  [ "${1:-}" = "restart" ] && verb="restarted. The service is"
+  echo "sshnpd $verb systemd."
+  echo "The service is configured to run as user: $user"
+  echo "If you wish to change this, run:"
+  echo "  sudo systemctl edit sshnpd"
+  echo "To see logs use:"
+  echo "  journalctl -u sshnpd -f"
+}
+
 install_via_rpm() {
   echo "Installing noports via rpm..."
   if ! (check_cmd dnf || check_cmd yum); then
@@ -1216,7 +1243,9 @@ EOF
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
+  customize_systemd_user
   cleanup_old_installation
+  print_systemd_summary restart
   used_package_manager=true
 }
 
@@ -1263,7 +1292,9 @@ install_via_apt() {
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
+  customize_systemd_user
   cleanup_old_installation
+  print_systemd_summary restart
   used_package_manager=true
 }
 
