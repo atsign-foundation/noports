@@ -10,6 +10,8 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 dockerfilesDir="$(dirname "$0")/../../dockerfiles"
 cd "$dockerfilesDir"/../../.. # go to root of the repo
 
+baseRuntimeImageName=$(getBaseRuntimeImageName)
+
 doesImageExist() {
   imageName="$1" # e.g. "atsigncompany/noports_e2e_all_base_runtime:latest"
   sudo docker image inspect "$imageName" > /dev/null 2>&1
@@ -19,8 +21,6 @@ doesImageExist() {
     echo "false"
   fi
 }
-
-baseRuntimeImageName=$(getBaseRuntimeImageName)
 
 pullBaseRuntimeImage() {
   logInfo "Pulling base runtime image"
