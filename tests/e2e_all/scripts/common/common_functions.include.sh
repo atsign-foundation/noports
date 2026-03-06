@@ -7,6 +7,7 @@ BLUE='\033[0;34m'
 BBLUE='\033[1;34m'
 
 authKeysFile="$HOME/.ssh/authorized_keys"
+knownHostsFile="$HOME/.ssh/known_hosts"
 
 ### BEGIN GENERAL ###
 
@@ -776,3 +777,17 @@ runDockerDaemon() {
 }
 
 ### END build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
+
+backupKnownHostsFile() {
+  mv "$HOME/.ssh/known_hosts" "$HOME/.ssh/known_hosts.bak"
+  knownHostsFileBackup="$knownHostsFile.before.commit.${commitId}"
+  rm -f "$authKeysFileBackup"
+  cp -p "$authKeysFile" "$authKeysFileBackup"
+}
+
+restoreKnownHostsFile() {
+  knownHostsBackupFile="$knownHostsFile.before.commit.${commitId}"
+  if [ -f "$HOME/.ssh/known_hosts.bak" ]; then
+    mv "$HOME/.ssh/known_hosts.bak" "$HOME/.ssh/known_hosts"
+  fi
+}

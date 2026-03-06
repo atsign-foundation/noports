@@ -239,8 +239,8 @@ else
 fi
 
 echo
-logInfo "Calling common/wipe_known_hosts.sh"
-"$testScriptsDir/common/wipe_known_hosts.sh"
+logInfo "Calling common/known_hosts_move.sh"
+"$testScriptsDir/common/known_hosts_move.sh"
 
 echo
 logInfo "Calling common/setup_atkeys.sh"
