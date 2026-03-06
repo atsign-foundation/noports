@@ -46,9 +46,11 @@ jobs:
       - name: Install expect
         run: |
           sudo apt-get install -y expect
-      - name: Wipe known hosts 
+      - name: Ensure blank known hosts 
         run: |
           rm -f ~/.ssh/known_hosts
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
