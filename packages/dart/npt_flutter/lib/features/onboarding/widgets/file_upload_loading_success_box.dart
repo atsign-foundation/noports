@@ -7,6 +7,7 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class FileUploadLoadSuccessBox extends StatelessWidget {
+  /// A widget which shows the loading and success states of the file upload process, displaying a success message and the name of the uploaded file when the file upload is in a success state, and a loading message when the file upload is in a loading state.
   const FileUploadLoadSuccessBox({super.key, required this.width});
 
   final double width;

@@ -10,8 +10,8 @@ import 'package:npt_flutter/widgets/or_divider.dart';
 
 import 'multi_activation_dialog_buttons.dart';
 
-/// A dialog which allows the user to complete activation using a file based flow or a manual entry flow
 class ActivationDialogInitial extends StatelessWidget {
+  /// A dialog which allows the user to complete activation using a file based flow or a manual entry flow.
   const ActivationDialogInitial({super.key});
 
   @override

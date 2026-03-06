@@ -5,6 +5,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class ManualActivation extends StatelessWidget {
+  /// A widget which shows the manual entry flow for activation, allowing the user to enter the atsign and root domain information manually to complete activation without using an activation file.
   const ManualActivation({super.key});
 
   @override

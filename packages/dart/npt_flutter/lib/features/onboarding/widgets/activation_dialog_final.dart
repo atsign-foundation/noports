@@ -11,8 +11,8 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_container.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// A dialog which shows the and activate each atsign in the activation file
 class ActivationDialogFinal extends StatelessWidget {
+  /// A dialog which shows and activate each atsign in the activation file one by one, showing the activation status of each atsign, and allowing the user to sign in with the first activated Atsign once the activation process is complete.
   const ActivationDialogFinal({super.key});
 
   @override

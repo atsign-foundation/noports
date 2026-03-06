@@ -8,6 +8,7 @@ import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
 class FileUploadIdleErrorBox extends StatelessWidget {
+  /// A widget which shows the idle and error states of the file upload process, displaying an error message and the name of the uploaded file when the file upload is in an idle or error state, and allows the user to click on it to re-upload the file.
   const FileUploadIdleErrorBox({super.key, required this.width});
 
   final double width;
