@@ -109,6 +109,7 @@ abstract class Sshnpd {
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
+    void Function()? versionCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
@@ -118,6 +119,7 @@ abstract class Sshnpd {
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
       helpCallback: helpCallback,
+      versionCallback: versionCallback,
       version: version,
       notifPreProcessor: notifPreProcessor,
     );

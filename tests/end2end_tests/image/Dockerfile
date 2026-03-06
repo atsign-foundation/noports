@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20260112-slim@sha256:ed542b2d269ff08139fc5ab8c762efe8c8986b564a423d5241a5ce9fb09b6c08 AS base
+FROM debian:stable-20260223-slim@sha256:85dfcffff3c1e193877f143d05eaba8ae7f3f95cb0a32e0bc04a448077e1ac69 AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -26,7 +26,7 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.10.8@sha256:538a59844eff5c6f6b8c761a974f1f035bb115f68710f6a90c32430af01c2241 AS build-branch
+FROM dart:3.11.1@sha256:e3ea62cbe54470e5cc4c31cbc85693aa9b0b01723521baf0be634ea3597e1f5d AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
@@ -49,7 +49,7 @@ RUN set -eux ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
   dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
   dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME BRANCH
 FROM base AS runtime-branch
@@ -65,7 +65,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.10.8@sha256:538a59844eff5c6f6b8c761a974f1f035bb115f68710f6a90c32430af01c2241 AS build-local
+FROM dart:3.11.1@sha256:e3ea62cbe54470e5cc4c31cbc85693aa9b0b01723521baf0be634ea3597e1f5d AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
@@ -85,7 +85,7 @@ RUN set -eux ; \
   dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
   dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
   dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-  dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ;
+  dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ;
 
 # RUNTIME LOCAL
 FROM base AS runtime-local
@@ -101,7 +101,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20260112-slim@sha256:ed542b2d269ff08139fc5ab8c762efe8c8986b564a423d5241a5ce9fb09b6c08 AS build-release
+FROM debian:stable-20260223-slim@sha256:85dfcffff3c1e193877f143d05eaba8ae7f3f95cb0a32e0bc04a448077e1ac69 AS build-release
 
 ARG release
 

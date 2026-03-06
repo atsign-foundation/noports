@@ -64,6 +64,7 @@ class SshnpdParams {
   static Future<SshnpdParams> fromArgs(
     List<String> args, {
     void Function()? helpCallback,
+    void Function()? versionCallback,
   }) async {
     // Arg check
     final Configuration c = Configuration<SshnpdOption>.resolveNoExcept(
@@ -71,6 +72,10 @@ class SshnpdParams {
       args: args,
       configBroker: SshnpdConfigBroker(),
     );
+
+    if (c.value(SshnpdOption.version)) {
+      versionCallback?.call();
+    }
 
     if (c.value(SshnpdOption.help)) {
       helpCallback?.call();

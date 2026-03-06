@@ -1,0 +1,74 @@
+name: "noports"
+arch: ${ARCH}
+platform: "linux"
+version: ${VERSION}
+section: "net"
+priority: "optional"
+provides:
+  - noports
+maintainer: "Chris Swan <chris@atsign.com>"
+description: |
+  Connect to any device with no external
+    listening ports open
+vendor: "Atsign"
+homepage: "http://noports.com"
+contents:
+  - src: ./sshnp/at_activate
+    dst: /usr/bin/at_activate
+  - src: ./sshnp/noports
+    dst: /usr/bin/noports
+  - src: ./sshnp/np_admin
+    dst: /usr/bin/np_admin
+  - src: ./sshnp/npp_atserver
+    dst: /usr/bin/npp_atserver
+  - src: ./sshnp/npp_file
+    dst: /usr/bin/npp_file
+  - src: ./sshnp/npt
+    dst: /usr/bin/npt
+  - src: ./sshnp/srv
+    dst: /usr/bin/srv
+  - src: ./sshnp/srvd
+    dst: /usr/bin/srvd
+  - src: ./sshnp/sshnp
+    dst: /usr/bin/sshnp
+  - src: ./sshnp/sshnpd
+    dst: /usr/bin/sshnpd
+  - src: ./bundles/core/config/sshnpd.yaml
+    dst: /etc/noports/sshnpd.yaml
+    type: config
+  - src: ./bundles/shell/systemd.nfpm/sshnpd.service
+    dst: /lib/systemd/system/sshnpd.service
+  - src: ./LICENSE
+    dst: /usr/share/doc/noports/copyright
+  - src: ./sshnp/at_activate.1.gz
+    dst: /usr/share/man/man1/at_activate.1.gz
+  - src: ./sshnp/noports.1.gz
+    dst: /usr/share/man/man1/noports.1.gz
+  - src: ./sshnp/np_admin.1.gz
+    dst: /usr/share/man/man1/np_admin.1.gz
+  - src: ./sshnp/npp_atserver.1.gz
+    dst: /usr/share/man/man1/npp_atserver.1.gz
+  - src: ./sshnp/npp_file.1.gz
+    dst: /usr/share/man/man1/npp_file.1.gz
+  - src: ./sshnp/npt.1.gz
+    dst: /usr/share/man/man1/npt.1.gz
+  - src: ./sshnp/srv.1.gz
+    dst: /usr/share/man/man1/srv.1.gz
+  - src: ./sshnp/srvd.1.gz
+    dst: /usr/share/man/man1/srvd.1.gz
+  - src: ./sshnp/sshnp.1.gz
+    dst: /usr/share/man/man1/sshnp.1.gz
+  - src: ./sshnp/sshnpd.1.gz
+    dst: /usr/share/man/man1/sshnpd.1.gz
+  - src: ./sshnp/CHANGELOG.md.gz
+    dst: /usr/share/doc/noports/changelog.gz
+scripts:
+  postinstall: ./bundles/shell/systemd.nfpm/postinstall.sh
+  preremove: ./bundles/shell/systemd.nfpm/preremove.sh
+overrides:
+  deb:
+    depends:
+      - libc6
+rpm:
+  signature:
+    key_file: ./gpg.key

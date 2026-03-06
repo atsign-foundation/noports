@@ -1,0 +1,38 @@
+name: Update Packages
+
+on:
+  release:
+    types: [edited, published, released]
+
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  Dispatch:
+    runs-on: ubuntu-slim
+    steps:
+      - name: homebrew-tap trigger
+        if: github.event.release.prerelease == false && startsWith(github.ref_name, 'v')
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          repository: atsign-foundation/homebrew-tap
+          event-type: new-release
+          client-payload: >
+            {
+              "version": "${{ github.event.release.tag_name }}"
+            }
+      - name: noports-apt trigger
+        if: github.event.release.prerelease == false && startsWith(github.ref_name, 'v')
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          repository: atsign-foundation/noports-apt
+          event-type: new-release
+      - name: noports-rpm trigger
+        if: github.event.release.prerelease == false && startsWith(github.ref_name, 'v')
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          repository: atsign-foundation/noports-rpm
+          event-type: new-release

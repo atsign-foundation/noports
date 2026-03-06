@@ -347,6 +347,15 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       helpText: 'Show usage',
       group: runtimeGroup,
     ),
+  ),
+
+  version(
+    FlagOption(
+      argName: 'version',
+      defaultsTo: false,
+      helpText: 'Show version',
+      group: runtimeGroup,
+    ),
   );
 
   const SshnpdOption(this.option);

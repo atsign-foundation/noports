@@ -55,6 +55,10 @@ Future<void> main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'Show usage info')
+    ..addFlag('version',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Show version info')
     ..addFlag('rv-e2ee',
         defaultsTo: false,
         help: 'Whether this rv process will encrypt/decrypt'
@@ -80,6 +84,11 @@ Future<void> main(List<String> args) async {
         parsed = parser.parse(args);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
+      }
+
+      if (parsed.wasParsed('version')) {
+        printVersion();
+        exit(0);
       }
 
       if (parsed.wasParsed('help')) {
