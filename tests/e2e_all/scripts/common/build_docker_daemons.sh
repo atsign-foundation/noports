@@ -7,11 +7,10 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-
 dockerfilesDir="$(dirname "$0")/../../dockerfiles"
 cd "$dockerfilesDir"/../../.. # go to root of the repo
 
-isImageExists() {
+doesImageExist() {
   imageName="$1" # e.g. "atsigncompany/noports_e2e_all_base_runtime:latest"
   sudo docker image inspect "$imageName" > /dev/null 2>&1
   if [ $? -eq 0 ]; then
@@ -53,7 +52,7 @@ buildBaseRuntimeImage() {
     .
 }
 
-if [ "$(isImageExists "$baseRuntimeImageName")" = "false" ]; then
+if [ "$(doesImageExist "$baseRuntimeImageName")" = "false" ]; then
   logInfo "Base runtime image not found, building it locally"
   buildBaseRuntimeImage
 fi
@@ -68,7 +67,7 @@ if [ "${allowParallelization}" = "true" ]; then
     version=$(echo "$typeAndVersion" | cut -d: -f2)
 
     imageName=$(getDockerDaemonImageName "$type" "$version")
-    if [[ "$recompile" == "false" && "$(isImageExists "$imageName")" == "true" ]]; then
+    if [[ "$recompile" == "false" && "$(doesImageExist "$imageName")" == "true" ]]; then
       logInfo "You set recompile = $recompile and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
@@ -89,7 +88,7 @@ else
     type=$(echo "$typeAndVersion" | cut -d: -f1)
     version=$(echo "$typeAndVersion" | cut -d: -f2)
     imageName=$(getDockerDaemonImageName "$type" "$version")
-    if [ "$(isImageExists "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
+    if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
       logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
