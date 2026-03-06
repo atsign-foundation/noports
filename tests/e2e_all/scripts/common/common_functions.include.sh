@@ -81,7 +81,7 @@ getTestSshCommand() {
   echo $testSshCommand
 }
 
-backUpAuthorizedKeys() {
+backUpAuthorizedKeysFile() {
   authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
   rm -f "$authKeysFileBackup"
   if test -f "$authKeysFile"; then
@@ -89,7 +89,7 @@ backUpAuthorizedKeys() {
   fi
 }
 
-restoreAuthorizedKeys() {
+restoreAuthorizedKeysFile() {
   authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
   if test -f "$authKeysFileBackup"; then
     rm -f "$authKeysFile"

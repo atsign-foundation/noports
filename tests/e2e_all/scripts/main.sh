@@ -248,7 +248,7 @@ generateNewSshKey
 
 echo
 logInfo "Backing up authorized_keys"
-backUpAuthorizedKeys
+backUpAuthorizedKeysFile
 
 echo
 logInfo "Backing up known_hosts file"
@@ -309,7 +309,7 @@ fi
 
 echo
 logInfo "Restoring authorized_keys from backup"
-restoreAuthorizedKeys
+restoreAuthorizedKeysFile
 
 echo
 logInfo "Restoring known_hosts file from backup"
