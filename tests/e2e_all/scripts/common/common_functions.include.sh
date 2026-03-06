@@ -81,10 +81,16 @@ getTestSshCommand() {
   echo $testSshCommand
 }
 
-backupAuthorizedKeys() {
+backUpAuthorizedKeys() {
   authKeysFileBackup="$authKeysFile.before.commit.${commitId}"
   rm -f "$authKeysFileBackup"
-  cp -p "$authKeysFile" "$authKeysFileBackup"
+  if test -f "$authKeysFile"; then
+    cp -p "$authKeysFile" "$authKeysFileBackup"
+  fi
+}
+
+backupAuthorizedKeys() {
+  backUpAuthorizedKeys
 }
 
 restoreAuthorizedKeys() {
@@ -92,6 +98,26 @@ restoreAuthorizedKeys() {
   if test -f "$authKeysFileBackup"; then
     rm -f "$authKeysFile"
     mv "$authKeysFileBackup" "$authKeysFile"
+  else
+    rm -f "$authKeysFile"
+  fi
+}
+
+backUpKnownHostsFile() {
+  knownHostsFileBackup="$knownHostsFile.before.commit.${commitId}"
+  rm -f "$knownHostsFileBackup"
+  if test -f "$knownHostsFile"; then
+    cp -p "$knownHostsFile" "$knownHostsFileBackup"
+  fi
+}
+
+restoreKnownHostsFile() {
+  knownHostsFileBackup="$knownHostsFile.before.commit.${commitId}"
+  if test -f "$knownHostsFileBackup"; then
+    rm -f "$knownHostsFile"
+    mv "$knownHostsFileBackup" "$knownHostsFile"
+  else
+    rm -f "$knownHostsFile"
   fi
 }
 
@@ -777,17 +803,3 @@ runDockerDaemon() {
 }
 
 ### END build_docker_daemons.sh and start_daemons.sh FUNCTIONS ###
-
-backupKnownHostsFile() {
-  mv "$HOME/.ssh/known_hosts" "$HOME/.ssh/known_hosts.bak"
-  knownHostsFileBackup="$knownHostsFile.before.commit.${commitId}"
-  rm -f "$authKeysFileBackup"
-  cp -p "$authKeysFile" "$authKeysFileBackup"
-}
-
-restoreKnownHostsFile() {
-  knownHostsBackupFile="$knownHostsFile.before.commit.${commitId}"
-  if [ -f "$HOME/.ssh/known_hosts.bak" ]; then
-    mv "$HOME/.ssh/known_hosts.bak" "$HOME/.ssh/known_hosts"
-  fi
-}

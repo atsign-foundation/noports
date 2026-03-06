@@ -239,10 +239,6 @@ else
 fi
 
 echo
-logInfo "Calling common/known_hosts_move.sh"
-"$testScriptsDir/common/known_hosts_move.sh"
-
-echo
 logInfo "Calling common/setup_atkeys.sh"
 "$testScriptsDir/common/setup_atkeys.sh"
 
@@ -252,7 +248,11 @@ generateNewSshKey
 
 echo
 logInfo "Backing up authorized_keys"
-backupAuthorizedKeys
+backUpAuthorizedKeys
+
+echo
+logInfo "Backing up known_hosts file"
+backUpKnownHostsFile
 
 # Kill any daemons that might be running since last time, due to a Ctrl-C or whatever
 echo
@@ -310,6 +310,10 @@ fi
 echo
 logInfo "Restoring authorized_keys from backup"
 restoreAuthorizedKeys
+
+echo
+logInfo "Restoring known_hosts file from backup"
+restoreKnownHostsFile
 
 logInfo "Removing $identityFilename and $identityFilename.pub"
 rm -f "${identityFilename}" "${identityFilename}.pub"
