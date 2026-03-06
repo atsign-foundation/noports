@@ -9,7 +9,6 @@ pubspec_overrides.yaml
 
 
 # Binaries build from dart/sshnoports
-packages/dart/sshnoports/bin/activate_cli
 packages/dart/sshnoports/bin/at_activate
 packages/dart/sshnoports/bin/demo/npa_cli
 packages/dart/sshnoports/bin/demo/sshnpa_always_deny

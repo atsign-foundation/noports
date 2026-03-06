@@ -26,7 +26,7 @@ enroll() {
   fi
   atSign=$1
   which=$2
-  authBinary="$(getDartCompilationOutputDir)/activate_cli"
+  authBinary="$(getDartCompilationOutputDir)/at_activate"
 
   mkdir -p "$(getApkamKeysDir)"
 

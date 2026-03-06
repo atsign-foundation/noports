@@ -1,4 +1,4 @@
-FROM dart:3.11.0@sha256:193a4d037dcef48b56f2a3544f053f4ef3b5e9865953f8f5ff2a284554da567a AS buildimage
+FROM dart:3.11.1@sha256:e3ea62cbe54470e5cc4c31cbc85693aa9b0b01723521baf0be634ea3597e1f5d AS buildimage
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
@@ -15,7 +15,7 @@ RUN set -eux ; \
     git clone ${URL} . ; \
     git checkout ${branch} ; \
     dart pub get -C ${PACKAGE_DIR} ; \
-    dart compile exe ${PACKAGE_DIR}/bin/activate_cli.dart -o ${OUTPUT_DIR}/at_activate ; \
+    dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
     dart compile exe ${PACKAGE_DIR}/bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
     dart compile exe ${PACKAGE_DIR}/bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
     dart compile exe ${PACKAGE_DIR}/bin/npt.dart -o ${OUTPUT_DIR}/npt ; \
@@ -26,7 +26,7 @@ RUN set -eux ; \
     dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents ; \
     dart compile exe ${PACKAGE_DIR}/bin/npp.dart -o ${OUTPUT_DIR}/npp
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:dedf382e6dbdd2ca99dc37d18a8b1469de03fa3366f0dd30f3089a3789151c1c AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:d4e224062007c238a2a7b241867cad21faa78640ea342953f4a1fd9e2ce5cc7e AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
