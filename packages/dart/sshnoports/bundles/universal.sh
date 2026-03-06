@@ -223,7 +223,7 @@ parse_env() {
   if is_root; then
     user="$SUDO_USER"
     as_root=true
-    bin_path="/usr/local/bin"
+    bin_path="/usr/bin"
     if [ -z "$user" ]; then
       user="root"
     else
@@ -816,11 +816,29 @@ device() {
   fi
 
   if [ "$used_package_manager" = false ]; then
+    if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
+      cleanup_old_installation
+    fi
+
     # install at_activate binary
     "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
     # install sshnpd binary and capture the installer output
-    install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+    # If systemd, we want to use the new style
+    if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
+      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd)
+      # Manually install the nfpm style systemd unit
+      mkdir -p /lib/systemd/system
+      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
+      # If we are root, we should also ensure /etc/noports exists and has the config
+      mkdir -p /etc/noports
+      if [ ! -f /etc/noports/sshnpd.yaml ]; then
+        cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" /etc/noports/sshnpd.yaml
+      fi
+      migrate_systemd_config_to_yaml
+    else
+      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+    fi
 
     if [ "$verbose" = true ]; then
       echo "$install_output"
@@ -840,12 +858,25 @@ device() {
     fi
     ;;
   systemd)
-    if [ "$is_overrideconf_created" = true ]; then
-      echo "systemd config for sshnpd service already in place"
-      echo "sshnpd systemd upgraded and restarted. To see logs use:"
-      echo "  journalctl -u sshnpd -f"
-      systemctl restart sshnpd
-      return
+    if [ "$as_root" = true ]; then
+       # For systemd nfpm style, we check if it's already enabled/running
+       if systemctl is-enabled sshnpd >/dev/null 2>&1; then
+         echo "sshnpd systemd service is already enabled"
+         if [ "$used_package_manager" = false ]; then
+           systemctl daemon-reload
+           systemctl restart sshnpd
+           echo "sshnpd restarted. To see logs use: journalctl -u sshnpd -f"
+           return
+         fi
+       fi
+    else
+      if [ "$is_overrideconf_created" = true ]; then
+        echo "systemd config for sshnpd service already in place"
+        echo "sshnpd systemd upgraded and restarted. To see logs use:"
+        echo "  journalctl -u sshnpd -f"
+        systemctl restart sshnpd
+        return
+      fi
     fi
     ;;
   tmux | headless)
@@ -854,6 +885,18 @@ device() {
   esac
 
   # Get atSigns for fresh install
+  # We only need to prompt if the config isn't already populated
+  if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ] && [ -f /etc/noports/sshnpd.yaml ]; then
+     if grep -E "^[[:space:]]+atsign:[[:space:]]*[^[:space:]#]" /etc/noports/sshnpd.yaml >/dev/null; then
+        echo "Configuration already populated in /etc/noports/sshnpd.yaml"
+        # We still might need to ensure activation if it's a new install but config was migrated
+        # Actually validation happens later if client/device_atsign are set.
+        # Let's extract them from YAML if they aren't set
+        [ -z "$device_atsign" ] && device_atsign=$(grep -E "^[[:space:]]+atsign:[[:space:]]*" /etc/noports/sshnpd.yaml | head -n 1 | cut -d: -f2 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        [ -z "$client_atsign" ] && client_atsign=$(grep -A 5 "managers:" /etc/noports/sshnpd.yaml | grep "-" | head -n 1 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*-//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+     fi
+  fi
+
   if [ -z "$client_atsign" ]; then
     get_atsign_manually "client"
     client_atsign="$selectedatsign"
@@ -866,6 +909,11 @@ device() {
 
   # Note: policy_atsign is not mandatory so, if none was supplied,
   #       we will not prompt for it
+
+  # For systemd nfpm style, we might already have the name in YAML
+  if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ] && [ -f /etc/noports/sshnpd.yaml ]; then
+     [ -z "$device_name" ] && device_name=$(grep -E "^[[:space:]]*name:[[:space:]]*" /etc/noports/sshnpd.yaml | head -n 1 | cut -d: -f2 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  fi
 
   while [ -z "$device_name" ]; do
     printf "Enter device name: "
@@ -899,16 +947,36 @@ device() {
     echo "sshnpd installed with launchd"
     ;;
   systemd)
-    write_systemd_user "$systemd_config_path" "$user"
-    write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
-    write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
-    if [ -n "$policy_atsign" ]; then
-      write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
-    fi
-    write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
+    if [ "$as_root" = true ]; then
+      # Update YAML if we got new inputs
+      yaml_file="/etc/noports/sshnpd.yaml"
+      sedi "s|^\([[:space:]]\{2\}atsign:\)[[:space:]]*.*$|\1 '$(norm_atsign "$device_atsign")'|" "$yaml_file"
+      if [ -n "$client_atsign" ]; then
+        # This is a bit simplistic for managers list, but if it was empty it works
+        if ! grep -A 5 "managers:" "$yaml_file" | grep -q "$(norm_atsign "$client_atsign")"; then
+           sedi "s|^[[:space:]]*#[[:space:]]*- your_atsign_here$|    - '$(norm_atsign "$client_atsign")'|" "$yaml_file"
+        fi
+      fi
+      if [ -n "$policy_atsign" ]; then
+        sedi "s|^\([[:space:]]\{2\}policy:\)[[:space:]]*.*$|\1 '$(norm_atsign "$policy_atsign")'|" "$yaml_file"
+      fi
+      sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*.*$|\1 '$device_name'|" "$yaml_file"
 
-    systemctl enable sshnpd
-    systemctl start sshnpd
+      systemctl daemon-reload
+      systemctl enable sshnpd
+      systemctl start sshnpd
+    else
+      write_systemd_user "$systemd_config_path" "$user"
+      write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
+      write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
+      if [ -n "$policy_atsign" ]; then
+        write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+      fi
+      write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
+
+      systemctl enable sshnpd
+      systemctl start sshnpd
+    fi
 
     echo "sshnpd installed with systemd. To see logs use:"
     echo "  journalctl -u sshnpd -f"
@@ -962,15 +1030,72 @@ is_redhat_like() {
   return 1
 }
 
+cleanup_old_installation() {
+  if [ "$as_root" = false ]; then
+    return
+  fi
+  echo "Cleaning up old noports installation..."
+  # List of binaries and scripts to remove from non-package locations
+  binaries="sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_file"
+  # We check /usr/local/bin
+  # Note: New install is to /usr/bin, so those are safe.
+  for dir in "/usr/local/bin"; do
+    for bin in $binaries; do
+      if [ -f "$dir/$bin" ]; then
+        echo "Removing old binary: $dir/$bin"
+        rm -f "$dir/$bin"
+      fi
+    done
+    # Also remove the wrapper script if it exists
+    if [ -f "$dir/sshnpd.sh" ]; then
+      echo "Removing old script: $dir/sshnpd.sh"
+      rm -f "$dir/sshnpd.sh"
+    fi
+  done
+
+  # If we have an old systemd unit in /etc/systemd/system, it will override the package unit in /lib/systemd/system
+  # Or if we are doing a manual install, we want to move to /lib/systemd/system/ (nfpm style)
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    echo "Disabling and removing old systemd unit /etc/systemd/system/sshnpd.service"
+    systemctl stop sshnpd 2>/dev/null || true
+    systemctl disable sshnpd 2>/dev/null || true
+    mv "/etc/systemd/system/sshnpd.service" "/etc/systemd/system/sshnpd.service.old"
+    [ -d "/etc/systemd/system/sshnpd.service.d" ] && mv "/etc/systemd/system/sshnpd.service.d" "/etc/systemd/system/sshnpd.service.d.old"
+    systemctl daemon-reload
+  fi
+}
+
 migrate_systemd_config_to_yaml() {
   yaml_file="/etc/noports/sshnpd.yaml"
+  # If the YAML doesn't exist, we might be in a manual install flow where it's not yet copied.
+  # But for nfpm style, it should be there.
   if [ ! -f "$yaml_file" ]; then
-    echo "Warning: $yaml_file not found. Skipping migration."
-    return
+    echo "Warning: $yaml_file not found. Creating from template if available."
+    mkdir -p /etc/noports
+    if [ -f "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" ]; then
+      cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" "$yaml_file"
+    else
+      # Fallback to minimal if template not found in expected extract path
+      cat <<EOF > "$yaml_file"
+atsign:
+  atsign: 
+access:
+  policy: 
+  managers:
+    - 
+device:
+  name: 
+ssh:
+  add-publickeys: true
+  ssh-client: openssh
+  sshd-port: 22
+runtime:
+  verbose: true
+EOF
+    fi
   fi
 
   # Check if atsign is already set
-  # We look for the nested "atsign:" key (indented) followed by any non-whitespace value
   if grep -E "^[[:space:]]+atsign:[[:space:]]*[^[:space:]#]" "$yaml_file" >/dev/null; then
     echo "YAML config $yaml_file appears to be already populated, skipping migration."
     return
@@ -979,8 +1104,11 @@ migrate_systemd_config_to_yaml() {
   echo "Migrating existing systemd configuration to $yaml_file..."
 
   # Extract values from systemd unit and override files
+  # Check /etc/systemd/system/sshnpd.service.old if we just moved it
   unit_file="/etc/systemd/system/sshnpd.service"
+  [ ! -f "$unit_file" ] && [ -f "${unit_file}.old" ] && unit_file="${unit_file}.old"
   override_file="/etc/systemd/system/sshnpd.service.d/override.conf"
+  [ ! -d "$(dirname "$override_file")" ] && [ -d "$(dirname "$override_file").old" ] && override_file="$(dirname "$override_file").old/override.conf"
 
   m_atsign=""
   d_atsign=""
@@ -1019,38 +1147,6 @@ migrate_systemd_config_to_yaml() {
   echo "Migration complete."
 }
 
-remove_old_binaries() {
-  echo "Cleaning up old noports installation..."
-  # List of binaries and scripts to remove from non-package locations
-  binaries="sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_atserver npp_file"
-  # We check /usr/local/bin and the user's local bin
-  # Note: Package installs to /usr/bin, so those are safe.
-  for dir in "/usr/local/bin" "$user_home/.local/bin"; do
-    for bin in $binaries; do
-      if [ -f "$dir/$bin" ]; then
-        echo "Removing old binary: $dir/$bin"
-        rm -f "$dir/$bin"
-      fi
-    done
-    # Also remove the wrapper script if it exists
-    if [ -f "$dir/sshnpd.sh" ]; then
-      echo "Removing old script: $dir/sshnpd.sh"
-      rm -f "$dir/sshnpd.sh"
-    fi
-  done
-
-  # If we have an old systemd unit in /etc/systemd/system, it will override the package unit in /lib/systemd/system
-  # So we must remove/rename it after migration is confirmed.
-  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
-    echo "Disabling and removing old systemd unit /etc/systemd/system/sshnpd.service"
-    systemctl stop sshnpd 2>/dev/null || true
-    systemctl disable sshnpd 2>/dev/null || true
-    mv "/etc/systemd/system/sshnpd.service" "/etc/systemd/system/sshnpd.service.old"
-    [ -d "/etc/systemd/system/sshnpd.service.d" ] && mv "/etc/systemd/system/sshnpd.service.d" "/etc/systemd/system/sshnpd.service.d.old"
-    systemctl daemon-reload
-  fi
-}
-
 install_via_rpm() {
   echo "Installing noports via rpm..."
   if ! (check_cmd dnf || check_cmd yum); then
@@ -1083,7 +1179,7 @@ EOF
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
-  remove_old_binaries
+  cleanup_old_installation
   used_package_manager=true
 }
 
@@ -1130,7 +1226,7 @@ install_via_apt() {
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
   fi
-  remove_old_binaries
+  cleanup_old_installation
   used_package_manager=true
 }
 
