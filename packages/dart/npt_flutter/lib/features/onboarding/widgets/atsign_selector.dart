@@ -11,7 +11,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 class AtsignSelector extends StatefulWidget {
   const AtsignSelector({
     this.options,
-    // Prevent the text field from showing the last used Atsign. Desirable when signing in but not when activating a new Atsign.
+
+    /// Prevent the text field from showing the last used Atsign. Desirable when signing in but not when activating a new Atsign.
     this.isInSignInFlow = true,
     super.key,
   });
