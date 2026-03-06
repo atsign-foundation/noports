@@ -1053,6 +1053,43 @@ cleanup_old_installation() {
     fi
   done
 
+  # Check for local installation in user's home
+  if [ "$user" != "root" ]; then
+    local_bin_dir="$user_home/.local/bin"
+    found_local=false
+    for bin in $binaries; do
+      if [ -f "$local_bin_dir/$bin" ]; then
+        found_local=true
+        break
+      fi
+    done
+
+    if [ "$found_local" = true ]; then
+      if [ "$quiet" = true ]; then
+        echo "Removing local installation from $local_bin_dir..."
+        for bin in $binaries; do
+          rm -f "$local_bin_dir/$bin"
+        done
+        rm -f "$local_bin_dir/sshnpd.sh"
+      else
+        echo "WARNING: A local installation of NoPorts was found in $local_bin_dir"
+        echo "This may conflict with the system-wide installation."
+        printf "Would you like to remove the local installation? [Y/n] "
+        read -r remove_local
+        case $remove_local in
+        [Nn]*) ;;
+        *)
+          echo "Removing local installation..."
+          for bin in $binaries; do
+            rm -f "$local_bin_dir/$bin"
+          done
+          rm -f "$local_bin_dir/sshnpd.sh"
+          ;;
+        esac
+      fi
+    fi
+  fi
+
   # If we have an old systemd unit in /etc/systemd/system, it will override the package unit in /lib/systemd/system
   # Or if we are doing a manual install, we want to move to /lib/systemd/system/ (nfpm style)
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
