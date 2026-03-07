@@ -2,6 +2,8 @@ import 'package:chalkdart/chalk.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';
 
+import '../at_pipe/at_pipe_params.dart';
+
 class UsageMessages {
   static final mainMenu =
       '''
@@ -62,9 +64,9 @@ ${chalk.bold('Notes')}
   static final pipeHelp =
       '''
 ${chalk.bold('Usage:')}
-  ${chalk.cyan('atpipe')} send | receive -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
+  ${chalk.cyan('atpipe')} <send | receive> -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
     or
-  ${chalk.cyan('noports pipe')} send | receive -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
+  ${chalk.cyan('noports pipe')} <send | receive> -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
 
   Pipes from anywhere to anywhere else!
   
@@ -82,6 +84,6 @@ ${chalk.bold('Usage:')}
 
   Options:
   
-\t${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n\t')}
+\t${AtPipeParams.argParser.usage.split('\n').map((line) => '  $line').join('\n\t')}
 ''';
 }

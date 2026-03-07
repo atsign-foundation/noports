@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:chalkdart/chalk.dart';
 
@@ -11,7 +12,10 @@ import 'at_pipe_sender.dart';
 import 'at_pipe_receiver.dart';
 
 abstract class AtPipe {
+  static final _simpleColorCodedHandler = ColorCodedStderrLoggingHandler();
+
   factory AtPipe.fromArgs(List<String> args) {
+    AtSignLogger.defaultLoggingHandler = _simpleColorCodedHandler;
     if (args.isEmpty) {
       throw ArgumentError('At least one argument is required.');
     }
@@ -34,10 +38,7 @@ abstract class AtPipe {
       AtSignLogger.root_level = 'FINEST';
     }
 
-    logger = AtSignLogger(
-      ' $runtimeType ',
-      loggingHandler: ColorCodedStderrLoggingHandler(),
-    )..level = 'info';
+    logger = AtSignLogger(' $runtimeType ')..level = 'info';
   }
 
   @protected
@@ -56,6 +57,7 @@ abstract class AtPipe {
         uniqueID: DateTime.now().microsecondsSinceEpoch.toString(),
       ),
     );
+    AtSignLogger.defaultLoggingHandler = _simpleColorCodedHandler;
     await _cliBase.init();
     atClient = _cliBase.atClient;
   }
@@ -68,8 +70,27 @@ class ColorCodedStderrLoggingHandler implements LoggingHandler {
   void call(record) {
     stderr.write(
       chalk.green(
-        '${record.level.name}|${record.time}|${record.loggerName}|${record.message} \n',
+        '${_getColoredLevel(record.level).padLeft(7)}'
+        '|${record.time}'
+        '|${record.loggerName}'
+        '|${record.message} \n',
       ),
     );
+  }
+
+  String _getColoredLevel(Level level) {
+    switch (level) {
+      case Level.WARNING:
+        return chalk.yellow(level.name.toLowerCase());
+      case Level.SEVERE:
+      case Level.SHOUT:
+        return chalk.red(level.name.toLowerCase());
+      case Level.INFO:
+        return chalk.blueBright(level.name.toLowerCase());
+      case Level.FINER:
+      case Level.FINEST:
+      default:
+        return chalk.gray(level.name.toLowerCase());
+    }
   }
 }

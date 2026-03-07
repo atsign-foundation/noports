@@ -151,6 +151,7 @@ class AtPipeParams {
 
     p.addFlag('debug', negatable: false, help: 'All the logging');
 
+    // TODO add help flag
     return p;
   }
 }
