@@ -30,7 +30,7 @@ class DiagnosticRunner {
     return results;
   }
 
-  /// Generate a summary report (Version Simplifiée pour sshnpd)
+  /// Generate a summary report (simplified version for sshnpd)
   String generateSummary(List<CheckResult> results) {
     final buffer = StringBuffer();
 
@@ -53,24 +53,24 @@ class DiagnosticRunner {
 
     if (failed > 0) {
       buffer.writeln(
-          '\n PROBLEMS DETECTED : sshnpd cannot start correctly.');
-      buffer.writeln('\nError details :');
+          '\n PROBLEMS DETECTED: sshnpd cannot start correctly.');
+      buffer.writeln('\nError details:');
       for (final result in results.where((r) => r.failed)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
     } else if (warnings > 0) {
       buffer.writeln(
-          '\n  WARNING : sshnpd may work, but check the items above.');
-      buffer.writeln('\nWarnings :');
+          '\n  WARNING: sshnpd may work, but check the items above.');
+      buffer.writeln('\nWarnings:');
       for (final result in results.where((r) => r.hasWarning)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
     } else {
-      buffer.writeln('\n SUCCESS : Everything seems ready to use sshnpd !');
+      buffer.writeln('\n SUCCESS: Everything seems ready to use sshnpd!');
     }
 
     if (passed > 0) {
-      buffer.writeln('\nPassed Tests :');
+      buffer.writeln('\nPassed Tests:');
       for (final result in results.where((r) => r.passed)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }

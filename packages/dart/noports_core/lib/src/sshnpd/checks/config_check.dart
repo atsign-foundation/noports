@@ -41,7 +41,7 @@ class ConfigCheck extends DiagnosticCheck {
           return CheckResult(
             checkName: name,
             status: CheckStatus.warning,
-            message: 'File found ($path) but impossible to read it: $e',
+            message: 'File found ($path) but unable to read it: $e',
             duration: DateTime.now().difference(start),
           );
         }

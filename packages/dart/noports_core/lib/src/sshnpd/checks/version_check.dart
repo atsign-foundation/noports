@@ -112,7 +112,7 @@ class VersionCheck extends DiagnosticCheck {
              );
           }
 
-          // Lancer le téléchargement
+          // Start the download
           bool success = await _performUpdate(targetAsset['browser_download_url'], targetAsset['name']);
 
           if (success) {

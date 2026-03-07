@@ -32,7 +32,7 @@ class PrerequisitesCheck extends DiagnosticCheck {
     } else {
       return CheckResult(
         checkName: name,
-        status: CheckStatus.fail, // C'm bloquant !
+        status: CheckStatus.fail, // This is a blocking issue!
         message: 'Missing required tools: ${missingTools.join(', ')}',
         duration: DateTime.now().difference(start),
       );
