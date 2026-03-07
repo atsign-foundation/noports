@@ -58,4 +58,30 @@ ${chalk.bold('Notes')}
   • Resumable if interrupted (re-run same command)
   • Device name argument applies the target device, not the executing device.
 ''';
+
+  static final pipeHelp =
+      '''
+${chalk.bold('Usage:')}
+  ${chalk.cyan('atpipe')} send | receive -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
+    or
+  ${chalk.cyan('noports pipe')} send | receive -p <pipeName> -a ${chalk.cyan('@<atsign>')} [options]
+
+  Pipes from anywhere to anywhere else!
+  
+  Examples:
+  1. terminal to terminal:
+    . Start receiver on your receiving host, writing what it receives to stdout:
+      ${chalk.darkBlue('user@receivingHost \$')} atpipe receive -p cat -a @alice 
+    . Run a sender on your sending host, with input coming from terminal:
+      ${chalk.darkBlue('user@sendingHost \$')} atpipe send -p cat -a @alice
+  2. binary file copy:
+    . Start receiver on your receiving host, writing output to a file:
+      ${chalk.darkBlue('user@receivingHost \$')} atpipe receive -p bin -a @alice > atpipe.example.bin
+    . Run a sender on your sending host, input from a binary file:
+      ${chalk.darkBlue('user@sendingHost \$')} cat `which noports` | atpipe send -p bin -a @alice
+
+  Options:
+  
+\t${IssueKeysParams.argParser.usage.split('\n').map((line) => '  $line').join('\n\t')}
+''';
 }

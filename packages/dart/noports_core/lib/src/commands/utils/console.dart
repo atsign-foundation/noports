@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:chalkdart/chalk.dart';
 
 void displayBanner() {
-  print('\n${chalk.bold('╔════════════════════════════════════╗')}');
-  print(
-    '${chalk.bold('║')}  ${chalk.cyan('Noports CLI')}                  ${chalk.bold('║')}',
+  stderr.writeln('\n${chalk.bold('╔════════════════════════════════════╗')}');
+  stderr.writeln(
+    '${chalk.bold('║')}'
+    '  ${chalk.cyan('Noports CLI')}'
+    '                       ${chalk.bold('║')}',
   );
-  print('${chalk.bold('╚════════════════════════════════════╝')}\n');
+  stderr.writeln('${chalk.bold('╚════════════════════════════════════╝')}\n');
 }
 
 bool isHelpFlag(String arg) {

@@ -6,7 +6,8 @@ import 'package:sshnoports/src/print_version.dart';
 
 enum NoPortsCommand {
   activate('activate'),
-  issueKeys('issue-keys');
+  issueKeys('issue-keys'),
+  pipe('pipe');
 
   final String commandName;
 
@@ -69,6 +70,10 @@ Future<void> main(List<String> args) async {
         final issueKeysImpl = IssueKeys.fromArgs(commandArgs);
         exitCode = await issueKeysImpl.wrappedMain();
         break;
+      case NoPortsCommand.pipe:
+        final AtPipe pipe = AtPipe.fromArgs(commandArgs);
+        exitCode = await pipe.wrappedMain();
+        break;
     }
     exit(exitCode);
   } on HelpRequestedException {
@@ -79,8 +84,9 @@ Future<void> main(List<String> args) async {
     stderr.writeln('\n');
     printUsage(command: command);
     exit(1);
-  } catch (e) {
+  } catch (e, st) {
     logger.shout(e.toString());
+    logger.shout('Stack Trace: \n$st');
     exit(2);
   }
 }
@@ -95,6 +101,9 @@ void printUsage({NoPortsCommand? command}) {
         break;
       case NoPortsCommand.issueKeys:
         stderr.writeln(UsageMessages.issueKeysHelp);
+        break;
+      case NoPortsCommand.pipe:
+        stderr.writeln(UsageMessages.pipeHelp);
         break;
     }
   }

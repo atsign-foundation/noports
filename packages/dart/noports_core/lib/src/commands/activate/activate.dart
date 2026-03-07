@@ -134,7 +134,7 @@ class Activate {
         logger.info('Writing keys to ${_params.atKeysFilePath}');
       }
     }
-    return ;
+    return;
   }
 
   @visibleForTesting

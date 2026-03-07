@@ -127,8 +127,10 @@ class IssueKeys {
 
   @visibleForTesting
   Future<void> generateOTP() async {
-    params.otp =
-        await requestEnrollmentOtp(_atClient!, otpExpiry: _otpExpiryString);
+    params.otp = await requestEnrollmentOtp(
+      _atClient!,
+      otpExpiry: _otpExpiryString,
+    );
   }
 
   /// Uses "noports_<otp>" as fallback device name
