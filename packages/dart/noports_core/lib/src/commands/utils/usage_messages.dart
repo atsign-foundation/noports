@@ -10,6 +10,7 @@ class UsageMessages {
 ${chalk.bold('Usage')}
   noports issue-keys ${chalk.bold('@<atsign>')} ${chalk.gray('[options]')}
   noports activate ${chalk.bold('<activation_string>')} ${chalk.gray('[options]')}
+  noports pipe <send | receive> -p <pipeName> -a <@atsign> ${chalk.gray('[options]')}
 
 ${chalk.bold('Examples')}
   noports activate '@alice:cram:secret123' (one-time onboarding)

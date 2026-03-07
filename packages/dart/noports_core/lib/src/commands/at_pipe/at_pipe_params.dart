@@ -63,7 +63,7 @@ class AtPipeParams {
       pipeName: r['pipe-name'],
       isSender: isSender,
       toAtSign: r['to-atsign']?.toString().toAtsign(),
-      fromAtSigns: <Atsign>{}
+      fromAtSigns: <Atsign>{atSign}
         ..addAll(
           (r['from-atsigns'].toString())
               .split(',')

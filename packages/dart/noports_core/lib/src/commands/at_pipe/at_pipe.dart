@@ -50,6 +50,7 @@ abstract class AtPipe {
       homeDir: getHomeDirectory(throwIfNull: true),
       verbose: params.verbose || params.debug,
       atKeysFilePath: params.atKeysFilePath,
+      syncDisabled: true,
       storageDir: standardAtClientStoragePath(
         baseDir: getHomeDirectory(throwIfNull: true)!,
         atSign: params.atSign,

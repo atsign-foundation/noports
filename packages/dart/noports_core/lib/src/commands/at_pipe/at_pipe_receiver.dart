@@ -43,7 +43,7 @@ class AtPipeReceiver extends AtPipe {
       username: 'atpipe',
       homeDirectory: getHomeDirectory()!,
       device: 'atpipe_${params.pipeName}',
-      managerAtsigns: [params.atSign],
+      managerAtsigns: params.fromAtSigns.toList(),
       sshClient: SupportedSshClient.openssh,
       ephemeralPermissions: '',
       sshAlgorithm: SupportedSshAlgorithm.ed25519,

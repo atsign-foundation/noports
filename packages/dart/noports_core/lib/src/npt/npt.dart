@@ -95,6 +95,7 @@ abstract class NptBase implements Npt {
 
   /// Subclasses should use this method to generate progress messages
   sendProgress(String message) {
+    logger.info(message);
     _progressStreamController.add(message);
   }
 
@@ -198,8 +199,7 @@ class _NptImpl extends NptBase
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
-    logger.info('Sending daemon feature check request');
-    sendProgress('Sending daemon feature check request');
+    sendProgress('Sending daemon feature check request to ${params.sshnpdAtSign}');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
     featureCheckFuture = sshnpdChannel.featureCheck(
