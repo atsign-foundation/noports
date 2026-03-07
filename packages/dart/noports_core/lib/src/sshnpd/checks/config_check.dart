@@ -23,7 +23,7 @@ class ConfigCheck extends DiagnosticCheck {
       if (await configFile.exists()) {
         try {
           String content = await configFile.readAsString();
-          //get important lines
+          
           var importantLines = content
               .split('\n')
               .where(
