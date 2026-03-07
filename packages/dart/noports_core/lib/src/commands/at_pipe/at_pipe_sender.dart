@@ -33,7 +33,7 @@ class AtPipeSender extends AtPipe {
         relayAuthMode: RelayAuthMode.escr,
         inline: true,
         timeout: Duration(seconds: 30),
-        verbose: true,
+        verbose: params.verbose,
       ),
       atClient: atClient,
     );

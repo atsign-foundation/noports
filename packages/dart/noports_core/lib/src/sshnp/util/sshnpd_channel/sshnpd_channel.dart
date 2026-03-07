@@ -304,13 +304,15 @@ abstract class SshnpdChannel
         ..isEncrypted = true
         ..namespaceAware = true);
 
-    logger.info('Sending ping to sshnpd');
-    await notify(
-      pingKey,
-      'ping',
+    logger.info('Sending ping $pingKey to sshnpd');
+    await atClient.notificationService.notify(
+      NotificationParams.forUpdate(
+        pingKey,
+        value: 'ping',
+        notificationExpiry: Duration(minutes: 1),
+      ),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
-      ttln: Duration(minutes: 1),
     );
 
     return completer.future;
