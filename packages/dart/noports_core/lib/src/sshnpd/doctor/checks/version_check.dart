@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import '../diagnostic_check.dart';
 
-import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
+import 'package:noports_core/src/sshnpd/doctor/utils/platform_utils.dart';
 import 'package:version/version.dart';
 
 
@@ -72,7 +72,7 @@ class VersionCheck extends DiagnosticCheck {
         String os = Platform.operatingSystem;
         String arch = await PlatformUtils.instance.getArchitecture();
 
-        print('\n A NEW UPDATE IS AVAILABLE !');
+        print('\n A NEW UPDATE IS AVAILABLE!');
         print('Current version: $currentVersion');
         print('New version: $cleanLatest');
         print('Detected OS: $os');

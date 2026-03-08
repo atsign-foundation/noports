@@ -11,15 +11,16 @@ class ServiceStatusCheck extends DiagnosticCheck {
   @override
   Future<CheckResult> run() async {
     final start = DateTime.now();
+    final serviceName = 'sshnpd';
 
     // 1. Check Process (Is the binary executing?)
-    bool processRunning = await PlatformUtils.instance.isProcessRunning('sshnpd');
+    bool processRunning = await PlatformUtils.instance.isProcessRunning(serviceName);
 
     // 2. Check Service (Is it registered with systemd/launchd/Windows Service?)
-    bool serviceInstalled = await PlatformUtils.instance.isServiceInstalled('sshnpd');
+    bool serviceInstalled = await PlatformUtils.instance.isServiceInstalled(serviceName);
     bool serviceRunning = false;
     if (serviceInstalled) {
-      serviceRunning = await PlatformUtils.instance.isServiceRunning('sshnpd');
+      serviceRunning = await PlatformUtils.instance.isServiceRunning(serviceName);
     }
 
     if (processRunning) {

@@ -371,11 +371,13 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       argAbbrev: 'o',
       defaultsTo: false,
       helpText:
-          'Output file for doctor usage. Only valid when used with --doctor.'
-          ' If no file name is provided, defaults to sshnpd_doctor_log.txt',
+          'Save doctor report to a file. Only valid when used with --doctor.'
+          ' Defaults to sshnpd_doctor_log.txt.'
+          ' A custom filename can be provided as an additional argument.',
       group: runtimeGroup,
     ),
   );
+
 
   const SshnpdOption(this.option);
 

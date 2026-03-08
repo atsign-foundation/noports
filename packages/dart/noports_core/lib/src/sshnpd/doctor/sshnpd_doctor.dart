@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:noports_core/src/sshnpd/sshnpd_config.dart';
-import 'package:noports_core/src/sshnpd/diagnostic_runner.dart';
-import 'package:noports_core/src/sshnpd/utils/platform_utils.dart';
-import 'package:noports_core/src/sshnpd/checks/keys_check.dart';
-import 'package:noports_core/src/sshnpd/checks/prerequisites_check.dart';
-import 'package:noports_core/src/sshnpd/checks/service_status_check.dart';
-import 'package:noports_core/src/sshnpd/checks/config_check.dart';
-import 'package:noports_core/src/sshnpd/checks/version_check.dart';
-import 'package:noports_core/src/sshnpd/checks/service_logs_check.dart';
-import 'package:noports_core/src/sshnpd/checks/connectivity_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/diagnostic_runner.dart';
+import 'package:noports_core/src/sshnpd/doctor/utils/platform_utils.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/keys_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/prerequisites_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/service_status_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/config_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/version_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/service_logs_check.dart';
+import 'package:noports_core/src/sshnpd/doctor/checks/connectivity_check.dart';
 
 class SshnpdDoctor {
   Future<void> run(List<String> args, {required String packageVersion}) async {
@@ -58,13 +58,9 @@ ${'-' * 60}
   print(summary);
   try {
     final results = SshnpdOption.argParser.parse(args);
-    if (results.wasParsed('output')) {
+    if (results['output'] == true) {
       String outputName = 'sshnpd_doctor_log.txt';
       if (results.rest.isNotEmpty) {
-        // If there's a remaining argument that looks like a filename, use it
-        // We assume the filename would be the next argument if it was intended as such
-        // However, with arg parser, rest contains all non-option arguments.
-        // If the user typed `sshnpd --doctor -o mylog.txt`, `mylog.txt` will be in rest.
         outputName = results.rest.first;
       }
       final file = File(outputName);
@@ -72,7 +68,7 @@ ${'-' * 60}
       print('Summary saved to $outputName');
     }
   } catch (e) {
-    // Ignore error if parsing fails, as it's just for output file
+    // Ignore error if parsing fails
   }
   }
 }

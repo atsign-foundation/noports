@@ -112,7 +112,7 @@ class MacOSUtils implements PlatformUtils {
     try {
       final result = await Process.run('log', [
         'show', 
-        '--predicate', 'process CONTAINS "sshnpd"', 
+        '--predicate', 'process CONTAINS "$serviceName"', 
         '--last', '10m',
         '--style', 'syslog'
       ]);
