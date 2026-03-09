@@ -226,7 +226,7 @@ class LinuxUtils implements PlatformUtils {
               .where((line) => line.contains('@'))
               .map((l) => l.trim())
               .join(', ');
-    atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
+    print(atkeys);
     return atkeys;
   }
 }
@@ -260,7 +260,7 @@ class WindowsUtils implements PlatformUtils {
   @override
   List<String> getPotentialConfigPaths() {
     return [
-      r'C:\ProgramData\NoPorts\sshnpd.yaml',
+      'C:\ProgramData\NoPorts\sshnpd.yaml',
     ];
   }
 
@@ -319,7 +319,7 @@ class WindowsUtils implements PlatformUtils {
               .where((line) => line.contains('@'))
               .map((l) => l.trim())
               .join(', ');
-    atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
+    print(atkeys);
     return atkeys;
   }
 }
