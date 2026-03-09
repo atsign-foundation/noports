@@ -2,8 +2,8 @@
 
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
-script_version="3.1.0"
-sshnp_version="5.8.0"
+script_version="3.2.0"
+sshnp_version="5.14.10"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -54,6 +54,7 @@ unset download_url
 local_archive=""
 no_sudo=false
 quiet=false
+used_package_manager=false
 
 ### Client/ Device Install Variables
 client_atsign=""
@@ -222,7 +223,7 @@ parse_env() {
   if is_root; then
     user="$SUDO_USER"
     as_root=true
-    bin_path="/usr/local/bin"
+    bin_path="/usr/bin"
     if [ -z "$user" ]; then
       user="root"
     else
@@ -747,13 +748,15 @@ validate_activation() {
 
 # CLIENT INSTALLATION #
 client() {
-  mkdir -p "$bin_path"
+  if [ "$used_package_manager" = false ]; then
+    mkdir -p "$bin_path"
 
-  # install the binaries
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+    # install the binaries
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnp
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" npt
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" srv
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+  fi
 
   # set PATH so it includes user's private bin if it exists
   if [ -d "$user_home/.local/bin" ] ; then
@@ -812,14 +815,42 @@ device() {
     device_install_type=$device_type
   fi
 
-  # install at_activate binary
-  "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
+  if [ "$used_package_manager" = false ]; then
+    if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
+      cleanup_old_installation
+    fi
 
-  # install sshnpd binary and capture the installer output
-  install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+    # install at_activate binary
+    "$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" at_activate
 
-  if [ "$verbose" = true ]; then
-    echo "$install_output"
+    # install sshnpd binary and capture the installer output
+    # If systemd, we want to use the new style
+    if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
+      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd)
+      # Manually install the nfpm style systemd unit
+      mkdir -p /lib/systemd/system
+      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
+      
+      # Install the override file and customize the User
+      mkdir -p /etc/systemd/system/sshnpd.service.d
+      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service.d/override.conf" /etc/systemd/system/sshnpd.service.d/override.conf
+      customize_systemd_user
+
+      # If we are root, we should also ensure /etc/noports exists and has the config
+      mkdir -p /etc/noports
+      if [ ! -f /etc/noports/sshnpd.yaml ]; then
+        cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" /etc/noports/sshnpd.yaml
+      fi
+      migrate_systemd_config_to_yaml
+    else
+      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+    fi
+
+    if [ "$verbose" = true ]; then
+      echo "$install_output"
+    fi
+  else
+    install_output=""
   fi
 
   # upgrade an existing installation if we find one
@@ -833,12 +864,25 @@ device() {
     fi
     ;;
   systemd)
-    if [ "$is_overrideconf_created" = true ]; then
-      echo "systemd config for sshnpd service already in place"
-      echo "sshnpd systemd upgraded and restarted. To see logs use:"
-      echo "  journalctl -u sshnpd -f"
-      systemctl restart sshnpd
-      return
+    if [ "$as_root" = true ]; then
+       # For systemd nfpm style, we check if it's already enabled/running
+       if systemctl is-enabled sshnpd >/dev/null 2>&1; then
+         echo "sshnpd systemd service is already enabled"
+         if [ "$used_package_manager" = false ]; then
+           systemctl daemon-reload
+           systemctl restart sshnpd
+           print_systemd_summary restart
+           return
+         fi
+       fi
+    else
+      if [ "$is_overrideconf_created" = true ]; then
+        echo "systemd config for sshnpd service already in place"
+        echo "sshnpd systemd upgraded and restarted. To see logs use:"
+        echo "  journalctl -u sshnpd -f"
+        systemctl restart sshnpd
+        return
+      fi
     fi
     ;;
   tmux | headless)
@@ -847,6 +891,18 @@ device() {
   esac
 
   # Get atSigns for fresh install
+  # We only need to prompt if the config isn't already populated
+  if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ] && [ -f /etc/noports/sshnpd.yaml ]; then
+     if grep -E "^[[:space:]]+atsign:[[:space:]]*[^[:space:]#]" /etc/noports/sshnpd.yaml >/dev/null; then
+        echo "Configuration already populated in /etc/noports/sshnpd.yaml"
+        # We still might need to ensure activation if it's a new install but config was migrated
+        # Actually validation happens later if client/device_atsign are set.
+        # Let's extract them from YAML if they aren't set
+        [ -z "$device_atsign" ] && device_atsign=$(grep -E "^[[:space:]]+atsign:[[:space:]]*" /etc/noports/sshnpd.yaml | head -n 1 | cut -d: -f2 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        [ -z "$client_atsign" ] && client_atsign=$(grep -A 5 "managers:" /etc/noports/sshnpd.yaml | grep "-" | head -n 1 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*-//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+     fi
+  fi
+
   if [ -z "$client_atsign" ]; then
     get_atsign_manually "client"
     client_atsign="$selectedatsign"
@@ -859,6 +915,11 @@ device() {
 
   # Note: policy_atsign is not mandatory so, if none was supplied,
   #       we will not prompt for it
+
+  # For systemd nfpm style, we might already have the name in YAML
+  if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ] && [ -f /etc/noports/sshnpd.yaml ]; then
+     [ -z "$device_name" ] && device_name=$(grep -E "^[[:space:]]*name:[[:space:]]*" /etc/noports/sshnpd.yaml | head -n 1 | cut -d: -f2 | sed -e "s/['\"]//g" -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  fi
 
   while [ -z "$device_name" ]; do
     printf "Enter device name: "
@@ -892,19 +953,38 @@ device() {
     echo "sshnpd installed with launchd"
     ;;
   systemd)
-    write_systemd_user "$systemd_config_path" "$user"
-    write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
-    write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
-    if [ -n "$policy_atsign" ]; then
-      write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+    if [ "$as_root" = true ]; then
+      # Update YAML if we got new inputs
+      yaml_file="/etc/noports/sshnpd.yaml"
+      sedi "s|^\([[:space:]]\{2\}atsign:\)[[:space:]]*.*$|\1 '$(norm_atsign "$device_atsign")'|" "$yaml_file"
+      if [ -n "$client_atsign" ]; then
+        # This is a bit simplistic for managers list, but if it was empty it works
+        if ! grep -A 5 "managers:" "$yaml_file" | grep -q "$(norm_atsign "$client_atsign")"; then
+           sedi "s|^[[:space:]]*#[[:space:]]*- your_atsign_here$|    - '$(norm_atsign "$client_atsign")'|" "$yaml_file"
+        fi
+      fi
+      if [ -n "$policy_atsign" ]; then
+        sedi "s|^\([[:space:]]\{2\}policy:\)[[:space:]]*.*$|\1 '$(norm_atsign "$policy_atsign")'|" "$yaml_file"
+      fi
+      sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*.*$|\1 '$device_name'|" "$yaml_file"
+
+      systemctl daemon-reload
+      systemctl enable sshnpd
+      systemctl start sshnpd
+    else
+      write_systemd_user "$systemd_config_path" "$user"
+      write_systemd_environment "$systemd_config_path" "manager_atsign" "$(norm_atsign "$client_atsign")"
+      write_systemd_environment "$systemd_config_path" "device_atsign" "$(norm_atsign "$device_atsign")"
+      if [ -n "$policy_atsign" ]; then
+        write_systemd_environment "$systemd_config_path" "delegate_policy" "-p $(norm_atsign "$policy_atsign")"
+      fi
+      write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
+
+      systemctl enable sshnpd
+      systemctl start sshnpd
     fi
-    write_systemd_environment "$systemd_config_path" "device_name" "$device_name"
 
-    systemctl enable sshnpd
-    systemctl start sshnpd
-
-    echo "sshnpd installed with systemd. To see logs use:"
-    echo "  journalctl -u sshnpd -f"
+    print_systemd_summary
     ;;
   tmux | headless)
     shell_script="$bin_path"/sshnpd.sh
@@ -923,6 +1003,301 @@ device() {
   fi
 }
 
+is_debian_like() {
+  if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "$ID" in
+    debian | ubuntu | mint | kali | raspbian) return 0 ;;
+    esac
+    case "${ID_LIKE:-}" in
+    *debian* | *ubuntu*) return 0 ;;
+    esac
+  elif [ -f /etc/debian_version ]; then
+    return 0
+  fi
+  return 1
+}
+
+is_redhat_like() {
+  if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "$ID" in
+    fedora | rhel | centos | amzn | rocky | almalinux) return 0 ;;
+    esac
+    case "${ID_LIKE:-}" in
+    *fedora* | *rhel* | *centos*) return 0 ;;
+    esac
+  elif [ -f /etc/redhat-release ]; then
+    return 0
+  fi
+  return 1
+}
+
+cleanup_old_installation() {
+  if [ "$as_root" = false ]; then
+    return
+  fi
+  echo "Cleaning up old noports installation..."
+  # List of binaries and scripts to remove from non-package locations
+  binaries="sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_file"
+  # We check /usr/local/bin
+  # Note: New install is to /usr/bin, so those are safe.
+  for dir in "/usr/local/bin"; do
+    for bin in $binaries; do
+      if [ -f "$dir/$bin" ]; then
+        echo "Removing old binary: $dir/$bin"
+        rm -f "$dir/$bin"
+      fi
+    done
+    # Also remove the wrapper script if it exists
+    if [ -f "$dir/sshnpd.sh" ]; then
+      echo "Removing old script: $dir/sshnpd.sh"
+      rm -f "$dir/sshnpd.sh"
+    fi
+  done
+
+  # Check for local installation in user's home
+  if [ "$user" != "root" ]; then
+    local_bin_dir="$user_home/.local/bin"
+    found_local=false
+    for bin in $binaries; do
+      if [ -f "$local_bin_dir/$bin" ]; then
+        found_local=true
+        break
+      fi
+    done
+
+    if [ "$found_local" = true ]; then
+      if [ "$quiet" = true ]; then
+        echo "Removing local installation from $local_bin_dir..."
+        for bin in $binaries; do
+          rm -f "$local_bin_dir/$bin"
+        done
+        rm -f "$local_bin_dir/sshnpd.sh"
+      else
+        echo "WARNING: A local installation of NoPorts was found in $local_bin_dir"
+        echo "This may conflict with the system-wide installation."
+        printf "Would you like to remove the local installation? [Y/n] "
+        read -r remove_local
+        case $remove_local in
+        [Nn]*) ;;
+        *)
+          echo "Removing local installation..."
+          for bin in $binaries; do
+            rm -f "$local_bin_dir/$bin"
+          done
+          rm -f "$local_bin_dir/sshnpd.sh"
+          ;;
+        esac
+      fi
+    fi
+  fi
+
+  # If we have an old systemd unit in /etc/systemd/system, it will override the package unit in /lib/systemd/system
+  # Or if we are doing a manual install, we want to move to /lib/systemd/system/ (nfpm style)
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    echo "Disabling and removing old systemd unit /etc/systemd/system/sshnpd.service"
+    systemctl stop sshnpd 2>/dev/null || true
+    systemctl disable sshnpd 2>/dev/null || true
+    mv "/etc/systemd/system/sshnpd.service" "/etc/systemd/system/sshnpd.service.old"
+    [ -d "/etc/systemd/system/sshnpd.service.d" ] && mv "/etc/systemd/system/sshnpd.service.d" "/etc/systemd/system/sshnpd.service.d.old"
+    systemctl daemon-reload
+  fi
+}
+
+migrate_systemd_config_to_yaml() {
+  yaml_file="/etc/noports/sshnpd.yaml"
+  # If the YAML doesn't exist, we might be in a manual install flow where it's not yet copied.
+  # But for nfpm style, it should be there.
+  if [ ! -f "$yaml_file" ]; then
+    echo "Warning: $yaml_file not found. Creating from template if available."
+    mkdir -p /etc/noports
+    if [ -f "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" ]; then
+      cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" "$yaml_file"
+    else
+      # Fallback to minimal if template not found in expected extract path
+      cat <<EOF > "$yaml_file"
+atsign:
+  atsign: 
+access:
+  policy: 
+  managers:
+    - 
+device:
+  name: 
+ssh:
+  add-publickeys: true
+  ssh-client: openssh
+  sshd-port: 22
+runtime:
+  verbose: true
+EOF
+    fi
+  fi
+
+  # Check if atsign is already set
+  if grep -E "^[[:space:]]+atsign:[[:space:]]*[^[:space:]#]" "$yaml_file" >/dev/null; then
+    echo "YAML config $yaml_file appears to be already populated, skipping migration."
+    return
+  fi
+
+  echo "Migrating existing systemd configuration to $yaml_file..."
+
+  # Extract values from systemd unit and override files
+  # Check /etc/systemd/system/sshnpd.service.old if we just moved it
+  unit_file="/etc/systemd/system/sshnpd.service"
+  [ ! -f "$unit_file" ] && [ -f "${unit_file}.old" ] && unit_file="${unit_file}.old"
+  override_file="/etc/systemd/system/sshnpd.service.d/override.conf"
+  [ ! -d "$(dirname "$override_file")" ] && [ -d "$(dirname "$override_file").old" ] && override_file="$(dirname "$override_file").old/override.conf"
+
+  m_atsign=""
+  d_atsign=""
+  d_name=""
+  p_atsign=""
+
+  extract_val() {
+    val=$(grep -h "^Environment=$1=" "$override_file" "$unit_file" 2>/dev/null | tail -n 1 | cut -d= -f3- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+    echo "$val"
+  }
+
+  m_atsign=$(extract_val "manager_atsign")
+  d_atsign=$(extract_val "device_atsign")
+  d_name=$(extract_val "device_name")
+  delegate_policy=$(extract_val "delegate_policy")
+  if [ -n "$delegate_policy" ]; then
+    p_atsign=$(echo "$delegate_policy" | sed 's/-p //')
+  fi
+
+  [ -z "$d_name" ] && d_name="default"
+
+  # Update the template file using sedi
+  if [ -n "$d_atsign" ]; then
+    sedi "s|^\([[:space:]]\{2\}atsign:\)[[:space:]]*$|\1 '$(norm_atsign "$d_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$p_atsign" ]; then
+    sedi "s|^\([[:space:]]\{2\}policy:\)[[:space:]]*$|\1 '$(norm_atsign "$p_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$m_atsign" ]; then
+    sedi "s|^[[:space:]]*#[[:space:]]*- your_atsign_here$|    - '$(norm_atsign "$m_atsign")'|" "$yaml_file"
+  fi
+  if [ -n "$d_name" ]; then
+    sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*$|\1 '$d_name'|" "$yaml_file"
+  fi
+
+  echo "Migration complete."
+}
+
+customize_systemd_user() {
+  # This covers both sshnpd and srvd as they both have overrides in nfpm
+  for service in "sshnpd" "srvd"; do
+    override_file="/etc/systemd/system/${service}.service.d/override.conf"
+    if [ -f "$override_file" ]; then
+      echo "Customizing systemd user for ${service} in $override_file..."
+      sedi "s/^User=1000$/User=$user/" "$override_file"
+    fi
+  done
+}
+
+print_systemd_summary() {
+  verb="installed with"
+  [ "${1:-}" = "restart" ] && verb="restarted. The service is"
+  echo "sshnpd $verb systemd."
+  echo "The service is configured to run as user: $user"
+  echo "If you wish to change this, run:"
+  echo "  sudo systemctl edit sshnpd"
+  echo "To see logs use:"
+  echo "  journalctl -u sshnpd -f"
+}
+
+install_via_rpm() {
+  echo "Installing noports via rpm..."
+  if ! (check_cmd dnf || check_cmd yum); then
+    >&2 echo "Error: dnf or yum is required for rpm installation"
+    exit 1
+  fi
+
+  if ! check_cmd sudo; then
+    >&2 echo "Error: sudo is required for rpm installation"
+    exit 1
+  fi
+
+  # Create the repository file
+  sudo tee /etc/yum.repos.d/noports.repo <<EOF
+[noports]
+name=NoPorts Repository
+baseurl=https://rpm.noports.com/\$basearch/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://rpm.noports.com/noports.pub.asc
+EOF
+
+  if check_cmd dnf; then
+    sudo dnf install -y noports
+  else
+    sudo yum install -y noports
+  fi
+
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    migrate_systemd_config_to_yaml
+  fi
+  customize_systemd_user
+  cleanup_old_installation
+  print_systemd_summary restart
+  used_package_manager=true
+}
+
+install_via_brew() {
+  echo "Installing noports via brew..."
+  if ! check_cmd brew; then
+    >&2 echo "Error: brew is required for brew installation"
+    exit 1
+  fi
+
+  brew tap atsign-foundation/homebrew-tap
+  brew install noports
+  used_package_manager=true
+}
+
+install_via_apt() {
+  echo "Installing noports via apt..."
+  if ! check_cmd apt; then
+    >&2 echo "Error: apt is required for apt installation"
+    exit 1
+  fi
+
+  if ! check_cmd sudo; then
+    >&2 echo "Error: sudo is required for apt installation"
+    exit 1
+  fi
+
+  if ! check_cmd curl; then
+    echo "curl not found, installing curl..."
+    sudo apt update && sudo apt install -y curl
+  fi
+
+  if ! check_cmd gpg; then
+    echo "gpg not found, installing gnupg..."
+    sudo apt update && sudo apt install -y gnupg
+  fi
+
+  sudo mkdir -p /usr/share/keyrings
+  curl -fsSL https://apt.noports.com/noports.pub.asc | sudo gpg --dearmor -o /usr/share/keyrings/noports-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | sudo tee /etc/apt/sources.list.d/noports.list
+  sudo apt update
+  sudo apt install -y noports
+
+  if [ -f "/etc/systemd/system/sshnpd.service" ]; then
+    migrate_systemd_config_to_yaml
+  fi
+  customize_systemd_user
+  cleanup_old_installation
+  print_systemd_summary restart
+  used_package_manager=true
+}
+
 main() {
   trap cleanup EXIT
   set -eu
@@ -934,12 +1309,34 @@ main() {
   if [ -n "$local_archive" ]; then
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
+    unpack_archive
+  elif [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+    install_via_apt
+  elif [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+    install_via_rpm
+  elif [ "$platform_name" = "macos" ] && check_cmd brew; then
+    if [ "$quiet" = true ]; then
+      install_via_brew
+    else
+      echo "Homebrew detected."
+      printf "Would you like to install noports via Homebrew? [Y/n] "
+      read -r use_brew
+      case $use_brew in
+      [Nn]*)
+        download_url=$(get_download_url)
+        echo "$download_url" | download_archive
+        unpack_archive
+        ;;
+      *)
+        install_via_brew
+        ;;
+      esac
+    fi
   else
     download_url=$(get_download_url)
     echo "$download_url" | download_archive
+    unpack_archive
   fi
-
-  unpack_archive
 
   get_user_inputs
   case "$install_type" in
