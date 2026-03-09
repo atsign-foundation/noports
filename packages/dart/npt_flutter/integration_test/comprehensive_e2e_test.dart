@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:npt_flutter/features/features.dart';
+import 'package:npt_flutter/features/onboarding/widgets/get_started_dialog.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_device_at_sign_text_field.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_device_name_text_field.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_display_name_text_field.dart';
@@ -35,38 +36,39 @@ void main() {
         tester.printToConsole('✓ Core app structure verified');
 
         // Verify onboarding UI elements are present
-        expect(find.byType(OnboardingButton), findsOneWidget);
+        expect(find.byType(GetStartedButton), findsOneWidget);
         expect(
-          find.widgetWithText(CustomTextButton, 'Reset atSign'),
+          find.widgetWithText(CustomTextButton, 'Remove Atsign'),
           findsOneWidget,
         );
-        expect(find.textContaining('v'), findsOneWidget); // Version display
+        expect(find.textContaining('v1'), findsOneWidget); // Version display
         tester.printToConsole('✓ Onboarding interface elements verified');
 
         // === PHASE 2: ONBOARDING FLOW ===
         tester.printToConsole('=== Phase 2: Onboarding Process ===');
 
-        final getStartedButton = find.byType(OnboardingButton);
+        final getStartedButton = find.byType(GetStartedButton);
         expect(getStartedButton, findsOneWidget);
 
         // Initiate onboarding
         await tester.tap(getStartedButton, warnIfMissed: false);
         await tester.pump();
 
-        // Verify loading state appears
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
-        expect(find.byKey(const Key('loading state')), findsOneWidget);
-        tester.printToConsole('✓ Loading state displayed correctly');
+        // Verify and complete onboarding dialog
+        expect(find.byType(GetStartedDialog), findsOneWidget);
+        tester.printToConsole('✓ GetStarted Dialog appeared');
 
-        // Wait for onboarding dialog
-        await tester.pump(const Duration(milliseconds: 250));
-        await tester.pump(const Duration(milliseconds: 250));
+        final signInButton = find.widgetWithText(OutlinedButton, 'Sign In');
+        expect(signInButton, findsOneWidget);
+
+        await tester.tap(signInButton, warnIfMissed: false);
+        await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
         // Verify and complete onboarding dialog
         expect(find.byType(AlertDialog), findsOneWidget);
-        tester.printToConsole('✓ Onboarding dialog appeared');
+        tester.printToConsole('✓ Sign In Dialog appeared');
 
-        final nextButton = find.widgetWithText(ElevatedButton, 'Next');
+        final nextButton = find.widgetWithText(ElevatedButton, 'Sign In');
         expect(nextButton, findsOneWidget);
 
         await tester.tap(nextButton, warnIfMissed: false);
@@ -483,7 +485,7 @@ Future<void> _testRapidInteractions(WidgetTester tester) async {
 
 /// Quick onboarding for stress tests
 Future<void> _quickOnboarding(WidgetTester tester) async {
-  final getStartedButton = find.byType(OnboardingButton);
+  final getStartedButton = find.byType(GetStartedButton);
   if (getStartedButton.evaluate().isNotEmpty) {
     try {
       await tester.tap(getStartedButton, warnIfMissed: false);

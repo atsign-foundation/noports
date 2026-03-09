@@ -37,6 +37,8 @@ updates:
     directory: "/apps/admin/webapp/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm:
         patterns:
