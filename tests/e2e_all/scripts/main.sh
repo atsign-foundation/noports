@@ -220,13 +220,13 @@ logInfo "    commitId:           $commitId"
 logInfo "    testsToRun:         $(tr "\n" ";" <<<"$testsToRun")"
 
 echo
-logInfo "Calling common/build_docker_daemons.sh"
+logInfo "Calling common/build_all_docker_images.sh"
 if [ "${allowParallelization}" = "true" ]; then
   # shellcheck disable=SC2016
-  "$testScriptsDir/common/build_docker_daemons.sh" &
-  buildDockerDaemonPidParallel=$!
+  "$testScriptsDir/common/build_all_docker_images.sh" &
+  buildAllDockerDaemonImagesPidParallel=$!
 else
-  "$testScriptsDir/common/build_docker_daemons.sh"
+  "$testScriptsDir/common/build_all_docker_images.sh"
 fi
 
 echo
@@ -276,7 +276,7 @@ logInfo "Calling common/apkam_setup.sh"
 
 if [ "${allowParallelization}" = "true" ]; then
   logInfo "Waiting for build_docker_daemons.sh to finish"
-  wait "$buildDockerDaemonPidParallel"
+  wait "$buildAllDockerDaemonImagesPidParallel"
   retCode=$?
   if [ "$retCode" -ne 0 ]; then
     logErrorAndReport "build_docker_daemons.sh failed with exit code $retCode"

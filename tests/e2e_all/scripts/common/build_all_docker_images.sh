@@ -10,7 +10,7 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 dockerfilesDir="$(dirname "$0")/../../dockerfiles"
 cd "$dockerfilesDir"/../../.. # go to root of the repo
 
-baseRuntimeImageName=$(getBaseRuntimeImageName)
+baseImageName=$(getBaseRuntimeImageName)
 
 doesImageExist() {
   imageName="$1" # e.g. "atsigncompany/noports_e2e_all_base_runtime:latest"
@@ -42,15 +42,9 @@ buildBaseRuntimeImage() {
     .
 }
 
-if [ "$(doesImageExist "$baseRuntimeImageName")" = "false" ]; then
-  logInfo "Base runtime image not found, building it locally"
-  buildBaseRuntimeImage
-fi
-
-if [ "${allowParallelization}" = "true" ]; then
-  # build in parallel
+buildDockerDaemonsInParallel() {
   logInfo "Building all docker daemons for $daemonVersions in parallel"
-  buildDockerDaemonPids=()
+  pids=()
   for typeAndVersion in $daemonVersions; do
     # typeAndVersion is a string like "d:4.0.5" or "c:current"
     type=$(echo "$typeAndVersion" | cut -d: -f1)
@@ -70,8 +64,9 @@ if [ "${allowParallelization}" = "true" ]; then
   for pid in "${buildDockerDaemonPids[@]}"; do
     wait $pid
   done
-else
-  # build sequentially
+}
+
+buildDockerDaemonsInSequence() {
   logInfo "Building all docker daemons for $daemonVersions sequentially"
   for typeAndVersion in $daemonVersions; do
     # typeAndVersion is a string like "d:4.0.5" or "c:current"
@@ -86,4 +81,38 @@ else
     logInfo "Building docker daemon for type $type and version $version"
     buildDockerDaemon "$type" "$version"
   done
+}
+
+buildDockerPolicyInParallel() {
+  logInfo "Building all docker policy images for $policyVersions in parallel"
+  for typeAndVersion in $policyVersions; do # e.g. "d:current d:5.14.10"
+    type=$(echo "typeAndVersion" | cut -d: -f1) # get the type e.g. "d"
+    version=$(echo "$typeAndVersion" | cut -d: -f2) # "5.14.10"
+    imageName=$(getDockerPolicyImageName "$type" "$version")
+    if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
+      logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
+      continue
+    fi
+    logInfo "Building docker daemon for type $type and version $version"
+    buildDockerPolicy "$type" "$version"
+  done
+}
+
+buildDockerPolicyInSequence() {
+  logInfo "Building all docker policy images for $policyVersions sequentially"
+}
+
+if [ "$(doesImageExist "$baseRuntimeImageName")" = "false" ]; then
+  logInfo "Base runtime image not found, building it locally"
+  buildBaseRuntimeImage
+fi
+
+if [ "${allowParallelization}" = "true" ]; then
+  # build in parallel
+  buildDockerDaemonsInParallel
+  buildDockerPolicyInParallel
+else
+  # build sequentially
+  buildDockerDaemonsInSequence
+  buildDockerPolicyInSequence
 fi
