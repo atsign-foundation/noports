@@ -21,6 +21,7 @@ jobs:
           - sshnpd
           - activate_sshnpd
           - sshnp_sshnpd
+          - npp_sshnpd
           - npt_sshnpd
           - sshnpd-slim
           - srvd
@@ -31,6 +32,8 @@ jobs:
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.activate
           - name: sshnp_sshnpd
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.sshnp
+          - name: npp_sshnpd
+            dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.npp
           - name: npt_sshnpd
             dockerfile: ./packages/dart/sshnoports/tools/Dockerfile.npt
           - name: sshnpd-slim
@@ -123,6 +126,7 @@ jobs:
           - name: sshnpd
           - name: activate_sshnpd
           - name: sshnp_sshnpd
+          - name: npp_sshnpd
           - name: npt_sshnpd
           - name: sshnpd-slim
           - name: srvd
