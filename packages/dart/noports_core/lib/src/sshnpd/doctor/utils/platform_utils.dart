@@ -263,7 +263,7 @@ class WindowsUtils implements PlatformUtils {
   @override
   List<String> getPotentialConfigPaths() {
     return [
-      'C:\ProgramData\NoPorts\sshnpd.yaml',
+      r'C:\ProgramData\NoPorts\sshnpd.yaml',
     ];
   }
 
