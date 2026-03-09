@@ -50,6 +50,8 @@ abstract class PlatformUtils {
 
   /// Get the system architecture (e.g. x64, arm64)
   Future<String> getArchitecture();
+
+  Future<String> getAtKeys(String content);
 }
 
 /// MacOS Implementation
@@ -133,6 +135,17 @@ class MacOSUtils implements PlatformUtils {
     if (arch == 'arm64') return 'arm64';
     return arch;
   }
+
+  @override
+  Future<String> getAtKeys(String content) async {
+    var atkeys = content
+              .split('\n')
+              .where((line) => line.contains('@'))
+              .map((l) => l.trim())
+              .join(', ');
+    atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
+    return atkeys;
+  }
 }
 
 /// Linux Implementation (Very similar to MacOS)
@@ -205,6 +218,16 @@ class LinuxUtils implements PlatformUtils {
     if (arch == 'aarch64' || arch == 'arm64') return 'arm64';
     if (arch.startsWith('arm')) return 'arm';
     return arch;
+  }
+    @override
+  Future<String> getAtKeys(String content) async {
+    var atkeys = content
+              .split('\n')
+              .where((line) => line.contains('@'))
+              .map((l) => l.trim())
+              .join(', ');
+    atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
+    return atkeys;
   }
 }
 
@@ -289,4 +312,15 @@ class WindowsUtils implements PlatformUtils {
     if (arch == 'ARM64') return 'arm64';
     return arch;
   }
+  @override
+  Future<String> getAtKeys(String content) async{
+    var atkeys = content
+              .split('\n')
+              .where((line) => line.contains('@'))
+              .map((l) => l.trim())
+              .join(', ');
+    atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
+    return atkeys;
+  }
 }
+

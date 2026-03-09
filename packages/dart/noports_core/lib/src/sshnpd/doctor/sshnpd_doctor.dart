@@ -23,10 +23,10 @@ class SshnpdDoctor {
       checks: [
         PrerequisitesCheck(), 
         ConnectivityCheck(), 
+        ConfigCheck(),
         KeysCheck(), 
         ServiceStatusCheck(), 
         ServiceLogsCheck(), 
-        ConfigCheck(), 
         VersionCheck(packageVersion), 
       ],
     );
