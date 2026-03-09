@@ -219,14 +219,17 @@ class LinuxUtils implements PlatformUtils {
     if (arch.startsWith('arm')) return 'arm';
     return arch;
   }
-    @override
+  @override
   Future<String> getAtKeys(String content) async {
+    final quoteRegex = RegExp(r'"([^"]*)"');
     var atkeys = content
-              .split('\n')
-              .where((line) => line.contains('@'))
-              .map((l) => l.trim())
-              .join(', ');
-    print(atkeys);
+        .split('\n')
+        .where((line) => line.contains('@'))
+        .map((line) {
+          final match = quoteRegex.firstMatch(line);
+          return match != null ? match.group(1)!.trim() : line.trim();
+        })
+        .join(', ');
     return atkeys;
   }
 }
