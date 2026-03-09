@@ -2,6 +2,10 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.10
+
+* feat: Update universal.sh to use packages where possible.
+
 ## v5.14.9
 
 * build: Ensure noports binary is packaged
