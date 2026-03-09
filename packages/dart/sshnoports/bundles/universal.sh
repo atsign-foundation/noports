@@ -1102,7 +1102,7 @@ cleanup_old_installation() {
     systemctl stop sshnpd 2>/dev/null || true
     systemctl disable sshnpd 2>/dev/null || true
     mv "/etc/systemd/system/sshnpd.service" "/etc/systemd/system/sshnpd.service.old"
-    [ -d "/etc/systemd/system/sshnpd.service.d" ] && mv "/etc/systemd/system/sshnpd.service.d" "/etc/systemd/system/sshnpd.service.d.old"
+    # We do NOT move the .service.d directory as it's still needed for User= and other overrides
     systemctl daemon-reload
   fi
 }
@@ -1184,6 +1184,20 @@ EOF
   fi
   if [ -n "$d_name" ]; then
     sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*$|\1 '$d_name'|" "$yaml_file"
+  fi
+
+  # Comment out the old Environment variables in the override file if they were migrated
+  if [ -f "$override_file" ]; then
+    if grep -q "^Environment=" "$override_file"; then
+      echo "Cleaning up migrated Environment variables from $override_file..."
+      # Add a header note to the [Service] section
+      sedi "s/^\[Service\]/\[Service\]\\
+# NOTE: Environment variables have been commented out below because\\
+# config has been migrated to $yaml_file/" "$override_file"
+
+      # Comment out any active Environment= lines
+      sedi "s/^\(Environment=.*\)/# \1/" "$override_file"
+    fi
   fi
 
   echo "Migration complete."
