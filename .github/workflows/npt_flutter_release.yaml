@@ -1,0 +1,94 @@
+name: NoPorts Desktop Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Derive bundle metadata
+        id: metadata
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            BUNDLE_ID="${GITHUB_REF_NAME}"
+          else
+            BUNDLE_ID="${SHORT_SHA}"
+          fi
+          echo "bundle_id=${BUNDLE_ID}" >> "$GITHUB_OUTPUT"
+          echo "asset_name=NoPortsDesktop-${BUNDLE_ID}-windows-x64.zip" >> "$GITHUB_OUTPUT"
+
+      - name: flutter pub get
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: flutter pub get
+
+      - name: Create a blank .env to avoid build error
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: printf "API_KEY=''\n" > .env
+
+      - name: flutter build windows --release
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: flutter build windows --release
+
+      - name: package using powershell
+        working-directory: packages/dart/npt_flutter
+        shell: pwsh
+        env:
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+        run: |
+          if (Test-Path $env:ASSET_NAME) {
+            Remove-Item $env:ASSET_NAME -Force
+          }
+          Compress-Archive `
+            -Path build/windows/x64/runner/Release/* `
+            -DestinationPath $env:ASSET_NAME
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: npt_flutter_${{ steps.metadata.outputs.bundle_id }}_${{ github.run_number }}_${{ github.run_attempt }}
+          path: packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}
+          if-no-files-found: error
+
+      - name: If release, ensure GitHub release exists
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          gh release view "${RELEASE_TAG}" >/dev/null 2>&1 || \
+          gh release create "${RELEASE_TAG}" \
+            --title "${RELEASE_TAG}" \
+            --generate-notes
+
+      - name: If release, upload desktop bundle to GitHub release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: |
+          gh release upload \
+            "${RELEASE_TAG}" \
+            "${{ steps.metadata.outputs.asset_name }}" \
+            --clobber
