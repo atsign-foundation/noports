@@ -64,7 +64,7 @@ jobs:
 
       - name: package using powershell
         working-directory: packages/dart/npt_flutter
-        shell: pwsh
+        shell: powershell
         env:
           ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
         run: |
