@@ -12,7 +12,7 @@ permissions:
 jobs:
   build-windows-desktop:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'desktop')
-    runs-on: windows-latest
+    runs-on: windows-signer
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
