@@ -10,7 +10,7 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 dockerfilesDir="$(dirname "$0")/../../dockerfiles"
 cd "$dockerfilesDir"/../../.. # go to root of the repo
 
-baseImageName=$(getBaseRuntimeImageName)
+baseRuntimeImageName=$(getBaseRuntimeImageName)
 
 doesImageExist() {
   imageName="$1" # e.g. "atsigncompany/noports_e2e_all_base_runtime:latest"
@@ -44,7 +44,7 @@ buildBaseRuntimeImage() {
 
 buildDockerDaemonsInParallel() {
   logInfo "Building all docker daemons for $daemonVersions in parallel"
-  pids=()
+  buildDockerDaemonPids=()
   for typeAndVersion in $daemonVersions; do
     # typeAndVersion is a string like "d:4.0.5" or "c:current"
     type=$(echo "$typeAndVersion" | cut -d: -f1)
@@ -85,21 +85,40 @@ buildDockerDaemonsInSequence() {
 
 buildDockerPolicyInParallel() {
   logInfo "Building all docker policy images for $policyVersions in parallel"
+  buildDockerPolicyPids=()
   for typeAndVersion in $policyVersions; do # e.g. "d:current d:5.14.10"
-    type=$(echo "typeAndVersion" | cut -d: -f1) # get the type e.g. "d"
+    type=$(echo "$typeAndVersion" | cut -d: -f1) # get the type e.g. "d"
     version=$(echo "$typeAndVersion" | cut -d: -f2) # "5.14.10"
     imageName=$(getDockerPolicyImageName "$type" "$version")
     if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
       logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
-    logInfo "Building docker daemon for type $type and version $version"
-    buildDockerPolicy "$type" "$version"
+    logInfo "Building docker policy for type $type and version $version"
+    buildDockerPolicy "$type" "$version" &
+    pid=$!
+    buildDockerPolicyPids+=($pid)
+  done
+
+  for pid in "${buildDockerPolicyPids[@]}"; do
+    wait $pid
   done
 }
 
 buildDockerPolicyInSequence() {
   logInfo "Building all docker policy images for $policyVersions sequentially"
+  for typeAndVersion in $policyVersions; do
+    type=$(echo "$typeAndVersion" | cut -d: -f1)
+    version=$(echo "$typeAndVersion" | cut -d: -f2)
+    imageName=$(getDockerPolicyImageName "$type" "$version")
+    if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
+      logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
+      continue
+    fi
+
+    logInfo "Building docker policy for type $type and version $version"
+    buildDockerPolicy "$type" "$version"
+  done
 }
 
 if [ "$(doesImageExist "$baseRuntimeImageName")" = "false" ]; then

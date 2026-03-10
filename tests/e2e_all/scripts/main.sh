@@ -22,6 +22,7 @@ function usageAndExit {
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
   echo "     [-c <client versions>] - defaults to $defaultClientVersions \\"
+  echo "     [-u <policy versions>] - defaults to $defaultPolicyVersions \\"
   echo "     [-w <daemon start wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
   echo "     [-p (Enable test parallelization) ]"
@@ -50,9 +51,11 @@ testsToRun="all"
 # defaultDaemonVersions="c:current"
 defaultDaemonVersions="d:current c:current d:5.9.4 d:5.11.2 d:5.13.0"
 defaultClientVersions="d:current d:5.9.4 d:5.11.2 d:5.13.0"
+defaultPolicyVersions="d:5.14.9 d:current"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions
+policyVersions=$defaultPolicyVersions
 
 unset testScriptsDir
 unset testRootDir
@@ -151,6 +154,7 @@ while getopts r:t:s:c:u:w:pn opt; do
   t) testsToRun=$OPTARG ;;
   s) daemonVersions=$OPTARG ;;
   c) clientVersions=$OPTARG ;;
+  u) policyVersions=$OPTARG ;;
   w) daemonStartWait=$OPTARG ;;
   p) allowParallelization="true" ;;
   n) recompile="false" ;;
@@ -169,6 +173,7 @@ export atDirectoryPort
 export testsToRun
 export daemonVersions
 export clientVersions
+export policyVersions
 export remoteUsername="atsign"
 export identityFilename
 export daemonStartWait
@@ -216,6 +221,7 @@ logInfo "    parallelization:    $allowParallelization"
 logInfo "    atDirectoryHost:    $atDirectoryHost"
 logInfo "    daemonVersions:     $daemonVersions"
 logInfo "    clientVersions:     $clientVersions"
+logInfo "    policyVersions:     $policyVersions"
 logInfo "    commitId:           $commitId"
 logInfo "    testsToRun:         $(tr "\n" ";" <<<"$testsToRun")"
 

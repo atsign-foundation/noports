@@ -684,6 +684,17 @@ getDockerDaemonImageName() {
   fi
 }
 
+getDockerPolicyImageName() {
+  type="$1"
+  version="$2"
+
+  if [ "$type" != "d" ]; then
+    logErrorAndExit "Policy services currently support only d:<version>, got $type:$version"
+  fi
+
+  getDockerDaemonImageName "$type" "$version"
+}
+
 getBaseRuntimeImageName() {
   echo "atsigncompany/noports_e2e_all_base_runtime:latest"
 }
@@ -752,6 +763,18 @@ buildDockerDaemon() {
   fi
 }
 
+buildDockerPolicy() {
+  local type="$1"
+  local version="$2"
+
+  if [ "$type" != "d" ]; then
+    logErrorAndReport "Error: policy services currently support only d:<version>, got $type:$version"
+    return 1
+  fi
+
+  buildDockerDaemon "$type" "$version"
+}
+
 # usage: `waitUntilDockerDaemonStarted $logFile $timeout` 
 # - logFile is the path to the log file of the docker daemon
 # - timeout is optional, default is 60 seconds
@@ -769,6 +792,22 @@ waitUntilDockerDaemonStarted() {
   cat $logFile
   
   exit 1
+}
+
+waitUntilDockerContainerRunning() {
+  local containerName="$1"
+  local timeout="${2:-60}"
+
+  for i in $(seq 1 "$timeout"); do
+    if sudo docker ps --filter "name=^/${containerName}$" --format '{{.Names}}' | grep -q "^${containerName}$"; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  logError "Container did not stay running: $containerName"
+  sudo docker logs "$containerName" 2>/dev/null || true
+  return 1
 }
 
 # e.g. `runDockerDaemon "d" "4.0.5" "deviceName" "clientAtSign" "daemonAtSign" "log.txt" "-u -s"
@@ -793,6 +832,29 @@ runDockerDaemon() {
     -v \"$testRuntimeDir/keys/:/atsign/.atsign/keys/\" \
     \"$tag\" \
     /bin/bash -c \"sudo service ssh start && /usr/local/bin/sshnpd -a $daemonAt -m $clientAt -d $deviceName $daemonFlags --root-domain $atDirectoryHost -v\""
+
+  logInfo "Executing: $dockerRunCommand"
+  eval "$dockerRunCommand"
+}
+
+runDockerPolicy() {
+  local type="$1"
+  local version="$2"
+  local policyContainerSuffix="$3"
+  local policyAt="$4"
+
+  tag=$(getDockerPolicyImageName "$type" "$version")
+  containerName="e2e_all-policy-$policyContainerSuffix"
+
+  logInfo "Starting policy container for: Type: $type, Version: $version, Policy atSign: $policyAt, containerName: $containerName"
+
+  local dockerRunCommand="sudo docker run \
+    --rm \
+    -d \
+    --name \"$containerName\" \
+    -v \"$testRuntimeDir/keys/:/atsign/.atsign/keys/\" \
+    \"$tag\" \
+    /bin/bash -c \"/usr/local/bin/npp -a $policyAt --root-domain $atDirectoryHost -v\""
 
   logInfo "Executing: $dockerRunCommand"
   eval "$dockerRunCommand"

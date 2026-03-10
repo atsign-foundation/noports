@@ -21,6 +21,10 @@ if [ -z "$clientVersions" ] ; then
   echo -e "    ${RED}check_env: clientVersions is not set${NC}" && exit 1
 fi
 
+if [ -z "$policyVersions" ] ; then
+  echo -e "    ${RED}check_env: policyVersions is not set${NC}" && exit 1
+fi
+
 if [ -z "$clientAtSign" ] ; then
   echo -e "    ${RED}check_env: clientAtSign is not set${NC}" && exit 1
 fi
@@ -35,6 +39,10 @@ fi
 
 if [ -z "$policyAtSign" ] ; then
   echo -e "    ${RED}check_env: policyAtSign is not set${NC}" && exit 1
+fi
+
+if [ -z "$policyLatestAtSign" ] ; then
+  echo -e "    ${RED}check_env: policyLatestAtSign is not set${NC}" && exit 1
 fi
 
 if [ -z "$eventsAtSign" ] ; then

@@ -9,6 +9,7 @@ source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
 outputDir=$(getOutputDir)
 mkdir -p "${outputDir}/daemons"
+mkdir -p "${outputDir}/policies"
 
 dockerfilesDir="$(dirname "$0")/../../dockerfiles"
 cd "$dockerfilesDir"/../../..
@@ -53,4 +54,33 @@ done
 for logFile in "${logFilesToCheck[@]}"; do
   logInfo "Waiting for Docker daemon with logFile \"$logFile\" to start..."
   waitUntilDockerDaemonStarted "$logFile" 60
+done
+
+policyContainersToCheck=()
+for typeAndVersion in $policyVersions; do
+  type=$(echo "$typeAndVersion" | cut -d: -f1)
+  version=$(echo "$typeAndVersion" | cut -d: -f2)
+  versionForContainerName=$(echo "$version" | tr -d ".")
+
+  if [ "$version" = "current" ]; then
+    policyAt="$policyLatestAtSign"
+    policyTag="latest"
+  else
+    policyAt="$policyAtSign"
+    policyTag="release"
+  fi
+
+  policyContainerSuffix="${commitId}${type}${versionForContainerName}-${policyTag}"
+  policyContainerName="e2e_all-policy-$policyContainerSuffix"
+  policyLogFile="${outputDir}/policies/${policyContainerSuffix}.log"
+
+  echo "Starting policy version $typeAndVersion with atSign $policyAt" >> "$policyLogFile"
+  runDockerPolicy "$type" "$version" "$policyContainerSuffix" "$policyAt"
+  sudo docker logs -f "$policyContainerName" >> "$policyLogFile" 2>&1 &
+  policyContainersToCheck+=("$policyContainerName")
+done
+
+for containerName in "${policyContainersToCheck[@]}"; do
+  logInfo "Waiting for Docker policy container \"$containerName\" to start..."
+  waitUntilDockerContainerRunning "$containerName" 60 || exit 1
 done
