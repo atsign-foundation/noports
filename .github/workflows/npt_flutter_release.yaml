@@ -1,9 +1,9 @@
 name: NoPorts Desktop Release
 
 on:
-  push:
-    tags:
-      - "desktop*.*.*+*"
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 permissions:
@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   build-windows-desktop:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'desktop')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -25,8 +26,8 @@ jobs:
         shell: bash
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
-            BUNDLE_ID="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+            BUNDLE_ID="${{ github.event.release.tag_name }}"
           else
             BUNDLE_ID="${SHORT_SHA}"
           fi
@@ -68,23 +69,11 @@ jobs:
           path: packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}
           if-no-files-found: error
 
-      - name: If release, ensure GitHub release exists
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        shell: bash
-        run: |
-          gh release view "${RELEASE_TAG}" >/dev/null 2>&1 || \
-          gh release create "${RELEASE_TAG}" \
-            --title "${RELEASE_TAG}" \
-            --generate-notes
-
       - name: If release, upload desktop bundle to GitHub release
-        if: github.event_name == 'push'
+        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
