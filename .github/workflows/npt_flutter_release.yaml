@@ -3,7 +3,7 @@ name: NoPorts Desktop Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "desktop*.*.*+*"
   workflow_dispatch:
 
 permissions:
