@@ -5,11 +5,23 @@ import 'package:noports_core/src/commands/utils/constants.dart';
 
 enum ActivateType {
   cram,
-  enroll;
+  enroll,
+  fetch;
+
+  RegExp get regex {
+    switch (this) {
+      case ActivateType.cram:
+        return ActivateRegex.cram;
+      case ActivateType.enroll:
+        return ActivateRegex.enroll;
+      case ActivateType.fetch:
+        return ActivateRegex.fetch;
+    }
+  }
 
   static ActivateType parse(String input) {
     try {
-      return values.firstWhere((type) => input.contains(type.name));
+      return values.firstWhere((type) => input.contains(':${type.name}:'));
     } catch (e) {
       throw ArgumentError(
         'Invalid activation type in: $input (expected "cram" or "enroll")',
@@ -24,6 +36,9 @@ class ActivateParams {
   final String? cramSecret;
   final String? otp;
   final String? deviceName;
+  final String? fetchLocation;
+  final String? fetchAes64;
+  final String? fetchIv64;
   final appName = defaultAppName;
   final namespaces = defaultEnrollmentNamespaces;
   String? atKeysFilePath;
@@ -42,6 +57,9 @@ class ActivateParams {
     this.cramSecret,
     this.otp,
     this.deviceName,
+    this.fetchLocation,
+    this.fetchAes64,
+    this.fetchIv64,
     this.atKeysFilePath,
     required this.rootDomain,
     this.verbose = false,
@@ -58,7 +76,7 @@ class ActivateParams {
     if (results.rest.isEmpty) {
       throw ArgumentError(
         'Activation string is required (e.g. @alice:cram:secret or'
-        ' @alice:enroll:otp:123456)',
+            ' @alice:enroll:otp:123456)',
       );
     }
 
@@ -73,12 +91,16 @@ class ActivateParams {
     // parse from arg parser results
     final keyfile = results['target-keyfile'] as String?;
 
+    final parsedFetch = _parseFetch(activationString);
     return ActivateParams(
       atsign: atsign,
       type: type,
       cramSecret: _parseCramSecret(activationString),
       otp: _parseOtp(activationString),
       deviceName: _parseDeviceName(activationString),
+      fetchLocation: parsedFetch.$1,
+      fetchAes64: parsedFetch.$2,
+      fetchIv64: parsedFetch.$3,
       atKeysFilePath: keyfile,
       rootDomain: results['root-server'],
       verbose: results['verbose'],
@@ -153,6 +175,15 @@ class ActivateParams {
     final match = ActivateRegex.enroll.firstMatch(input);
     return match?.namedGroup(ActivateRegexGroups.deviceName);
   }
+
+  static (String?, String?, String?) _parseFetch(String input) {
+    final match = ActivateRegex.fetch.firstMatch(input);
+    return (
+    match?.namedGroup(ActivateRegexGroups.fetchLocation),
+    match?.namedGroup(ActivateRegexGroups.fetchAes64),
+    match?.namedGroup(ActivateRegexGroups.fetchIv64),
+    );
+  }
 }
 
 class ActivateRegex {
@@ -164,6 +195,10 @@ class ActivateRegex {
     r'^(?<atsign>[^:]+):enroll:otp:(?<otp>[A-Za-z0-9]{6})'
     r'(?::name:(?<device_name>[^]+))?$', // ?: indicates a non-capturing group
   );
+
+  static final fetch = RegExp(
+    r'^(?<atsign>[^:]+):fetch:(?<location>.+):(?<aes64>.+):(?<iv64>.+)$',
+  );
 }
 
 /// Named capture groups used in [ActivateRegex]
@@ -173,4 +208,7 @@ class ActivateRegexGroups {
   static const otp = 'otp';
   static const deviceName = 'device_name';
   static const keyfilePath = 'keyfile_path';
+  static const fetchLocation = 'location';
+  static const fetchAes64 = 'aes64';
+  static const fetchIv64 = 'iv64';
 }

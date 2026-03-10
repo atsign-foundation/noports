@@ -46,6 +46,8 @@ class Activate {
         return await cramAuthenticate();
       case ActivateType.enroll:
         return await enroll();
+      case ActivateType.fetch:
+        return await fetch();
     }
   }
 
@@ -107,6 +109,11 @@ class Activate {
     );
 
     return response.enrollStatus == EnrollmentStatus.approved ? 0 : 1;
+  }
+
+  /// Fetches keys which have been generated elsewhere for this device
+  Future<int> fetch() async {
+    throw UnimplementedError('Not implemented');
   }
 
   /// Validates and prepares the atKeys file location before enrollment.
