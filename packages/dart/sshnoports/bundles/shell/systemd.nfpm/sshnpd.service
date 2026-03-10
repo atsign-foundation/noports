@@ -1,5 +1,5 @@
 [Unit]
-Description=Ssh No Ports Daemon
+Description=NoPorts Daemon
 After=network-online.target
 
 [Install]
@@ -11,7 +11,6 @@ Restart=always
 RestartSec=3
 KillMode=process
 
-# The line below runs the sshnpd service, with the options set in
-# /etc/systemd/system/sshnpd.d/override.conf.
-# You can edit that config with: sudo systemctl edit sshnpd
-ExecStart=/usr/local/bin/sshnpd -a "$device_atsign" -m "$manager_atsign" -d "$device_name" "$delegate_policy" "$s" "$u" "$v" "$additional_args"
+# The line below runs the sshnpd service, with the config from
+# /etc/noports/sshnpd.yaml
+ExecStart=/usr/bin/sshnpd

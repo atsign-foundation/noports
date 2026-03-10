@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.14.9
+version: 5.14.10
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -35,5 +35,5 @@ dev_dependencies:
   lints: ^6.1.0
   test: ^1.30.0
   mocktail: ^1.0.4
-  build_runner: 2.12.1
+  build_runner: 2.12.2
   build_version: ^2.1.3
