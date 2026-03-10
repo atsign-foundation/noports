@@ -83,19 +83,18 @@ Policy images use:
 
 ```text
 atsigncompany/noports_e2e_all_policy_<type>:current
-atsigncompany/noports_e2e_all_policy_<type>:v<version>
 ```
 
 Examples:
 
 ```text
 atsigncompany/noports_e2e_all_policy_d:current
-atsigncompany/noports_e2e_all_policy_d:v5.14.9
 ```
 
 Notes:
 
 - Daemon image names come from `getDockerDaemonImageName`.
 - Policy image names come from `getDockerPolicyImageName`.
-- Policy services currently support only Dart policy images, so policy versions must be `d:<version>`.
-- Release policy images are pulled first when available and built locally only as a fallback.
+- Policy services currently support only the current branch Dart policy image, so `e2e_all` only runs `d:current`.
+- `@policyAtSign` is currently ignored by the harness because there is no release policy service to run yet.
+- `@policyLatestAtSign` is the atSign used for the current branch policy service.
