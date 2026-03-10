@@ -692,51 +692,63 @@ getDockerPolicyImageName() {
     logErrorAndExit "Policy services currently support only d:<version>, got $type:$version"
   fi
 
-  getDockerDaemonImageName "$type" "$version"
+  if [ "$version" = "current" ]; then
+      echo "atsigncompany/noports_e2e_all_policy_$type:current"
+  else
+      echo "atsigncompany/noports_e2e_all_policy_$type:v$version"
+  fi
 }
 
 getBaseRuntimeImageName() {
   echo "atsigncompany/noports_e2e_all_base_runtime:latest"
 }
 
-buildDockerDaemon() {
+getDockerfileForTypeAndVersion() {
   local type="$1"
   local version="$2"
-  
+  local language
+
   if [ "$type" = "d" ]; then
-      language="dart"
+    language="dart"
   elif [ "$type" = "c" ]; then
-      language="c"
+    language="c"
   else
-      logErrorAndReport "Error: Unknown type: $type"
-      return 1
+    logErrorAndReport "Error: Unknown type: $type"
+    return 1
   fi
 
-  imageName=$(getDockerDaemonImageName "$type" "$version")
   if [ "$version" = "current" ]; then
-      dockerfile="$dockerfilesDir/Dockerfile.$language.current"
-      tag="$imageName"
-      fBuildArg=""
-      fCache="--no-cache"
+    echo "$dockerfilesDir/Dockerfile.$language.current"
   else
-      # assume "$version" is a release version like "4.0.5" or "5.2.0"
-      dockerfile="$dockerfilesDir/Dockerfile.$language.release"
-      tag="$imageName"
-      fBuildArg="--build-arg release=$version"
-      fCache=""
+    echo "$dockerfilesDir/Dockerfile.$language.release"
+  fi
+}
+
+buildDockerImage() {
+  local imageName="$1"
+  local dockerfile="$2"
+  local version="$3"
+  local buildTarget="${4:-runtime}"
+  local fBuildArg=""
+  local fCache=""
+
+  if [ "$version" = "current" ]; then
+    fCache="--no-cache"
+  else
+    fBuildArg="--build-arg release=$version"
   fi
 
-  logInfo "Building container for:      Type: $type, Version: $version"
+  logInfo "Building image $imageName from $dockerfile for version $version"
 
   local dockerBuildCommand="sudo docker build \
       -f \"$dockerfile\" \
-      -t $tag \
+      -t $imageName \
       --quiet \
       $fCache \
       $fBuildArg \
-      --target runtime \
+      --target $buildTarget \
       ."
-  
+
   logInfo "Executing Docker build command: $dockerBuildCommand"
 
   local max_retries=3
@@ -755,24 +767,64 @@ buildDockerDaemon() {
   done
   
   if [ $exitCode -ne 0 ]; then
-      logErrorAndReport "Error: Docker build failed with exit code $exitCode after $max_retries attempts"
-      return $exitCode
+    logErrorAndReport "Error: Docker build failed with exit code $exitCode after $max_retries attempts"
+    return $exitCode
   else
-      logInfo "Container $type $version built successfully"
-      return 0
+    logInfo "Image $imageName built successfully"
+    return 0
   fi
+}
+
+pullDockerImage() {
+  local imageName="$1"
+
+  logInfo "Attempting to pull image $imageName"
+  sudo docker pull "$imageName" --quiet
+}
+
+buildDockerDaemon() {
+  local type="$1"
+  local version="$2"
+  local imageName
+  local dockerfile
+
+  imageName=$(getDockerDaemonImageName "$type" "$version")
+  dockerfile=$(getDockerfileForTypeAndVersion "$type" "$version") || return 1
+
+  logInfo "Building container for: Type: $type, Version: $version"
+  buildDockerImage "$imageName" "$dockerfile" "$version"
+}
+
+pullOrBuildDockerPolicy() {
+  local type="$1"
+  local version="$2"
+  local imageName="$3"
+
+  if pullDockerImage "$imageName"; then
+    logInfo "Successfully pulled policy image $imageName"
+    return 0
+  fi
+
+  logWarning "Could not pull policy image $imageName, building it locally"
+  buildDockerPolicy "$type" "$version"
 }
 
 buildDockerPolicy() {
   local type="$1"
   local version="$2"
+  local imageName
+  local dockerfile
 
   if [ "$type" != "d" ]; then
     logErrorAndReport "Error: policy services currently support only d:<version>, got $type:$version"
     return 1
   fi
 
-  buildDockerDaemon "$type" "$version"
+  imageName=$(getDockerPolicyImageName "$type" "$version")
+  dockerfile=$(getDockerfileForTypeAndVersion "$type" "$version") || return 1
+
+  logInfo "Building policy container for: Type: $type, Version: $version"
+  buildDockerImage "$imageName" "$dockerfile" "$version"
 }
 
 # usage: `waitUntilDockerDaemonStarted $logFile $timeout` 

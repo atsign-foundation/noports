@@ -94,8 +94,13 @@ buildDockerPolicyInParallel() {
       logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
-    logInfo "Building docker policy for type $type and version $version"
-    buildDockerPolicy "$type" "$version" &
+    if [ "$version" = "current" ]; then
+      logInfo "Building docker policy for type $type and version $version"
+      buildDockerPolicy "$type" "$version" &
+    else
+      logInfo "Pulling docker policy for type $type and version $version, with local build fallback"
+      pullOrBuildDockerPolicy "$type" "$version" "$imageName" &
+    fi
     pid=$!
     buildDockerPolicyPids+=($pid)
   done
@@ -116,8 +121,13 @@ buildDockerPolicyInSequence() {
       continue
     fi
 
-    logInfo "Building docker policy for type $type and version $version"
-    buildDockerPolicy "$type" "$version"
+    if [ "$version" = "current" ]; then
+      logInfo "Building docker policy for type $type and version $version"
+      buildDockerPolicy "$type" "$version"
+    else
+      logInfo "Pulling docker policy for type $type and version $version, with local build fallback"
+      pullOrBuildDockerPolicy "$type" "$version" "$imageName"
+    fi
   done
 }
 
