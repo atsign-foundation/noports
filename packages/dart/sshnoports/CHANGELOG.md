@@ -2,6 +2,11 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.12
+
+* feat: npp.dart
+* feat: npp_client.dart
+
 ## v5.14.10
 
 * feat: Update universal.sh to use packages where possible.
