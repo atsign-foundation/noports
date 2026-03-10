@@ -49,6 +49,19 @@ jobs:
         shell: bash
         run: flutter build windows --release
 
+      - name: Sign Windows desktop binaries
+        working-directory: packages/dart/npt_flutter/build/windows/x64/runner/Release
+        shell: bash
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          source ../../../../../../../tools/codesign_windows.sh
+          shopt -s nullglob
+          for FILE in *.exe *.dll; do
+            sign_file "$FILE"
+          done
+
       - name: package using powershell
         working-directory: packages/dart/npt_flutter
         shell: pwsh
