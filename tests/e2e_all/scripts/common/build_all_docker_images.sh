@@ -89,18 +89,17 @@ buildDockerPolicyInParallel() {
   for typeAndVersion in $policyVersions; do # e.g. "d:current d:5.14.10"
     type=$(echo "$typeAndVersion" | cut -d: -f1) # get the type e.g. "d"
     version=$(echo "$typeAndVersion" | cut -d: -f2) # "5.14.10"
+    if [ "$version" != "current" ]; then
+      logWarning "Skipping policy image build for $typeAndVersion. e2e_all currently runs only the current branch policy service."
+      continue
+    fi
     imageName=$(getDockerPolicyImageName "$type" "$version")
     if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
       logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
-    if [ "$version" = "current" ]; then
-      logInfo "Building docker policy for type $type and version $version"
-      buildDockerPolicy "$type" "$version" &
-    else
-      logInfo "Pulling docker policy for type $type and version $version, with local build fallback"
-      pullOrBuildDockerPolicy "$type" "$version" "$imageName" &
-    fi
+    logInfo "Building docker policy for type $type and version $version"
+    buildDockerPolicy "$type" "$version" &
     pid=$!
     buildDockerPolicyPids+=($pid)
   done
@@ -115,19 +114,18 @@ buildDockerPolicyInSequence() {
   for typeAndVersion in $policyVersions; do
     type=$(echo "$typeAndVersion" | cut -d: -f1)
     version=$(echo "$typeAndVersion" | cut -d: -f2)
+    if [ "$version" != "current" ]; then
+      logWarning "Skipping policy image build for $typeAndVersion. e2e_all currently runs only the current branch policy service."
+      continue
+    fi
     imageName=$(getDockerPolicyImageName "$type" "$version")
     if [ "$(doesImageExist "$imageName")" = "true" ] && [ "$recompile" = "false" ]; then
       logInfo "You set recompile = $recompile (using -n) and $imageName already exists, so skipping build for $typeAndVersion"
       continue
     fi
 
-    if [ "$version" = "current" ]; then
-      logInfo "Building docker policy for type $type and version $version"
-      buildDockerPolicy "$type" "$version"
-    else
-      logInfo "Pulling docker policy for type $type and version $version, with local build fallback"
-      pullOrBuildDockerPolicy "$type" "$version" "$imageName"
-    fi
+    logInfo "Building docker policy for type $type and version $version"
+    buildDockerPolicy "$type" "$version"
   done
 }
 

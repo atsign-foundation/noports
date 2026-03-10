@@ -17,7 +17,6 @@ mkdir -p $testAtKeysDir
 daemonAtKeysFile="$HOME/.atsign/keys/"$daemonAtSign"_key.atKeys" 
 clientAtKeysFile="$HOME/.atsign/keys/"$clientAtSign"_key.atKeys"
 relayAtKeysFile="$HOME/.atsign/keys/"$srvAtSign"_key.atKeys"
-policyAtKeysFile="$HOME/.atsign/keys/"$policyAtSign"_key.atKeys"
 policyLatestAtKeysFile="$HOME/.atsign/keys/"$policyLatestAtSign"_key.atKeys"
 eventsAtKeysFile="$HOME/.atsign/keys/"$eventsAtSign"_key.atKeys"
 singletonAtKeysFile="$HOME/.atsign/keys/"$singletonAtSign"_key.atKeys"
@@ -31,9 +30,6 @@ logInfo "Copied $clientAtKeysFile to $testAtKeysDir"
 cp $relayAtKeysFile $testAtKeysDir
 logInfo "Copied $relayAtKeysFile to $testAtKeysDir"
 
-cp $policyAtKeysFile $testAtKeysDir
-logInfo "Copied $policyAtKeysFile to $testAtKeysDir"
-
 cp $policyLatestAtKeysFile $testAtKeysDir
 logInfo "Copied $policyLatestAtKeysFile to $testAtKeysDir"
 
@@ -42,4 +38,3 @@ logInfo "Copied $eventsAtKeysFile to $testAtKeysDir"
 
 cp $singletonAtKeysFile $testAtKeysDir
 logInfo "Copied $singletonAtKeysFile to $testAtKeysDir"
-

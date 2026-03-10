@@ -62,13 +62,12 @@ for typeAndVersion in $policyVersions; do
   version=$(echo "$typeAndVersion" | cut -d: -f2)
   versionForContainerName=$(echo "$version" | tr -d ".")
 
-  if [ "$version" = "current" ]; then
-    policyAt="$policyLatestAtSign"
-    policyTag="latest"
-  else
-    policyAt="$policyAtSign"
-    policyTag="release"
+  if [ "$version" != "current" ]; then
+    logWarning "Skipping policy version $typeAndVersion. e2e_all currently runs only the current branch policy service on $policyLatestAtSign"
+    continue
   fi
+  policyAt="$policyLatestAtSign"
+  policyTag="latest"
 
   policyContainerSuffix="${commitId}${type}${versionForContainerName}-${policyTag}"
   policyContainerName="e2e_all-policy-$policyContainerSuffix"
