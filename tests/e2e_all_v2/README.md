@@ -1,21 +1,38 @@
-# tests/e2e_all/dockerfiles
+# tests/e2e_all_v2
 
-- [tests/e2e_all/dockerfiles](#tests-e2e-all-dockerfiles)
+- [tests/e2e_all_v2](#testse2e_all_v2)
+  * [Dockerfile.base](#dockerfilebase)
+    + [1. Build the Base Image](#1-build-the-base-image)
   * [Dockerfile.c.branch](#dockerfilecbranch)
-    + [1. From Commit Hash](#1-from-commit-hash-1)
-    + [2. From Branch Name](#2-from-branch-name-1)
+    + [1. From Commit Hash](#1-from-commit-hash)
+    + [2. From Branch Name](#2-from-branch-name)
   * [Dockerfile.c.current](#dockerfileccurrent)
     + [1. From Root Directory](#1-from-root-directory)
   * [Dockerfile.c.release](#dockerfilecrelease)
-    + [1. From Release Version](#1-from-release-version-1)
+    + [1. From Release Version](#1-from-release-version)
   * [Dockerfile.dart.branch](#dockerfiledartbranch)
-    + [1. From Commit Hash](#1-from-commit-hash)
-    + [2. From Branch Name](#2-from-branch-name)
+    + [1. From Commit Hash](#1-from-commit-hash-1)
+    + [2. From Branch Name](#2-from-branch-name-1)
   * [Dockerfile.dart.current](#dockerfiledartcurrent)
     + [1. From Root Directory](#1-from-root-directory-1)
   * [Dockerfile.dart.release](#dockerfiledartrelease)
-    + [1. From Release Version](#1-from-release-version)
+    + [1. From Release Version](#1-from-release-version-1)
     + [2. From Latest Version](#2-from-latest-version)
+
+## Dockerfile.base
+
+Build the shared base image first:
+
+### 1. Build the Base Image
+
+```bash
+sudo docker build \
+    -f tests/e2e_all_v2/Dockerfile.base \
+    -t atsigncompany/noports_e2e_all_v2_base:latest \
+    tests/e2e_all_v2
+```
+
+This image provides the `atsign` user, SSH server, sudo access, and the base filesystem layout used by the rest of the Dockerfiles.
 
 ## Dockerfile.c.branch
 
@@ -28,10 +45,9 @@ commit_hash=$(git rev-parse HEAD)
 echo "Latest commit hash: $commit_hash"
 
 sudo docker build \
-    -f Dockerfile.c.branch \
+    -f tests/e2e_all_v2/Dockerfile.c.branch \
     -t noports-c:$commit_hash \
     --build-arg branch=$commit_hash \
-    --target runtime \
     .
 
 sudo docker run \
@@ -39,7 +55,7 @@ sudo docker run \
     -it \
     -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
     noports-c:$commit_hash \
-    /bin/bash -c "sudo service ssh start && /usr/local/bin/sshnpd -a @12snowboating -m @12alpaca -d c-test -s -v"
+    /bin/bash -c "sudo service ssh start && /usr/bin/sshnpd -a @12snowboating -m @12alpaca -d c-test -s -v"
 ```
 
 ### 2. From Branch Name
@@ -48,10 +64,9 @@ sudo docker run \
 branch=trunk
 
 sudo docker build \
-    -f Dockerfile.c.branch \
+    -f tests/e2e_all_v2/Dockerfile.c.branch \
     -t noports-c:$branch \
     --build-arg branch=$branch \
-    --target runtime \
     .
 
 sudo docker run \
@@ -59,12 +74,12 @@ sudo docker run \
     -it \
     -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
     noports-c:$branch \
-    /bin/bash -c "sudo service ssh start && /usr/local/bin/sshnpd -a @12snowboating -m @12alpaca -d c-trunk -s -v"
+    /bin/bash -c "sudo service ssh start && /usr/bin/sshnpd -a @12snowboating -m @12alpaca -d c-trunk -s -v"
 ```
 
 ## Dockerfile.c.current
 
-Here are some examples of building a Docker image containing C binaries from the current repository as it is
+Here are some examples of building a Docker image containing C binaries from the current repository as it is.
 
 ### 1. From Root Directory
 
@@ -72,9 +87,8 @@ Ensure that `pwd` is the root directory of the repository.
 
 ```bash
 sudo docker build \
-    -f tests/e2e_all/dockerfiles/Dockerfile.c.current \
+    -f tests/e2e_all_v2/Dockerfile.c.current \
     -t noports-c:current \
-    --target runtime \
     .
 ```
 
@@ -117,14 +131,15 @@ Here are some examples of running a Docker image with C binaries.
 
 ### 1. From Release Version
 
+Note: `Dockerfile.c.release` expects the numeric part of the release, for example `1.0.0`, and internally downloads from the `c<version>` GitHub release tag.
+
 ```bash
-release=c1.0.0
+release=1.0.0
 
 sudo docker build \
-    -f ./Dockerfile.c.release \
+    -f tests/e2e_all_v2/Dockerfile.c.release \
     -t noports-c:$release \
     --build-arg release=$release \
-    --target runtime \
     .
 
 sudo docker run \
@@ -132,7 +147,7 @@ sudo docker run \
     -it \
     -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
     noports-c:$release \
-    /bin/bash -c "sudo service ssh start && /usr/local/bin/sshnpd -a @12snowboating -m @12alpaca -d c101 -s -u -v"
+    /bin/bash -c "sudo service ssh start && /usr/local/bin/sshnpd -a @12snowboating -m @12alpaca -d c100 -s -u -v"
 ```
 
 ## Dockerfile.dart.branch
@@ -146,30 +161,28 @@ commit_hash=$(git rev-parse HEAD)
 echo "Latest commit hash: $commit_hash"
 
 sudo docker build \
-    -f Dockerfile.dart.branch \
+    -f tests/e2e_all_v2/Dockerfile.dart.branch \
     -t noports-dart:$commit_hash \
     --build-arg branch=$commit_hash \
-    --target runtime \
     .
 
 sudo docker run \
     --rm \
     -it \
     -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
-    noports-dart:$release \
+    noports-dart:$commit_hash \
     /bin/bash -c "sudo service ssh start && /usr/local/bin/sshnpd -a @12snowboating -m @12alpaca -d dart-latest-hash -s -v"
 ```
 
 ### 2. From Branch Name
 
 ```bash
-branch="trunk"
+branch=trunk
 
 sudo docker build \
-    -f Dockerfile.dart.branch \
+    -f tests/e2e_all_v2/Dockerfile.dart.branch \
     -t noports-dart:$branch \
     --build-arg branch=$branch \
-    --target runtime \
     .
 
 sudo docker run \
@@ -182,7 +195,7 @@ sudo docker run \
 
 ## Dockerfile.dart.current
 
-Here are some examples of building a Docker image containing Dart binaries from the current repository as it is
+Here are some examples of building a Docker image containing Dart binaries from the current repository as it is.
 
 ### 1. From Root Directory
 
@@ -190,9 +203,8 @@ Ensure that `pwd` is the root directory of the repository.
 
 ```bash
 sudo docker build \
-    -f tests/e2e_all/dockerfiles/Dockerfile.dart.current \
+    -f tests/e2e_all_v2/Dockerfile.dart.current \
     -t noports-dart:current \
-    --target runtime \
     .
 ```
 
@@ -214,13 +226,12 @@ Here are some examples of running a Docker image with Dart binaries.
 ### 1. From Release Version
 
 ```bash
-release=v5.8.7
+release=5.8.7
 
 sudo docker build \
-    -f ./Dockerfile.dart.release \
+    -f tests/e2e_all_v2/Dockerfile.dart.release \
     -t noports-dart:$release \
     --build-arg release=$release \
-    --target runtime \
     .
 
 sudo docker run \
@@ -237,10 +248,9 @@ sudo docker run \
 release=latest
 
 sudo docker build \
-    -f ./Dockerfile.dart.release \
+    -f tests/e2e_all_v2/Dockerfile.dart.release \
     -t noports-dart:$release \
     --build-arg release=$release \
-    --target runtime \
     .
 
 sudo docker run \
