@@ -43,4 +43,59 @@ tests/e2e_all/scripts/main.sh \
   @npe2e_events \
   -t noop \
   -r root.atsign.wtf
+
+## Developer
+
+### Prerequisites
+
+To run the `e2e_all` scripts locally, you need:
+
+- Docker installed
+- The Docker daemon running
+- Docker registry access configured with `docker login`
+- macOS or Linux
+
+Notes:
+
+- The shell scripts only handle macOS and Linux runtime setup.
+- The Docker-based daemon and policy startup flow assumes local Docker access is available from the shell running the scripts.
+
+### Docker Image Naming
+
+The `e2e_all` harness uses separate Docker image namespaces for daemon containers and policy containers.
+
+Daemon images use:
+
+```text
+atsigncompany/noports_e2e_all_<type>:current
+atsigncompany/noports_e2e_all_<type>:v<version>
 ```
+
+Examples:
+
+```text
+atsigncompany/noports_e2e_all_d:current
+atsigncompany/noports_e2e_all_d:v5.13.0
+atsigncompany/noports_e2e_all_c:current
+```
+
+Policy images use:
+
+```text
+atsigncompany/noports_e2e_all_policy_<type>:current
+atsigncompany/noports_e2e_all_policy_<type>:v<version>
+```
+
+Examples:
+
+```text
+atsigncompany/noports_e2e_all_policy_d:current
+atsigncompany/noports_e2e_all_policy_d:v5.14.9
+```
+
+Notes:
+
+- Daemon image names come from `getDockerDaemonImageName`.
+- Policy image names come from `getDockerPolicyImageName`.
+- Policy services currently support only Dart policy images, so policy versions must be `d:<version>`.
+- Release policy images are pulled first when available and built locally only as a fallback.
