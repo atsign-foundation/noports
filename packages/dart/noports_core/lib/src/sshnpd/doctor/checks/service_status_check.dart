@@ -19,15 +19,42 @@ class ServiceStatusCheck extends DiagnosticCheck {
     // 2. Check Service (Is it registered with systemd/launchd/Windows Service?)
     bool serviceInstalled = await PlatformUtils.instance.isServiceInstalled(serviceName);
     bool serviceRunning = false;
+    ServiceExitInfo? exitInfo;
+
     if (serviceInstalled) {
       serviceRunning = await PlatformUtils.instance.isServiceRunning(serviceName);
+      exitInfo = await PlatformUtils.instance.getServiceExitInfo(serviceName);
     }
 
+    // 3. If service has failed (non-zero exit code or failed state), report it
+    if (exitInfo != null && exitInfo.hasFailed) {
+      String message = 'The sshnpd service has FAILED.';
+      message += '\n      Exit Code: ${exitInfo.exitCode}';
+      message += '\n      Result: ${exitInfo.result}';
+      message += '\n      Active State: ${exitInfo.activeState} (${exitInfo.subState})';
+      message += '\n      System Service: Installed';
+      if (processRunning) {
+        message += '\n      Note: Process is still running (may be restart-looping)';
+      }
+
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.fail,
+        message: message,
+        duration: DateTime.now().difference(start),
+      );
+    }
+
+    // 4. Normal path — process is running and service is healthy
     if (processRunning) {
       String message = 'The service process is ACTIVE.';
       if (serviceInstalled) {
         message += '\n      System Service: Installed';
         message += '\n      Service Status: ${serviceRunning ? "Running" : "Stopped"}';
+        if (exitInfo != null && exitInfo.exitCode >= 0) {
+          message += '\n      Exit Code: ${exitInfo.exitCode}';
+          message += '\n      Active State: ${exitInfo.activeState} (${exitInfo.subState})';
+        }
       } else {
         message += '\n      System Service: Not Installed (running manually?)';
       }
@@ -42,6 +69,11 @@ class ServiceStatusCheck extends DiagnosticCheck {
       String message = 'The sshnpd process is STOPPED.';
       if (serviceInstalled) {
          message += '\n      System Service: Installed but not running.';
+         if (exitInfo != null && exitInfo.exitCode >= 0) {
+           message += '\n      Exit Code: ${exitInfo.exitCode}';
+           message += '\n      Result: ${exitInfo.result}';
+           message += '\n      Active State: ${exitInfo.activeState} (${exitInfo.subState})';
+         }
       } else {
          message += '\n      System Service: Not Installed.';
       }

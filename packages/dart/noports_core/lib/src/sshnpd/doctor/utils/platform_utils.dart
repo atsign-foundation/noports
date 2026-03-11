@@ -1,6 +1,23 @@
 import 'dart:io';
 
 
+class ServiceExitInfo {
+  final int exitCode;
+  final String result;
+  final String activeState;
+  final String subState;
+
+  ServiceExitInfo({
+    this.exitCode = -1,
+    this.result = 'unknown',
+    this.activeState = 'unknown',
+    this.subState = 'unknown',
+  });
+
+  bool get hasFailed => exitCode > 0 || activeState == 'failed';
+}
+
+
 /// Abstract class defining platform-specific operations
 abstract class PlatformUtils {
   /// current instance
@@ -52,6 +69,10 @@ abstract class PlatformUtils {
   Future<String> getArchitecture();
 
   Future<String> getAtKeys(String content);
+
+  /// Get structured exit info for the service (exit code, result, states).
+  /// Returns defaults if not applicable on this platform.
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName);
 }
 
 /// MacOS Implementation
@@ -146,6 +167,10 @@ class MacOSUtils implements PlatformUtils {
     atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
     return atkeys;
   }
+
+  @override
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async =>
+      ServiceExitInfo();
 }
 
 /// Linux Implementation (Very similar to MacOS)
@@ -231,6 +256,32 @@ class LinuxUtils implements PlatformUtils {
         })
         .join(', ');
     return atkeys;
+  }
+
+  @override
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async {
+    try {
+      final result = await Process.run('systemctl', [
+        'show',
+        '$serviceName.service',
+        '--property=ExecMainStatus,Result,ActiveState,SubState',
+      ]);
+      final props = <String, String>{};
+      for (final line in result.stdout.toString().trim().split('\n')) {
+        final idx = line.indexOf('=');
+        if (idx > 0) {
+          props[line.substring(0, idx)] = line.substring(idx + 1);
+        }
+      }
+      return ServiceExitInfo(
+        exitCode: int.tryParse(props['ExecMainStatus'] ?? '') ?? -1,
+        result: props['Result'] ?? 'unknown',
+        activeState: props['ActiveState'] ?? 'unknown',
+        subState: props['SubState'] ?? 'unknown',
+      );
+    } catch (_) {
+      return ServiceExitInfo();
+    }
   }
 }
 
@@ -328,5 +379,9 @@ class WindowsUtils implements PlatformUtils {
         .join(', ');
     return atkeys;
   }
+
+  @override
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async =>
+      ServiceExitInfo();
 }
 
