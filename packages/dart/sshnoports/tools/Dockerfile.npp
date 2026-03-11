@@ -1,5 +1,5 @@
-# Dockerfile.activate
-# Build image for a containerized call of the at_activate binary
+# Dockerfile.npp
+# Build image for a containerized call of the npp binary
 FROM dart:3.11.2@sha256:b0f73636933b6e10b574b3118856cec6c2b3e8074e2ce4229c0838aef66ae203 AS buildimage
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV BINARYDIR=/usr/local/at
@@ -12,7 +12,7 @@ RUN \
   cd ${PACKAGEDIR}; \
   dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs ; \
-  dart compile exe bin/sshnp.dart -o ${BINARYDIR}/sshnp
+  dart compile exe bin/npp.dart -o ${BINARYDIR}/npp
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20260223-slim@sha256:85dfcffff3c1e193877f143d05eaba8ae7f3f95cb0a32e0bc04a448077e1ac69
@@ -22,7 +22,7 @@ ENV BINARYDIR=/usr/local/at
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
-COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnp /usr/local/at/
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/npp /usr/local/at/
 WORKDIR ${HOMEDIR}
 
 RUN \
@@ -36,4 +36,4 @@ RUN \
   usermod -aG sudo ${USER} ;
 
 USER ${USER}
-ENTRYPOINT [ "/usr/local/at/sshnp" ]
+ENTRYPOINT [ "/usr/local/at/npp" ]
