@@ -1,7 +1,6 @@
 import 'dart:io'; 
 import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
-import 'config_check.dart';
 
 class KeysCheck extends DiagnosticCheck {
   @override
@@ -12,7 +11,7 @@ class KeysCheck extends DiagnosticCheck {
       'Checks for the presence of keys directory and .atKeys files';
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
 
     String home = PlatformUtils.instance.homeDirectory;
@@ -38,12 +37,12 @@ class KeysCheck extends DiagnosticCheck {
       if (keyFiles.isNotEmpty) {
         var keyFileNames = keyFiles.map((f) => f.uri.pathSegments.last).join(', ');
         var keyNames = keyFileNames.replaceAll('.atKeys', '').replaceAll('_key', '');
-        print(keyNames);
-        print(ConfigCheck.atKeys);
+
+        final configAtKeys = context['atKeys'] as List<String>? ?? <String>[];
 
         for (var keyName in keyNames.split(',')) {
           var trimmed = keyName.trim();
-          if (ConfigCheck.atKeys.contains(trimmed)) {
+          if (configAtKeys.contains(trimmed)) {
             return CheckResult(
               checkName: name,
               status: CheckStatus.pass,

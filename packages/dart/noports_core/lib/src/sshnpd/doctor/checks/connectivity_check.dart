@@ -9,7 +9,7 @@ class ConnectivityCheck extends DiagnosticCheck {
   String get description => 'Checks internet access and AtSign root server reachability';
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
     var messages = <String>[];
     bool allPassed = true;

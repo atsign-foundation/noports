@@ -9,7 +9,7 @@ class ServiceStatusCheck extends DiagnosticCheck {
   String get description => 'Checks if sshnpd is running in the background';
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
     final serviceName = 'sshnpd';
 

@@ -9,7 +9,7 @@ class PrerequisitesCheck extends DiagnosticCheck {
   String get description => 'Checks for the presence of curl and ssh';
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
     List<String> missingTools = [];
 

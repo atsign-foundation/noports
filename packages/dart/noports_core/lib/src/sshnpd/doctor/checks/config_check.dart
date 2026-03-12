@@ -3,11 +3,7 @@ import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
 class ConfigCheck extends DiagnosticCheck {
-  static List<String> _atKeys = [];
 
-  /// List of atKeys strings parsed from the config file.
-  /// Populated after [run] completes successfully.
-  static List<String> get atKeys => _atKeys;
 
   @override
   String get name => 'Config Check (sshnpd.yaml)';
@@ -17,7 +13,7 @@ class ConfigCheck extends DiagnosticCheck {
       'Checks for the presence and content of the config file';
   
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
 
     //potential paths for config file
@@ -38,11 +34,13 @@ class ConfigCheck extends DiagnosticCheck {
               .join(', ');
          
           var atkeysRaw = await PlatformUtils.instance.getAtKeys(content);
-          _atKeys = atkeysRaw
+          var parsedKeys = atkeysRaw
               .split(',')
               .map((s) => s.trim())
               .where((s) => s.isNotEmpty)
               .toList();
+
+          context['atKeys'] = parsedKeys;
 
           return CheckResult(
             checkName: name,

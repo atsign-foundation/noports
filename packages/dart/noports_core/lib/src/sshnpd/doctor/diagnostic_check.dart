@@ -7,7 +7,7 @@ abstract class DiagnosticCheck {
   String get description;
 
   /// Run the test and return the result
-  Future<CheckResult> run();
+  Future<CheckResult> run(Map<String, dynamic> context);
 }
 
 /// Result of a diagnostic test

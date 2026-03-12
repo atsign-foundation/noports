@@ -10,6 +10,7 @@ class DiagnosticRunner {
   /// Run all tests and return results
   Future<List<CheckResult>> runAll() async {
     final results = <CheckResult>[];
+    final context = <String, dynamic>{};
 
     for (final check in checks) {
       if (verbose) {
@@ -17,7 +18,7 @@ class DiagnosticRunner {
         print('   ${check.description}');
       }
 
-      final result = await check.run();
+      final result = await check.run(context);
       results.add(result);
 
       if (verbose) {

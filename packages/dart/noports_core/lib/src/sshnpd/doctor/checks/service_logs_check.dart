@@ -9,7 +9,7 @@ class ServiceLogsCheck extends DiagnosticCheck {
   String get description => 'Fetches recent logs from the system service manager (journalctl/EventLog/log)';
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
 
     // Check if service is installed first, otherwise logs might be irrelevant or empty

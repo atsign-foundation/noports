@@ -23,13 +23,11 @@ class VersionCheck extends DiagnosticCheck {
 
 
   @override
-  Future<CheckResult> run() async {
+  Future<CheckResult> run(Map<String, dynamic> context) async {
     final start = DateTime.now();
     Version currentVersion = packageVersion;
 
     try {
-      // Get the latest version from GitHub
-      print('Checking for latest version on GitHub...');
 
       var result = await Process.run('curl', [
         '-s',
@@ -88,8 +86,6 @@ class VersionCheck extends DiagnosticCheck {
           
           // Construct expected asset name pattern, e.g., sshnp-macos-arm64.zip
           String expectedAssetStart = 'sshnp-$os-$arch';
-          
-          print(' Looking for asset matching: $expectedAssetStart...$extension');
 
           Map<String, dynamic>? targetAsset;
           
