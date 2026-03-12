@@ -2,6 +2,15 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.12
+
+* feat: npp.dart
+* feat: npp_client.dart
+
+## v5.14.11
+
+* build: add another copy of windows msi, without the version number in the filename
+
 ## v5.14.10
 
 * feat: Update universal.sh to use packages where possible.

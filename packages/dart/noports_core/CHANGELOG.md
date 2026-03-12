@@ -1,3 +1,7 @@
+# 6.12.0
+
+- feat: npp policy next iteration
+
 # 6.11.0
 
 - feat: remove persistent caching of public keys
