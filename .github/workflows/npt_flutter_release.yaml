@@ -1,9 +1,9 @@
 name: NoPorts Desktop Release
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - 'desktop*.*.*\+*'
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   build-windows-desktop:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'desktop')
     runs-on: windows-signer
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -25,11 +24,13 @@ jobs:
         id: metadata
         shell: bash
         run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
-            BUNDLE_ID="${{ github.event.release.tag_name }}"
+          # BUNDLE_ID is used to uniquely identify the build artifact.
+          # If it's a tag build, use the tag name as the bundle ID
+          # Otherwise, use the short SHA of the commit
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            BUNDLE_ID="${GITHUB_REF_NAME}"
           else
-            BUNDLE_ID="${SHORT_SHA}"
+            BUNDLE_ID="${GITHUB_SHA::7}"
           fi
           echo "bundle_id=${BUNDLE_ID}" >> "$GITHUB_OUTPUT"
           echo "asset_name=NoPortsDesktop-${BUNDLE_ID}-windows-x64.zip" >> "$GITHUB_OUTPUT"
@@ -82,14 +83,16 @@ jobs:
           path: packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}
           if-no-files-found: error
 
-      - name: If release, upload desktop bundle to GitHub release
-        if: github.event_name == 'release'
+      - name: If tag push, upload desktop bundle to GitHub release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.ref_name }}
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
+          gh release view "${RELEASE_TAG}" >/dev/null 2>&1 || \
+            gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes ""
           gh release upload \
             "${RELEASE_TAG}" \
             "${{ steps.metadata.outputs.asset_name }}" \
