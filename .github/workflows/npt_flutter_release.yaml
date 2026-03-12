@@ -100,8 +100,7 @@ jobs:
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
-          gh release view "${RELEASE_TAG}" >/dev/null 2>&1 || \
-            gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes ""
+          gh release view "${RELEASE_TAG}" >/dev/null 2>&1
           gh release upload \
             "${RELEASE_TAG}" \
             "${{ steps.metadata.outputs.asset_name }}" \
