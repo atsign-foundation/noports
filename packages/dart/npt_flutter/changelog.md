@@ -1,3 +1,8 @@
+## 1.9.1+28
+
+- FEAT: windows release automation in GitHub
+- CHORE: dart pub get
+
 ## 1.9.0+27
 
 - FEAT: Get Started Dialog Added

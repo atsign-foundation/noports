@@ -1,0 +1,107 @@
+name: NoPorts Desktop Release
+
+on:
+  push:
+    tags:
+      - 'desktop*.*.*\+*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-desktop:
+    runs-on: windows-signer # codesign_windows.sh only works in windows-signer runner
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # upon installing flutter in this windows-signer,
+      # subsequent steps will need to use `shell: bash`
+      - uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Derive bundle metadata
+        id: metadata
+        shell: bash
+        run: |
+          # BUNDLE_ID is used to uniquely identify the build artifact.
+          # If it's a tag build, use the tag name as the bundle ID
+          # Otherwise, use the short SHA of the commit
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            BUNDLE_ID="${GITHUB_REF_NAME}"
+          else
+            BUNDLE_ID="${GITHUB_SHA::7}"
+          fi
+          echo "bundle_id=${BUNDLE_ID}" >> "$GITHUB_OUTPUT"
+          echo "asset_name=NoPortsDesktop-${BUNDLE_ID}-windows-x64.zip" >> "$GITHUB_OUTPUT"
+
+      - name: flutter pub get
+        working-directory: packages/dart/npt_flutter
+        shell: bash # this line is needed because we are in a windows-signer
+        run: |
+          flutter pub get
+
+      - name: Create a blank .env to avoid build error
+        working-directory: packages/dart/npt_flutter
+        shell: bash # this line is needed because we are in a windows-signer
+        run: |
+          printf "API_KEY=''\n" > .env
+
+      - name: flutter build windows --release
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: | # flutter build windows doesn't work in powershell, so we have to use bash
+          flutter build windows --release
+
+      - name: Sign Windows desktop binaries
+        shell: bash
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
+        run: |
+          source "${GITHUB_WORKSPACE}/tools/codesign_windows.sh"
+          shopt -s nullglob
+          for FILE in "${GITHUB_WORKSPACE}"/packages/dart/npt_flutter/build/windows/x64/runner/Release/*.exe \
+                      "${GITHUB_WORKSPACE}"/packages/dart/npt_flutter/build/windows/x64/runner/Release/*.dll; do
+            sign_file "$FILE"
+          done
+
+      - name: package using powershell
+        working-directory: packages/dart/npt_flutter
+        shell: powershell
+        env:
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }} # e.g. "NoPortsDesktop-abc1234-windows-x64.zip"
+        run: |
+          # if the asset already exists, 
+          # remove it first to avoid Compress-Archive error
+          if (Test-Path $env:ASSET_NAME) {
+            Remove-Item $env:ASSET_NAME -Force
+          }
+          # everything in the Release/ dir should be already signed
+          # let's put all of those things into zip file
+          Compress-Archive `
+            -Path build/windows/x64/runner/Release/* `
+            -DestinationPath $env:ASSET_NAME
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: npt_flutter_${{ steps.metadata.outputs.bundle_id }}_${{ github.run_number }}_${{ github.run_attempt }}
+          path: packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}
+          if-no-files-found: error
+
+      - name: If tag push, upload desktop bundle to GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        working-directory: packages/dart/npt_flutter
+        shell: bash
+        run: |
+          gh release view "${RELEASE_TAG}" >/dev/null 2>&1
+          gh release upload \
+            "${RELEASE_TAG}" \
+            "${{ steps.metadata.outputs.asset_name }}" \
+            --clobber
