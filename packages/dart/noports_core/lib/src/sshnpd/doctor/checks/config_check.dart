@@ -61,10 +61,9 @@ class ConfigCheck extends DiagnosticCheck {
     
     return CheckResult(
       checkName: name,
-      status: CheckStatus
-          .warning, //warning because it's not a problem if you are using CLI arguments
+      status: CheckStatus.fail,
       message:
-          'No sshnpd.yaml file found (this is not a problem if you are using CLI arguments).',
+          'No sshnpd.yaml file found (Running CLI arguments is not recommended).',
       duration: DateTime.now().difference(start),
     );
   }
