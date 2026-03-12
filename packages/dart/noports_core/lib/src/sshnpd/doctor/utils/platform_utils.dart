@@ -169,8 +169,55 @@ class MacOSUtils implements PlatformUtils {
   }
 
   @override
-  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async =>
-      ServiceExitInfo();
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async {
+    try {
+      final listResult = await Process.run('launchctl', ['list']);
+      final lines = listResult.stdout.toString().split('\n');
+      String? actualLabel;
+      for (var line in lines) {
+        if (line.contains(serviceName)) {
+          final parts = line.trim().split(RegExp(r'\s+'));
+          if (parts.length >= 3) {
+            actualLabel = parts[2];
+            break;
+          }
+        }
+      }
+
+      if (actualLabel == null) return ServiceExitInfo();
+
+      final result = await Process.run('launchctl', ['list', actualLabel]);
+      final output = result.stdout.toString();
+      
+      final exitMatch = RegExp(r'"LastExitStatus"\s*=\s*(\d+);').firstMatch(output);
+      int exitCode = -1;
+      if (exitMatch != null) {
+        exitCode = int.tryParse(exitMatch.group(1)!) ?? -1;
+        if (exitCode > 255) {
+          exitCode = exitCode >> 8;
+        }
+      }
+
+      final pidMatch = RegExp(r'"PID"\s*=\s*(\d+);').firstMatch(output);
+      String activeState = 'unknown';
+      if (pidMatch != null) {
+        activeState = 'active';
+      } else if (exitCode > 0) {
+        activeState = 'failed';
+      } else {
+        activeState = 'inactive';
+      }
+
+      return ServiceExitInfo(
+        exitCode: exitCode,
+        result: exitCode == 0 ? 'success' : 'failed',
+        activeState: activeState,
+        subState: 'unknown',
+      );
+    } catch (_) {
+      return ServiceExitInfo();
+    }
+  }
 }
 
 /// Linux Implementation (Very similar to MacOS)
@@ -381,7 +428,39 @@ class WindowsUtils implements PlatformUtils {
   }
 
   @override
-  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async =>
-      ServiceExitInfo();
+  Future<ServiceExitInfo> getServiceExitInfo(String serviceName) async {
+    try {
+      final result = await Process.run('sc', ['query', serviceName]);
+      final output = result.stdout.toString();
+      
+      int exitCode = -1;
+      
+      final win32Match = RegExp(r'WIN32_EXIT_CODE\s*:\s*(\d+)').firstMatch(output);
+      final serviceMatch = RegExp(r'SERVICE_EXIT_CODE\s*:\s*(\d+)').firstMatch(output);
+      
+      if (win32Match != null) {
+        exitCode = int.tryParse(win32Match.group(1)!) ?? -1;
+      }
+      if (exitCode == 1066 && serviceMatch != null) { 
+        exitCode = int.tryParse(serviceMatch.group(1)!) ?? exitCode;
+      }
+
+      final stateMatch = RegExp(r'STATE\s*:\s*\d+\s+(\w+)').firstMatch(output);
+      String activeState = 'unknown';
+      if (stateMatch != null) {
+        activeState = stateMatch.group(1)!.toLowerCase();
+      }
+
+      bool hasFailed = exitCode > 0;
+      return ServiceExitInfo(
+        exitCode: exitCode,
+        result: hasFailed ? 'failed' : 'success',
+        activeState: activeState,
+        subState: 'unknown',
+      );
+    } catch (_) {
+      return ServiceExitInfo();
+    }
+  }
 }
 
