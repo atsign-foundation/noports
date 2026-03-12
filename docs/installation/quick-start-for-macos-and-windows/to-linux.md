@@ -36,8 +36,10 @@ Make the script executable and run the script by running the command below:
 
 ```bash
 chmod u+x universal.sh
-./universal.sh
+sudo ./universal.sh
 ```
+
+NB the device install _can_ be done without `sudo` but that will just install the binaries in the user's `$HOME/.local/bin` directory. `sudo` is used to install into `/usr/bin` and configure systemd services.
 
 During installation, you’ll be prompted to enter the following items:
 
