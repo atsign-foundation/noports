@@ -174,6 +174,7 @@ class MacOSUtils implements PlatformUtils {
       final listResult = await Process.run('launchctl', ['list']);
       final lines = listResult.stdout.toString().split('\n');
       String? actualLabel;
+      
       for (var line in lines) {
         if (line.contains(serviceName)) {
           final parts = line.trim().split(RegExp(r'\s+'));
@@ -432,7 +433,7 @@ class WindowsUtils implements PlatformUtils {
     try {
       final result = await Process.run('sc', ['query', serviceName]);
       final output = result.stdout.toString();
-      
+
       int exitCode = -1;
       
       final win32Match = RegExp(r'WIN32_EXIT_CODE\s*:\s*(\d+)').firstMatch(output);
