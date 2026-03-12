@@ -15,6 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      # upon installing flutter in this windows-signer,
+      # subsequent steps will need to use `shell: bash`
       - uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
         with:
           channel: stable
@@ -37,18 +39,21 @@ jobs:
 
       - name: flutter pub get
         working-directory: packages/dart/npt_flutter
-        shell: bash
-        run: flutter pub get
+        shell: bash # this line is needed because we are in a windows-signer
+        run: |
+          flutter pub get
 
       - name: Create a blank .env to avoid build error
         working-directory: packages/dart/npt_flutter
-        shell: bash
-        run: printf "API_KEY=''\n" > .env
+        shell: bash # this line is needed because we are in a windows-signer
+        run: |
+          printf "API_KEY=''\n" > .env
 
       - name: flutter build windows --release
         working-directory: packages/dart/npt_flutter
         shell: bash
-        run: flutter build windows --release
+        run: | # flutter build windows doesn't work in powershell, so we have to use bash
+          flutter build windows --release
 
       - name: Sign Windows desktop binaries
         shell: bash
@@ -67,11 +72,15 @@ jobs:
         working-directory: packages/dart/npt_flutter
         shell: powershell
         env:
-          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }} # e.g. "NoPortsDesktop-abc1234-windows-x64.zip"
         run: |
+          # if the asset already exists, 
+          # remove it first to avoid Compress-Archive error
           if (Test-Path $env:ASSET_NAME) {
             Remove-Item $env:ASSET_NAME -Force
           }
+          # everything in the Release/ dir should be already signed
+          # let's put all of those things into zip file
           Compress-Archive `
             -Path build/windows/x64/runner/Release/* `
             -DestinationPath $env:ASSET_NAME
