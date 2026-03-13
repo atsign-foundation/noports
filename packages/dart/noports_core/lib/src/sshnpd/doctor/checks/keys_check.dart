@@ -65,7 +65,7 @@ class KeysCheck extends DiagnosticCheck {
         // The keys directory exists but contains no .atKeys files.
         return CheckResult(
           checkName: name,
-          status: CheckStatus.warning,
+          status: CheckStatus.fail,
           message: 'The keys directory exists but contains no .atKeys files.',
           duration: DateTime.now().difference(start),
         );
