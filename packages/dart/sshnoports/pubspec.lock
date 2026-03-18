@@ -50,13 +50,14 @@ packages:
     source: hosted
     version: "2.13.0"
   at_auth:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_auth
-      sha256: "92cdf7958b44a665380a1fb44ae1ec6253a83550494df480d7f9b47fb5732689"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
+      path: "packages/at_auth"
+      ref: "st/onb-cli-remove-wait-pkam-auth"
+      resolved-ref: "5e8b51b3d96c39c218349191d5e6f9b581f5a73d"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.0.2"
   at_base2e15:
     dependency: transitive
     description:
@@ -109,11 +110,12 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      name: at_onboarding_cli
-      sha256: "40b9b40ff88bbfba50412bbc6fe4d5991958e6ccab9a1f434bba0eaa9af115b9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.15.0"
+      path: "packages/at_onboarding_cli"
+      ref: "st/onb-cli-remove-wait-pkam-auth"
+      resolved-ref: "5e8b51b3d96c39c218349191d5e6f9b581f5a73d"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "1.16.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
