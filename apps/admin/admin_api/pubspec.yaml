@@ -14,7 +14,7 @@ dependencies:
   json_annotation: 4.11.0
   at_cli_commons: ^3.0.1
   args: 2.7.0
-  meta: 1.18.1
+  meta: 1.18.2
   noports_core:
     path: ../../../packages/dart/noports_core
 
