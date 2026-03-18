@@ -193,7 +193,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
                   receivedChallenge = true;
 
-                  socket.writeln(responseToChallenge(challenge));
+                  socket.writeln(await responseToChallenge(challenge));
                   await socket.flush();
                 } catch (e) {
                   completer.completeError(
@@ -218,7 +218,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     return completer.future;
   }
 
-  String responseToChallenge(String challenge) {
+  Future<String> responseToChallenge(String challenge) async {
     /// Construct response payload
     Map envelope = {
       'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')},
@@ -238,14 +238,12 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     /// Encrypt the response payload
     final InitialisationVector iv = AtChopsUtil.generateRandomIV(16);
     final ea = AESEncryptionAlgo(AESKey(relayAuthAesKey));
-    final String envelopeEncrypted64 = _atChops
-        .encryptString(
-          envelope64,
-          EncryptionKeyType.aes256,
-          encryptionAlgorithm: ea,
-          iv: iv,
-        )
-        .result;
+    final String envelopeEncrypted64 = (await _atChops.encryptString(
+      envelope64,
+      EncryptionKeyType.aes256,
+      encryptionAlgorithm: ea,
+      iv: iv,
+    )).result;
 
     String authPayload64 = base64Encode(
       jsonEncode({

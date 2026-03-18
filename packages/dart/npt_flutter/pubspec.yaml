@@ -87,8 +87,7 @@ dependencies:
   yaml: ^3.1.2
   yaml_writer: ^2.0.0
 dev_dependencies:
-  bloc_test: ^9.1.7
-  build_runner: ^2.4.12
+  build_runner: ^2.10.4
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
     sdk: flutter
@@ -102,6 +101,13 @@ dependency_overrides:
   at_client: 3.8.0
   at_auth: ^2.4.0
   at_chops: ^2.0.1
+  at_client:
+    git:
+      ref: trunk
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_client
+  at_auth: ^3.0.1
+  at_chops: ^3.0.0
   archive: ^4.0.7
   file_picker: ^10.3.3
   intl: 0.20.2
