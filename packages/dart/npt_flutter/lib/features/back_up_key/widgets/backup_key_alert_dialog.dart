@@ -8,7 +8,10 @@ import 'package:npt_flutter/widgets/custom_container.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class BackupKeyAlertDialog extends StatefulWidget {
-  const BackupKeyAlertDialog({super.key});
+  const BackupKeyAlertDialog({this.isBackup = true, super.key});
+
+  /// If [isBackup] is true, the dialog will show backup related text and proceed with the backup If false, it will show save related text and skip the back up process since it is handled during the multi-activation process.
+  final bool isBackup;
 
   @override
   State<BackupKeyAlertDialog> createState() => _BackupKeyAlertDialogState();
@@ -40,7 +43,7 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                   ),
                   gapW10,
                   Text(
-                    strings.backUpAtKeys,
+                    widget.isBackup ? strings.backUpAtKeys : strings.saveAtKeys,
                     style: const TextStyle(
                       fontSize: Sizes.p18,
                       color: Colors.black,
@@ -64,7 +67,9 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
               child: CustomContainer.background(
                 child: Text.rich(
                   TextSpan(
-                    text: strings.backUpAtKeysIntroMsgFirst,
+                    text: strings.backUpAtKeysIntroMsgFirst(
+                      widget.isBackup ? strings.backUp : strings.save,
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                     children: [
                       TextSpan(
@@ -124,7 +129,11 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
                 children: [
                   ElevatedButton(
                     onPressed: () async {
-                      await context.read<BackupKeyCubit>().backUpKeys();
+                      if (widget.isBackup) {
+                        await context.read<BackupKeyCubit>().backUpKeys();
+                      } else {
+                        Navigator.of(context).pop();
+                      }
                     },
                     child: Text(strings.saveAtKeys),
                   ),

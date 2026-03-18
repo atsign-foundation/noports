@@ -16,19 +16,19 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.8.1+26
+version: 1.9.1+28
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.8.1.0
+  msix_version: 1.9.1.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
 
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.10.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -40,8 +40,9 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.4.0
   at_backupkey_flutter: ^4.0.16
-  at_client_mobile: ^3.2.24
   at_client: ^3.8.0
+  # at_client_flutter: ^0.1.2
+  at_client_mobile: ^3.2.24
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_onboarding_flutter:
@@ -51,7 +52,9 @@ dependencies:
   at_server_status: ^1.1.1
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
+  desktop_drop: ^0.7.0
   device_info_plus: ^11.3.3
+  dotted_border: ^3.1.0
   equatable: ^2.0.5
   file_picker: ^10.3.3
   flutter:
@@ -74,6 +77,7 @@ dependencies:
   phosphor_flutter: ^2.1.0
   pin_code_fields: ^8.0.1
   socket_connector: ^2.4.1
+  super_tooltip: ^2.1.0
   toml: ^0.16.0
   tray_manager: ^0.5.1
   url_launcher: ^6.3.0
@@ -83,6 +87,7 @@ dependencies:
   yaml: ^3.1.2
   yaml_writer: ^2.0.0
 dev_dependencies:
+  bloc_test: ^9.1.7
   build_runner: ^2.4.12
   flutter_launcher_icons: "^0.14.1"
   flutter_test:
@@ -90,10 +95,13 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   mockito: ^5.5.0
-  bloc_test: ^9.1.7
   msix: ^3.16.8
 
 dependency_overrides:
+  at_onboarding_cli: 1.14.2
+  at_client: 3.8.0
+  at_auth: ^2.4.0
+  at_chops: ^2.0.1
   archive: ^4.0.7
   file_picker: ^10.3.3
   intl: 0.20.2

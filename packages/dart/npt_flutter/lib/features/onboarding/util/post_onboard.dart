@@ -2,6 +2,7 @@ import 'package:at_client_mobile/at_client_mobile.dart' hide OnboardingStatus;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 Future<void> postOnboard(String atSign, String rootDomain) async {
   App.log("setting all application state after onboarding".loggable);
@@ -16,5 +17,5 @@ Future<void> postOnboard(String atSign, String rootDomain) async {
   context?.read<ProfileListBloc>().add(const ProfileListLoadEvent());
   context?.read<SettingsBloc>().add(const SettingsLoadEvent());
   context?.read<AuthorisationService>().init();
-  await context?.read<PolicyCubit>().loadRoles(strings);
+  await context?.read<PolicyCubit>().loadRoles(AppLocalizations.of(context)!);
 }

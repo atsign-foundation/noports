@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:at_client_mobile/at_client_mobile.dart';
 
-import '../../logging/models/logging_bloc.dart';
 import '../../logging/models/loggable.dart';
+import '../../logging/models/logging_bloc.dart';
 
 class Count extends Loggable {
   final int count;

@@ -6,11 +6,13 @@ class AppTheme {
   static TextTheme lightTextTheme = const TextTheme(
     headlineLarge: TextStyle(fontSize: Sizes.p32, fontWeight: FontWeight.w600),
     headlineMedium: TextStyle(fontSize: Sizes.p24, fontWeight: FontWeight.w500),
-    headlineSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-    titleMedium: TextStyle(fontSize: Sizes.p18, fontWeight: FontWeight.w600),
-    bodyLarge: TextStyle(fontSize: Sizes.p15, fontWeight: FontWeight.w500),
-    bodyMedium: TextStyle(fontSize: Sizes.p15, fontWeight: FontWeight.w500),
-    bodySmall: TextStyle(fontSize: Sizes.p11, fontWeight: FontWeight.w400),
+    headlineSmall: TextStyle(fontSize: Sizes.p18, fontWeight: FontWeight.w500),
+    titleLarge: TextStyle(fontSize: Sizes.p16, fontWeight: FontWeight.w600),
+    titleMedium: TextStyle(fontSize: Sizes.p14, fontWeight: FontWeight.w600),
+    titleSmall: TextStyle(fontSize: Sizes.p12, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(fontSize: Sizes.p16, fontWeight: FontWeight.w500),
+    bodyMedium: TextStyle(fontSize: Sizes.p14, fontWeight: FontWeight.w500),
+    bodySmall: TextStyle(fontSize: Sizes.p12, fontWeight: FontWeight.w400),
     // labelLarge: TextStyle(
     //   fontSize: 11,
     //   fontWeight: FontWeight.w500,
@@ -82,7 +84,17 @@ class AppTheme {
           minimumSize: WidgetStateProperty.all<Size>(const Size(102, 60)),
           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Sizes.p10),
+              borderRadius: BorderRadius.circular(Sizes.p6),
+            ),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: WidgetStateProperty.all<Size>(const Size(102, 60)),
+          shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Sizes.p6),
             ),
           ),
         ),
@@ -98,7 +110,7 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme().copyWith(
-        fillColor: const Color(0xFFF4F4F4),
+        fillColor: const Color(0xFFFFFFFF),
         filled: true,
         hoverColor: Colors.transparent,
         constraints: const BoxConstraints(maxWidth: 179, maxHeight: 59.21),

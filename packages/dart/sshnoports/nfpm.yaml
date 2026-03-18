@@ -15,8 +15,12 @@ homepage: "http://noports.com"
 contents:
   - src: ./sshnp/at_activate
     dst: /usr/bin/at_activate
+  - src: ./sshnp/noports
+    dst: /usr/bin/noports
   - src: ./sshnp/np_admin
     dst: /usr/bin/np_admin
+  - src: ./sshnp/npp
+    dst: /usr/bin/npp
   - src: ./sshnp/npp_atserver
     dst: /usr/bin/npp_atserver
   - src: ./sshnp/npp_file
@@ -34,14 +38,26 @@ contents:
   - src: ./bundles/core/config/sshnpd.yaml
     dst: /etc/noports/sshnpd.yaml
     type: config
+  - src: ./bundles/shell/systemd.nfpm/srvd.service
+    dst: /lib/systemd/system/srvd.service
+  - src: ./bundles/shell/systemd.nfpm/srvd.service.d/override.conf
+    dst: /etc/systemd/system/srvd.service.d/override.conf
+    type: config
   - src: ./bundles/shell/systemd.nfpm/sshnpd.service
     dst: /lib/systemd/system/sshnpd.service
+  - src: ./bundles/shell/systemd.nfpm/sshnpd.service.d/override.conf
+    dst: /etc/systemd/system/sshnpd.service.d/override.conf
+    type: config
   - src: ./LICENSE
     dst: /usr/share/doc/noports/copyright
   - src: ./sshnp/at_activate.1.gz
     dst: /usr/share/man/man1/at_activate.1.gz
+  - src: ./sshnp/noports.1.gz
+    dst: /usr/share/man/man1/noports.1.gz
   - src: ./sshnp/np_admin.1.gz
     dst: /usr/share/man/man1/np_admin.1.gz
+  - src: ./sshnp/npp.1.gz
+    dst: /usr/share/man/man1/npp.1.gz
   - src: ./sshnp/npp_atserver.1.gz
     dst: /usr/share/man/man1/npp_atserver.1.gz
   - src: ./sshnp/npp_file.1.gz
