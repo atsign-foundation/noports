@@ -39,6 +39,16 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_onboarding_cli
+      ref: st/onb-cli-remove-wait-pkam-auth
+  at_auth:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_auth
+      ref: st/onb-cli-remove-wait-pkam-auth
 
 dev_dependencies:
   build_runner: ^2.4.12
