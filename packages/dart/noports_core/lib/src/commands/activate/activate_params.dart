@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:args/args.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:noports_core/commands.dart';
@@ -21,10 +23,10 @@ enum ActivateType {
 
   static ActivateType parse(String input) {
     try {
-      return values.firstWhere((type) => input.contains(':${type.name}:'));
+      return values.firstWhere((type) => input.contains('${type.name}:'));
     } catch (e) {
       throw ArgumentError(
-        'Invalid activation type in: $input (expected "cram" or "enroll")',
+        'Invalid activation type "$input" - should be one of ${ActivateType.values.map((t) => t.name)}',
       );
     }
   }
@@ -36,9 +38,7 @@ class ActivateParams {
   final String? cramSecret;
   final String? otp;
   final String? deviceName;
-  final String? fetchLocation;
-  final String? fetchAes64;
-  final String? fetchIv64;
+  final FetchParams? fetchParams;
   final appName = defaultAppName;
   final namespaces = defaultEnrollmentNamespaces;
   String? atKeysFilePath;
@@ -57,9 +57,7 @@ class ActivateParams {
     this.cramSecret,
     this.otp,
     this.deviceName,
-    this.fetchLocation,
-    this.fetchAes64,
-    this.fetchIv64,
+    this.fetchParams,
     this.atKeysFilePath,
     required this.rootDomain,
     this.verbose = false,
@@ -76,7 +74,7 @@ class ActivateParams {
     if (results.rest.isEmpty) {
       throw ArgumentError(
         'Activation string is required (e.g. @alice:cram:secret or'
-            ' @alice:enroll:otp:123456)',
+        ' @alice:enroll:otp:123456)',
       );
     }
 
@@ -97,10 +95,8 @@ class ActivateParams {
       type: type,
       cramSecret: _parseCramSecret(activationString),
       otp: _parseOtp(activationString),
-      deviceName: _parseDeviceName(activationString),
-      fetchLocation: parsedFetch.$1,
-      fetchAes64: parsedFetch.$2,
-      fetchIv64: parsedFetch.$3,
+      deviceName: parsedFetch?.device ?? _parseDeviceName(activationString),
+      fetchParams: parsedFetch,
       atKeysFilePath: keyfile,
       rootDomain: results['root-server'],
       verbose: results['verbose'],
@@ -151,11 +147,7 @@ class ActivateParams {
   }
 
   static Atsign? _parseAtsign(String input, ActivateType type) {
-    final regex = type == ActivateType.cram
-        ? ActivateRegex.cram
-        : ActivateRegex.enroll;
-
-    final match = regex.firstMatch(input);
+    final match = type.regex.firstMatch(input);
     final atsign = match?.namedGroup(ActivateRegexGroups.atsign);
 
     return atsign != null && atsign.isNotEmpty ? atsign.toAtsign() : null;
@@ -176,13 +168,36 @@ class ActivateParams {
     return match?.namedGroup(ActivateRegexGroups.deviceName);
   }
 
-  static (String?, String?, String?) _parseFetch(String input) {
+  /// input is base64-encoded string-encoded json
+  static FetchParams? _parseFetch(String input) {
+    // decode base64 to json string
+    // decode json string to map
+    // make FetchParams from the map
     final match = ActivateRegex.fetch.firstMatch(input);
-    return (
-    match?.namedGroup(ActivateRegexGroups.fetchLocation),
-    match?.namedGroup(ActivateRegexGroups.fetchAes64),
-    match?.namedGroup(ActivateRegexGroups.fetchIv64),
-    );
+    if (match == null) {
+      return null;
+    }
+    final String? b64 = match.namedGroup(ActivateRegexGroups.params);
+    if (b64 == null) {
+      throw ArgumentError('fetch: Invalid parameters');
+    }
+    final String jsonString;
+    try {
+      jsonString = String.fromCharCodes(base64Decode(b64));
+    } catch (_) {
+      throw ArgumentError('fetch: base64 decode params failed');
+    }
+    final Map<String, dynamic> json;
+    try {
+      json = jsonDecode(jsonString);
+    } catch (_) {
+      throw ArgumentError('fetch: json decode params failed');
+    }
+    try {
+      return FetchParams.fromJson(json);
+    } catch (_) {
+      throw ArgumentError('fetch: invalid json');
+    }
   }
 }
 
@@ -193,11 +208,37 @@ class ActivateRegex {
   // Enrollment: <atsign>:enroll:otp:<otp>[:name:<device>]
   static final enroll = RegExp(
     r'^(?<atsign>[^:]+):enroll:otp:(?<otp>[A-Za-z0-9]{6})'
-    r'(?::name:(?<device_name>[^]+))?$', // ?: indicates a non-capturing group
+    r'(?::name:(?<device>[^]+))?$', // ?: indicates a non-capturing group
   );
 
-  static final fetch = RegExp(
-    r'^(?<atsign>[^:]+):fetch:(?<location>.+):(?<aes64>.+):(?<iv64>.+)$',
+  static final fetch = RegExp(r'^(?<atsign>[^:]+):fetch:(?<params>.+)$');
+}
+
+class FetchParams {
+  final String device;
+  final String location;
+  final String aes64;
+  final String iv64;
+
+  FetchParams({
+    required this.device,
+    required this.location,
+    required this.aes64,
+    required this.iv64,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'device': device,
+    'location': location,
+    'aes64': aes64,
+    'iv64': iv64,
+  };
+
+  factory FetchParams.fromJson(Map<String, dynamic> m) => FetchParams(
+    device: m['device'],
+    location: m['location'],
+    aes64: m['aes64'],
+    iv64: m['iv64'],
   );
 }
 
@@ -206,9 +247,6 @@ class ActivateRegexGroups {
   static const atsign = 'atsign';
   static const cram = 'secret';
   static const otp = 'otp';
-  static const deviceName = 'device_name';
-  static const keyfilePath = 'keyfile_path';
-  static const fetchLocation = 'location';
-  static const fetchAes64 = 'aes64';
-  static const fetchIv64 = 'iv64';
+  static const deviceName = 'device';
+  static const params = 'params';
 }

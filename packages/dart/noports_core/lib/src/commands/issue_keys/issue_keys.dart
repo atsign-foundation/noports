@@ -24,10 +24,22 @@ import 'package:noports_core/src/commands/utils/constants.dart';
 
 /// Handles the issuance of enrollment keys for new device enrollment.
 ///
-/// Manages the enrollment flow:
-/// 1. Generates an OTP and enrollment command
-/// 2. Waits for the enrollment request from the new device
-/// 3. Approves the enrollment request
+/// We're handling either
+/// - (1) Three-step enrollment flow
+///   - (i) Approver (this program)
+///     - generates otp
+///     - sets default device name, if not provided
+///     - displays activate command
+///   - (ii) Enroller runs the activate command on the device
+///   - (iii) Approver (this program) approves the enrollment request
+/// - (2) Two-step enrollment flow
+///   - (i)
+///     - sets default device name, if not provided
+///     - does the full otp-enroll-approve here
+///     - encrypts and saves generated keys to a public hidden record
+///     - displays activate command
+///   - (ii) Enroller runs the activate command, which fetches the keys
+///
 class IssueKeys {
   static const _baseEnrollCommand = '<atsign>:enroll:otp:<otp>:name:<device>';
   static const _defaultDeviceNamePrefix = 'noports_';
@@ -71,33 +83,36 @@ class IssueKeys {
     return IssueKeys(params);
   }
 
-  /// Entry point for the `issue-keys` command.
-  ///
-  /// Orchestrates the complete enrollment flow:
-  /// 1. Initialize AtClient connection
-  /// 2. Generate OTP
-  /// 3. Set default device name, if not provided
-  /// 4. Display activation command for user
-  /// 5. Wait for and approve the enrollment request
-  ///
   /// Returns: 0 on success, 1 on failure
   Future<int> wrappedMain() async {
     _setLoggingLevel();
     await _init();
 
-    // Check for matching pending enrollment, approve if found | works like a resume
-    final existingEnrollment = await fetchMatchingEnrollment();
-    if (existingEnrollment != null) {
-      await approveEnrollment(existingEnrollment);
+    if (!params.generate) {
+      // Check for matching pending enrollment, approve if found | works like a resume
+      final existingEnrollment = await fetchMatchingEnrollment();
+      if (existingEnrollment != null) {
+        await approveEnrollment(existingEnrollment);
+      } else {
+        await generateOTP();
+        ensureDeviceName();
+        _displayActivationCommand();
+        final enrollment = await waitForMatchingEnrollment();
+        await approveEnrollment(enrollment);
+      }
+      return 0;
     } else {
       await generateOTP();
       ensureDeviceName();
-      _displayActivationCommand();
+      // TODO submit enrollment request
       final enrollment = await waitForMatchingEnrollment();
       await approveEnrollment(enrollment);
+      // TODO wait for enrollment approval
+      // TODO construct "atKeys file" in memory
+      // TODO generate aes/iv, encrypt the atKeys, save to public hidden key
+      // TODO generate the noports activate:@alice:fetch:<base64> command
+      return 0;
     }
-
-    return 0;
   }
 
   void _setLoggingLevel() {

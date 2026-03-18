@@ -11,6 +11,7 @@ class IssueKeysParams {
 
   String? device;
   String? otp;
+  final bool generate;
 
   // Logging
   bool verbose = false;
@@ -22,6 +23,7 @@ class IssueKeysParams {
     required this.atsign,
     this.device,
     this.otp,
+    required this.generate,
     this.atKeysFilePath,
     this.passPhrase,
     required this.rootDomain,
@@ -39,6 +41,7 @@ class IssueKeysParams {
     return IssueKeysParams(
       atsign: r['atsign'],
       device: r['device'],
+      generate: r['generate'],
       atKeysFilePath: r['key-file'],
       passPhrase: r['pass-phrase'],
       rootDomain: r['root-server'],
@@ -101,6 +104,13 @@ class IssueKeysParams {
       'debug',
       negatable: false,
       help: 'More logging (DEBUG and above)',
+    );
+
+    p.addFlag(
+      'generate',
+      negatable: false,
+      defaultsTo: false,
+      help: 'Generate keys which device will get via activate:fetch',
     );
 
     return p;

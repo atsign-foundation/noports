@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
@@ -113,6 +114,7 @@ class Activate {
 
   /// Fetches keys which have been generated elsewhere for this device
   Future<int> fetch() async {
+    logger.shout('fetch() params: ${_params.fetchParams?.toJson()}');
     throw UnimplementedError('Not implemented');
   }
 
