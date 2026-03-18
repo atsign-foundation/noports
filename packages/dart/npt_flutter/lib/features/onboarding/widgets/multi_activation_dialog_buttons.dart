@@ -42,12 +42,16 @@ class MultiActivationDialogButtons extends StatelessWidget {
                 onPressed: state.entries.isNotEmpty
                     ? () async {
                         // Show the back up dialog so user understands the importance of backing up their atKeys.
-                        await showAdaptiveDialog(
+                        final result = await showAdaptiveDialog<bool>(
                           barrierDismissible: false,
                           context: context,
                           builder: (context) =>
                               const BackupKeyAlertDialog(isBackup: false),
                         );
+
+                        if (result == null || result == false) {
+                          return;
+                        }
 
                         Navigator.of(App.navState.currentContext!).pop();
                         App.navState.currentContext!

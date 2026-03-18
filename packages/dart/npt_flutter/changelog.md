@@ -1,3 +1,9 @@
+## 1.9.2+29
+
+-Fix: Activation Dialog Final Title Text changed and Title Icon removed.
+-Fix: Back button added to the Save Back Up Dialog.
+-Fix: Sign In occurs with the last Atsign in the activation file When Multi-Activation completes.
+
 ## 1.9.1+28
 
 - FEAT: windows release automation in GitHub

@@ -309,4 +309,22 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     await file.create(recursive: true);
     await file.writeAsBytes(data);
   }
+
+  /// Check if any Atsign is still waiting for activation.
+  bool isAnyWaitingStatus() {
+    return state.fileContent.entries.any(
+      (entry) => entry.activationKeyStatus == ActivationKeyStatus.waiting,
+    );
+  }
+
+  // Get the overall activation state to show in the UI based on the status of each individual atsign activation.
+  String overallActicationState() {
+    if (isAnyWaitingStatus()) {
+      return 'Activating';
+    } else if (isAnyActivatedStatus()) {
+      return 'Activation Completed';
+    } else {
+      return "Activation Failed";
+    }
+  }
 }

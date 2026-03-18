@@ -70,6 +70,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get activationManual => 'Ativação Manual';
 
   @override
+  String get activationStatus => 'Status de Ativação';
+
+  @override
   String get activationStatusActivating => 'Ativando';
 
   @override
@@ -1133,6 +1136,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get activationManual => 'Ativação Manual';
+
+  @override
+  String get activationStatus => 'Status de Ativação';
 
   @override
   String get activationStatusActivating => 'Ativando';

@@ -17,6 +17,7 @@
   "activationKeyStatusFailed": "Falhou",
   "activationKeyStatusWaiting": "Aguardando",
   "activationManual": "Ativação Manual",
+  "activationStatus": "Status de Ativação",
   "activationStatusActivating": "Ativando",
   "activationStatusCount": "{current} de {total} Atsigns ativados:",
   "activationStatusOtpWait": "Por favor, insira o OTP do seu e-mail",
