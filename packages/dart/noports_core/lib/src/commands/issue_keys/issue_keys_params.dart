@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/commands.dart';
 
 class IssueKeysParams {
@@ -42,7 +43,12 @@ class IssueKeysParams {
       atsign: r['atsign'],
       device: r['device'],
       generate: r['generate'],
-      atKeysFilePath: r['key-file'],
+      atKeysFilePath:
+          r['key-file'] ??
+          getDefaultAtKeysFilePath(
+            getHomeDirectory(throwIfNull: true)!,
+            r['atsign'],
+          ),
       passPhrase: r['pass-phrase'],
       rootDomain: r['root-server'],
       verbose: r['verbose'],

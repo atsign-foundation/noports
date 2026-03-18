@@ -113,6 +113,7 @@ void printUsage({NoPortsCommand? command}) {
 }
 
 AtSignLogger setupLogging() {
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   AtSignLogger.root_level = 'severe';
   return AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())
     ..level = 'info';

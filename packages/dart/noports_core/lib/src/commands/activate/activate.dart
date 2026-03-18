@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
@@ -10,6 +13,13 @@ import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
 
 class Activate {
+  final ioClient = IOClient(
+    HttpClient(
+      context: SecurityContext(withTrustedRoots: true)
+        ..setAlpnProtocols(['http/1.1'], false),
+    ),
+  );
+
   final ActivateParams _params;
 
   final AtOnboardingService _onboardingService;
@@ -114,8 +124,44 @@ class Activate {
 
   /// Fetches keys which have been generated elsewhere for this device
   Future<int> fetch() async {
-    logger.shout('fetch() params: ${_params.fetchParams?.toJson()}');
-    throw UnimplementedError('Not implemented');
+    logger.info('fetch() params: ${_params.fetchParams?.toJson()}');
+
+    _params.atKeysFilePath ??= getDefaultAtKeysFilePath(
+      getHomeDirectory(throwIfNull: true)!,
+      _params.atsign,
+    );
+    _validateAndPrepareKeysFile();
+
+    logger.info('Fetching data');
+    http.Response r = await ioClient.get(
+      Uri.parse(_params.fetchParams!.location),
+    );
+    if (r.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch from ${_params.fetchParams!.location}'
+        ' : ${r.statusCode}'
+        ' : ${r.body}',
+      );
+    }
+    String encryptedAtKeys = r.body;
+
+    logger.info('Decrypting');
+    String atKeys = EncryptionUtil.decryptValue(
+      encryptedAtKeys,
+      _params.fetchParams!.aes64,
+      ivBase64: _params.fetchParams!.iv64,
+    );
+
+    logger.info('Writing atKeys');
+    File atKeysFile = File(_params.atKeysFilePath!);
+    if (atKeysFile.existsSync()) {
+      throw StateError('Keys file already exists : $atKeysFile');
+    }
+    atKeysFile.writeAsStringSync(atKeys);
+
+    // TODO remove the public hidden key
+
+    return 0;
   }
 
   /// Validates and prepares the atKeys file location before enrollment.

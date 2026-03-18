@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:at_commons/atsign.dart';
@@ -40,7 +41,7 @@ class ActivateParams {
   final String? deviceName;
   final FetchParams? fetchParams;
   final appName = defaultAppName;
-  final namespaces = defaultEnrollmentNamespaces;
+  final namespaces = defaultNamespaces;
   String? atKeysFilePath;
   final String rootDomain;
 
@@ -80,6 +81,7 @@ class ActivateParams {
 
     final activationString = results.rest.single;
     final type = ActivateType.parse(activationString);
+    stderr.writeln('Got activate command type: $type');
 
     final atsign = _parseAtsign(activationString, type);
     if (atsign == null || atsign.isEmpty) {
