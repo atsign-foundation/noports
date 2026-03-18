@@ -19,6 +19,8 @@ clientAtKeysFile="$HOME/.atsign/keys/"$clientAtSign"_key.atKeys"
 
 cp $daemonAtKeysFile $testAtKeysDir
 logInfo "Copied $daemonAtKeysFile to $testAtKeysDir"
+chmod 644 "$testAtKeysDir/$(basename "$daemonAtKeysFile")"
 
 cp $clientAtKeysFile $testAtKeysDir
 logInfo "Copied $clientAtKeysFile to $testAtKeysDir"
+chmod 644 "$testAtKeysDir/$(basename "$clientAtKeysFile")"

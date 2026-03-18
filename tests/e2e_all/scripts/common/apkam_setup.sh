@@ -89,6 +89,7 @@ logInfo
 atKeysDir="$testRuntimeDir/keys"
 logInfo "Copying all contents in "$(getApkamKeysDir)" to $atKeysDir"
 cp $(getApkamKeysDir)/* "$atKeysDir" || exit 1
+chmod 644 "$atKeysDir"/*.atKeys
 
 logInfo
 logInfo "apkam_setup.sh complete"
