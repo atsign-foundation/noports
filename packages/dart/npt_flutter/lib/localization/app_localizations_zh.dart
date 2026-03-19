@@ -65,6 +65,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get activationManual => '手动激活';
 
   @override
+  String get activationStatus => '激活状态';
+
+  @override
   String get activationStatusActivating => '正在激活';
 
   @override
@@ -1065,6 +1068,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get activationManual => '手动激活';
 
   @override
+  String get activationStatus => '激活状态';
+
+  @override
   String get activationStatusActivating => '正在激活';
 
   @override
@@ -2063,6 +2069,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get activationManual => '手動啟動';
+
+  @override
+  String get activationStatus => '啟動狀態';
 
   @override
   String get activationStatusActivating => '正在啟動';

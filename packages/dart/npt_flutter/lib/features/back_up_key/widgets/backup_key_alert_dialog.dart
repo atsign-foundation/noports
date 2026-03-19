@@ -10,7 +10,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 class BackupKeyAlertDialog extends StatefulWidget {
   const BackupKeyAlertDialog({this.isBackup = true, super.key});
 
-  /// If [isBackup] is true, the dialog will show backup related text and proceed with the backup If false, it will show save related text and skip the back up process since it is handled during the multi-activation process.
+  /// If [isBackup] is true, the dialog will show backup related text and proceed with the backup If false, it will show save related text and skip the back up process since it is handled during the multi-activation process. NOTE: The backup process is not handled when [isBackup] is false.
   final bool isBackup;
 
   @override
@@ -125,14 +125,22 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
             gapH10,
             CustomContainer.background(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  widget.isBackup == false
+                      ? ElevatedButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(false);
+                          },
+                          child: Text(strings.back),
+                        )
+                      : gap0,
                   ElevatedButton(
                     onPressed: () async {
                       if (widget.isBackup) {
                         await context.read<BackupKeyCubit>().backUpKeys();
                       } else {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(true);
                       }
                     },
                     child: Text(strings.saveAtKeys),

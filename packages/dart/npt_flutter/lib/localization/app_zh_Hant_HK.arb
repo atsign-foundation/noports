@@ -17,6 +17,7 @@
   "activationKeyStatusFailed": "失敗",
   "activationKeyStatusWaiting": "等待中",
   "activationManual": "手動啟動",
+  "activationStatus": "啟動狀態",
   "activationStatusActivating": "正在啟動",
   "activationStatusCount": "已啟動 {total} 個中的 {current} 個 Atsign：",
   "activationStatusOtpWait": "請輸入您電子郵件中的 OTP",

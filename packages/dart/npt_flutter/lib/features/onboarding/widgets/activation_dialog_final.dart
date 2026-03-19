@@ -23,6 +23,9 @@ class ActivationDialogFinal extends StatelessWidget {
     // final width = MediaQuery.of(context).size.width * 0.70;
     return BlocBuilder<MultiActivationCubit, MultiActivationState>(
       builder: (context, state) {
+        final bool anyWatingStatus = context
+            .read<MultiActivationCubit>()
+            .isAnyWaitingStatus();
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -35,10 +38,8 @@ class ActivationDialogFinal extends StatelessWidget {
               gapH13,
               Row(
                 children: [
-                  PhosphorIcon(PhosphorIcons.spinnerGap()),
-                  gapW10,
                   Text(
-                    strings.activating,
+                    strings.activationStatus,
                     style: textTheme.headlineSmall!.copyWith(
                       color: AppColor.onSurfaceColorAlt,
                     ),
@@ -60,7 +61,7 @@ class ActivationDialogFinal extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   strings.activationStatusCount(
-                    '${state.fileContent.entries.where((entry) => entry.activationKeyStatus == ActivationKeyStatus.activated).length}',
+                    '${state.fileContent.entries.where((entry) => entry.activationKeyStatus == ActivationKeyStatus.activated || entry.activationKeyStatus == ActivationKeyStatus.alreadyActivated).length}',
                     '${state.fileContent.entries.length}',
                   ),
                 ),
@@ -140,6 +141,7 @@ class ActivationDialogFinal extends StatelessWidget {
             context.read<MultiActivationCubit>().isAnyFailedStatus()
                 ? ElevatedButton.icon(
                     onPressed: () {
+                      context.read<MultiActivationCubit>().reset();
                       Navigator.pop(context);
                     },
                     label: const Text('Cancel'),
@@ -162,7 +164,8 @@ class ActivationDialogFinal extends StatelessWidget {
 
                       context.read<OnboardingCubit>().setState(
                         // Onboard with the first atsign in the list since they should all be the same atsigns from the activation file. This is needed to set the root domain and atsign in the onboarding cubit state which is used in the onboarding process after this dialog.
-                        atSign: state.fileContent.entries.first.atsign,
+                        // TODO: Use the last Atsign for now. This need to be refactored to the first Atsign in the UI redesign.
+                        atSign: state.fileContent.entries.last.atsign,
 
                         // TODO: User the root dimain in atsign information.
                         rootDomain: "root.atsign.org",
