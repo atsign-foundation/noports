@@ -221,6 +221,12 @@ abstract class AppLocalizations {
   /// **'Manual Activation'**
   String get activationManual;
 
+  /// No description provided for @activationStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Activation Status'**
+  String get activationStatus;
+
   /// No description provided for @activationStatusActivating.
   ///
   /// In en, this message translates to:
