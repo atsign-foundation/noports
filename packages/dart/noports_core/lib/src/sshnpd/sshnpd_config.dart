@@ -356,7 +356,28 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       helpText: 'Show version',
       group: runtimeGroup,
     ),
+  ),
+  doctor(
+    FlagOption(
+      argName: 'doctor',
+      defaultsTo: false,
+      helpText: 'Run the doctor',
+      group: runtimeGroup,
+    ),
+  ),
+  output(
+    FlagOption(
+      argName: 'output',
+      argAbbrev: 'o',
+      defaultsTo: false,
+      helpText:
+          'Save doctor report to a file. Only valid when used with --doctor.'
+          ' Defaults to sshnpd_doctor_log.txt.'
+          ' A custom filename can be provided as an additional argument.',
+      group: runtimeGroup,
+    ),
   );
+
 
   const SshnpdOption(this.option);
 
