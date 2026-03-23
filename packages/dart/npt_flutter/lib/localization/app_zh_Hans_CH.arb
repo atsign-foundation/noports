@@ -17,6 +17,7 @@
   "activationKeyStatusFailed": "失败",
   "activationKeyStatusWaiting": "等待中",
   "activationManual": "手动激活",
+  "activationStatus": "激活状态",
   "activationStatusActivating": "正在激活",
   "activationStatusCount": "已激活 {total} 个中的 {current} 个 Atsign：",
   "activationStatusOtpWait": "请从您的电子邮件中输入 OTP",
