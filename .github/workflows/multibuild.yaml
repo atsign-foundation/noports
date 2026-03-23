@@ -253,7 +253,7 @@ jobs:
           security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           # codesign
-          DBINS="${BINS} srvd debug/srvd"
+          DBINS="debug/srvd ${BINS} np_admin srvd"
           for BINARY in ${DBINS}; do \
             /usr/bin/codesign \
               --force \
