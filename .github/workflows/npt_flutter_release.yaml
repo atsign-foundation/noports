@@ -13,7 +13,12 @@ jobs:
   build-windows-desktop:
     runs-on: windows-signer # codesign_windows.sh only works in windows-signer runner
     permissions:
-      contents: write
+      contents: write # Needed for release uploads
+      id-token: write # For attestation OIDC token
+      attestations: write # To persist attestation
+      artifact-metadata: write # To create artifact storage record
+    outputs:
+      hashes: ${{ steps.release.outputs.hashes }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -38,37 +43,37 @@ jobs:
           fi
           echo "bundle_id=${BUNDLE_ID}" >> "$GITHUB_OUTPUT"
           echo "asset_name=NoPortsDesktop-${BUNDLE_ID}-windows-x64.zip" >> "$GITHUB_OUTPUT"
+          echo "sbom_name=NoPortsDesktop-${BUNDLE_ID}-sbom.cdx.json" >> "$GITHUB_OUTPUT"
 
-      - name: flutter pub get
-        working-directory: packages/dart/npt_flutter
+      - name: Build and Sign Windows desktop binaries
         shell: bash # this line is needed because we are in a windows-signer
-        run: |
-          flutter pub get
-
-      - name: Create a blank .env to avoid build error
         working-directory: packages/dart/npt_flutter
-        shell: bash # this line is needed because we are in a windows-signer
-        run: |
-          printf "API_KEY=''\n" > .env
-
-      - name: flutter build windows --release
-        working-directory: packages/dart/npt_flutter
-        shell: bash
-        run: | # flutter build windows doesn't work in powershell, so we have to use bash
-          flutter build windows --release
-
-      - name: Sign Windows desktop binaries
-        shell: bash
         env:
           WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
           WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
+          flutter pub get
+          printf "API_KEY=''\n" > .env # Create a blank .env to avoid build error
+          flutter build windows --release
           source "${GITHUB_WORKSPACE}/tools/codesign_windows.sh"
           shopt -s nullglob
-          for FILE in "${GITHUB_WORKSPACE}"/packages/dart/npt_flutter/build/windows/x64/runner/Release/*.exe \
-                      "${GITHUB_WORKSPACE}"/packages/dart/npt_flutter/build/windows/x64/runner/Release/*.dll; do
+          for FILE in build/windows/x64/runner/Release/*.exe \
+                      build/windows/x64/runner/Release/*.dll; do
             sign_file "$FILE"
           done
+
+      - name: Generate SBOM
+        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        working-directory: packages/dart/npt_flutter
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: 'xUUCaZd4OWr1'
+          LOCK_FILE: 'pubspec.lock'
+          COMPONENT_VERSION: ${{ steps.metadata.outputs.bundle_id }}-gha${{github.run_number}}
+          OUTPUT_FILE: ${{ steps.metadata.outputs.sbom_name }}
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: true
 
       - name: package using powershell
         working-directory: packages/dart/npt_flutter
@@ -95,15 +100,40 @@ jobs:
           if-no-files-found: error
 
       - name: If tag push, upload desktop bundle to GitHub release
+        id: release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+          SBOM_NAME: ${{ steps.metadata.outputs.sbom_name }}
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
+          sha256sum "${ASSET_NAME}" > checksums.txt
+          sha256sum "${SBOM_NAME}" >> checksums.txt
+          echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
           gh release view "${RELEASE_TAG}" >/dev/null 2>&1
           gh release upload \
             "${RELEASE_TAG}" \
-            "${{ steps.metadata.outputs.asset_name }}" \
+            "${ASSET_NAME}" \
+            "${SBOM_NAME}" \
+            checksums.txt \
             --clobber
+
+      - uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: "packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}"
+          sbom-path: "packages/dart/npt_flutter/${{ steps.metadata.outputs.sbom_name }}"
+
+  provenance:
+    if: github.ref_type == 'tag'
+    needs: [build-windows-desktop]
+    permissions:
+      actions: read # Needed for detection of GitHub Actions environment.
+      id-token: write # Needed for provenance signing and ID
+      contents: write # Needed for release uploads
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    with:
+      base64-subjects: "${{ needs.build-windows-desktop.outputs.hashes }}"
+      upload-assets: true
