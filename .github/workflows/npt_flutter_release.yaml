@@ -64,13 +64,12 @@ jobs:
 
       - name: Generate SBOM
         uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
-        working-directory: packages/dart/npt_flutter
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'xUUCaZd4OWr1'
-          LOCK_FILE: 'pubspec.lock'
+          LOCK_FILE: 'packages/dart/npt_flutter/pubspec.lock'
           COMPONENT_VERSION: ${{ steps.metadata.outputs.bundle_id }}-gha${{github.run_number}}
-          OUTPUT_FILE: ${{ steps.metadata.outputs.sbom_name }}
+          OUTPUT_FILE: 'packages/dart/npt_flutter/${{ steps.metadata.outputs.sbom_name }}'
           AUGMENT: true
           ENRICH: true
           UPLOAD: true
