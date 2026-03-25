@@ -432,6 +432,7 @@ jobs:
   cleanup:
     name: Clean up temporary branch
     needs: [main_build]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write # Needed to delete workflow branch
