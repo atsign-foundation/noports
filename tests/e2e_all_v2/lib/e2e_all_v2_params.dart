@@ -7,82 +7,94 @@ class E2EAllV2Params {
   // Parameter cases
   // Case 1: mandatory (no defaults)
   // Case 2a: non-mandatory, compile-time default
-  // Case 2b: non-mandatory, run-time dsdfjlasdkfe
+  // Case 2b: non-mandatory, run-time 
   // Case 3: Non-mandatorry, with no default
 
-  static ArgParser _argParser = _createArgParser();
+  static final ArgParser argParser = _createArgParser();
 
   // Case 1 - mandatory parameters
-  final String clientAtsign;
-  final String daemonAtsign;
-  final String relayAtsign;
-  final String relayLatestAtsign;
-  final String policyAtsign;
-  final String policyLatestAtsign;
-  final String eventsAtsign;
+  late String clientAtsign;
+  late String daemonAtsign;
+  late String relayAtsign;
+  late String relayLatestAtsign;
+  late String policyAtsign;
+  late String policyLatestAtsign;
+  late String eventsAtsign;
 
   // Case 2a - compile time defaults
-  final String rootDomain;
-  final bool verbose;
+  late bool help;
 
-  E2EAllV2Params._({
-    required this.clientAtsign,
-    required this.daemonAtsign,
-    required this.relayAtsign,
-    required this.relayLatestAtsign,
-    required this.policyAtsign,
-    required this.policyLatestAtsign,
-    required this.eventsAtsign,
-    required this.rootDomain,
-    required this.verbose,
-  });
+  late String rootDomain;
+  late bool verbose;
 
-  factory E2EAllV2Params.fromArgs(List<String> args) {
-    ArgResults argResults = _argParser.parse(args);
-    E2EAllV2Params e2eAllV2Params = E2EAllV2Params._(
-      clientAtsign: argResults['client-atsign'],
-      daemonAtsign: argResults['daemon-atsign'],
-      relayAtsign: argResults['relay-atsign'],
-      relayLatestAtsign: argResults['relay-latest-atsign'],
-      policyAtsign: argResults['policy-atsign'],
-      policyLatestAtsign: argResults['policy-latest-atsign'],
-      eventsAtsign: argResults['events-atsign'],
-      rootDomain: argResults['root-domain'],
-      verbose: argResults['verbose'],
-    );
+  // Private constructor
+  E2EAllV2Params._();
+
+  factory E2EAllV2Params.parse(List<String> args) {
+    final ArgResults argResults = argParser.parse(args);
+    final E2EAllV2Params e2eAllV2Params = E2EAllV2Params._();
+    e2eAllV2Params.help = argResults['help'];
+    e2eAllV2Params.clientAtsign = argResults['client-atsign'];
+    e2eAllV2Params.daemonAtsign = argResults['daemon-atsign'];
+    e2eAllV2Params.relayAtsign = argResults['relay-atsign'];
+    e2eAllV2Params.relayLatestAtsign = argResults['relay-latest-atsign'];
+    e2eAllV2Params.policyAtsign = argResults['policy-atsign'];
+    e2eAllV2Params.policyLatestAtsign = argResults['policy-latest-atsign'];
+    e2eAllV2Params.eventsAtsign = argResults['events-atsign'];
+    e2eAllV2Params.rootDomain = argResults['root-domain'];
+    e2eAllV2Params.verbose = argResults['verbose'];
     return e2eAllV2Params;
   }
 
   static ArgParser _createArgParser() {
     final ArgParser argParser = ArgParser();
+    argParser.addFlag('help',
+      defaultsTo: false,
+      help: 'Shows usage instructions',
+    );
     argParser.addOption('client-atsign',
       mandatory: true, 
-      help: 'client Atsign that will be used in tests', 
+      help: 'Client Atsign that will be used in tests', 
     );
     argParser.addOption('daemon-atsign',
       mandatory: true,
-      help: 'daemon Atsign that will be used in tests',
+      help: 'Daemon Atsign that will be used in tests',
     );
     argParser.addOption('relay-atsign',
       mandatory: true,
-      help: 'relay Atsign that will be used in tests',
+      help: 'Relay Atsign that will be used in tests',
     );
     argParser.addOption('relay-latest-atsign',
       mandatory: true,
-      help: 'the relay Atsign to test aganist the most recent code changes',
+      help: 'The relay Atsign to test aganist the most recent code changes',
     );
     argParser.addOption('policy-atsign',
       mandatory: true,
-      help: 'policy Atsign will be used in tests',
+      help: 'Policy Atsign will be used in tests',
     );
     argParser.addOption('policy-latest-atsign',
       mandatory: true,
-      help: 'the policy Atsign that will be used against the most recent code changes',
+      help: 'The policy Atsign that will be used against the most recent code changes',
     );
     argParser.addOption('events-atsign',
       mandatory: true,
-      help: 'the events Atsign that will be used against the most recent code changes',
+      help: 'The events Atsign that will be used against the most recent code changes',
+    );
+    argParser.addOption('root-domain',
+      mandatory: false,
+      defaultsTo: 'root.atsign.org:64', // TODO make into a constant somewhere
+      help: 'Host and port of atDirectory server'
+    );
+    argParser.addFlag('verbose',
+      defaultsTo: false,
+      help: 'More logging',
     );
     return argParser;
   }
+
+  static void printUsage() {
+    print('e2e_all_v2 usage:');
+    print(argParser.usage);
+  }
+
 }
