@@ -10,25 +10,36 @@ permissions:
   contents: read
 
 jobs:
-  build-windows-desktop:
-    runs-on: windows-signer # codesign_windows.sh only works in windows-signer runner
+  verify_tags:
     permissions:
-      contents: write # Needed for release uploads
-      id-token: write # For attestation OIDC token
-      attestations: write # To persist attestation
-      artifact-metadata: write # To create artifact storage record
+      contents: write # Needed to create workflow branch
+    runs-on: ubuntu-latest
     outputs:
-      hashes: ${{ steps.release.outputs.hashes }}
+      bundle_id: ${{ steps.metadata.outputs.bundle_id }}
+      asset_name: ${{ steps.metadata.outputs.asset_name }}
+      sbom_name: ${{ steps.metadata.outputs.sbom_name }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      # upon installing flutter in this windows-signer,
-      # subsequent steps will need to use `shell: bash`
-      - uses: subosito/flutter-action@0ca7a949e71ae44c8e688a51c5e7e93b2c87e295 # v2.22.0
-        with:
-          channel: stable
-          cache: true
-
+      - name: Create action branch
+        run: |
+          git config --global user.name 'Atsign Robot'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b npt-release-${{github.run_number}}
+      - name: Update pubspec.yaml version if tag
+        shell: bash
+        if: github.ref_type == 'tag'
+        working-directory: packages/dart/npt_flutter
+        run: |
+          REF=${{ github.ref_name }}
+          # tag is desktop1.2.3+4, we want 1.2.3+4
+          VER=${REF#desktop}
+          sed -i "0,/version:/{s/version: \(.*\)/version: ${VER}/}" pubspec.yaml
+          if [ "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m 'ci: Updated version to tag'
+          fi
+      - name: Push changes to branch
+        run: git push --set-upstream origin npt-release-${{github.run_number}}
       - name: Derive bundle metadata
         id: metadata
         shell: bash
@@ -44,6 +55,58 @@ jobs:
           echo "bundle_id=${BUNDLE_ID}" >> "$GITHUB_OUTPUT"
           echo "asset_name=NoPortsDesktop-${BUNDLE_ID}-windows-x64.zip" >> "$GITHUB_OUTPUT"
           echo "sbom_name=NoPortsDesktop-${BUNDLE_ID}-sbom.cdx.json" >> "$GITHUB_OUTPUT"
+
+  generate-sbom:
+    needs: verify_tags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: npt-release-${{github.run_number}}
+      - name: Generate SBOM
+        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: 'xUUCaZd4OWr1'
+          LOCK_FILE: 'packages/dart/npt_flutter/pubspec.lock'
+          COMPONENT_VERSION: ${{ needs.verify_tags.outputs.bundle_id }}-gha${{github.run_number}}
+          OUTPUT_FILE: 'packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}'
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: true
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: sbom
+          path: packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}
+
+  build-windows-desktop:
+    needs: [generate-sbom]
+    runs-on: windows-signer # codesign_windows.sh only works in windows-signer runner
+    permissions:
+      contents: write # Needed for release uploads
+      id-token: write # For attestation OIDC token
+      attestations: write # To persist attestation
+      artifact-metadata: write # To create artifact storage record
+    outputs:
+      hashes: ${{ steps.release.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: npt-release-${{github.run_number}}
+
+      - name: Download SBOM
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom
+          path: packages/dart/npt_flutter
+
+      # upon installing flutter in this windows-signer,
+      # subsequent steps will need to use `shell: bash`
+      - uses: subosito/flutter-action@0ca7a949e71ae44c8e688a51c5e7e93b2c87e295 # v2.22.0
+        with:
+          channel: stable
+          cache: true
 
       - name: Build and Sign Windows desktop binaries
         shell: bash # this line is needed because we are in a windows-signer
@@ -62,23 +125,11 @@ jobs:
             sign_file "$FILE"
           done
 
-      - name: Generate SBOM
-        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
-        env:
-          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
-          COMPONENT_ID: 'xUUCaZd4OWr1'
-          LOCK_FILE: 'packages/dart/npt_flutter/pubspec.lock'
-          COMPONENT_VERSION: ${{ steps.metadata.outputs.bundle_id }}-gha${{github.run_number}}
-          OUTPUT_FILE: 'packages/dart/npt_flutter/${{ steps.metadata.outputs.sbom_name }}'
-          AUGMENT: true
-          ENRICH: true
-          UPLOAD: true
-
       - name: package using powershell
         working-directory: packages/dart/npt_flutter
         shell: powershell
         env:
-          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }} # e.g. "NoPortsDesktop-abc1234-windows-x64.zip"
+          ASSET_NAME: ${{ needs.verify_tags.outputs.asset_name }} # e.g. "NoPortsDesktop-abc1234-windows-x64.zip"
         run: |
           # if the asset already exists, 
           # remove it first to avoid Compress-Archive error
@@ -94,8 +145,8 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: npt_flutter_${{ steps.metadata.outputs.bundle_id }}_${{ github.run_number }}_${{ github.run_attempt }}
-          path: packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}
+          name: npt_flutter_${{ needs.verify_tags.outputs.bundle_id }}_${{ github.run_number }}_${{ github.run_attempt }}
+          path: packages/dart/npt_flutter/${{ needs.verify_tags.outputs.asset_name }}
           if-no-files-found: error
 
       - name: If tag push, upload desktop bundle to GitHub release
@@ -104,8 +155,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
-          SBOM_NAME: ${{ steps.metadata.outputs.sbom_name }}
+          ASSET_NAME: ${{ needs.verify_tags.outputs.asset_name }}
+          SBOM_NAME: ${{ needs.verify_tags.outputs.sbom_name }}
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
@@ -122,8 +173,8 @@ jobs:
 
       - uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
-          subject-path: "packages/dart/npt_flutter/${{ steps.metadata.outputs.asset_name }}"
-          sbom-path: "packages/dart/npt_flutter/${{ steps.metadata.outputs.sbom_name }}"
+          subject-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.asset_name }}"
+          sbom-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}"
 
   provenance:
     if: github.ref_type == 'tag'
@@ -136,3 +187,15 @@ jobs:
     with:
       base64-subjects: "${{ needs.build-windows-desktop.outputs.hashes }}"
       upload-assets: true
+
+  cleanup:
+    name: Clean up temporary branch
+    needs: [build-windows-desktop]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to delete workflow branch
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Delete workflow branch
+        run: git push origin --delete npt-release-${{github.run_number}}
