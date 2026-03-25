@@ -2,6 +2,11 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.13
+
+* feat: sshnpd doctor by @LilianGRD
+* ci: Codesign most deeply nested binary first and add np_admin
+
 ## v5.14.12
 
 * feat: npp.dart
