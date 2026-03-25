@@ -65,6 +65,7 @@ class SshnpdParams {
     List<String> args, {
     void Function()? helpCallback,
     void Function()? versionCallback,
+    Future<void> Function()? doctorCallback,
   }) async {
     // Arg check
     final Configuration c = Configuration<SshnpdOption>.resolveNoExcept(
@@ -79,6 +80,10 @@ class SshnpdParams {
 
     if (c.value(SshnpdOption.help)) {
       helpCallback?.call();
+    }
+
+    if (c.value(SshnpdOption.doctor)) {
+      await doctorCallback?.call();
     }
 
     if (c.errors.isNotEmpty) {

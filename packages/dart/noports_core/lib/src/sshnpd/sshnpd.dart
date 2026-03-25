@@ -110,6 +110,7 @@ abstract class Sshnpd {
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     void Function()? versionCallback,
+    Future<void> Function()? doctorCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
@@ -120,6 +121,7 @@ abstract class Sshnpd {
       usageCallback: usageCallback,
       helpCallback: helpCallback,
       versionCallback: versionCallback,
+      doctorCallback: doctorCallback,
       version: version,
       notifPreProcessor: notifPreProcessor,
     );

@@ -181,13 +181,14 @@ class SshnpdImpl
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     void Function()? versionCallback,
+    Future<void> Function()? doctorCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback, versionCallback: versionCallback);
+        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback, versionCallback: versionCallback, doctorCallback: doctorCallback);
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
