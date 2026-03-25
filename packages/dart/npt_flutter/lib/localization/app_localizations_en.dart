@@ -70,6 +70,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activationManual => 'Manual Activation';
 
   @override
+  String get activationStatus => 'Activation Status';
+
+  @override
   String get activationStatusActivating => 'Activating';
 
   @override

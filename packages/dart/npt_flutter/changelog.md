@@ -1,3 +1,13 @@
+## 1.9.3+30
+
+-FIX: Back Up Dialog Save button is centered when back button isn't shown.
+
+## 1.9.2+29
+
+-FIX: Activation Dialog Final Title Text changed and Title Icon removed.
+-FIX: Back button added to the Save Back Up Dialog.
+-FIX: Sign In occurs with the last Atsign in the activation file When Multi-Activation completes.
+
 ## 1.9.1+28
 
 - FEAT: windows release automation in GitHub
