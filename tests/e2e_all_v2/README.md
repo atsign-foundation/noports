@@ -9,6 +9,7 @@ dart run bin/main.dart \
     --relay-atsign "@npe2e_relay" \
     --relay-latest-atsign "@npe2e_relay_latest" \
     --policy-atsign "@npe2e_policy" \
+    --policy-latest-atsign "@npe2e_policy_latest" \
     --events-atsign "@npe2e_events" \
     --root-domain "root.atsign.wtf:64"
 ```
