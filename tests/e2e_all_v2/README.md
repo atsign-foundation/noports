@@ -32,6 +32,22 @@ notes:
 - Let `dart test --concurrency=1` be able to decide how it runs in parallel
 - Versions are determined in the test itself.
 
+## Happy PAth
+
+1. Developer runs `dart run bin/main.dart`
+2. Tear down (if old existing session running)
+3. Set up
+  a. Build and start up necessary Docker containers (client, daemons, policy, events)
+  b. Check docker readiness
+4. Execute tests
+  a. Execute commands in container
+  b. Validate logs in container
+5. Tear down
+
+Modules:
+- buildOrPullDockerContainer
+- executeInContainer
+
 ## Next steps if i have time
 
 Runs a web app on localhost, allows me to enter input parameters (auto detects keys), then 
