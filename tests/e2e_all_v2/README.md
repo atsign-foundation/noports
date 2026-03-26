@@ -7,9 +7,7 @@ dart run bin/main.dart \
     --client-atsign "@npe2e_client" \
     --daemon-atsign "@npe2e_daemon" \
     --relay-atsign "@npe2e_relay" \
-    --relay-latest-atsign "@npe2e_relay_latest" \
     --policy-atsign "@npe2e_policy" \
-    --policy-latest-atsign "@npe2e_policy_latest" \
     --events-atsign "@npe2e_events" \
     --root-domain "root.atsign.wtf:64"
 
@@ -17,9 +15,7 @@ dart run bin/main.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
-    --relay-latest-atsign "@relay_jttest" \
     --policy-atsign "@policy_jttest" \
-    --policy-latest-atsign "@policy_jttest" \
     --events-atsign "@events_jttest" \
 ```
 

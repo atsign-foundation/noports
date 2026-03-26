@@ -26,9 +26,7 @@ void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {
   logger.info('  client-atsign: ${e2eAllV2Params.clientAtsign}');
   logger.info('  daemon-atsign: ${e2eAllV2Params.daemonAtsign}');
   logger.info('  relay-atsign: ${e2eAllV2Params.relayAtsign}');
-  logger.info('  relay-latest-atsign: ${e2eAllV2Params.relayLatestAtsign}');
   logger.info('  policy-atsign: ${e2eAllV2Params.policyAtsign}');
-  logger.info('  policy-latest-atsign: ${e2eAllV2Params.policyLatestAtsign}');
   logger.info('  events-atsign: ${e2eAllV2Params.eventsAtsign}');
   logger.info('  root-domain: ${e2eAllV2Params.rootDomain}');
   logger.info('  verbose: ${e2eAllV2Params.verbose}');

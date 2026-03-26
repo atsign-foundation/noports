@@ -16,9 +16,7 @@ class E2EAllV2Params {
   late String clientAtsign;
   late String daemonAtsign;
   late String relayAtsign;
-  late String relayLatestAtsign;
   late String policyAtsign;
-  late String policyLatestAtsign;
   late String eventsAtsign;
 
   // Case 2a - compile time defaults
@@ -37,9 +35,7 @@ class E2EAllV2Params {
     e2eAllV2Params.clientAtsign = argResults['client-atsign'];
     e2eAllV2Params.daemonAtsign = argResults['daemon-atsign'];
     e2eAllV2Params.relayAtsign = argResults['relay-atsign'];
-    e2eAllV2Params.relayLatestAtsign = argResults['relay-latest-atsign'];
     e2eAllV2Params.policyAtsign = argResults['policy-atsign'];
-    e2eAllV2Params.policyLatestAtsign = argResults['policy-latest-atsign'];
     e2eAllV2Params.eventsAtsign = argResults['events-atsign'];
     e2eAllV2Params.rootDomain = argResults['root-domain'];
     e2eAllV2Params.verbose = argResults['verbose'];
@@ -64,17 +60,9 @@ class E2EAllV2Params {
       mandatory: true,
       help: 'Relay Atsign that will be used in tests',
     );
-    argParser.addOption('relay-latest-atsign',
-      mandatory: true,
-      help: 'The relay Atsign to test aganist the most recent code changes',
-    );
     argParser.addOption('policy-atsign',
       mandatory: true,
       help: 'Policy Atsign will be used in tests',
-    );
-    argParser.addOption('policy-latest-atsign',
-      mandatory: true,
-      help: 'The policy Atsign that will be used against the most recent code changes',
     );
     argParser.addOption('events-atsign',
       mandatory: true,
