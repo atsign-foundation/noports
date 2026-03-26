@@ -6,7 +6,7 @@ icon: linux
 
 This guide provides instructions for connecting from the NoPorts desktop application, to a machine running Linux.
 
-### Step 9 and Step 10
+### Step 7 and Step 8
 
 Complete these steps **on the machine you are connecting to (Linux)**
 
@@ -14,7 +14,7 @@ Complete these steps **on the machine you are connecting to (Linux)**
 
 <summary>On the machine you are connecting to</summary>
 
-### <mark style="color:orange;">Step 9:</mark> Download and run the Installer
+### <mark style="color:orange;">Step 7:</mark> Download and run the Installer
 
 {% hint style="warning" %}
 Do not run the following commands while logged in as the root user. Instead, use `sudo` from a regular account when elevated privileges are required, and create a regular account if one does not already exist.
@@ -60,7 +60,7 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 * This should be the name of the machine you're currently installing on.
 
-### <mark style="color:orange;">Step 10:</mark> Initiate atSign authorization request
+### <mark style="color:orange;">Step 8:</mark> Initiate atSign authorization request
 
 Run the following command to make an authorization request:&#x20;
 
@@ -69,7 +69,7 @@ Be sure to replace the following values:
 
 `@<REPLACE>_np` with your **device atSign**,
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 7**,&#x20;
+&#x20;`<PASSCODE>` with the **passcode generated in Step 5**,&#x20;
 
 `@<REPLACE>_np_key` with your **device atSign**,&#x20;
 
@@ -94,7 +94,7 @@ Waiting for approval; will check every 10 seconds
 
 </details>
 
-### Step 11 to Step 14
+### Step 9 to Step 12
 
 With both machines now configured, the final steps bring us back to the machine initiating the connection.
 
@@ -102,17 +102,17 @@ With both machines now configured, the final steps bring us back to the machine 
 
 <summary>On the machine you are connecting from</summary>
 
-### <mark style="color:orange;">Step 11:</mark> Approve the atSign authorization request
+### <mark style="color:orange;">Step 9:</mark> Approve the atSign authorization request
 
 1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
 2. After a few seconds, the request will also show as approved on the machine you are connecting to.
 
-### <mark style="color:orange;">Step 12:</mark> Switch back to your client atSign (@example01\_np)
+### <mark style="color:orange;">Step 10:</mark> Switch to your client atSign (@example01\_np)
 
 1. Click on **your atSign** in the top right corner of the screen. This will open a list of atSigns that are currently signed into the app.
-2. Select your **client atSign** in order to switch to it.
+2. Select the one you would like to use as your **client atSign** in order to switch to it.
 
-### <mark style="color:orange;">Step 13:</mark> Create a Connection Profile
+### <mark style="color:orange;">Step 11:</mark> Create a Connection Profile
 
 1. If you aren't already on the Connections tab, click on **Connections** at the top of the Screen. Then click **Add New**, to create a new profile.
 2. Enter the following information into the profile then click **Submit**.
@@ -127,7 +127,7 @@ With both machines now configured, the final steps bring us back to the machine 
 
 For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
-### <mark style="color:orange;">Step 14:</mark> Establish a connection
+### <mark style="color:orange;">Step 12:</mark> Establish a connection
 
 Click the **Connect Icon ▶️** to establish a connection with your remote device. If the connection is successful, you will see green. If you see red, hover over the icon to see reason for failure.
 

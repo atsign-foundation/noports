@@ -11,15 +11,22 @@ This guide is intended for people connecting from a machine running Windows or m
 For people connecting from Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
 {% endhint %}
 
-### <mark style="color:orange;">Step 1:</mark> Sign up for NoPorts
+### <mark style="color:orange;">Step 1:</mark> Sign up for NoPorts or log into the NoPorts Management Portal
 
-Go to [noports.com](https://my.noports.com/no-ports-invite/30dayfreetrial) and sign up for a subscription or free trial&#x20;
+If you have not already signed up or purchased NoPorts, go to [my.noports.com](https://my.noports.com/no-ports-invite/30dayfreetrial) and sign up for a subscription or free trial then proceed to **Step 2**.\
+\
+If you already have a NoPorts account, you’ll need to start by logging into the Management Portal. Go to [my.noports.com/login](https://my.noports.com/login) and enter your registered email address to receive your one‑time password. Once logged in, select the subscription for the Atsigns you want to activate, then continue with the instructions below.&#x20;
 
 {% hint style="info" %}
 Make note of your atSigns (e.g., @example01\_np, @example02\_np). You'll need them shortly.
 {% endhint %}
 
-### <mark style="color:orange;">Step 2:</mark> Download the NoPorts desktop application
+### <mark style="color:orange;">Step 2:</mark> Initiate Atsign activation in the Management Portal&#x20;
+
+1. Click **Activate All** and wait for the activation file to be generated.&#x20;
+2. Once its completed, download the activation file. It should look something like youratsigns\_activation\_file.yaml.
+
+### <mark style="color:orange;">Step 3:</mark> Download the NoPorts desktop application
 
 Download the NoPorts desktop app using one of the links below:
 
@@ -31,47 +38,39 @@ Download the NoPorts desktop app using one of the links below:
 For people connecting from Linux please follow the [Linux Installation Guide](../connecting-from-linux/).
 {% endhint %}
 
-### <mark style="color:orange;">Step 3:</mark> Activate your client atSign (@example01\_np)
+### <mark style="color:orange;">Step 4:</mark> Complete Atsign activation in the NoPorts desktop application
 
 {% hint style="warning" %}
 In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
 {% endhint %}
 
-1. Launch the NoPorts desktop app and click **Get Started**.
-2. Enter your **client atSign** into the text field (e.g., @example01\_np), leave the root domain as is, and then click **Next**.
-3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
+1. Launch the NoPorts desktop application and click **Get Started** and then click **Complete Activation**
+2. Upload or drag and drop you activation file (.yaml) and then click **Next**.
 
 {% hint style="info" %}
+If you don’t have an activation file, you can activate your Atsigns individually by entering each one in the Manual Atsign section and following the steps provided in the app.
+{% endhint %}
+
+{% hint style="danger" %}
 For Windows, if the app stalls at "Preparing for activation", verify that your CA certificates are up to date.
 {% endhint %}
 
-### <mark style="color:orange;">Step 4:</mark> Save a copy of your client atKeys
+### <mark style="color:orange;">Step 4:</mark> Save your atKeys
 
 Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
 2. Select a memorable location on your machine and **save** your keys.&#x20;
 
-### <mark style="color:orange;">Step 5:</mark> Activate your device atSign (@example02\_np)
+All your Atsigns will be activated and the keys will be saved in your chosen location.&#x20;
 
-{% hint style="warning" %}
-Both the atSigns are activated on the machine you are connecting from. Later, you’ll grant your remote machine access to the keys stored on this machine.
-{% endhint %}
+### <mark style="color:orange;">Step 5:</mark> Generate a device atSign authorization passcode
 
-1. You'll need to add your device atSign. To do this, click on **your atSign** at the top right of the screen, then select **+ Add atSign**.
-2. Enter your **device atSign** into the text field (e.g., @example02\_np). Leave the root domain as is, and then click **Next**.
-3. A **one-time password (OTP)** will be sent to you via email. Enter this OTP into the app and then click **Confirm**.&#x20;
+Once the activation process is complete you will be signed in using one of your activated Atsigns. This will be your device Atsign, e.g. @example02\_np.&#x20;
 
-### <mark style="color:orange;">Step 6:</mark> Save a copy of your device atKeys&#x20;
+Click on **Authenticator** at the top of the screen and then click on **OTP.** Take note of the 6-character code as you will use it in **Step 8**.
 
-1. Click on **Save atKeys**
-2. Select a memorable location on your machine and **save** your keys.&#x20;
-
-### <mark style="color:orange;">Step 7:</mark> Generate a device atSign authorization passcode
-
-Click on **Authenticator** at the top of the screen and then click on **OTP.** You will use this 6 character code in **Step 10**.
-
-### <mark style="color:orange;">Step 8:</mark> Switch to the machine you are connecting to OR use a demo profile to access our test page
+### <mark style="color:orange;">Step 6:</mark> Switch to the machine you are connecting to OR use a demo profile to access our test page
 
 Now that your atSigns are ready, you can either set up your remote machine or try our hidden test page.
 
