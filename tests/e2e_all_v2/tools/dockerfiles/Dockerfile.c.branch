@@ -24,14 +24,14 @@ RUN set -eux ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
-FROM atsigncompany/noports_e2e_all_v2_base:latest
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:c7e089fad3460aedceed019a2aedbe591b9b9979f8fd898d4fb985ce33b204ca AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV USER_ID=1024
 ENV GROUP_ID=1024
 
-COPY --from=buildimage /output/ /usr/bin
+COPY --from=buildimage /output/ /usr/local/bin/
 
 USER ${USER}
 WORKDIR ${HOMEDIR}

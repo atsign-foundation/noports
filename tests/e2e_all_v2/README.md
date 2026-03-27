@@ -28,7 +28,7 @@ notes:
 - Let `dart test --concurrency=1` be able to decide how it runs in parallel
 - Versions are determined in the test itself.
 
-## Happy PAth
+## Happy Path
 
 1. Developer runs `dart run bin/main.dart`
 2. Tear down (if old existing session running)
@@ -43,6 +43,12 @@ notes:
 Modules:
 - buildOrPullDockerContainer
 - executeInContainer
+
+## Notes
+
+- Goal here is to explicitly define each individual tests. As it is, we define a list of versions
+- and if we want to do something specifically (such as add policy, relay, events into our tests),
+- that is difficult with the way the harness works in e2e_all.
 
 ## Next steps if i have time
 

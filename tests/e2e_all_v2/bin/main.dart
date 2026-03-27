@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:at_utils/at_utils.dart';
+import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
 
 late AtSignLogger logger;
@@ -18,6 +20,37 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
   _logLoadedParameters(e2eAllV2Params);
+
+  final DockerImage dockerImage = DockerImage.release(language: Language.dart, version: 'v5.9.4');
+  final ProcessResult process = await dockerImage.build();
+  print(process.exitCode);
+
+  // Clients: Dart Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
+  // Daemons: Dart Current, C Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
+  // Relay: Dart Current
+  // Policy: Dart Current
+  // Events: Dart Current
+
+  // sudo docker build \
+  //  -f $dockerfile \
+  //  -t $tag \
+  //  --quiet \
+  //  ?--no-cache \
+  //  ?--build-arg release=v5.9.4 \
+  // --target runtime \
+  // .
+
+  // sudo docker run \
+  //  --rm \
+  //  -d \
+  //  --name "$containerName" \
+  //  -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
+  //  $TAG
+  //  /bin/bash -c sudo service ssh start && /usr/local/bin/sshnpd -a @daemon -m @client -d deviceName $daemonFlags --root-domain root-domain -v
+
+  // atsigncompany/noports_e2e_all_$type:current
+  // atsigncompany/noports_e2e_all_$type:vx.x.x
+  // Base Image: atsigncompany/noports_e2e_all_base_runtime:latest
 }
 
 void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {

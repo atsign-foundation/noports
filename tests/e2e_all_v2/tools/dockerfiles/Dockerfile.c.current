@@ -22,9 +22,10 @@ RUN set -eux ; \
     rm -rf build ; \
     cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
-    mv build/srv ${OUTPUT_DIR}/srv ;
+    mv build/srv ${OUTPUT_DIR}/srv
 
-FROM atsigncompany/noports_e2e_all_v2_base:latest
+
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:c7e089fad3460aedceed019a2aedbe591b9b9979f8fd898d4fb985ce33b204ca AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
