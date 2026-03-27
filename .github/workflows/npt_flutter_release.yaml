@@ -155,7 +155,7 @@ jobs:
 
       - name: If tag push, upload desktop bundle to GitHub release
         id: release
-        #if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
