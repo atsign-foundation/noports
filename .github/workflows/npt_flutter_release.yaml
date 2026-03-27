@@ -164,10 +164,18 @@ jobs:
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
+          echo "Generating SHA for ${ASSET_NAME}"
           sha256sum "${ASSET_NAME}" > checksums.txt
+          cat checksums.txt
+          echo "Generating SHA for ${SBOM_NAME}"
           sha256sum "${SBOM_NAME}" >> checksums.txt
+          cat checksums.txt
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-          gh release view "${RELEASE_TAG}" >/dev/null 2>&1
+          # Check if release exists, create as draft if it doesn't
+          if ! gh release view "${RELEASE_TAG}" >/dev/null; then
+            echo "Release ${RELEASE_TAG} not found. Creating a draft release..."
+            gh release create "${RELEASE_TAG}" --draft --title "${RELEASE_TAG}" --notes "Automated release for ${RELEASE_TAG}"
+          fi
           gh release upload \
             "${RELEASE_TAG}" \
             "${ASSET_NAME}" \
