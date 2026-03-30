@@ -11,12 +11,12 @@ dart run bin/main.dart \
     --events-atsign "@npe2e_events" \
     --root-domain "root.atsign.wtf:64"
 
-dart run bin/main.dart \
+dart run tests/e2e_all_v2/bin/main.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
     --policy-atsign "@policy_jttest" \
-    --events-atsign "@events_jttest" \
+    --events-atsign "@events_jttest" 
 ```
 
 notes:
@@ -64,3 +64,52 @@ I get a good overview of the things happening
 ```bash
 dart run bin/web.dart
 ```
+
+## List of Tests
+
+### 001_minus_s_flag
+
+1. Generates a new ssh key
+2. 
+    a. Run sshnp against a daemon without the `-s` flag with that new key
+    b. Verify it fails
+3.
+    a. Run against a daemon with the `-s` flag
+    b. Verify it succeeds
+
+- d:current vs. d:current
+- d:current vs. c:current
+- d:current vs. d:v5.9.4
+- d:current vs. d:v5.11.2
+- d:current vs. d:v5.13.0
+
+### minus_r_flag
+
+- d:current vs. d:current
+- d:v5.9.4 vs. d:current
+- d:v5.11.2 vs. d:current
+- d:v5.13.0 vs. d:current
+- d:current vs. d:v5.9.4
+- d:v5.9.4 vs. d:v5.9.4
+- d:v5.11.2 vs. d:v5.9.4
+- d:v5.13.0 vs. d:v5.9.4
+- d:current vs. d:v5.11.2
+- d:v5.9.4 vs. d:v5.11.2
+- d:v5.11.2 vs. d:v5.11.2
+- d:v5.13.0 vs. d:v5.11.2
+
+### minus_u_flag
+
+### npt_to_port_22
+
+### npt_to_port_22_no_encrypt_traffic
+
+### v4_dart_inline
+
+### v4_openssh_print
+
+### v5_dart_inline
+
+### v5_openssh_inline
+
+### v5_openssh_print
