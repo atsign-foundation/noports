@@ -70,46 +70,160 @@ dart run bin/web.dart
 ### 001_minus_s_flag
 
 1. Generates a new ssh key
-2. 
+2.
     a. Run sshnp against a daemon without the `-s` flag with that new key
     b. Verify it fails
 3.
     a. Run against a daemon with the `-s` flag
     b. Verify it succeeds
 
-- d:current vs. d:current
-- d:current vs. c:current
-- d:current vs. d:v5.9.4
-- d:current vs. d:v5.11.2
-- d:current vs. d:v5.13.0
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: C (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
 
 ### minus_r_flag
 
-- d:current vs. d:current
-- d:v5.9.4 vs. d:current
-- d:v5.11.2 vs. d:current
-- d:v5.13.0 vs. d:current
-- d:current vs. d:v5.9.4
-- d:v5.9.4 vs. d:v5.9.4
-- d:v5.11.2 vs. d:v5.9.4
-- d:v5.13.0 vs. d:v5.9.4
-- d:current vs. d:v5.11.2
-- d:v5.9.4 vs. d:v5.11.2
-- d:v5.11.2 vs. d:v5.11.2
-- d:v5.13.0 vs. d:v5.11.2
+1. Run sshnp with `--host` (expect to pass)
+2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
+3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart v5.9.4 | Daemon: Dart v5.9.4
+- Client: Dart v5.11.2 | Daemon: Dart v5.9.4
+- Client: Dart v5.13.0 | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart v5.9.4 | Daemon: Dart v5.11.2
+- Client: Dart v5.11.2 | Daemon: Dart v5.11.2
+- Client: Dart v5.13.0 | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
+- Client: Dart v5.9.4 | Daemon: Dart v5.13.0
+- Client: Dart v5.11.2 | Daemon: Dart v5.13.0
+- Client: Dart v5.13.0 | Daemon: Dart v5.13.0
 
 ### minus_u_flag
 
+1. Run sshnp without `-u <username>` talking to device daemon which does not have `-u` flag enabled (expect to fail)
+2. Run sshnp without `-u <username>` talking to device daemon which does have `-u` flag enabled (expect to pass)
+
+- Client: Dart (current) | Daemon: Dart (current)
+
 ### npt_to_port_22
+
+1. Run npt to device daemon on port 22, then use ssh (expect to pass)
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: C (current)
+- Client: Dart v5.9.4 | Daemon: C (current)
+- Client: Dart v5.11.2 | Daemon: C (current)
+- Client: Dart v5.13.0 | Daemon: C (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
 
 ### npt_to_port_22_no_encrypt_traffic
 
+1. Run npt with `--no-encrypt-rvd-traffic` then ssh (expect to pass)
+
+- Client: Dart (current) | Daemon: Dart (current)
+
 ### v4_dart_inline
+
+v4 protocol lacks advanced features; does not support:
+- device authentication to relay
+- end-to-end traffic encryption
+- daemon feature detection/ping
+- when a v5 cleint needs to talk to v4 daemon, client must `--no-ad` (disable device auth to rvd) `--no-et` (disable end-to-end encryption)
+
+1. Configuration:
+    a. SSH client: dart (client `--ssh-client dart|openssh`)
+    b. Protocol version: v4
+    c. Connection mode: inline
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
 
 ### v4_openssh_print
 
+1. Configuration:
+    a. SSH Client: OpenSSH `--ssh-client openssh`
+    b. Protocol Version: v4
+    c. Connection Mode: print `-x`
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
+
 ### v5_dart_inline
+
+1. Configuration:
+    a. SSH Client: Dart `--ssh-client dart`
+    b. Protocol Version: v5
+    c. Connection mode: inline
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: C (current)
+- Client: Dart v5.9.4 | Daemon: C (current)
+- Client: Dart v5.11.2 | Daemon: C (current)
+- Client: Dart v5.13.0 | Daemon: C (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
 
 ### v5_openssh_inline
 
+Configuration:
+    a. SSH Client: `--ssh-client openssh`
+    b. Protocol Version: v5
+    c. Connection mode: `inline`
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: C (current)
+- Client: Dart v5.9.4 | Daemon: C (current)
+- Client: Dart v5.11.2 | Daemon: C (current)
+- Client: Dart v5.13.0 | Daemon: C (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
+
 ### v5_openssh_print
+
+Configuration:
+    a. SSH Client: `--ssh-cleint openssh`
+    b. Protocol version: v5
+    c. Connection mode: print `-x`
+
+- Client: Dart (current) | Daemon: Dart (current)
+- Client: Dart v5.9.4 | Daemon: Dart (current)
+- Client: Dart v5.11.2 | Daemon: Dart (current)
+- Client: Dart v5.13.0 | Daemon: Dart (current)
+- Client: Dart (current) | Daemon: C (current)
+- Client: Dart v5.9.4 | Daemon: C (current)
+- Client: Dart v5.11.2 | Daemon: C (current)
+- Client: Dart v5.13.0 | Daemon: C (current)
+- Client: Dart (current) | Daemon: Dart v5.9.4
+- Client: Dart (current) | Daemon: Dart v5.11.2
+- Client: Dart (current) | Daemon: Dart v5.13.0
