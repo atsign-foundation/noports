@@ -82,13 +82,13 @@ class DockerImage {
     final String executable = 'docker';
     final List<String> args = [
       'pull',
-      imageName,
+      '$imageName:$tag',
       '--quiet',
     ];
     return Process.start(executable, args, runInShell: true);
   }
 
-  Future<ProcessResult> build({
+  Future<Process> build({
     final bool forceOverwriteCache = false,
   }) async {
     // sudo docker build \
@@ -99,13 +99,15 @@ class DockerImage {
     //  ?--build-arg release=v5.9.4 \
     // --target runtime \
     // .
-    final String dockerfile = 'tests/e2e_all_v2/tools/dockerfiles/Dockerfile.${language.name}.${imageType.name}';
+    final String dockerfile = 
+      'tests/e2e_all_v2/tools/dockerfiles/'
+      'Dockerfile.${language.name}.${imageType.name}';
     final String executable = 'docker';
     List<String> args = [
       'build',
       '-f', dockerfile,
       '-t', imageName,
-      '--quiet',
+      // '--quiet',
       '--target', 'runtime',
     ];
     if(forceOverwriteCache) {
@@ -116,13 +118,11 @@ class DockerImage {
       args.add('release=$tag');
     }
     args.add('.');
-    final ProcessResult process = await Process.run(
+    final Process process = await Process.start(
       executable,
       args,
       runInShell: true,
       );
-    print(process.stdout);
-    print(process.stderr);
     return process;
   }
 
@@ -136,10 +136,78 @@ class DockerImage {
 }
 
 class DockerInstance {
-  final String tag; // image tag
-  DockerInstanceState state = DockerInstanceState.stopped;
+  final DockerImage dockerImage;
+  late String containerName; // image tag
+  DockerInstanceState _state = DockerInstanceState.stopped;
 
-  DockerInstance({required this.tag});
+  DockerInstance({
+    required this.dockerImage,
+  }) {
+    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.imageType}_${dockerImage.tag}';
+  }
+
+  Future<Process> run({required final String command}) async {
+    _state = DockerInstanceState.starting;
+    final String dockerImageName = dockerImage.imageName;
+    final String executable = 'docker';
+    // temp --- start
+    final String daemonAt = '@device_jttest';
+    final String clientAt = '@client_jttest';
+    final String daemonFlags = '-s -u';
+    final String atDirectoryHost = 'root.atsign.org';
+    final String deviceName = 'default';
+    // temp --- end
+    List<String> args = [
+      'run',
+      '--rm', // remove when stopped
+      '--name', containerName,
+      '-v', '/Users/jeremytubongbanua/.atsign/keys/:/atsign/.atsign/keys/',
+      dockerImageName,
+      '/bin/bash',
+      '-c',
+      'sudo service ssh start && /usr/local/bin/sshnpd'
+        ' -a $daemonAt'
+        ' -m $clientAt'
+        ' -d $deviceName'
+        ' --root-domain $atDirectoryHost'
+        ' -v'
+        ' $daemonFlags',
+    ];
+    // use start, spawns a process
+    final Process process = await Process.start(
+      executable,
+      args,
+      runInShell: false);
+    if((await process.exitCode) == 0) {
+      _state = DockerInstanceState.started;
+    } else {
+      final bool success = process.kill(ProcessSignal.sigterm);
+      if(success) {
+
+        _state = DockerInstanceState.stopped;
+      }
+    }
+    _process = process;
+    return process;
+  }
+
+  Future<DockerInstanceState> getState() async {
+    final String executable = 'docker';
+    List<String> args = [
+      // docker ps --filter "name=e2e_all_v2_dart_DockerImageType.release_v5.9.4"
+      'ps',
+      '-q' // quiet , if container is found, it will print something out in stdout
+      '--filter', containerName
+    ];
+
+    final ProcessResult processResult = await Process.run(executable, args);
+    if(processResult.stdout.length > 0) {
+      _state = DockerInstanceState.started;
+    } else {
+      _state = DockerInstanceState.stopped;
+    }
+    return _state;
+  }
 }
 
 class DockerManager {

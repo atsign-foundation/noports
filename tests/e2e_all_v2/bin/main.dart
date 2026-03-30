@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:at_utils/at_utils.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
@@ -21,9 +22,33 @@ Future<void> main(List<String> args) async {
   }
   _logLoadedParameters(e2eAllV2Params);
 
+  const List<String> clientVersions = [
+    'v5.9.4',
+    'v5.11.2',
+    'v5.13.0',
+  ];
+
+  const List<String> daemonVerisons = [
+    'v5.9.4',
+    'v5.11.2',
+    'v5.13.0',
+  ];
+
   final DockerImage dockerImage = DockerImage.release(language: Language.dart, version: 'v5.9.4');
-  final ProcessResult process = await dockerImage.build();
-  print(process.exitCode);
+  final Process dockerImageBuildProcess = await dockerImage.build(forceOverwriteCache: false);
+  // dockerImageBuildProcess.stdout.transform(utf8.decoder).listen((event) {
+  //   print(event);
+  // });
+
+  dockerImageBuildProcess.stderr.transform(utf8.decoder).listen((event) {
+    print(event);
+  });
+
+  final DockerInstance dockerInstance = DockerInstance(dockerImage: dockerImage);
+  final Process dockerInstanceProcess = await dockerInstance.run();
+  dockerInstanceProcess.stderr.transform(utf8.decoder).listen((event) {
+    print(event);
+  });
 
   // Clients: Dart Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
   // Daemons: Dart Current, C Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
