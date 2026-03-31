@@ -1,12 +1,16 @@
 import 'dart:io';
 
+import 'package:at_utils/at_utils.dart';
+
+AtSignLogger logger = AtSignLogger('docker_manager');
+
 enum DockerImageType {
   release, // "v5.9.4", "v5.11.3", "c0.0.1"
   branch, // "trunk", *commithash*
   current, // represents the current code on the machine (latest)
 }
 
-enum Language {
+enum E2EAllV2Language {
   dart,
   c,
 }
@@ -18,73 +22,62 @@ enum DockerInstanceState {
 }
 
 class DockerImage {
-  final Language language;
+  final E2EAllV2Language language;
   final DockerImageType imageType;
-  final String imageName;
   final String tag; // e.g. "v5.9.4", "trunk", "commit hash", "current"
+  late String fullImageName; // e.g. 'atsigncompany/e2e_lal_v2_dart:v5.9.4'
 
   DockerImage._({
     required this.language,
     required this.imageType,
-    required this.imageName,
     required this.tag,
-  });
+  }) {
+    fullImageName = 'atsigncompany/noports_e2e_all_${language.name}:$tag';
+  }
 
   factory DockerImage.release({
-    required final Language language,
+    required final E2EAllV2Language language,
     required final String version, // e.g. "5.9.4" or "v5.9.4"
   }) {
-    final String dockerImageName = _getDockerImageName(
-      language: language,
-      tag: version); // e.g. "atsigncompany/noports_e2e_all_dart:v5.9.4
-    // final String dockerfile = 'Dockerfile.$language.release';
     return DockerImage._(
       language: language,
       imageType: DockerImageType.release,
-      imageName: dockerImageName,
       tag: version,
     );
   }
 
   factory DockerImage.current({
-    required final Language language, 
+    required final E2EAllV2Language language, 
   }) {
-    final String dockerImageName = _getDockerImageName(
-      language: language,
-      tag: 'current');
-    // final String dockerfile = 'Dockerfile.$language.current';
     return DockerImage._(
       language: language,
       imageType: DockerImageType.current,
-      imageName: dockerImageName,
       tag: 'current',
     );
   }
 
   factory DockerImage.branch({
-    required final Language language,
+    required final E2EAllV2Language language,
     required final String branch, // branch name like "trunk" or a commit hash
   }) {
-    final String dockerImageName = _getDockerImageName(
-      language: language,
-      tag: branch);
-    // final String dockerfile = 'Dockerfile.$language.branch';
     return DockerImage._(
       language: language,
       imageType: DockerImageType.branch,
-      imageName: dockerImageName,
       tag: branch,
     );
   }
 
-  Future<Process> tryPull() async {
+  Future<Process> pull({bool quiet = true}) async {
     // sudo docker pull $imageName --quiet
     final String executable = 'docker';
     final List<String> args = [
       'pull',
-      '$imageName:$tag',
-      '--quiet',
+      '$fullImageName',
     ];
+    if(quiet) {
+      args.add('--quiet');
+    }
+    print('Executing $executable ${args.toString()}'); // TODO logger
     return Process.start(executable, args, runInShell: true);
   }
 
@@ -106,7 +99,7 @@ class DockerImage {
     List<String> args = [
       'build',
       '-f', dockerfile,
-      '-t', imageName,
+      '-t', fullImageName,
       // '--quiet',
       '--target', 'runtime',
     ];
@@ -118,6 +111,7 @@ class DockerImage {
       args.add('release=$tag');
     }
     args.add('.');
+    print('Executing $executable ${args.toString()}'); // TODO logger
     final Process process = await Process.start(
       executable,
       args,
@@ -127,12 +121,34 @@ class DockerImage {
   }
 
   static String _getDockerImageName({
-    required final Language language, // e.g. "c", "dart"
-    required final String tag, // e.g. "v5.9.4" or "current"
+    required final E2EAllV2Language language, // e.g. "c", "dart"
+    required final String tag, // e.g. "v5.9.4" "c0.0.1" or "current" "trunk"
   }) {
     return 'atsigncompany/noports_e2e_all_${language.name}:$tag';
   }
 
+}
+
+class VolumeMapping {
+  final Directory localDirectory;
+  final Directory containerDirectory;
+
+  VolumeMapping({
+    required this.localDirectory,
+    required this.containerDirectory,
+  }) {
+    if(localDirectory.existsSync()) {
+      logger.severe('${localDirectory.path} does not exist!');
+    }
+    if(containerDirectory.existsSync()) {
+      logger.severe('${containerDirectory.path} does not exist!');
+    }
+  }
+}
+
+class DockerRunFlags {
+  bool quiet = false; // --quiet
+  bool removeWhenStopped = false; // --rm
 }
 
 class DockerInstance {
@@ -143,36 +159,35 @@ class DockerInstance {
   DockerInstance({
     required this.dockerImage,
   }) {
-    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.imageType}_${dockerImage.tag}';
+    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.imageType.name}_${dockerImage.tag}';
   }
 
-  Future<Process> run({required final String command}) async {
+  Future<Process> run({
+    required final String executable,
+    List<String> entrypoint = const <String>[],
+    List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
+    DockerRunFlags? dockerRunFlags,
+  }) async {
     _state = DockerInstanceState.starting;
-    final String dockerImageName = dockerImage.imageName;
-    final String executable = 'docker';
-    // temp --- start
-    final String daemonAt = '@device_jttest';
-    final String clientAt = '@client_jttest';
-    final String daemonFlags = '-s -u';
-    final String atDirectoryHost = 'root.atsign.org';
-    final String deviceName = 'default';
-    // temp --- end
     List<String> args = [
       'run',
-      '--rm', // remove when stopped
       '--name', containerName,
-      '-v', '/Users/jeremytubongbanua/.atsign/keys/:/atsign/.atsign/keys/',
-      dockerImageName,
-      '/bin/bash',
-      '-c',
-      'sudo service ssh start && /usr/local/bin/sshnpd'
-        ' -a $daemonAt'
-        ' -m $clientAt'
-        ' -d $deviceName'
-        ' --root-domain $atDirectoryHost'
-        ' -v'
-        ' $daemonFlags',
     ];
+    if(dockerRunFlags != null) {
+      if(dockerRunFlags.quiet) {
+        args.add('--quiet');
+      }
+
+      if(dockerRunFlags.removeWhenStopped) {
+        args.add('--rm');
+      }
+    }
+    for(final VolumeMapping volumeMapping in volumeMappings) {
+      args.add('--volume');
+      args.add('${volumeMapping.localDirectory.path}/:${volumeMapping.containerDirectory.path}/');
+    }
+    args.add(dockerImage.fullImageName);
+    args.addAll(entrypoint);
     // use start, spawns a process
     final Process process = await Process.start(
       executable,

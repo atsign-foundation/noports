@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:at_utils/at_utils.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
@@ -21,7 +22,9 @@ Future<void> main(List<String> args) async {
   }
   _logLoadedParameters(e2eAllV2Params);
 
-  v4_dart_inline();
+  int exitCode;
+
+  exitCode = await v4_dart_inline();
 }
 
 void test_minus_r_flag() {
@@ -98,9 +101,27 @@ Future<int> v4_dart_inline() async {
       dockerImage = DockerImage.branch(language: language, branch: value);
     }
 
-    final Process tryPullProcess = await dockerImage.tryPull();
-    
+    final Process tryPullProcess = await dockerImage.pull();
+    tryPullProcess.stdout.transform(utf8.decoder).listen((event) {
+      print(event);
+    });
+    tryPullProcess.stderr.transform(utf8.decoder).listen((event) {
+      print(event);
+    });
+    final int tryPullProcessExitCode = await tryPullProcess.exitCode;
+    if(tryPullProcessExitCode != 0) {
+      // we need to build it
+      final Process buildProcess = await dockerImage.build();
+      buildProcess.stdout.transform(utf8.decoder).listen((event) {
+        print(event);
+      });
+      buildProcess.stderr.transform(utf8.decoder).listen((event) {
+        print(event);
+      });
+      print(await buildProcess.exitCode);
+    }
   }
+  return 0;
 }
 
 
