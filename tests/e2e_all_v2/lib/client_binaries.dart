@@ -65,26 +65,32 @@ class ClientBinary {
       throw Exception('Cannot download "current" version. Use compile() instead.');
     }
 
-    // GitHub release URL pattern:
-    // https://github.com/atsign-foundation/noports/releases/download/v5.9.4/sshnp-linux-x64
+    // GitHub release URL pattern for archives:
+    // https://github.com/atsign-foundation/noports/releases/download/v5.9.4/sshnp-linux-x64.tgz
+    // https://github.com/atsign-foundation/noports/releases/download/v5.9.4/sshnp-macos-x64.zip
     final String os = _getOsString();
     final String arch = _getArchString();
-    final String downloadUrl =
-        'https://github.com/atsign-foundation/noports/releases/download/$version/${binaryType.name}-$os-$arch';
+    final String archiveExt = Platform.isWindows ? 'zip' : (Platform.isMacOS ? 'zip' : 'tgz');
+    final String archiveName = 'sshnp-$os-$arch.$archiveExt';
+    final String downloadUrl = 'https://github.com/atsign-foundation/noports/releases/download/$version/$archiveName';
 
-    logger.info('Downloading $binaryName from $downloadUrl');
+    logger.info('Downloading archive $archiveName from $downloadUrl');
 
     final File binaryFile = File(binaryPath);
     await binaryFile.parent.create(recursive: true);
 
-    final List<String> args = [
-      '-L', 
-      '-o', binaryPath,
+    // Download archive to temp location
+    final String tempDir = path.join(binaryFile.parent.path, 'temp_$archiveName');
+    final String archivePath = path.join(Directory.systemTemp.path, archiveName);
+
+    final List<String> curlArgs = [
+      '-L',
+      '-o', archivePath,
       downloadUrl,
     ];
 
-    logger.info('Executing curl ${args.join(' ')}');
-    final Process process = await Process.start('curl', args);
+    logger.info('Executing curl ${curlArgs.join(' ')}');
+    final Process curlProcess = await Process.start('curl', curlArgs);
 
     if (logDirectory != null) {
       await Directory(logDirectory).create(recursive: true);
@@ -94,24 +100,66 @@ class ClientBinary {
       final File stdoutFile = File('${logPrefix}_stdout.log');
       final File stderrFile = File('${logPrefix}_stderr.log');
 
-      process.stdout.listen((data) {
+      curlProcess.stdout.listen((data) {
         stdoutFile.writeAsBytesSync(data, mode: FileMode.append);
       });
 
-      process.stderr.listen((data) {
+      curlProcess.stderr.listen((data) {
         stderrFile.writeAsBytesSync(data, mode: FileMode.append);
       });
 
       logger.info('Download logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
-    final exitCode = await process.exitCode;
-    if (exitCode == 0) {
-      await Process.run('chmod', ['+x', binaryPath]);
-      logger.info('Downloaded and made executable: $binaryPath');
+    final exitCode = await curlProcess.exitCode;
+    if (exitCode != 0) {
+      logger.severe('Failed to download archive (exit code: $exitCode)');
+      logger.severe('Download URL: $downloadUrl');
+      logger.severe('Archive path: $archivePath');
+      if (logDirectory != null) {
+        logger.severe('Check logs in: $logDirectory');
+      }
+      return curlProcess;
     }
 
-    return process;
+    // Extract archive
+    logger.info('Extracting archive $archivePath');
+    await Directory(tempDir).create(recursive: true);
+
+    ProcessResult extractResult;
+    if (archiveExt == 'tgz') {
+      extractResult = await Process.run('tar', ['-xzf', archivePath, '-C', tempDir]);
+    } else {
+      extractResult = await Process.run('unzip', ['-q', archivePath, '-d', tempDir]);
+    }
+
+    if (extractResult.exitCode != 0) {
+      logger.severe('Failed to extract archive (exit code: ${extractResult.exitCode})');
+      logger.severe('Archive path: $archivePath');
+      logger.severe('Extract stderr: ${extractResult.stderr}');
+      return curlProcess; // Return original process for consistency
+    }
+
+    // Find and move the specific binary we need
+    final String extractedBinaryPath = path.join(tempDir, 'sshnp', binaryName);
+    final File extractedBinary = File(extractedBinaryPath);
+
+    if (!extractedBinary.existsSync()) {
+      logger.severe('Binary $binaryName not found in extracted archive');
+      logger.severe('Expected path: $extractedBinaryPath');
+      return curlProcess;
+    }
+
+    await extractedBinary.copy(binaryPath);
+    await Process.run('chmod', ['+x', binaryPath]);
+
+    // Clean up
+    await File(archivePath).delete();
+    await Directory(tempDir).delete(recursive: true);
+
+    logger.info('Downloaded and extracted: $binaryPath');
+
+    return curlProcess;
   }
 
   Future<Process> compile({String? logDirectory}) async {
@@ -125,8 +173,30 @@ class ClientBinary {
 
     final String sourcePath = _getSourcePath();
     final String outputPath = binaryPath;
+    final String packageDir = _getPackageDirectory();
 
     await File(outputPath).parent.create(recursive: true);
+
+    // First, run dart pub get to fetch dependencies
+    logger.info('Running dart pub get in $packageDir');
+    final ProcessResult pubGetResult = await Process.run(
+      'dart',
+      ['pub', 'get'],
+      workingDirectory: packageDir,
+    );
+
+    if (pubGetResult.exitCode != 0) {
+      logger.severe('Failed to run dart pub get (exit code: ${pubGetResult.exitCode})');
+      logger.severe('Package directory: $packageDir');
+      logger.severe('Stderr: ${pubGetResult.stderr}');
+      if (logDirectory != null) {
+        logger.severe('Check logs in: $logDirectory');
+      }
+      // Create a fake process to return for consistency
+      final Process fakeProcess = await Process.start('echo', ['dart pub get failed']);
+      await fakeProcess.exitCode;
+      return fakeProcess;
+    }
 
     final List<String> args = [
       'compile',
@@ -155,6 +225,18 @@ class ClientBinary {
       });
 
       logger.info('Compile logs: ${stdoutFile.path} / ${stderrFile.path}');
+    }
+
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      logger.severe('Failed to compile $binaryName (exit code: $exitCode)');
+      logger.severe('Source path: $sourcePath');
+      logger.severe('Output path: $outputPath');
+      if (logDirectory != null) {
+        logger.severe('Check logs in: $logDirectory');
+      }
+    } else {
+      logger.info('Successfully compiled: $binaryPath');
     }
 
     return process;
@@ -228,6 +310,10 @@ class ClientBinary {
         return 'packages/dart/sshnoports/bin/npa.dart';
     }
   }
+
+  String _getPackageDirectory() {
+    return 'packages/dart/sshnoports';
+  }
 }
 
 class ClientBinaryManager {
@@ -276,8 +362,10 @@ class ClientBinaryManager {
       try {
         Process process;
         if (version == 'current') {
+          logger.info('Compiling ${binaryType.name} (${language.name}) version $version');
           process = await binary.compile(logDirectory: logDirectory);
         } else {
+          logger.info('Downloading ${binaryType.name} (${language.name}) version $version');
           process = await binary.download(logDirectory: logDirectory);
         }
 
@@ -286,11 +374,18 @@ class ClientBinaryManager {
           logger.info('Successfully prepared binary: ${binary.binaryPath}');
           prepared.add(binary);
         } else {
-          logger.severe('Failed to prepare binary: ${binary.binaryPath} (exit code: $exitCode)');
+          final action = version == 'current' ? 'compile' : 'download';
+          logger.severe('Failed to $action binary: ${binary.binaryPath} (exit code: $exitCode)');
+          logger.severe('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
+          if (logDirectory != null) {
+            logger.severe('Check error logs in: $logDirectory');
+          }
           failed.add(binary);
         }
-      } catch (e) {
-        logger.severe('Error preparing binary ${binary.binaryPath}: $e');
+      } catch (e, stackTrace) {
+        logger.severe('Exception preparing binary ${binary.binaryPath}: $e');
+        logger.severe('Stack trace: $stackTrace');
+        logger.severe('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
         failed.add(binary);
       }
     }

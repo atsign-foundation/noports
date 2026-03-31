@@ -1,6 +1,9 @@
 import 'package:e2e_all_v2/client_binaries.dart';
 
-Future<void> runCoreTestCases({required final String testRunId}) async {
+Future<void> runCoreTestCases({
+  required final String testRunId,
+  required final String logDirectory,
+}) async {
 
   // Goals:
   // 1. Set up Client binaries put them in a $testId/$version/* folder
@@ -9,7 +12,7 @@ Future<void> runCoreTestCases({required final String testRunId}) async {
   //  for current, compile dart binaries using `dart compile exe`
   // 2. Set up the Docker daemons
   //  run Dart (current), v5.9.4, v5.11.2, v5.13.0, and C (current) in Docker containers
-  // 3. Run tests via executing Client binaries, and save logs 
+  // 3. Run tests via executing Client binaries, and save logs
 
   // assume Dart
   const List<String> clientVersions = [
@@ -19,14 +22,17 @@ Future<void> runCoreTestCases({required final String testRunId}) async {
     'current',
   ];
 
-  ClientBinaryManager clientBinaryManager = 
+  ClientBinaryManager clientBinaryManager =
     ClientBinaryManager(testRunId: testRunId);
 
   List<(ClientBinaryType, ClientLanguage, String)> requiredBinaries = [];
   requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.sshnp, ClientLanguage.dart, clientVersion)).toSet());
   requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.npt, ClientLanguage.dart, clientVersion)).toSet());
 
-  List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(required: requiredBinaries);
+  List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
+    required: requiredBinaries,
+    logDirectory: logDirectory,
+  );
   print('Available client binaries: length=${clientBinaries.length}');
   for(final ClientBinary clientBinary in clientBinaries) {
     print('  ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version}');
