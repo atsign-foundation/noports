@@ -10,19 +10,13 @@ enum DockerImageType {
   current, // represents the current code on the machine (latest)
 }
 
-enum E2EAllV2Language {
+enum Language {
   dart,
   c,
 }
 
-enum DockerInstanceState {
-  stopped,
-  starting,
-  started,
-}
-
 class DockerImage {
-  final E2EAllV2Language language;
+  final Language language;
   final DockerImageType imageType;
   final String tag; // e.g. "v5.9.4", "trunk", "commit hash", "current"
   late String fullImageName; // e.g. 'atsigncompany/e2e_lal_v2_dart:v5.9.4'
@@ -36,7 +30,7 @@ class DockerImage {
   }
 
   factory DockerImage.release({
-    required final E2EAllV2Language language,
+    required final Language language,
     required final String version, // e.g. "5.9.4" or "v5.9.4"
   }) {
     return DockerImage._(
@@ -47,7 +41,7 @@ class DockerImage {
   }
 
   factory DockerImage.current({
-    required final E2EAllV2Language language, 
+    required final Language language, 
   }) {
     return DockerImage._(
       language: language,
@@ -57,7 +51,7 @@ class DockerImage {
   }
 
   factory DockerImage.branch({
-    required final E2EAllV2Language language,
+    required final Language language,
     required final String branch, // branch name like "trunk" or a commit hash
   }) {
     return DockerImage._(
@@ -122,7 +116,6 @@ class DockerImage {
       );
     return process;
   }
-
 }
 
 class VolumeMapping {
@@ -142,41 +135,30 @@ class VolumeMapping {
   }
 }
 
-class DockerRunFlags {
-  bool quiet = false; // --quiet
-  bool removeWhenStopped = false; // --rm
-}
-
 class DockerInstance {
   final DockerImage dockerImage;
   late String containerName; // image tag
-  DockerInstanceState _state = DockerInstanceState.stopped;
 
-  DockerInstance({
-    required this.dockerImage,
-  }) {
+  DockerInstance({required this.dockerImage}) {
     containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.imageType.name}_${dockerImage.tag}';
   }
 
   Future<Process> run({
     required final String executable,
-    List<String> entrypoint = const <String>[],
-    List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
-    DockerRunFlags? dockerRunFlags,
+    final List<String> entrypoint = const <String>[],
+    final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
+    final bool quiet = false,
+    final bool removeWhenStopped = false,
   }) async {
-    _state = DockerInstanceState.starting;
     List<String> args = [
       'run',
       '--name', containerName,
     ];
-    if(dockerRunFlags != null) {
-      if(dockerRunFlags.quiet) {
-        args.add('--quiet');
-      }
-
-      if(dockerRunFlags.removeWhenStopped) {
-        args.add('--rm');
-      }
+    if(quiet) {
+      args.add('--quiet');
+    }
+    if(removeWhenStopped) {
+      args.add('--rm');
     }
     for(final VolumeMapping volumeMapping in volumeMappings) {
       args.add('--volume');
@@ -189,34 +171,24 @@ class DockerInstance {
       executable,
       args,
       runInShell: false);
-    if((await process.exitCode) == 0) {
-      _state = DockerInstanceState.started;
-    } else {
-      final bool success = process.kill(ProcessSignal.sigterm);
-      if(success) {
-
-        _state = DockerInstanceState.stopped;
-      }
-    }
     return process;
   }
 
-  Future<DockerInstanceState> getState() async {
+  Future<bool> isActive() async {
+    // docker ps --filter "name=e2e_all_v2_dart_DockerImageType.release_v5.9.4"
     final String executable = 'docker';
-    List<String> args = [
-      // docker ps --filter "name=e2e_all_v2_dart_DockerImageType.release_v5.9.4"
+    final List<String> args = [
       'ps',
       '-q' // quiet , if container is found, it will print something out in stdout
       '--filter', containerName
     ];
 
     final ProcessResult processResult = await Process.run(executable, args);
-    if(processResult.stdout.length > 0) {
-      _state = DockerInstanceState.started;
+    if(processResult.stdout.length > 0) { // since we're using `-q`, the length will be > 0 if the container is active
+      return true;
     } else {
-      _state = DockerInstanceState.stopped;
+      return false;
     }
-    return _state;
   }
 }
 

@@ -69,7 +69,7 @@ Future<int> v4_dart_inline() async {
     final String clientVersion = testCase.$1;
     final String daemonVersion = testCase.$2;
 
-    E2EAllV2Language language;
+    Language language;
     final List<String> daemonVersionSplit = daemonVersion.split(':');
     if(daemonVersionSplit.length != 2) {
       print('daemonVersionSplit was expected to be length == 2');
@@ -77,11 +77,11 @@ Future<int> v4_dart_inline() async {
     }
     switch(daemonVersionSplit[0]) {
       case('d'): {
-        language = E2EAllV2Language.dart;
+        language = Language.dart;
         break;
       }
       case('c'): {
-        language = E2EAllV2Language.c;
+        language = Language.c;
         break;
       }
       default: {
