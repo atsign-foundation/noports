@@ -608,7 +608,8 @@ class SshnpdImpl
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttl = 10000
+        ..ttl =
+            10000 // allow only ten seconds before this record expires
         ..namespaceAware = true);
 
     /// send a heartbeat back

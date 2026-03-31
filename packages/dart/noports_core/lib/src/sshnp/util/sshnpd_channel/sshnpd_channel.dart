@@ -319,19 +319,21 @@ abstract class SshnpdChannel
   Future<Map<String, int>> getRvLatencyDevice() async {
     final completer = Completer<Map<String, int>>();
     late StreamSubscription<AtNotification> subscription;
-    subscription = subscribe(
-      regex: 'rv_latency.${params.device}.${DefaultArgs.namespace}',
-      shouldDecrypt: true,
-    ).listen((notification) {
-      logger.info(
-        'Received rv_latencies from device ${notification.from} : ${notification.key} : ${notification.value}',
-      );
-      if (notification.from == params.sshnpdAtSign && !completer.isCompleted) {
-        final Map<String, dynamic> raw = jsonDecode(notification.value ?? '{}');
-        completer.complete(Map<String, int>.from(raw));
-        subscription.cancel();
-      }
-    });
+    subscription =
+        subscribe(
+          regex: 'rv_latency.${params.device}.${DefaultArgs.namespace}',
+          shouldDecrypt: true,
+        ).listen((notification) {
+          logger.info('Received rv_latencies from device: ${notification.value}');
+          if (notification.from == params.sshnpdAtSign &&
+              !completer.isCompleted) {
+            final Map<String, dynamic> raw = jsonDecode(
+              notification.value ?? '{}',
+            );
+            completer.complete(Map<String, int>.from(raw));
+            subscription.cancel();
+          }
+        });
 
     /// Send a latency check notification
     await notify(
