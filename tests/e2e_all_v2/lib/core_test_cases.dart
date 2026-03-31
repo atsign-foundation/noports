@@ -1,12 +1,47 @@
+import 'package:e2e_all_v2/client_binaries.dart';
 
-Future<void> runCoreTestCases() async {
+Future<void> runCoreTestCases({required final String testRunId}) async {
 
   // Goals:
-  // 1. Set up the Docker daemons
+  // 1. Set up Client binaries put them in a $testId/$version/* folder
+  //  (v5.9.4, v5.11.2, v5.13.0, current)
+  //  for versions, download from github.com/atsign-foundation/noports/releases
+  //  for current, compile dart binaries using `dart compile exe`
+  // 2. Set up the Docker daemons
+  //  run Dart (current), v5.9.4, v5.11.2, v5.13.0, and C (current) in Docker containers
+  // 3. Run tests via executing Client binaries, and save logs 
+
+  // assume Dart
+  const List<String> clientVersions = [
+    'v5.9.4',
+    'v5.11.2',
+    'v5.13.0',
+    'current',
+  ];
+
+  ClientBinaryManager clientBinaryManager = 
+    ClientBinaryManager(testRunId: testRunId);
+
+  List<(ClientBinaryType, ClientLanguage, String)> requiredBinaries = [];
+  requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.sshnp, ClientLanguage.dart, clientVersion)).toSet());
+  requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.npt, ClientLanguage.dart, clientVersion)).toSet());
+
+  List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(required: requiredBinaries);
+  print('Available client binaries: length=${clientBinaries.length}');
+  for(final ClientBinary clientBinary in clientBinaries) {
+    print('  ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version}');
+  }
 
   // Test coverage
 
   // Test #1: 001_minus_s_flag
+  // 1. Generates a new ssh key
+  // 2. 
+  //     a. Run sshnp against a daemon without the `-s` flag with that new key
+  //     b. Verify it fails
+  // 3.
+  //     a. Run against a daemon with the `-s` flag
+  //     b. Verify it succeeds
   // - Client: Dart (current) | Daemon: Dart (current)
   // - Client: Dart (current) | Daemon: C (current)
   // - Client: Dart (current) | Daemon: Dart v5.9.4
@@ -14,6 +49,9 @@ Future<void> runCoreTestCases() async {
   // - Client: Dart (current) | Daemon: Dart v5.13.0
 
   // Test #2: minus_r_flag
+  // 1. Run sshnp with `--host` (expect to pass)
+  // 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
+  // 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
   // - Client: Dart (current) | Daemon: Dart (current)
   // - Client: Dart v5.9.4 | Daemon: Dart (current)
   // - Client: Dart v5.11.2 | Daemon: Dart (current)

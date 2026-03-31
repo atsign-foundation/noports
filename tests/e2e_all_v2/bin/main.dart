@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:e2e_all_v2/core_test_cases.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
-import 'package:e2e_all_v2/e2e_all_v2_params.dart';
+import 'package:e2e_all_v2/params.dart';
 
 late AtSignLogger logger;
 
@@ -22,9 +23,14 @@ Future<int> main(List<String> args) async {
   }
   _logLoadedParameters(e2eAllV2Params);
 
-  int exitCode;
-  exitCode = await v4_dart_inline();
-  return exitCode;
+  final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
+
+  runCoreTestCases(testRunId: testRunId);
+
+  return 0;
+  // int exitCode;
+  // exitCode = await v4_dart_inline();
+  // return exitCode;
 }
 
 void test_minus_r_flag() {

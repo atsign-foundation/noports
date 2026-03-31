@@ -341,9 +341,3 @@ class DockerInstance {
     return processResult.exitCode;
   }
 }
-
-class DockerManager {
-  List<DockerImage> dockerImages = [];
-  List<DockerInstance> dockerInstances = [];
-}
-
