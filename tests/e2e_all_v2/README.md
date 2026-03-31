@@ -12,7 +12,7 @@ dart run bin/main.dart \
     --root-domain "root.atsign.wtf:64" \
     --log-directory "logs"
 
-docker stop $(docker ps -q) && dart run tests/e2e_all_v2/bin/main.dart \
+docker stop $(docker ps -q) ; rm -rf logs/ ; dart run tests/e2e_all_v2/bin/main.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
