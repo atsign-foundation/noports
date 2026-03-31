@@ -9,14 +9,16 @@ dart run bin/main.dart \
     --relay-atsign "@npe2e_relay" \
     --policy-atsign "@npe2e_policy" \
     --events-atsign "@npe2e_events" \
-    --root-domain "root.atsign.wtf:64"
+    --root-domain "root.atsign.wtf:64" \
+    --log-directory "logs"
 
 dart run tests/e2e_all_v2/bin/main.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
     --policy-atsign "@policy_jttest" \
-    --events-atsign "@events_jttest" 
+    --events-atsign "@events_jttest" \
+    --log-directory "logs"
 ```
 
 notes:

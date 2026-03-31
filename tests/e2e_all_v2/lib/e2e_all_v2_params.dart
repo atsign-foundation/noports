@@ -24,6 +24,7 @@ class E2EAllV2Params {
 
   late String rootDomain;
   late bool verbose;
+  late String logDirectory;
 
   // Private constructor
   E2EAllV2Params._();
@@ -39,6 +40,7 @@ class E2EAllV2Params {
     e2eAllV2Params.eventsAtsign = argResults['events-atsign'];
     e2eAllV2Params.rootDomain = argResults['root-domain'];
     e2eAllV2Params.verbose = argResults['verbose'];
+    e2eAllV2Params.logDirectory = argResults['log-directory'];
     return e2eAllV2Params;
   }
 
@@ -76,6 +78,11 @@ class E2EAllV2Params {
     argParser.addFlag('verbose',
       defaultsTo: false,
       help: 'More logging',
+    );
+    argParser.addOption('log-directory',
+      mandatory: false,
+      defaultsTo: 'logs',
+      help: 'Directory where all Docker operation logs will be stored',
     );
     return argParser;
   }

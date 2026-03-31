@@ -73,7 +73,10 @@ class DockerImage {
     return exists;
   }
 
-  Future<Process> pull({bool quiet = true}) async {
+  Future<Process> pull({
+    bool quiet = true,
+    String? logDirectory,
+  }) async {
     // sudo docker pull $imageName --quiet
     final String executable = 'docker';
     final List<String> args = [
@@ -84,12 +87,33 @@ class DockerImage {
       args.add('--quiet');
     }
     print('Executing $executable ${args.join(' ')}'); // TODO logger
-    return Process.start(executable, args, runInShell: true);
+    final Process process = await Process.start(executable, args, runInShell: true);
+
+    // Log to files if logDirectory specified
+    if (logDirectory != null) {
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String logPrefix = '$logDirectory/pull_${fullImageName.replaceAll(':', '_').replaceAll('/', '_')}_$timestamp';
+      await Directory(logDirectory).create(recursive: true);
+
+      final File stdoutFile = File('${logPrefix}_stdout.log');
+      final File stderrFile = File('${logPrefix}_stderr.log');
+
+      process.stdout.listen((data) {
+        stdoutFile.writeAsBytesSync(data, mode: FileMode.append);
+      });
+
+      process.stderr.listen((data) {
+        stderrFile.writeAsBytesSync(data, mode: FileMode.append);
+      });
+    }
+
+    return process;
   }
 
   Future<Process> build({
     final bool forceOverwriteCache = false,
     final bool quiet = false,
+    String? logDirectory,
   }) async {
     // sudo docker build \
     //  -f $dockerfile \
@@ -99,7 +123,7 @@ class DockerImage {
     //  ?--build-arg release=v5.9.4 \
     // --target runtime \
     // .
-    final String dockerfile = 
+    final String dockerfile =
       'tests/e2e_all_v2/tools/dockerfiles/'
       'Dockerfile.${language.name}.${imageType.name}';
     final String executable = 'docker';
@@ -125,7 +149,26 @@ class DockerImage {
       executable,
       args,
       runInShell: true,
-      );
+    );
+
+    // Log to files if logDirectory specified
+    if (logDirectory != null) {
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String logPrefix = '$logDirectory/build_${fullImageName.replaceAll(':', '_').replaceAll('/', '_')}_$timestamp';
+      await Directory(logDirectory).create(recursive: true);
+
+      final File stdoutFile = File('${logPrefix}_stdout.log');
+      final File stderrFile = File('${logPrefix}_stderr.log');
+
+      process.stdout.listen((data) {
+        stdoutFile.writeAsBytesSync(data, mode: FileMode.append);
+      });
+
+      process.stderr.listen((data) {
+        stderrFile.writeAsBytesSync(data, mode: FileMode.append);
+      });
+    }
+
     return process;
   }
 }
@@ -151,6 +194,8 @@ class DockerInstance {
   final List<String> _stderrLines = [];
   final int maxLogLines = 10000; // prevent unbounded memory growth
   File? _logFile;
+  File? _dockerRunStdoutFile;
+  File? _dockerRunStderrFile;
 
   DockerInstance({
     required this.dockerImage,
@@ -208,13 +253,13 @@ class DockerInstance {
     final Process pr = await Process.start(executable, args);
     process = pr;
 
-    // set up log file if requested
-    if (captureLogsToFile) {
-      final logDir = logDirectory ?? '.';
-      final logPath = '$logDir/$containerName.log';
-      _logFile = File(logPath);
-      await _logFile!.create(recursive: true);
-      logger.info('Logging to file: $logPath');
+    // Set up log files for container entrypoint stdout/stderr
+    if (logDirectory != null) {
+      await Directory(logDirectory).create(recursive: true);
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      _dockerRunStdoutFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stdout.log');
+      _dockerRunStderrFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stderr.log');
+      logger.info('Container entrypoint logs: ${_dockerRunStdoutFile!.path} / ${_dockerRunStderrFile!.path}');
     }
 
     _startLogCapture();
@@ -247,7 +292,9 @@ class DockerInstance {
       _stdoutLines.removeAt(0);
     }
     _stdoutLines.add(line);
-    _logFile?.writeAsStringSync('[STDOUT] $line\n', mode: FileMode.append);
+
+    // Write to separate stdout file
+    _dockerRunStdoutFile?.writeAsStringSync('$line\n', mode: FileMode.append);
   }
 
   void _addStderrLine(String line) {
@@ -255,7 +302,9 @@ class DockerInstance {
       _stderrLines.removeAt(0);
     }
     _stderrLines.add(line);
-    _logFile?.writeAsStringSync('[STDERR] $line\n', mode: FileMode.append);
+
+    // Write to separate stderr file
+    _dockerRunStderrFile?.writeAsStringSync('$line\n', mode: FileMode.append);
   }
 
   Future<bool> isActive() async {
@@ -275,7 +324,7 @@ class DockerInstance {
     }
   }
 
-  Future<int> stop() async {
+  Future<int> stop({String? logDirectory}) async {
     const String executable  = 'docker';
     final List<String> args = [
       'container', 'stop',
@@ -283,8 +332,23 @@ class DockerInstance {
     ];
     print('Executing \"${executable} ${args.join(' ')}\"');
     final ProcessResult processResult = await Process.run(executable, args);
-    return processResult.exitCode;
 
+    // Log stop command output if logDirectory specified
+    if (logDirectory != null) {
+      await Directory(logDirectory).create(recursive: true);
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String logPrefix = '$logDirectory/stop_${containerName}_$timestamp';
+
+      final File stdoutFile = File('${logPrefix}_stdout.log');
+      final File stderrFile = File('${logPrefix}_stderr.log');
+
+      await stdoutFile.writeAsString(processResult.stdout.toString());
+      await stderrFile.writeAsString(processResult.stderr.toString());
+
+      logger.info('Docker stop logs: ${stdoutFile.path} / ${stderrFile.path}');
+    }
+
+    return processResult.exitCode;
   }
 }
 
