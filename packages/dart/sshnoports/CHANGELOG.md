@@ -2,6 +2,34 @@
 
 <!-- pyml disable md034-->
 
+## v5.14.13
+
+* feat: sshnpd doctor by @LilianGRD
+* ci: Codesign most deeply nested binary first and add np_admin
+
+## v5.14.12
+
+* feat: npp.dart
+* feat: npp_client.dart
+
+## v5.14.11
+
+* build: add another copy of windows msi, without the version number in the filename
+
+## v5.14.10
+
+* feat: Update universal.sh to use packages where possible.
+
+## v5.14.9
+
+* build: Ensure noports binary is packaged
+* fix: noports cli now accepts --version
+* ci: Add trigger for homebrew-tap
+
+## v5.14.8
+
+* ci: Workflow to trigger update of apt and rpm repos
+
 ## v5.14.7
 
 * build: Create .deb and .rpm packages

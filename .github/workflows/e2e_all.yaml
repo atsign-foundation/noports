@@ -30,7 +30,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup dart
-        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
       - name: Set stuff up 
         run: |
           mkdir -p /tmp/e2e_all
@@ -60,7 +60,7 @@ jobs:
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
       - name: Upload /tmp/e2e_all as artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip 

@@ -1,3 +1,25 @@
+## 1.9.3+30
+
+-FIX: Back Up Dialog Save button is centered when back button isn't shown.
+
+## 1.9.2+29
+
+-FIX: Activation Dialog Final Title Text changed and Title Icon removed.
+-FIX: Back button added to the Save Back Up Dialog.
+-FIX: Sign In occurs with the last Atsign in the activation file When Multi-Activation completes.
+
+## 1.9.1+28
+
+- FEAT: windows release automation in GitHub
+- CHORE: dart pub get
+
+## 1.9.0+27
+
+- FEAT: Get Started Dialog Added
+- FEAT: Sign In Dialog Added
+- FEAT: MultiActivation Flow Added
+- FIX: Added and Updated descriptions for better clarity along with their language translations.
+
 ## 1.8.1+26
 
 - FIX: Backup Key Dialog is shown when user activate an atSign from the get started button.

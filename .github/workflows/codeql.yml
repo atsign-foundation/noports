@@ -53,7 +53,7 @@ jobs:
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           languages: ${{ matrix.language }}
           # If you wish to specify custom queries, you can do so here or in a config file.
@@ -67,9 +67,9 @@ jobs:
 
       # Pin cmake to <4.0.0
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@3a6cbe35ba64df7ca70c51365c4aff65db9a9037
+        uses: jwlawson/actions-setup-cmake@0d6a7d60b009d01c9e7523be22153ff8f19460d3 # v2.2.0
         with:
-          cmake-version: "3.31.6"
+          cmake-version: "3.31.11"
       - name: Build C sshnpd
         if: ${{ matrix.language == 'c-cpp' }}
         run: |
@@ -80,7 +80,7 @@ jobs:
 
       - name: Setup node
         if: ${{ matrix.language == 'javascript-typescript' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: "24.2.0"
       - name: Build the admin webapp
@@ -91,6 +91,6 @@ jobs:
           npm run build
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           category: "/language:${{matrix.language}}"

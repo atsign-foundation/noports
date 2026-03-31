@@ -14,6 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
+import 'package:noports_core/src/common/srvd_latency_checker.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -181,13 +182,19 @@ class SshnpdImpl
     void Function(Object, StackTrace)? usageCallback,
     void Function()? helpCallback,
     void Function()? versionCallback,
+    Future<void> Function()? doctorCallback,
     required String version,
     Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     try {
       SshnpdParams p;
       try {
-        p = await SshnpdParams.fromArgs(args, helpCallback: helpCallback, versionCallback: versionCallback);
+        p = await SshnpdParams.fromArgs(
+          args,
+          helpCallback: helpCallback,
+          versionCallback: versionCallback,
+          doctorCallback: doctorCallback,
+        );
       } on FormatException catch (e) {
         throw ArgumentError(e.message);
       }
@@ -239,8 +246,10 @@ class SshnpdImpl
 
       if (p.clearCachedPKs) {
         sshnpd.logger.shout('Clearing cached public keys');
-        sshnpd.logger.shout('Note: locally cached public keys are no longer'
-          ' used by sshnpd');
+        sshnpd.logger.shout(
+          'Note: locally cached public keys are no longer'
+          ' used by sshnpd',
+        );
         await clearLocallyCachedPKs(
           logger: sshnpd.logger,
           fs: LocalFileSystem(),
@@ -429,6 +438,14 @@ class SshnpdImpl
           _handleNptRequestNotification(notification, auth);
           break;
 
+        case 'latency_check':
+          logger.info(
+            '$messageType received from ${notification.from}'
+            ' ( ${notification.value})',
+          );
+          await _handleLatencyCheckRequest(notification);
+          break;
+
         default:
           logger.warning(
             'unknown "$messageType" request received from ${notification.from}'
@@ -597,6 +614,25 @@ class SshnpdImpl
 
     /// send a heartbeat back
     unawaited(_notify(atKey: atKey, value: jsonEncode(pingResponse)));
+  }
+
+  Future<void> _handleLatencyCheckRequest(AtNotification notification) async {
+    final rvLatencyMap = await AtLatencyChecker().getRvLatencyMap();
+    logger.finer('Got latency map: $rvLatencyMap');
+
+    var atKey = AtKey()
+      ..key = 'rv_latency.$device'
+      ..sharedBy = deviceAtsign
+      ..sharedWith = notification.from
+      ..namespace = DefaultArgs.namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..ttl =
+            10000 // allow only ten seconds before this record expires
+        ..namespaceAware = true);
+
+    await _notify(atKey: atKey, value: jsonEncode(rvLatencyMap));
   }
 
   Future<void> _handlePublicKeyNotification(AtNotification notification) async {

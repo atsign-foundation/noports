@@ -26,6 +26,12 @@ enum NoPortsCommand {
 }
 
 Future<void> main(List<String> args) async {
+  if (args.isNotEmpty && args.contains('--version')) {
+    printVersion();
+    exit(0);
+  }
+
+  displayBanner();
   final logger = setupLogging();
 
   if (args.isEmpty) {
@@ -98,7 +104,6 @@ void printUsage({NoPortsCommand? command}) {
 }
 
 AtSignLogger setupLogging() {
-  displayBanner();
   AtSignLogger.root_level = 'severe';
   return AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())
     ..level = 'info';
