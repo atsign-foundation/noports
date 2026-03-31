@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
 import 'package:at_utils/at_utils.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
@@ -22,7 +21,89 @@ Future<void> main(List<String> args) async {
   }
   _logLoadedParameters(e2eAllV2Params);
 
+  v4_dart_inline();
 }
+
+void test_minus_r_flag() {
+
+}
+
+void test_minus_u_flag() {
+
+}
+
+void npt_to_port_22() {
+}
+
+void npt_to_port_22_no_encrypt_traffic() {
+}
+
+Future<int> v4_dart_inline() async {
+  const List<String> clientVersions = [
+    'd:current',
+    'd:v5.9.4',
+    'd:v5.11.2',
+    'd:v5.13.0',
+  ];
+  const List<String> daemonVersions = [
+    'd:current',
+    'd:v5.9.4',
+    'd:v5.11.2',
+    'd:v5.13.0',
+  ];
+  List<(String, String)> testCases = [];
+  for(final String clientVersion in clientVersions) {
+    for(final String daemonVersion in daemonVersions) {
+      if(!clientVersion.contains('d:current') && !daemonVersion.contains('d:current')) {
+        continue;
+      }
+      testCases.add((clientVersion, daemonVersion));
+    }
+  }
+  print(testCases);
+
+  for(final (String, String) testCase in testCases) {
+    final String clientVersion = testCase.$1;
+    final String daemonVersion = testCase.$2;
+
+    Language language;
+    final List<String> daemonVersionSplit = daemonVersion.split(':');
+    if(daemonVersionSplit.length != 2) {
+      print('daemonVersionSplit was expected to be length == 2');
+      return 1;
+    }
+    switch(daemonVersionSplit[0]) {
+      case('d'): {
+        language = Language.dart;
+        break;
+      }
+      case('c'): {
+        language = Language.c;
+        break;
+      }
+      default: {
+        print('Could not parse language: ${daemonVersionSplit[0]}');
+        return 1;
+      }
+    }
+
+    final String value = daemonVersionSplit[1];
+
+    DockerImage dockerImage;
+    if(value.startsWith('v')) {
+      dockerImage = DockerImage.release(language: language, version: value);
+    } else if (value == 'current') {
+      dockerImage = DockerImage.current(language: language);
+    } else {
+      dockerImage = DockerImage.branch(language: language, branch: value);
+    }
+
+    final Process tryPullProcess = await dockerImage.tryPull();
+    
+  }
+}
+
+
 
 void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {
   logger.info('e2e_all_v2 Loaded Parameters:');

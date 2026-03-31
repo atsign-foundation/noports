@@ -187,7 +187,6 @@ class DockerInstance {
         _state = DockerInstanceState.stopped;
       }
     }
-    _process = process;
     return process;
   }
 
