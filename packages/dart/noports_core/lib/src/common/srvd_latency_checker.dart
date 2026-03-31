@@ -66,13 +66,14 @@ class AtLatencyChecker {
       }
     }
 
+    logger.info('Client RV latencies: $clientLatencies');
+    logger.info('Daemon RV latencies: $daemonLatencies');
+
     if (bestRv == null) {
       throw StateError('No reachable RV found');
     }
-    logger.info('Client RV latencies: $clientLatencies');
-    logger.info('Daemon RV latencies: $daemonLatencies');
+
     logger.info('Selecting best RV: $bestRv');
-    
     return bestRv;
   }
 }
