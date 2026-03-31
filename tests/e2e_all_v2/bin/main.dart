@@ -25,7 +25,10 @@ Future<int> main(List<String> args) async {
 
   final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
 
-  runCoreTestCases(testRunId: testRunId);
+  runCoreTestCases(
+    testRunId: testRunId,
+    logDirectory: e2eAllV2Params.logDirectory,
+  );
 
   return 0;
   // int exitCode;
