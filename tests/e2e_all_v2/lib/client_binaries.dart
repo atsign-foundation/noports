@@ -74,12 +74,11 @@ class ClientBinary {
 
     logger.info('Downloading $binaryName from $downloadUrl');
 
-    // Use curl to download
     final File binaryFile = File(binaryPath);
     await binaryFile.parent.create(recursive: true);
 
     final List<String> args = [
-      '-L', // Follow redirects
+      '-L', 
       '-o', binaryPath,
       downloadUrl,
     ];
@@ -87,7 +86,6 @@ class ClientBinary {
     logger.info('Executing curl ${args.join(' ')}');
     final Process process = await Process.start('curl', args);
 
-    // Log to files if logDirectory specified
     if (logDirectory != null) {
       await Directory(logDirectory).create(recursive: true);
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
@@ -107,10 +105,8 @@ class ClientBinary {
       logger.info('Download logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
-    // Wait for download to complete
     final exitCode = await process.exitCode;
     if (exitCode == 0) {
-      // Make binary executable
       await Process.run('chmod', ['+x', binaryPath]);
       logger.info('Downloaded and made executable: $binaryPath');
     }
@@ -118,8 +114,6 @@ class ClientBinary {
     return process;
   }
 
-  /// Compile binary from current source code
-  /// Only works for "current" version
   Future<Process> compile({String? logDirectory}) async {
     if (version != 'current') {
       throw Exception('compile() only works for "current" version. Use download() for releases.');
@@ -129,11 +123,9 @@ class ClientBinary {
       throw Exception('Compilation only supported for Dart binaries currently');
     }
 
-    // Determine source path based on binary type
     final String sourcePath = _getSourcePath();
     final String outputPath = binaryPath;
 
-    // Create output directory
     await File(outputPath).parent.create(recursive: true);
 
     final List<String> args = [
@@ -146,7 +138,6 @@ class ClientBinary {
     logger.info('Executing dart ${args.join(' ')}');
     final Process process = await Process.start('dart', args);
 
-    // Log to files if logDirectory specified
     if (logDirectory != null) {
       await Directory(logDirectory).create(recursive: true);
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
