@@ -65,6 +65,9 @@ Future<int> v4_dart_inline() async {
   }
   print(testCases);
 
+  List<DockerImage> builtDockerImages = [];
+  List<DockerImage> failedDockerImages = [];
+
   for(final (String, String) testCase in testCases) {
     final String clientVersion = testCase.$1;
     final String daemonVersion = testCase.$2;
@@ -100,16 +103,51 @@ Future<int> v4_dart_inline() async {
     } else {
       dockerImage = DockerImage.branch(language: language, branch: value);
     }
-
-    final Process tryPullProcess = await dockerImage.pull();
-    final int tryPullProcessExitCode = await tryPullProcess.exitCode;
-    if(tryPullProcessExitCode != 0) {
-      // we need to build it
-      print('Attempted to pull ${dockerImage.fullImageName} but was not found. Building it locally...');
-      final Process buildProcess = await dockerImage.build(forceOverwriteCache: false);
-      print('Built ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
+    final bool existsOnMachine = await dockerImage.existsOnMachine();
+    if(!existsOnMachine) {
+      final Process tryPullProcess = await dockerImage.pull();
+      final int tryPullProcessExitCode = await tryPullProcess.exitCode;
+      if(tryPullProcessExitCode != 0) {
+        // we need to build it
+        print('Attempted to pull ${dockerImage.fullImageName} but was not found. Building it locally...');
+        final Process buildProcess = await dockerImage.build(forceOverwriteCache: false);
+        print('Built ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
+        builtDockerImages.add(dockerImage);
+      } else {
+        failedDockerImages.add(dockerImage);
+      }
+    } else {
+      print('${dockerImage.fullImageName} was already found on the machine, skipping pull/build');
+      builtDockerImages.add(dockerImage);
     }
   }
+
+  print('Built DockerImages: ${builtDockerImages.length}');
+  print('Failed Docker Images: ${failedDockerImages.length}');
+
+  List<DockerInstance> dockerInstances = [];
+
+  for(final DockerImage dockerImage in builtDockerImages) {
+    final DockerInstance dockerInstance = DockerInstance(dockerImage: dockerImage); 
+    await dockerInstance.stop(); // stop in case it's running
+    await dockerInstance.run(
+      entrypoint: [
+        '/bin/bash',
+        '-c',
+        'sudo service ssh start && sshnpd -a @device_jttest -m @client_jttest -s -v'
+        ],
+      volumeMappings: [VolumeMapping(
+        localDirectory: Directory('/Users/jeremytubongbanua/.atsign/keys/'),
+        containerDirectory: Directory('/atsign/.atsign/keys/'),
+      )],
+    );
+    dockerInstances.add(dockerInstance);
+  }
+
+  for(final DockerInstance dockerInstance in dockerInstances) {
+    await dockerInstance.process!.exitCode;
+  }
+
   return 0;
 }
 

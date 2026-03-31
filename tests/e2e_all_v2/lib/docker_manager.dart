@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:at_utils/at_utils.dart';
 
@@ -61,6 +62,17 @@ class DockerImage {
     );
   }
 
+  Future<bool> existsOnMachine() async {
+    final String executable = 'docker';
+    final List<String> args = [
+      'images',
+      '-q', fullImageName,
+    ];
+    final ProcessResult processResult = await Process.run(executable, args);
+    bool exists = processResult.stdout.toString().trim().isNotEmpty;
+    return exists;
+  }
+
   Future<Process> pull({bool quiet = true}) async {
     // sudo docker pull $imageName --quiet
     final String executable = 'docker';
@@ -71,7 +83,7 @@ class DockerImage {
     if(quiet) {
       args.add('--quiet');
     }
-    print('Executing $executable ${args.toString()}'); // TODO logger
+    print('Executing $executable ${args.join(' ')}'); // TODO logger
     return Process.start(executable, args, runInShell: true);
   }
 
@@ -108,7 +120,7 @@ class DockerImage {
       args.add('release=$tag');
     }
     args.add('.'); // context is this directory
-    print('Executing $executable ${args.toString()}'); // TODO logger
+    print('Executing $executable ${args.join(' ')}'); // TODO logger
     final Process process = await Process.start(
       executable,
       args,
@@ -125,35 +137,58 @@ class VolumeMapping {
   VolumeMapping({
     required this.localDirectory,
     required this.containerDirectory,
-  }) {
-    if(localDirectory.existsSync()) {
-      logger.severe('${localDirectory.path} does not exist!');
-    }
-    if(containerDirectory.existsSync()) {
-      logger.severe('${containerDirectory.path} does not exist!');
-    }
-  }
+  });
 }
 
 class DockerInstance {
   final DockerImage dockerImage;
   late String containerName; // image tag
 
+  Process? process; // instantiated from run()
+
+  // Log storage
+  final List<String> _stdoutLines = [];
+  final List<String> _stderrLines = [];
+  final int maxLogLines = 10000; // Prevent unbounded memory growth
+  File? _logFile;
+
   DockerInstance({required this.dockerImage}) {
-    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.imageType.name}_${dockerImage.tag}';
+    final shortUuid = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
+    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$shortUuid';
+  }
+
+  // Get all stdout logs
+  List<String> get stdoutLogs => List.unmodifiable(_stdoutLines);
+
+  // Get all stderr logs
+  List<String> get stderrLogs => List.unmodifiable(_stderrLines);
+
+  // Get all logs combined with prefixes
+  String get allLogs {
+    final buffer = StringBuffer();
+    for (final line in _stdoutLines) {
+      buffer.writeln('[STDOUT] $line');
+    }
+    for (final line in _stderrLines) {
+      buffer.writeln('[STDERR] $line');
+    }
+    return buffer.toString();
   }
 
   Future<Process> run({
-    required final String executable,
     final List<String> entrypoint = const <String>[],
     final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
     final bool quiet = false,
-    final bool removeWhenStopped = false,
+    final bool removeWhenStopped = true,
+    final bool captureLogsToFile = false,
+    final String? logDirectory,
   }) async {
-    List<String> args = [
+    const String executable = 'docker';
+    final List<String> args = [
       'run',
       '--name', containerName,
     ];
+
     if(quiet) {
       args.add('--quiet');
     }
@@ -162,21 +197,76 @@ class DockerInstance {
     }
     for(final VolumeMapping volumeMapping in volumeMappings) {
       args.add('--volume');
-      args.add('${volumeMapping.localDirectory.path}/:${volumeMapping.containerDirectory.path}/');
+      args.add('${volumeMapping.localDirectory.path}:${volumeMapping.containerDirectory.path}');
     }
     args.add(dockerImage.fullImageName);
     args.addAll(entrypoint);
+
     // use start, spawns a process
-    final Process process = await Process.start(
-      executable,
-      args,
-      runInShell: false);
-    return process;
+    print('Executing ${executable} ${args.join(' ')}');
+    final Process pr = await Process.start(executable, args);
+    process = pr;
+
+    // Set up log file if requested
+    if (captureLogsToFile) {
+      final logDir = logDirectory ?? '.';
+      final logPath = '$logDir/$containerName.log';
+      _logFile = File(logPath);
+      await _logFile!.create(recursive: true);
+      logger.info('Logging to file: $logPath');
+    }
+
+    // Start capturing logs immediately
+    _startLogCapture();
+
+    return pr;
+  }
+
+  void _startLogCapture() {
+    if (process == null) return;
+
+    // Capture stdout
+    process!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(
+      (line) {
+        _addStdoutLine(line);
+      },
+      onError: (error) => logger.severe('Error reading stdout: $error'),
+    );
+
+    // Capture stderr
+    process!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
+      (line) {
+        _addStderrLine(line);
+      },
+      onError: (error) => logger.severe('Error reading stderr: $error'),
+    );
+  }
+
+  void _addStdoutLine(String line) {
+    // Add to memory buffer with circular behavior
+    if (_stdoutLines.length >= maxLogLines) {
+      _stdoutLines.removeAt(0);
+    }
+    _stdoutLines.add(line);
+
+    // Write to file if enabled
+    _logFile?.writeAsStringSync('[STDOUT] $line\n', mode: FileMode.append);
+  }
+
+  void _addStderrLine(String line) {
+    // Add to memory buffer with circular behavior
+    if (_stderrLines.length >= maxLogLines) {
+      _stderrLines.removeAt(0);
+    }
+    _stderrLines.add(line);
+
+    // Write to file if enabled
+    _logFile?.writeAsStringSync('[STDERR] $line\n', mode: FileMode.append);
   }
 
   Future<bool> isActive() async {
     // docker ps --filter "name=e2e_all_v2_dart_DockerImageType.release_v5.9.4"
-    final String executable = 'docker';
+    const String executable = 'docker';
     final List<String> args = [
       'ps',
       '-q' // quiet , if container is found, it will print something out in stdout
@@ -190,11 +280,17 @@ class DockerInstance {
       return false;
     }
   }
-}
 
-class DockerManager {
-  final List<DockerInstance> dockerInstances = [];
+  Future<int> stop() async {
+    const String executable  = 'docker';
+    final List<String> args = [
+      'container', 'stop',
+      containerName,
+    ];
+    print('Executing \"${executable} ${args.join(' ')}\"');
+    final ProcessResult processResult = await Process.run(executable, args);
+    return processResult.exitCode;
 
-  DockerManager() {
   }
 }
+
