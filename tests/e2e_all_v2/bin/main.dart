@@ -42,6 +42,10 @@ void npt_to_port_22_no_encrypt_traffic() {
 }
 
 Future<int> v4_dart_inline() async {
+  // Generate unique test run ID
+  final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
+  logger.info('Test run ID: $testRunId');
+
   const List<String> clientVersions = [
     'd:current',
     'd:v5.9.4',
@@ -128,7 +132,10 @@ Future<int> v4_dart_inline() async {
   List<DockerInstance> dockerInstances = [];
 
   for(final DockerImage dockerImage in builtDockerImages) {
-    final DockerInstance dockerInstance = DockerInstance(dockerImage: dockerImage); 
+    final DockerInstance dockerInstance = DockerInstance(
+      dockerImage: dockerImage,
+      testRunId: testRunId,
+    );
     await dockerInstance.stop(); // stop in case it's running
     await dockerInstance.run(
       entrypoint: [

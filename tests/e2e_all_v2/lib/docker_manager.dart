@@ -142,6 +142,7 @@ class VolumeMapping {
 
 class DockerInstance {
   final DockerImage dockerImage;
+  final String testRunId;
   late String containerName; // image tag
 
   Process? process; // instantiated from run()
@@ -151,7 +152,10 @@ class DockerInstance {
   final int maxLogLines = 10000; // prevent unbounded memory growth
   File? _logFile;
 
-  DockerInstance({required this.dockerImage}) {
+  DockerInstance({
+    required this.dockerImage,
+    required this.testRunId,
+  }) {
     containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$testRunId';
   }
 
