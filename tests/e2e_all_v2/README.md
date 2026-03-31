@@ -12,7 +12,7 @@ dart run bin/main.dart \
     --root-domain "root.atsign.wtf:64" \
     --log-directory "logs"
 
-dart run tests/e2e_all_v2/bin/main.dart \
+docker stop $(docker ps -q) && dart run tests/e2e_all_v2/bin/main.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
@@ -29,6 +29,7 @@ notes:
 - I should be able to run `dart test` on a single test
 - Let `dart test --concurrency=1` be able to decide how it runs in parallel
 - Versions are determined in the test itself.
+- Assumed that host machine is running Docker and has a file system
 
 ## Happy Path
 
