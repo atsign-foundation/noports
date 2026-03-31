@@ -7,7 +7,7 @@ import 'package:e2e_all_v2/e2e_all_v2_params.dart';
 
 late AtSignLogger logger;
 
-Future<void> main(List<String> args) async {
+Future<int> main(List<String> args) async {
   logger = AtSignLogger('e2e_all_v2');
   E2EAllV2Params e2eAllV2Params;
   try {
@@ -23,8 +23,8 @@ Future<void> main(List<String> args) async {
   _logLoadedParameters(e2eAllV2Params);
 
   int exitCode;
-
   exitCode = await v4_dart_inline();
+  return exitCode;
 }
 
 void test_minus_r_flag() {
@@ -69,7 +69,7 @@ Future<int> v4_dart_inline() async {
     final String clientVersion = testCase.$1;
     final String daemonVersion = testCase.$2;
 
-    Language language;
+    E2EAllV2Language language;
     final List<String> daemonVersionSplit = daemonVersion.split(':');
     if(daemonVersionSplit.length != 2) {
       print('daemonVersionSplit was expected to be length == 2');
@@ -77,11 +77,11 @@ Future<int> v4_dart_inline() async {
     }
     switch(daemonVersionSplit[0]) {
       case('d'): {
-        language = Language.dart;
+        language = E2EAllV2Language.dart;
         break;
       }
       case('c'): {
-        language = Language.c;
+        language = E2EAllV2Language.c;
         break;
       }
       default: {
@@ -102,23 +102,12 @@ Future<int> v4_dart_inline() async {
     }
 
     final Process tryPullProcess = await dockerImage.pull();
-    tryPullProcess.stdout.transform(utf8.decoder).listen((event) {
-      print(event);
-    });
-    tryPullProcess.stderr.transform(utf8.decoder).listen((event) {
-      print(event);
-    });
     final int tryPullProcessExitCode = await tryPullProcess.exitCode;
     if(tryPullProcessExitCode != 0) {
       // we need to build it
-      final Process buildProcess = await dockerImage.build();
-      buildProcess.stdout.transform(utf8.decoder).listen((event) {
-        print(event);
-      });
-      buildProcess.stderr.transform(utf8.decoder).listen((event) {
-        print(event);
-      });
-      print(await buildProcess.exitCode);
+      print('Attempted to pull ${dockerImage.fullImageName} but was not found. Building it locally...');
+      final Process buildProcess = await dockerImage.build(forceOverwriteCache: false);
+      print('Built ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
     }
   }
   return 0;

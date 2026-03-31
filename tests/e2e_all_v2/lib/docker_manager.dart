@@ -83,6 +83,7 @@ class DockerImage {
 
   Future<Process> build({
     final bool forceOverwriteCache = false,
+    final bool quiet = false,
   }) async {
     // sudo docker build \
     //  -f $dockerfile \
@@ -100,17 +101,19 @@ class DockerImage {
       'build',
       '-f', dockerfile,
       '-t', fullImageName,
-      // '--quiet',
       '--target', 'runtime',
     ];
     if(forceOverwriteCache) {
       args.add('--no-cache');
     }
+    if(quiet) {
+      args.add('--quiet');
+    }
     if(imageType == DockerImageType.release) {
       args.add('--build-arg');
       args.add('release=$tag');
     }
-    args.add('.');
+    args.add('.'); // context is this directory
     print('Executing $executable ${args.toString()}'); // TODO logger
     final Process process = await Process.start(
       executable,
@@ -118,13 +121,6 @@ class DockerImage {
       runInShell: true,
       );
     return process;
-  }
-
-  static String _getDockerImageName({
-    required final E2EAllV2Language language, // e.g. "c", "dart"
-    required final String tag, // e.g. "v5.9.4" "c0.0.1" or "current" "trunk"
-  }) {
-    return 'atsigncompany/noports_e2e_all_${language.name}:$tag';
   }
 
 }
