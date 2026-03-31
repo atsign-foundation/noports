@@ -10,6 +10,7 @@ dependencies:
   args: ^2.7.0
   at_utils: ^3.4.0
   path: ^1.9.0
+  pool: ^1.5.2
 
 dev_dependencies:
   lints: ^6.0.0
