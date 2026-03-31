@@ -46,6 +46,13 @@ Future<int> v4_dart_inline() async {
   final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
   logger.info('Test run ID: $testRunId');
 
+  // Set up log directory
+  final Directory logDirectory = Directory('logs');
+  if (!logDirectory.existsSync()) {
+    logDirectory.createSync(recursive: true);
+    logger.info('Created log directory: ${logDirectory.path}');
+  }
+
   const List<String> clientVersions = [
     'd:current',
     'd:v5.9.4',
@@ -109,12 +116,15 @@ Future<int> v4_dart_inline() async {
     }
     final bool existsOnMachine = await dockerImage.existsOnMachine();
     if(!existsOnMachine) {
-      final Process tryPullProcess = await dockerImage.pull();
+      final Process tryPullProcess = await dockerImage.pull(logDirectory: logDirectory.path);
       final int tryPullProcessExitCode = await tryPullProcess.exitCode;
       if(tryPullProcessExitCode != 0) {
         // we need to build it
         print('Attempted to pull ${dockerImage.fullImageName} but was not found. Building it locally...');
-        final Process buildProcess = await dockerImage.build(forceOverwriteCache: false);
+        final Process buildProcess = await dockerImage.build(
+          forceOverwriteCache: false,
+          logDirectory: logDirectory.path,
+          quiet: false);
         print('Built ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
         builtDockerImages.add(dockerImage);
       } else {
@@ -136,8 +146,11 @@ Future<int> v4_dart_inline() async {
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
-    await dockerInstance.stop(); // stop in case it's running
+    await dockerInstance.stop(logDirectory: logDirectory.path); // stop in case it's running
     await dockerInstance.run(
+      quiet: false,
+      removeWhenStopped: true,
+      logDirectory: logDirectory.path,
       entrypoint: [
         '/bin/bash',
         '-c',

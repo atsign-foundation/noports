@@ -224,7 +224,6 @@ class DockerInstance {
     final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
     final bool quiet = false,
     final bool removeWhenStopped = true,
-    final bool captureLogsToFile = false,
     final String? logDirectory,
   }) async {
     const String executable = 'docker';
