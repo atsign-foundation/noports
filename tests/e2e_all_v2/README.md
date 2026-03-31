@@ -97,17 +97,8 @@ dart run bin/web.dart
 - Client: Dart v5.11.2 | Daemon: Dart (current)
 - Client: Dart v5.13.0 | Daemon: Dart (current)
 - Client: Dart (current) | Daemon: Dart v5.9.4
-- Client: Dart v5.9.4 | Daemon: Dart v5.9.4
-- Client: Dart v5.11.2 | Daemon: Dart v5.9.4
-- Client: Dart v5.13.0 | Daemon: Dart v5.9.4
 - Client: Dart (current) | Daemon: Dart v5.11.2
-- Client: Dart v5.9.4 | Daemon: Dart v5.11.2
-- Client: Dart v5.11.2 | Daemon: Dart v5.11.2
-- Client: Dart v5.13.0 | Daemon: Dart v5.11.2
 - Client: Dart (current) | Daemon: Dart v5.13.0
-- Client: Dart v5.9.4 | Daemon: Dart v5.13.0
-- Client: Dart v5.11.2 | Daemon: Dart v5.13.0
-- Client: Dart v5.13.0 | Daemon: Dart v5.13.0
 
 ### minus_u_flag
 
