@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
@@ -28,11 +28,9 @@ Future<int> main(List<String> args) async {
 }
 
 void test_minus_r_flag() {
-
 }
 
 void test_minus_u_flag() {
-
 }
 
 void npt_to_port_22() {
@@ -123,12 +121,18 @@ Future<int> v4_dart_inline() async {
         print('Attempted to pull ${dockerImage.fullImageName} but was not found. Building it locally...');
         final Process buildProcess = await dockerImage.build(
           forceOverwriteCache: false,
-          logDirectory: logDirectory.path,
-          quiet: false);
-        print('Built ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
-        builtDockerImages.add(dockerImage);
+          quiet: false,
+          logDirectory: logDirectory.path);
+        final int buildExitCode = await buildProcess.exitCode;
+        print('Built ${dockerImage.fullImageName}: $buildExitCode');
+        if (buildExitCode == 0) {
+          builtDockerImages.add(dockerImage);
+        } else {
+          failedDockerImages.add(dockerImage);
+        }
       } else {
-        failedDockerImages.add(dockerImage);
+        print('Pulled ${dockerImage.fullImageName} successfully');
+        builtDockerImages.add(dockerImage);
       }
     } else {
       print('${dockerImage.fullImageName} was already found on the machine, skipping pull/build');
@@ -146,7 +150,6 @@ Future<int> v4_dart_inline() async {
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
-    await dockerInstance.stop(logDirectory: logDirectory.path); // stop in case it's running
     await dockerInstance.run(
       quiet: false,
       removeWhenStopped: true,
@@ -157,7 +160,7 @@ Future<int> v4_dart_inline() async {
         'sudo service ssh start && sshnpd -a @device_jttest -m @client_jttest -s -v'
         ],
       volumeMappings: [VolumeMapping(
-        localDirectory: Directory('/Users/jeremytubongbanua/.atsign/keys/'),
+        localDirectory: Directory('${getHomeDirectory()}/.atsign/keys/'),
         containerDirectory: Directory('/atsign/.atsign/keys/'),
       )],
     );
@@ -171,8 +174,6 @@ Future<int> v4_dart_inline() async {
   return 0;
 }
 
-
-
 void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {
   logger.info('e2e_all_v2 Loaded Parameters:');
   logger.info('  help: ${e2eAllV2Params.help}');
@@ -184,58 +185,3 @@ void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {
   logger.info('  root-domain: ${e2eAllV2Params.rootDomain}');
   logger.info('  verbose: ${e2eAllV2Params.verbose}');
 }
-
-// const List<String> clientVersions = [
-//   'v5.9.4',
-//   'v5.11.2',
-//   'v5.13.0',
-// ];
-//
-// const List<String> daemonVerisons = [
-//   'v5.9.4',
-//   'v5.11.2',
-//   'v5.13.0',
-// ];
-//
-// final DockerImage dockerImage = DockerImage.release(language: Language.dart, version: 'v5.9.4');
-// final Process dockerImageBuildProcess = await dockerImage.build(forceOverwriteCache: false);
-// // dockerImageBuildProcess.stdout.transform(utf8.decoder).listen((event) {
-// //   print(event);
-// // });
-//
-// dockerImageBuildProcess.stderr.transform(utf8.decoder).listen((event) {
-//   print(event);
-// });
-//
-// final DockerInstance dockerInstance = DockerInstance(dockerImage: dockerImage);
-// final Process dockerInstanceProcess = await dockerInstance.run();
-// dockerInstanceProcess.stderr.transform(utf8.decoder).listen((event) {
-//   print(event);
-// });
-
-// Clients: Dart Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
-// Daemons: Dart Current, C Current, Dart v5.9.4, Dart v5.11.2, Dart v5.13.0
-// Relay: Dart Current
-// Policy: Dart Current
-// Events: Dart Current
-
-// sudo docker build \
-//  -f $dockerfile \
-//  -t $tag \
-//  --quiet \
-//  ?--no-cache \
-//  ?--build-arg release=v5.9.4 \
-// --target runtime \
-// .
-
-// sudo docker run \
-//  --rm \
-//  -d \
-//  --name "$containerName" \
-//  -v ~/.atsign/keys/:/atsign/.atsign/keys/ \
-//  $TAG
-//  /bin/bash -c sudo service ssh start && /usr/local/bin/sshnpd -a @daemon -m @client -d deviceName $daemonFlags --root-domain root-domain -v
-
-// atsigncompany/noports_e2e_all_$type:current
-// atsigncompany/noports_e2e_all_$type:vx.x.x
-// Base Image: atsigncompany/noports_e2e_all_base_runtime:latest

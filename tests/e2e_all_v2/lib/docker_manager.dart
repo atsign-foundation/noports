@@ -190,12 +190,8 @@ class DockerInstance {
 
   Process? process; // instantiated from run()
 
-  final List<String> _stdoutLines = [];
-  final List<String> _stderrLines = [];
-  final int maxLogLines = 10000; // prevent unbounded memory growth
-  File? _logFile;
-  File? _dockerRunStdoutFile;
-  File? _dockerRunStderrFile;
+  File? _stdoutFile;
+  File? _stderrFile;
 
   DockerInstance({
     required this.dockerImage,
@@ -204,20 +200,35 @@ class DockerInstance {
     containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$testRunId';
   }
 
-  List<String> get stdoutLogs => List.unmodifiable(_stdoutLines);
+  // Read stdout logs from file
+  List<String> get stdoutLogs {
+    if (_stdoutFile == null || !_stdoutFile!.existsSync()) return [];
+    return _stdoutFile!.readAsLinesSync();
+  }
 
-  List<String> get stderrLogs => List.unmodifiable(_stderrLines);
+  // Read stderr logs from file
+  List<String> get stderrLogs {
+    if (_stderrFile == null || !_stderrFile!.existsSync()) return [];
+    return _stderrFile!.readAsLinesSync();
+  }
 
+  // Read all logs combined from files
   String get allLogs {
     final buffer = StringBuffer();
-    for (final line in _stdoutLines) {
+    for (final line in stdoutLogs) {
       buffer.writeln('[STDOUT] $line');
     }
-    for (final line in _stderrLines) {
+    for (final line in stderrLogs) {
       buffer.writeln('[STDERR] $line');
     }
     return buffer.toString();
   }
+
+  // Get the stdout log file path
+  String? get stdoutLogPath => _stdoutFile?.path;
+
+  // Get the stderr log file path
+  String? get stderrLogPath => _stderrFile?.path;
 
   Future<Process> run({
     final List<String> entrypoint = const <String>[],
@@ -256,12 +267,12 @@ class DockerInstance {
     if (logDirectory != null) {
       await Directory(logDirectory).create(recursive: true);
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      _dockerRunStdoutFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stdout.log');
-      _dockerRunStderrFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stderr.log');
-      logger.info('Container entrypoint logs: ${_dockerRunStdoutFile!.path} / ${_dockerRunStderrFile!.path}');
-    }
+      _stdoutFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stdout.log');
+      _stderrFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stderr.log');
+      logger.info('Container entrypoint logs: ${_stdoutFile!.path} / ${_stderrFile!.path}');
 
-    _startLogCapture();
+      _startLogCapture();
+    }
 
     return pr;
   }
@@ -269,41 +280,21 @@ class DockerInstance {
   void _startLogCapture() {
     if (process == null) return;
 
-    // stdout
+    // stdout - write directly to file only
     process!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(
       (line) {
-        _addStdoutLine(line);
+        _stdoutFile?.writeAsStringSync('$line\n', mode: FileMode.append);
       },
       onError: (error) => logger.severe('Error reading stdout: $error'),
     );
 
-    // stderr
+    // stderr - write directly to file only
     process!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
       (line) {
-        _addStderrLine(line);
+        _stderrFile?.writeAsStringSync('$line\n', mode: FileMode.append);
       },
       onError: (error) => logger.severe('Error reading stderr: $error'),
     );
-  }
-
-  void _addStdoutLine(String line) {
-    if (_stdoutLines.length >= maxLogLines) {
-      _stdoutLines.removeAt(0);
-    }
-    _stdoutLines.add(line);
-
-    // Write to separate stdout file
-    _dockerRunStdoutFile?.writeAsStringSync('$line\n', mode: FileMode.append);
-  }
-
-  void _addStderrLine(String line) {
-    if (_stderrLines.length >= maxLogLines) {
-      _stderrLines.removeAt(0);
-    }
-    _stderrLines.add(line);
-
-    // Write to separate stderr file
-    _dockerRunStderrFile?.writeAsStringSync('$line\n', mode: FileMode.append);
   }
 
   Future<bool> isActive() async {
@@ -349,5 +340,10 @@ class DockerInstance {
 
     return processResult.exitCode;
   }
+}
+
+class DockerManager {
+  List<DockerImage> dockerImages = [];
+  List<DockerInstance> dockerInstances = [];
 }
 
