@@ -146,24 +146,19 @@ class DockerInstance {
 
   Process? process; // instantiated from run()
 
-  // Log storage
   final List<String> _stdoutLines = [];
   final List<String> _stderrLines = [];
-  final int maxLogLines = 10000; // Prevent unbounded memory growth
+  final int maxLogLines = 10000; // prevent unbounded memory growth
   File? _logFile;
 
   DockerInstance({required this.dockerImage}) {
-    final shortUuid = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
-    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$shortUuid';
+    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$testRunId';
   }
 
-  // Get all stdout logs
   List<String> get stdoutLogs => List.unmodifiable(_stdoutLines);
 
-  // Get all stderr logs
   List<String> get stderrLogs => List.unmodifiable(_stderrLines);
 
-  // Get all logs combined with prefixes
   String get allLogs {
     final buffer = StringBuffer();
     for (final line in _stdoutLines) {
@@ -184,6 +179,8 @@ class DockerInstance {
     final String? logDirectory,
   }) async {
     const String executable = 'docker';
+
+    // construct args
     final List<String> args = [
       'run',
       '--name', containerName,
@@ -207,7 +204,7 @@ class DockerInstance {
     final Process pr = await Process.start(executable, args);
     process = pr;
 
-    // Set up log file if requested
+    // set up log file if requested
     if (captureLogsToFile) {
       final logDir = logDirectory ?? '.';
       final logPath = '$logDir/$containerName.log';
@@ -216,7 +213,6 @@ class DockerInstance {
       logger.info('Logging to file: $logPath');
     }
 
-    // Start capturing logs immediately
     _startLogCapture();
 
     return pr;
@@ -225,7 +221,7 @@ class DockerInstance {
   void _startLogCapture() {
     if (process == null) return;
 
-    // Capture stdout
+    // stdout
     process!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(
       (line) {
         _addStdoutLine(line);
@@ -233,7 +229,7 @@ class DockerInstance {
       onError: (error) => logger.severe('Error reading stdout: $error'),
     );
 
-    // Capture stderr
+    // stderr
     process!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
       (line) {
         _addStderrLine(line);
@@ -243,24 +239,18 @@ class DockerInstance {
   }
 
   void _addStdoutLine(String line) {
-    // Add to memory buffer with circular behavior
     if (_stdoutLines.length >= maxLogLines) {
       _stdoutLines.removeAt(0);
     }
     _stdoutLines.add(line);
-
-    // Write to file if enabled
     _logFile?.writeAsStringSync('[STDOUT] $line\n', mode: FileMode.append);
   }
 
   void _addStderrLine(String line) {
-    // Add to memory buffer with circular behavior
     if (_stderrLines.length >= maxLogLines) {
       _stderrLines.removeAt(0);
     }
     _stderrLines.add(line);
-
-    // Write to file if enabled
     _logFile?.writeAsStringSync('[STDERR] $line\n', mode: FileMode.append);
   }
 
