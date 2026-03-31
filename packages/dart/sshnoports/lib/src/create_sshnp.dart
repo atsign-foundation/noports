@@ -22,6 +22,11 @@ Future<Sshnp> createSshnp(
     throw ArgumentError(
         'atClient must be provided or atClientGenerator must be provided');
   }
+  if (params.srvdAtSign.isEmpty) {
+    // if srvdAtSign is not provided, auto select the best rv
+    final bestRv = await selectBestRv(atClient, params);
+    params = SshnpParams.merge(params, SshnpPartialParams(srvdAtSign: bestRv));
+  }
 
   switch (sshClient) {
     case SupportedSshClient.openssh:
