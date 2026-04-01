@@ -16,10 +16,10 @@ void main(List<String> args) async {
 
   ArgResults r;
   try {
-    r = SrvdParams.parser.parse(args);
+    r = SrvdOption.argParser.parse(args);
   } catch (_) {
     printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stderr.writeln(SrvdOption.usage);
     exit(0);
   }
 
@@ -30,7 +30,7 @@ void main(List<String> args) async {
 
   if (r.wasParsed('help')) {
     printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stderr.writeln(SrvdOption.usage);
     exit(0);
   }
 
@@ -40,7 +40,7 @@ void main(List<String> args) async {
     p = await SrvdParams.fromArgs(args);
   } on ArgumentError catch (e) {
     printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stderr.writeln(SrvdOption.usage);
     stderr.writeln('\n$e');
     exit(1);
   }
@@ -115,7 +115,7 @@ void main(List<String> args) async {
       ),
       usageCallback: (e, s) {
         printVersion();
-        stderr.writeln(SrvdParams.parser.usage);
+        stderr.writeln(SrvdOption.usage);
         stderr.writeln('\n$e');
       },
     );

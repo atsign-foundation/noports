@@ -44,7 +44,7 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   ipAddress(
     StringOption(
       argName: 'ip',
-      configKey: 'network/ip',
+      configKey: '/network/ip',
       argAliases: ['ip'],
       argAbbrev: 'i',
       mandatory: true,
@@ -56,7 +56,7 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   bindPort(
     IntOption(
       argName: 'bindPort',
-      configKey: 'network/443-bind-port',
+      configKey: '/network/443-bind-port',
       argAliases: ['443-bind-port'],
       mandatory: false,
       defaultsTo: 443,
@@ -71,7 +71,7 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   bind443(
     FlagOption(
       argName: 'bind443',
-      configKey: 'network/bind-443',
+      configKey: '/network/bind-443',
       argAliases: ['443'],
       mandatory: false,
       defaultsTo: false,
@@ -84,7 +84,7 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   logTraffic(
     FlagOption(
       argName: 'logTraffic',
-      configKey: 'runtime/log-traffic',
+      configKey: '/runtime/log-traffic',
       mandatory: false,
       defaultsTo: true,
       helpText: 'log traffic',
@@ -95,7 +95,7 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   perSessionStorage(
     FlagOption(
       argName: 'perSessionStorage',
-      configKey: 'runtime/per-session-storage',
+      configKey: '/runtime/per-session-storage',
       mandatory: false,
       defaultsTo: true,
       helpText:
@@ -106,10 +106,9 @@ enum SrvdOption<V> implements OptionDefinition<V> {
   ),
 
   verbose(SharedOptions.verbose),
-
   debug(SharedOptions.debug),
-
-  help(SharedOptions.help);
+  help(SharedOptions.help),
+  version(SharedOptions.version);
 
   const SrvdOption(this.option);
 
