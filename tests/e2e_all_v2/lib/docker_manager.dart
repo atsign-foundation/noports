@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-import 'package:at_utils/at_utils.dart';
 
-AtSignLogger logger = AtSignLogger('docker_manager');
 
 enum DockerImageType {
   release, // "v5.9.4", "v5.11.3", "c0.0.1"
@@ -269,7 +267,7 @@ class DockerInstance {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       _stdoutFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stdout.log');
       _stderrFile = File('$logDirectory/entrypoint_${containerName}_${timestamp}_stderr.log');
-      logger.info('Container entrypoint logs: ${_stdoutFile!.path} / ${_stderrFile!.path}');
+      print('Container entrypoint logs: ${_stdoutFile!.path} / ${_stderrFile!.path}');
 
       _startLogCapture();
     }
@@ -285,7 +283,7 @@ class DockerInstance {
       (line) {
         _stdoutFile?.writeAsStringSync('$line\n', mode: FileMode.append);
       },
-      onError: (error) => logger.severe('Error reading stdout: $error'),
+      onError: (error) => print('Error reading stdout: $error'),
     );
 
     // stderr - write directly to file only
@@ -293,7 +291,7 @@ class DockerInstance {
       (line) {
         _stderrFile?.writeAsStringSync('$line\n', mode: FileMode.append);
       },
-      onError: (error) => logger.severe('Error reading stderr: $error'),
+      onError: (error) => print('Error reading stderr: $error'),
     );
   }
 
@@ -335,7 +333,7 @@ class DockerInstance {
       await stdoutFile.writeAsString(processResult.stdout.toString());
       await stderrFile.writeAsString(processResult.stderr.toString());
 
-      logger.info('Docker stop logs: ${stdoutFile.path} / ${stderrFile.path}');
+      print('Docker stop logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
     return processResult.exitCode;

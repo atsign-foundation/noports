@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:at_utils/at_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
-final AtSignLogger logger = AtSignLogger('client_binaries');
 
 enum ClientBinaryType {
   sshnp,
@@ -72,7 +70,7 @@ class ClientBinary {
     final String archiveName = 'sshnp-$os-$arch.$archiveExt';
     final String downloadUrl = 'https://github.com/atsign-foundation/noports/releases/download/$version/$archiveName';
 
-    logger.info('Downloading archive $archiveName from $downloadUrl');
+    print('Downloading archive $archiveName from $downloadUrl');
 
     final File binaryFile = File(binaryPath);
     await binaryFile.parent.create(recursive: true);
@@ -87,7 +85,7 @@ class ClientBinary {
       downloadUrl,
     ];
 
-    logger.info('Executing curl ${curlArgs.join(' ')}');
+    print('Executing curl ${curlArgs.join(' ')}');
     final Process curlProcess = await Process.start('curl', curlArgs);
 
     if (logDirectory != null) {
@@ -106,22 +104,22 @@ class ClientBinary {
         stderrFile.writeAsBytesSync(data, mode: FileMode.append);
       });
 
-      logger.info('Download logs: ${stdoutFile.path} / ${stderrFile.path}');
+      print('Download logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
     final exitCode = await curlProcess.exitCode;
     if (exitCode != 0) {
-      logger.severe('Failed to download archive (exit code: $exitCode)');
-      logger.severe('Download URL: $downloadUrl');
-      logger.severe('Archive path: $archivePath');
+      print('Failed to download archive (exit code: $exitCode)');
+      print('Download URL: $downloadUrl');
+      print('Archive path: $archivePath');
       if (logDirectory != null) {
-        logger.severe('Check logs in: $logDirectory');
+        print('Check logs in: $logDirectory');
       }
       return curlProcess;
     }
 
     // Extract archive
-    logger.info('Extracting archive $archivePath');
+    print('Extracting archive $archivePath');
     await Directory(tempDir).create(recursive: true);
 
     ProcessResult extractResult;
@@ -132,9 +130,9 @@ class ClientBinary {
     }
 
     if (extractResult.exitCode != 0) {
-      logger.severe('Failed to extract archive (exit code: ${extractResult.exitCode})');
-      logger.severe('Archive path: $archivePath');
-      logger.severe('Extract stderr: ${extractResult.stderr}');
+      print('Failed to extract archive (exit code: ${extractResult.exitCode})');
+      print('Archive path: $archivePath');
+      print('Extract stderr: ${extractResult.stderr}');
       return curlProcess; // Return original process for consistency
     }
 
@@ -143,8 +141,8 @@ class ClientBinary {
     final File extractedBinary = File(extractedBinaryPath);
 
     if (!extractedBinary.existsSync()) {
-      logger.severe('Binary $binaryName not found in extracted archive');
-      logger.severe('Expected path: $extractedBinaryPath');
+      print('Binary $binaryName not found in extracted archive');
+      print('Expected path: $extractedBinaryPath');
       return curlProcess;
     }
 
@@ -155,7 +153,7 @@ class ClientBinary {
     await File(archivePath).delete();
     await Directory(tempDir).delete(recursive: true);
 
-    logger.info('Downloaded and extracted: $binaryPath');
+    print('Downloaded and extracted: $binaryPath');
 
     return curlProcess;
   }
@@ -176,7 +174,7 @@ class ClientBinary {
     await File(outputPath).parent.create(recursive: true);
 
     // First, run dart pub get to fetch dependencies
-    logger.info('Running dart pub get in $packageDir');
+    print('Running dart pub get in $packageDir');
     final ProcessResult pubGetResult = await Process.run(
       'dart',
       ['pub', 'get'],
@@ -184,11 +182,11 @@ class ClientBinary {
     );
 
     if (pubGetResult.exitCode != 0) {
-      logger.severe('Failed to run dart pub get (exit code: ${pubGetResult.exitCode})');
-      logger.severe('Package directory: $packageDir');
-      logger.severe('Stderr: ${pubGetResult.stderr}');
+      print('Failed to run dart pub get (exit code: ${pubGetResult.exitCode})');
+      print('Package directory: $packageDir');
+      print('Stderr: ${pubGetResult.stderr}');
       if (logDirectory != null) {
-        logger.severe('Check logs in: $logDirectory');
+        print('Check logs in: $logDirectory');
       }
       // Create a fake process to return for consistency
       final Process fakeProcess = await Process.start('echo', ['dart pub get failed']);
@@ -203,7 +201,7 @@ class ClientBinary {
       '-o', outputPath,
     ];
 
-    logger.info('Executing dart ${args.join(' ')}');
+    print('Executing dart ${args.join(' ')}');
     final Process process = await Process.start('dart', args);
 
     if (logDirectory != null) {
@@ -222,19 +220,19 @@ class ClientBinary {
         stderrFile.writeAsBytesSync(data, mode: FileMode.append);
       });
 
-      logger.info('Compile logs: ${stdoutFile.path} / ${stderrFile.path}');
+      print('Compile logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      logger.severe('Failed to compile $binaryName (exit code: $exitCode)');
-      logger.severe('Source path: $sourcePath');
-      logger.severe('Output path: $outputPath');
+      print('Failed to compile $binaryName (exit code: $exitCode)');
+      print('Source path: $sourcePath');
+      print('Output path: $outputPath');
       if (logDirectory != null) {
-        logger.severe('Check logs in: $logDirectory');
+        print('Check logs in: $logDirectory');
       }
     } else {
-      logger.info('Successfully compiled: $binaryPath');
+      print('Successfully compiled: $binaryPath');
     }
 
     return process;
@@ -250,7 +248,7 @@ class ClientBinary {
       throw Exception('Binary does not exist: $binaryPath');
     }
 
-    logger.info('Executing $binaryPath ${args.join(' ')}');
+    print('Executing $binaryPath ${args.join(' ')}');
     final Process process = await Process.start(
       binaryPath,
       args,
@@ -274,7 +272,7 @@ class ClientBinary {
         stderrFile.writeAsBytesSync(data, mode: FileMode.append);
       });
 
-      logger.info('Execute logs: ${stdoutFile.path} / ${stderrFile.path}');
+      print('Execute logs: ${stdoutFile.path} / ${stderrFile.path}');
     }
 
     return process;
@@ -348,7 +346,7 @@ class ClientBinaryManager {
       );
 
       if (binary.exists()) {
-        logger.info('Binary already exists: ${binary.binaryPath}');
+        print('Binary already exists: ${binary.binaryPath}');
         prepared.add(binary);
         continue;
       }
@@ -356,36 +354,36 @@ class ClientBinaryManager {
       try {
         Process process;
         if (version == 'current') {
-          logger.info('Compiling ${binaryType.name} (${language.name}) version $version');
+          print('Compiling ${binaryType.name} (${language.name}) version $version');
           process = await binary.compile(logDirectory: logDirectory);
         } else {
-          logger.info('Downloading ${binaryType.name} (${language.name}) version $version');
+          print('Downloading ${binaryType.name} (${language.name}) version $version');
           process = await binary.download(logDirectory: logDirectory);
         }
 
         final exitCode = await process.exitCode;
         if (exitCode == 0) {
-          logger.info('Successfully prepared binary: ${binary.binaryPath}');
+          print('Successfully prepared binary: ${binary.binaryPath}');
           prepared.add(binary);
         } else {
           final action = version == 'current' ? 'compile' : 'download';
-          logger.severe('Failed to $action binary: ${binary.binaryPath} (exit code: $exitCode)');
-          logger.severe('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
+          print('Failed to $action binary: ${binary.binaryPath} (exit code: $exitCode)');
+          print('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
           if (logDirectory != null) {
-            logger.severe('Check error logs in: $logDirectory');
+            print('Check error logs in: $logDirectory');
           }
           failed.add(binary);
         }
       } catch (e, stackTrace) {
-        logger.severe('Exception preparing binary ${binary.binaryPath}: $e');
-        logger.severe('Stack trace: $stackTrace');
-        logger.severe('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
+        print('Exception preparing binary ${binary.binaryPath}: $e');
+        print('Stack trace: $stackTrace');
+        print('Binary type: ${binaryType.name}, Language: ${language.name}, Version: $version');
         failed.add(binary);
       }
     }
 
     if (failed.isNotEmpty) {
-      logger.warning('Failed to prepare ${failed.length} binaries');
+      print('Failed to prepare ${failed.length} binaries');
     }
 
     return prepared;
@@ -395,7 +393,7 @@ class ClientBinaryManager {
     final dir = Directory(path.join('binaries', testRunId));
     if (await dir.exists()) {
       await dir.delete(recursive: true);
-      logger.info('Cleaned up binaries directory: ${dir.path}');
+      print('Cleaned up binaries directory: ${dir.path}');
     }
   }
 }

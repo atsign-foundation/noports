@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:e2e_all_v2/client_binaries.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
+import 'package:e2e_all_v2/test_result.dart';
 
 Future<void> runCoreTestCases({
   required final String testRunId,
@@ -163,6 +164,64 @@ Future<void> runCoreTestCases({
   }
   // End Phase 2
 
+  // Start Phase 3 - Run Tests
+  List<TestResult> testResults = [];
+
+  // Run all tests in order
+  print('\n========== Running Tests ==========\n');
+
+  // Test #1: 001_minus_s_flag (only runs with current client)
+  for (final (daemonLanguage, daemonVersion) in parsedDaemonVersions) {
+    final result = await _test001MinusSFlag(
+      clientBinaries: clientBinaries,
+      dockerInstances: dockerInstances,
+      daemonLanguage: daemonLanguage,
+      daemonVersion: daemonVersion,
+      testRunId: testRunId,
+      logDirectory: logDirectory,
+    );
+    if (result != null) testResults.add(result);
+  }
+
+  // TODO: Add remaining tests following the same pattern
+
+  // End Phase 3
+
+  // Print Summary
+  print('\n========== Test Summary ==========\n');
+  int passed = 0;
+  int failed = 0;
+  int skipped = 0;
+
+  for (final result in testResults) {
+    if (result.status == TestStatus.passed) {
+      passed++;
+      print('✓ ${result.testName} [${result.clientVersion} -> ${result.daemonVersion}]: PASSED');
+    } else if (result.status == TestStatus.failed) {
+      failed++;
+      print('✗ ${result.testName} [${result.clientVersion} -> ${result.daemonVersion}]: FAILED');
+      if (result.stderr.isNotEmpty) {
+        print('  Error output:');
+        for (final line in result.stderr.split('\n').take(10)) {
+          print('    $line');
+        }
+      }
+    } else {
+      skipped++;
+    }
+  }
+
+  print('\nTotal: ${testResults.length} tests');
+  print('Passed: $passed');
+  print('Failed: $failed');
+  print('Skipped: $skipped');
+
+  if (failed > 0) {
+    print('\n⚠️  Some tests failed. Check logs for details.');
+  } else {
+    print('\n✓ All tests passed!');
+  }
+
   // Test coverage
 
   // Test #1: 001_minus_s_flag
@@ -267,3 +326,48 @@ Future<void> runCoreTestCases({
   // - Client: Dart (current) | Daemon: Dart v5.11.2
   // - Client: Dart (current) | Daemon: Dart v5.13.0
 }
+
+// Private test functions
+
+Future<TestResult?> _test001MinusSFlag({
+  required List<ClientBinary> clientBinaries,
+  required List<DockerInstance> dockerInstances,
+  required ClientLanguage daemonLanguage,
+  required String daemonVersion,
+  required String testRunId,
+  required String logDirectory,
+}) async {
+  const String testName = '001_minus_s_flag';
+  final String clientVersionStr = 'd:current';
+  final String daemonVersionStr = '${daemonLanguage == ClientLanguage.dart ? "d" : "c"}:$daemonVersion';
+
+  // Only run with current client
+  final ClientBinary? clientBinary = clientBinaries.where((b) =>
+      b.binaryType == ClientBinaryType.sshnp &&
+      b.language == ClientLanguage.dart &&
+      b.version == 'current'
+  ).firstOrNull;
+
+  if (clientBinary == null) {
+    print('Skipping $testName [$clientVersionStr -> $daemonVersionStr]: current client not found');
+    return TestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.skipped,
+    );
+  }
+
+  print('Running $testName [$clientVersionStr -> $daemonVersionStr]');
+
+  // For now, return a placeholder result
+  // TODO: Implement actual test logic
+  return TestResult(
+    testName: testName,
+    clientVersion: clientVersionStr,
+    daemonVersion: daemonVersionStr,
+    status: TestStatus.skipped,
+    stdout: 'Test not yet implemented',
+  );
+}
+

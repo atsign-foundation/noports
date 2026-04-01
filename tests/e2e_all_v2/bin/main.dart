@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_utils/at_utils.dart';
 import 'package:e2e_all_v2/core_test_cases.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/params.dart';
 
-late AtSignLogger logger;
 
 Future<int> main(List<String> args) async {
   logger = AtSignLogger('e2e_all_v2');
@@ -51,13 +49,13 @@ void npt_to_port_22_no_encrypt_traffic() {
 Future<int> v4_dart_inline() async {
   // Generate unique test run ID
   final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
-  logger.info('Test run ID: $testRunId');
+  print('Test run ID: $testRunId');
 
   // Set up log directory
   final Directory logDirectory = Directory('logs');
   if (!logDirectory.existsSync()) {
     logDirectory.createSync(recursive: true);
-    logger.info('Created log directory: ${logDirectory.path}');
+    print('Created log directory: ${logDirectory.path}');
   }
 
   const List<String> clientVersions = [
@@ -184,13 +182,13 @@ Future<int> v4_dart_inline() async {
 }
 
 void _logLoadedParameters(E2EAllV2Params e2eAllV2Params) {
-  logger.info('e2e_all_v2 Loaded Parameters:');
-  logger.info('  help: ${e2eAllV2Params.help}');
-  logger.info('  client-atsign: ${e2eAllV2Params.clientAtsign}');
-  logger.info('  daemon-atsign: ${e2eAllV2Params.daemonAtsign}');
-  logger.info('  relay-atsign: ${e2eAllV2Params.relayAtsign}');
-  logger.info('  policy-atsign: ${e2eAllV2Params.policyAtsign}');
-  logger.info('  events-atsign: ${e2eAllV2Params.eventsAtsign}');
-  logger.info('  root-domain: ${e2eAllV2Params.rootDomain}');
-  logger.info('  verbose: ${e2eAllV2Params.verbose}');
+  print('e2e_all_v2 Loaded Parameters:');
+  print('  help: ${e2eAllV2Params.help}');
+  print('  client-atsign: ${e2eAllV2Params.clientAtsign}');
+  print('  daemon-atsign: ${e2eAllV2Params.daemonAtsign}');
+  print('  relay-atsign: ${e2eAllV2Params.relayAtsign}');
+  print('  policy-atsign: ${e2eAllV2Params.policyAtsign}');
+  print('  events-atsign: ${e2eAllV2Params.eventsAtsign}');
+  print('  root-domain: ${e2eAllV2Params.rootDomain}');
+  print('  verbose: ${e2eAllV2Params.verbose}');
 }
