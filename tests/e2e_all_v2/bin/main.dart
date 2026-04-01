@@ -25,6 +25,12 @@ Future<int> main(List<String> args) async {
   runCoreTestCases(
     testRunId: testRunId,
     logDirectory: e2eAllV2Params.logDirectory,
+    clientAtSign: e2eAllV2Params.clientAtsign,
+    daemonAtSign: e2eAllV2Params.daemonAtsign,
+    atKeysVolumeMapping: VolumeMapping(
+      localDirectory: Directory('${getHomeDirectory()}/.atsign/keys/'),
+      containerDirectory: Directory('/atsign/.atsign/keys/'),
+    ),
   );
 
   return 0;

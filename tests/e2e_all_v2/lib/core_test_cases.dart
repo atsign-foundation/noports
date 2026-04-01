@@ -7,6 +7,9 @@ import 'package:e2e_all_v2/test_result.dart';
 Future<void> runCoreTestCases({
   required final String testRunId,
   required final String logDirectory,
+  required final String daemonAtSign,
+  required final String clientAtSign,
+  required final VolumeMapping atKeysVolumeMapping,
 }) async {
 
   // Goals:
@@ -32,9 +35,8 @@ Future<void> runCoreTestCases({
     'd:v5.11.2',
     'd:v5.13.0',
   ];
-  // Start Phase 1
-  // assume Dart
 
+  // Start Phase 1
   ClientBinaryManager clientBinaryManager =
     ClientBinaryManager(testRunId: testRunId);
 
@@ -132,25 +134,33 @@ Future<void> runCoreTestCases({
   // Start Docker instances for each daemon version
   List<DockerInstance> dockerInstances = [];
   for (final dockerImage in dockerImages) {
-    final DockerInstance dockerInstance = DockerInstance(
+    final String deviceNameWithoutFlags = '${testRunId}${dockerImage.language.name[0]}${dockerImage.tag.replaceAll('.', '')}';
+    final String deviceNameWithFlags = '${deviceNameWithoutFlags}f';
+
+    // 1. create a docker instance with -s -u (container 1)
+    final DockerInstance dockerInstance1 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
 
-    print('Starting Docker instance: ${dockerInstance.containerName}');
-    await dockerInstance.run(
+    print('Starting Docker instance: ${dockerInstance1.containerName}');
+    await dockerInstance1.run(
       quiet: false,
+      volumeMappings: [atKeysVolumeMapping],
       removeWhenStopped: true,
       logDirectory: logDirectory,
       entrypoint: [
         '/bin/bash',
         '-c',
-        'sudo service ssh start && tail -f /dev/null', // Keep container running
+        'sudo service ssh start && '
+          'sshnpd -a $daemonAtSign -m $clientAtSign -v '
+          '-d ${deviceNameWithFlags} '
+          '-s -u',
       ],
     );
 
-    dockerInstances.add(dockerInstance);
-    print('Started Docker instance: ${dockerInstance.containerName}');
+    dockerInstances.add(dockerInstance1);
+    print('Started Docker instance: ${dockerInstance1.containerName}');
   }
 
   print('Running Docker instances: ${dockerInstances.length}');
@@ -168,8 +178,8 @@ Future<void> runCoreTestCases({
   // Test #1: 001_minus_s_flag (only runs with current client)
   for (final (daemonLanguage, daemonVersion) in parsedDaemonVersions) {
     final result = await _test001MinusSFlag(
-      clientBinaries: clientBinaries,
-      dockerInstances: dockerInstances,
+      allClientBinaries: clientBinaries,
+      allDockerInstances: dockerInstances,
       daemonLanguage: daemonLanguage,
       daemonVersion: daemonVersion,
       testRunId: testRunId,
@@ -186,7 +196,6 @@ Future<void> runCoreTestCases({
   print('\n========== Test Summary ==========\n');
   int passed = 0;
   int failed = 0;
-  int skipped = 0;
 
   for (final result in testResults) {
     if (result.status == TestStatus.passed) {
@@ -201,15 +210,12 @@ Future<void> runCoreTestCases({
           print('    $line');
         }
       }
-    } else {
-      skipped++;
     }
   }
 
   print('\nTotal: ${testResults.length} tests');
   print('Passed: $passed');
   print('Failed: $failed');
-  print('Skipped: $skipped');
 
   if (failed > 0) {
     print('\n⚠️  Some tests failed. Check logs for details.');
@@ -229,160 +235,241 @@ Future<void> runCoreTestCases({
     }
   }
   print('All Docker instances stopped.');
-
-  // Test coverage
-
-  // Test #1: 001_minus_s_flag
-  // 1. Generates a new ssh key
-  // 2. 
-  //     a. Run sshnp against a daemon without the `-s` flag with that new key
-  //     b. Verify it fails
-  // 3.
-  //     a. Run against a daemon with the `-s` flag
-  //     b. Verify it succeeds
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: C (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #2: minus_r_flag
-  // 1. Run sshnp with `--host` (expect to pass)
-  // 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
-  // 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #3: minus_u_flag
-  // - Client: Dart (current) | Daemon: Dart (current)
-
-  // Test #4: npt_to_port_22
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: C (current)
-  // - Client: Dart v5.9.4 | Daemon: C (current)
-  // - Client: Dart v5.11.2 | Daemon: C (current)
-  // - Client: Dart v5.13.0 | Daemon: C (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #5: npt_to_port_22_no_encrypt_traffic
-  // - Client: Dart (current) | Daemon: Dart (current)
-
-  // Test #6: v4_dart_inline
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #7: v4_openssh_print
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #8: v5_dart_inline
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: C (current)
-  // - Client: Dart v5.9.4 | Daemon: C (current)
-  // - Client: Dart v5.11.2 | Daemon: C (current)
-  // - Client: Dart v5.13.0 | Daemon: C (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #9: v5_openssh_inline
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: C (current)
-  // - Client: Dart v5.9.4 | Daemon: C (current)
-  // - Client: Dart v5.11.2 | Daemon: C (current)
-  // - Client: Dart v5.13.0 | Daemon: C (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
-
-  // Test #10: v5_openssh_print
-  // - Client: Dart (current) | Daemon: Dart (current)
-  // - Client: Dart v5.9.4 | Daemon: Dart (current)
-  // - Client: Dart v5.11.2 | Daemon: Dart (current)
-  // - Client: Dart v5.13.0 | Daemon: Dart (current)
-  // - Client: Dart (current) | Daemon: C (current)
-  // - Client: Dart v5.9.4 | Daemon: C (current)
-  // - Client: Dart v5.11.2 | Daemon: C (current)
-  // - Client: Dart v5.13.0 | Daemon: C (current)
-  // - Client: Dart (current) | Daemon: Dart v5.9.4
-  // - Client: Dart (current) | Daemon: Dart v5.11.2
-  // - Client: Dart (current) | Daemon: Dart v5.13.0
 }
 
-// Private test functions
+// Test coverage
 
-Future<TestResult?> _test001MinusSFlag({
-  required List<ClientBinary> clientBinaries,
-  required List<DockerInstance> dockerInstances,
-  required ClientLanguage daemonLanguage,
-  required String daemonVersion,
+// Test #2: minus_r_flag
+// 1. Run sshnp with `--host` (expect to pass)
+// 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
+// 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #3: minus_u_flag
+// - Client: Dart (current) | Daemon: Dart (current)
+
+// Test #4: npt_to_port_22
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: C (current)
+// - Client: Dart v5.9.4 | Daemon: C (current)
+// - Client: Dart v5.11.2 | Daemon: C (current)
+// - Client: Dart v5.13.0 | Daemon: C (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #5: npt_to_port_22_no_encrypt_traffic
+// - Client: Dart (current) | Daemon: Dart (current)
+
+// Test #6: v4_dart_inline
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #7: v4_openssh_print
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #8: v5_dart_inline
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: C (current)
+// - Client: Dart v5.9.4 | Daemon: C (current)
+// - Client: Dart v5.11.2 | Daemon: C (current)
+// - Client: Dart v5.13.0 | Daemon: C (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #9: v5_openssh_inline
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: C (current)
+// - Client: Dart v5.9.4 | Daemon: C (current)
+// - Client: Dart v5.11.2 | Daemon: C (current)
+// - Client: Dart v5.13.0 | Daemon: C (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+// Test #10: v5_openssh_print
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart v5.9.4 | Daemon: Dart (current)
+// - Client: Dart v5.11.2 | Daemon: Dart (current)
+// - Client: Dart v5.13.0 | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: C (current)
+// - Client: Dart v5.9.4 | Daemon: C (current)
+// - Client: Dart v5.11.2 | Daemon: C (current)
+// - Client: Dart v5.13.0 | Daemon: C (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+
+
+// Test #1: 001_minus_s_flag
+// 1. Generates a new ssh key
+// 2. 
+//     a. Run sshnp against a daemon without the `-s` flag with that new key
+//     b. Verify it fails
+// 3.
+//     a. Run against a daemon with the `-s` flag
+//     b. Verify it succeeds
+// - Client: Dart (current) | Daemon: Dart (current)
+// - Client: Dart (current) | Daemon: C (current)
+// - Client: Dart (current) | Daemon: Dart v5.9.4
+// - Client: Dart (current) | Daemon: Dart v5.11.2
+// - Client: Dart (current) | Daemon: Dart v5.13.0
+Future<List<TestResult>> _test001MinusSFlag({
+  required List<ClientBinary> allClientBinaries,
+  required List<DockerInstance> allDockerInstances,
   required String testRunId,
   required String logDirectory,
 }) async {
+  List<TestResult> testResults = [];
+
   const String testName = '001_minus_s_flag';
-  final String clientVersionStr = 'd:current';
-  final String daemonVersionStr = '${daemonLanguage == ClientLanguage.dart ? "d" : "c"}:$daemonVersion';
-
-  // Only run with current client
-  final ClientBinary? clientBinary = clientBinaries.where((b) =>
-      b.binaryType == ClientBinaryType.sshnp &&
-      b.language == ClientLanguage.dart &&
-      b.version == 'current'
-  ).firstOrNull;
-
-  if (clientBinary == null) {
-    print('Skipping $testName [$clientVersionStr -> $daemonVersionStr]: current client not found');
-    return TestResult(
-      testName: testName,
-      clientVersion: clientVersionStr,
-      daemonVersion: daemonVersionStr,
-      status: TestStatus.skipped,
-    );
-  }
-
-  print('Running $testName [$clientVersionStr -> $daemonVersionStr]');
-
-  // For now, return a placeholder result
-  // TODO: Implement actual test logic
-
-  final result = TestResult(
-    testName: testName,
-    clientVersion: clientVersionStr,
-    daemonVersion: daemonVersionStr,
-    status: TestStatus.skipped,
-    stdout: 'Test not yet implemented',
+  const List<String> clientVersions = [
+    'd:current',
+  ];
+  const List<String> daemonVersions = [
+    'd:current',
+    'c:current',
+    'd:v5.9.4',
+    'd:v5.11.2',
+    'd:v5.13.0',
+  ];
+  final List<ClientBinary> matchingClientBinaries = _getMatchingClientBinaries(
+    allClientBinaries: allClientBinaries,
+    clientVersions: clientVersions,
+  );
+  final List<DockerInstance> matchingDockerInstances = _getMatchingDockerInstancaes(
+    allDockerInstances: allDockerInstances,
+    daemonVersions: daemonVersions,
   );
 
-  if (result.status == TestStatus.passed) {
-    print('\tTEST PASSED');
+  if (matchingClientBinaries.isEmpty) {
+    throw Exception('Required client binary not found for test $testName: sshnp, Dart, current');
+  }
+  final ClientBinary clientBinary = matchingClientBinaries.firstWhere((binary) =>
+    binary.binaryType == ClientBinaryType.sshnp &&
+    binary.language == ClientLanguage.dart &&
+    binary.version == 'current'
+  );
+
+  _generateNewSshKey(testRunId: testRunId);
+
+  for(final DockerInstance dockerInstance in matchingDockerInstances) {
+    final String daemonVersion = '${dockerInstance.dockerImage.language == Language.dart ? 'd' : 'c'}:${dockerInstance.dockerImage.tag}';
+    print('\nRunning test $testName with client ${clientBinary.version} against daemon $daemonVersion');
   }
 
-  return result;
+}
+
+List<ClientBinary> _getMatchingClientBinaries({
+  required List<ClientBinary> allClientBinaries,
+  required List<String> clientVersions,
+}) {
+  List<ClientBinary> matchingBinaries = [];
+  for (final String clientVersion in clientVersions) {
+    final List<ClientBinary> matches = allClientBinaries.where((binary) =>
+      binary.version == clientVersion.split(':')[1] &&
+      binary.language == (clientVersion.startsWith('d:') ? ClientLanguage.dart : ClientLanguage.c)
+    ).toList();
+
+    if (matches.isEmpty) {
+      print('WARNING: No matching client binary found for client version $clientVersion');
+    } else {
+      matchingBinaries.addAll(matches);
+    }
+  }
+  return matchingBinaries;
+}
+
+List<DockerInstance> _getMatchingDockerInstancaes({
+  required List<DockerInstance> allDockerInstances,
+  required List<String> daemonVersions,
+}) {
+  List<DockerInstance> matchingInstances = [];
+  for (final String daemonVersion in daemonVersions) {
+    final List<DockerInstance> matches = allDockerInstances.where((instance) =>
+      instance.dockerImage.tag == daemonVersion.split(':')[1] &&
+      instance.dockerImage.language == (daemonVersion.startsWith('d:') ? Language.dart : Language.c)
+    ).toList();
+
+    if (matches.isEmpty) {
+      print('WARNING: No matching Docker instance found for daemon version $daemonVersion');
+    } else {
+      matchingInstances.addAll(matches);
+    }
+  }
+  return matchingInstances;
+}
+
+void _generateNewSshKey({required final String testRunId}) {
+  // mkdir -p $HOME/.ssh
+  final String sshDirPath = '${Platform.environment['HOME']}/.ssh';
+  final Directory sshDir = Directory(sshDirPath);
+  if (!sshDir.existsSync()) {
+    sshDir.createSync(recursive: true);
+    print('Created .ssh directory at $sshDirPath');
+  }
+
+  // chmod go-rwx $HOME/.ssh (remove group and other permissions)
+  // TODO make OS fluid
+  Process.runSync('chmod', ['go-rwx', sshDirPath]);
+
+  // touch authkeysFile = $HOME/.ssh/authorized_keys
+  final String authKeysFilePath = '$sshDirPath/authorized_keys';
+  final File authKeysFile = File(authKeysFilePath);
+  if (!authKeysFile.existsSync()) {
+    authKeysFile.createSync();
+    print('Created authorized_keys file at $authKeysFilePath');
+  }
+
+  // chmod go-rwx $HOME/.ssh/authorized_keys
+  // TODO make OS fluid
+  Process.runSync('chmod', ['go-rwx', authKeysFilePath]);
+
+  // identityFileName = $HOME/.ssh/e2e_all.${testRunId}
+  final String identityFileName = '$sshDirPath/e2e_all.$testRunId';
+
+  // ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$testRunId"
+  final ProcessResult keyGenResult = Process.runSync(
+    'ssh-keygen',
+    ['-t', 'ed25519', '-q', '-N', '', '-f', identityFileName, '-C', testRunId],
+  );
+
+  if (keyGenResult.exitCode != 0) {
+    throw Exception('Failed to generate SSH key: ${keyGenResult.stderr}');
+  }
+
+  // print('Generated SSH key: $identityFileName');
+
+  // Read the public key and append it to authorized_keys
+  final String publicKey = File('$identityFileName.pub').readAsStringSync().trim();
+  authKeysFile.writeAsStringSync('$publicKey\n', mode: FileMode.append);
+  print('Added public key to authorized_keys');
 }
 

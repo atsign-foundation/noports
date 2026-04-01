@@ -1,7 +1,6 @@
 enum TestStatus {
   passed,
   failed,
-  skipped,
 }
 
 class TestResult {
