@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:e2e_all_v2/apkam_setup.dart';
 import 'package:e2e_all_v2/client_binaries.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/test_result.dart';
@@ -10,6 +11,7 @@ Future<void> runCoreTestCases({
   required final String daemonAtSign,
   required final String clientAtSign,
   required final VolumeMapping atKeysVolumeMapping,
+  required final String atDirectoryHost,
 }) async {
 
   // Goals:
@@ -67,6 +69,67 @@ Future<void> runCoreTestCases({
     print('  ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version}');
   }
   // End Phase 1
+
+  // Start Phase 1.5 - APKAM Enrollment
+  print('\n========== Phase 1.5: APKAM Enrollment ==========\n');
+
+  // Create apkam keys directory under testRunId
+  final Directory apkamKeysDirectory = Directory('apkam_keys/$testRunId');
+  if (!apkamKeysDirectory.existsSync()) {
+    apkamKeysDirectory.createSync(recursive: true);
+    print('Created APKAM keys directory: ${apkamKeysDirectory.path}');
+  }
+
+  // Ensure at_activate binary is available
+  final ClientBinary atActivateBinary = clientBinaryManager.getBinary(
+    binaryType: ClientBinaryType.at_activate,
+    language: ClientLanguage.dart,
+    version: 'current',
+  );
+
+  if (!atActivateBinary.exists()) {
+    print('at_activate binary not found, compiling...');
+    final Process compileProcess = await atActivateBinary.compile(logDirectory: logDirectory);
+    final int compileExitCode = await compileProcess.exitCode;
+    if (compileExitCode != 0) {
+      throw Exception('Failed to compile at_activate binary');
+    }
+  }
+
+  // Enroll client atsign
+  print('Enrolling client atsign: $clientAtSign');
+  final int clientEnrollExitCode = await enroll(
+    apkamKeysDirectory: apkamKeysDirectory,
+    atsign: clientAtSign,
+    which: 'client',
+    atActivateClientBinary: atActivateBinary,
+    atDirectoryHost: atDirectoryHost,
+    testRunId: testRunId,
+  );
+
+  if (clientEnrollExitCode != 0) {
+    throw Exception('Failed to enroll client atsign: $clientAtSign (exit code: $clientEnrollExitCode)');
+  }
+  print('Successfully enrolled client atsign: $clientAtSign');
+
+  // Enroll daemon atsign
+  print('Enrolling daemon atsign: $daemonAtSign');
+  final int daemonEnrollExitCode = await enroll(
+    apkamKeysDirectory: apkamKeysDirectory,
+    atsign: daemonAtSign,
+    which: 'daemon',
+    atActivateClientBinary: atActivateBinary,
+    atDirectoryHost: atDirectoryHost,
+    testRunId: testRunId,
+  );
+
+  if (daemonEnrollExitCode != 0) {
+    throw Exception('Failed to enroll daemon atsign: $daemonAtSign (exit code: $daemonEnrollExitCode)');
+  }
+  print('Successfully enrolled daemon atsign: $daemonAtSign');
+
+  print('\n========== End Phase 1.5 ==========\n');
+  // End Phase 1.5
 
   // Start Phase 2
   List<(ClientLanguage, String)> parsedDaemonVersions = [];
@@ -141,6 +204,7 @@ Future<void> runCoreTestCases({
     final DockerInstance dockerInstance1 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
+      uniqueIdentifier: 'f',
     );
 
     print('Starting Docker instance: ${dockerInstance1.containerName}');
@@ -158,9 +222,30 @@ Future<void> runCoreTestCases({
           '-s -u',
       ],
     );
-
     dockerInstances.add(dockerInstance1);
     print('Started Docker instance: ${dockerInstance1.containerName}');
+
+    // 2. create a docker instance without -s -u (container 2)
+    final DockerInstance dockerInstance2 = DockerInstance(
+      dockerImage: dockerImage,
+      testRunId: testRunId,
+    );
+    print('Starting Docker instance: ${dockerInstance2.containerName}');
+    await dockerInstance2.run(
+      quiet: false,
+      volumeMappings: [atKeysVolumeMapping],
+      removeWhenStopped: true,
+      logDirectory: logDirectory,
+      entrypoint: [
+        '/bin/bash',
+        '-c',
+        'sudo service ssh start && '
+          'sshnpd -a $daemonAtSign -m $clientAtSign -v '
+          '-d ${deviceNameWithoutFlags}',
+      ],
+    );
+    dockerInstances.add(dockerInstance2);
+    print('Started Docker instance: ${dockerInstance2.containerName}');
   }
 
   print('Running Docker instances: ${dockerInstances.length}');
@@ -176,17 +261,15 @@ Future<void> runCoreTestCases({
   print('\n========== Running Tests ==========\n');
 
   // Test #1: 001_minus_s_flag (only runs with current client)
-  for (final (daemonLanguage, daemonVersion) in parsedDaemonVersions) {
-    final result = await _test001MinusSFlag(
-      allClientBinaries: clientBinaries,
-      allDockerInstances: dockerInstances,
-      daemonLanguage: daemonLanguage,
-      daemonVersion: daemonVersion,
-      testRunId: testRunId,
-      logDirectory: logDirectory,
-    );
-    if (result != null) testResults.add(result);
-  }
+  List<TestResult> result = await _test001MinusSFlag(
+    allClientBinaries: clientBinaries,
+    allDockerInstances: dockerInstances,
+    testRunId: testRunId,
+    logDirectory: logDirectory,
+    clientAtSign: clientAtSign,
+    daemonAtSign: daemonAtSign,
+    apkamKeysDirectory: apkamKeysDirectory,
+  );
 
   // TODO: Add remaining tests following the same pattern
 
@@ -346,6 +429,9 @@ Future<List<TestResult>> _test001MinusSFlag({
   required List<DockerInstance> allDockerInstances,
   required String testRunId,
   required String logDirectory,
+  required String clientAtSign,
+  required String daemonAtSign,
+  required Directory apkamKeysDirectory,
 }) async {
   List<TestResult> testResults = [];
 
@@ -383,8 +469,70 @@ Future<List<TestResult>> _test001MinusSFlag({
   for(final DockerInstance dockerInstance in matchingDockerInstances) {
     final String daemonVersion = '${dockerInstance.dockerImage.language == Language.dart ? 'd' : 'c'}:${dockerInstance.dockerImage.tag}';
     print('\nRunning test $testName with client ${clientBinary.version} against daemon $daemonVersion');
+    List<String> extraFlags = [];
+
+    // 1. add -x or -x --no-ad --no-et
+    switch(dockerInstance.dockerImage.language) {
+      case(Language.dart): {
+        if(versionIsAtLeast(versionToCheck: dockerInstance.dockerImage.tag, minimumVersion: 'v5.0.0')) {
+          extraFlags.add('-x --no-ad --no-et');
+        }
+        break;
+      }
+      case(Language.c): {
+        extraFlags.add('-x');
+        break;
+      }
+      default: {
+        throw Exception('Unsupported language: ${dockerInstance.dockerImage.language}');
+      }
+    }
+    // 2. Add -k
+    if(versionIsAtLeast(versionToCheck: dockerInstance.dockerImage.tag, 
+      minimumVersion: 'v5.3.0')) {
+      final String apkamApp = 'e2e_all';
+      final String apkamDeviceName = 'client_$testRunId';
+      final String apkamKeysFileName = '${apkamKeysDirectory.path}/${clientAtSign}.${apkamApp}.${apkamDeviceName}.atKeys';
+      extraFlags.add('-k $apkamKeysFileName');
+    }
+
+    // 3. Run sshnp without flags, expect failure
+    final ProcessResult resultWithSFlag = Process.run(
+      clientBinary.binaryPath,
+      [
+        '-f', clientAtSign,
+        '-t', daemonAtSign,
+        '-d', 
+        '-s',
+        ...extraFlags,
+      ],
+    );
+
+
+}
+
+bool versionIsAtLeast({
+  required String versionToCheck,
+  required String minimumVersion,
+}) {
+  List<int> parseVersion(String version) {
+    return version.split('.').map(int.parse).toList();
   }
 
+  final List<int> toCheck = parseVersion(versionToCheck);
+  final List<int> minimum = parseVersion(minimumVersion);
+
+  for (int i = 0; i < minimum.length; i++) {
+    if (toCheck.length <= i) {
+      return false; // versionToCheck has fewer segments than minimumVersion
+    }
+    if (toCheck[i] > minimum[i]) {
+      return true;
+    } else if (toCheck[i] < minimum[i]) {
+      return false;
+    }
+  }
+  return true; // versions are equal
 }
 
 List<ClientBinary> _getMatchingClientBinaries({
@@ -464,12 +612,5 @@ void _generateNewSshKey({required final String testRunId}) {
   if (keyGenResult.exitCode != 0) {
     throw Exception('Failed to generate SSH key: ${keyGenResult.stderr}');
   }
-
-  // print('Generated SSH key: $identityFileName');
-
-  // Read the public key and append it to authorized_keys
-  final String publicKey = File('$identityFileName.pub').readAsStringSync().trim();
-  authKeysFile.writeAsStringSync('$publicKey\n', mode: FileMode.append);
-  print('Added public key to authorized_keys');
 }
 

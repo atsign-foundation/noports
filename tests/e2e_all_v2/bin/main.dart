@@ -22,15 +22,19 @@ Future<int> main(List<String> args) async {
 
   final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
 
+  // Create logs and binaries directories under testRunId folder
+  final String logDirectory = '${e2eAllV2Params.logDirectory}/$testRunId';
+
   runCoreTestCases(
     testRunId: testRunId,
-    logDirectory: e2eAllV2Params.logDirectory,
+    logDirectory: logDirectory,
     clientAtSign: e2eAllV2Params.clientAtsign,
     daemonAtSign: e2eAllV2Params.daemonAtsign,
     atKeysVolumeMapping: VolumeMapping(
       localDirectory: Directory('${getHomeDirectory()}/.atsign/keys/'),
       containerDirectory: Directory('/atsign/.atsign/keys/'),
     ),
+    atDirectoryHost: e2eAllV2Params.rootDomain,
   );
 
   return 0;

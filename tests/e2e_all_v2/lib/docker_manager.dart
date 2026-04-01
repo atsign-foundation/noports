@@ -194,8 +194,12 @@ class DockerInstance {
   DockerInstance({
     required this.dockerImage,
     required this.testRunId,
+    String uniqueIdentifier = '',
   }) {
     containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$testRunId';
+    if(uniqueIdentifier.isNotEmpty) {
+      containerName += '_$uniqueIdentifier';  
+    }
   }
 
   // Read stdout logs from file

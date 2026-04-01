@@ -9,6 +9,7 @@ enum ClientBinaryType {
   npt,
   srv,
   npp_client,
+  at_activate,
 }
 
 enum ClientLanguage {
@@ -44,23 +45,13 @@ class ClientBinary {
   }
 
   String _getBinaryPath() {
-    // Release binaries are cached globally (not per test run)
-    // Current/compiled binaries are per test run
-    if (version == 'current') {
-      return path.join(
-        'binaries',
-        testRunId,
-        '${language.name}_$version',
-        binaryName,
-      );
-    } else {
-      return path.join(
-        'binaries',
-        'releases',
-        '${language.name}_$version',
-        binaryName,
-      );
-    }
+    // All binaries go under testRunId folder now
+    return path.join(
+      'binaries',
+      testRunId,
+      '${language.name}_$version',
+      binaryName,
+    );
   }
 
   bool exists() {
@@ -311,6 +302,8 @@ class ClientBinary {
         return 'packages/dart/sshnoports/bin/srv.dart';
       case ClientBinaryType.npp_client:
         return 'packages/dart/sshnoports/bin/npp_client.dart';
+      case ClientBinaryType.at_activate:
+        return 'packages/dart/sshnoports/bin/at_activate.dart';
     }
   }
 
