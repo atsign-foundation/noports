@@ -34,7 +34,7 @@ void main() {
         username: 'testuser',
         homeDirectory: '/home/testuser',
         device: 'testdevice',
-        managerAtsigns: ['@manager'],
+        managerAtsigns: ['@manager'.toAtsign()],
         policyManagerAtsign: null,
         sshClient: SupportedSshClient.openssh,
         makeDeviceInfoVisible: false,

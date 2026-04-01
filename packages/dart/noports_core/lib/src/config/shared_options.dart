@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:at_client/at_client.dart';
 import 'package:config/config.dart';
 
 class SharedOptions {
@@ -16,9 +19,10 @@ class SharedOptions {
     group: atsignGroup,
   );
 
-  static const ConfigOptionBase<String> storagePath = StringOption(
+  static const ConfigOptionBase<Directory> storagePath = DirOption(
     argName: 'storage-path',
     configKey: '/runtime/storage-path',
+    argAliases: ['storage-dir'],
     mandatory: false,
     helpText:
         'Directory for local storage.'
@@ -81,10 +85,18 @@ class SharedOptions {
     helpText: 'All logging (FINEST and above)',
     group: runtimeGroup,
   );
+
+  static const ConfigOptionBase<bool> version = FlagOption(
+    argName: 'version',
+    configKey: '/runtime/version',
+    defaultsTo: false,
+    helpText: 'Show version',
+    group: runtimeGroup,
+  );
 }
 
 class AtsignParams {
-  final String atSign;
+  final Atsign atSign;
   final String rootDomain;
   final String passPhrase;
   final String atKeysFilePath;

@@ -5,13 +5,13 @@ import 'package:config/config.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:yaml/yaml.dart';
 
-const OptionGroup mainGroup = OptionGroup("atSign Options");
+import '../config/shared_options.dart';
+
 const OptionGroup deviceConfigGroup = OptionGroup(
   "Device Configuration Options",
 );
 const OptionGroup accessControlGroup = OptionGroup("Access Control Options");
 const OptionGroup sshGroup = OptionGroup("Sshd Configuration Options");
-const OptionGroup runtimeGroup = OptionGroup("Runtime Options");
 
 File _defaultConfigFilePath() {
   switch (Platform.operatingSystem) {
@@ -35,63 +35,15 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       fromDefault: _defaultConfigFilePath,
       mandatory: false,
       mode: PathExistMode.mayExist,
-      group: runtimeGroup,
+      group: SharedOptions.runtimeGroup,
     ),
   ),
 
   // atSign Options Group
-  keyfile(
-    StringOption(
-      argName: 'key-file',
-      configKey: '/atsign/keys',
-      argAliases: ['keyFile'],
-      argAbbrev: 'k',
-      mandatory: false,
-      helpText:
-          'Sending atSign\'s keyFile if not in ~/.atsign/keys/'
-          '  Alias: --keyFile',
-      group: mainGroup,
-    ),
-  ),
-
-  passPhrase(
-    StringOption(
-      argName: 'pass-phrase',
-      configKey: '/atsign/passphrase',
-      argAliases: ['passPhrase'],
-      argAbbrev: 'P',
-      mandatory: false,
-      defaultsTo: '',
-      helpText:
-          'Pass phrase to encrypt/decrypt the password protected atKeys file',
-      hide: true,
-    ),
-  ),
-
-  atsign(
-    StringOption(
-      argName: 'atsign',
-      configKey: '/atsign/atsign',
-      argAbbrev: 'a',
-      mandatory: true,
-      helpText: 'atSign of this device',
-      group: mainGroup,
-    ),
-  ),
-
-  rootServer(
-    StringOption(
-      argName: 'root-server',
-      configKey: '/atsign/root',
-      argAliases: ['root-domain'],
-      mandatory: false,
-      defaultsTo: 'root.atsign.org',
-      helpText:
-          'atDirectory domain.'
-          ' Alias (for backwards compatibility): --root-domain',
-      group: mainGroup,
-    ),
-  ),
+  keyfile(SharedOptions.keyfile),
+  passPhrase(SharedOptions.passPhrase),
+  atsign(SharedOptions.atsign),
+  rootServer(SharedOptions.rootServer),
 
   // Access Control Group
   managers(
@@ -280,17 +232,11 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
   ),
 
   // Runtime Options
-  storagePath(
-    DirOption(
-      argName: 'storage-path',
-      configKey: '/runtime/storage-path',
-      mandatory: false,
-      helpText:
-          'Directory for local storage.'
-          r' Defaults to $HOME/.atsign/storage/$atSign/.npd/$deviceName/',
-      group: runtimeGroup,
-    ),
-  ),
+  storagePath(SharedOptions.storagePath),
+  verbose(SharedOptions.verbose),
+  debug(SharedOptions.debug),
+  help(SharedOptions.help),
+  version(SharedOptions.version),
 
   clearCachedPks(
     FlagOption(
@@ -299,7 +245,7 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       helpText: 'Clear cached public keys',
       hide: true,
       defaultsTo: false,
-      group: runtimeGroup,
+      group: SharedOptions.runtimeGroup,
     ),
   ),
 
@@ -315,56 +261,19 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
           ' previous request was handled, the request will be rejected.',
       hide: false,
       defaultsTo: null,
-      group: runtimeGroup,
+      group: SharedOptions.runtimeGroup,
     ),
   ),
 
-  verbose(
-    FlagOption(
-      argName: 'verbose',
-      configKey: '/runtime/verbose',
-      argAbbrev: 'v',
-      defaultsTo: false,
-      helpText: 'More logging (INFO and above)',
-      group: runtimeGroup,
-    ),
-  ),
-
-  debug(
-    FlagOption(
-      argName: 'debug',
-      configKey: '/runtime/debug',
-      defaultsTo: false,
-      helpText: 'All logging (FINEST and above)',
-      group: runtimeGroup,
-    ),
-  ),
-
-  help(
-    FlagOption(
-      argName: 'help',
-      defaultsTo: false,
-      helpText: 'Show usage',
-      group: runtimeGroup,
-    ),
-  ),
-
-  version(
-    FlagOption(
-      argName: 'version',
-      defaultsTo: false,
-      helpText: 'Show version',
-      group: runtimeGroup,
-    ),
-  ),
   doctor(
     FlagOption(
       argName: 'doctor',
       defaultsTo: false,
       helpText: 'Run the doctor',
-      group: runtimeGroup,
+      group: SharedOptions.runtimeGroup,
     ),
   ),
+
   output(
     FlagOption(
       argName: 'output',
@@ -374,10 +283,9 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
           'Save doctor report to a file. Only valid when used with --doctor.'
           ' Defaults to sshnpd_doctor_log.txt.'
           ' A custom filename can be provided as an additional argument.',
-      group: runtimeGroup,
+      group: SharedOptions.runtimeGroup,
     ),
   );
-
 
   const SshnpdOption(this.option);
 
