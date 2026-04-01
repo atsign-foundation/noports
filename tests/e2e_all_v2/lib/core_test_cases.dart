@@ -14,6 +14,7 @@ Future<void> runCoreTestCases({
   //  run Dart (current), v5.9.4, v5.11.2, v5.13.0, and C (current) in Docker containers
   // 3. Run tests via executing Client binaries, and save logs
 
+  // Start Phase 1
   // assume Dart
   const List<String> clientVersions = [
     'v5.9.4',
@@ -37,6 +38,7 @@ Future<void> runCoreTestCases({
   for(final ClientBinary clientBinary in clientBinaries) {
     print('  ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version}');
   }
+  // End Phase 1
 
   // Test coverage
 
