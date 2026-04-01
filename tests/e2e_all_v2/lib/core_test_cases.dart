@@ -14,21 +14,43 @@ Future<void> runCoreTestCases({
   //  run Dart (current), v5.9.4, v5.11.2, v5.13.0, and C (current) in Docker containers
   // 3. Run tests via executing Client binaries, and save logs
 
+  const List<String> clientVersions = [
+    'd:v5.9.4',
+    'd:v5.11.2',
+    'd:v5.13.0',
+    'd:current',
+  ];
+
+  const List<String> daemonVersions = [
+    'd:current',
+    'c:current',
+    'd:v5.9.4',
+    'd:v5.11.2',
+    'd:v5.13.0',
+  ];
   // Start Phase 1
   // assume Dart
-  const List<String> clientVersions = [
-    'v5.9.4',
-    'v5.11.2',
-    'v5.13.0',
-    'current',
-  ];
 
   ClientBinaryManager clientBinaryManager =
     ClientBinaryManager(testRunId: testRunId);
 
+  // Parse client versions to extract language and version
+  List<(ClientLanguage, String)> parsedClientVersions = [];
+  for (final String clientVersion in clientVersions) {
+    final List<String> parts = clientVersion.split(':');
+    if (parts.length != 2) {
+      throw Exception('Invalid client version format: $clientVersion. Expected format: "d:v5.9.4" or "c:current"');
+    }
+    final ClientLanguage language = parts[0] == 'd' ? ClientLanguage.dart : ClientLanguage.c;
+    final String version = parts[1];
+    parsedClientVersions.add((language, version));
+  }
+
   List<(ClientBinaryType, ClientLanguage, String)> requiredBinaries = [];
-  requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.sshnp, ClientLanguage.dart, clientVersion)).toSet());
-  requiredBinaries.addAll(clientVersions.map((clientVersion) => (ClientBinaryType.npt, ClientLanguage.dart, clientVersion)).toSet());
+  for (final (language, version) in parsedClientVersions) {
+    requiredBinaries.add((ClientBinaryType.sshnp, language, version));
+    requiredBinaries.add((ClientBinaryType.npt, language, version));
+  }
 
   List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
     required: requiredBinaries,
@@ -39,6 +61,24 @@ Future<void> runCoreTestCases({
     print('  ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version}');
   }
   // End Phase 1
+
+  // Start Phase 2
+  List<(ClientLanguage, String)> parsedDaemonVersions = [];
+  for (final String daemonVersion in daemonVersions) {
+    final List<String> parts = daemonVersion.split(':');
+    if (parts.length != 2) {
+      throw Exception('Invalid daemon version format: $daemonVersion. Expected format: "d:v5.9.4" or "c:current"');
+    }
+    final ClientLanguage language = parts[0] == 'd' ? ClientLanguage.dart : ClientLanguage.c;
+    final String version = parts[1];
+    parsedDaemonVersions.add((language, version));
+  }
+
+  print('Parsed daemon versions: length=${parsedDaemonVersions.length}');
+  for (final (language, version) in parsedDaemonVersions) {
+    print('  ${language.name} | $version');
+  }
+  // End Phase 2
 
   // Test coverage
 
