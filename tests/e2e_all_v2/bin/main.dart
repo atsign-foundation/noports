@@ -7,7 +7,6 @@ import 'package:e2e_all_v2/params.dart';
 
 
 Future<int> main(List<String> args) async {
-  logger = AtSignLogger('e2e_all_v2');
   E2EAllV2Params e2eAllV2Params;
   try {
     e2eAllV2Params = E2EAllV2Params.parse(args);

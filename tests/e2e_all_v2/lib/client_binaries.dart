@@ -44,12 +44,23 @@ class ClientBinary {
   }
 
   String _getBinaryPath() {
-    return path.join(
-      'binaries',
-      testRunId,
-      '${language.name}_$version',
-      binaryName,
-    );
+    // Release binaries are cached globally (not per test run)
+    // Current/compiled binaries are per test run
+    if (version == 'current') {
+      return path.join(
+        'binaries',
+        testRunId,
+        '${language.name}_$version',
+        binaryName,
+      );
+    } else {
+      return path.join(
+        'binaries',
+        'releases',
+        '${language.name}_$version',
+        binaryName,
+      );
+    }
   }
 
   bool exists() {
@@ -75,9 +86,9 @@ class ClientBinary {
     final File binaryFile = File(binaryPath);
     await binaryFile.parent.create(recursive: true);
 
-    // Download archive to temp location
-    final String tempDir = path.join(binaryFile.parent.path, 'temp_$archiveName');
-    final String archivePath = path.join(Directory.systemTemp.path, archiveName);
+    // Download archive to project temp location
+    final String tempDir = path.join(binaryFile.parent.path, 'temp_extract');
+    final String archivePath = path.join(binaryFile.parent.path, archiveName);
 
     final List<String> curlArgs = [
       '-L',

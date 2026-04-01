@@ -78,11 +78,6 @@ Future<void> runCoreTestCases({
     parsedDaemonVersions.add((language, version));
   }
 
-  print('Parsed daemon versions: length=${parsedDaemonVersions.length}');
-  for (final (language, version) in parsedDaemonVersions) {
-    print('  ${language.name} | $version');
-  }
-
   // Build/pull Docker images for each daemon version
   List<DockerImage> dockerImages = [];
   for (final (language, version) in parsedDaemonVersions) {
@@ -221,6 +216,19 @@ Future<void> runCoreTestCases({
   } else {
     print('\n✓ All tests passed!');
   }
+
+  // Tear down Docker instances
+  print('\n========== Tearing Down Docker Instances ==========\n');
+  for (final instance in dockerInstances) {
+    print('Stopping Docker instance: ${instance.containerName}');
+    final int stopExitCode = await instance.stop(logDirectory: logDirectory);
+    if (stopExitCode == 0) {
+      print('Stopped: ${instance.containerName}');
+    } else {
+      print('Failed to stop: ${instance.containerName} (exit code: $stopExitCode)');
+    }
+  }
+  print('All Docker instances stopped.');
 
   // Test coverage
 
@@ -362,12 +370,19 @@ Future<TestResult?> _test001MinusSFlag({
 
   // For now, return a placeholder result
   // TODO: Implement actual test logic
-  return TestResult(
+
+  final result = TestResult(
     testName: testName,
     clientVersion: clientVersionStr,
     daemonVersion: daemonVersionStr,
     status: TestStatus.skipped,
     stdout: 'Test not yet implemented',
   );
+
+  if (result.status == TestStatus.passed) {
+    print('\tTEST PASSED');
+  }
+
+  return result;
 }
 
