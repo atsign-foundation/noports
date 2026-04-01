@@ -2099,8 +2099,8 @@ Future<AesKeyBundle> genBundle(
       AtChops atChops = AtChopsImpl(
         AtChopsKeys.create(AtEncryptionKeyPair.create(encPubKey, 'n/a'), null),
       );
-      aesKeyEncrypted = atChops.encryptString(aesKey, encKeyType).result;
-      ivEncrypted = atChops.encryptString(iv, encKeyType).result;
+      aesKeyEncrypted = (await atChops.encryptString(aesKey, encKeyType)).result;
+      ivEncrypted = (await atChops.encryptString(iv, encKeyType)).result;
       break;
     default:
       throw Exception('No handling for ephemeralPKType $encKeyType');

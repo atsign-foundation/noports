@@ -1,10 +1,7 @@
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart'
-    show
-        ApprovedRequestDecisionBuilder,
-        EnrollmentRequestDecision,
-        AtEnrollmentResponse;
+    show EnrollmentRequestDecision, AtEnrollmentResponse;
 import 'package:at_client/at_client.dart'
     show
         EnrollmentService,
@@ -14,6 +11,8 @@ import 'package:at_client/at_client.dart'
         EnrollmentStatus,
         AtEnrollmentException,
         AtClient;
+import 'package:at_commons/at_commons.dart' show AtBytes;
+import 'package:at_commons/atsign.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
@@ -88,13 +87,19 @@ class IssueKeys {
     // Check for matching pending enrollment, approve if found | works like a resume
     final existingEnrollment = await fetchMatchingEnrollment();
     if (existingEnrollment != null) {
-      await approveEnrollment(existingEnrollment);
+      await approveEnrollment(
+        existingEnrollment,
+        _atClient!.getCurrentAtSign()!.toAtsign(),
+      );
     } else {
       await generateOTP();
       ensureDeviceName();
       _displayActivationCommand();
       final enrollment = await waitForMatchingEnrollment();
-      await approveEnrollment(enrollment);
+      await approveEnrollment(
+        enrollment,
+        _atClient!.getCurrentAtSign()!.toAtsign(),
+      );
     }
 
     return 0;
@@ -127,8 +132,10 @@ class IssueKeys {
 
   @visibleForTesting
   Future<void> generateOTP() async {
-    params.otp =
-        await requestEnrollmentOtp(_atClient!, otpExpiry: _otpExpiryString);
+    params.otp = await requestEnrollmentOtp(
+      _atClient!,
+      otpExpiry: _otpExpiryString,
+    );
   }
 
   /// Uses "noports_<otp>" as fallback device name
@@ -164,15 +171,16 @@ class IssueKeys {
   }
 
   @visibleForTesting
-  Future<void> approveEnrollment(Enrollment enrollment) async {
+  Future<void> approveEnrollment(Enrollment enrollment, Atsign atSign) async {
     logger.info('Approving enrollment...');
 
-    final decisionBuilder = ApprovedRequestDecisionBuilder(
+    final decision = EnrollmentRequestDecision.approved(
       enrollmentId: enrollment.enrollmentId!,
-      encryptedAPKAMSymmetricKey: enrollment.encryptedAPKAMSymmetricKey!,
+      apkamSymmetricKey: AtBytes.fromString(
+        enrollment.encryptedAPKAMSymmetricKey!,
+      ),
+      atSign: atSign,
     );
-
-    final decision = EnrollmentRequestDecision.approved(decisionBuilder);
     AtEnrollmentResponse er = await _enrollmentService!.approve(decision);
 
     if (er.enrollStatus != EnrollmentStatus.approved) {

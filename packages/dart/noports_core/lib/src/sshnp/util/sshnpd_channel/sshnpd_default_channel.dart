@@ -88,11 +88,11 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
       if (aesKeyC2DEncrypted != null && ivC2DEncrypted != null) {
         atChops ??= AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
-        aesC2D = atChops
-            .decryptString(aesKeyC2DEncrypted, params.sessionKPType)
+        aesC2D = (await atChops
+            .decryptString(aesKeyC2DEncrypted, params.sessionKPType))
             .result;
-        ivC2D = atChops
-            .decryptString(ivC2DEncrypted, params.sessionKPType)
+        ivC2D = (await atChops
+            .decryptString(ivC2DEncrypted, params.sessionKPType))
             .result;
       }
 
@@ -104,11 +104,11 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
 
       if (aesKeyD2CEncrypted != null && ivD2CEncrypted != null) {
         atChops ??= AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
-        aesD2C = atChops
-            .decryptString(aesKeyD2CEncrypted, params.sessionKPType)
+        aesD2C = (await atChops
+            .decryptString(aesKeyD2CEncrypted, params.sessionKPType))
             .result;
-        ivD2C = atChops
-            .decryptString(ivD2CEncrypted, params.sessionKPType)
+        ivD2C = (await atChops
+            .decryptString(ivD2CEncrypted, params.sessionKPType))
             .result;
       }
 
