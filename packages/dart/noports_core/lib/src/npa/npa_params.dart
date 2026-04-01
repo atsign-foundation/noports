@@ -1,111 +1,74 @@
-import 'dart:io';
-
-import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
+import 'package:config/config.dart';
+import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/config/shared_options.dart';
+import 'package:noports_core/src/npa/npa_config.dart';
 
-class NPAParams {
-  final String policyAtsign;
-  final String atKeysFilePath;
-  final bool verbose;
-  final String rootDomain;
+class NPAParams extends AtsignParams {
   final String homeDirectory;
-  final String? eventLoggingAtsign;
-  final String? storagePath;
+  final Atsign? eventLoggingAtsign;
 
-  // Non param variables
-  static final ArgParser parser = _createArgParser();
+  Atsign get policyAtsign => atSign;
 
   NPAParams({
-    required this.policyAtsign,
-    required this.atKeysFilePath,
-    required this.verbose,
-    required this.rootDomain,
+    required super.atSign,
+    required super.atKeysFilePath,
+    required super.passPhrase,
+    required super.storagePath,
+    required super.rootDomain,
+    required super.verbose,
+    required super.debug,
     required this.homeDirectory,
     required this.eventLoggingAtsign,
-    this.storagePath,
   });
 
-  static Future<NPAParams> fromArgs(List<String> args) async {
-    // Arg check
-    ArgResults r = parser.parse(args);
+  static Future<NPAParams> fromArgs(
+    List<String> args, {
+    void Function()? helpCallback,
+    void Function()? versionCallback,
+  }) async {
+    final Configuration c = Configuration<NPAOption>.resolveNoExcept(
+      options: NPAOption.values,
+      args: args,
+      configBroker: NPAConfigBroker(),
+    );
 
-    String policyAtsign = (r['atsign'] as String).toAtsign();
-    String homeDirectory = getHomeDirectory()!;
+    if (c.value(NPAOption.version)) {
+      versionCallback?.call();
+    }
+
+    if (c.value(NPAOption.help)) {
+      helpCallback?.call();
+    }
+
+    if (c.errors.isNotEmpty) {
+      throw ArgumentError(c.errors.first);
+    }
+
+    final Atsign policyAtsign = c.value(NPAOption.atsign).toAtsign();
+    final String homeDirectory = getHomeDirectory(throwIfNull: true)!;
 
     return NPAParams(
-      policyAtsign: policyAtsign,
+      atSign: policyAtsign,
       atKeysFilePath:
-          r['key-file'] ??
+          c.optionalValue(NPAOption.keyfile) ??
           getDefaultAtKeysFilePath(homeDirectory, policyAtsign),
-      verbose: r['verbose'],
-      rootDomain: r['root-server'] ?? 'root.atsign.org',
+      passPhrase: c.optionalValue(NPAOption.passPhrase) ?? '',
+      verbose: c.value(NPAOption.verbose),
+      debug: c.value(NPAOption.debug),
+      rootDomain: c.value(NPAOption.rootServer),
       homeDirectory: homeDirectory,
-      eventLoggingAtsign: r['event-logging-atsign'],
-      storagePath: r['storage-path'],
+      eventLoggingAtsign:
+          c.optionalValue(NPAOption.eventLoggingAtsign)?.toAtsign(),
+      storagePath:
+          c.optionalValue(NPAOption.storagePath)?.path ??
+          standardAtClientStoragePath(
+            baseDir: homeDirectory,
+            atSign: policyAtsign,
+            progName: '.${DefaultArgs.namespace}',
+            uniqueID: 'single',
+          ),
     );
-  }
-
-  static ArgParser _createArgParser() {
-    int? usageLineLength = stdout.hasTerminal ? stdout.terminalColumns : null;
-    var parser = ArgParser(usageLineLength: usageLineLength);
-
-    // Basic arguments
-    parser.addFlag('help', negatable: false, help: 'Usage instructions');
-
-    parser.addOption(
-      'atsign',
-      abbr: 'a',
-      mandatory: true,
-      help: 'atSign of this policy service',
-    );
-
-    parser.addOption(
-      'event-logging-atsign',
-      abbr: 'l',
-      help: 'atSign of a noports logging service.',
-    );
-
-    // This is obsolete, thus is now hidden.
-    // For closed networks, it is best to set an allow list on the policy
-    // atSign's atServer using the `config` verb.
-    parser.addOption(
-      'daemon-atsigns',
-      mandatory: false,
-      defaultsTo: '',
-      help: 'Comma-separated list of daemon atSigns which use this service',
-      hide: true,
-    );
-
-    parser.addOption(
-      'key-file',
-      abbr: 'k',
-      mandatory: false,
-      aliases: const ['keyFile'],
-      help: 'The atSign\'s atKeys file if not in ~/.atsign/keys/',
-    );
-
-    parser.addFlag('verbose', abbr: 'v', help: 'More logging');
-
-    parser.addOption(
-      'root-server',
-      aliases: const ['root-domain'],
-      mandatory: false,
-      defaultsTo: 'root.atsign.org',
-      help: 'atDirectory domain',
-      hide: true,
-    );
-
-    parser.addOption(
-      'storage-path',
-      abbr: 's',
-      mandatory: false,
-      help:
-          'Path to atsign storage directory. Defaults to "~/.atsign/storage/<atSign>/sshnp/single/". '
-          'Running multiple CLI atClient programs with the same storage path is not supported. '
-          'An alternate storage directory can be passed through this argument when running multiple instances.',
-    );
-
-    return parser;
   }
 }

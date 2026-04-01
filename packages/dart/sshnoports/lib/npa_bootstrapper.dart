@@ -22,19 +22,25 @@ Future<void> run(
       atClientGenerator: (NPAParams p) => createAtClientCli(
         atsign: p.policyAtsign,
         atKeysFilePath: p.atKeysFilePath,
+        passPhrase: p.passPhrase,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
-        storagePath: standardAtClientStoragePath(
-            baseDir: p.homeDirectory,
-            atSign: p.policyAtsign,
-            progName: '.${DefaultArgs.namespace}',
-            uniqueID: 'single'),
+        storagePath: p.storagePath,
       ),
       usageCallback: (e, s) {
         printVersion();
-        stdout.writeln(NPAParams.parser.usage);
+        stdout.writeln(NPAOption.usage);
         stderr.writeln('\n$e');
+      },
+      helpCallback: () {
+        printVersion();
+        stdout.writeln(NPAOption.usage);
+        exit(0);
+      },
+      versionCallback: () {
+        printVersion();
+        exit(0);
       },
     );
   } on ArgumentError catch (_) {

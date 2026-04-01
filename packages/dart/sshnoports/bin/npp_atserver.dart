@@ -9,25 +9,30 @@ import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
+import 'package:sshnoports/src/print_version.dart';
 
 late AtSignLogger logger;
 
 void main(List<String> args) async {
   try {
-    if (NPAParams.parser.parse(args)['help'] == true) {
-      print(NPAParams.parser.usage);
+    if (NPAOption.argParser.parse(args)['help'] == true) {
+      print(NPAOption.usage);
+      exit(0);
+    }
+    if (NPAOption.argParser.parse(args)['version'] == true) {
+      printVersion();
       exit(0);
     }
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln('Usage: \n${NPAOption.usage}\n');
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln('Usage: \n${NPAOption.usage}\n');
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln('Usage: \n${NPAOption.usage}\n');
     stderr.writeln(err);
     exit(1);
   }
@@ -36,7 +41,7 @@ void main(List<String> args) async {
   try {
     p = await NPAParams.fromArgs(args);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.writeln('Usage: \n${NPAOption.usage}\n');
     stderr.writeln(err);
     exit(1);
   }
@@ -48,7 +53,9 @@ void main(List<String> args) async {
   }
 
   AtSignLogger.root_level = 'SHOUT';
-  if (p.verbose) {
+  if (p.debug) {
+    AtSignLogger.root_level = 'FINEST';
+  } else if (p.verbose) {
     AtSignLogger.root_level = 'INFO';
   }
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
@@ -59,15 +66,11 @@ void main(List<String> args) async {
     atClient = await createAtClientCli(
       atsign: p.policyAtsign,
       atKeysFilePath: p.atKeysFilePath,
+      passPhrase: p.passPhrase,
       rootDomain: p.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: DefaultArgs.namespace,
-      storagePath: p.storagePath ??
-          standardAtClientStoragePath(
-              baseDir: p.homeDirectory,
-              atSign: p.policyAtsign,
-              progName: '.${DefaultArgs.namespace}',
-              uniqueID: 'single'),
+      storagePath: p.storagePath,
     );
   } catch (err) {
     stderr.writeln(err);
@@ -86,10 +89,12 @@ void main(List<String> args) async {
     atClient: atClient,
     homeDirectory: p.homeDirectory,
     handler: handler,
-    eventLoggingAtsign: p.eventLoggingAtsign?.toAtsign(),
+    eventLoggingAtsign: p.eventLoggingAtsign,
   );
 
-  if (p.verbose) {
+  if (p.debug) {
+    sshnpa.logger.logger.level = Level.FINEST;
+  } else if (p.verbose) {
     sshnpa.logger.logger.level = Level.INFO;
   }
 
