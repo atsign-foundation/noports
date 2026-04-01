@@ -1,0 +1,51 @@
+# Main service's atSign authentication information
+atsign:
+  # The atsign to run the service as
+  # Examples:
+  # `atsign: '@logger_np'`
+  # `atsign: logger_np`
+  # Don't do the following, as the '@' symbol is a special character in yaml:
+  # `atsign: @logger_np`
+  # TODO: MANDATORY SETTING
+  atsign:
+
+  # The path to the .atKeys file for the atsign, only needed if not
+  # located at the default path.
+  # Default for the 'atsign' example above:
+  # `keys: ~/.atsign/keys/@logger_np_key.atKeys`
+  keys:
+
+  # The passphrase for the atKeys file if the file has been protected.
+  # Example:
+  # `passphrase: 'my-pass-phrase'`
+  passphrase:
+
+  # The root configuration for the atPlatform
+  # Examples:
+  # `root: root.atsign.org` (The default)
+  # `root: proxy:proxy0001.atsign.org:443`
+  # `root: my.enterprise.root:64`
+  root:
+
+# Logging configuration
+logging:
+  # List of atSigns with whom this listener will share logging config.
+  # The listener will then receive NoPorts session events for those atSigns.
+  # Example:
+  # logging-atsigns:
+  #   - '@alice'
+  #   - '@bob'
+  # TODO: MANDATORY SETTING
+  atsigns:
+    # - '@alice'
+
+# Additional runtime settings for the service
+runtime:
+  # Unnecessary unless you are running multiple npevents instances under the
+  # same user with the same atSign on the same host.
+  storage-path:
+
+  # Enable verbose logging.
+  # Default:
+  # `verbose: false`
+  verbose: false

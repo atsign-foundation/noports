@@ -65,7 +65,7 @@ void main() {
         atSign: relayAtSign.toAtsign(),
         homeDirectory: Directory.current.path,
         atKeysFilePath: Directory.current.path,
-        managerAtsign: 'open',
+        managerAtsign: null,
         ipAddress: '127.0.0.1',
         logTraffic: false,
         verbose: false,

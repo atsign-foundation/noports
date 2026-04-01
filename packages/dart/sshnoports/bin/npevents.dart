@@ -2,17 +2,14 @@
 import 'dart:async';
 import 'dart:io';
 
-// other packages
-import 'package:args/args.dart';
-
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_client/at_client.dart';
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
 // local packages
+import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 /// Minimal implementation of a NoPorts session events listener.
@@ -21,17 +18,9 @@ import 'package:sshnoports/src/print_version.dart';
 void main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
 
-  ArgParser parser = CLIBase.createArgsParser(
-      namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);
-  parser.addFlag('debug', help: 'maximum debug verbosity ');
-  parser.addOption('logging-atsigns',
-      abbr: 'A',
-      help: 'Comma-separated list of atSigns with whom to share logging config',
-      mandatory: true);
-
   void printUsage({Object? error}) {
     printVersion();
-    stderr.writeln(parser.usage);
+    stderr.writeln(EventsOption.usage);
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -49,15 +38,22 @@ void main(List<String> args) async {
   await runZonedGuarded(() async {
     try {
       // Parse Args
-      ArgResults parsedArgs = parser.parse(args);
+      final parsedArgs = EventsOption.argParser.parse(args);
 
       if (parsedArgs['help'] == true) {
-        print(parser.usage);
+        print(EventsOption.usage);
         exit(0);
       }
 
-      verboseLogging = parsedArgs['verbose'];
-      debugLogging = parsedArgs['debug'];
+      if (parsedArgs['version'] == true) {
+        printVersion();
+        exit(0);
+      }
+
+      final params = EventsParams.fromArgs(args);
+
+      verboseLogging = params.verbose;
+      debugLogging = params.debug;
 
       if (debugLogging) {
         AtSignLogger.root_level = 'FINEST';
@@ -76,15 +72,19 @@ void main(List<String> args) async {
         });
       }
 
-      List<Atsign> loggingAtsigns = parsedArgs['logging-atsigns']!
-          .toString()
-          .split(',')
-          .map((s) => s.toAtsign())
-          .toList();
-      CLIBase cliBase = await CLIBase.fromCommandLineArgs(args, parser: parser);
+      final loggingAtsigns = params.loggingAtsigns;
 
-      AtEventListenerService svc =
-          AtEventListenerService(atClient: cliBase.atClient);
+      final atClient = await createAtClientCli(
+        atsign: params.atSign,
+        atKeysFilePath: params.atKeysFilePath,
+        passPhrase: params.passPhrase,
+        atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+        storagePath: params.storagePath,
+        namespace: DefaultArgs.namespace,
+        rootDomain: params.rootDomain,
+      );
+
+      AtEventListenerService svc = AtEventListenerService(atClient: atClient);
       final elc = await svc.getOrCreateConfig(
           namespace: DefaultArgs.eventLoggingNamespace, ttln: 60 * 60 * 1000);
       await svc.shareEventLoggingConfigWithAtsigns(
