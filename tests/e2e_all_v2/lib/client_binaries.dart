@@ -8,11 +8,9 @@ final AtSignLogger logger = AtSignLogger('client_binaries');
 
 enum ClientBinaryType {
   sshnp,
-  sshnpd,
   npt,
-  npp,
-  srvd,
-  npa,
+  srv,
+  npp_client,
 }
 
 enum ClientLanguage {
@@ -298,16 +296,12 @@ class ClientBinary {
     switch (binaryType) {
       case ClientBinaryType.sshnp:
         return 'packages/dart/sshnoports/bin/sshnp.dart';
-      case ClientBinaryType.sshnpd:
-        return 'packages/dart/sshnoports/bin/sshnpd.dart';
       case ClientBinaryType.npt:
         return 'packages/dart/sshnoports/bin/npt.dart';
-      case ClientBinaryType.npp:
-        return 'packages/dart/sshnoports/bin/npp.dart';
-      case ClientBinaryType.srvd:
-        return 'packages/dart/sshnoports/bin/srvd.dart';
-      case ClientBinaryType.npa:
-        return 'packages/dart/sshnoports/bin/npa.dart';
+      case ClientBinaryType.srv:
+        return 'packages/dart/sshnoports/bin/srv.dart';
+      case ClientBinaryType.npp_client:
+        return 'packages/dart/sshnoports/bin/npp_client.dart';
     }
   }
 
