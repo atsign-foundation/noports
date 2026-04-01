@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:e2e_all_v2/client_binaries.dart';
+import 'package:e2e_all_v2/docker_manager.dart';
 
 Future<void> runCoreTestCases({
   required final String testRunId,
@@ -77,6 +80,86 @@ Future<void> runCoreTestCases({
   print('Parsed daemon versions: length=${parsedDaemonVersions.length}');
   for (final (language, version) in parsedDaemonVersions) {
     print('  ${language.name} | $version');
+  }
+
+  // Build/pull Docker images for each daemon version
+  List<DockerImage> dockerImages = [];
+  for (final (language, version) in parsedDaemonVersions) {
+    final Language dockerLanguage = language == ClientLanguage.dart ? Language.dart : Language.c;
+
+    DockerImage dockerImage;
+    if (version == 'current') {
+      dockerImage = DockerImage.current(language: dockerLanguage);
+    } else if (version.startsWith('v')) {
+      dockerImage = DockerImage.release(language: dockerLanguage, version: version);
+    } else {
+      dockerImage = DockerImage.branch(language: dockerLanguage, branch: version);
+    }
+
+    // Check if image exists
+    final bool existsOnMachine = await dockerImage.existsOnMachine();
+    if (!existsOnMachine) {
+      print('Docker image ${dockerImage.fullImageName} not found, attempting to pull...');
+      final Process pullProcess = await dockerImage.pull(logDirectory: logDirectory);
+      final int pullExitCode = await pullProcess.exitCode;
+
+      if (pullExitCode != 0) {
+        print('Pull failed for ${dockerImage.fullImageName}, building locally...');
+        final Process buildProcess = await dockerImage.build(
+          forceOverwriteCache: false,
+          quiet: false,
+          logDirectory: logDirectory,
+        );
+        final int buildExitCode = await buildProcess.exitCode;
+
+        if (buildExitCode == 0) {
+          print('Successfully built ${dockerImage.fullImageName}');
+          dockerImages.add(dockerImage);
+        } else {
+          print('ERROR: Failed to build ${dockerImage.fullImageName}');
+        }
+      } else {
+        print('Successfully pulled ${dockerImage.fullImageName}');
+        dockerImages.add(dockerImage);
+      }
+    } else {
+      print('Docker image ${dockerImage.fullImageName} already exists');
+      dockerImages.add(dockerImage);
+    }
+  }
+
+  print('Available Docker images: length=${dockerImages.length}');
+  for (final dockerImage in dockerImages) {
+    print('  ${dockerImage.fullImageName}');
+  }
+
+  // Start Docker instances for each daemon version
+  List<DockerInstance> dockerInstances = [];
+  for (final dockerImage in dockerImages) {
+    final DockerInstance dockerInstance = DockerInstance(
+      dockerImage: dockerImage,
+      testRunId: testRunId,
+    );
+
+    print('Starting Docker instance: ${dockerInstance.containerName}');
+    await dockerInstance.run(
+      quiet: false,
+      removeWhenStopped: true,
+      logDirectory: logDirectory,
+      entrypoint: [
+        '/bin/bash',
+        '-c',
+        'sudo service ssh start && tail -f /dev/null', // Keep container running
+      ],
+    );
+
+    dockerInstances.add(dockerInstance);
+    print('Started Docker instance: ${dockerInstance.containerName}');
+  }
+
+  print('Running Docker instances: ${dockerInstances.length}');
+  for (final instance in dockerInstances) {
+    print('  ${instance.containerName}');
   }
   // End Phase 2
 
