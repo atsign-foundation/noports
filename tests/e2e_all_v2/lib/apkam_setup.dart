@@ -145,7 +145,13 @@ Future<int> enroll({
   }
 
   // Ensure keys file exists
-  File potentiallyExistingKeysFile2 =  
+  File potentiallyExistingKeysFile2 =  File(apkamKeysFilePath);
+  if(!potentiallyExistingKeysFile2.existsSync()) {
+    print('Enrollment process for ${atsign} completed but keys file not found at ${potentiallyExistingKeysFile2.path}');
+    return 1;
+  }
+
+
   return exitCode;
 }
 
