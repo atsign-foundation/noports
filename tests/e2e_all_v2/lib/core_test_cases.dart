@@ -8,8 +8,9 @@ import 'package:e2e_all_v2/test_result.dart';
 Future<void> runCoreTestCases({
   required final String testRunId,
   required final String logDirectory,
-  required final String daemonAtSign,
-  required final String clientAtSign,
+  required final String daemonAtsign,
+  required final String clientAtsign,
+  required final String relayAtsign,
   required final VolumeMapping atKeysVolumeMapping,
   required final String atDirectoryHost,
 }) async {
@@ -73,8 +74,8 @@ Future<void> runCoreTestCases({
   // Start Phase 1.5 - APKAM Enrollment
   print('\n========== Phase 1.5: APKAM Enrollment ==========\n');
 
-  // Create apkam keys directory under testRunId
-  final Directory apkamKeysDirectory = Directory('apkam_keys/$testRunId');
+  // Create apkam keys directory: e2e_all/$testRunId/apkamKeys/
+  final Directory apkamKeysDirectory = Directory('e2e_all/$testRunId/apkamKeys');
   if (!apkamKeysDirectory.existsSync()) {
     apkamKeysDirectory.createSync(recursive: true);
     print('Created APKAM keys directory: ${apkamKeysDirectory.path}');
@@ -97,10 +98,10 @@ Future<void> runCoreTestCases({
   }
 
   // Enroll client atsign
-  print('Enrolling client atsign: $clientAtSign');
+  print('Enrolling client atsign: $clientAtsign');
   final int clientEnrollExitCode = await enroll(
     apkamKeysDirectory: apkamKeysDirectory,
-    atsign: clientAtSign,
+    atsign: clientAtsign,
     which: 'client',
     atActivateClientBinary: atActivateBinary,
     atDirectoryHost: atDirectoryHost,
@@ -108,15 +109,15 @@ Future<void> runCoreTestCases({
   );
 
   if (clientEnrollExitCode != 0) {
-    throw Exception('Failed to enroll client atsign: $clientAtSign (exit code: $clientEnrollExitCode)');
+    throw Exception('Failed to enroll client atsign: $clientAtsign (exit code: $clientEnrollExitCode)');
   }
-  print('Successfully enrolled client atsign: $clientAtSign');
+  print('Successfully enrolled client atsign: $clientAtsign');
 
   // Enroll daemon atsign
-  print('Enrolling daemon atsign: $daemonAtSign');
+  print('Enrolling daemon atsign: $daemonAtsign');
   final int daemonEnrollExitCode = await enroll(
     apkamKeysDirectory: apkamKeysDirectory,
-    atsign: daemonAtSign,
+    atsign: daemonAtsign,
     which: 'daemon',
     atActivateClientBinary: atActivateBinary,
     atDirectoryHost: atDirectoryHost,
@@ -124,9 +125,9 @@ Future<void> runCoreTestCases({
   );
 
   if (daemonEnrollExitCode != 0) {
-    throw Exception('Failed to enroll daemon atsign: $daemonAtSign (exit code: $daemonEnrollExitCode)');
+    throw Exception('Failed to enroll daemon atsign: $daemonAtsign (exit code: $daemonEnrollExitCode)');
   }
-  print('Successfully enrolled daemon atsign: $daemonAtSign');
+  print('Successfully enrolled daemon atsign: $daemonAtsign');
 
   print('\n========== End Phase 1.5 ==========\n');
   // End Phase 1.5
@@ -219,7 +220,7 @@ Future<void> runCoreTestCases({
         '/bin/bash',
         '-c',
         'sudo service ssh start && '
-          'sshnpd -a $daemonAtSign -m $clientAtSign -v '
+          'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithFlags} '
           '-s -u',
       ],
@@ -243,7 +244,7 @@ Future<void> runCoreTestCases({
         '/bin/bash',
         '-c',
         'sudo service ssh start && '
-          'sshnpd -a $daemonAtSign -m $clientAtSign -v '
+          'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithoutFlags}',
       ],
     );
@@ -270,8 +271,9 @@ Future<void> runCoreTestCases({
     allDeviceNamesAndDockerInstances: deviceNamesAndDockerInstances,
     testRunId: testRunId,
     logDirectory: logDirectory,
-    clientAtSign: clientAtSign,
-    daemonAtSign: daemonAtSign,
+    clientAtsign: clientAtsign,
+    daemonAtsign: daemonAtsign,
+    relayAtsign: relayAtsign,
     apkamKeysDirectory: apkamKeysDirectory,
   );
 
@@ -433,8 +435,9 @@ Future<List<TestResult>> _test001MinusSFlag({
   required List<(String, DockerInstance)> allDeviceNamesAndDockerInstances,
   required String testRunId,
   required String logDirectory,
-  required String clientAtSign,
-  required String daemonAtSign,
+  required String clientAtsign,
+  required String daemonAtsign,
+  required String relayAtsign,
   required Directory apkamKeysDirectory,
 }) async {
   List<TestResult> testResults = [];
@@ -504,7 +507,7 @@ Future<List<TestResult>> _test001MinusSFlag({
       final String apkamDeviceName = getApkamDeviceName(which: 'client', testRunId: testRunId);
       final String apkamKeysFileName = getApkamKeysFileName(
         apkamKeysDirectory: apkamKeysDirectory,
-        clientAtSign: clientAtSign,
+        clientAtSign: clientAtsign,
         apkamApp: apkamApp,
         apkamDeviceName: apkamDeviceName,
       );
@@ -516,8 +519,9 @@ Future<List<TestResult>> _test001MinusSFlag({
     print('Test step: Running sshnp with -d $deviceName');
     final String executable = clientBinary.binaryPath;
     final List<String> args = [
-      '-f', clientAtSign,
-      '-t', daemonAtSign,
+      '-f', clientAtsign,
+      '-t', daemonAtsign,
+      '-r', relayAtsign,
       '-d', deviceName,
       ...extraFlags,
     ];
@@ -527,15 +531,25 @@ Future<List<TestResult>> _test001MinusSFlag({
       args
     );
 
+    // Save client logs
+    final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final String logFilePrefix = '$logDirectory/client_${testName}_${daemonVersion.replaceAll(':', '_')}_${deviceName}_$timestamp';
+    final File stdoutLogFile = File('${logFilePrefix}_stdout.log');
+    final File stderrLogFile = File('${logFilePrefix}_stderr.log');
+
+    await stdoutLogFile.writeAsString(result.stdout.toString());
+    await stderrLogFile.writeAsString(result.stderr.toString());
+
     // Determine expected behavior based on device name
     // If device name ends with 'f', it's the daemon WITH -s -u flags, so sshnp should succeed
     // Otherwise, it's the daemon WITHOUT -s -u flags, so sshnp should fail
-    final bool isDaemonWithSFlag = deviceName.endsWith('_f');
+    final bool isDaemonWithSFlag = deviceName.endsWith('f');
 
     if (isDaemonWithSFlag) {
       // Daemon has -s flag, expect success
       if (result.exitCode == 0) {
         print('  ✓ EXPECTED: Command succeeded against daemon WITH -s flag (exit code: ${result.exitCode})');
+        print('  Logs saved: ${stdoutLogFile.path} / ${stderrLogFile.path}');
         testResults.add(TestResult(
           testName: '$testName (daemon with -s)',
           clientVersion: 'd:${clientBinary.version}',
@@ -547,6 +561,12 @@ Future<List<TestResult>> _test001MinusSFlag({
         ));
       } else {
         print('  ✗ UNEXPECTED: Command failed against daemon WITH -s flag (exit code: ${result.exitCode})');
+        print('  Logs saved: ${stdoutLogFile.path} / ${stderrLogFile.path}');
+        print('\n--- STDOUT ---');
+        print(result.stdout.toString());
+        print('\n--- STDERR ---');
+        print(result.stderr.toString());
+        print('--- END LOGS ---\n');
         testResults.add(TestResult(
           testName: '$testName (daemon with -s)',
           clientVersion: 'd:${clientBinary.version}',
@@ -561,6 +581,12 @@ Future<List<TestResult>> _test001MinusSFlag({
       // Daemon does NOT have -s flag, expect failure
       if (result.exitCode == 0) {
         print('  ✗ UNEXPECTED: Command succeeded against daemon WITHOUT -s flag (should have failed)');
+        print('  Logs saved: ${stdoutLogFile.path} / ${stderrLogFile.path}');
+        print('\n--- STDOUT ---');
+        print(result.stdout.toString());
+        print('\n--- STDERR ---');
+        print(result.stderr.toString());
+        print('--- END LOGS ---\n');
         testResults.add(TestResult(
           testName: '$testName (daemon without -s)',
           clientVersion: 'd:${clientBinary.version}',
@@ -572,6 +598,7 @@ Future<List<TestResult>> _test001MinusSFlag({
         ));
       } else {
         print('  ✓ EXPECTED: Command failed against daemon WITHOUT -s flag (exit code: ${result.exitCode})');
+        print('  Logs saved: ${stdoutLogFile.path} / ${stderrLogFile.path}');
         testResults.add(TestResult(
           testName: '$testName (daemon without -s)',
           clientVersion: 'd:${clientBinary.version}',
@@ -709,6 +736,20 @@ void _generateNewSshKey({required final String testRunId}) {
 
   // identityFileName = $HOME/.ssh/e2e_all.${testRunId}
   final String identityFileName = '$sshDirPath/e2e_all.$testRunId';
+
+  // Remove existing key files if they exist
+  final File privateKeyFile = File(identityFileName);
+  final File publicKeyFile = File('$identityFileName.pub');
+
+  if (privateKeyFile.existsSync()) {
+    privateKeyFile.deleteSync();
+    print('Deleted existing private key: $identityFileName');
+  }
+
+  if (publicKeyFile.existsSync()) {
+    publicKeyFile.deleteSync();
+    print('Deleted existing public key: $identityFileName.pub');
+  }
 
   // ssh-keygen -t ed25519 -q -N '' -f "${identityFilename}" -C "$testRunId"
   final ProcessResult keyGenResult = Process.runSync(
