@@ -59,6 +59,7 @@ Future<void> runCoreTestCases({
   for (final (language, version) in parsedClientVersions) {
     requiredBinaries.add((ClientBinaryType.sshnp, language, version));
     requiredBinaries.add((ClientBinaryType.npt, language, version));
+    requiredBinaries.add((ClientBinaryType.srv, language, version));
   }
 
   List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
