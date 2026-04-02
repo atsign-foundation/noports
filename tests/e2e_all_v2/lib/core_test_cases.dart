@@ -196,6 +196,8 @@ Future<void> runCoreTestCases({
 
   // Start Docker instances for each daemon version
   List<DockerInstance> dockerInstances = [];
+  List<(String, DockerInstance)> deviceNamesAndDockerInstances = [];
+
   for (final dockerImage in dockerImages) {
     final String deviceNameWithoutFlags = '${testRunId}${dockerImage.language.name[0]}${dockerImage.tag.replaceAll('.', '')}';
     final String deviceNameWithFlags = '${deviceNameWithoutFlags}f';
@@ -223,6 +225,7 @@ Future<void> runCoreTestCases({
       ],
     );
     dockerInstances.add(dockerInstance1);
+    deviceNamesAndDockerInstances.add((deviceNameWithFlags, dockerInstance1));
     print('Started Docker instance: ${dockerInstance1.containerName}');
 
     // 2. create a docker instance without -s -u (container 2)
@@ -245,6 +248,7 @@ Future<void> runCoreTestCases({
       ],
     );
     dockerInstances.add(dockerInstance2);
+    deviceNamesAndDockerInstances.add((deviceNameWithoutFlags, dockerInstance2));
     print('Started Docker instance: ${dockerInstance2.containerName}');
   }
 
@@ -263,7 +267,7 @@ Future<void> runCoreTestCases({
   // Test #1: 001_minus_s_flag (only runs with current client)
   List<TestResult> result = await _test001MinusSFlag(
     allClientBinaries: clientBinaries,
-    allDockerInstances: dockerInstances,
+    allDeviceNamesAndDockerInstances: deviceNamesAndDockerInstances,
     testRunId: testRunId,
     logDirectory: logDirectory,
     clientAtSign: clientAtSign,
@@ -426,7 +430,7 @@ Future<void> runCoreTestCases({
 // - Client: Dart (current) | Daemon: Dart v5.13.0
 Future<List<TestResult>> _test001MinusSFlag({
   required List<ClientBinary> allClientBinaries,
-  required List<DockerInstance> allDockerInstances,
+  required List<(String, DockerInstance)> allDeviceNamesAndDockerInstances,
   required String testRunId,
   required String logDirectory,
   required String clientAtSign,
@@ -451,8 +455,8 @@ Future<List<TestResult>> _test001MinusSFlag({
     allClientBinaries: allClientBinaries,
     clientVersions: clientVersions,
   );
-  final List<DockerInstance> matchingDockerInstances = _getMatchingDockerInstancaes(
-    allDockerInstances: allDockerInstances,
+  final List<(String, DockerInstance)> matchingDeviceNamesAndDockerInstances = _getMatchingDeviceNamesAndDockerInstances(
+    allDeviceNamesAndDockerInstances: allDeviceNamesAndDockerInstances,
     daemonVersions: daemonVersions,
   );
 
@@ -467,16 +471,20 @@ Future<List<TestResult>> _test001MinusSFlag({
 
   _generateNewSshKey(testRunId: testRunId);
 
-  for(final DockerInstance dockerInstance in matchingDockerInstances) {
+  for(final (String deviceName, DockerInstance dockerInstance) in matchingDeviceNamesAndDockerInstances) {
     final String daemonVersion = '${dockerInstance.dockerImage.language == Language.dart ? 'd' : 'c'}:${dockerInstance.dockerImage.tag}';
     print('\nRunning test $testName with client ${clientBinary.version} against daemon $daemonVersion');
+    print('Device name: $deviceName');
+
     List<String> extraFlags = [];
 
     // 1. add -x or -x --no-ad --no-et
     switch(dockerInstance.dockerImage.language) {
       case(Language.dart): {
         if(versionIsAtLeast(versionToCheck: dockerInstance.dockerImage.tag, minimumVersion: 'v5.0.0')) {
-          extraFlags.add('-x --no-ad --no-et');
+          extraFlags.add('-x');
+          extraFlags.add('--no-ad');
+          extraFlags.add('--no-et');
         }
         break;
       }
@@ -488,51 +496,117 @@ Future<List<TestResult>> _test001MinusSFlag({
         throw Exception('Unsupported language: ${dockerInstance.dockerImage.language}');
       }
     }
+
     // 2. Add -k
-    if(versionIsAtLeast(versionToCheck: dockerInstance.dockerImage.tag, 
+    if(versionIsAtLeast(versionToCheck: dockerInstance.dockerImage.tag,
       minimumVersion: 'v5.3.0')) {
-      final String apkamApp = 'e2e_all';
-      final String apkamDeviceName = 'client_$testRunId';
-      final String apkamKeysFileName = '${apkamKeysDirectory.path}/${clientAtSign}.${apkamApp}.${apkamDeviceName}.atKeys';
-      extraFlags.add('-k $apkamKeysFileName');
+      final String apkamApp = getApkamApp();
+      final String apkamDeviceName = getApkamDeviceName(which: 'client', testRunId: testRunId);
+      final String apkamKeysFileName = getApkamKeysFileName(
+        apkamKeysDirectory: apkamKeysDirectory,
+        clientAtSign: clientAtSign,
+        apkamApp: apkamApp,
+        apkamDeviceName: apkamDeviceName,
+      );
+      extraFlags.add('-k');
+      extraFlags.add(apkamKeysFileName);
     }
 
-    // 3. Run sshnp against daemon without flags, expect failure
-    final ProcessResult resultWithFlags = await Process.run(
-      clientBinary.binaryPath,
-      [
-        '-f', clientAtSign,
-        '-t', daemonAtSign,
-        '-d', 
-        '-s',
-        ...extraFlags,
-      ],
+    // 3. Run sshnp with -d $deviceName
+    print('Test step: Running sshnp with -d $deviceName');
+    final String executable = clientBinary.binaryPath;
+    final List<String> args = [
+      '-f', clientAtSign,
+      '-t', daemonAtSign,
+      '-d', deviceName,
+      ...extraFlags,
+    ];
+    print('Executing: $executable ${args.join(' ')}');
+    final ProcessResult result = await Process.run(
+      executable,
+      args
     );
 
-    // 4. Run sshnp against daemon with flags, expect success
-    final ProcessResult resultWithoutFlags = await Process.run(
-      clientBinary.binaryPath,
-      [
-        '-f', clientAtSign,
-        '-t', daemonAtSign,
-        '-d',
-        ...extraFlags,
-      ],
-    );
+    // Determine expected behavior based on device name
+    // If device name ends with 'f', it's the daemon WITH -s -u flags, so sshnp should succeed
+    // Otherwise, it's the daemon WITHOUT -s -u flags, so sshnp should fail
+    final bool isDaemonWithSFlag = deviceName.endsWith('_f');
 
+    if (isDaemonWithSFlag) {
+      // Daemon has -s flag, expect success
+      if (result.exitCode == 0) {
+        print('  ✓ EXPECTED: Command succeeded against daemon WITH -s flag (exit code: ${result.exitCode})');
+        testResults.add(TestResult(
+          testName: '$testName (daemon with -s)',
+          clientVersion: 'd:${clientBinary.version}',
+          daemonVersion: daemonVersion,
+          status: TestStatus.passed,
+          stdout: result.stdout.toString(),
+          stderr: result.stderr.toString(),
+          exitCode: result.exitCode,
+        ));
+      } else {
+        print('  ✗ UNEXPECTED: Command failed against daemon WITH -s flag (exit code: ${result.exitCode})');
+        testResults.add(TestResult(
+          testName: '$testName (daemon with -s)',
+          clientVersion: 'd:${clientBinary.version}',
+          daemonVersion: daemonVersion,
+          status: TestStatus.failed,
+          stdout: result.stdout.toString(),
+          stderr: result.stderr.toString(),
+          exitCode: result.exitCode,
+        ));
+      }
+    } else {
+      // Daemon does NOT have -s flag, expect failure
+      if (result.exitCode == 0) {
+        print('  ✗ UNEXPECTED: Command succeeded against daemon WITHOUT -s flag (should have failed)');
+        testResults.add(TestResult(
+          testName: '$testName (daemon without -s)',
+          clientVersion: 'd:${clientBinary.version}',
+          daemonVersion: daemonVersion,
+          status: TestStatus.failed,
+          stdout: result.stdout.toString(),
+          stderr: result.stderr.toString(),
+          exitCode: result.exitCode,
+        ));
+      } else {
+        print('  ✓ EXPECTED: Command failed against daemon WITHOUT -s flag (exit code: ${result.exitCode})');
+        testResults.add(TestResult(
+          testName: '$testName (daemon without -s)',
+          clientVersion: 'd:${clientBinary.version}',
+          daemonVersion: daemonVersion,
+          status: TestStatus.passed,
+          stdout: result.stdout.toString(),
+          stderr: result.stderr.toString(),
+          exitCode: result.exitCode,
+        ));
+      }
+    }
+  }
 
+  return testResults;
 }
 
 bool versionIsAtLeast({
   required String versionToCheck,
   required String minimumVersion,
 }) {
+  // If versionToCheck is "current", assume it's the latest version
+  if (versionToCheck == 'current') {
+    return true;
+  }
+
+  // Remove 'v' prefix if present
+  String normalizedVersionToCheck = versionToCheck.startsWith('v') ? versionToCheck.substring(1) : versionToCheck;
+  String normalizedMinimumVersion = minimumVersion.startsWith('v') ? minimumVersion.substring(1) : minimumVersion;
+
   List<int> parseVersion(String version) {
     return version.split('.').map(int.parse).toList();
   }
 
-  final List<int> toCheck = parseVersion(versionToCheck);
-  final List<int> minimum = parseVersion(minimumVersion);
+  final List<int> toCheck = parseVersion(normalizedVersionToCheck);
+  final List<int> minimum = parseVersion(normalizedMinimumVersion);
 
   for (int i = 0; i < minimum.length; i++) {
     if (toCheck.length <= i) {
@@ -585,6 +659,27 @@ List<DockerInstance> _getMatchingDockerInstancaes({
     }
   }
   return matchingInstances;
+}
+
+List<(String, DockerInstance)> _getMatchingDeviceNamesAndDockerInstances({
+  required List<(String, DockerInstance)> allDeviceNamesAndDockerInstances,
+  required List<String> daemonVersions,
+}) {
+  List<(String, DockerInstance)> matchingPairs = [];
+  for (final String daemonVersion in daemonVersions) {
+    final List<(String, DockerInstance)> matches = allDeviceNamesAndDockerInstances.where((pair) {
+      final dockerInstance = pair.$2;
+      return dockerInstance.dockerImage.tag == daemonVersion.split(':')[1] &&
+        dockerInstance.dockerImage.language == (daemonVersion.startsWith('d:') ? Language.dart : Language.c);
+    }).toList();
+
+    if (matches.isEmpty) {
+      print('WARNING: No matching device name and Docker instance found for daemon version $daemonVersion');
+    } else {
+      matchingPairs.addAll(matches);
+    }
+  }
+  return matchingPairs;
 }
 
 void _generateNewSshKey({required final String testRunId}) {

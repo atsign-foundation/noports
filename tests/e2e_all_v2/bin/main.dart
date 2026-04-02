@@ -20,10 +20,19 @@ Future<int> main(List<String> args) async {
   }
   _logLoadedParameters(e2eAllV2Params);
 
-  final String testRunId = DateTime.now().millisecondsSinceEpoch.toRadixString(36).substring(0, 6);
+  // Get git commit ID (shortened) as testRunId
+  final ProcessResult gitResult = await Process.run('git', ['rev-parse', '--short', 'HEAD']);
+  if (gitResult.exitCode != 0) {
+    print('Error: Failed to get git commit ID');
+    print('stderr: ${gitResult.stderr}');
+    exit(1);
+  }
+  final String testRunId = gitResult.stdout.toString().trim();
+  print('Test run ID (git commit): $testRunId');
 
-  // Create logs and binaries directories under testRunId folder
-  final String logDirectory = '${e2eAllV2Params.logDirectory}/$testRunId';
+  // Create directory structure: e2e_all/$testRunId/{binaries,logs,apkamKeys}
+  final String baseDirectory = 'e2e_all/$testRunId';
+  final String logDirectory = '$baseDirectory/logs';
 
   runCoreTestCases(
     testRunId: testRunId,

@@ -42,7 +42,7 @@ Future<int> enroll({
     atActivateClientBinary.binaryPath,
     [
       'otp',
-      '-atsign', atsign,
+      '-a', atsign,
       '-r', atDirectoryHost,
     ],
   );

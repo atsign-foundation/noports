@@ -45,10 +45,11 @@ class ClientBinary {
   }
 
   String _getBinaryPath() {
-    // All binaries go under testRunId folder now
+    // Structure: e2e_all/$testRunId/binaries/{language}_{version}/{binaryName}
     return path.join(
-      'binaries',
+      'e2e_all',
       testRunId,
+      'binaries',
       '${language.name}_$version',
       binaryName,
     );
@@ -394,7 +395,7 @@ class ClientBinaryManager {
   }
 
   Future<void> cleanup() async {
-    final dir = Directory(path.join('binaries', testRunId));
+    final dir = Directory(path.join('e2e_all', testRunId, 'binaries'));
     if (await dir.exists()) {
       await dir.delete(recursive: true);
       print('Cleaned up binaries directory: ${dir.path}');
