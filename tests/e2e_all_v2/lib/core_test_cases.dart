@@ -446,6 +446,7 @@ Future<List<TestResult>> _test001MinusSFlag({
     'd:v5.11.2',
     'd:v5.13.0',
   ];
+
   final List<ClientBinary> matchingClientBinaries = _getMatchingClientBinaries(
     allClientBinaries: allClientBinaries,
     clientVersions: clientVersions,
@@ -496,14 +497,25 @@ Future<List<TestResult>> _test001MinusSFlag({
       extraFlags.add('-k $apkamKeysFileName');
     }
 
-    // 3. Run sshnp without flags, expect failure
-    final ProcessResult resultWithSFlag = Process.run(
+    // 3. Run sshnp against daemon without flags, expect failure
+    final ProcessResult resultWithFlags = await Process.run(
       clientBinary.binaryPath,
       [
         '-f', clientAtSign,
         '-t', daemonAtSign,
         '-d', 
         '-s',
+        ...extraFlags,
+      ],
+    );
+
+    // 4. Run sshnp against daemon with flags, expect success
+    final ProcessResult resultWithoutFlags = await Process.run(
+      clientBinary.binaryPath,
+      [
+        '-f', clientAtSign,
+        '-t', daemonAtSign,
+        '-d',
         ...extraFlags,
       ],
     );
