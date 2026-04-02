@@ -86,7 +86,7 @@ packages:
     description:
       path: "packages/at_client"
       ref: trunk
-      resolved-ref: a468b16fb65f5bb627e4969cc6a6dba7f2be8634
+      resolved-ref: fad76e9090486086f4d4c6fc12bbd752a006f70a
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
     version: "3.12.0"
