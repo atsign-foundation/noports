@@ -36,6 +36,7 @@ part 'policy.g.dart';
 ///  ]
 /// }
 
+/// Converts the `String` atsigns saved to the `atServer` to `Atsign`.
 class AtsignConverter implements JsonConverter<Atsign, String> {
   const AtsignConverter();
 
