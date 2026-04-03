@@ -52,7 +52,7 @@ class ActivateUtil {
   }
 
   Future<({String? cramkey, String? errorMessage})> verifyActivation({
-    required String atsign,
+    required Atsign atsign,
     required String otp,
   }) async {
     var res = await registrarApiRequest(NoPortsActivateApiEndpoints.validate, {
@@ -76,12 +76,11 @@ class ActivateUtil {
   }
 
   Future<AtOnboardingResult> onboardFromCramKey({
-    required String atsign,
+    required Atsign atsign,
     required String cramkey,
     required AtOnboardingConfig config,
   }) async {
     try {
-      atsign = atsign.startsWith('@') ? atsign : '@$atsign';
       OnboardingService onboardingService = OnboardingService.getInstance();
       bool isExist = await onboardingService.isExistingAtsign(atsign);
       if (isExist) {
@@ -105,24 +104,24 @@ class ActivateUtil {
 
       if (res) {
         int round = 1;
-        ServerStatus? atSignStatus = await onboardingService
+        ServerStatus? atsignStatus = await onboardingService
             .checkAtSignServerStatus(atsign);
-        while (atSignStatus != ServerStatus.activated) {
+        while (atsignStatus != ServerStatus.activated) {
           if (round > 10) {
             break;
           }
           await Future.delayed(const Duration(seconds: 3));
           round++;
-          atSignStatus = await onboardingService.checkAtSignServerStatus(
+          atsignStatus = await onboardingService.checkAtSignServerStatus(
             atsign,
           );
         }
 
-        if (atSignStatus == ServerStatus.teapot) {
+        if (atsignStatus == ServerStatus.teapot) {
           return AtOnboardingResult.error(
             message: AtOnboardingLocalizations.current.msg_atSign_unreachable,
           );
-        } else if (atSignStatus == ServerStatus.activated) {
+        } else if (atsignStatus == ServerStatus.activated) {
           return AtOnboardingResult.success(atsign: atsign);
         }
       }

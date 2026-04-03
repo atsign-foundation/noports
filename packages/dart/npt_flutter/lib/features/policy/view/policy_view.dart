@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/features.dart';
@@ -13,22 +14,22 @@ import '../../policy_logs/cubit/policy_logs_cubit.dart';
 import '../../policy_logs/widgets/logs_viewer.dart';
 
 class PolicyView extends StatelessWidget {
-  final String atSign;
-  const PolicyView({super.key, required this.atSign});
+  final Atsign atsign;
+  const PolicyView({super.key, required this.atsign});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PolicyCubit, PolicyState>(
       builder: (context, state) {
-        return PolicyContent(atSign: atSign);
+        return PolicyContent(atsign: atsign);
       },
     );
   }
 }
 
 class PolicyContent extends StatelessWidget {
-  final String atSign;
-  const PolicyContent({super.key, required this.atSign});
+  final Atsign atsign;
+  const PolicyContent({super.key, required this.atsign});
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/favorite/models/favorite.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
@@ -99,10 +100,10 @@ void main() {
     });
 
     test('isFavoriteMatch should return true for matching Profile', () {
-      const profile = Profile(
+      final profile = Profile(
         testUuid,
         displayName: 'Test Profile',
-        sshnpdAtsign: '@test_device',
+        sshnpdAtsign: '@test_device'.toAtsign(),
         deviceName: 'test-device',
         remotePort: 22,
         localPort: 2222,
@@ -112,10 +113,10 @@ void main() {
     });
 
     test('isFavoriteMatch should return false for non-matching Profile', () {
-      const profile = Profile(
+      final profile = Profile(
         'different-uuid',
         displayName: 'Test Profile',
-        sshnpdAtsign: '@test_device',
+        sshnpdAtsign: '@test_device'.toAtsign(),
         deviceName: 'test-device',
         remotePort: 22,
         localPort: 2222,

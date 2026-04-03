@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/favorite/models/favoritable.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
@@ -6,17 +7,17 @@ void main() {
   group('Profile Model Tests', () {
     const testUuid = 'test-uuid-123';
     const testDisplayName = 'Test Profile';
-    const testSshnpdAtsign = '@test_device';
+    final testSshnpdAtsign = '@test_device'.toAtsign();
     const testDeviceName = 'test-device';
     const testRemoteHost = 'localhost';
     const testRemotePort = 22;
     const testLocalPort = 2222;
-    const testRelayAtsign = '@relay_test';
+    final testRelayAtsign = '@relay_test'.toAtsign();
 
     late Profile testProfile;
 
     setUp(() {
-      testProfile = const Profile(
+      testProfile = Profile(
         testUuid,
         displayName: testDisplayName,
         sshnpdAtsign: testSshnpdAtsign,
@@ -44,7 +45,7 @@ void main() {
       test(
         'should create profile with default remoteHost when not provided',
         () {
-          const profileWithoutRemoteHost = Profile(
+          final profileWithoutRemoteHost = Profile(
             testUuid,
             displayName: testDisplayName,
             sshnpdAtsign: testSshnpdAtsign,
@@ -54,12 +55,15 @@ void main() {
           );
 
           expect(profileWithoutRemoteHost.remoteHost, equals('localhost'));
-          expect(profileWithoutRemoteHost.keepAlive, equals(false)); // Default is true
+          expect(
+            profileWithoutRemoteHost.keepAlive,
+            equals(false),
+          ); // Default is true
         },
       );
 
       test('should create profile with null relayAtsign', () {
-        const profileWithoutRelay = Profile(
+        final profileWithoutRelay = Profile(
           testUuid,
           displayName: testDisplayName,
           sshnpdAtsign: testSshnpdAtsign,
@@ -117,7 +121,7 @@ void main() {
       });
 
       test('should copy profile with updated relayAtsign', () {
-        const newRelayAtsign = '@new_relay';
+        final newRelayAtsign = '@new_relay'.toAtsign();
         final updatedProfile = testProfile.copyWith(
           relayAtsign: newRelayAtsign,
         );
@@ -175,14 +179,14 @@ void main() {
           final profileWithDefaultHost = Profile.fromJson(jsonWithoutHost);
           expect(profileWithDefaultHost.remoteHost, equals('localhost'));
           expect(profileWithDefaultHost.displayName, equals(testDisplayName));
-          expect(profileWithDefaultHost.keepAlive, equals(false)); 
+          expect(profileWithDefaultHost.keepAlive, equals(false));
         },
       );
     });
 
     group('Profile Equality and String Representation', () {
       test('should implement equality correctly', () {
-        const profile1 = Profile(
+        final profile1 = Profile(
           testUuid,
           displayName: testDisplayName,
           sshnpdAtsign: testSshnpdAtsign,
@@ -191,7 +195,7 @@ void main() {
           localPort: testLocalPort,
         );
 
-        const profile2 = Profile(
+        final profile2 = Profile(
           testUuid,
           displayName: testDisplayName,
           sshnpdAtsign: testSshnpdAtsign,
@@ -238,9 +242,9 @@ void main() {
 
     group('Profile toNptParams', () {
       test('should convert to NptParams with all parameters', () {
-        const clientAtsign = '@client';
+        final clientAtsign = '@client'.toAtsign();
         const rootDomain = 'test.domain.com';
-        const fallbackRelayAtsign = '@fallback_relay';
+        final fallbackRelayAtsign = '@fallback_relay'.toAtsign();
 
         final nptParams = testProfile.toNptParams(
           clientAtsign: clientAtsign,
@@ -264,9 +268,9 @@ void main() {
       test(
         'should use fallback relay when overrideRelayWithFallback is true',
         () {
-          const clientAtsign = '@client';
+          final clientAtsign = '@client'.toAtsign();
           const rootDomain = 'test.domain.com';
-          const fallbackRelayAtsign = '@fallback_relay';
+          final fallbackRelayAtsign = '@fallback_relay'.toAtsign();
 
           final nptParams = testProfile.toNptParams(
             clientAtsign: clientAtsign,
@@ -283,7 +287,7 @@ void main() {
       );
 
       test('should use fallback relay when profile relay is null', () {
-        const profileWithoutRelay = Profile(
+        final profileWithoutRelay = Profile(
           testUuid,
           displayName: testDisplayName,
           sshnpdAtsign: testSshnpdAtsign,
@@ -292,27 +296,11 @@ void main() {
           localPort: testLocalPort,
         );
 
-        const clientAtsign = '@client';
+        final clientAtsign = '@client'.toAtsign();
         const rootDomain = 'test.domain.com';
-        const fallbackRelayAtsign = '@fallback_relay';
+        final fallbackRelayAtsign = '@fallback_relay'.toAtsign();
 
         final nptParams = profileWithoutRelay.toNptParams(
-          clientAtsign: clientAtsign,
-          rootDomain: rootDomain,
-          fallbackRelayAtsign: fallbackRelayAtsign,
-        );
-
-        expect(nptParams.srvdAtSign, equals(fallbackRelayAtsign));
-      });
-
-      test('should use fallback relay when profile relay is empty', () {
-        final profileWithEmptyRelay = testProfile.copyWith(relayAtsign: '');
-
-        const clientAtsign = '@client';
-        const rootDomain = 'test.domain.com';
-        const fallbackRelayAtsign = '@fallback_relay';
-
-        final nptParams = profileWithEmptyRelay.toNptParams(
           clientAtsign: clientAtsign,
           rootDomain: rootDomain,
           fallbackRelayAtsign: fallbackRelayAtsign,

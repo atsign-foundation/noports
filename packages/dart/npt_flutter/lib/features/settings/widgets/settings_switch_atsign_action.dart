@@ -24,25 +24,25 @@
 //       onTap: () async {
 //         await showModalBottomSheet(
 //             context: App.navState .currentContext!,
-//             builder: (context) => const SwitchAtSignBottomSheet());
+//             builder: (context) => const SwitchAtsignBottomSheet());
 //       },
 //     );
 //   }
 // }
 
-// class SwitchAtSignBottomSheet extends ConsumerStatefulWidget {
-//   const SwitchAtSignBottomSheet({super.key});
+// class SwitchAtsignBottomSheet extends ConsumerStatefulWidget {
+//   const SwitchAtsignBottomSheet({super.key});
 
 //   @override
-//   ConsumerState<SwitchAtSignBottomSheet> createState() => _AtSignBottomSheetState();
+//   ConsumerState<SwitchAtsignBottomSheet> createState() => _AtsignBottomSheetState();
 // }
 
-// class _AtSignBottomSheetState extends ConsumerState<SwitchAtSignBottomSheet> {
+// class _AtsignBottomSheetState extends ConsumerState<SwitchAtsignBottomSheet> {
 //   bool isLoading = false;
 
 //   @override
 //   void initState() {
-//     ref.read(authenticationController.notifier).getAtSignList();
+//     ref.read(authenticationController.notifier).getAtsignList();
 
 //     super.initState();
 //   }

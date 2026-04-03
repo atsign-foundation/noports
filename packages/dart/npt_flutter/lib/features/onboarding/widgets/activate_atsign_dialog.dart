@@ -16,13 +16,13 @@ class ActivateAtsignDialog extends StatefulWidget {
   final pinLength = 4;
   final String registrarUrl;
   final String apiKey;
-  final String atSign;
+  final Atsign atsign;
   final AtOnboardingConfig config;
   final bool waitForTeapot;
   final NoPortsOnboardingUtil onboardingUtil;
   const ActivateAtsignDialog({
     super.key,
-    required this.atSign,
+    required this.atsign,
     required this.apiKey,
     required this.config,
     required this.registrarUrl,
@@ -135,7 +135,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
   Future<void> _getPinCode() async {
     var res = await util.registrarApiRequest(
       NoPortsActivateApiEndpoints.login,
-      {'atsign': widget.atSign},
+      {'atsign': widget.atsign},
     );
 
     if (res.statusCode == 200 &&
@@ -194,11 +194,11 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             });
 
             // This does two things:
-            // 1. If the atSign is not in teapot, it will (assuming success)
-            //    start activating the atSign as if you hit "Activate" in the dashboard
+            // 1. If the atsign is not in teapot, it will (assuming success)
+            //    start activating the atsign as if you hit "Activate" in the dashboard
             // 2. It will trigger the email/text OTP
             var (:cramkey, :errorMessage) = await util.verifyActivation(
-              atsign: widget.atSign,
+              atsign: widget.atsign,
               otp: pinController.text.toUpperCase(),
             );
 
@@ -219,18 +219,18 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               return;
             }
 
-            // If the atSign wasn't in teapot when we arrived at this screen,
-            // we should wait until the atSign is in teapot
+            // If the atsign wasn't in teapot when we arrived at this screen,
+            // we should wait until the atsign is in teapot
             if (widget.waitForTeapot) {
               int round = 1;
               getStatus() async {
                 return (await widget.onboardingUtil.atServerStatus(
-                  widget.atSign,
+                  widget.atsign,
                 )).status();
               }
 
-              AtSignStatus? atSignStatus = await getStatus();
-              while (atSignStatus != AtSignStatus.teapot) {
+              AtSignStatus? atsignStatus = await getStatus();
+              while (atsignStatus != AtSignStatus.teapot) {
                 // 6 * 5 = 30 seconds
                 // 12 * 5 = 60 seconds
                 if (round > 12) {
@@ -238,12 +238,12 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                 }
                 await Future.delayed(const Duration(seconds: 5));
                 round++;
-                atSignStatus = (await getStatus());
+                atsignStatus = (await getStatus());
               }
 
               // If the Atsign is still not in teapot after the waiting period
               // Then return an error
-              if (atSignStatus != AtSignStatus.teapot) {
+              if (atsignStatus != AtSignStatus.teapot) {
                 if (mounted) {
                   Navigator.of(context).pop(
                     AtOnboardingResult.error(
@@ -259,7 +259,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             // being activation: Generating keys, bootstrapping server, etc.
             // i.e. all the stuff to go from teapot -> activated
             var result = await util.onboardFromCramKey(
-              atsign: widget.atSign,
+              atsign: widget.atsign,
               cramkey: cramkey,
               config: widget.config,
             );

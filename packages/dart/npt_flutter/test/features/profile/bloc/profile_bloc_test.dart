@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -15,14 +16,14 @@ void main() {
     late MockProfileRepository mockRepository;
 
     const testUuid = 'test-uuid-123';
-    const testProfile = Profile(
+    final testProfile = Profile(
       testUuid,
       displayName: 'Test Profile',
-      sshnpdAtsign: '@test_device',
+      sshnpdAtsign: '@test_device'.toAtsign(),
       deviceName: 'test-device',
       remotePort: 22,
       localPort: 2222,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
     setUp(() {
@@ -56,7 +57,7 @@ void main() {
         act: (bloc) => bloc.add(const ProfileLoadEvent()),
         expect: () => [
           const ProfileLoading(testUuid),
-          const ProfileLoaded(testUuid, profile: testProfile),
+          ProfileLoaded(testUuid, profile: testProfile),
         ],
       );
 
@@ -101,7 +102,7 @@ void main() {
         act: (bloc) => bloc.add(const ProfileLoadEvent(useCache: false)),
         expect: () => [
           const ProfileLoading(testUuid),
-          const ProfileLoaded(testUuid, profile: testProfile),
+          ProfileLoaded(testUuid, profile: testProfile),
         ],
         verify: (_) {
           verify(
@@ -123,7 +124,7 @@ void main() {
         act: (bloc) => bloc.add(const ProfileLoadOrCreateEvent()),
         expect: () => [
           const ProfileLoading(testUuid),
-          const ProfileLoaded(testUuid, profile: testProfile),
+          ProfileLoaded(testUuid, profile: testProfile),
         ],
       );
 
@@ -143,8 +144,7 @@ void main() {
             profile: Profile(
               testUuid,
               displayName: '',
-              sshnpdAtsign: '',
-              relayAtsign: '',
+
               deviceName: '',
               remotePort: 3389,
               localPort: 0,
@@ -162,7 +162,7 @@ void main() {
           return profileBloc;
         },
         act: (bloc) =>
-            bloc.add(const ProfileLoadOrCreateEvent(copyFrom: testProfile)),
+            bloc.add(ProfileLoadOrCreateEvent(copyFrom: testProfile)),
         expect: () => [
           const ProfileLoading(testUuid),
           ProfileLoaded(
@@ -177,7 +177,7 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoaded when current state is ProfileLoaded',
         build: () => profileBloc,
-        seed: () => const ProfileLoaded(testUuid, profile: testProfile),
+        seed: () => ProfileLoaded(testUuid, profile: testProfile),
         act: (bloc) {
           final editedProfile = testProfile.copyWith(
             displayName: 'Edited Profile',
@@ -195,7 +195,7 @@ void main() {
       blocTest<ProfileBloc, ProfileState>(
         'should emit ProfileLoaded when current state is ProfileFailedSave',
         build: () => profileBloc,
-        seed: () => const ProfileFailedSave(testUuid, profile: testProfile),
+        seed: () => ProfileFailedSave(testUuid, profile: testProfile),
         act: (bloc) {
           final editedProfile = testProfile.copyWith(
             displayName: 'Edited Profile',
@@ -228,8 +228,8 @@ void main() {
       test(
         'ProfileLoadedState should include ProfileLoaded and ProfileFailedSave',
         () {
-          const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-          const failedSaveState = ProfileFailedSave(
+          final loadedState = ProfileLoaded(testUuid, profile: testProfile);
+          final failedSaveState = ProfileFailedSave(
             testUuid,
             profile: testProfile,
           );
@@ -241,7 +241,7 @@ void main() {
 
       test('ProfileStarting should include status', () {
         const status = 'Connecting...';
-        const startingState = ProfileStarting(
+        final startingState = ProfileStarting(
           testUuid,
           profile: testProfile,
           status: status,
@@ -253,7 +253,7 @@ void main() {
 
       test('ProfileFailedStart should include reason', () {
         const reason = 'Connection failed';
-        const failedStartState = ProfileFailedStart(
+        final failedStartState = ProfileFailedStart(
           testUuid,
           profile: testProfile,
           reason: reason,
@@ -269,7 +269,7 @@ void main() {
         () {
           const loadEvent = ProfileLoadEvent(useCache: false);
           const createEvent = ProfileLoadOrCreateEvent();
-          const editEvent = ProfileEditEvent(profile: testProfile);
+          final editEvent = ProfileEditEvent(profile: testProfile);
           const startEvent = ProfileStartEvent();
           const stopEvent = ProfileStopEvent();
 
@@ -287,8 +287,8 @@ void main() {
         const initialState = ProfileInitial(testUuid);
         const loadingState = ProfileLoading(testUuid);
         const failedLoadState = ProfileFailedLoad(testUuid);
-        const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-        const failedSaveState = ProfileFailedSave(
+        final loadedState = ProfileLoaded(testUuid, profile: testProfile);
+        final failedSaveState = ProfileFailedSave(
           testUuid,
           profile: testProfile,
         );
@@ -311,7 +311,7 @@ void main() {
       test('Event props should contain appropriate data for equality', () {
         const loadEvent = ProfileLoadEvent();
         const createEvent = ProfileLoadOrCreateEvent();
-        const editEvent = ProfileEditEvent(profile: testProfile);
+        final editEvent = ProfileEditEvent(profile: testProfile);
         const startEvent = ProfileStartEvent();
         const stopEvent = ProfileStopEvent();
 
@@ -326,8 +326,8 @@ void main() {
         const initialState = ProfileInitial(testUuid);
         const loadingState = ProfileLoading(testUuid);
         const failedLoadState = ProfileFailedLoad(testUuid);
-        const loadedState = ProfileLoaded(testUuid, profile: testProfile);
-        const failedSaveState = ProfileFailedSave(
+        final loadedState = ProfileLoaded(testUuid, profile: testProfile);
+        final failedSaveState = ProfileFailedSave(
           testUuid,
           profile: testProfile,
         );
@@ -365,7 +365,7 @@ void main() {
         },
         expect: () => [
           const ProfileLoading(testUuid),
-          const ProfileLoaded(testUuid, profile: testProfile),
+          ProfileLoaded(testUuid, profile: testProfile),
           ProfileLoaded(
             testUuid,
             profile: testProfile.copyWith(displayName: 'New Name'),

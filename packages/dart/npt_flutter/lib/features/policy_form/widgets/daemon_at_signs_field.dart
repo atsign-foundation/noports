@@ -1,15 +1,16 @@
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 import '../../policy/models/policy.dart';
 import 'at_signs_list_widget.dart';
 
-class DaemonAtSignsField extends StatelessWidget {
+class DaemonAtsignsField extends StatelessWidget {
   final RoleInProgress role;
   final bool isEditing;
-  final Function(List<String>) onChanged;
+  final Function(List<Atsign>) onChanged;
 
-  const DaemonAtSignsField({
+  const DaemonAtsignsField({
     super.key,
     required this.role,
     required this.isEditing,
@@ -19,9 +20,9 @@ class DaemonAtSignsField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    return AtSignsListWidget(
+    return AtsignsListWidget(
       label: strings.deviceAtsigns,
-      atSigns: role.daemonAtSigns,
+      atsigns: role.daemonAtsigns,
       isEditing: isEditing,
       onChanged: onChanged,
       tooltip: strings.deviceAtsignDescriptionTwo,

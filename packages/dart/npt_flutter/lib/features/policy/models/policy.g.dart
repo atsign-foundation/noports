@@ -35,8 +35,8 @@ FetchedRole _$FetchedRoleFromJson(Map<String, dynamic> json) => FetchedRole(
   id: json['id'] as String,
   name: json['name'] as String,
   description: json['description'] as String,
-  daemonAtSigns: (json['daemonAtSigns'] as List<dynamic>)
-      .map((e) => e as String)
+  daemonAtsigns: (json['daemonAtSigns'] as List<dynamic>)
+      .map((e) => const AtsignConverter().fromJson(e as String))
       .toList(),
   devices: (json['devices'] as List<dynamic>)
       .map((e) => Device.fromJson(e as Map<String, dynamic>))
@@ -44,8 +44,8 @@ FetchedRole _$FetchedRoleFromJson(Map<String, dynamic> json) => FetchedRole(
   deviceGroups: (json['deviceGroups'] as List<dynamic>)
       .map((e) => DeviceGroup.fromJson(e as Map<String, dynamic>))
       .toList(),
-  userAtSigns: (json['userAtSigns'] as List<dynamic>)
-      .map((e) => e as String)
+  userAtsigns: (json['userAtSigns'] as List<dynamic>)
+      .map((e) => const AtsignConverter().fromJson(e as String))
       .toList(),
 )..tempId = json['tempId'] as String?;
 
@@ -54,9 +54,13 @@ Map<String, dynamic> _$FetchedRoleToJson(FetchedRole instance) =>
       'tempId': instance.tempId,
       'name': instance.name,
       'description': instance.description,
-      'daemonAtSigns': instance.daemonAtSigns,
+      'daemonAtSigns': instance.daemonAtsigns
+          .map(const AtsignConverter().toJson)
+          .toList(),
       'devices': instance.devices,
       'deviceGroups': instance.deviceGroups,
-      'userAtSigns': instance.userAtSigns,
+      'userAtSigns': instance.userAtsigns
+          .map(const AtsignConverter().toJson)
+          .toList(),
       'id': instance.id,
     };

@@ -332,7 +332,7 @@ abstract class AppLocalizations {
   /// No description provided for @atsignDialogTitle.
   ///
   /// In en, this message translates to:
-  /// **'AtSign'**
+  /// **'Atsign'**
   String get atsignDialogTitle;
 
   /// No description provided for @atsignFrom.
@@ -809,23 +809,23 @@ abstract class AppLocalizations {
   /// **'Unable to connect to the atServer, make sure you have a stable internet connection.'**
   String get errorAtServerUnreachable;
 
-  /// No description provided for @errorAtSignAlreadyPaired.
+  /// No description provided for @errorAtsignAlreadyPaired.
   ///
   /// In en, this message translates to:
   /// **'The Atsign {atsign} is already paired, please contact support.'**
-  String errorAtSignAlreadyPaired(Object atsign);
+  String errorAtsignAlreadyPaired(Object atsign);
 
-  /// No description provided for @errorAtSignNotExist.
+  /// No description provided for @errorAtsignNotExist.
   ///
   /// In en, this message translates to:
   /// **'The Atsign you have requested doesn\'t exist in this root domain.'**
-  String get errorAtSignNotExist;
+  String get errorAtsignNotExist;
 
-  /// No description provided for @errorAtSignUnavailable.
+  /// No description provided for @errorAtsignUnavailable.
   ///
   /// In en, this message translates to:
   /// **'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.'**
-  String get errorAtSignUnavailable;
+  String get errorAtsignUnavailable;
 
   /// No description provided for @errorAuthenticatinFailed.
   ///
@@ -869,11 +869,11 @@ abstract class AppLocalizations {
   /// **'The specified root domain is not supported by automatic activation.'**
   String get errorRootDomainNotSupported;
 
-  /// No description provided for @errorSwitchAtSignFailed.
+  /// No description provided for @errorSwitchAtsignFailed.
   ///
   /// In en, this message translates to:
   /// **'Failed to switch Atsign after activation.'**
-  String get errorSwitchAtSignFailed;
+  String get errorSwitchAtsignFailed;
 
   /// No description provided for @errorWithDetails.
   ///
@@ -1865,23 +1865,23 @@ abstract class AppLocalizations {
   /// **'Success'**
   String get success;
 
-  /// No description provided for @switchAtSign.
+  /// No description provided for @switchAtsign.
   ///
   /// In en, this message translates to:
   /// **'Switch Atsign'**
-  String get switchAtSign;
+  String get switchAtsign;
 
-  /// No description provided for @switchAtSignDescription.
+  /// No description provided for @switchAtsignDescription.
   ///
   /// In en, this message translates to:
   /// **'Are you sure you want to switch Atsign?'**
-  String get switchAtSignDescription;
+  String get switchAtsignDescription;
 
-  /// No description provided for @switchAtSignNote.
+  /// No description provided for @switchAtsignNote.
   ///
   /// In en, this message translates to:
   /// **'Note: Switching Atsign ends all connections.'**
-  String get switchAtSignNote;
+  String get switchAtsignNote;
 
   /// No description provided for @syncCompleted.
   ///
