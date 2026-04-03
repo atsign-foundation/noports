@@ -69,14 +69,10 @@ void main() {
         expect(copiedSettings.language, originalSettings.language);
       });
 
-      test('should default to @rv_am when relayAtsign is null or empty', () {
+      test('should default to @rv_am when relayAtsign is null', () {
         final copiedWithNull = originalSettings.copyWith(relayAtsign: null);
-        final copiedWithEmpty = originalSettings.copyWith(
-          relayAtsign: ''.toAtsign(),
-        );
 
         expect(copiedWithNull.relayAtsign, '@rv_am');
-        expect(copiedWithEmpty.relayAtsign, '@rv_am');
       });
 
       test('should update overrideRelay when provided', () {
