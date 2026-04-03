@@ -32,7 +32,7 @@ void main() {
     late IssueKeys issueKeys;
     late IssueKeysParams params;
 
-    const testAtsign = '@impl_test';
+    final Atsign testAtsign = '@impl_test'.toAtsign();
     const testDevice = 'testDevice_123456';
 
     setUp(() {
@@ -165,7 +165,7 @@ void main() {
         ).thenAnswer((_) async => mockEnrollmentResponse);
 
         await expectLater(
-          issueKeys.approveEnrollment(fakeEnrollment),
+          issueKeys.approveEnrollment(fakeEnrollment, testAtsign),
           completes,
         ); // error less execution should count as success
       });
@@ -184,7 +184,7 @@ void main() {
         ).thenAnswer((_) async => mockEnrollmentResponse);
 
         await expectLater(
-          issueKeys.approveEnrollment(fakeEnrollment),
+          issueKeys.approveEnrollment(fakeEnrollment, testAtsign),
           throwsA(isA<AtEnrollmentException>()),
         );
       });
