@@ -282,6 +282,7 @@ Future<void> runCoreTestCases({
     clientAtsign: clientAtsign,
     daemonAtsign: daemonAtsign,
     relayAtsign: relayAtsign,
+    atDirectoryHost: atDirectoryHost,
     apkamKeysDirectory: apkamKeysDirectory,
   );
   testResults.addAll(test001Results);
@@ -447,6 +448,7 @@ Future<List<TestResult>> _test001MinusSFlag({
   required String clientAtsign,
   required String daemonAtsign,
   required String relayAtsign,
+  required String atDirectoryHost,
   required Directory apkamKeysDirectory,
 }) async {
   List<TestResult> testResults = [];
