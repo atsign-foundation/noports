@@ -167,6 +167,7 @@ class SrvdImpl
   }
 
   Future<void> notificationHandler(AtNotification n) async {
+    logger.info('Received notification: ${n.key} from ${n.from} to ${n.to}');
     try {
       if (!wellFormedRequest(n)) {
         logger.shout('Un-handled notification key: ${n.key}');
@@ -198,6 +199,9 @@ class SrvdImpl
           return await handleRequestPorts(n);
         case 'sessions':
           return await handleSessionMessages(topic, n);
+        case 'discover':
+          logger.info('Received discover request from ${n.from}');
+          return await handleDiscover(n.from);
         default:
           logger.warning(
             'unknown "$messageType" request received from ${n.from}'
@@ -457,6 +461,40 @@ class SrvdImpl
       Future.delayed(
         Duration(seconds: 30),
       ).whenComplete(() => preFetched.remove(sessionParams.sessionId)),
+    );
+  }
+
+  Future<void> handleDiscover(String requestingAtsign) async {
+    logger.info('Received discover request from $requestingAtsign');
+
+    final metadata = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..ttl = 10000
+      ..namespaceAware = true;
+
+    final atKey = AtKey()
+      ..key = 'discover'
+      ..sharedBy = atSign
+      ..sharedWith = requestingAtsign
+      ..namespace = Srvd.namespace
+      ..metadata = metadata;
+
+    final toSendIpAddr = {
+      'ip': ipAddress,
+      'port': bind443 ? 443 : null,
+    };
+
+    final notificationParams = NotificationParams.forUpdate(
+      atKey,
+      value: jsonEncode(toSendIpAddr),
+      notificationExpiry: Duration(minutes: 1),
+    );
+
+    await atClient.notificationService.notify(
+      notificationParams,
+      waitForFinalDeliveryStatus: false,
+      checkForFinalDeliveryStatus: false,
     );
   }
 
