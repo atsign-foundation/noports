@@ -617,7 +617,12 @@ class SshnpdImpl
   }
 
   Future<void> _handleLatencyCheckRequest(AtNotification notification) async {
-    final rvLatencyMap = await AtLatencyChecker().getRvLatencyMap();
+    if (notification.value == null) {
+      return;
+      // in this case the client will just timeout and throw an exception
+    }
+    Map<String, dynamic> rvServers = jsonDecode(notification.value!);
+    final rvLatencyMap = await AtLatencyChecker().getRvLatencyMap(rvServers);
     logger.finer('Got latency map: $rvLatencyMap');
 
     var atKey = AtKey()
@@ -628,8 +633,7 @@ class SshnpdImpl
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttl =
-            10000 // allow only ten seconds before this record expires
+        ..ttl = 60000
         ..namespaceAware = true);
 
     await _notify(atKey: atKey, value: jsonEncode(rvLatencyMap));

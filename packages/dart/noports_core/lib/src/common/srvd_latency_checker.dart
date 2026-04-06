@@ -2,15 +2,8 @@ import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
 
-const Map<String, List<String>> rvServers = {
-  '@rv_ap': ['91.242.241.90', '38.180.106.94'],
-  '@rv_eu': ['195.54.161.125', '38.180.8.69'],
-  '@rv_am': ['185.28.119.179', '38.180.89.181'],
-  '@rv_oc': ['139.99.184.231', '38.180.128.36'],
-};
-
 class AtLatencyChecker {
-  static AtSignLogger logger = AtSignLogger('AtLatencyChecker');
+  final AtSignLogger logger = AtSignLogger('AtLatencyChecker');
 
   Future<int> _getLatency(
     String host, {
@@ -34,16 +27,35 @@ class AtLatencyChecker {
     }
   }
 
-  Future<Map<String, int>> getRvLatencyMap() async {
+  /// Measures TCP latency from this machine to each RV in [rvServers].
+  ///
+  /// [rvServers] format:
+  /// ```json
+  /// {
+  ///   "@rv_am": { "ip": "192.0.2.1", "port": 443 },
+  ///   "@rv_eu": { "ip": "192.0.2.2", "port": 443 }
+  /// }
+  /// ```
+  ///
+  /// Returns a map of RV atSign → latency in milliseconds, or -1 if unreachable.
+  Future<Map<String, int>> getRvLatencyMap(
+    Map<String, dynamic> rvServers,
+  ) async {
     final latencyMap = <String, int>{};
+
     for (final rv in rvServers.keys) {
-      int latency = -1;
-      for (final ip in rvServers[rv]!) {
-        latency = await _getLatency(ip);
-        if (latency >= 0) break; // got a response, no need to try the next IP
+      final addr = rvServers[rv] as Map<String, dynamic>;
+      final ip = addr['ip'] as String?;
+      final port = addr['port'] as int?;
+
+      if (ip == null || port == null) {
+        logger.warning('Missing ip or port for $rv, skipping');
+        latencyMap[rv] = -1;
+        continue;
       }
-      latencyMap[rv] = latency;
+      latencyMap[rv] = await _getLatency(ip, port: port);
     }
+
     return latencyMap;
   }
 
@@ -66,14 +78,10 @@ class AtLatencyChecker {
       }
     }
 
-    logger.info('Client RV latencies: $clientLatencies');
-    logger.info('Daemon RV latencies: $daemonLatencies');
-
     if (bestRv == null) {
       throw StateError('No reachable RV found');
     }
 
-    logger.info('Selecting best RV: $bestRv');
     return bestRv;
   }
 }

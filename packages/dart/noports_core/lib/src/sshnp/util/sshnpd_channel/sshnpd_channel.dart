@@ -316,7 +316,21 @@ abstract class SshnpdChannel
     return completer.future;
   }
 
-  Future<Map<String, int>> getRvLatencyDevice() async {
+  /// Sends [rvServers] to the device daemon and waits for it to respond with
+  /// its measured latency to each RV.
+  ///
+  /// [rvServers] format:
+  /// ```json
+  /// {
+  ///   "@rv_am": { "ip": "192.0.2.1", "port": 443 },
+  ///   "@rv_eu": { "ip": "192.0.2.2", "port": 443 }
+  /// }
+  /// ```
+  ///
+  /// Returns a map of RV atSign → latency in milliseconds, or -1 if unreachable.
+  Future<Map<String, int>> getRvLatencyDevice(
+    Map<String, dynamic> rvServers,
+  ) async {
     final completer = Completer<Map<String, int>>();
     late StreamSubscription<AtNotification> subscription;
     subscription =
@@ -324,7 +338,9 @@ abstract class SshnpdChannel
           regex: 'rv_latency.${params.device}.${DefaultArgs.namespace}',
           shouldDecrypt: true,
         ).listen((notification) {
-          logger.info('Received rv_latencies from device: ${notification.value}');
+          logger.info(
+            'Received rv_latencies from device: ${notification.value}',
+          );
           if (notification.from == params.sshnpdAtSign &&
               !completer.isCompleted) {
             final Map<String, dynamic> raw = jsonDecode(
@@ -342,14 +358,20 @@ abstract class SshnpdChannel
         ..namespace = DefaultArgs.namespace
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000),
-      'latency_check',
+        ..metadata = (Metadata()..ttl = 60000),
+      jsonEncode(rvServers),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
     );
 
-    return completer.future;
+    return completer.future.timeout(
+      Duration(minutes: 1),
+      onTimeout: () {
+        subscription.cancel();
+        throw TimeoutException('Timeout waiting for rv_latencies from device');
+      },
+    );
   }
 
   /// List all available devices from the daemon.
