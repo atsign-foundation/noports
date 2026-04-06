@@ -61,6 +61,8 @@ Future<int> runCoreTestCases({
     requiredBinaries.add((ClientBinaryType.npt, language, version));
     requiredBinaries.add((ClientBinaryType.srv, language, version));
   }
+  // Add at_activate for current version (needed for APKAM enrollment)
+  requiredBinaries.add((ClientBinaryType.at_activate, ClientLanguage.dart, 'current'));
 
   List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
     required: requiredBinaries,
@@ -82,7 +84,7 @@ Future<int> runCoreTestCases({
     print('Created APKAM keys directory: ${apkamKeysDirectory.path}');
   }
 
-  // Ensure at_activate binary is available
+  // Get at_activate binary (already ensured in Phase 1)
   final ClientBinary atActivateBinary = clientBinaryManager.getBinary(
     binaryType: ClientBinaryType.at_activate,
     language: ClientLanguage.dart,
@@ -90,12 +92,7 @@ Future<int> runCoreTestCases({
   );
 
   if (!atActivateBinary.exists()) {
-    print('at_activate binary not found, compiling...');
-    final Process compileProcess = await atActivateBinary.compile(logDirectory: logDirectory);
-    final int compileExitCode = await compileProcess.exitCode;
-    if (compileExitCode != 0) {
-      throw Exception('Failed to compile at_activate binary');
-    }
+    throw Exception('at_activate binary should have been prepared in Phase 1 but was not found');
   }
 
   // Enroll client atsign
