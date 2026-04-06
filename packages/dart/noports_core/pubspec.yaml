@@ -9,8 +9,9 @@ environment:
 
 dependencies:
   args: ^2.4.2
-  at_chops: ^2.0.1
-  at_client: ^3.10.0
+  at_auth: ^3.0.1
+  at_chops: ^3.0.0
+  at_client: ^3.11.0
   at_commons: ^5.8.0
   at_cli_commons: ^3.0.1
   at_utils: ^3.4.0
@@ -34,7 +35,6 @@ dependencies:
   at_onboarding_cli: ^1.14.2
 
 dependency_overrides:
-  archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

@@ -82,7 +82,7 @@ void main() {
       expect(verifier.isSideA, null);
 
       bool verified = await verifier.verifyChallengeResponse(
-        authenticator.responseToChallenge(verifier.challenge),
+        await authenticator.responseToChallenge(verifier.challenge),
       );
 
       expect(verified, true);
@@ -108,7 +108,7 @@ void main() {
 
       await expectLater(
         verifier.verifyChallengeResponse(
-          authenticator.responseToChallenge(verifier.challenge),
+          await authenticator.responseToChallenge(verifier.challenge),
         ),
         throwsA(
           isA<RAVE>().having(
@@ -141,7 +141,7 @@ void main() {
 
       await expectLater(
         verifier.verifyChallengeResponse(
-          authenticator.responseToChallenge(verifier.challenge),
+          await authenticator.responseToChallenge(verifier.challenge),
         ),
         throwsA(
           isA<RAVE>().having(
@@ -174,7 +174,7 @@ void main() {
 
       await expectLater(
         verifier.verifyChallengeResponse(
-          authenticator.responseToChallenge(wrongChallenge),
+          await authenticator.responseToChallenge(wrongChallenge),
         ),
         throwsA(
           isA<RAVE>()

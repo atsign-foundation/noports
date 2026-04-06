@@ -107,10 +107,10 @@ jobs:
       # upon installing flutter in this windows-signer,
       # subsequent steps will need to use `shell: bash`
       - name: Install Flutter stable
-        uses: subosito/flutter-action@0ca7a949e71ae44c8e688a51c5e7e93b2c87e295 # v2.22.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
-          cache: true
+          cache: false
 
       - name: Build and Sign Windows desktop binaries
         shell: bash # this line is needed because we are in a windows-signer
@@ -164,10 +164,18 @@ jobs:
         working-directory: packages/dart/npt_flutter
         shell: bash
         run: |
+          echo "Generating SHA for ${ASSET_NAME}"
           sha256sum "${ASSET_NAME}" > checksums.txt
+          cat checksums.txt
+          echo "Generating SHA for ${SBOM_NAME}"
           sha256sum "${SBOM_NAME}" >> checksums.txt
+          cat checksums.txt
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-          gh release view "${RELEASE_TAG}" >/dev/null 2>&1
+          # Check if release exists, create as draft if it doesn't
+          if ! gh release view "${RELEASE_TAG}" >/dev/null; then
+            echo "Release ${RELEASE_TAG} not found. Creating a draft release..."
+            gh release create "${RELEASE_TAG}" --draft --title "${RELEASE_TAG}" --notes "Automated release for ${RELEASE_TAG}"
+          fi
           gh release upload \
             "${RELEASE_TAG}" \
             "${ASSET_NAME}" \
