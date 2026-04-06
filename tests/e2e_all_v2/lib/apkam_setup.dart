@@ -55,11 +55,14 @@ Future<int> enroll({
     otpArgs,
   );
   exitCode = await otpProcessResult.exitCode;
+  print('OTP stdout: ${otpProcessResult.stdout}');
+  print('OTP stderr: ${otpProcessResult.stderr}');
   if(exitCode != 0) {
-    print('Failed to generate OTP for ${atsign}. Output: ${otpProcessResult.stdout}, Error: ${otpProcessResult.stderr}');
+    print('Failed to generate OTP for ${atsign}. Exit code: $exitCode');
     return exitCode;
   }
   final String otp = otpProcessResult.stdout.toString().trim();
+  print('Generated OTP: $otp');
 
   // Buffer between at_activate commands
   await Future.delayed(const Duration(seconds: 2));
@@ -94,9 +97,11 @@ Future<int> enroll({
     denyArgs,
   );
   exitCode = await denyProcessResult.exitCode;
+  print('Deny stdout: ${denyProcessResult.stdout}');
+  print('Deny stderr: ${denyProcessResult.stderr}');
+  print('Deny exit code: $exitCode');
   if(exitCode != 0) {
-    print('Warning: deny command returned non-zero exit code. Output: ${denyProcessResult.stdout}, Error: ${denyProcessResult.stderr}');
-    print('Continuing anyway...');
+    print('Warning: deny command returned non-zero exit code. Continuing anyway...');
   }
 
   // Buffer between at_activate commands
@@ -116,9 +121,11 @@ Future<int> enroll({
     revokeArgs,
   );
   exitCode = await revokeProcessResult.exitCode;
+  print('Revoke stdout: ${revokeProcessResult.stdout}');
+  print('Revoke stderr: ${revokeProcessResult.stderr}');
+  print('Revoke exit code: $exitCode');
   if(exitCode != 0) {
-    print('Warning: revoke command returned non-zero exit code. Output: ${revokeProcessResult.stdout}, Error: ${revokeProcessResult.stderr}');
-    print('Continuing anyway...');
+    print('Warning: revoke command returned non-zero exit code. Continuing anyway...');
   }
 
   // Buffer between at_activate commands
@@ -164,10 +171,11 @@ Future<int> enroll({
     approveArgs,
   );
   exitCode = await approveProcessResult.exitCode;
+  print('Approve stdout: ${approveProcessResult.stdout}');
+  print('Approve stderr: ${approveProcessResult.stderr}');
+  print('Approve exit code: $exitCode');
   if(exitCode != 0) {
     print('Failed to approve ${atsign}.');
-    print('Approve stdout: ${approveProcessResult.stdout}');
-    print('Approve stderr: ${approveProcessResult.stderr}');
     return exitCode;
   }
   print('Approval completed for ${atsign}');
@@ -175,10 +183,11 @@ Future<int> enroll({
   // Ensure enrollment process exits
   print('Waiting for enrollment process to complete for ${atsign}...');
   exitCode = await enrollProcess.exitCode;
+  print('Enroll stdout: ${enrollStdout.toString()}');
+  print('Enroll stderr: ${enrollStderr.toString()}');
+  print('Enroll exit code: $exitCode');
   if(exitCode != 0) {
     print('Failed to enroll ${atsign}.');
-    print('Enroll stdout: ${enrollStdout.toString()}');
-    print('Enroll stderr: ${enrollStderr.toString()}');
     return exitCode;
   }
   print('Enrollment process completed for ${atsign}');
