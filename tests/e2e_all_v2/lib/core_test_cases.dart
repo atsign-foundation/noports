@@ -114,6 +114,10 @@ Future<int> runCoreTestCases({
   }
   print('Successfully enrolled client atsign: $clientAtsign');
 
+  // Buffer between enrollments
+  print('Waiting 3 seconds before daemon enrollment...');
+  await Future.delayed(const Duration(seconds: 3));
+
   // Enroll daemon atsign
   print('Enrolling daemon atsign: $daemonAtsign');
   final int daemonEnrollExitCode = await enroll(

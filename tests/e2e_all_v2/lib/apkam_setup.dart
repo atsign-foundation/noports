@@ -1,4 +1,5 @@
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:e2e_all_v2/client_binaries.dart';
@@ -82,8 +83,8 @@ Future<int> enroll({
   print('Denying any pending enrollment requests for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> denyArgs = [
     'deny',
-    '-a', atsign,
     '-r', atDirectoryHost,
+    '-a', atsign,
     '--arx', apkamApp,
     '--drx', apkamDeviceName,
   ];
@@ -104,8 +105,8 @@ Future<int> enroll({
   print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> revokeArgs = [
     'revoke',
-    '-a', atsign,
     '-r', atDirectoryHost,
+    '-a', atsign,
     '--arx', apkamApp,
     '--drx', apkamDeviceName,
   ];
@@ -126,8 +127,8 @@ Future<int> enroll({
   print('Submitting enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> enrollArgs = [
     'enroll',
-    '-a', atsign,
     '-r', atDirectoryHost,
+    '-a', atsign,
     '--app', apkamApp,
     '--device', apkamDeviceName,
     '--namespaces', 'sshnp:rw,sshrvd:rw',
@@ -139,6 +140,13 @@ Future<int> enroll({
     atActivateClientBinary.binaryPath,
     enrollArgs,
   );
+
+  // Capture stdout and stderr from enroll process
+  final StringBuffer enrollStdout = StringBuffer();
+  final StringBuffer enrollStderr = StringBuffer();
+  enrollProcess.stdout.transform(utf8.decoder).listen((data) => enrollStdout.write(data));
+  enrollProcess.stderr.transform(utf8.decoder).listen((data) => enrollStderr.write(data));
+
   print('Waiting for enrollment approval for ${atsign}...');
   sleep(const Duration(seconds: 5));
 
@@ -158,15 +166,22 @@ Future<int> enroll({
   exitCode = await approveProcessResult.exitCode;
   if(exitCode != 0) {
     print('Failed to approve ${atsign}.');
+    print('Approve stdout: ${approveProcessResult.stdout}');
+    print('Approve stderr: ${approveProcessResult.stderr}');
     return exitCode;
   }
+  print('Approval completed for ${atsign}');
 
   // Ensure enrollment process exits
+  print('Waiting for enrollment process to complete for ${atsign}...');
   exitCode = await enrollProcess.exitCode;
   if(exitCode != 0) {
-    print('Failed to enroll ${atsign}. Output: ${enrollProcess.stdout}, Error: ${enrollProcess.stderr}');
+    print('Failed to enroll ${atsign}.');
+    print('Enroll stdout: ${enrollStdout.toString()}');
+    print('Enroll stderr: ${enrollStderr.toString()}');
     return exitCode;
   }
+  print('Enrollment process completed for ${atsign}');
 
   // Ensure keys file exists
   File potentiallyExistingKeysFile2 =  File(apkamKeysFilePath);
