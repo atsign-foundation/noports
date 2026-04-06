@@ -11,7 +11,7 @@ String getApkamApp() {
 String getApkamDeviceName({
   required final String which,
   required final String testRunId}) {
-  return 'e2e_all_v2_${which}_${testRunId}';
+  return 'v2_${which}_${testRunId}';
 }
 
 String getApkamKeysFileName({
