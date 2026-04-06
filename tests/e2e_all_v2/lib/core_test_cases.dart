@@ -223,6 +223,7 @@ Future<void> runCoreTestCases({
         'sudo service ssh start && '
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithFlags} '
+          '-r $atDirectoryHost '
           '-s -u',
       ],
     );
@@ -246,7 +247,8 @@ Future<void> runCoreTestCases({
         '-c',
         'sudo service ssh start && '
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
-          '-d ${deviceNameWithoutFlags}',
+          '-d ${deviceNameWithoutFlags} '
+          '-r $atDirectoryHost',
       ],
     );
     dockerInstances.add(dockerInstance2);
@@ -537,6 +539,7 @@ Future<List<TestResult>> _test001MinusSFlag({
       '-t', daemonAtsign,
       '-r', relayAtsign,
       '-d', deviceName,
+      '--root-domain', atDirectoryHost,
       ...extraFlags,
     ];
     print('Executing: $executable ${args.join(' ')}');
