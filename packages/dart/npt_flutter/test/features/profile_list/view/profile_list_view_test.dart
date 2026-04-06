@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -51,18 +52,18 @@ void main() {
     const testUuid2 = 'test-uuid-2';
     const testUuids = [testUuid1, testUuid2];
 
-    const testProfile1 = Profile(
+    final testProfile1 = Profile(
       testUuid1,
       displayName: 'Test Profile 1',
-      sshnpdAtsign: '@test1',
-      relayAtsign: '@relay1',
+      sshnpdAtsign: '@test1'.toAtsign(),
+      relayAtsign: '@relay1'.toAtsign(),
       deviceName: 'device1',
       remotePort: 22,
       localPort: 2022,
     );
 
-    const testSettings = Settings(
-      relayAtsign: '@rv_eu',
+    final testSettings = Settings(
+      relayAtsign: '@rv_eu'.toAtsign(),
       overrideRelay: false,
       viewLayout: PreferredViewLayout.minimal,
       darkMode: false,
@@ -99,8 +100,8 @@ void main() {
       provideDummy<ProfileCacheState>(const ProfileCacheState({}));
       provideDummy<ProfileState>(const ProfileInitial('test'));
       provideDummy<OnboardingState>(
-        const OnboardingState(
-          atSign: '@test',
+        OnboardingState(
+          atsign: '@test'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'root.atsign.org',
         ),
@@ -123,10 +124,9 @@ void main() {
       when(mockProfileBloc.uuid).thenReturn(testUuid1);
       when(
         mockProfileBloc.state,
-      ).thenReturn(const ProfileLoaded(testUuid1, profile: testProfile1));
+      ).thenReturn(ProfileLoaded(testUuid1, profile: testProfile1));
       when(mockProfileBloc.stream).thenAnswer(
-        (_) =>
-            Stream.value(const ProfileLoaded(testUuid1, profile: testProfile1)),
+        (_) => Stream.value(ProfileLoaded(testUuid1, profile: testProfile1)),
       );
 
       when(
@@ -140,16 +140,16 @@ void main() {
       ); // Mock as already backed up to avoid dialog
 
       when(mockOnboardingCubit.state).thenReturn(
-        const OnboardingState(
-          atSign: '@test',
+        OnboardingState(
+          atsign: '@test'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'root.atsign.org',
         ),
       );
       when(mockOnboardingCubit.stream).thenAnswer(
         (_) => Stream.value(
-          const OnboardingState(
-            atSign: '@test',
+          OnboardingState(
+            atsign: '@test'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -158,10 +158,10 @@ void main() {
 
       when(
         mockSettingsBloc.state,
-      ).thenReturn(const SettingsLoaded(settings: testSettings));
-      when(mockSettingsBloc.stream).thenAnswer(
-        (_) => Stream.value(const SettingsLoaded(settings: testSettings)),
-      );
+      ).thenReturn(SettingsLoaded(settings: testSettings));
+      when(
+        mockSettingsBloc.stream,
+      ).thenAnswer((_) => Stream.value(SettingsLoaded(settings: testSettings)));
 
       when(
         mockProfilesSelectedCubit.state,

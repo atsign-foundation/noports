@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -19,7 +20,7 @@ void main() {
 
     group('Initial State', () {
       test('has correct initial state', () {
-        expect(cubit.state.atSign, equals(''));
+        expect(cubit.state.atsign, equals(null));
         expect(cubit.state.status, equals(OnboardingStatus.offboarded));
         expect(cubit.state.rootDomain, equals('root.atsign.org'));
       });
@@ -27,14 +28,14 @@ void main() {
       test('initial state toString is correct', () {
         expect(
           cubit.state.toString(),
-          equals('OnboardingState(, offboarded, root.atsign.org)'),
+          equals('OnboardingState(null, offboarded, root.atsign.org)'),
         );
       });
 
       test('initial state props are correct', () {
         expect(
           cubit.state.props,
-          equals(['', OnboardingStatus.offboarded, 'root.atsign.org']),
+          equals([null, OnboardingStatus.offboarded, 'root.atsign.org']),
         );
       });
     });
@@ -43,10 +44,10 @@ void main() {
       blocTest<OnboardingCubit, OnboardingState>(
         'emits new state with updated atSign',
         build: () => cubit,
-        act: (cubit) => cubit.setAtSign('@test_user'),
+        act: (cubit) => cubit.setAtsign('@test_user'.toAtsign()),
         expect: () => [
-          const OnboardingState(
-            atSign: '@test_user',
+          OnboardingState(
+            atsign: '@test_user'.toAtsign(),
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -63,10 +64,10 @@ void main() {
           );
           return cubit;
         },
-        act: (cubit) => cubit.setAtSign('@new_user'),
+        act: (cubit) => cubit.setAtsign('@new_user'.toAtsign()),
         expect: () => [
-          const OnboardingState(
-            atSign: '@new_user',
+          OnboardingState(
+            atsign: '@new_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'custom.domain.com',
           ),
@@ -74,8 +75,8 @@ void main() {
       );
 
       test('getAtSign returns current atSign', () {
-        cubit.setAtSign('@test_user');
-        expect(cubit.getAtSign(), equals('@test_user'));
+        cubit.setAtsign('@test_user'.toAtsign());
+        expect(cubit.getAtsign(), equals('@test_user'.toAtsign()));
       });
     });
 
@@ -86,7 +87,6 @@ void main() {
         act: (cubit) => cubit.setStatus(OnboardingStatus.onboarded),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.onboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -98,15 +98,15 @@ void main() {
         build: () {
           final cubit = OnboardingCubit();
           cubit.setState(
-            atSign: '@existing_user',
+            atsign: '@existing_user'.toAtsign(),
             rootDomain: 'custom.domain.com',
           );
           return cubit;
         },
         act: (cubit) => cubit.setStatus(OnboardingStatus.onboarded),
         expect: () => [
-          const OnboardingState(
-            atSign: '@existing_user',
+          OnboardingState(
+            atsign: '@existing_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'custom.domain.com',
           ),
@@ -126,7 +126,6 @@ void main() {
         act: (cubit) => cubit.setRootDomain('test.domain.com'),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.offboarded,
             rootDomain: 'test.domain.com',
           ),
@@ -138,15 +137,15 @@ void main() {
         build: () {
           final cubit = OnboardingCubit();
           cubit.setState(
-            atSign: '@existing_user',
+            atsign: '@existing_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
           );
           return cubit;
         },
         act: (cubit) => cubit.setRootDomain('custom.domain.com'),
         expect: () => [
-          const OnboardingState(
-            atSign: '@existing_user',
+          OnboardingState(
+            atsign: '@existing_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'custom.domain.com',
           ),
@@ -163,10 +162,10 @@ void main() {
       blocTest<OnboardingCubit, OnboardingState>(
         'updates only atSign when only atSign is provided',
         build: () => cubit,
-        act: (cubit) => cubit.setState(atSign: '@new_user'),
+        act: (cubit) => cubit.setState(atsign: '@new_user'.toAtsign()),
         expect: () => [
-          const OnboardingState(
-            atSign: '@new_user',
+          OnboardingState(
+            atsign: '@new_user'.toAtsign(),
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -179,7 +178,6 @@ void main() {
         act: (cubit) => cubit.setState(status: OnboardingStatus.onboarded),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.onboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -192,7 +190,6 @@ void main() {
         act: (cubit) => cubit.setState(rootDomain: 'custom.domain.com'),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.offboarded,
             rootDomain: 'custom.domain.com',
           ),
@@ -203,13 +200,13 @@ void main() {
         'updates multiple fields when multiple parameters are provided',
         build: () => cubit,
         act: (cubit) => cubit.setState(
-          atSign: '@test_user',
+          atsign: '@test_user'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'test.domain.com',
         ),
         expect: () => [
-          const OnboardingState(
-            atSign: '@test_user',
+          OnboardingState(
+            atsign: '@test_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'test.domain.com',
           ),
@@ -221,17 +218,18 @@ void main() {
         build: () {
           final cubit = OnboardingCubit();
           cubit.setState(
-            atSign: '@existing_user',
+            atsign: '@existing_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'existing.domain.com',
           );
           return cubit;
         },
-        act: (cubit) =>
-            cubit.setState(atSign: '@new_user'), // Only update atSign
+        act: (cubit) => cubit.setState(
+          atsign: '@new_user'.toAtsign(),
+        ), // Only update atsign
         expect: () => [
-          const OnboardingState(
-            atSign: '@new_user',
+          OnboardingState(
+            atsign: '@new_user'.toAtsign(),
             status: OnboardingStatus.onboarded, // Preserved
             rootDomain: 'existing.domain.com', // Preserved
           ),
@@ -244,7 +242,6 @@ void main() {
         act: (cubit) => cubit.setState(),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -257,29 +254,29 @@ void main() {
         'handles multiple state changes in sequence',
         build: () => cubit,
         act: (cubit) {
-          cubit.setAtSign('@first_user');
+          cubit.setAtsign('@first_user'.toAtsign());
           cubit.setStatus(OnboardingStatus.onboarded);
           cubit.setRootDomain('custom.domain.com');
-          cubit.setAtSign('@second_user');
+          cubit.setAtsign('@second_user'.toAtsign());
         },
         expect: () => [
-          const OnboardingState(
-            atSign: '@first_user',
+          OnboardingState(
+            atsign: '@first_user'.toAtsign(),
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
-          const OnboardingState(
-            atSign: '@first_user',
+          OnboardingState(
+            atsign: '@first_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'root.atsign.org',
           ),
-          const OnboardingState(
-            atSign: '@first_user',
+          OnboardingState(
+            atsign: '@first_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'custom.domain.com',
           ),
-          const OnboardingState(
-            atSign: '@second_user',
+          OnboardingState(
+            atsign: '@second_user'.toAtsign(),
             status: OnboardingStatus.onboarded,
             rootDomain: 'custom.domain.com',
           ),
@@ -287,11 +284,11 @@ void main() {
       );
 
       test('getters return current state values after multiple changes', () {
-        cubit.setAtSign('@test_user');
+        cubit.setAtsign('@test_user'.toAtsign());
         cubit.setStatus(OnboardingStatus.onboarded);
         cubit.setRootDomain('test.domain.com');
 
-        expect(cubit.getAtSign(), equals('@test_user'));
+        expect(cubit.getAtsign(), equals('@test_user'));
         expect(cubit.getStatus(), equals(OnboardingStatus.onboarded));
         expect(cubit.getRootDomain(), equals('test.domain.com'));
       });
@@ -299,18 +296,18 @@ void main() {
 
     group('OnboardingState', () {
       test('equality works correctly', () {
-        const state1 = OnboardingState(
-          atSign: '@test_user',
+        final state1 = OnboardingState(
+          atsign: '@test_user'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'test.domain.com',
         );
-        const state2 = OnboardingState(
-          atSign: '@test_user',
+        final state2 = OnboardingState(
+          atsign: '@test_user'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'test.domain.com',
         );
-        const state3 = OnboardingState(
-          atSign: '@different_user',
+        final state3 = OnboardingState(
+          atsign: '@different_user'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'test.domain.com',
         );
@@ -320,8 +317,8 @@ void main() {
       });
 
       test('toString and props work correctly', () {
-        const state = OnboardingState(
-          atSign: '@test_user',
+        final state = OnboardingState(
+          atsign: '@test_user'.toAtsign(),
           status: OnboardingStatus.onboarded,
           rootDomain: 'test.domain.com',
         );
@@ -354,25 +351,11 @@ void main() {
 
     group('Edge Cases', () {
       blocTest<OnboardingCubit, OnboardingState>(
-        'handles empty string atSign',
-        build: () => cubit,
-        act: (cubit) => cubit.setAtSign(''),
-        expect: () => [
-          const OnboardingState(
-            atSign: '',
-            status: OnboardingStatus.offboarded,
-            rootDomain: 'root.atsign.org',
-          ),
-        ],
-      );
-
-      blocTest<OnboardingCubit, OnboardingState>(
         'handles empty string rootDomain',
         build: () => cubit,
         act: (cubit) => cubit.setRootDomain(''),
         expect: () => [
           const OnboardingState(
-            atSign: '',
             status: OnboardingStatus.offboarded,
             rootDomain: '',
           ),
@@ -382,10 +365,10 @@ void main() {
       blocTest<OnboardingCubit, OnboardingState>(
         'handles very long atSign',
         build: () => cubit,
-        act: (cubit) => cubit.setAtSign('@${'a' * 100}'),
+        act: (cubit) => cubit.setAtsign('@${'a' * 100}'.toAtsign()),
         expect: () => [
           OnboardingState(
-            atSign: '@${'a' * 100}',
+            atsign: '@${'a' * 100}'.toAtsign(),
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
@@ -398,7 +381,6 @@ void main() {
         act: (cubit) => cubit.setRootDomain('${'subdomain.' * 10}domain.com'),
         expect: () => [
           OnboardingState(
-            atSign: '',
             status: OnboardingStatus.offboarded,
             rootDomain: '${'subdomain.' * 10}domain.com',
           ),

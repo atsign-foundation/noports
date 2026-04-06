@@ -31,7 +31,7 @@ class _AtDirectorySelectorState extends State<AtDirectorySelector> {
             selection: TextSelection.collapsed(offset: state.rootDomain.length),
           );
           return TextFormField(
-            enabled: !(widget.options?.containsKey(state.atSign) ?? false),
+            enabled: !(widget.options?.containsKey(state.atsign) ?? false),
             controller: controller,
             onChanged: (rootDomain) {
               context.read<OnboardingCubit>().setRootDomain(rootDomain);

@@ -1,22 +1,23 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
-class AtSignsListWidget extends StatefulWidget {
+class AtsignsListWidget extends StatefulWidget {
   final String label;
-  final List<String> atSigns;
+  final List<Atsign> atsigns;
   final bool isEditing;
-  final Function(List<String>) onChanged;
+  final Function(List<Atsign>) onChanged;
   final String? helperText;
   final String? tooltip;
   final int maxVisibleItems;
 
-  const AtSignsListWidget({
+  const AtsignsListWidget({
     super.key,
     required this.label,
-    required this.atSigns,
+    required this.atsigns,
     required this.isEditing,
     required this.onChanged,
     this.helperText,
@@ -25,17 +26,17 @@ class AtSignsListWidget extends StatefulWidget {
   });
 
   @override
-  State<AtSignsListWidget> createState() => _AtSignsListWidgetState();
+  State<AtsignsListWidget> createState() => _AtsignsListWidgetState();
 }
 
-class _AtSignsListWidgetState extends State<AtSignsListWidget> {
+class _AtsignsListWidgetState extends State<AtsignsListWidget> {
   late TextEditingController _addController;
-  late List<String> _localAtSigns;
+  late List<Atsign> _localAtsigns;
   bool _isHovering = false;
   static const double _itemHeight = Sizes.p42;
 
   double get _listHeight {
-    final itemCount = _localAtSigns.length;
+    final itemCount = _localAtsigns.length;
     final heightForItems = itemCount <= widget.maxVisibleItems
         ? itemCount * _itemHeight
         : widget.maxVisibleItems * _itemHeight;
@@ -46,14 +47,14 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
   void initState() {
     super.initState();
     _addController = TextEditingController();
-    _localAtSigns = List.from(widget.atSigns);
+    _localAtsigns = List.from(widget.atsigns);
   }
 
   @override
-  void didUpdateWidget(AtSignsListWidget oldWidget) {
+  void didUpdateWidget(AtsignsListWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.atSigns != widget.atSigns) {
-      _localAtSigns = List.from(widget.atSigns);
+    if (oldWidget.atsigns != widget.atsigns) {
+      _localAtsigns = List.from(widget.atsigns);
     }
   }
 
@@ -63,26 +64,24 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
     super.dispose();
   }
 
-  void _addAtSign() {
-    final input = _addController.text.trim();
+  void _addAtsign() {
+    final input = _addController.text.trim().toAtsign();
     if (input.isEmpty) return;
 
-    final newAtSign = input.startsWith('@') ? input : '@$input';
-
-    if (!_localAtSigns.contains(newAtSign)) {
+    if (!_localAtsigns.contains(input)) {
       setState(() {
-        _localAtSigns.add(newAtSign);
+        _localAtsigns.add(input);
         _addController.clear();
       });
-      widget.onChanged(_localAtSigns);
+      widget.onChanged(_localAtsigns);
     }
   }
 
-  void _removeAtSign(String atSign) {
+  void _removeAtsign(Atsign atsign) {
     setState(() {
-      _localAtSigns.remove(atSign);
+      _localAtsigns.remove(atsign);
     });
-    widget.onChanged(_localAtSigns);
+    widget.onChanged(_localAtsigns);
   }
 
   void _showTooltipModal(AppLocalizations strings) {
@@ -156,7 +155,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
         ),
         gapH12,
 
-        if (_localAtSigns.isEmpty)
+        if (_localAtsigns.isEmpty)
           Container(
             padding: const EdgeInsets.all(Sizes.p16),
             decoration: BoxDecoration(
@@ -184,22 +183,22 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
             child: ListView.separated(
               shrinkWrap: true,
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: _localAtSigns.length,
+              itemCount: _localAtsigns.length,
               separatorBuilder: (context, index) =>
                   const Divider(height: Sizes.p1, color: AppColor.dividerColor),
               itemBuilder: (context, index) {
-                final atSign = _localAtSigns[index];
+                final atsign = _localAtsigns[index];
                 return ListTile(
                   dense: true,
                   leading: const Icon(Icons.person, size: Sizes.p20),
-                  title: Text(atSign),
+                  title: Text(atsign),
                   trailing: widget.isEditing
                       ? IconButton(
                           icon: const Icon(
                             Icons.remove_circle_outline,
                             color: Colors.red,
                           ),
-                          onPressed: () => _removeAtSign(atSign),
+                          onPressed: () => _removeAtsign(atsign),
                           iconSize: Sizes.p20,
                         )
                       : null,
@@ -224,7 +223,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
                   ),
                   onChanged: (_) => setState(() {}),
                   validator: FormValidator.validateOptionalAtsignField,
-                  onFieldSubmitted: (_) => _addAtSign(),
+                  onFieldSubmitted: (_) => _addAtsign(),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
               ),
@@ -232,7 +231,7 @@ class _AtSignsListWidgetState extends State<AtSignsListWidget> {
               ElevatedButton.icon(
                 onPressed: _addController.text.trim().isEmpty
                     ? null
-                    : _addAtSign,
+                    : _addAtsign,
                 icon: const Icon(Icons.add, size: Sizes.p18),
                 label: Text(strings.add),
               ),

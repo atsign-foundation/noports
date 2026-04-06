@@ -56,7 +56,7 @@ class ConnectedProfilesDialog extends StatelessWidget {
             PhosphorIcons.userCircle(),
             // color: Colors.red,
           ),
-          Text(strings.switchAtSign),
+          Text(strings.switchAtsign),
         ],
       ),
       content: connectedProfileNames.isNotEmpty
@@ -64,7 +64,7 @@ class ConnectedProfilesDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.switchAtSignDescription,
+                  strings.switchAtsignDescription,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class ConnectedProfilesDialog extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: strings.switchAtSignNote.split(' ').first,
+                        text: strings.switchAtsignNote.split(' ').first,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: AppColor.primaryColor,
                           fontWeight: FontWeight.bold,
@@ -138,7 +138,7 @@ class ConnectedProfilesDialog extends StatelessWidget {
                       ),
                       TextSpan(
                         text:
-                            ' ${strings.switchAtSignNote.split(' ').skip(1).join(' ')}',
+                            ' ${strings.switchAtsignNote.split(' ').skip(1).join(' ')}',
                       ),
                     ],
                   ),

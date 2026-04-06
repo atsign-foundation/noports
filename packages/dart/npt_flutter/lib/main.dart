@@ -14,6 +14,6 @@ Future<void> main() async {
   );
   await windowManager.ensureInitialized();
   await windowManager.waitUntilReadyToShow(windowOptions);
-  // AtSignLogger.root_level = 'FINEST';
+  // AtsignLogger.root_level = 'FINEST';
   runApp(const App());
 }

@@ -1,10 +1,11 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/policy/view/policy_view.dart';
 
 class PolicyPageArguments {
-  final String atSign;
+  final Atsign atsign;
 
-  PolicyPageArguments(this.atSign);
+  PolicyPageArguments(this.atsign);
 }
 
 class PolicyPage extends StatelessWidget {
@@ -12,7 +13,8 @@ class PolicyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PolicyPageArguments args = ModalRoute.of(context)!.settings.arguments as PolicyPageArguments;
-    return PolicyView(atSign: args.atSign);
+    final PolicyPageArguments args =
+        ModalRoute.of(context)!.settings.arguments as PolicyPageArguments;
+    return PolicyView(atsign: args.atsign);
   }
 }

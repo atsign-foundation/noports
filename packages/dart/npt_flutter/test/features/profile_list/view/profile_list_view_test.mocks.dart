@@ -5,18 +5,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
+import 'package:at_client_mobile/at_client_mobile.dart' as _i10;
 import 'package:flutter_bloc/flutter_bloc.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart'
     as _i9;
-import 'package:npt_flutter/features/favorite/favorite.dart' as _i11;
+import 'package:npt_flutter/features/favorite/favorite.dart' as _i12;
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart'
     as _i3;
 import 'package:npt_flutter/features/profile/profile.dart' as _i2;
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart' as _i8;
 import 'package:npt_flutter/features/profile_list/profile_list.dart' as _i4;
-import 'package:npt_flutter/features/settings/settings.dart' as _i10;
+import 'package:npt_flutter/features/settings/settings.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -31,6 +32,7 @@ import 'package:npt_flutter/features/settings/settings.dart' as _i10;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeProfileCacheState_0 extends _i1.SmartFake
     implements _i2.ProfileCacheState {
@@ -592,25 +594,25 @@ class MockOnboardingCubit extends _i1.Mock implements _i3.OnboardingCubit {
           as String);
 
   @override
-  void setAtSign(String? atSign) => super.noSuchMethod(
-    Invocation.method(#setAtSign, [atSign]),
+  void setAtsign(_i10.Atsign? atsign) => super.noSuchMethod(
+    Invocation.method(#setAtsign, [atsign]),
     returnValueForMissingStub: null,
   );
 
   @override
-  String getAtSign() =>
+  _i10.Atsign getAtsign() =>
       (super.noSuchMethod(
-            Invocation.method(#getAtSign, []),
+            Invocation.method(#getAtsign, []),
             returnValue: _i5.dummyValue<String>(
               this,
-              Invocation.method(#getAtSign, []),
+              Invocation.method(#getAtsign, []),
             ),
             returnValueForMissingStub: _i5.dummyValue<String>(
               this,
-              Invocation.method(#getAtSign, []),
+              Invocation.method(#getAtsign, []),
             ),
           )
-          as String);
+          as _i10.Atsign);
 
   @override
   void setStatus(_i3.OnboardingStatus? status) => super.noSuchMethod(
@@ -629,12 +631,12 @@ class MockOnboardingCubit extends _i1.Mock implements _i3.OnboardingCubit {
 
   @override
   void setState({
-    String? atSign,
+    _i10.Atsign? atsign,
     _i3.OnboardingStatus? status,
     String? rootDomain,
   }) => super.noSuchMethod(
     Invocation.method(#setState, [], {
-      #atSign: atSign,
+      #atsign: atsign,
       #status: status,
       #rootDomain: rootDomain,
     }),
@@ -678,30 +680,30 @@ class MockOnboardingCubit extends _i1.Mock implements _i3.OnboardingCubit {
 /// A class which mocks [SettingsBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSettingsBloc extends _i1.Mock implements _i10.SettingsBloc {
+class MockSettingsBloc extends _i1.Mock implements _i11.SettingsBloc {
   @override
-  _i10.SettingsState get state =>
+  _i11.SettingsState get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _i5.dummyValue<_i10.SettingsState>(
+            returnValue: _i5.dummyValue<_i11.SettingsState>(
               this,
               Invocation.getter(#state),
             ),
-            returnValueForMissingStub: _i5.dummyValue<_i10.SettingsState>(
+            returnValueForMissingStub: _i5.dummyValue<_i11.SettingsState>(
               this,
               Invocation.getter(#state),
             ),
           )
-          as _i10.SettingsState);
+          as _i11.SettingsState);
 
   @override
-  _i6.Stream<_i10.SettingsState> get stream =>
+  _i6.Stream<_i11.SettingsState> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i6.Stream<_i10.SettingsState>.empty(),
-            returnValueForMissingStub: _i6.Stream<_i10.SettingsState>.empty(),
+            returnValue: _i6.Stream<_i11.SettingsState>.empty(),
+            returnValueForMissingStub: _i6.Stream<_i11.SettingsState>.empty(),
           )
-          as _i6.Stream<_i10.SettingsState>);
+          as _i6.Stream<_i11.SettingsState>);
 
   @override
   bool get isClosed =>
@@ -719,26 +721,26 @@ class MockSettingsBloc extends _i1.Mock implements _i10.SettingsBloc {
   );
 
   @override
-  void onEvent(_i10.SettingsEvent? event) => super.noSuchMethod(
+  void onEvent(_i11.SettingsEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void emit(_i10.SettingsState? state) => super.noSuchMethod(
+  void emit(_i11.SettingsState? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void add(_i10.SettingsEvent? event) => super.noSuchMethod(
+  void add(_i11.SettingsEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void on<E extends _i10.SettingsEvent>(
-    _i7.EventHandler<E, _i10.SettingsState>? handler, {
+  void on<E extends _i11.SettingsEvent>(
+    _i7.EventHandler<E, _i11.SettingsState>? handler, {
     _i7.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
@@ -747,7 +749,7 @@ class MockSettingsBloc extends _i1.Mock implements _i10.SettingsBloc {
 
   @override
   void onTransition(
-    _i7.Transition<_i10.SettingsEvent, _i10.SettingsState>? transition,
+    _i7.Transition<_i11.SettingsEvent, _i11.SettingsState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
@@ -763,7 +765,7 @@ class MockSettingsBloc extends _i1.Mock implements _i10.SettingsBloc {
           as _i6.Future<void>);
 
   @override
-  void onChange(_i7.Change<_i10.SettingsState>? change) => super.noSuchMethod(
+  void onChange(_i7.Change<_i11.SettingsState>? change) => super.noSuchMethod(
     Invocation.method(#onChange, [change]),
     returnValueForMissingStub: null,
   );
@@ -883,30 +885,30 @@ class MockProfilesSelectedCubit extends _i1.Mock
 /// A class which mocks [FavoriteBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFavoriteBloc extends _i1.Mock implements _i11.FavoriteBloc {
+class MockFavoriteBloc extends _i1.Mock implements _i12.FavoriteBloc {
   @override
-  _i11.FavoritesState get state =>
+  _i12.FavoritesState get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _i5.dummyValue<_i11.FavoritesState>(
+            returnValue: _i5.dummyValue<_i12.FavoritesState>(
               this,
               Invocation.getter(#state),
             ),
-            returnValueForMissingStub: _i5.dummyValue<_i11.FavoritesState>(
+            returnValueForMissingStub: _i5.dummyValue<_i12.FavoritesState>(
               this,
               Invocation.getter(#state),
             ),
           )
-          as _i11.FavoritesState);
+          as _i12.FavoritesState);
 
   @override
-  _i6.Stream<_i11.FavoritesState> get stream =>
+  _i6.Stream<_i12.FavoritesState> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i6.Stream<_i11.FavoritesState>.empty(),
-            returnValueForMissingStub: _i6.Stream<_i11.FavoritesState>.empty(),
+            returnValue: _i6.Stream<_i12.FavoritesState>.empty(),
+            returnValueForMissingStub: _i6.Stream<_i12.FavoritesState>.empty(),
           )
-          as _i6.Stream<_i11.FavoritesState>);
+          as _i6.Stream<_i12.FavoritesState>);
 
   @override
   bool get isClosed =>
@@ -924,26 +926,26 @@ class MockFavoriteBloc extends _i1.Mock implements _i11.FavoriteBloc {
   );
 
   @override
-  void onEvent(_i11.FavoriteEvent? event) => super.noSuchMethod(
+  void onEvent(_i12.FavoriteEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void emit(_i11.FavoritesState? state) => super.noSuchMethod(
+  void emit(_i12.FavoritesState? state) => super.noSuchMethod(
     Invocation.method(#emit, [state]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void add(_i11.FavoriteEvent? event) => super.noSuchMethod(
+  void add(_i12.FavoriteEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void on<E extends _i11.FavoriteEvent>(
-    _i7.EventHandler<E, _i11.FavoritesState>? handler, {
+  void on<E extends _i12.FavoriteEvent>(
+    _i7.EventHandler<E, _i12.FavoritesState>? handler, {
     _i7.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
@@ -952,7 +954,7 @@ class MockFavoriteBloc extends _i1.Mock implements _i11.FavoriteBloc {
 
   @override
   void onTransition(
-    _i7.Transition<_i11.FavoriteEvent, _i11.FavoritesState>? transition,
+    _i7.Transition<_i12.FavoriteEvent, _i12.FavoritesState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
@@ -968,7 +970,7 @@ class MockFavoriteBloc extends _i1.Mock implements _i11.FavoriteBloc {
           as _i6.Future<void>);
 
   @override
-  void onChange(_i7.Change<_i11.FavoritesState>? change) => super.noSuchMethod(
+  void onChange(_i7.Change<_i12.FavoritesState>? change) => super.noSuchMethod(
     Invocation.method(#onChange, [change]),
     returnValueForMissingStub: null,
   );

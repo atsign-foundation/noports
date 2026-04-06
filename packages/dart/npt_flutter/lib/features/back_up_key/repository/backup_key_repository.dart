@@ -16,12 +16,12 @@ class BackUpKeyRepository {
   /// If it is already backed up or if there is an error, it returns true, if not, it returns false.
   Future<bool> getBackupKeyStatus() async {
     AtClient atClient = AtClientManager.getInstance().atClient;
-    String? atSign = atClient.getCurrentAtSign();
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     var key = AtKey.self(
       'key_backup.app_metadata',
       namespace: Constants.namespace,
     );
-    if (atSign != null) key.sharedBy(atSign);
+    if (atsign != null) key.sharedBy(atsign);
 
     try {
       final value = await atClient.get(key.build());
@@ -36,12 +36,12 @@ class BackUpKeyRepository {
   /// This method is used to update the backup key status in the atClient.
   Future<bool> putBackupKeyStatus(bool status) async {
     AtClient atClient = AtClientManager.getInstance().atClient;
-    String? atSign = atClient.getCurrentAtSign();
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     var key = AtKey.self(
       'key_backup.app_metadata',
       namespace: Constants.namespace,
     );
-    if (atSign != null) key.sharedBy(atSign);
+    if (atsign != null) key.sharedBy(atsign);
 
     try {
       return await atClient.put(key.build(), jsonEncode(_toJson(status)));

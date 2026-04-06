@@ -30,7 +30,7 @@ class OnboardingApkamDialog extends StatefulWidget {
     super.key,
   });
 
-  final String atsign;
+  final Atsign atsign;
   final AtClientPreference atClientPreference;
 
   @override

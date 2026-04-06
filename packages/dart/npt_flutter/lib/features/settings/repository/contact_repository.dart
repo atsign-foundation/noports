@@ -17,7 +17,7 @@ class ContactsService {
   factory ContactsService.getInstance() {
     return _singleton;
   }
-  final AtSignLogger _logger = AtSignLogger(Constants.namespace!);
+  final AtSignLogger _logger = AtSignLogger(Constants.namespace);
 
   AtClient? atClient;
   var atClientManager = AtClientManager.getInstance();
@@ -46,10 +46,10 @@ class ContactsService {
   }
 
   /// Delete contact from contact list.
-  Future<bool> addContact(String atSign, String? nickname) async {
+  Future<bool> addContact(Atsign atsign, String? nickname) async {
     try {
       bool isAdded = await atContactService.addAtSign(
-        atSign: atSign,
+        atSign: atsign,
         nickName: nickname,
       );
 
@@ -64,9 +64,9 @@ class ContactsService {
   }
 
   /// Delete contact from contact list.
-  Future<bool> deleteContact(String atSign) async {
+  Future<bool> deleteContact(Atsign atsign) async {
     try {
-      bool isDeleted = await atContactService.deleteAtSign(atSign: atSign);
+      bool isDeleted = await atContactService.deleteAtSign(atSign: atsign);
 
       return isDeleted;
     } on AtClientException catch (atClientExcep) {

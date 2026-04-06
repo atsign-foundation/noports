@@ -21,14 +21,14 @@ void main() {
 
     const testUuid = 'test-uuid-123';
     const testAtsign = '@test_user';
-    const testProfile = Profile(
+    final testProfile = Profile(
       testUuid,
       displayName: 'Test Profile',
-      sshnpdAtsign: '@test_device',
+      sshnpdAtsign: '@test_device'.toAtsign(),
       deviceName: 'test-device',
       remotePort: 22,
       localPort: 2222,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
     setUp(() {
@@ -91,10 +91,10 @@ void main() {
       });
 
       test('should update cache when putProfile is called', () async {
-        const updatedProfile = Profile(
+        final updatedProfile = Profile(
           testUuid,
           displayName: 'Updated Profile',
-          sshnpdAtsign: '@updated_device',
+          sshnpdAtsign: '@updated_device'.toAtsign(),
           deviceName: 'updated-device',
           remotePort: 23,
           localPort: 2223,
@@ -118,7 +118,7 @@ void main() {
         final result = await repository.getProfile(testUuid, useCache: true);
         expect(result, isNotNull);
         expect(result!.displayName, equals('Updated Profile'));
-        expect(result.sshnpdAtsign, equals('@updated_device'));
+        expect(result.sshnpdAtsign, equals('@updated_device'.toAtsign()));
 
         // Should not have called get on AtClient since it's cached
         verifyNever(mockAtClient.get(any));
@@ -371,26 +371,26 @@ void main() {
         test('should return multiple profiles for given UUIDs', () async {
           const uuids = ['uuid1', 'uuid2', 'uuid3'];
           final profiles = [
-            const Profile(
+            Profile(
               'uuid1',
               displayName: 'Profile 1',
-              sshnpdAtsign: '@device1',
+              sshnpdAtsign: '@device1'.toAtsign(),
               deviceName: 'device1',
               remotePort: 22,
               localPort: 2222,
             ),
-            const Profile(
+            Profile(
               'uuid2',
               displayName: 'Profile 2',
-              sshnpdAtsign: '@device2',
+              sshnpdAtsign: '@device2'.toAtsign(),
               deviceName: 'device2',
               remotePort: 23,
               localPort: 2223,
             ),
-            const Profile(
+            Profile(
               'uuid3',
               displayName: 'Profile 3',
-              sshnpdAtsign: '@device3',
+              sshnpdAtsign: '@device3'.toAtsign(),
               deviceName: 'device3',
               remotePort: 24,
               localPort: 2224,
@@ -422,10 +422,10 @@ void main() {
           'should filter out null profiles when some fail to load',
           () async {
             const uuids = ['uuid1', 'uuid2', 'uuid3'];
-            const successProfile = Profile(
+            final successProfile = Profile(
               'uuid1',
               displayName: 'Profile 1',
-              sshnpdAtsign: '@device1',
+              sshnpdAtsign: '@device1'.toAtsign(),
               deviceName: 'device1',
               remotePort: 22,
               localPort: 2222,
@@ -483,18 +483,18 @@ void main() {
 
         test('should use cached profiles when available', () async {
           const uuids = ['uuid1', 'uuid2'];
-          const profile1 = Profile(
+          final profile1 = Profile(
             'uuid1',
             displayName: 'Profile 1',
-            sshnpdAtsign: '@device1',
+            sshnpdAtsign: '@device1'.toAtsign(),
             deviceName: 'device1',
             remotePort: 22,
             localPort: 2222,
           );
-          const profile2 = Profile(
+          final profile2 = Profile(
             'uuid2',
             displayName: 'Profile 2',
-            sshnpdAtsign: '@device2',
+            sshnpdAtsign: '@device2'.toAtsign(),
             deviceName: 'device2',
             remotePort: 23,
             localPort: 2223,
