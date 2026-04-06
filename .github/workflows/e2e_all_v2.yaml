@@ -5,18 +5,9 @@ permissions:
 
 on:
   workflow_dispatch:
-  push:
-    paths-ignore:
-      - "docs/**"
-    branches:
-      - trunk
-
   pull_request:
-    paths-ignore:
-      - "docs/**"
     branches:
       - trunk
-      - release-v*.*.*
 
 jobs:
   e2e_all_v2:
@@ -58,38 +49,35 @@ jobs:
         run: |
           dart pub get
 
+      - name: Env variables
+        run: |
+          echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
+          echo "LOGS_DIR=e2e_all" >> $GITHUB_ENV
+
       - name: Run e2e_all_v2 tests
         run: |
-          echo "Test started at: $(date)"
-          start_time=$(date +%s)
           dart run tests/e2e_all_v2/bin/main.dart \
             --client-atsign "@npe2e_client" \
             --daemon-atsign "@npe2e_daemon" \
             --relay-atsign "@rv_dev" \
             --policy-atsign "@npe2e_policy" \
             --events-atsign "@npe2e_events" \
-            --root-domain "root.atsign.wtf:64"
-          test_exit_code=$?
-          end_time=$(date +%s)
-          echo "Test finished at: $(date)"
-          echo "Total execution time: $((end_time - start_time)) seconds"
-          exit $test_exit_code
+            --root-domain "root.atsign.wtf:64" \
+            --log-directory "$LOGS_DIR"
 
       - name: Zip e2e_all artifacts
         if: always()
         run: |
-          cd tests/e2e_all_v2
-          if [ -d "e2e_all" ]; then
-            zip -r ../../e2e_all_v2_artifacts.zip e2e_all
-            echo "Zipped e2e_all directory contents"
+          if [ -d "$LOGS_DIR" ]; then
+            zip -r ../../"$OUTPUT_ARTIFACT".zip "$LOGS_DIR"
+            echo "Zipped "$LOGS_DIR" directory contents into "$OUTPUT_ARTIFACT".zip"
           else
-            echo "No e2e_all directory found, skipping zip"
+            echo "No "$LOGS_DIR" directory found. Skipping zipping artifacts."
           fi
 
       - name: Upload e2e_all_v2 artifacts
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: e2e_all_v2_artifacts
-          path: e2e_all_v2_artifacts.zip
+          path: ${{ env.OUTPUT_ARTIFACT }}.zip
           if-no-files-found: warn
