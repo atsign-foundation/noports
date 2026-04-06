@@ -55,6 +55,9 @@ Future<int> enroll({
   }
   final String otp = otpProcessResult.stdout.toString().trim();
 
+  // Buffer between at_activate commands
+  await Future.delayed(const Duration(seconds: 2));
+
   final String apkamApp = getApkamApp();
   final String apkamDeviceName = getApkamDeviceName(which: which, testRunId: testRunId);
   final String apkamKeysFilePath = getApkamKeysFileName(
@@ -90,6 +93,9 @@ Future<int> enroll({
     return exitCode;
   }
 
+  // Buffer between at_activate commands
+  await Future.delayed(const Duration(seconds: 2));
+
   print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> revokeArgs = [
     'revoke',
@@ -108,6 +114,9 @@ Future<int> enroll({
     print('Failed to revoke approved enrollments for ${atsign}. Output: ${revokeProcessResult.stdout}, Error: ${revokeProcessResult.stderr}');
     return exitCode;
   }
+
+  // Buffer between at_activate commands
+  await Future.delayed(const Duration(seconds: 2));
 
   print('Submitting enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> enrollArgs = [
