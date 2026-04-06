@@ -258,6 +258,11 @@ Future<void> runCoreTestCases({
   for (final instance in dockerInstances) {
     print('  ${instance.containerName}');
   }
+
+  // Wait for daemons to fully initialize
+  print('\nWaiting 5 seconds for daemons to initialize...');
+  await Future.delayed(const Duration(seconds: 5));
+  print('Daemons ready.\n');
   // End Phase 2
 
   // Start Phase 3 - Run Tests

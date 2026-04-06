@@ -234,8 +234,6 @@ class ClientBinary {
       if (logDirectory != null) {
         print('Check logs in: $logDirectory');
       }
-    } else {
-      print('Successfully compiled: $binaryPath');
     }
 
     return process;

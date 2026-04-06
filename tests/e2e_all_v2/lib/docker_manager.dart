@@ -187,9 +187,12 @@ class DockerInstance {
   late String containerName; // image tag
 
   Process? process; // instantiated from run()
+  Process? _dockerLogsProcess; // process for docker logs -f
 
   File? _stdoutFile;
   File? _stderrFile;
+  File? _daemonStdoutFile;
+  File? _daemonStderrFile;
 
   DockerInstance({
     required this.dockerImage,
@@ -274,6 +277,13 @@ class DockerInstance {
       print('Container entrypoint logs: ${_stdoutFile!.path} / ${_stderrFile!.path}');
 
       _startLogCapture();
+
+      // Also capture daemon logs using docker logs -f
+      _daemonStdoutFile = File('$logDirectory/daemon_${containerName}_${timestamp}_stdout.log');
+      _daemonStderrFile = File('$logDirectory/daemon_${containerName}_${timestamp}_stderr.log');
+      print('Container daemon logs: ${_daemonStdoutFile!.path} / ${_daemonStderrFile!.path}');
+
+      await _startDaemonLogCapture();
     }
 
     return pr;
@@ -299,6 +309,37 @@ class DockerInstance {
     );
   }
 
+  Future<void> _startDaemonLogCapture() async {
+    // Wait a moment for container to start
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Start docker logs -f to capture daemon output
+    try {
+      _dockerLogsProcess = await Process.start(
+        'docker',
+        ['logs', '-f', containerName],
+      );
+
+      // Capture stdout from daemon
+      _dockerLogsProcess!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(
+        (line) {
+          _daemonStdoutFile?.writeAsStringSync('$line\n', mode: FileMode.append);
+        },
+        onError: (error) => print('Error reading daemon stdout: $error'),
+      );
+
+      // Capture stderr from daemon
+      _dockerLogsProcess!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
+        (line) {
+          _daemonStderrFile?.writeAsStringSync('$line\n', mode: FileMode.append);
+        },
+        onError: (error) => print('Error reading daemon stderr: $error'),
+      );
+    } catch (e) {
+      print('Error starting daemon log capture for $containerName: $e');
+    }
+  }
+
   Future<bool> isActive() async {
     // docker ps --filter "name=e2e_all_v2_dart_DockerImageType.release_v5.9.4"
     const String executable = 'docker';
@@ -317,6 +358,13 @@ class DockerInstance {
   }
 
   Future<int> stop({String? logDirectory}) async {
+    // Kill docker logs process if running
+    if (_dockerLogsProcess != null) {
+      _dockerLogsProcess!.kill();
+      await _dockerLogsProcess!.exitCode;
+      _dockerLogsProcess = null;
+    }
+
     const String executable  = 'docker';
     final List<String> args = [
       'container', 'stop',
