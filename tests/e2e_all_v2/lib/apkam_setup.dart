@@ -135,7 +135,7 @@ Future<int> enroll({
     enrollArgs,
   );
   print('Waiting for enrollment approval for ${atsign}...');
-  sleep(const Duration(seconds: 2));
+  sleep(const Duration(seconds: 5));
 
   // approve enrollment
   print('Approving enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
