@@ -6,7 +6,7 @@ import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/params.dart';
 
 
-Future<int> main(List<String> args) async {
+Future<void> main(List<String> args) async {
   E2EAllV2Params e2eAllV2Params;
   try {
     e2eAllV2Params = E2EAllV2Params.parse(args);
@@ -47,10 +47,7 @@ Future<int> main(List<String> args) async {
     atDirectoryHost: e2eAllV2Params.rootDomain,
   );
 
-  return exitCode;
-  // int exitCode;
-  // exitCode = await v4_dart_inline();
-  // return exitCode;
+  exit(exitCode);
 }
 
 void test_minus_r_flag() {
