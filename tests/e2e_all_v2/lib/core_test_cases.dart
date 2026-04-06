@@ -5,7 +5,7 @@ import 'package:e2e_all_v2/client_binaries.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
-Future<void> runCoreTestCases({
+Future<int> runCoreTestCases({
   required final String testRunId,
   required final String logDirectory,
   required final String daemonAtsign,
@@ -334,6 +334,9 @@ Future<void> runCoreTestCases({
     }
   }
   print('All Docker instances stopped.');
+
+  // Return exit code based on test results
+  return (failed > 0) ? 1 : 0;
 }
 
 // Test coverage

@@ -34,7 +34,7 @@ Future<int> main(List<String> args) async {
   final String baseDirectory = 'e2e_all/$testRunId';
   final String logDirectory = '$baseDirectory/logs';
 
-  await runCoreTestCases(
+  final int exitCode = await runCoreTestCases(
     testRunId: testRunId,
     logDirectory: logDirectory,
     clientAtsign: e2eAllV2Params.clientAtsign,
@@ -47,7 +47,7 @@ Future<int> main(List<String> args) async {
     atDirectoryHost: e2eAllV2Params.rootDomain,
   );
 
-  return 0;
+  return exitCode;
   // int exitCode;
   // exitCode = await v4_dart_inline();
   // return exitCode;
