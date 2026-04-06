@@ -5,13 +5,13 @@ import 'dart:io';
 import 'package:e2e_all_v2/client_binaries.dart';
 
 String getApkamApp() {
-  return 'e2e_all';
+  return 'e2e_all_v2';
 }
 
 String getApkamDeviceName({
   required final String which,
   required final String testRunId}) {
-  return '${which}_${testRunId}';
+  return 'e2e_all_v2_${which}_${testRunId}';
 }
 
 String getApkamKeysFileName({
