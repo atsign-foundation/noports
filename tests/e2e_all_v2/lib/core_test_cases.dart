@@ -267,7 +267,7 @@ Future<void> runCoreTestCases({
   print('\n========== Running Tests ==========\n');
 
   // Test #1: 001_minus_s_flag (only runs with current client)
-  List<TestResult> result = await _test001MinusSFlag(
+  List<TestResult> test001Results = await _test001MinusSFlag(
     allClientBinaries: clientBinaries,
     allDeviceNamesAndDockerInstances: deviceNamesAndDockerInstances,
     testRunId: testRunId,
@@ -277,6 +277,7 @@ Future<void> runCoreTestCases({
     relayAtsign: relayAtsign,
     apkamKeysDirectory: apkamKeysDirectory,
   );
+  testResults.addAll(test001Results);
 
   // TODO: Add remaining tests following the same pattern
 
@@ -473,7 +474,7 @@ Future<List<TestResult>> _test001MinusSFlag({
     binary.version == 'current'
   );
 
-  _generateNewSshKey(testRunId: testRunId);
+  final String identityFile = _generateNewSshKey(testRunId: testRunId);
 
   for(final (String deviceName, DockerInstance dockerInstance) in matchingDeviceNamesAndDockerInstances) {
     final String daemonVersion = '${dockerInstance.dockerImage.language == Language.dart ? 'd' : 'c'}:${dockerInstance.dockerImage.tag}';
@@ -481,6 +482,13 @@ Future<List<TestResult>> _test001MinusSFlag({
     print('Device name: $deviceName');
 
     List<String> extraFlags = [];
+
+    // 0. Add -i flag for SSH identity file
+    extraFlags.add('-i');
+    extraFlags.add(identityFile);
+
+    // 0.5. Add -s flag to send SSH public key to daemon
+    extraFlags.add('-s');
 
     // 1. add -x or -x --no-ad --no-et
     switch(dockerInstance.dockerImage.language) {
@@ -710,7 +718,7 @@ List<(String, DockerInstance)> _getMatchingDeviceNamesAndDockerInstances({
   return matchingPairs;
 }
 
-void _generateNewSshKey({required final String testRunId}) {
+String _generateNewSshKey({required final String testRunId}) {
   // mkdir -p $HOME/.ssh
   final String sshDirPath = '${Platform.environment['HOME']}/.ssh';
   final Directory sshDir = Directory(sshDirPath);
@@ -761,5 +769,9 @@ void _generateNewSshKey({required final String testRunId}) {
   if (keyGenResult.exitCode != 0) {
     throw Exception('Failed to generate SSH key: ${keyGenResult.stderr}');
   }
+
+  print('Generated SSH key: $identityFileName');
+  print('Note: Public key NOT added to local authorized_keys - testing daemon -s -u behavior');
+  return identityFileName;
 }
 

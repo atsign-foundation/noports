@@ -37,14 +37,16 @@ Future<int> enroll({
   }
 
   print('Generating OTP for ${atsign}');
+  final List<String> otpArgs = [
+    'otp',
+    '-a', atsign,
+    '-r', atDirectoryHost,
+  ];
+  print('Executing: ${atActivateClientBinary.binaryPath} ${otpArgs.join(' ')}');
 
   final ProcessResult otpProcessResult = await Process.run(
     atActivateClientBinary.binaryPath,
-    [
-      'otp',
-      '-a', atsign,
-      '-r', atDirectoryHost,
-    ],
+    otpArgs,
   );
   exitCode = await otpProcessResult.exitCode;
   if(exitCode != 0) {
@@ -70,15 +72,17 @@ Future<int> enroll({
   }
 
   print('Denying any pending enrollment requests for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
+  final List<String> denyArgs = [
+    'deny',
+    '-a', atsign,
+    '-r', atDirectoryHost,
+    '--arx', apkamApp,
+    '--drx', apkamDeviceName,
+  ];
+  print('Executing: ${atActivateClientBinary.binaryPath} ${denyArgs.join(' ')}');
   final ProcessResult denyProcessResult = await Process.run(
     atActivateClientBinary.binaryPath,
-    [
-      'deny',
-      '-a', atsign,
-      '-r', atDirectoryHost,
-      '--arx', apkamApp,
-      '--drx', apkamDeviceName, 
-    ]
+    denyArgs,
   );
   exitCode = await denyProcessResult.exitCode;
   if(exitCode != 0) {
@@ -87,15 +91,17 @@ Future<int> enroll({
   }
 
   print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
+  final List<String> revokeArgs = [
+    'revoke',
+    '-a', atsign,
+    '-r', atDirectoryHost,
+    '--arx', apkamApp,
+    '--drx', apkamDeviceName,
+  ];
+  print('Executing: ${atActivateClientBinary.binaryPath} ${revokeArgs.join(' ')}');
   final ProcessResult revokeProcessResult = await Process.run(
     atActivateClientBinary.binaryPath,
-    [
-      'revoke',
-      '-a', atsign,
-      '-r', atDirectoryHost,
-      '--arx', apkamApp,
-      '--drx', apkamDeviceName,
-    ]
+    revokeArgs,
   );
   exitCode = await revokeProcessResult.exitCode;
   if(exitCode != 0) {
@@ -104,32 +110,36 @@ Future<int> enroll({
   }
 
   print('Submitting enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
+  final List<String> enrollArgs = [
+    'enroll',
+    '-a', atsign,
+    '-r', atDirectoryHost,
+    '--app', apkamApp,
+    '--device', apkamDeviceName,
+    '--namespaces', 'sshnp:rw,sshrvd:rw',
+    '--keys', apkamKeysFilePath,
+    '--passcode', otp,
+  ];
+  print('Executing: ${atActivateClientBinary.binaryPath} ${enrollArgs.join(' ')}');
   final Process enrollProcess = await Process.start(
     atActivateClientBinary.binaryPath,
-    [
-      'enroll',
-      '-a', atsign,
-      '-r', atDirectoryHost,
-      '--app', apkamApp,
-      '--device', apkamDeviceName,
-      '--namespaces', 'sshnp:rw,sshrvd:rw',
-      '--keys', apkamKeysFilePath,
-      '--passcode', otp,
-    ],
+    enrollArgs,
   );
   print('Waiting for enrollment approval for ${atsign}...');
   sleep(const Duration(seconds: 2));
 
   // approve enrollment
   print('Approving enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
+  final List<String> approveArgs = [
+    'approve',
+    '-a', atsign,
+    '-r', atDirectoryHost,
+    '--drx', apkamDeviceName,
+  ];
+  print('Executing: ${atActivateClientBinary.binaryPath} ${approveArgs.join(' ')}');
   final ProcessResult approveProcessResult = await Process.run(
     atActivateClientBinary.binaryPath,
-    [
-      'approve',
-      '-a', atsign,
-      '-r', atDirectoryHost,
-      '--drx', apkamDeviceName,
-    ],
+    approveArgs,
   );
   exitCode = await approveProcessResult.exitCode;
   if(exitCode != 0) {

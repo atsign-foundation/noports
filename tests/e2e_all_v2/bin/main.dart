@@ -34,7 +34,7 @@ Future<int> main(List<String> args) async {
   final String baseDirectory = 'e2e_all/$testRunId';
   final String logDirectory = '$baseDirectory/logs';
 
-  runCoreTestCases(
+  await runCoreTestCases(
     testRunId: testRunId,
     logDirectory: logDirectory,
     clientAtsign: e2eAllV2Params.clientAtsign,
