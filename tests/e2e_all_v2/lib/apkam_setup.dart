@@ -22,6 +22,11 @@ String getApkamKeysFileName({
   return '${apkamKeysDirectory.path}/$clientAtSign.$apkamApp.$apkamDeviceName.atKeys';
 }
 
+/// Enrolls an atsign with APKAM.
+///
+/// Note: The deny and revoke operations are non-fatal - they will log warnings
+/// but continue even if they fail. This is because they are cleanup operations
+/// that may fail if no matching enrollments exist.
 Future<int> enroll({
   required final Directory apkamKeysDirectory,
   required final String atsign,
@@ -89,8 +94,8 @@ Future<int> enroll({
   );
   exitCode = await denyProcessResult.exitCode;
   if(exitCode != 0) {
-    print('Failed to deny pending enrollment requests for ${atsign}. Output: ${denyProcessResult.stdout}, Error: ${denyProcessResult.stderr}');
-    return exitCode;
+    print('Warning: deny command returned non-zero exit code. Output: ${denyProcessResult.stdout}, Error: ${denyProcessResult.stderr}');
+    print('Continuing anyway...');
   }
 
   // Buffer between at_activate commands
@@ -111,8 +116,8 @@ Future<int> enroll({
   );
   exitCode = await revokeProcessResult.exitCode;
   if(exitCode != 0) {
-    print('Failed to revoke approved enrollments for ${atsign}. Output: ${revokeProcessResult.stdout}, Error: ${revokeProcessResult.stderr}');
-    return exitCode;
+    print('Warning: revoke command returned non-zero exit code. Output: ${revokeProcessResult.stdout}, Error: ${revokeProcessResult.stderr}');
+    print('Continuing anyway...');
   }
 
   // Buffer between at_activate commands
