@@ -31,7 +31,7 @@ Future<void> main(List<String> args) async {
   print('Test run ID (git commit): $testRunId');
 
   // Create directory structure: e2e_all/$testRunId/{binaries,logs,apkamKeys}
-  final String baseDirectory = 'e2e_all/$testRunId';
+  final String baseDirectory = 'e2e_all_v2/$testRunId';
   final String logDirectory = '$baseDirectory/logs';
 
   final int exitCode = await runCoreTestCases(
