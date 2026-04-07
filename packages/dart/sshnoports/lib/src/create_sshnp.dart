@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_commons/atsign.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:at_utils/at_utils.dart';
 
@@ -27,15 +26,16 @@ Future<Sshnp> createSshnp(
   // If srvdAtSign is not provided, or is a comma-separated list,
   // auto select the best rv
   if (params.srvdAtSign.isEmpty || params.srvdAtSign.contains(',')) {
-    final rvSelector = RvSelector(atClient);
+    final rvSelector = RelaySelector(atClient);
     List<Atsign>? rvAtSigns;
     if (params.srvdAtSign.contains(',')) {
+      // parse comma-separated list of rvAtSigns
       rvAtSigns = params.srvdAtSign
           .split(',')
           .map((s) => s.trim().toAtsign())
           .toList();
     }
-    final bestRv = await rvSelector.selectBestRv(params, rvAtSigns: rvAtSigns);
+    final bestRv = await rvSelector.selectBestRelay(params, rvAtSigns: rvAtSigns);
     params = SshnpParams.merge(params, SshnpPartialParams(srvdAtSign: bestRv));
   }
 

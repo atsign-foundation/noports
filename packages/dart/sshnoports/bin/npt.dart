@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
@@ -396,34 +395,6 @@ void main(List<String> args) async {
           passPhrase: parsedArgs['passPhrase']);
 
       await cliBase.init();
-
-      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
-        logProgress('Auto selecting best RV');
-        final rvSelector = RvSelector(cliBase.atClient);
-        List<Atsign>? rvAtSigns;
-        if (srvdAtSign.contains(',')) {
-          rvAtSigns = srvdAtSign
-              .split(',')
-              .map((s) => s.trim().toAtsign())
-              .toList();
-        }
-        // selectBestRv needs SshnpParams, but NptParams is almost the same.
-        // Actually selectBestRv only uses it to create a channel.
-        final bestRv = await rvSelector.selectBestRv(
-          SshnpParams.merge(
-            SshnpParams.empty(),
-            SshnpPartialParams(
-              clientAtSign: clientAtSign,
-              sshnpdAtSign: daemonAtSign,
-              device: device,
-              verbose: verbose,
-            ),
-          ),
-          rvAtSigns: rvAtSigns,
-        );
-        logProgress('Selected best RV: $bestRv');
-        srvdAtSign = bestRv;
-      }
 
       String timeoutArg = parsedArgs['timeout'];
       if (timeoutArg == '0') {

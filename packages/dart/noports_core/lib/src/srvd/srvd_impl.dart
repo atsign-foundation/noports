@@ -465,8 +465,6 @@ class SrvdImpl
   }
 
   Future<void> handleDiscover(String requestingAtsign) async {
-    logger.info('Received discover request from $requestingAtsign');
-
     final metadata = Metadata()
       ..isPublic = false
       ..isEncrypted = true
@@ -480,10 +478,7 @@ class SrvdImpl
       ..namespace = Srvd.namespace
       ..metadata = metadata;
 
-    final toSendIpAddr = {
-      'ip': ipAddress,
-      'port': bind443 ? 443 : null,
-    };
+    final toSendIpAddr = {'ip': ipAddress, 'port': bind443 ? 443 : null};
 
     final notificationParams = NotificationParams.forUpdate(
       atKey,

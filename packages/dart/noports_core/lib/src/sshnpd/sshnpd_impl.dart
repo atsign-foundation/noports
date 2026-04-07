@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/common/srvd_latency_checker.dart';
+import 'package:noports_core/src/common/relay_latency_checker.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -618,12 +618,15 @@ class SshnpdImpl
 
   Future<void> _handleLatencyCheckRequest(AtNotification notification) async {
     if (notification.value == null) {
+      logger.warning(
+        'No srvd IPs provided in latency check request. Ignoring.',
+      );
       return;
       // in this case the client will just timeout and throw an exception
     }
     Map<String, dynamic> rvServers = jsonDecode(notification.value!);
-    final rvLatencyMap = await AtLatencyChecker().getRvLatencyMap(rvServers);
-    logger.finer('Got latency map: $rvLatencyMap');
+    final rvLatencyMap = await RelayLatencyChecker.measureLatencies(rvServers);
+    logger.finer('Latency per relay (ms): $rvLatencyMap');
 
     var atKey = AtKey()
       ..key = 'rv_latency.$device'
@@ -2103,7 +2106,10 @@ Future<AesKeyBundle> genBundle(
       AtChops atChops = AtChopsImpl(
         AtChopsKeys.create(AtEncryptionKeyPair.create(encPubKey, 'n/a'), null),
       );
-      aesKeyEncrypted = (await atChops.encryptString(aesKey, encKeyType)).result;
+      aesKeyEncrypted = (await atChops.encryptString(
+        aesKey,
+        encKeyType,
+      )).result;
       ivEncrypted = (await atChops.encryptString(iv, encKeyType)).result;
       break;
     default:

@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
 
-class AtLatencyChecker {
-  final AtSignLogger logger = AtSignLogger('AtLatencyChecker');
+class RelayLatencyChecker {
+  static final AtSignLogger logger = AtSignLogger('AtLatencyChecker');
 
-  Future<int> _getLatency(
+  static Future<int> _getLatency(
     String host, {
     int port = 443,
     Duration timeout = const Duration(seconds: 5),
@@ -38,7 +38,7 @@ class AtLatencyChecker {
   /// ```
   ///
   /// Returns a map of RV atSign → latency in milliseconds, or -1 if unreachable.
-  Future<Map<String, int>> getRvLatencyMap(
+  static Future<Map<String, int>> measureLatencies(
     Map<String, dynamic> rvServers,
   ) async {
     final latencyMap = <String, int>{};
@@ -57,31 +57,5 @@ class AtLatencyChecker {
     }
 
     return latencyMap;
-  }
-
-  String getBestRv(
-    Map<String, int> daemonLatencies,
-    Map<String, int> clientLatencies,
-  ) {
-    String? bestRv;
-    double bestAverage = -1;
-
-    for (final rv in daemonLatencies.keys) {
-      final d = daemonLatencies[rv] ?? -1;
-      final c = clientLatencies[rv] ?? -1;
-      if (d == -1 || c == -1) continue; // skip unreachable RVs
-
-      final average = (d + c) / 2;
-      if (bestAverage == -1 || average < bestAverage) {
-        bestAverage = average;
-        bestRv = rv;
-      }
-    }
-
-    if (bestRv == null) {
-      throw StateError('No reachable RV found');
-    }
-
-    return bestRv;
   }
 }

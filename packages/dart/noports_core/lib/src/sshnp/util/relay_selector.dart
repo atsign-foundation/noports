@@ -10,29 +10,29 @@ import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
-import 'package:noports_core/src/common/srvd_latency_checker.dart';
+import 'package:noports_core/src/common/relay_latency_checker.dart';
 import 'package:uuid/uuid.dart';
 
-class RvSelector with AtClientBindings {
+class RelaySelector with AtClientBindings {
   @override
   late final AtClient atClient;
 
   @override
   final AtSignLogger logger = AtSignLogger('RvSelector');
 
-  static final AtSignLogger _staticLogger = AtSignLogger('RvSelector');
-
-  static const String rvServerListUrl =
+  final String rvServerListUrl =
       'https://atsign-foundation.github.io/noports/standard_relays.json';
 
   final Map<String, Map<String, dynamic>> rvIpMap = {};
 
-  RvSelector(this.atClient);
+  late Map<String, dynamic> defaultRvList = {};
+
+  RelaySelector(this.atClient);
 
   /// Fetches the RV servers map from [rvServerListUrl].
   /// Returns a map of RV atSign → list of IP/hostname strings.
   /// Throws if the URL is unreachable or returns a non-200 status.
-  static Future<Map<String, dynamic>> _fetchRvServers() async {
+  Future<Map<String, dynamic>> _fetchStandardRelays() async {
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(rvServerListUrl));
@@ -45,14 +45,14 @@ class RvSelector with AtClientBindings {
         'Unexpected status ${response.statusCode} fetching RV list',
       );
     } catch (e) {
-      _staticLogger.warning('Failed to fetch RV list: $e');
+      logger.warning('Failed to fetch RV list: $e');
       rethrow;
     } finally {
       client.close();
     }
   }
 
-  Future<Map<String, dynamic>> _getIpAddress(AtClient atClient, Atsign rvAtSign) async {
+  Future<Map<String, dynamic>> _requestRelayIpAddress(Atsign rvAtSign) async {
     Completer<Map<String, dynamic>> completer = Completer();
 
     final String fixedRvAtSign = AtUtils.fixAtSign(rvAtSign.toString());
@@ -63,8 +63,9 @@ class RvSelector with AtClientBindings {
     String regex = 'discover\\.${Srvd.namespace}$fixedRvAtSign';
 
     late StreamSubscription<AtNotification> subscription;
-    subscription = subscribe(regex: regex, shouldDecrypt: true)
-        .listen((notification) {
+    subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
+      notification,
+    ) {
       if (!completer.isCompleted &&
           notification.from == fixedRvAtSign &&
           notification.value != null) {
@@ -97,7 +98,9 @@ class RvSelector with AtClientBindings {
       Duration(seconds: 10),
       onTimeout: () {
         subscription.cancel();
-        throw TimeoutException('Timed out waiting for srvd response from $rvAtSign');
+        throw TimeoutException(
+          'Timed out waiting for discover response from $rvAtSign',
+        );
       },
     );
   }
@@ -112,38 +115,42 @@ class RvSelector with AtClientBindings {
   ///
   /// If [channel] is provided (e.g. reusing an already-created session channel),
   /// it will be used directly. Otherwise a temporary channel is created.
-  Future<String> selectBestRv(
+  Future<String> selectBestRelay(
     SshnpParams params, {
     List<Atsign>? rvAtSigns,
     SshnpdChannel? channel,
   }) async {
-    final checker = AtLatencyChecker();
-
     List<Atsign> toCheck = [];
+
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
       toCheck = rvAtSigns;
     } else {
       // fetch a list of available RVs from [rvServerListUrl]
-      final standardRelaysRaw = await _fetchRvServers();
-      final Map<String, dynamic> rvServers = standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
-      toCheck = rvServers.keys.map((s) => s.toAtsign()).toList();
+      final standardRelaysRaw = await _fetchStandardRelays();
+      defaultRvList =
+          standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
+      toCheck = defaultRvList.keys.map((s) => s.toAtsign()).toList();
     }
-    logger.shout('RV servers to be Latency-checked: $toCheck');
+    logger.info('Checking latency for RVs: $toCheck');
 
     // fetch IP for each RV in parallel
-    await Future.wait(toCheck.map((rv) async {
-      try {
-        final ipInfo = await _getIpAddress(atClient, rv);
-        rvIpMap[rv.toString()] = ipInfo;
-        logger.shout('Got IP for $rv: $ipInfo');
-      } catch (e) {
-        logger.warning('Failed to get IP for $rv: $e');
-      }
-    }));
+    await Future.wait(
+      toCheck.map((rv) async {
+        try {
+          final ipInfo = await _requestRelayIpAddress(rv);
+          rvIpMap[rv.toString()] = ipInfo;
+        } catch (e) {
+          logger.warning('Failed to get IP for $rv: $e');
+        }
+      }),
+    );
 
     if (rvIpMap.isEmpty) {
       throw StateError('No RV servers could be resolved');
     }
+
+    final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
+    logger.info('Fetched latencies for client -> RV: $clientLatency');
 
     channel ??= SshnpdDefaultChannel(
       atClient: atClient,
@@ -152,12 +159,37 @@ class RvSelector with AtClientBindings {
       namespace: DefaultArgs.namespace,
     );
 
-    final clientLatency = await checker.getRvLatencyMap(rvIpMap);
-    logger.shout('Latency RV-Client: $clientLatency');
     final deviceLatency = await channel.getRvLatencyDevice(rvIpMap);
-    logger.shout('Latency Device-RV: $deviceLatency');
+    logger.info('Fetched latencies for device -> RV: $deviceLatency');
     channel = null;
 
-    return checker.getBestRv(deviceLatency, clientLatency);
+    return _lowestAverageLatency(deviceLatency, clientLatency);
+  }
+
+  String _lowestAverageLatency(
+    Map<String, int> daemonLatencies,
+    Map<String, int> clientLatencies,
+  ) {
+    String? bestRv;
+    double bestAverage = -1;
+
+    for (final rv in daemonLatencies.keys) {
+      final d = daemonLatencies[rv] ?? -1;
+      final c = clientLatencies[rv] ?? -1;
+      if (d == -1 || c == -1) continue; // skip unreachable RVs
+
+      final average = (d + c) / 2;
+      if (bestAverage == -1 || average < bestAverage) {
+        bestAverage = average;
+        bestRv = rv;
+      }
+    }
+
+    if (bestRv == null) {
+      throw StateError('No reachable RV found');
+    }
+
+    logger.info('Selecting fastest RV: $bestRv');
+    return bestRv;
   }
 }
