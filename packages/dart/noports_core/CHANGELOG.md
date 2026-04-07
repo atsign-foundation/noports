@@ -1,3 +1,8 @@
+# 6.13.0
+
+- build(deps): take up at_auth 3.0 & at_chops 3.0
+- feat: add doctor to sshnpd
+
 # 6.12.0
 
 - feat: npp policy next iteration
