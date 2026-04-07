@@ -88,10 +88,16 @@ Future<void> main(List<String> args) async {
       print(chalk.blue('\nSending simulate request...'));
       stdout.write(chalk.white('\nEnter daemon atSign: '));
       final String daemonAtsign = stdin.readLineSync()!;
-      stdout.write(chalk.white('Enter device name: '));
-      final String deviceName = stdin.readLineSync()!;
-      stdout.write(chalk.white('Enter device group name: '));
-      final String deviceGroupName = stdin.readLineSync()!;
+      stdout.write(chalk.white('Enter device name (press Enter to default to "default"): '));
+      String? deviceName = stdin.readLineSync();
+      if(deviceName == null || deviceName.isEmpty) {
+        deviceName = 'default';
+      }
+      stdout.write(chalk.white('Enter device group name (press Enter to default to "__none__"): '));
+      String? deviceGroupName = stdin.readLineSync();
+      if(deviceGroupName == null || deviceGroupName.isEmpty) {
+        deviceGroupName = '__none__';
+      }
       stdout.write(chalk.white('Enter client atSign: '));
       final String clientAtsign = stdin.readLineSync()!;
       try {
@@ -104,6 +110,9 @@ Future<void> main(List<String> args) async {
         print(chalk.green('\n✓ Simulate successful!'));
         print('  ${chalk.cyan('status')}: ${authCheckResponse.authorized}');
         print('  ${chalk.cyan('message')}: ${authCheckResponse.message}');
+        if (authCheckResponse.authorized){
+          print('  ${chalk.cyan('permitOpen')}: ${authCheckResponse.permitOpen}');
+        }
       } catch (e) {
         print(chalk.red('\n✗ Simulate failed: $e'));
       }
