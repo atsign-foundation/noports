@@ -27,7 +27,7 @@ packages:
     source: hosted
     version: "12.0.0"
   archive:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: archive
       sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
@@ -93,11 +93,12 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: ef6490ce6a001fc38095bf6d53c1e98af1d9cb1242a87c9944890dfb9f9220d4
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.11.0"
+      path: "packages/at_client"
+      ref: trunk
+      resolved-ref: "11e184d4e4a62a70c963f38f97a02ce5aa3c193e"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.12.0"
   at_commons:
     dependency: transitive
     description:
@@ -406,10 +407,10 @@ packages:
     dependency: transitive
     description:
       name: file
-      sha256: "1b92bec4fc2a72f59a8e15af5f52cd441e4a7860b49499d69dfa817af20e925d"
+      sha256: a3b4f84adafef897088c160faf7dfffb7696046cb13ae90b508c2cbc95d3b8d4
       url: "https://pub.dev"
     source: hosted
-    version: "6.1.4"
+    version: "7.0.1"
   fixnum:
     dependency: transitive
     description:
@@ -608,7 +609,7 @@ packages:
       path: "../../../packages/dart/noports_core"
       relative: true
     source: path
-    version: "6.12.0"
+    version: "6.13.0"
   openssh_ed25519:
     dependency: transitive
     description:
