@@ -30,6 +30,45 @@ Future<void> main(List<String> args) async {
   final String testRunId = gitResult.stdout.toString().trim();
   print('Test run ID (git commit): $testRunId');
 
+  // Copy APKAM keys from e2e_all to ~/.atsign/keys/
+  print('');
+  print('========== Copying APKAM keys from e2e_all ==========');
+  final String e2eAllApkamKeysDir = 'e2e_all/$testRunId/apkamKeys';
+  final Directory e2eAllApkamKeysDirectory = Directory(e2eAllApkamKeysDir);
+  final Directory atSignKeysDirectory = Directory('${getHomeDirectory()}/.atsign/keys/');
+
+  if (e2eAllApkamKeysDirectory.existsSync()) {
+    print('Found e2e_all APKAM keys at: ${e2eAllApkamKeysDirectory.path}');
+    print('Copying to: ${atSignKeysDirectory.path}');
+
+    final List<FileSystemEntity> apkamKeyFiles = e2eAllApkamKeysDirectory.listSync();
+    int copiedCount = 0;
+    for (final FileSystemEntity file in apkamKeyFiles) {
+      if (file is File) {
+        final String fileName = file.path.split('/').last;
+        final String destinationPath = '${atSignKeysDirectory.path}/$fileName';
+        print('  Copying: $fileName');
+        await file.copy(destinationPath);
+        copiedCount++;
+      }
+    }
+    print('Successfully copied $copiedCount APKAM key files');
+    print('');
+    print('Contents of ~/.atsign/keys/:');
+    final List<FileSystemEntity> keysFiles = atSignKeysDirectory.listSync();
+    for (final FileSystemEntity file in keysFiles) {
+      if (file is File) {
+        final String fileName = file.path.split('/').last;
+        print('  - $fileName');
+      }
+    }
+  } else {
+    print('Warning: e2e_all APKAM keys directory not found at: ${e2eAllApkamKeysDirectory.path}');
+    print('This might be expected if e2e_all hasn\'t run yet or failed');
+  }
+  print('========== End Copying APKAM keys ==========');
+  print('');
+
   // Create directory structure: e2e_all/$testRunId/{binaries,logs,apkamKeys}
   final String baseDirectory = 'e2e_all_v2/$testRunId';
   final String logDirectory = '$baseDirectory/logs';

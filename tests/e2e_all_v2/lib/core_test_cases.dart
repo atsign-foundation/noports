@@ -205,6 +205,12 @@ Future<int> runCoreTestCases({
     final String deviceNameWithoutFlags = '${testRunId}${dockerImage.language.name[0]}${dockerImage.tag.replaceAll('.', '')}';
     final String deviceNameWithFlags = '${deviceNameWithoutFlags}f';
 
+    // Construct the APKAM keys file path (from e2e_all bash test)
+    // The e2e_all test creates keys with device name "daemon_{testRunId}"
+    final String apkamApp = 'e2e_all';  // Must match e2e_all bash test
+    final String apkamDeviceName = 'daemon_$testRunId';  // Must match e2e_all bash test
+    final String keysFilePath = '/atsign/.atsign/keys/$daemonAtsign.$apkamApp.$apkamDeviceName.atKeys';
+
     // 1. create a docker instance with -s -u (container 1)
     final DockerInstance dockerInstance1 = DockerInstance(
       dockerImage: dockerImage,
@@ -213,6 +219,7 @@ Future<int> runCoreTestCases({
     );
 
     print('Starting Docker instance: ${dockerInstance1.containerName}');
+    print('  Using APKAM keys: $keysFilePath');
     await dockerInstance1.run(
       quiet: false,
       volumeMappings: [atKeysVolumeMapping],
@@ -225,6 +232,7 @@ Future<int> runCoreTestCases({
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithFlags} '
           '-r $atDirectoryHost '
+          '-k $keysFilePath '
           '-s -u',
       ],
     );
@@ -238,6 +246,7 @@ Future<int> runCoreTestCases({
       testRunId: testRunId,
     );
     print('Starting Docker instance: ${dockerInstance2.containerName}');
+    print('  Using APKAM keys: $keysFilePath');
     await dockerInstance2.run(
       quiet: false,
       volumeMappings: [atKeysVolumeMapping],
@@ -249,7 +258,8 @@ Future<int> runCoreTestCases({
         'sudo service ssh start && '
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithoutFlags} '
-          '-r $atDirectoryHost',
+          '-r $atDirectoryHost '
+          '-k $keysFilePath',
       ],
     );
     dockerInstances.add(dockerInstance2);
