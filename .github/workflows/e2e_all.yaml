@@ -109,7 +109,7 @@ jobs:
       - name: Env variables
         run: |
           echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
-          echo "LOGS_DIR=e2e_all" >> $GITHUB_ENV
+          echo "LOGS_DIR=e2e_all_v2" >> $GITHUB_ENV
 
       - name: Run e2e_all_v2 tests
         run: |
