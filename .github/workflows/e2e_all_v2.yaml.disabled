@@ -61,10 +61,62 @@ jobs:
           echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
           echo "LOGS_DIR=e2e_all" >> $GITHUB_ENV
 
-      - name: Wait 1 minute
+      - name: Wait for e2e_all workflow to complete
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Waiting for 1 minute before starting e2e_all_v2 tests..."
-          sleep 60
+          echo "Waiting for e2e_all workflow to complete..."
+
+          # Get the current run's SHA
+          CURRENT_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "Current SHA: $CURRENT_SHA"
+
+          # Maximum wait time: 30 minutes (1800 seconds)
+          MAX_WAIT=1800
+          ELAPSED=0
+          POLL_INTERVAL=30
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "Checking for e2e_all workflow runs (elapsed: ${ELAPSED}s)..."
+
+            # Get the latest e2e_all workflow run for this SHA
+            WORKFLOW_RUN=$(gh run list \
+              --workflow=e2e_all.yaml \
+              --json databaseId,status,conclusion,headSha \
+              --jq ".[] | select(.headSha == \"$CURRENT_SHA\") | {id: .databaseId, status: .status, conclusion: .conclusion}" \
+              | head -1)
+
+            if [ -n "$WORKFLOW_RUN" ]; then
+              STATUS=$(echo "$WORKFLOW_RUN" | jq -r '.status')
+              CONCLUSION=$(echo "$WORKFLOW_RUN" | jq -r '.conclusion')
+              RUN_ID=$(echo "$WORKFLOW_RUN" | jq -r '.id')
+
+              echo "Found e2e_all run: ID=$RUN_ID, Status=$STATUS, Conclusion=$CONCLUSION"
+
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  echo "✓ e2e_all workflow completed successfully!"
+                  break
+                else
+                  echo "✗ e2e_all workflow failed with conclusion: $CONCLUSION"
+                  exit 1
+                fi
+              else
+                echo "e2e_all workflow is still running (status: $STATUS)..."
+              fi
+            else
+              echo "e2e_all workflow not found yet for this SHA..."
+            fi
+
+            sleep $POLL_INTERVAL
+            ELAPSED=$((ELAPSED + POLL_INTERVAL))
+          done
+
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "✗ Timeout waiting for e2e_all workflow to complete"
+            exit 1
+          fi
 
       - name: Run e2e_all_v2 tests
         run: |

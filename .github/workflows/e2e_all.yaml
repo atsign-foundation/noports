@@ -63,4 +63,79 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: tmp_e2e_all_artifacts
-          path: tmp_e2e_all_artifacts.zip 
+          path: tmp_e2e_all_artifacts.zip
+
+  e2e_all_v2:
+    # Wait for e2e_all job to complete successfully before running
+    needs: e2e_all
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      - name: Set up atKeys from GitHub secrets
+        run: |
+          mkdir -p ~/.atsign/keys/
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+
+      - name: dart pub get (tests/e2e_all_v2)
+        working-directory: tests/e2e_all_v2
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Env variables
+        run: |
+          echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
+          echo "LOGS_DIR=e2e_all" >> $GITHUB_ENV
+
+      - name: Run e2e_all_v2 tests
+        run: |
+          dart run tests/e2e_all_v2/bin/main.dart \
+            --client-atsign "@npe2e_client" \
+            --daemon-atsign "@npe2e_daemon" \
+            --relay-atsign "@rv_dev" \
+            --policy-atsign "@npe2e_policy" \
+            --events-atsign "@npe2e_events" \
+            --root-domain "root.atsign.wtf:64" \
+            --log-directory "$LOGS_DIR"
+
+      - name: Zip e2e_all_v2 artifacts
+        if: always()
+        run: |
+          if [ -d "$LOGS_DIR" ]; then
+            zip -r "$OUTPUT_ARTIFACT".zip "$LOGS_DIR"
+            echo "Zipped $LOGS_DIR directory contents into $OUTPUT_ARTIFACT.zip"
+          else
+            echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload e2e_all_v2 artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: e2e_all_v2_artifacts
+          path: ${{ env.OUTPUT_ARTIFACT }}.zip
+          if-no-files-found: warn
