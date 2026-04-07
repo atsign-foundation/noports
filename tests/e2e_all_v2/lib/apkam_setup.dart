@@ -107,29 +107,29 @@ Future<int> enroll({
   // Buffer between at_activate commands
   await Future.delayed(const Duration(seconds: 2));
 
-  print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
-  final List<String> revokeArgs = [
-    'revoke',
-    '-r', atDirectoryHost,
-    '-a', atsign,
-    '--arx', apkamApp,
-    '--drx', apkamDeviceName,
-  ];
-  print('Executing: ${atActivateClientBinary.binaryPath} ${revokeArgs.join(' ')}');
-  final ProcessResult revokeProcessResult = await Process.run(
-    atActivateClientBinary.binaryPath,
-    revokeArgs,
-  );
-  exitCode = await revokeProcessResult.exitCode;
-  print('Revoke stdout: ${revokeProcessResult.stdout}');
-  print('Revoke stderr: ${revokeProcessResult.stderr}');
-  print('Revoke exit code: $exitCode');
-  if(exitCode != 0) {
-    print('Warning: revoke command returned non-zero exit code. Continuing anyway...');
-  }
-
-  // Buffer between at_activate commands
-  await Future.delayed(const Duration(seconds: 2));
+  // print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
+  // final List<String> revokeArgs = [
+  //   'revoke',
+  //   '-r', atDirectoryHost,
+  //   '-a', atsign,
+  //   '--arx', apkamApp,
+  //   '--drx', apkamDeviceName,
+  // ];
+  // print('Executing: ${atActivateClientBinary.binaryPath} ${revokeArgs.join(' ')}');
+  // final ProcessResult revokeProcessResult = await Process.run(
+  //   atActivateClientBinary.binaryPath,
+  //   revokeArgs,
+  // );
+  // exitCode = await revokeProcessResult.exitCode;
+  // print('Revoke stdout: ${revokeProcessResult.stdout}');
+  // print('Revoke stderr: ${revokeProcessResult.stderr}');
+  // print('Revoke exit code: $exitCode');
+  // if(exitCode != 0) {
+  //   print('Warning: revoke command returned non-zero exit code. Continuing anyway...');
+  // }
+  //
+  // // Buffer between at_activate commands
+  // await Future.delayed(const Duration(seconds: 2));
 
   print('Submitting enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
   final List<String> enrollArgs = [
