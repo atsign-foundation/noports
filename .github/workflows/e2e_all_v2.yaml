@@ -5,6 +5,10 @@ permissions:
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["e2e_all"]
+    types:
+      - completed
   pull_request:
     branches:
       - trunk
@@ -12,10 +16,12 @@ on:
 jobs:
   e2e_all_v2:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
-    # Wait for e2e_all to complete successfully
-    if:
-      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
-      'dependabot[bot]'}}
+    # Wait for e2e_all to complete successfully (when triggered by workflow_run)
+    if: |
+      ${{
+        (github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]') &&
+        (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+      }}
     runs-on: ubuntu-latest
 
     steps:
@@ -54,11 +60,6 @@ jobs:
         run: |
           echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
           echo "LOGS_DIR=e2e_all" >> $GITHUB_ENV
-
-      - name: Wait 2 minutes
-        run: |
-          echo "Waiting for 2 minutes before starting e2e_all_v2 tests..."
-          sleep 120
 
       - name: Run e2e_all_v2 tests
         run: |
