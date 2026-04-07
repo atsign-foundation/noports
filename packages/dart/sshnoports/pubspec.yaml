@@ -12,7 +12,7 @@ dependencies:
   at_onboarding_cli: ^1.14.2
   at_commons: ^5.7.0
   at_cli_commons: ^3.0.1
-  at_client: ^3.10.0
+  at_client: ^3.11.0
   args: 2.7.0
   socket_connector: 2.4.1
   dartssh2: 2.11.0
@@ -25,7 +25,6 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
-  archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2

@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
@@ -11,14 +12,14 @@ class SettingsRelayQuickButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScrollController controller = ScrollController();
-    return BlocSelector<SettingsBloc, SettingsState, String?>(
+    return BlocSelector<SettingsBloc, SettingsState, Atsign?>(
       selector: (SettingsState state) {
         if (state is SettingsLoadedState) {
           return state.settings.relayAtsign;
         }
         return null;
       },
-      builder: (BuildContext context, String? relayAtsign) {
+      builder: (BuildContext context, Atsign? relayAtsign) {
         if (relayAtsign == null) return gap0;
         return Scrollbar(
           controller: controller,
@@ -41,7 +42,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                         key: Key(e.name),
                         child: SizedBox(
                           width: Sizes.p200,
-                          child: RadioListTile(
+                          child: RadioListTile<Atsign>(
                             title: Text(e.regions),
                             value: e.relayAtsign,
                             groupValue: relayAtsign,
@@ -63,7 +64,7 @@ class SettingsRelayQuickButtons extends StatelessWidget {
                   ),
                   const Padding(
                     padding: EdgeInsets.only(top: Sizes.p4),
-                    child: SettingsRelayAtSignTextField(),
+                    child: SettingsRelayAtsignTextField(),
                   ),
                 ],
               ),

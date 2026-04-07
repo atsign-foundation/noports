@@ -7,7 +7,7 @@ class AuthorisationView extends StatelessWidget {
   const AuthorisationView({super.key});
   @override
   Widget build(BuildContext context) {
-    final atSign = context.watch<OnboardingCubit>().getAtSign();
+    final atsign = context.watch<OnboardingCubit>().getAtsign();
     return Padding(
       padding: const EdgeInsets.all(64.0),
       child: Container(
@@ -17,7 +17,7 @@ class AuthorisationView extends StatelessWidget {
         ),
         child: AuthorisationHub(
           // Ensure a unique key so that the AuthorisationHub is rebuilt when switching atsigns
-          key: ValueKey('authorization_hub_$atSign'),
+          key: ValueKey('authorization_hub_$atsign'),
           service: context.watch<AuthorisationService>(),
           themeData: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(

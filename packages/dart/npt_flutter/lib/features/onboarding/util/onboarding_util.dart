@@ -44,39 +44,40 @@ class NoPortsOnboardingUtil {
   }
 
   Future<void> _initializeConfig(BuildContext context) async {
-    AtsignInformation atsignInformation = context.read<OnboardingCubit>().state;
+    final cubit = context.read<OnboardingCubit>().state;
+
     config = AtOnboardingConfig(
       atClientPreference: await AtClientMethods.loadAtClientPreference(
-        atsignInformation.rootDomain,
+        cubit.rootDomain,
       ),
       rootEnvironment: RootEnvironment.Production,
-      domain: atsignInformation.rootDomain,
+      domain: cubit.rootDomain,
       appAPIKey: await Constants.appAPIKey,
     );
   }
 
-  /// A method to check whether an atSign has been activated or not
-  Future<AtStatus> atServerStatus(String atSign) async {
+  /// A method to check whether an atsign has been activated or not
+  Future<AtStatus> atServerStatus(Atsign atsign) async {
     _atServerStatus ??= AtStatusImpl(
       rootUrl: config.atClientPreference.rootDomain,
       rootPort: config.atClientPreference.rootPort,
     );
-    return _atServerStatus!.get(atSign);
+    return _atServerStatus!.get(atsign);
   }
 
   /// Upload an atKeys file, returning a stream with the progress so we can update the ui accordingly.
   /// Example implementation:
   /// https://github.com/atsign-foundation/at_widgets/blob/b4006854fa93c21eeb5bcea41044787bdf0f6f32/packages/at_onboarding_flutter/lib/src/screen/at_onboarding_home_screen.dart#L659
-  Stream<FileUploadStatus> uploadAtKeysFile(String? atSign) {
+  Stream<FileUploadStatus> uploadAtKeysFile(Atsign? atsign) {
     _uploadService ??= AtKeysFileUploadService(config: config);
-    return _uploadService!.uploadKeyFile(atSign);
+    return _uploadService!.uploadKeyFile(atsign);
   }
 
   /// Handles onboarding an atsign by checking its status and showing appropriate dialogs
   /// This is shared between the main onboarding button and the switch atsign functionality
   Future<AtOnboardingResult?> handleAtsignByStatus({
     required BuildContext context,
-    required String atsign,
+    required Atsign atsign,
     void Function(FileUploadStatus)? onProgress,
   }) async {
     final strings = AppLocalizations.of(context)!;
@@ -116,7 +117,7 @@ class NoPortsOnboardingUtil {
         );
 
       case AtSignStatus.notFound:
-        result = AtOnboardingResult.error(message: strings.errorAtSignNotExist);
+        result = AtOnboardingResult.error(message: strings.errorAtsignNotExist);
 
       case null:
       case AtSignStatus.error:
@@ -131,7 +132,7 @@ class NoPortsOnboardingUtil {
   /// Handles activation flow for unavailable/teapot atsigns
   Future<AtOnboardingResult?> _handleActivation({
     required BuildContext context,
-    required String atsign,
+    required Atsign atsign,
     AtSignStatus? initialStatus,
     required AppLocalizations strings,
   }) async {
@@ -141,7 +142,7 @@ class NoPortsOnboardingUtil {
 
     final apiKey = await Constants.appAPIKey;
     if (apiKey == null) {
-      return AtOnboardingResult.error(message: strings.errorAtSignNotExist);
+      return AtOnboardingResult.error(message: strings.errorAtsignNotExist);
     }
 
     AtOnboardingConstants.setApiKey(apiKey);
@@ -169,7 +170,7 @@ class NoPortsOnboardingUtil {
       context: context,
       barrierDismissible: false,
       builder: (context) => ActivateAtsignDialog(
-        atSign: atsign,
+        atsign: atsign,
         apiKey: apiKey,
         config: config,
         registrarUrl: regUrl,
@@ -190,7 +191,7 @@ class NoPortsOnboardingUtil {
       );
       if (!res) {
         return AtOnboardingResult.error(
-          message: strings.errorSwitchAtSignFailed,
+          message: strings.errorSwitchAtsignFailed,
         );
       }
     }
@@ -201,7 +202,7 @@ class NoPortsOnboardingUtil {
   /// Handles flow for already activated atsigns (APKAM or file upload)
   Future<AtOnboardingResult?> _handleActivatedAtsign({
     required BuildContext context,
-    required String atsign,
+    required Atsign atsign,
     required AppLocalizations strings,
     void Function(FileUploadStatus)? onProgress,
   }) async {
@@ -261,7 +262,7 @@ class NoPortsOnboardingUtil {
   Future<AtOnboardingResult?> _handleFileUploadStatusStream({
     required BuildContext context,
     required Stream<FileUploadStatus> statusStream,
-    required String atsign,
+    required Atsign atsign,
     required AppLocalizations strings,
     void Function(FileUploadStatus)? onProgress, // Add this callback
   }) async {
@@ -301,7 +302,7 @@ class NoPortsOnboardingUtil {
           break;
         case ErrorPairedAtsign _:
           result = AtOnboardingResult.error(
-            message: strings.errorAtSignAlreadyPaired(status.atSign ?? atsign),
+            message: strings.errorAtsignAlreadyPaired(status.atSign ?? atsign),
           );
           break;
         case FilePickingCanceled():
@@ -334,14 +335,13 @@ class NoPortsOnboardingUtil {
     var options = await getAtsignEntries();
 
     final cubit = App.navState.currentContext!.read<OnboardingCubit>();
-    String atsign = cubit.state.atSign;
+    Atsign? atsign = cubit.state.atsign;
     String? rootDomain = cubit.state.rootDomain;
 
     if (options.isEmpty) {
-      atsign = "";
-    } else if (atsign.isEmpty) {
-      atsign = options.keys.first;
-    }
+      atsign = null;
+    } else
+      atsign ??= options.keys.first.toAtsign();
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
@@ -350,7 +350,7 @@ class NoPortsOnboardingUtil {
       ).keys.first;
     }
 
-    cubit.setState(atSign: atsign, rootDomain: rootDomain);
+    cubit.setState(atsign: atsign, rootDomain: rootDomain);
     final results = await showDialog(
       context: App.navState.currentContext!,
 
@@ -361,19 +361,19 @@ class NoPortsOnboardingUtil {
   }
 
   Future<void> onboard({
-    required String atsign,
+    required Atsign atsign,
     required String rootDomain,
     required BuildContext context,
     bool isFromInitState = false,
   }) async {
-    var atSigns = await KeyChainManager.getInstance()
+    var atsigns = await KeyChainManager.getInstance()
         .getAtSignListFromKeychain();
 
     AtOnboardingResult? onboardingResult;
 
     if (!context.mounted) return;
 
-    if (atSigns.contains(atsign)) {
+    if (atsigns.contains(atsign)) {
       onboardingResult = await AtOnboarding.onboard(
         atsign: atsign,
         context: context,
@@ -403,10 +403,10 @@ class NoPortsOnboardingUtil {
           ProfileProgressListener(),
         );
         AtClientManager.getInstance().atClient.syncService.sync();
-        postOnboard(onboardingResult!.atsign!, rootDomain);
+        postOnboard(onboardingResult!.atsign!.toAtsign(), rootDomain);
         final result = await saveAtsignInformation(
           AtsignInformation(
-            atSign: onboardingResult.atsign!,
+            atsign: onboardingResult.atsign!.toAtsign(),
             rootDomain: rootDomain,
           ),
         );

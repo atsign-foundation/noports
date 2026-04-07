@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,34 +27,34 @@ void main() {
     const testUuid3 = 'test-uuid-3';
     const testProfileUuids = [testUuid1, testUuid2, testUuid3];
 
-    const testProfile1 = Profile(
+    final testProfile1 = Profile(
       testUuid1,
       displayName: 'Test Profile 1',
-      sshnpdAtsign: '@test_device1',
+      sshnpdAtsign: '@test_device1'.toAtsign(),
       deviceName: 'test-device-1',
       remotePort: 22,
       localPort: 2222,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
-    const testProfile2 = Profile(
+    final testProfile2 = Profile(
       testUuid2,
       displayName: 'Test Profile 2',
-      sshnpdAtsign: '@test_device2',
+      sshnpdAtsign: '@test_device2'.toAtsign(),
       deviceName: 'test-device-2',
       remotePort: 23,
       localPort: 2223,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
-    const testProfile3 = Profile(
+    final testProfile3 = Profile(
       testUuid3,
       displayName: 'Test Profile 3',
-      sshnpdAtsign: '@test_device3',
+      sshnpdAtsign: '@test_device3'.toAtsign(),
       deviceName: 'test-device-3',
       remotePort: 24,
       localPort: 2224,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
     setUp(() {
@@ -257,7 +258,7 @@ void main() {
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1, testUuid2]),
-        act: (bloc) => bloc.add(const ProfileListAddEvent([testProfile3])),
+        act: (bloc) => bloc.add(ProfileListAddEvent([testProfile3])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1, testUuid2, testUuid3]),
         ],
@@ -279,7 +280,7 @@ void main() {
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1]),
         act: (bloc) =>
-            bloc.add(const ProfileListAddEvent([testProfile2, testProfile3])),
+            bloc.add(ProfileListAddEvent([testProfile2, testProfile3])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1, testUuid2, testUuid3]),
         ],
@@ -293,7 +294,7 @@ void main() {
         'should not emit anything when state is not ProfileListLoaded',
         build: () => profileListBloc,
         seed: () => const ProfileListLoading(),
-        act: (bloc) => bloc.add(const ProfileListAddEvent([testProfile1])),
+        act: (bloc) => bloc.add(ProfileListAddEvent([testProfile1])),
         expect: () => [],
         verify: (_) {
           verifyNever(mockRepository.putProfile(any));
@@ -321,7 +322,7 @@ void main() {
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: <String>[]),
-        act: (bloc) => bloc.add(const ProfileListAddEvent([testProfile1])),
+        act: (bloc) => bloc.add(ProfileListAddEvent([testProfile1])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1]),
         ],
@@ -348,7 +349,7 @@ void main() {
         const loadEvent = ProfileListLoadEvent();
         const updateEvent = ProfileListUpdateEvent(testProfileUuids);
         const deleteEvent = ProfileListDeleteEvent(toDelete: [testUuid1]);
-        const addEvent = ProfileListAddEvent([testProfile1]);
+        final addEvent = ProfileListAddEvent([testProfile1]);
 
         expect(loadEvent.props, isEmpty);
         expect(updateEvent.props, contains(testProfileUuids));
@@ -372,7 +373,7 @@ void main() {
           const loadEvent = ProfileListLoadEvent();
           const updateEvent = ProfileListUpdateEvent(testProfileUuids);
           const deleteEvent = ProfileListDeleteEvent(toDelete: [testUuid1]);
-          const addEvent = ProfileListAddEvent([testProfile1]);
+          final addEvent = ProfileListAddEvent([testProfile1]);
 
           expect(loadEvent.toString(), equals('ProfileListLoadEvent'));
           expect(
@@ -434,7 +435,7 @@ void main() {
         act: (bloc) async {
           bloc.add(const ProfileListLoadEvent());
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(const ProfileListAddEvent([testProfile2]));
+          bloc.add(ProfileListAddEvent([testProfile2]));
           await Future.delayed(const Duration(milliseconds: 10));
           bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1]));
         },
@@ -459,9 +460,9 @@ void main() {
         },
         seed: () => const ProfileListLoaded(profiles: <String>[]),
         act: (bloc) async {
-          bloc.add(const ProfileListAddEvent([testProfile1]));
+          bloc.add(ProfileListAddEvent([testProfile1]));
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(const ProfileListAddEvent([testProfile2]));
+          bloc.add(ProfileListAddEvent([testProfile2]));
           await Future.delayed(const Duration(milliseconds: 10));
           bloc.add(const ProfileListUpdateEvent([testUuid3]));
         },
@@ -510,7 +511,7 @@ void main() {
         act: (bloc) async {
           bloc.add(const ProfileListDeleteEvent(toDelete: [testUuid1]));
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(const ProfileListAddEvent([testProfile3]));
+          bloc.add(ProfileListAddEvent([testProfile3]));
         },
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid2]),
@@ -527,7 +528,7 @@ void main() {
           return profileListBloc;
         },
         seed: () => const ProfileListLoaded(profiles: [testUuid1]),
-        act: (bloc) => bloc.add(const ProfileListAddEvent([testProfile1])),
+        act: (bloc) => bloc.add(ProfileListAddEvent([testProfile1])),
         expect: () => [
           const ProfileListLoaded(profiles: [testUuid1, testUuid1]),
         ],

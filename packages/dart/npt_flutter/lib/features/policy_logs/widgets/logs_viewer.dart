@@ -231,8 +231,8 @@ class LogsViewer extends StatelessWidget {
         final log = state.logs[index];
         return PolicyLogItem(
           timestamp: log.timestamp,
-          fromAtSign: log.fromAtSign,
-          toAtSign: log.toAtSign,
+          fromAtsign: log.fromAtsign,
+          toAtsign: log.toAtsign,
           type: log.type,
           deviceName: log.deviceName,
           deviceGroup: log.deviceGroup,

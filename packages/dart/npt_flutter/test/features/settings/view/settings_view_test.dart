@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,8 +26,8 @@ void main() {
     late MockSettingsBloc mockSettingsBloc;
     late MockEnableLoggingCubit mockEnableLoggingCubit;
 
-    const testSettings = Settings(
-      relayAtsign: '@rv_eu',
+    final testSettings = Settings(
+      relayAtsign: '@rv_eu'.toAtsign(),
       overrideRelay: false,
       viewLayout: PreferredViewLayout.minimal,
       darkMode: false,
@@ -109,7 +110,7 @@ void main() {
         WidgetTester tester,
       ) async {
         await tester.pumpWidget(
-          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+          createWidgetUnderTest(SettingsLoaded(settings: testSettings)),
         );
         await tester.pump();
 
@@ -128,7 +129,7 @@ void main() {
         WidgetTester tester,
       ) async {
         await tester.pumpWidget(
-          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+          createWidgetUnderTest(SettingsLoaded(settings: testSettings)),
         );
         await tester.pump();
 
@@ -140,7 +141,7 @@ void main() {
         WidgetTester tester,
       ) async {
         await tester.pumpWidget(
-          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+          createWidgetUnderTest(SettingsLoaded(settings: testSettings)),
         );
         await tester
             .pumpAndSettle(); // Use pumpAndSettle to wait for all animations
@@ -167,7 +168,7 @@ void main() {
         WidgetTester tester,
       ) async {
         await tester.pumpWidget(
-          createWidgetUnderTest(const SettingsLoaded(settings: testSettings)),
+          createWidgetUnderTest(SettingsLoaded(settings: testSettings)),
         );
         await tester.pump();
 

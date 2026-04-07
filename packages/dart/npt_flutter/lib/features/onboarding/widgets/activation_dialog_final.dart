@@ -165,7 +165,7 @@ class ActivationDialogFinal extends StatelessWidget {
                       context.read<OnboardingCubit>().setState(
                         // Onboard with the first atsign in the list since they should all be the same atsigns from the activation file. This is needed to set the root domain and atsign in the onboarding cubit state which is used in the onboarding process after this dialog.
                         // TODO: Use the last Atsign for now. This need to be refactored to the first Atsign in the UI redesign.
-                        atSign: state.fileContent.entries.last.atsign,
+                        atsign: state.fileContent.entries.last.atsign,
 
                         // TODO: User the root dimain in atsign information.
                         rootDomain: "root.atsign.org",
@@ -180,7 +180,7 @@ class ActivationDialogFinal extends StatelessWidget {
                           .read<MultiActivationCubit>()
                           .reset();
                       await util.onboard(
-                        atsign: atsignInformation.atSign,
+                        atsign: atsignInformation.atsign!,
                         rootDomain: atsignInformation.rootDomain,
                         context: App.navState.currentContext!,
                       );

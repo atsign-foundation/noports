@@ -90,7 +90,7 @@ class _SignInDialogState extends State<SignInDialog> {
                           ),
                           onPressed:
                               FormValidator.validateRequiredAtsignField(
-                                    state.atSign,
+                                    state.atsign,
                                   ) ==
                                   null
                               ? () {

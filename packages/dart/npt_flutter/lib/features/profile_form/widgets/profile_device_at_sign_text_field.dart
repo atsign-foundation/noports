@@ -1,21 +1,21 @@
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
-import 'package:npt_flutter/util/general_extensions.dart';
 
-class ProfileDeviceAtSignTextField extends StatefulWidget {
-  const ProfileDeviceAtSignTextField({super.key});
+class ProfileDeviceAtsignTextField extends StatefulWidget {
+  const ProfileDeviceAtsignTextField({super.key});
 
   @override
-  State<ProfileDeviceAtSignTextField> createState() =>
-      _ProfileDeviceAtSignTextFieldState();
+  State<ProfileDeviceAtsignTextField> createState() =>
+      _ProfileDeviceAtsignTextFieldState();
 }
 
-class _ProfileDeviceAtSignTextFieldState
-    extends State<ProfileDeviceAtSignTextField> {
+class _ProfileDeviceAtsignTextFieldState
+    extends State<ProfileDeviceAtsignTextField> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class _ProfileDeviceAtSignTextFieldState
         BlocSelector<ProfileBloc, ProfileState, String?>(
           selector: (ProfileState state) {
             if (state is ProfileLoadedState) {
-              return state.profile.sshnpdAtsign;
+              return state.profile.sshnpdAtsign?.toString() ?? '';
             }
             return null;
           },
@@ -55,14 +55,14 @@ class _ProfileDeviceAtSignTextFieldState
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: FormValidator.validateRequiredAtsignField,
                 onChanged: (value) {
-                  value = value.atsignify();
+                  value = value.toAtsign();
                   setState(() {});
 
                   var bloc = context.read<ProfileBloc>();
                   bloc.add(
                     ProfileEditEvent(
                       profile: (bloc.state as ProfileLoadedState).profile
-                          .copyWith(sshnpdAtsign: value),
+                          .copyWith(sshnpdAtsign: value.toAtsign()),
                     ),
                   );
                 },

@@ -1,11 +1,10 @@
-import 'package:npt_flutter/features/logging/models/logging_bloc.dart';
-import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:npt_flutter/app.dart';
 
 class OnboardingCubit extends LoggingCubit<OnboardingState> {
   OnboardingCubit()
     : super(
         const OnboardingState(
-          atSign: '',
           status: OnboardingStatus.offboarded,
           rootDomain: 'root.atsign.org',
         ),
@@ -13,25 +12,31 @@ class OnboardingCubit extends LoggingCubit<OnboardingState> {
 
   void setRootDomain(String rootDomain) => emit(
     OnboardingState(
-      atSign: state.atSign,
+      atsign: state.atsign,
       status: state.status,
       rootDomain: rootDomain,
     ),
   );
   String getRootDomain() => (state.rootDomain);
 
-  void setAtSign(String atSign) => emit(
+  void setAtsign(Atsign atsign) => emit(
     OnboardingState(
-      atSign: atSign,
+      atsign: atsign,
       status: state.status,
       rootDomain: state.rootDomain,
     ),
   );
-  String getAtSign() => (state.atSign);
+  Atsign getAtsign() {
+    assert(
+      state.atsign != null,
+      'Atsign is null. This should not happen. Please set the atsign before trying to get it.',
+    );
+    return state.atsign!;
+  }
 
   void setStatus(OnboardingStatus status) => emit(
     OnboardingState(
-      atSign: state.atSign,
+      atsign: state.atsign,
       status: status,
       rootDomain: state.rootDomain,
     ),
@@ -43,12 +48,12 @@ class OnboardingCubit extends LoggingCubit<OnboardingState> {
   /// then they will override the value of the current state
   /// keeping unspecified values the same
   void setState({
-    String? atSign,
+    Atsign? atsign,
     OnboardingStatus? status,
     String? rootDomain,
   }) => emit(
     OnboardingState(
-      atSign: atSign ?? state.atSign,
+      atsign: atsign ?? state.atsign,
       status: status ?? state.status,
       rootDomain: rootDomain ?? state.rootDomain,
     ),
@@ -57,19 +62,21 @@ class OnboardingCubit extends LoggingCubit<OnboardingState> {
 
 enum OnboardingStatus { onboarded, offboarded }
 
-class OnboardingState extends AtsignInformation {
+class OnboardingState extends Loggable {
   final OnboardingStatus status;
+  final Atsign? atsign;
+  final String rootDomain;
   const OnboardingState({
     required this.status,
-    required super.atSign,
-    required super.rootDomain,
+    this.atsign,
+    required this.rootDomain,
   });
 
   @override
-  List<Object?> get props => [atSign, status, rootDomain];
+  List<Object?> get props => [atsign, status, rootDomain];
 
   @override
   String toString() {
-    return 'OnboardingState($atSign, ${status.name}, $rootDomain)';
+    return 'OnboardingState($atsign, ${status.name}, $rootDomain)';
   }
 }

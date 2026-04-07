@@ -127,7 +127,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get atsignDialogSubtitle => 'Please select your Atsign';
 
   @override
-  String get atsignDialogTitle => 'AtSign';
+  String get atsignDialogTitle => 'Atsign';
 
   @override
   String get atsignFrom => 'From Atsign';
@@ -390,16 +390,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to connect to the atServer, make sure you have a stable internet connection.';
 
   @override
-  String errorAtSignAlreadyPaired(Object atsign) {
+  String errorAtsignAlreadyPaired(Object atsign) {
     return 'The Atsign $atsign is already paired, please contact support.';
   }
 
   @override
-  String get errorAtSignNotExist =>
+  String get errorAtsignNotExist =>
       'The Atsign you have requested doesn\'t exist in this root domain.';
 
   @override
-  String get errorAtSignUnavailable =>
+  String get errorAtsignUnavailable =>
       'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.';
 
   @override
@@ -429,7 +429,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The specified root domain is not supported by automatic activation.';
 
   @override
-  String get errorSwitchAtSignFailed =>
+  String get errorSwitchAtsignFailed =>
       'Failed to switch Atsign after activation.';
 
   @override
@@ -972,14 +972,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get success => 'Success';
 
   @override
-  String get switchAtSign => 'Switch Atsign';
+  String get switchAtsign => 'Switch Atsign';
 
   @override
-  String get switchAtSignDescription =>
+  String get switchAtsignDescription =>
       'Are you sure you want to switch Atsign?';
 
   @override
-  String get switchAtSignNote => 'Note: Switching Atsign ends all connections.';
+  String get switchAtsignNote => 'Note: Switching Atsign ends all connections.';
 
   @override
   String get syncCompleted => 'Sync completed. All profiles loaded.';

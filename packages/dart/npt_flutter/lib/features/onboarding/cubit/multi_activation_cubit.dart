@@ -112,7 +112,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   }
 
   /// Get the atsign that is currently being activated.
-  String? getActivatingAtsign() {
+  Atsign? getActivatingAtsign() {
     try {
       final ActivationKeyPair activationKeyPair = state.fileContent.entries
           .firstWhere(
@@ -195,14 +195,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       try {
         // 4. Configure Onboarding
         // Using AtOnboardingServiceImpl directly avoids global singleton state issues
-        // occurring when switching between multiple atSigns rapidly.
+        // occurring when switching between multiple atsigns rapidly.
 
-        String atsign = entry.atsign.startsWith('@')
-            ? entry.atsign
-            : '@${entry.atsign}';
+        Atsign atsign = entry.atsign;
         String cramSecret = entry.activationKey;
 
-        // 2. Reset the current atSign on the singleton
+        // 2. Reset the current atsign on the singleton
         onboardingService.setAtsign = atsign;
         // TODO: Consider replacing this when using at_client_flutter
         AtClientPreference atClientPreference = AtClientPreference()
@@ -296,7 +294,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   // Back Up the atKeys for the activated Atsign.
   Future<void> backUpActivatedAtsigns(
     String fileLocation,
-    String atsign,
+    Atsign atsign,
   ) async {
     //
     // TODO: Refactor so that it user BackupKeyCubit. Can't be used now because it is tightly coupled with the OnboardingCubit/Single Atsign Activation flow. This will be refactored when we migrate to at_client_flutter.

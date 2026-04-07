@@ -48,7 +48,7 @@ class BackupKeyCubit extends Cubit<bool> {
   Future<void> backUpKeys({bool popDialog = true}) async {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
-    var atsign = context.read<OnboardingCubit>().getAtSign();
+    var atsign = context.read<OnboardingCubit>().getAtsign();
     // Build file data
     var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
     var keyString = jsonEncode(aesEncryptedKeys);
