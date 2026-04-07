@@ -10,8 +10,18 @@ on:
       - trunk
 
 jobs:
+  e2e_all:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    uses: ./.github/workflows/e2e_all.yaml
+    secrets: inherit
+
   e2e_all_v2:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    # Wait for e2e_all to complete successfully
+    needs: e2e_all
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
       'dependabot[bot]'}}
