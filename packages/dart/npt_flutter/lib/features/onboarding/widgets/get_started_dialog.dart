@@ -112,7 +112,7 @@ class _GetStartedDialogState extends State<GetStartedDialog> {
                           .read<OnboardingCubit>()
                           .state;
                       await util.onboard(
-                        atsign: atsignInformation.atSign,
+                        atsign: atsignInformation.atsign!,
                         rootDomain: atsignInformation.rootDomain,
                         context: App.navState.currentContext!,
                       );

@@ -51,8 +51,8 @@ class ProfileRepository {
     }
 
     AtClient atClient = _client;
-    String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
+    Atsign? atsign = atClient.getCurrentAtSign()!.toAtsign();
+    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
     try {
       var value = await atClient.get(key);
       var profile = Profile.fromJson(jsonDecode(value.value));
@@ -68,8 +68,8 @@ class ProfileRepository {
     _profileCache[profile.uuid] = profile;
 
     AtClient atClient = _client;
-    String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atSign);
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
+    AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
       return await atClient.put(key, jsonEncode(profile.toJson()));
@@ -82,8 +82,8 @@ class ProfileRepository {
   Future<bool> deleteProfile(String uuid) async {
     _profileCache.remove(uuid);
     AtClient atClient = _client;
-    String? atSign = atClient.getCurrentAtSign();
-    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atSign);
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
+    AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
       return await atClient.delete(key);

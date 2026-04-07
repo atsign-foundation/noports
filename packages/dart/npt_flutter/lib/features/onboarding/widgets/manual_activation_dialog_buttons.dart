@@ -34,7 +34,7 @@ class ManualActivationDialogButtons extends StatelessWidget {
               const Spacer(),
               ElevatedButton(
                 onPressed:
-                    FormValidator.validateRequiredAtsignField(state.atSign) ==
+                    FormValidator.validateRequiredAtsignField(state.atsign) ==
                         null
                     ? () async {
                         Navigator.of(context).pop(true);
@@ -45,7 +45,7 @@ class ManualActivationDialogButtons extends StatelessWidget {
                             .read<OnboardingCubit>()
                             .state;
                         await util.onboard(
-                          atsign: atsignInformation.atSign,
+                          atsign: atsignInformation.atsign!,
                           rootDomain: atsignInformation.rootDomain,
                           context: App.navState.currentContext!,
                         );

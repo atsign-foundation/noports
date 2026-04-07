@@ -14,14 +14,14 @@ class FormValidator {
     return null;
   }
 
-  /// Validates an atSign field that is required.
+  /// Validates an atsign field that is required.
   static String? validateRequiredAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
     }
-    // Can starts with '@' and contains only valid atSign characters
+    // Can starts with '@' and contains only valid atsign characters
     if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
       return strings.validationErrorAtsignField;
     }
@@ -29,14 +29,14 @@ class FormValidator {
     return null;
   }
 
-  /// Validates an atSign field that is optional.
+  /// Validates an atsign field that is optional.
   static String? validateOptionalAtsignField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
     if (value?.isEmpty ?? true) {
       return null;
     }
-    // Can start with '@' and contains only valid atSign characters
+    // Can start with '@' and contains only valid atsign characters
     if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
       return strings.validationErrorAtsignField;
     }

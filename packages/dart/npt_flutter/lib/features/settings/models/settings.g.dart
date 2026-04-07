@@ -7,7 +7,7 @@ part of 'settings.dart';
 // **************************************************************************
 
 Settings _$SettingsFromJson(Map<String, dynamic> json) => Settings(
-  relayAtsign: json['relayAtsign'] as String,
+  relayAtsign: json['relayAtsign'] as Atsign,
   overrideRelay: json['overrideRelay'] as bool,
   viewLayout: $enumDecode(_$PreferredViewLayoutEnumMap, json['viewLayout']),
   darkMode: json['darkMode'] as bool? ?? false,

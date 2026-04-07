@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
 
-// Hand this method the atSign you wish to offboard
+// Hand this method the atsign you wish to offboard
 // Returns: a boolean, true = success, false = failed
 Future<bool> preSignout() async {
   App.log("Resetting all application state before signout".loggable);

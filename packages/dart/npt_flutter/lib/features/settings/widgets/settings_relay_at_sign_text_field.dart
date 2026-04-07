@@ -1,32 +1,32 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/form_validator.dart';
-import 'package:npt_flutter/util/general_extensions.dart';
 
-class SettingsRelayAtSignTextField extends StatefulWidget {
-  const SettingsRelayAtSignTextField({super.key});
+class SettingsRelayAtsignTextField extends StatefulWidget {
+  const SettingsRelayAtsignTextField({super.key});
 
   @override
-  State<SettingsRelayAtSignTextField> createState() =>
-      _SettingsRelayAtSignTextFieldState();
+  State<SettingsRelayAtsignTextField> createState() =>
+      _SettingsRelayAtsignTextFieldState();
 }
 
-class _SettingsRelayAtSignTextFieldState
-    extends State<SettingsRelayAtSignTextField> {
+class _SettingsRelayAtsignTextFieldState
+    extends State<SettingsRelayAtsignTextField> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<SettingsBloc, SettingsState, String?>(
+    return BlocSelector<SettingsBloc, SettingsState, Atsign?>(
       selector: (SettingsState state) {
         if (state is SettingsLoadedState) {
           return state.settings.relayAtsign;
         }
         return null;
       },
-      builder: (BuildContext context, String? relayAtsign) {
+      builder: (BuildContext context, Atsign? relayAtsign) {
         if (relayAtsign == null) return gap0;
         Future.microtask(
           () => controller.value = TextEditingValue(
@@ -46,7 +46,7 @@ class _SettingsRelayAtSignTextFieldState
               errorMaxLines: 2,
             ),
             onChanged: (value) {
-              value = value.atsignify();
+              value = value.toAtsign();
               controller.value = TextEditingValue(
                 text: value,
                 selection: TextSelection.collapsed(offset: value.length),
@@ -55,7 +55,7 @@ class _SettingsRelayAtSignTextFieldState
               bloc.add(
                 SettingsEditEvent(
                   settings: (bloc.state as SettingsLoadedState).settings
-                      .copyWith(relayAtsign: value),
+                      .copyWith(relayAtsign: value.toAtsign()),
                   save: true,
                 ),
               );

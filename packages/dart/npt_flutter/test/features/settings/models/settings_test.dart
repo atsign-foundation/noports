@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/settings/models/settings.dart';
 import 'package:npt_flutter/util/language.dart';
@@ -6,8 +7,8 @@ void main() {
   group('Settings Model Tests', () {
     group('Constructor', () {
       test('should create Settings with all parameters', () {
-        const settings = Settings(
-          relayAtsign: '@rv_am',
+        final settings = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
@@ -22,8 +23,8 @@ void main() {
       });
 
       test('should create Settings with darkMode defaulting to false', () {
-        const settings = Settings(
-          relayAtsign: '@rv_eu',
+        final settings = Settings(
+          relayAtsign: '@rv_eu'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           language: Language.spanish,
@@ -37,8 +38,8 @@ void main() {
       late Settings originalSettings;
 
       setUp(() {
-        originalSettings = const Settings(
-          relayAtsign: '@rv_am',
+        originalSettings = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
@@ -57,7 +58,9 @@ void main() {
       });
 
       test('should update relayAtsign when provided', () {
-        final copiedSettings = originalSettings.copyWith(relayAtsign: '@rv_eu');
+        final copiedSettings = originalSettings.copyWith(
+          relayAtsign: '@rv_eu'.toAtsign(),
+        );
 
         expect(copiedSettings.relayAtsign, '@rv_eu');
         expect(copiedSettings.overrideRelay, originalSettings.overrideRelay);
@@ -66,12 +69,10 @@ void main() {
         expect(copiedSettings.language, originalSettings.language);
       });
 
-      test('should default to @rv_am when relayAtsign is null or empty', () {
+      test('should default to @rv_am when relayAtsign is null', () {
         final copiedWithNull = originalSettings.copyWith(relayAtsign: null);
-        final copiedWithEmpty = originalSettings.copyWith(relayAtsign: '');
 
         expect(copiedWithNull.relayAtsign, '@rv_am');
-        expect(copiedWithEmpty.relayAtsign, '@rv_am');
       });
 
       test('should update overrideRelay when provided', () {
@@ -108,7 +109,7 @@ void main() {
 
       test('should update multiple properties at once', () {
         final copiedSettings = originalSettings.copyWith(
-          relayAtsign: '@rv_ap',
+          relayAtsign: '@rv_ap'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: true,
@@ -125,8 +126,8 @@ void main() {
 
     group('JSON Serialization', () {
       test('should serialize to JSON correctly', () {
-        const settings = Settings(
-          relayAtsign: '@rv_eu',
+        final settings = Settings(
+          relayAtsign: '@rv_eu'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: true,
@@ -161,8 +162,8 @@ void main() {
       });
 
       test('should handle round-trip serialization', () {
-        const originalSettings = Settings(
-          relayAtsign: '@custom_relay',
+        final originalSettings = Settings(
+          relayAtsign: '@custom_relay'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: true,
@@ -185,16 +186,16 @@ void main() {
 
     group('Equality and Props', () {
       test('should be equal when all properties are the same', () {
-        const settings1 = Settings(
-          relayAtsign: '@rv_am',
+        final settings1 = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
           language: Language.english,
         );
 
-        const settings2 = Settings(
-          relayAtsign: '@rv_am',
+        final settings2 = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
@@ -206,16 +207,16 @@ void main() {
       });
 
       test('should not be equal when properties differ', () {
-        const settings1 = Settings(
-          relayAtsign: '@rv_am',
+        final settings1 = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
           language: Language.english,
         );
 
-        const settings2 = Settings(
-          relayAtsign: '@rv_eu',
+        final settings2 = Settings(
+          relayAtsign: '@rv_eu'.toAtsign(),
           overrideRelay: false,
           viewLayout: PreferredViewLayout.minimal,
           darkMode: false,
@@ -226,8 +227,8 @@ void main() {
       });
 
       test('should have correct props list', () {
-        const settings = Settings(
-          relayAtsign: '@rv_am',
+        final settings = Settings(
+          relayAtsign: '@rv_am'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: true,
@@ -247,8 +248,8 @@ void main() {
 
     group('toString', () {
       test('should return formatted string representation', () {
-        const settings = Settings(
-          relayAtsign: '@rv_eu',
+        final settings = Settings(
+          relayAtsign: '@rv_eu'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: false,
@@ -282,15 +283,15 @@ void main() {
     });
 
     test('should serialize with kebab-case field names', () {
-      const settings1 = Settings(
-        relayAtsign: '@rv_am',
+      final settings1 = Settings(
+        relayAtsign: '@rv_am'.toAtsign(),
         overrideRelay: false,
         viewLayout: PreferredViewLayout.minimal,
         language: Language.english,
       );
 
-      const settings2 = Settings(
-        relayAtsign: '@rv_am',
+      final settings2 = Settings(
+        relayAtsign: '@rv_am'.toAtsign(),
         overrideRelay: false,
         viewLayout: PreferredViewLayout.sshStyle,
         language: Language.english,

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
-import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
@@ -192,8 +191,8 @@ class CustomTextButton extends StatelessWidget {
     }
 
     if (type == CustomListTileType.removeAtsign) {
-      return BlocBuilder<OnboardingCubit, AtsignInformation>(
-        builder: (context, atsignInformation) {
+      return BlocBuilder<OnboardingCubit, OnboardingState>(
+        builder: (context, state) {
           return Padding(
             padding: const EdgeInsets.only(
               left: Sizes.p30,
@@ -203,7 +202,7 @@ class CustomTextButton extends StatelessWidget {
             child: TextButton.icon(
               label: Text(getTitle(strings)),
               onPressed: () {
-                onTap(rootDomain: atsignInformation.rootDomain);
+                onTap(rootDomain: state.rootDomain);
               },
               icon: Icon(iconData),
             ),

@@ -4,11 +4,11 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
-Future<void> postOnboard(String atSign, String rootDomain) async {
+Future<void> postOnboard(Atsign atsign, String rootDomain) async {
   App.log("setting all application state after onboarding".loggable);
   final context = App.navState.currentContext;
   context?.read<OnboardingCubit>().setState(
-    atSign: atSign,
+    atsign: atsign,
     rootDomain: rootDomain,
     status: OnboardingStatus.onboarded,
   );

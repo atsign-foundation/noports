@@ -23,8 +23,8 @@ void main() {
     late MockAtClientManager mockAtClientManager;
 
     const testAtsign = '@test_user';
-    const testSettings = Settings(
-      relayAtsign: '@rv_eu',
+    final testSettings = Settings(
+      relayAtsign: '@rv_eu'.toAtsign(),
       overrideRelay: true,
       viewLayout: PreferredViewLayout.sshStyle,
       darkMode: true,
@@ -193,8 +193,8 @@ void main() {
         });
 
         test('should handle different settings configurations', () async {
-          const darkModeSettings = Settings(
-            relayAtsign: '@rv_ap',
+          final darkModeSettings = Settings(
+            relayAtsign: '@rv_ap'.toAtsign(),
             overrideRelay: false,
             viewLayout: PreferredViewLayout.minimal,
             darkMode: true,
@@ -253,8 +253,8 @@ void main() {
 
     group('Integration with Settings Model', () {
       test('should correctly serialize and deserialize settings', () async {
-        const originalSettings = Settings(
-          relayAtsign: '@custom_relay',
+        final originalSettings = Settings(
+          relayAtsign: '@custom_relay'.toAtsign(),
           overrideRelay: true,
           viewLayout: PreferredViewLayout.sshStyle,
           darkMode: false,

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
 
 class PolicyLogEntry {
   final String timestamp;
-  final String fromAtSign;
-  final String toAtSign;
+  final Atsign? fromAtsign;
+  final Atsign? toAtsign;
   final String type;
   final String deviceName;
   final String deviceGroup;
@@ -15,8 +16,8 @@ class PolicyLogEntry {
 
   PolicyLogEntry({
     required this.timestamp,
-    required this.fromAtSign,
-    required this.toAtSign,
+    required this.fromAtsign,
+    required this.toAtsign,
     required this.type,
     required this.deviceName,
     required this.deviceGroup,
@@ -25,7 +26,9 @@ class PolicyLogEntry {
   });
 
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
-    final timestamp = DateTime.fromMillisecondsSinceEpoch(notification.epochMillis ?? DateTime.now().millisecondsSinceEpoch);
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(
+      notification.epochMillis ?? DateTime.now().millisecondsSinceEpoch,
+    );
 
     String deviceName = '';
     String deviceGroup = '';
@@ -49,9 +52,11 @@ class PolicyLogEntry {
               if (requestPayload is Map<String, dynamic>) {
                 deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
                 deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
-                final clientAtSign = requestPayload['clientAtsign'] ?? 'unknown';
-                final daemonAtSign = requestPayload['daemonAtsign'] ?? 'unknown';
-                allowedServices = 'Request: $clientAtSign → $daemonAtSign';
+                final clientAtsign =
+                    requestPayload['clientAtsign'] ?? 'unknown';
+                final daemonAtsign =
+                    requestPayload['daemonAtsign'] ?? 'unknown';
+                allowedServices = 'Request: $clientAtsign → $daemonAtsign';
               }
             }
             final response = payload['response'];
@@ -71,7 +76,10 @@ class PolicyLogEntry {
             }
           }
         } catch (e) {
-          App.log('[ERROR] PolicyLogEntry.fromNotification: Failed to parse policy log payload: $e'.loggable);
+          App.log(
+            '[ERROR] PolicyLogEntry.fromNotification: Failed to parse policy log payload: $e'
+                .loggable,
+          );
           allowedServices = 'Parse error: ${e.toString()}';
         }
       }
@@ -81,12 +89,18 @@ class PolicyLogEntry {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
           deviceName = data['devicename'] ?? 'unknown';
           deviceGroup = data['deviceGroupName'] ?? '';
-          if (data['allowedServices'] != null && data['allowedServices'] is List) {
-            final List<String> services = List<String>.from(data['allowedServices']);
+          if (data['allowedServices'] != null &&
+              data['allowedServices'] is List) {
+            final List<String> services = List<String>.from(
+              data['allowedServices'],
+            );
             allowedServices = services.join(', ');
           }
         } catch (e) {
-          App.log('[ERROR] PolicyLogEntry.fromNotification: Failed to parse device log payload: $e'.loggable);
+          App.log(
+            '[ERROR] PolicyLogEntry.fromNotification: Failed to parse device log payload: $e'
+                .loggable,
+          );
           final keyParts = notification.key.split(':');
           if (keyParts.length > 1) {
             final devicePart = keyParts[1].split('.devices.policy.sshnp')[0];
@@ -99,8 +113,8 @@ class PolicyLogEntry {
 
     return PolicyLogEntry(
       timestamp: timestamp.toString().substring(0, 19),
-      fromAtSign: notification.from ?? 'unknown',
-      toAtSign: notification.to ?? 'unknown',
+      fromAtsign: notification.from.toAtsign(),
+      toAtsign: notification.to.toAtsign(),
       type: type,
       deviceName: deviceName,
       deviceGroup: deviceGroup,
@@ -113,7 +127,8 @@ class PolicyLogEntry {
 class PolicyLogMonitorService {
   static PolicyLogMonitorService? _instance;
   StreamSubscription<AtNotification>? _subscription;
-  final StreamController<PolicyLogEntry> _logStreamController = StreamController<PolicyLogEntry>.broadcast();
+  final StreamController<PolicyLogEntry> _logStreamController =
+      StreamController<PolicyLogEntry>.broadcast();
   final List<PolicyLogEntry> _logs = [];
   bool _isMonitoring = false;
 
@@ -139,38 +154,54 @@ class PolicyLogMonitorService {
     try {
       final AtClient atClient = AtClientManager.getInstance().atClient;
 
-      final deviceRegexParts = deviceNames.map((device) => '$device\\.devices\\.policy\\.sshnp').toList();
-      final deviceRegex = deviceRegexParts.isNotEmpty ? '(${deviceRegexParts.join('|')})' : '';
+      final deviceRegexParts = deviceNames
+          .map((device) => '$device\\.devices\\.policy\\.sshnp')
+          .toList();
+      final deviceRegex = deviceRegexParts.isNotEmpty
+          ? '(${deviceRegexParts.join('|')})'
+          : '';
       const policyLogRegex = 'logs\\.policy\\.sshnp';
 
-      final monitorRegex = deviceRegex.isNotEmpty ? '($deviceRegex|$policyLogRegex)' : policyLogRegex;
+      final monitorRegex = deviceRegex.isNotEmpty
+          ? '($deviceRegex|$policyLogRegex)'
+          : policyLogRegex;
 
       var notificationService = atClient.notificationService;
 
-      _subscription = notificationService.subscribe(regex: monitorRegex, shouldDecrypt: true).listen(
-        (notification) {
-          final logEntry = PolicyLogEntry.fromNotification(notification);
-          _logs.insert(0, logEntry);
+      _subscription = notificationService
+          .subscribe(regex: monitorRegex, shouldDecrypt: true)
+          .listen(
+            (notification) {
+              final logEntry = PolicyLogEntry.fromNotification(notification);
+              _logs.insert(0, logEntry);
 
-          if (_logs.length > 100) {
-            _logs.removeRange(100, _logs.length);
-          }
-          _logStreamController.add(logEntry);
-        },
-        onError: (error) {
-          App.log('[ERROR] PolicyLogMonitorService.startMonitoring stream error: $error'.loggable);
-          unawaited(stopMonitoring());
-        },
-        onDone: () {
-          App.log('[INFO] PolicyLogMonitorService.startMonitoring stream closed'.loggable);
-          unawaited(stopMonitoring());
-        }
-      );
+              if (_logs.length > 100) {
+                _logs.removeRange(100, _logs.length);
+              }
+              _logStreamController.add(logEntry);
+            },
+            onError: (error) {
+              App.log(
+                '[ERROR] PolicyLogMonitorService.startMonitoring stream error: $error'
+                    .loggable,
+              );
+              unawaited(stopMonitoring());
+            },
+            onDone: () {
+              App.log(
+                '[INFO] PolicyLogMonitorService.startMonitoring stream closed'
+                    .loggable,
+              );
+              unawaited(stopMonitoring());
+            },
+          );
 
       _isMonitoring = true;
-
     } catch (error) {
-      App.log('[ERROR] PolicyLogMonitorService.startMonitoring failed: $error'.loggable);
+      App.log(
+        '[ERROR] PolicyLogMonitorService.startMonitoring failed: $error'
+            .loggable,
+      );
       _subscription?.cancel();
       _subscription = null;
       _isMonitoring = false;
@@ -192,31 +223,45 @@ class PolicyLogMonitorService {
 
       var notificationService = atClient.notificationService;
 
-      _subscription = notificationService.subscribe(regex: monitorRegex, shouldDecrypt: true).listen(
-        (notification) {
-          final logEntry = PolicyLogEntry.fromNotification(notification);
-          _logs.insert(0, logEntry);
+      _subscription = notificationService
+          .subscribe(regex: monitorRegex, shouldDecrypt: true)
+          .listen(
+            (notification) {
+              final logEntry = PolicyLogEntry.fromNotification(notification);
+              _logs.insert(0, logEntry);
 
-          if (_logs.length > 100) {
-            _logs.removeRange(100, _logs.length);
-          }
+              if (_logs.length > 100) {
+                _logs.removeRange(100, _logs.length);
+              }
 
-          _logStreamController.add(logEntry);
-        },
-        onError: (error) {
-          App.log('[ERROR] PolicyLogMonitorService.startGlobalMonitoring stream error: $error'.loggable);
-          unawaited(stopMonitoring()); // unawait so it tells analyzer that we're intentionally unawaiting
-        },
-        onDone: () {
-          App.log('[INFO] PolicyLogMonitorService.startGlobalMonitoring stream closed'.loggable);
-          unawaited(stopMonitoring()); // unawait so it tells naalyzer that we're intentionally unawaiting
-        }
-      );
+              _logStreamController.add(logEntry);
+            },
+            onError: (error) {
+              App.log(
+                '[ERROR] PolicyLogMonitorService.startGlobalMonitoring stream error: $error'
+                    .loggable,
+              );
+              unawaited(
+                stopMonitoring(),
+              ); // unawait so it tells analyzer that we're intentionally unawaiting
+            },
+            onDone: () {
+              App.log(
+                '[INFO] PolicyLogMonitorService.startGlobalMonitoring stream closed'
+                    .loggable,
+              );
+              unawaited(
+                stopMonitoring(),
+              ); // unawait so it tells naalyzer that we're intentionally unawaiting
+            },
+          );
 
       _isMonitoring = true;
-
     } catch (error) {
-      App.log('[ERROR] PolicyLogMonitorService.startGlobalMonitoring failed: $error'.loggable);
+      App.log(
+        '[ERROR] PolicyLogMonitorService.startGlobalMonitoring failed: $error'
+            .loggable,
+      );
       _subscription?.cancel();
       _subscription = null;
       _isMonitoring = false;

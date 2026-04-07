@@ -9,8 +9,8 @@ part of 'profile.dart';
 Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
   json['uuid'] as String? ?? '',
   displayName: json['displayName'] as String,
-  relayAtsign: json['relayAtsign'] as String?,
-  sshnpdAtsign: json['sshnpdAtsign'] as String,
+  relayAtsign: json['relayAtsign'] as Atsign?,
+  sshnpdAtsign: json['sshnpdAtsign'] as Atsign?,
   deviceName: json['deviceName'] as String,
   remoteHost: json['remoteHost'] as String? ?? StringConst.localhost,
   remotePort: (json['remotePort'] as num).toInt(),

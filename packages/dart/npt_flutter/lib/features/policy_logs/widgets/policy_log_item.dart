@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -7,8 +8,8 @@ import 'package:npt_flutter/util/constants.dart';
 
 class PolicyLogItem extends StatefulWidget {
   final String timestamp;
-  final String fromAtSign;
-  final String toAtSign;
+  final Atsign? fromAtsign;
+  final Atsign? toAtsign;
   final String type;
   final String deviceName;
   final String deviceGroup;
@@ -18,8 +19,8 @@ class PolicyLogItem extends StatefulWidget {
   const PolicyLogItem({
     super.key,
     required this.timestamp,
-    required this.fromAtSign,
-    required this.toAtSign,
+    required this.fromAtsign,
+    required this.toAtsign,
     required this.type,
     required this.deviceName,
     required this.deviceGroup,
@@ -63,10 +64,10 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                 Expanded(
                   flex: 2,
                   child: Tooltip(
-                    message: widget.fromAtSign,
+                    message: widget.fromAtsign,
                     waitDuration: const Duration(milliseconds: 500),
                     child: Text(
-                      widget.fromAtSign,
+                      widget.fromAtsign ?? 'unknown',
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -76,10 +77,10 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                 Expanded(
                   flex: 2,
                   child: Tooltip(
-                    message: widget.toAtSign,
+                    message: widget.toAtsign,
                     waitDuration: const Duration(milliseconds: 500),
                     child: Text(
-                      widget.toAtSign,
+                      widget.toAtsign ?? 'unknown',
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),

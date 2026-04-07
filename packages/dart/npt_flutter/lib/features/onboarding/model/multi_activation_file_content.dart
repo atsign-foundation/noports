@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
@@ -67,7 +68,7 @@ extension ActivationKeyStatusExtension on ActivationKeyStatus {
 }
 
 class ActivationKeyPair {
-  final String atsign;
+  final Atsign atsign;
   final String activationKey;
   final ActivationKeyStatus activationKeyStatus;
 
@@ -85,7 +86,7 @@ class ActivationKeyPair {
       throw FormatException('Invalid activation entry format: $entry');
     }
 
-    final atsign = parts[0]; // @alice01_np
+    final atsign = parts[0].toAtsign(); // @alice01_np
     final activationKey = parts
         .sublist(2)
         .single; // Everything after "activation_key:"
@@ -102,7 +103,7 @@ class ActivationKeyPair {
   }
 
   ActivationKeyPair copyWith({
-    String? atsign,
+    Atsign? atsign,
     String? activationKey,
     ActivationKeyStatus? activationKeyStatus,
   }) {
