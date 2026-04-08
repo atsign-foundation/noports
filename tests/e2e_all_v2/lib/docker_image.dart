@@ -1,6 +1,19 @@
 import 'dart:io';
-
+import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/utils.dart';
+
+String _getDockerfilesPath() {
+  return 'tests/e2e_all_v2/tools/dockerfiles';
+}
+
+String _getFullImageName({
+  required final Language language,
+  required final DockerImageType imageType,
+  required final String tag,
+}) {
+  return 'atsigncompany/noports_e2e_all_${language.name}:$tag';
+}
 
 enum DockerImageType {
   release, // "v5.9.4", "v5.11.3", "c0.0.1"
@@ -19,7 +32,11 @@ class DockerImage {
     required this.imageType,
     required this.tag,
   }) {
-    fullImageName = 'atsigncompany/noports_e2e_all_${language.name}:$tag';
+    fullImageName = _getFullImageName(
+      language: language,
+      imageType: imageType,
+      tag: tag,
+    );
   }
 
   factory DockerImage.release({
@@ -55,7 +72,7 @@ class DockerImage {
   }
 
   Future<bool> existsOnMachine() async {
-    final String executable = 'docker';
+    const String executable = 'docker';
     final List<String> args = [
       'images',
       '-q', fullImageName,
@@ -66,11 +83,10 @@ class DockerImage {
   }
 
   Future<Process> pull({
-    bool quiet = true,
-    String? logDirectory,
+    bool quiet = false,
   }) async {
     // sudo docker pull $imageName --quiet
-    final String executable = 'docker';
+    const String executable = 'docker';
     final List<String> args = [
       'pull',
       '$fullImageName',
@@ -78,28 +94,8 @@ class DockerImage {
     if(quiet) {
       args.add('--quiet');
     }
-    print('Executing $executable ${args.join(' ')}'); // TODO logger
-    final Process process = await Process.start(executable, args, runInShell: true);
-
-    // Log to files if logDirectory specified
-    if (logDirectory != null) {
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String logPrefix = '$logDirectory/pull_${fullImageName.replaceAll(':', '_').replaceAll('/', '_')}_$timestamp';
-      await Directory(logDirectory).create(recursive: true);
-
-      final File stdoutFile = File('${logPrefix}_stdout.log');
-      final File stderrFile = File('${logPrefix}_stderr.log');
-
-      process.stdout.listen((data) {
-        stdoutFile.writeAsBytesSync(data, mode: FileMode.append);
-      });
-
-      process.stderr.listen((data) {
-        stderrFile.writeAsBytesSync(data, mode: FileMode.append);
-      });
-    }
-
-    return process;
+    final Process dockerProcess = await startCommand(executable, args); // for logging the command being run
+    return dockerProcess;
   }
 
   Future<Process> build({
@@ -114,9 +110,14 @@ class DockerImage {
     //  ?--build-arg release=v5.9.4 \
     // --target runtime \
     // .
-    final String dockerfile =
-      'tests/e2e_all_v2/tools/dockerfiles/'
-      'Dockerfile.${language.name}.${imageType.name}';
+    final String dockerfile = path.join(
+      _getDockerfilesPath(),
+      'Dockerfile.${language.name}.${imageType.name}',
+    );
+    final File file = File(dockerfile);
+    if(!(await file.exists())) {
+      throw Exception('Dockerfile does not exist: $dockerfile');
+    }
     final String executable = 'docker';
     List<String> args = [
       'build',
@@ -135,12 +136,6 @@ class DockerImage {
       args.add('release=$tag');
     }
     args.add('.'); // context is this directory
-    print('Executing $executable ${args.join(' ')}'); // TODO logger
-    final Process process = await Process.start(
-      executable,
-      args,
-      runInShell: true,
-    );
-    return process;
+    return startCommand(executable, args);
   }
 }
