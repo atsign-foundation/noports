@@ -6,6 +6,8 @@ TODOs:
   - sshnp -s ~/.ssh/id_ed25519.pub
 - minus_u_flag --> daemon without -u shouldn't share usernamew ith sshnp, daemon with -u shares username, sshnp would pass
 - npt_to_port_22_no_encrypt_traffic --> verifies backwards compatibility, newer daemons support older clients, this is double encrypt thing, originally: rely on ssh encryption, later on: added our own encryption in our tunnels
+- sample ssh command from e2e_all
+/home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/binaries/dart.branch/sshnp -f @npe2e_client -d 36b57d4ccf -i /home/runner/.ssh/e2e_all.36b57d4  -t @npe2e_daemon -h @rv_dev -u atsign   --root-domain root.atsign.wtf  -x -k /home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/apkam/@npe2e_client.e2e_all.client_36b57d4.atKeys -s
 
 ## Usage
 
