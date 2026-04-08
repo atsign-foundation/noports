@@ -87,7 +87,7 @@ Future<void> main(List<String> args) async {
     case '2': { // simulate
       print(chalk.blue('\nSending simulate request...'));
       stdout.write(chalk.white('\nEnter daemon atSign: '));
-      final String? daemonAtsign = stdin.readLineSync()!;
+      final String? daemonAtsign = stdin.readLineSync();
       if (daemonAtsign == null || daemonAtsign.isEmpty) {
         print(chalk.red('\n Invalid daemon atSign: $daemonAtsign'));
         break;
@@ -103,7 +103,7 @@ Future<void> main(List<String> args) async {
         deviceGroupName = '__none__';
       }
       stdout.write(chalk.white('Enter client atSign: '));
-      final String? clientAtsign = stdin.readLineSync()!;
+      final String? clientAtsign = stdin.readLineSync();
       if (clientAtsign == null || clientAtsign.isEmpty) {
         print(chalk.red('\n Invalid client atSign: $clientAtsign'));
         break;
