@@ -7,12 +7,12 @@ import 'package:e2e_all_v2/test_result.dart';
 
 Future<int> runCoreTestCases({
   required final String testRunId,
-  required final String logDirectory,
-  required final String daemonAtsign,
   required final String clientAtsign,
+  required final String daemonAtsign,
   required final String relayAtsign,
+  required final String rootDomain,
   required final VolumeMapping atKeysVolumeMapping,
-  required final String atDirectoryHost,
+  required final Directory baseDirectory,
 }) async {
 
   // Goals:
@@ -64,9 +64,11 @@ Future<int> runCoreTestCases({
   // Add at_activate for current version (needed for APKAM enrollment)
   requiredBinaries.add((ClientBinaryType.at_activate, ClientLanguage.dart, 'current'));
 
+  final Directory logDirectory = Directory('${baseDirectory.path}/logs');
+
   List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
     required: requiredBinaries,
-    logDirectory: logDirectory,
+    logDirectory: logDirectory.path,
   );
   print('Available client binaries: length=${clientBinaries.length}');
   for(final ClientBinary clientBinary in clientBinaries) {
@@ -102,7 +104,7 @@ Future<int> runCoreTestCases({
     atsign: clientAtsign,
     which: 'client',
     atActivateClientBinary: atActivateBinary,
-    atDirectoryHost: atDirectoryHost,
+    atDirectoryHost: rootDomain,
     testRunId: testRunId,
   );
 
@@ -122,7 +124,7 @@ Future<int> runCoreTestCases({
     atsign: daemonAtsign,
     which: 'daemon',
     atActivateClientBinary: atActivateBinary,
-    atDirectoryHost: atDirectoryHost,
+    atDirectoryHost: rootDomain,
     testRunId: testRunId,
   );
 
@@ -164,7 +166,7 @@ Future<int> runCoreTestCases({
     final bool existsOnMachine = await dockerImage.existsOnMachine();
     if (!existsOnMachine) {
       print('Docker image ${dockerImage.fullImageName} not found, attempting to pull...');
-      final Process pullProcess = await dockerImage.pull(logDirectory: logDirectory);
+      final Process pullProcess = await dockerImage.pull(logDirectory: logDirectory.path);
       final int pullExitCode = await pullProcess.exitCode;
 
       if (pullExitCode != 0) {
@@ -172,7 +174,7 @@ Future<int> runCoreTestCases({
         final Process buildProcess = await dockerImage.build(
           forceOverwriteCache: false,
           quiet: false,
-          logDirectory: logDirectory,
+          logDirectory: logDirectory.path,
         );
         final int buildExitCode = await buildProcess.exitCode;
 
@@ -224,14 +226,14 @@ Future<int> runCoreTestCases({
       quiet: false,
       volumeMappings: [atKeysVolumeMapping],
       removeWhenStopped: true,
-      logDirectory: logDirectory,
+      logDirectory: logDirectory.path,
       entrypoint: [
         '/bin/bash',
         '-c',
         'sudo service ssh start && '
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithFlags} '
-          '-r $atDirectoryHost '
+          '-r $rootDomain '
           '-k $keysFilePath '
           '-s -u',
       ],
@@ -251,14 +253,14 @@ Future<int> runCoreTestCases({
       quiet: false,
       volumeMappings: [atKeysVolumeMapping],
       removeWhenStopped: true,
-      logDirectory: logDirectory,
+      logDirectory: logDirectory.path,
       entrypoint: [
         '/bin/bash',
         '-c',
         'sudo service ssh start && '
           'sshnpd -a $daemonAtsign -m $clientAtsign -v '
           '-d ${deviceNameWithoutFlags} '
-          '-r $atDirectoryHost '
+          '-r $rootDomain '
           '-k $keysFilePath',
       ],
     );
@@ -289,11 +291,11 @@ Future<int> runCoreTestCases({
     allClientBinaries: clientBinaries,
     allDeviceNamesAndDockerInstances: deviceNamesAndDockerInstances,
     testRunId: testRunId,
-    logDirectory: logDirectory,
+    logDirectory: logDirectory.path,
     clientAtsign: clientAtsign,
     daemonAtsign: daemonAtsign,
     relayAtsign: relayAtsign,
-    atDirectoryHost: atDirectoryHost,
+    atDirectoryHost: rootDomain,
     apkamKeysDirectory: apkamKeysDirectory,
   );
   testResults.addAll(test001Results);
@@ -337,7 +339,7 @@ Future<int> runCoreTestCases({
   print('\n========== Tearing Down Docker Instances ==========\n');
   for (final instance in dockerInstances) {
     print('Stopping Docker instance: ${instance.containerName}');
-    final int stopExitCode = await instance.stop(logDirectory: logDirectory);
+    final int stopExitCode = await instance.stop(logDirectory: logDirectory.path);
     if (stopExitCode == 0) {
       print('Stopped: ${instance.containerName}');
     } else {
