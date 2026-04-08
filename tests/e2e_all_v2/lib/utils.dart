@@ -203,12 +203,78 @@ Future<List<ClientBinary>> fetchClientBinaries({
   }
 }
 
+String _getBinaryPath(ClientBinaryType binaryType) {
+  switch(binaryType) {
+    case ClientBinaryType.sshnp:
+      return 'sshnp';
+    case ClientBinaryType.npt:
+      return 'npt';
+    case ClientBinaryType.srv:
+      return 'srv';
+    case ClientBinaryType.npp_client:
+      return 'npp_client';
+    case ClientBinaryType.at_activate:
+      return 'at_activate';
+    default:
+      throw Exception('Unsupported ClientBinaryType: ${binaryType.name}');
+  }
+}
+
 Future<List<ClientBinary>> _compileCurrent({
   required final Language language,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory directory,
 }) async {
+  // 1. validate parameters
+  // 1a. language
+  if(language != Language.dart) {
+    throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
+  }
+
+  // 1b. directory
+  final bool dirExists = await ensureDirectoryExists(directory);
+  if(!dirExists) {
+    throw Exception('Failed to create directory for compiling current binaries: ${directory.path}');
+  }
+
+  // 2. compile binaries using dart compile exe
+  List<(Process, ClientBinaryType, String)> compileProcesses = [];
   List<ClientBinary> clientBinaries = [];
+  for(final ClientBinaryType binaryType in clientBinaryTypes) {
+    final String targetBinaryPath = _getBinaryPath(binaryType);
+    final String outputPath = path.join(directory.path, binaryType.name); // e.g. /path/to/binaries/dart/current/sshnp
+    final Process compileProcess = await startCommand(
+      'dart', 
+      ['compile', 'exe', targetBinaryPath, '-o', outputPath]);
+    compileProcesses.add((compileProcess, binaryType, outputPath));
+  }
+
+  // 3. wait for processes to finish and check exit codes
+  for(final (Process, ClientBinaryType, String) element in compileProcesses) {
+    final Process compileProcess = element.$1;
+    if((await compileProcess.exitCode) != 0) {
+      print('Failed to compile ${element.$2.name}. Exit code: ${await compileProcess.exitCode}');
+      compileProcess.stderr.transform(SystemEncoding().decoder).listen((data) {
+        print('Compile stderr: $data');
+      });
+      throw Exception('Failed to compile ${element.$2.name}. Exit code: $exitCode');
+    }
+
+    File outputFile = File(element.$3);
+    if(!(await outputFile.exists())) {
+      throw Exception('Expected output binary not found after compilation: ${outputFile.path}');
+    }
+    
+    final ClientBinaryType binaryType = element.$2;
+    final String outputPath = element.$3;
+    clientBinaries.add(ClientBinary(
+      binaryType: binaryType,
+      language: Language.dart, 
+      version: 'current',
+      file: outputFile,
+    ));
+  }
+
   return clientBinaries;
 }
 
