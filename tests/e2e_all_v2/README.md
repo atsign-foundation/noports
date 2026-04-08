@@ -1,5 +1,12 @@
 # e2e_all_v2
 
+TODOs:
+- add v4 to dameon list
+- 001_minus_s_flag -> daemon without -s flag would not add id_ed25519.pub to authorized keys
+  - sshnp -s ~/.ssh/id_ed25519.pub
+- minus_u_flag --> daemon without -u shouldn't share usernamew ith sshnp, daemon with -u shares username, sshnp would pass
+- npt_to_port_22_no_encrypt_traffic --> verifies backwards compatibility, newer daemons support older clients, this is double encrypt thing, originally: rely on ssh encryption, later on: added our own encryption in our tunnels
+
 ## Usage
 
 ```bash
