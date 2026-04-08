@@ -33,7 +33,7 @@ class SwitchAtsignButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final atsign = context.watch<OnboardingCubit>().getAtSign();
+    final atsign = context.watch<OnboardingCubit>().getAtsign();
 
     return Padding(
       padding: const EdgeInsets.only(right: 24.0),
@@ -58,7 +58,7 @@ class SwitchAtsignButton extends StatelessWidget {
               Text(
                 atsign.isNotEmpty
                     ? atsign.replaceFirst('@', '')
-                    : strings.switchAtSign,
+                    : strings.switchAtsign,
                 style: const TextStyle(
                   color: Colors.black,
                   fontSize: Sizes.p12,
@@ -79,20 +79,20 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
 
   // Step 1: Show the menu and get selection
-  final selectedAtsign = await _showAtsignMenu(context);
-  if (selectedAtsign == null) return; // User cancelled;
+  final selection = await _showAtsignMenu(context);
+  if (selection == null) return; // User cancelled;
 
   // Step 2: Check for connected profiles
   if (!await _checkAndHandleConnectedProfiles(context)) return;
 
   // Step 3: Handle the selection
-  await _handleSelection(context, selectedAtsign, strings);
+  await _handleSelection(context, selection, strings);
 }
 
 /// Shows the atsign menu and returns the selected option
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
-  final atSignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainUtil.getAtsignList();
 
   final result = await showMenu<String?>(
     context: context,
@@ -107,22 +107,22 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
       borderRadius: BorderRadius.circular(Sizes.p8),
     ),
     items: [
-      ...(atSignList ?? []).map(
-        (atSign) => PopupMenuItem<String>(
+      ...(atsignList ?? []).map(
+        (atsign) => PopupMenuItem<String>(
           padding: const EdgeInsets.all(Sizes.p0),
-          value: atSign,
-          child: _HoverableMenuItem(atSign: atSign),
+          value: atsign,
+          child: _HoverableMenuItem(label: atsign.toAtsign()),
         ),
       ),
       PopupMenuItem<String>(
         padding: const EdgeInsets.all(Sizes.p0),
         value: strings.addAtsign,
-        child: _HoverableMenuItem(atSign: strings.addAtsign),
+        child: _HoverableMenuItem(label: strings.addAtsign),
       ),
       PopupMenuItem<String>(
         padding: const EdgeInsets.all(Sizes.p0),
         value: strings.signout,
-        child: _HoverableMenuItem(atSign: strings.signout),
+        child: _HoverableMenuItem(label: strings.signout),
       ),
     ],
   );
@@ -158,15 +158,15 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
 /// Handles the menu selection (signout, add atsign, or switch)
 Future<void> _handleSelection(
   BuildContext context,
-  String selectedAtSign,
+  String selection,
   AppLocalizations strings,
 ) async {
-  if (selectedAtSign == strings.signout) {
+  if (selection == strings.signout) {
     await _handleSignout(context);
-  } else if (selectedAtSign == strings.addAtsign) {
+  } else if (selection == strings.addAtsign) {
     await _handleAddAtsign(context);
   } else {
-    await _handleSwitchToAtsign(context, selectedAtSign);
+    await _handleSwitchToAtsign(context, selection.toAtsign());
   }
 }
 
@@ -196,7 +196,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final originalAtsign = App.navState.currentContext!
       .read<OnboardingCubit>()
       .state
-      .atSign;
+      .atsign;
   final originalRootDomain = App.navState.currentContext!
       .read<OnboardingCubit>()
       .state
@@ -204,7 +204,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
   // Clear the atsign field before showing the dialog
   App.navState.currentContext!.read<OnboardingCubit>().setState(
-    atSign: '',
+    atsign: null,
     rootDomain: originalRootDomain,
   );
 
@@ -220,7 +220,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
     // User cancelled - revert to original atsign
 
     App.navState.currentContext!.read<OnboardingCubit>().setState(
-      atSign: originalAtsign,
+      atsign: originalAtsign,
       rootDomain: originalRootDomain,
     );
 
@@ -228,11 +228,11 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   }
 
   final atsignInfo = App.navState.currentContext!.read<OnboardingCubit>().state;
-  final newAtSign = atsignInfo.atSign;
+  final newAtsign = atsignInfo.atsign!;
   final rootDomain = atsignInfo.rootDomain;
 
   // Check if atsign already exists in keychain
-  final atSignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainUtil.getAtsignList();
 
   // Show loading dialog
 
@@ -246,9 +246,9 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   );
 
   try {
-    if (atSignList?.contains(newAtSign) ?? false) {
+    if (atsignList?.contains(newAtsign) ?? false) {
       // Atsign exists in keychain - use existing flow
-      await _performOnboarding(App.navState.currentContext!, newAtSign);
+      await _performOnboarding(App.navState.currentContext!, newAtsign);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
       final apiKey = await Constants.appAPIKey;
@@ -266,7 +266,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
       );
       final onboardingResult = await util.handleAtsignByStatus(
         context: App.navState.currentContext!,
-        atsign: newAtSign,
+        atsign: newAtsign,
       );
 
       switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
@@ -277,10 +277,10 @@ Future<void> _handleAddAtsign(BuildContext context) async {
           AtClientManager.getInstance().atClient.syncService
               .addProgressListener(ProfileProgressListener());
           AtClientManager.getInstance().atClient.syncService.sync();
-          postOnboard(onboardingResult!.atsign!, rootDomain);
+          postOnboard(onboardingResult!.atsign!.toAtsign(), rootDomain);
           final result = await saveAtsignInformation(
             AtsignInformation(
-              atSign: onboardingResult.atsign!,
+              atsign: onboardingResult.atsign!.toAtsign(),
               rootDomain: rootDomain,
             ),
           );
@@ -298,7 +298,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         case AtOnboardingResultStatus.error:
           if (App.navState.currentContext!.mounted) {
             App.navState.currentContext!.read<OnboardingCubit>().setState(
-              atSign: originalAtsign,
+              atsign: originalAtsign,
               rootDomain: originalRootDomain,
             );
           }
@@ -317,7 +317,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
           break;
         case AtOnboardingResultStatus.cancel:
           App.navState.currentContext!.read<OnboardingCubit>().setState(
-            atSign: originalAtsign,
+            atsign: originalAtsign,
             rootDomain: originalRootDomain,
           );
 
@@ -334,24 +334,24 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 /// Handles switching to an existing atsign
 Future<void> _handleSwitchToAtsign(
   BuildContext context,
-  String targetAtSign,
+  Atsign targetAtsign,
 ) async {
   await preSignout();
 
-  log('change primary atsign called: $targetAtSign');
+  log('change primary atsign called: $targetAtsign');
 
   final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtSign,
+    atsign: targetAtsign,
   );
 
   if (!changeSuccess) return;
 
   final currentContext = App.navState.currentContext!;
-  await _performOnboarding(currentContext, targetAtSign);
+  await _performOnboarding(currentContext, targetAtsign);
 }
 
 /// Performs the onboarding process for the given atsign
-Future<void> _performOnboarding(BuildContext context, String atsign) async {
+Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
   final rootDomain = context.read<OnboardingCubit>().getRootDomain();
   final atClientPreference = await AtClientMethods.loadAtClientPreference(
     rootDomain,
@@ -376,9 +376,10 @@ Future<void> _performOnboarding(BuildContext context, String atsign) async {
 }
 
 class _HoverableMenuItem extends StatefulWidget {
-  final String atSign;
+  /// The label to display for this menu item. This can be an atsign or a special action like "Add Atsign" or "Sign Out".
+  final String label;
 
-  const _HoverableMenuItem({required this.atSign});
+  const _HoverableMenuItem({required this.label});
   @override
   State<_HoverableMenuItem> createState() => _HoverableMenuItemState();
 }
@@ -386,11 +387,11 @@ class _HoverableMenuItem extends StatefulWidget {
 class _HoverableMenuItemState extends State<_HoverableMenuItem> {
   bool _hovering = false;
 
-  // Function to determine the prefix based on atSign value
+  // Function to determine the prefix based on label value
   String displayAtsignPrefix(AppLocalizations strings) {
-    if (widget.atSign == strings.addAtsign) {
+    if (widget.label == strings.addAtsign) {
       return '+ ';
-    } else if (widget.atSign == strings.signout) {
+    } else if (widget.label == strings.signout) {
       return '   ';
     } else {
       return '@';
@@ -422,13 +423,13 @@ class _HoverableMenuItemState extends State<_HoverableMenuItem> {
                           text: displayAtsignPrefix(strings),
                           style: TextStyle(
                             color: AppColor.primaryColor,
-                            fontSize: widget.atSign == strings.addAtsign
+                            fontSize: widget.label == strings.addAtsign
                                 ? Sizes.p20
                                 : Sizes.p12,
                           ),
                         ),
                         TextSpan(
-                          text: widget.atSign.split('@').last,
+                          text: widget.label.split('@').last,
                           style: Theme.of(
                             context,
                           ).textTheme.bodyMedium?.copyWith(),

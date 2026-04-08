@@ -26,8 +26,8 @@ class FavoriteRepository {
     if (useCache && _favoriteCache != null) return _favoriteCache;
     _favoriteCache ??= {};
 
-    String? atSign = _client.getCurrentAtSign();
-    AtKey key = getFavoriteAtKey(sharedBy: atSign);
+    Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
+    AtKey key = getFavoriteAtKey(sharedBy: atsign);
 
     try {
       var value = await _client.get(key);
@@ -50,8 +50,8 @@ class FavoriteRepository {
   }
 
   Future<bool> _putFavorites() async {
-    String? atSign = _client.getCurrentAtSign();
-    AtKey key = getFavoriteAtKey(sharedBy: atSign);
+    Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
+    AtKey key = getFavoriteAtKey(sharedBy: atsign);
     try {
       return await _client.put(key, jsonEncode(_favoriteCache));
     } catch (e) {

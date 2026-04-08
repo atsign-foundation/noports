@@ -1,3 +1,9 @@
+## 1.9.4+31
+
+-REFACTOR: replaced the use of `String` atsign with the `Atsign` class.
+-REFACTOR: where a String atsign is hardcoded or retrieved for packages `.toAtsign()` method is applied to convert it to the `Atsign` class.
+-REFACTOR: rename all use of the old 'atSign, AtSign' spelling with new 'atsign, Atsign' spelling.
+
 ## 1.9.3+30
 
 -FIX: Back Up Dialog Save button is centered when back button isn't shown.

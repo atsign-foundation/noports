@@ -223,24 +223,24 @@ class _FormContentState extends State<FormContent> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: UserAtSignsField(
+                              child: UserAtsignsField(
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
                                   context
                                       .read<PolicyFormCubit>()
-                                      .updateUserAtSigns(value);
+                                      .updateUserAtsigns(value);
                                 },
                               ),
                             ),
                             Expanded(
-                              child: DaemonAtSignsField(
+                              child: DaemonAtsignsField(
                                 role: currentRole,
                                 isEditing: isEditing,
                                 onChanged: (value) {
                                   context
                                       .read<PolicyFormCubit>()
-                                      .updateDaemonAtSigns(value);
+                                      .updateDaemonAtsigns(value);
                                 },
                               ),
                             ),

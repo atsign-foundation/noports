@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/features.dart';
@@ -13,14 +14,14 @@ class ProfileRelayQuickButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final ScrollController controller = ScrollController();
-    return BlocSelector<ProfileBloc, ProfileState, String?>(
+    return BlocSelector<ProfileBloc, ProfileState, Atsign?>(
       selector: (ProfileState state) {
         if (state is ProfileLoadedState) {
           return state.profile.relayAtsign;
         }
         return null;
       },
-      builder: (BuildContext context, String? relayAtsign) {
+      builder: (BuildContext context, Atsign? relayAtsign) {
         if (relayAtsign == null) return gap0;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: Sizes.p50),
@@ -53,7 +54,7 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                               padding: const EdgeInsets.only(right: Sizes.p10),
                               child: CustomContainer.foreground(
                                 key: Key(e.name),
-                                child: RadioListTile(
+                                child: RadioListTile<Atsign>(
                                   title: Text(e.regions),
                                   value: e.relayAtsign,
                                   groupValue: relayAtsign,
@@ -64,7 +65,10 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                                         profile:
                                             (bloc.state as ProfileLoadedState)
                                                 .profile
-                                                .copyWith(relayAtsign: value),
+                                                .copyWith(
+                                                  relayAtsign: value
+                                                      ?.toAtsign(),
+                                                ),
                                       ),
                                     );
                                   },
@@ -75,7 +79,7 @@ class ProfileRelayQuickButtons extends StatelessWidget {
                         ),
                         const Padding(
                           padding: EdgeInsets.only(top: Sizes.p4),
-                          child: ProfileRelayAtSignTextField(),
+                          child: ProfileRelayAtsignTextField(),
                         ),
                       ],
                     ),

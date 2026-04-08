@@ -129,7 +129,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get atsignDialogSubtitle => 'Por favor, selecciona tu Atsign';
 
   @override
-  String get atsignDialogTitle => 'AtSign';
+  String get atsignDialogTitle => 'Atsign';
 
   @override
   String get atsignFrom => 'Desde Atsign';
@@ -399,16 +399,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se puede conectar al atServer, asegúrate de tener una conexión a internet estable.';
 
   @override
-  String errorAtSignAlreadyPaired(Object atsign) {
+  String errorAtsignAlreadyPaired(Object atsign) {
     return 'El Atsign $atsign ya está vinculado, por favor contacta con soporte.';
   }
 
   @override
-  String get errorAtSignNotExist =>
+  String get errorAtsignNotExist =>
       'El Atsign que solicitaste no existe en este dominio raíz.';
 
   @override
-  String get errorAtSignUnavailable =>
+  String get errorAtsignUnavailable =>
       'El Atsign no está disponible. Asegúrate de haber presionado \"Activar\" desde tu panel y tener una conexión a internet estable.';
 
   @override
@@ -438,7 +438,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'El dominio raíz especificado no es compatible con la activación automática.';
 
   @override
-  String get errorSwitchAtSignFailed =>
+  String get errorSwitchAtsignFailed =>
       'Error al cambiar de Atsign después de la activación.';
 
   @override
@@ -986,14 +986,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get success => 'Éxito';
 
   @override
-  String get switchAtSign => 'Cambiar Atsign';
+  String get switchAtsign => 'Cambiar Atsign';
 
   @override
-  String get switchAtSignDescription =>
+  String get switchAtsignDescription =>
       '¿Estás seguro de que deseas cambiar de Atsign?';
 
   @override
-  String get switchAtSignNote =>
+  String get switchAtsignNote =>
       'Nota: Cambiar de Atsign finaliza todas las conexiones.';
 
   @override

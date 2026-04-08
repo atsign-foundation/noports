@@ -29,6 +29,7 @@ import 'package:mockito/src/dummies.dart' as _i7;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeSyncService_0 extends _i1.SmartFake implements _i2.SyncService {
   _FakeSyncService_0(Object parent, Invocation parentInvocation)
@@ -218,16 +219,9 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
           as _i6.Future<_i3.AtResponse>);
 
   @override
-  _i6.Future<bool> putMeta(
-    _i2.AtKey? key, {
-    _i2.PutRequestOptions? putRequestOptions,
-  }) =>
+  _i6.Future<bool> putMeta(_i2.AtKey? key) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #putMeta,
-              [key],
-              {#putRequestOptions: putRequestOptions},
-            ),
+            Invocation.method(#putMeta, [key]),
             returnValue: _i6.Future<bool>.value(false),
           )
           as _i6.Future<bool>);
@@ -634,12 +628,11 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
           as _i2.NotificationService);
 
   @override
-  set secondaryAddressFinder(
-    _i10.SecondaryAddressFinder? _secondaryAddressFinder,
-  ) => super.noSuchMethod(
-    Invocation.setter(#secondaryAddressFinder, _secondaryAddressFinder),
-    returnValueForMissingStub: null,
-  );
+  set secondaryAddressFinder(_i10.SecondaryAddressFinder? value) =>
+      super.noSuchMethod(
+        Invocation.setter(#secondaryAddressFinder, value),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void setSecondaryAddressFinder({

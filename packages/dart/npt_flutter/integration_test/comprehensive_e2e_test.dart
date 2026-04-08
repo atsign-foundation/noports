@@ -243,7 +243,7 @@ Future<void> _fillProfileForm(WidgetTester tester) async {
   final formFields = {
     ProfileDisplayNameTextField: 'E2E Test Profile',
     ProfileDeviceNameTextField: 'e2e-test-device',
-    ProfileDeviceAtSignTextField: '@e2e_test_device',
+    ProfileDeviceAtsignTextField: '@e2e_test_device',
     ProfileRemoteHostTextField: 'localhost',
   };
 

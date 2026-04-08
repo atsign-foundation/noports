@@ -73,8 +73,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           profile: Profile(
             uuid,
             displayName: '',
-            sshnpdAtsign: '',
-            relayAtsign: '',
             deviceName: '',
             remotePort: 3389,
             localPort: 0,
@@ -152,8 +150,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     AtClient atClient = AtClientManager.getInstance().atClient;
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
-    String? atSign = atClient.getCurrentAtSign();
-    if (atSign == null) {
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
+    if (atsign == null) {
       emit(ProfileFailedStart(uuid, profile: profile));
       App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
         uuid,
@@ -186,7 +184,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       npt = Npt.create(
         atClient: atClient,
         params: profile.toNptParams(
-          clientAtsign: atSign,
+          clientAtsign: atsign,
           rootDomain: atClient.getPreferences()!.rootDomain,
           fallbackRelayAtsign: settings.relayAtsign,
           overrideRelayWithFallback: settings.overrideRelay,
@@ -275,7 +273,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
         // retry the connection after a delay
         if (profile.keepAlive && state is ProfileStarted) {
-          await _retryConnection(emit, profile, atClient, atSign, settings);
+          await _retryConnection(emit, profile, atClient, atsign, settings);
         } else {
           emit(ProfileLoaded(uuid, profile: profile));
         }
@@ -287,7 +285,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
     Profile profile,
     AtClient atClient,
-    String atSign,
+    Atsign atsign,
     Settings settings,
   ) async {
     // Wait 5 seconds before retrying, similar to npt binary
@@ -317,7 +315,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       npt = Npt.create(
         atClient: atClient,
         params: profile.toNptParams(
-          clientAtsign: atSign,
+          clientAtsign: atsign,
           rootDomain: atClient.getPreferences()!.rootDomain,
           fallbackRelayAtsign: settings.relayAtsign,
           overrideRelayWithFallback: settings.overrideRelay,
@@ -396,7 +394,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
 
         // Continue retrying if keep-alive is still enabled and profile is still "started"
         if (profile.keepAlive && state is ProfileStarted) {
-          await _retryConnection(emit, profile, atClient, atSign, settings);
+          await _retryConnection(emit, profile, atClient, atsign, settings);
         } else {
           emit(ProfileLoaded(uuid, profile: profile));
         }

@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -18,7 +19,7 @@ enum PreferredViewLayout {
 
 @JsonSerializable()
 class Settings extends Loggable {
-  final String relayAtsign;
+  final Atsign relayAtsign;
 
   final bool overrideRelay;
 
@@ -37,7 +38,7 @@ class Settings extends Loggable {
   });
 
   Settings copyWith({
-    String? relayAtsign,
+    Atsign? relayAtsign,
     bool? overrideRelay,
     PreferredViewLayout? viewLayout,
     bool? darkMode,
@@ -45,7 +46,7 @@ class Settings extends Loggable {
   }) {
     return Settings(
       relayAtsign: (relayAtsign == null || relayAtsign.isEmpty)
-          ? '@rv_am'
+          ? 'rv_am'.toAtsign()
           : relayAtsign,
       overrideRelay: overrideRelay ?? this.overrideRelay,
       viewLayout: viewLayout ?? this.viewLayout,
@@ -80,14 +81,14 @@ class Settings extends Loggable {
 enum RelayOptions { am, eu, ap }
 
 extension RelayOptionsExtension on RelayOptions {
-  String get relayAtsign {
+  Atsign get relayAtsign {
     switch (this) {
       case RelayOptions.am:
-        return '@rv_am';
+        return '@rv_am'.toAtsign();
       case RelayOptions.eu:
-        return '@rv_eu';
+        return '@rv_eu'.toAtsign();
       case RelayOptions.ap:
-        return '@rv_ap';
+        return '@rv_ap'.toAtsign();
     }
   }
 
