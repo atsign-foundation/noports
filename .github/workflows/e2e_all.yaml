@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest @rv_am @e2e_all_v2_relay_jttest @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest @e2e_all_v2_events_jttest -p -r root.atsign.org
+          tests/e2e_all/scripts/main.sh @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest @rv_am @e2e_all_v2_relay_latest_jttest @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest @e2e_all_v2_events_jttest -p -r root.atsign.org
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
