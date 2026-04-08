@@ -12,6 +12,7 @@ dependencies:
   path: ^1.9.0
   pool: ^1.5.2
   at_cli_commons: ^3.0.1
+  version: ^3.0.2
 
 dev_dependencies:
   lints: ^6.0.0

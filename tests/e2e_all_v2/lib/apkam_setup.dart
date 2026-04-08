@@ -1,8 +1,7 @@
-
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:e2e_all_v2/client_binaries.dart';
+import 'package:e2e_all_v2/client_binary.dart';
 
 String getApkamApp() {
   return 'e2e_all_v2';

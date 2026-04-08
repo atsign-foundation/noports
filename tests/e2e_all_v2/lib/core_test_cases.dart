@@ -1,7 +1,6 @@
 import 'dart:io';
-
 import 'package:e2e_all_v2/apkam_setup.dart';
-import 'package:e2e_all_v2/client_binaries.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/docker_manager.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
@@ -14,61 +13,11 @@ Future<int> runCoreTestCases({
   required final VolumeMapping atKeysVolumeMapping,
   required final Directory baseDirectory,
 }) async {
-
-  // Goals:
-  // 1. Set up Client binaries put them in a $testId/$version/* folder
-  //  (v5.9.4, v5.11.2, v5.13.0, current)
-  //  for versions, download from github.com/atsign-foundation/noports/releases
-  //  for current, compile dart binaries using `dart compile exe`
-  // 2. Set up the Docker daemons
-  //  run Dart (current), v5.9.4, v5.11.2, v5.13.0, and C (current) in Docker containers
-  // 3. Run tests via executing Client binaries, and save logs
-
-  const List<String> clientVersions = [
-    'd:v5.9.4',
-    'd:v5.11.2',
-    'd:v5.13.0',
-    'd:current',
-  ];
-
-  const List<String> daemonVersions = [
-    'd:current',
-    'c:current',
-    'd:v5.9.4',
-    'd:v5.11.2',
-    'd:v5.13.0',
-  ];
-
   // Start Phase 1
-  ClientBinaryManager clientBinaryManager =
-    ClientBinaryManager(testRunId: testRunId);
-
-  // Parse client versions to extract language and version
-  List<(ClientLanguage, String)> parsedClientVersions = [];
-  for (final String clientVersion in clientVersions) {
-    final List<String> parts = clientVersion.split(':');
-    if (parts.length != 2) {
-      throw Exception('Invalid client version format: $clientVersion. Expected format: "d:v5.9.4" or "c:current"');
-    }
-    final ClientLanguage language = parts[0] == 'd' ? ClientLanguage.dart : ClientLanguage.c;
-    final String version = parts[1];
-    parsedClientVersions.add((language, version));
-  }
-
-  List<(ClientBinaryType, ClientLanguage, String)> requiredBinaries = [];
-  for (final (language, version) in parsedClientVersions) {
-    requiredBinaries.add((ClientBinaryType.sshnp, language, version));
-    requiredBinaries.add((ClientBinaryType.npt, language, version));
-    requiredBinaries.add((ClientBinaryType.srv, language, version));
-  }
-  // Add at_activate for current version (needed for APKAM enrollment)
-  requiredBinaries.add((ClientBinaryType.at_activate, ClientLanguage.dart, 'current'));
-
-  final Directory logDirectory = Directory('${baseDirectory.path}/logs');
-
+  ClientBinaryManager clientBinaryManager = ClientBinaryManager(testRunId: testRunId);
   List<ClientBinary> clientBinaries = await clientBinaryManager.ensureBinaries(
     required: requiredBinaries,
-    logDirectory: logDirectory.path,
+    baseDirectory: baseDirectory.path,
   );
   print('Available client binaries: length=${clientBinaries.length}');
   for(final ClientBinary clientBinary in clientBinaries) {
