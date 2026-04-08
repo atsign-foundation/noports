@@ -30,15 +30,15 @@ Future<void> main(List<String> args) async {
   final String testRunId = gitResult.stdout.toString().trim();
   print('Test run ID (git commit): $testRunId');
 
-  // Copy APKAM keys from e2e_all to ~/.atsign/keys/
+  // Copy APKAM keys from e2e_all_v2 to ~/.atsign/keys/
   print('');
   print('========== Copying APKAM keys from e2e_all ==========');
-  final String e2eAllApkamKeysDir = 'e2e_all/$testRunId/apkamKeys';
+  final String e2eAllApkamKeysDir = 'e2e_all_v2/$testRunId/apkamKeys';
   final Directory e2eAllApkamKeysDirectory = Directory(e2eAllApkamKeysDir);
   final Directory atSignKeysDirectory = Directory('${getHomeDirectory()}/.atsign/keys/');
 
   if (e2eAllApkamKeysDirectory.existsSync()) {
-    print('Found e2e_all APKAM keys at: ${e2eAllApkamKeysDirectory.path}');
+    print('Found e2e_all_v2 APKAM keys at: ${e2eAllApkamKeysDirectory.path}');
     print('Copying to: ${atSignKeysDirectory.path}');
 
     final List<FileSystemEntity> apkamKeyFiles = e2eAllApkamKeysDirectory.listSync();
