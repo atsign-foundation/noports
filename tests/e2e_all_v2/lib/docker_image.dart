@@ -1,14 +1,11 @@
 import 'dart:io';
 
+import 'package:e2e_all_v2/language.dart';
+
 enum DockerImageType {
   release, // "v5.9.4", "v5.11.3", "c0.0.1"
   branch, // "trunk", *commithash*
   current, // represents the current code on the machine (latest)
-}
-
-enum Language {
-  dart,
-  c,
 }
 
 class DockerImage {
@@ -108,7 +105,6 @@ class DockerImage {
   Future<Process> build({
     final bool forceOverwriteCache = false,
     final bool quiet = false,
-    String? logDirectory,
   }) async {
     // sudo docker build \
     //  -f $dockerfile \
@@ -145,25 +141,6 @@ class DockerImage {
       args,
       runInShell: true,
     );
-
-    // Log to files if logDirectory specified
-    if (logDirectory != null) {
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String logPrefix = '$logDirectory/build_${fullImageName.replaceAll(':', '_').replaceAll('/', '_')}_$timestamp';
-      await Directory(logDirectory).create(recursive: true);
-
-      final File stdoutFile = File('${logPrefix}_stdout.log');
-      final File stderrFile = File('${logPrefix}_stderr.log');
-
-      process.stdout.listen((data) {
-        stdoutFile.writeAsBytesSync(data, mode: FileMode.append);
-      });
-
-      process.stderr.listen((data) {
-        stderrFile.writeAsBytesSync(data, mode: FileMode.append);
-      });
-    }
-
     return process;
   }
 }

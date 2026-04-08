@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_image.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
+import 'package:e2e_all_v2/language.dart';
 import 'package:path/path.dart' as path;
 import 'package:version/version.dart';
 
@@ -377,4 +379,75 @@ bool isCommandAvailable(String command) {
   } catch (e) {
     return false;
   }
+}
+
+Future<List<Process>> startDockerDaemons({
+  required final List<String> daemonVersions,
+  required final String daemonAtsign,
+  required final String rootDomain,
+  required final String testRunId,
+}) async {
+  List<DockerImage> dockerImages = [];
+  for(final String daemonVersion in daemonVersions) {
+    final Language language = getLanguage(daemonVersion);
+    final String version = getVersionStr(daemonVersion);
+    
+    DockerImage dockerImage;
+    if(version == 'current') {
+      dockerImage = DockerImage.current(language: language); 
+    } else if(version.startsWith('v')) {
+      dockerImage = DockerImage.release(language: language, version: version);
+    } else {
+      dockerImage = DockerImage.branch(language: language, branch: version);
+    }
+    dockerImages.add(dockerImage);
+  }
+
+
+  List<DockerImage> completeDockerImages = [];
+
+  List<(Process, DockerImage)> pullProcesses = [];
+  for(final DockerImage dockerImage in dockerImages) {
+    final Process pullProcess = await dockerImage.pull(quiet: true);
+    pullProcesses.add((pullProcess, dockerImage));
+  }
+
+  List<(Process, DockerImage)> buildProcesses = [];
+  for(final (Process, DockerImage) e in pullProcesses) {
+    final Process pullProcess = e.$1;
+    final DockerImage dockerImage = e.$2;
+    if((await pullProcess.exitCode) == 0) {
+      completeDockerImages.add(dockerImage);
+    } else {
+      final Process buildProcess = await dockerImage.build(quiet: true);
+      buildProcesses.add((buildProcess, dockerImage));
+    }
+  }
+
+  for(final (Process, DockerImage) e in buildProcesses) {
+    final Process buildProcess = e.$1;
+    final DockerImage dockerImage = e.$2;
+    if((await buildProcess.exitCode) == 0) {
+      completeDockerImages.add(dockerImage);
+    } else {
+      throw Exception('Failed to build docker image ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
+    }
+  }
+
+  List<Process> dockerInstanceProcesses = [];
+  for(final DockerImage completeDockerImage in completeDockerImages) {
+    final DockerInstance dockerInstance = DockerInstance(
+      dockerImage: completeDockerImage,
+      testRunId: testRunId,
+    );
+    final Process dockerInstanceProcess = await dockerInstance.run(
+      entrypoint: [
+        '-a', daemonAtsign,
+        '-r', rootDomain,
+      ],
+      logDirectory: joinPath('logs', part2: completeDockerImage.language.name, part3: completeDockerImage.tag).path,
+    );
+    dockerInstanceProcesses.add(dockerInstanceProcess);
+  }
+  return dockerInstanceProcesses;
 }

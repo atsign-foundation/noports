@@ -4,6 +4,7 @@ import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
 import 'package:e2e_all_v2/apkam_setup.dart';
+import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/utils.dart';
 
 Future<void> main(List<String> args) async {
@@ -86,14 +87,25 @@ Future<void> main(List<String> args) async {
     }
     print('');
 
+    // 6. set up client and daemon apkam keys
+    final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.version == 'current');
     await setUpApkamKeys(
-      atActivateClientBinary: clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate),
+      atActivateClientBinary: atActivateClientBinary,
       clientAtsign: e2eAllV2Params.clientAtsign,
       daemonAtsign: e2eAllV2Params.daemonAtsign,
       rootDomain: e2eAllV2Params.rootDomain,
       apkamKeysDirectory: apkamKeysDirectory,
       testRunId: testRunId
     );
+
+    // 7. set up docker daemons
+    final List<Process> dockerInstanceProcesses = await startDockerDaemons(
+      daemonVersions: daemonVersions,
+      daemonAtsign: e2eAllV2Params.daemonAtsign,
+      rootDomain: e2eAllV2Params.rootDomain,
+      testRunId: testRunId,
+    );
+    print('Started ${dockerInstanceProcesses.length} docker daemon instances');
     exit(0);
   } catch (e) {
     print(e);

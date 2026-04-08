@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
+import 'package:e2e_all_v2/language.dart';
 
 enum ClientBinaryType {
   sshnp,
