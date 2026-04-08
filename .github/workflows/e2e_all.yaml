@@ -43,6 +43,7 @@ jobs:
           echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_latest_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_E2E_ALL_V2_EVENTS_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_events_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_E2E_ALL_V2_SINGLETON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_singleton_jttest_key.atKeys
+
       - name: Install expect
         run: |
           sudo apt-get install -y expect
