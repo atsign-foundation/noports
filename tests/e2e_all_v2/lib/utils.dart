@@ -164,34 +164,128 @@ Future<List<ClientBinary>> fetchClientBinaries({
     throw Exception('Failed to create binaries directory: ${binariesDirectory.path}');
   }
 
-
-  // sort by version
+  // 1. sort by language and version
   // e.g. 
-  // {
-  //   'v5.9.4': (Language.dart, ClientBinaryType.sshnp),
-  //   'v5.9.4': (Language.dart, ClientBinaryType.npt),
-  //   ...
-  //   'current': (Language.dart, ClientBinaryType.at_activate),
+  // 'dart': {
+  //   'v5.9.4': [ClientBinaryType.sshnp, ClientBinaryType.npt, ...]
+  //   'current': [ClientBinaryType.at_activate,...]
   // }
-  Map<String, (Language, ClientBinaryType)> versionToLanguageAndType = {};
+  Map<Language, Map<String, List<ClientBinaryType>>> map = {};
 
+  // construct map
   for(final (Language, String, ClientBinaryType) e in clientBinaryTuples) {
     final Language language = e.$1;
+    if(language != Language.dart) {
+      throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
+    }
     final String version = e.$2;
     final ClientBinaryType binaryType = e.$3;
-    versionToLanguageAndType[version] = (language, binaryType);
+    map.putIfAbsent(language, () => {});
+    map[language]!.putIfAbsent(version, () => []);
+    map[language]![version]!.add(binaryType);
   }
 
-  for(final String version in versionToLanguageAndType.keys) {
-    final (Language language, ClientBinaryType binaryType) = versionToLanguageAndType[version]!;
-    if(version == 'current') {
-      final Directory currentDirectory = Directory(path.join(binariesDirectory.path, 'current'));
-      ensureDirectoryExists(currentDirectory);
+  List<ClientBinary> allClientBinaries = [];
+
+  // 2. fetch binaries sorted by version and language
+  for(final Language language in map.keys) {
+    final Map<String, List<ClientBinaryType>> versionMap = map[language]!;
+    for(final String version in versionMap.keys) {
+      final Directory dir = Directory(path.join(binariesDirectory.path, language.name, version));
+      ensureDirectoryExists(dir);
+      final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
+      if(version == 'current') {
+        allClientBinaries.addAll(await _compileCurrent(language: language, clientBinaryTypes: clientBinaryTypes, directory: dir));
+      } else {
+        allClientBinaries.addAll(await _downloadRelease(language: language, version: version, clientBinaryTypes: clientBinaryTypes, directory: dir));
+      }
     }
   }
-
 }
 
-void _downloadRelease(final String version, final Language language) async {
-  
+Future<List<ClientBinary>> _compileCurrent({
+  required final Language language,
+  required final List<ClientBinaryType> clientBinaryTypes,
+  required final Directory directory,
+}) async {
+  List<ClientBinary> clientBinaries = [];
+  return clientBinaries;
+}
+
+Future<List<ClientBinary>> _downloadRelease({
+  required final Language language,
+  required final String version,
+  required final List<ClientBinaryType> clientBinaryTypes,
+  required final Directory directory,
+}) async {
+  if(language != Language.dart) {
+    throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
+  }
+  // 1. construct $archiveName and $downloadUrl
+  final String osStr = getOsString();   
+  final String archStr = getArchString();
+  String archiveExt;
+  switch(Platform.operatingSystem) {
+    case 'windows':
+    case 'macos':
+      archiveExt = 'zip';
+      break;
+    case 'linux':
+      archiveExt = 'tgz';
+      break;
+    default:
+      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+  }
+  final String archiveName = 'sshnp-$osStr-$archStr.$archiveExt';
+  final String downloadUrl = 'https://github.com/atsign-foundation/noports/releases/download/$version/$archiveName';
+
+  // 2. get tgz/zip
+  final ProcessResult curlProcessResult = await runCommand(
+    'curl', 
+    ['-L', '-o', path.join(directory.path, archiveName), downloadUrl],
+    printCommand: true);
+  if(curlProcessResult.exitCode != 0) {
+    throw Exception('Failed to download archive from $downloadUrl: ${curlProcessResult.stderr}');
+  }
+
+  // 3. create temporary extraction directory: $directory/temp_extract/
+  final Directory tempExtractDir = Directory(path.join(directory.path, 'temp_extract'));
+  ensureDirectoryExists(tempExtractDir);
+
+  // 4. extract archive to temporary directory
+  final ProcessResult extractProcessResult = Platform.isWindows || Platform.isMacOS
+    ? await runCommand('unzip', [path.join(directory.path, archiveName), '-d', tempExtractDir.path], printCommand: true)
+    : await runCommand('tar', ['-xzf', path.join(directory.path, archiveName), '-C', tempExtractDir.path], printCommand: true);
+  if(extractProcessResult.exitCode != 0) {
+    throw Exception('Failed to extract archive ${path.join(directory.path, archiveName)}: ${extractProcessResult.stderr}');
+  }
+
+  List<ClientBinary> clientBinaries = [];
+
+  // 5. move binaries from temporary extraction directory to final location: $directory/{binaryType}/
+  for(final ClientBinaryType binaryType in clientBinaryTypes) {
+    final String binaryName = binaryType.name;
+    final File extractedBinary = File(path.join(tempExtractDir.path, binaryName));
+    if(!(await extractedBinary.exists())) {
+      throw Exception('Expected binary not found in extracted archive: ${extractedBinary.path}');
+    }
+    final String finalBinaryPath = path.join(directory.path, binaryName);
+    final File binary = await extractedBinary.copy(finalBinaryPath);
+    if(!(await binary.exists())) {
+      throw Exception('Failed to move binary to final location: ${binary.path}');
+    } 
+    clientBinaries.add(ClientBinary(
+        binaryType: binaryType,
+        language: language,
+        version: version));
+  }
+
+  // 6. clean up temporary extraction directory and archive
+  try {
+    await tempExtractDir.delete(recursive: true);
+    await File(path.join(directory.path, archiveName)).delete();
+  } catch (e) {
+    print('Warning: Failed to clean up temporary files: $e');
+  }
+  return clientBinaries;
 }
