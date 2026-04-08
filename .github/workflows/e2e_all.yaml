@@ -35,14 +35,14 @@ jobs:
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_CLIENT_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_client_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_DAEMON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_daemon_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_latest_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_latest_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_EVENTS_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_events_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_SINGLETON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_singleton_jttest_key.atKeys
       - name: Install expect
         run: |
           sudo apt-get install -y expect
@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
+          tests/e2e_all/scripts/main.sh @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest @rv_am @e2e_all_v2_relay_jttest @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest @e2e_all_v2_events_jttest -p -r root.atsign.org
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
