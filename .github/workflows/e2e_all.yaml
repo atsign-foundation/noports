@@ -58,9 +58,11 @@ jobs:
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
       - name: Zip /tmp/e2e_all
+        if: ${ always() }} # run even if test fails
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
       - name: Upload /tmp/e2e_all as artifact
+        if: ${ always() }} # run even if test fails
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: tmp_e2e_all_artifacts
