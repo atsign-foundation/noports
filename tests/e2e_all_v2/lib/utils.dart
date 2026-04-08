@@ -11,22 +11,16 @@ Future<ProcessResult> runCommand(
   Map<String, String>? environment,
   printCommand = false,
 }) async {
-  print('    Running command: "$executable ${arguments.join(' ')}"');
+  print('> $executable ${arguments.join(' ')}');
   final ProcessResult result = await Process.run(
     executable,
     arguments,
     workingDirectory: workingDirectory,
     environment: environment,
   );
-  if (result.exitCode != 0) {
-    print('Error running command: $executable ${arguments.join(' ')}');
-    print('Exit code: ${result.exitCode}');
-    print('stdout: ${result.stdout}');
-    print('stderr: ${result.stderr}');
-  }
   if(printCommand) {
-    print('    stdout: ${result.stdout}');
-    print('    stderr: ${result.stderr}');
+    print('stdout:\n\t${result.stdout}');
+    print('stderr:\n\t${result.stderr}');
   }
   return result;
 }
@@ -38,7 +32,7 @@ Future<Process> startCommand(
   Map<String, String>? environment,
   bool printCommand = false,
 }) async {
-  print('    Starting command: "$executable ${arguments.join(' ')}"');
+  print('> $executable ${arguments.join(' ')}');
   final Process process = await Process.start(
     executable,
     arguments,

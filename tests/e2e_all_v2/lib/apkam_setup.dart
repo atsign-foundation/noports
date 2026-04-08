@@ -19,7 +19,7 @@ String getApkamKeysFilePath({
   required final String apkamApp,
   required final String apkamDeviceName,
 }) {
-  return path.join(apkamKeysDirectory.path, '${atsign}_${apkamApp}_${apkamDeviceName}_key.atKeys');
+  return path.join(apkamKeysDirectory.path, '${atsign}.${apkamApp}.${apkamDeviceName}.atKeys');
 }
 
 Future<void> setUpApkamKeys({
@@ -50,7 +50,44 @@ Future<void> setUpApkamKeys({
     final String which = entry.$1;
     final String atsign = entry.$2;
 
-    // 2. otp
+    final String apkamApp = getApkamApp();
+    final String apkamDeviceName = getApkamDeviceName(which: which, testRunId: testRunId);
+
+    // 1. revoke
+    final ProcessResult revokeProcess = await runCommand(
+      atActivateClientBinary.file.path,
+      [
+        'revoke',
+        '-a', atsign,
+        '-r', rootDomain,
+        '--arx', apkamApp,
+        '--drx', apkamDeviceName,
+      ],
+      printCommand: true,
+    );
+    if(revokeProcess.exitCode != 0) {
+      print('Error revoking $atsign: ${revokeProcess.stderr.toString()}');
+      throw Exception('Error revoking $atsign: ${revokeProcess.stderr}');
+    }
+
+    // 2. deny
+    final ProcessResult denyProcessResult = await runCommand(
+      atActivateClientBinary.file.path,
+      [
+        'deny',
+        '-a', atsign,
+        '-r', rootDomain,
+        '--arx', apkamApp,
+        '--drx', apkamDeviceName,
+      ],
+      printCommand: true,
+    );
+    if(denyProcessResult.exitCode != 0) {
+      print('Error denying $atsign: ${denyProcessResult.stderr.toString()}');
+      throw Exception('Error denying $atsign: ${denyProcessResult.stderr}');
+    }
+
+    // 3. otp
     final ProcessResult otpProcess = await runCommand(
       atActivateClientBinary.file.path,
       [
@@ -58,6 +95,7 @@ Future<void> setUpApkamKeys({
         '-a', atsign,
         '-r', rootDomain,
       ],
+      printCommand: true,
     );
     if(otpProcess.exitCode != 0) {
       print('Error generating OTP for $clientAtsign: ${otpProcess.stderr}');
@@ -65,9 +103,7 @@ Future<void> setUpApkamKeys({
     }
     final String otp = otpProcess.stdout.toString().trim();
 
-    // 3. enroll
-    final String apkamApp = getApkamApp();
-    final String apkamDeviceName = getApkamDeviceName(which: which, testRunId: testRunId);
+    // 4. enroll
     final String apkamKeysPath = getApkamKeysFilePath(
       apkamKeysDirectory: apkamKeysDirectory,
       atsign: atsign,
@@ -79,7 +115,7 @@ Future<void> setUpApkamKeys({
       atActivateClientBinary.file.path,
       [
         'enroll',
-        '-a', clientAtsign,
+        '-a', atsign,
         '-s', otp,
         '-p', apkamApp,
         '-k', apkamKeysPath,
@@ -87,9 +123,12 @@ Future<void> setUpApkamKeys({
         '-r', rootDomain,
         '-n', 'sshnp:rw,sshrvd:rw',
       ],
+      printCommand: true,
     );
 
-    // 4. approve
+    sleep(const Duration(seconds: 3)); 
+
+    // 5. approve
     final ProcessResult approveProcess = await runCommand(
       atActivateClientBinary.file.path,
       [
@@ -99,16 +138,17 @@ Future<void> setUpApkamKeys({
         '--drx', apkamDeviceName,
         '-r', rootDomain,
       ],
+      printCommand: true,
     );
     if(approveProcess.exitCode != 0) {
-      print('Error approving $clientAtsign: ${approveProcess.stderr}');
-      throw Exception('Error approving $clientAtsign: ${approveProcess.stderr}');
+      print('Error approving $atsign: ${approveProcess.stderr.toString()}');
+      throw Exception('Error approving $atsign: ${approveProcess.stderr}');
     }
 
     final int enrollProcessExitCode = await enrollProcess.exitCode;
     if(enrollProcessExitCode != 0) {
-      print('Error enrolling $clientAtsign: ${enrollProcess.stderr}');
-      throw Exception('Error enrolling $clientAtsign: ${enrollProcess.stderr}');
+      print('Error enrolling $atsign: ${enrollProcess.stderr.toString()}');
+      throw Exception('Error enrolling $atsign: ${enrollProcess.stderr}');
     }
   }
 }
