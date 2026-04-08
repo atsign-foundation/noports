@@ -89,45 +89,45 @@ Future<int> enroll({
 
   File potentiallyExistingKeysFile = File(apkamKeysFilePath);
   
-  if(potentiallyExistingKeysFile.existsSync()) {
-    print('Keys file already exists for ${atsign} at ${potentiallyExistingKeysFile.path}. Deleting it before enrollment.');
-    potentiallyExistingKeysFile.deleteSync();
-  }
+  // if(potentiallyExistingKeysFile.existsSync()) {
+  //   print('Keys file already exists for ${atsign} at ${potentiallyExistingKeysFile.path}. Deleting it before enrollment.');
+  //   potentiallyExistingKeysFile.deleteSync();
+  // }
 
-  print('Denying any pending enrollment requests for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
-  final List<String> denyArgs = [
-    'deny',
-    '-r', atDirectoryHost,
-    '-a', atsign,
-    '--arx', apkamApp,
-    '--drx', apkamDeviceName,
-  ];
-  print('Executing: ${atActivateClientBinary.binaryPath} ${denyArgs.join(' ')}');
-  final Process denyProcess = await Process.start(
-    atActivateClientBinary.binaryPath,
-    denyArgs,
-  );
-
-  final StringBuffer denyStdout = StringBuffer();
-  final StringBuffer denyStderr = StringBuffer();
-
-  denyProcess.stdout.transform(utf8.decoder).listen((data) {
-    stdout.write(data);
-    denyStdout.write(data);
-  });
-  denyProcess.stderr.transform(utf8.decoder).listen((data) {
-    stderr.write(data);
-    denyStderr.write(data);
-  });
-
-  exitCode = await denyProcess.exitCode;
-  print('Deny exit code: $exitCode');
-  if(exitCode != 0) {
-    print('Warning: deny command returned non-zero exit code. Continuing anyway...');
-  }
-
-  // Buffer between at_activate commands
-  await Future.delayed(const Duration(seconds: 2));
+  // print('Denying any pending enrollment requests for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
+  // final List<String> denyArgs = [
+  //   'deny',
+  //   '-r', atDirectoryHost,
+  //   '-a', atsign,
+  //   '--arx', apkamApp,
+  //   '--drx', apkamDeviceName,
+  // ];
+  // print('Executing: ${atActivateClientBinary.binaryPath} ${denyArgs.join(' ')}');
+  // final Process denyProcess = await Process.start(
+  //   atActivateClientBinary.binaryPath,
+  //   denyArgs,
+  // );
+  //
+  // final StringBuffer denyStdout = StringBuffer();
+  // final StringBuffer denyStderr = StringBuffer();
+  //
+  // denyProcess.stdout.transform(utf8.decoder).listen((data) {
+  //   stdout.write(data);
+  //   denyStdout.write(data);
+  // });
+  // denyProcess.stderr.transform(utf8.decoder).listen((data) {
+  //   stderr.write(data);
+  //   denyStderr.write(data);
+  // });
+  //
+  // exitCode = await denyProcess.exitCode;
+  // print('Deny exit code: $exitCode');
+  // if(exitCode != 0) {
+  //   print('Warning: deny command returned non-zero exit code. Continuing anyway...');
+  // }
+  //
+  // // Buffer between at_activate commands
+  // await Future.delayed(const Duration(seconds: 2));
 
   // print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
   // final List<String> revokeArgs = [
