@@ -6,6 +6,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns:
@@ -18,6 +20,8 @@ updates:
       - "/tests/end2end_tests/image/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       docker:
         patterns:
@@ -29,6 +33,8 @@ updates:
       - "/apps/admin/admin_api/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       pub:
         patterns:
