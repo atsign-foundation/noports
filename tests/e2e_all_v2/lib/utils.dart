@@ -196,28 +196,15 @@ Future<List<ClientBinary>> fetchClientBinaries({
       final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
       if(version == 'current') {
         allClientBinaries.addAll(await _compileCurrent(language: language, clientBinaryTypes: clientBinaryTypes, directory: dir));
-      } else {
+      } else if(version.startsWith('v')) {
         allClientBinaries.addAll(await _downloadRelease(language: language, version: version, clientBinaryTypes: clientBinaryTypes, directory: dir));
+      } else {
+        allClientBinaries.addAll(await _compileBranch(language: language, branch: version, clientBinaryTypes: clientBinaryTypes, directory: dir));
       }
     }
   }
-}
 
-String _getBinaryPath(ClientBinaryType binaryType) {
-  switch(binaryType) {
-    case ClientBinaryType.sshnp:
-      return 'sshnp';
-    case ClientBinaryType.npt:
-      return 'npt';
-    case ClientBinaryType.srv:
-      return 'srv';
-    case ClientBinaryType.npp_client:
-      return 'npp_client';
-    case ClientBinaryType.at_activate:
-      return 'at_activate';
-    default:
-      throw Exception('Unsupported ClientBinaryType: ${binaryType.name}');
-  }
+  return allClientBinaries;
 }
 
 Future<List<ClientBinary>> _compileCurrent({
@@ -241,17 +228,19 @@ Future<List<ClientBinary>> _compileCurrent({
   List<(Process, ClientBinaryType, String)> compileProcesses = [];
   List<ClientBinary> clientBinaries = [];
   for(final ClientBinaryType binaryType in clientBinaryTypes) {
-    final String targetBinaryPath = _getBinaryPath(binaryType);
+    final String dartSourcePath = getDartSourcePath(binaryType);
     final String outputPath = path.join(directory.path, binaryType.name); // e.g. /path/to/binaries/dart/current/sshnp
     final Process compileProcess = await startCommand(
       'dart', 
-      ['compile', 'exe', targetBinaryPath, '-o', outputPath]);
+      ['compile', 'exe', dartSourcePath, '-o', outputPath]);
     compileProcesses.add((compileProcess, binaryType, outputPath));
   }
 
   // 3. wait for processes to finish and check exit codes
   for(final (Process, ClientBinaryType, String) element in compileProcesses) {
     final Process compileProcess = element.$1;
+    final ClientBinaryType binaryType = element.$2;
+    final String outputPath = element.$3;
     if((await compileProcess.exitCode) != 0) {
       print('Failed to compile ${element.$2.name}. Exit code: ${await compileProcess.exitCode}');
       compileProcess.stderr.transform(SystemEncoding().decoder).listen((data) {
@@ -260,13 +249,11 @@ Future<List<ClientBinary>> _compileCurrent({
       throw Exception('Failed to compile ${element.$2.name}. Exit code: $exitCode');
     }
 
-    File outputFile = File(element.$3);
+    final File outputFile = File(outputPath);
     if(!(await outputFile.exists())) {
       throw Exception('Expected output binary not found after compilation: ${outputFile.path}');
     }
     
-    final ClientBinaryType binaryType = element.$2;
-    final String outputPath = element.$3;
     clientBinaries.add(ClientBinary(
       binaryType: binaryType,
       language: Language.dart, 
@@ -343,7 +330,9 @@ Future<List<ClientBinary>> _downloadRelease({
     clientBinaries.add(ClientBinary(
         binaryType: binaryType,
         language: language,
-        version: version));
+        version: version,
+        file: binary,
+    ));
   }
 
   // 6. clean up temporary extraction directory and archive
@@ -354,4 +343,13 @@ Future<List<ClientBinary>> _downloadRelease({
     print('Warning: Failed to clean up temporary files: $e');
   }
   return clientBinaries;
+}
+
+Future<List<ClientBinary>> _compileBranch({
+  required final Language language,
+  required final String branch,
+  required final List<ClientBinaryType> clientBinaryTypes,
+  required final Directory directory,
+}) async {
+  throw Exception('Compiling from branch is not yet implemented. Found branch: $branch');
 }
