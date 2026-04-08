@@ -25,8 +25,8 @@ Future<ProcessResult> runCommand(
     print('stderr: ${result.stderr}');
   }
   if(printCommand) {
-    print('stdout: ${result.stdout}');
-    print('stderr: ${result.stderr}');
+    print('    stdout: ${result.stdout}');
+    print('    stderr: ${result.stderr}');
   }
   return result;
 }
@@ -47,10 +47,10 @@ Future<Process> startCommand(
   );
   if(printCommand) {
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
-      print('stdout: $data');
+      print('$data');
     });
     process.stderr.transform(SystemEncoding().decoder).listen((data) {
-      print('stderr: $data');
+      print('$data');
     });
   }
   return process;
@@ -98,8 +98,7 @@ Directory joinPath(
 Future<String> getShortenedGitCommitHash() async {
   final ProcessResult gitResult = await runCommand(
     'git',
-    ['rev-parse', '--short', 'HEAD'],
-    printCommand: true);
+    ['rev-parse', '--short', 'HEAD']);
   if (gitResult.exitCode != 0) {
     print('stderr: ${gitResult.stderr}');
     exit(1);
@@ -295,8 +294,7 @@ Future<List<ClientBinary>> _downloadRelease({
   // 2. get tgz/zip
   final ProcessResult curlProcessResult = await runCommand(
     'curl', 
-    ['-L', '-o', path.join(directory.path, archiveName), downloadUrl],
-    printCommand: true);
+    ['-L', '-o', path.join(directory.path, archiveName), downloadUrl]);
   if(curlProcessResult.exitCode != 0) {
     throw Exception('Failed to download archive from $downloadUrl: ${curlProcessResult.stderr}');
   }
@@ -306,11 +304,32 @@ Future<List<ClientBinary>> _downloadRelease({
   ensureDirectoryExists(tempExtractDir);
 
   // 4. extract archive to temporary directory
-  final ProcessResult extractProcessResult = Platform.isWindows || Platform.isMacOS
-    ? await runCommand('unzip', [path.join(directory.path, archiveName), '-d', tempExtractDir.path], printCommand: true)
-    : await runCommand('tar', ['-xzf', path.join(directory.path, archiveName), '-C', tempExtractDir.path], printCommand: true);
-  if(extractProcessResult.exitCode != 0) {
-    throw Exception('Failed to extract archive ${path.join(directory.path, archiveName)}: ${extractProcessResult.stderr}');
+  ProcessResult extractResult;
+  switch(Platform.operatingSystem) {
+    case 'linux':
+      extractResult = await runCommand(
+        'tar',
+        ['-xzf', path.join(directory.path, archiveName), '-C', tempExtractDir.path],
+      );
+      break;
+    case 'windows':
+      extractResult = await runCommand(
+        'powershell',
+        ['-Command', 'Expand-Archive', '-Path', path.join(directory.path, archiveName), '-DestinationPath', tempExtractDir.path],
+      );
+      break;
+    case 'macos':
+      extractResult = await runCommand(
+        'unzip',
+        ['-q', path.join(directory.path, archiveName), '-d', tempExtractDir.path],
+      );
+      break;
+    default:
+      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+  }
+
+  if(extractResult.exitCode != 0) {
+    throw Exception('Failed to extract archive: ${extractResult.stderr}');
   }
 
   List<ClientBinary> clientBinaries = [];
@@ -318,7 +337,7 @@ Future<List<ClientBinary>> _downloadRelease({
   // 5. move binaries from temporary extraction directory to final location: $directory/{binaryType}/
   for(final ClientBinaryType binaryType in clientBinaryTypes) {
     final String binaryName = binaryType.name;
-    final File extractedBinary = File(path.join(tempExtractDir.path, binaryName));
+    final File extractedBinary = File(path.join(tempExtractDir.path, 'sshnp', binaryName));
     if(!(await extractedBinary.exists())) {
       throw Exception('Expected binary not found in extracted archive: ${extractedBinary.path}');
     }
@@ -352,4 +371,16 @@ Future<List<ClientBinary>> _compileBranch({
   required final Directory directory,
 }) async {
   throw Exception('Compiling from branch is not yet implemented. Found branch: $branch');
+}
+
+bool isCommandAvailable(String command) {
+  try {
+    final ProcessResult result = Process.runSync(
+      Platform.isWindows ? 'where' : 'which',
+      [command],
+    );
+    return result.exitCode == 0;
+  } catch (e) {
+    return false;
+  }
 }

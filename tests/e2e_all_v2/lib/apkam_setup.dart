@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
-
+import 'package:e2e_all_v2/utils.dart';
+import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/client_binary.dart';
 
 String getApkamApp() {
@@ -8,234 +8,108 @@ String getApkamApp() {
 }
 
 String getApkamDeviceName({
-  required final String which,
+  required final String which, // 'client', 'daemon'
   required final String testRunId}) {
-  return 'v2_${which}_${testRunId}';
+  return '${which}_${testRunId}';
 }
 
-String getApkamKeysFileName({
+String getApkamKeysFilePath({
   required final Directory apkamKeysDirectory,
-  required final String clientAtSign,
+  required final String atsign,
   required final String apkamApp,
   required final String apkamDeviceName,
 }) {
-  return '${apkamKeysDirectory.path}/$clientAtSign.$apkamApp.$apkamDeviceName.atKeys';
+  return path.join(apkamKeysDirectory.path, '${atsign}_${apkamApp}_${apkamDeviceName}_key.atKeys');
 }
 
-/// Enrolls an atsign with APKAM.
-///
-/// Note: The deny and revoke operations are non-fatal - they will log warnings
-/// but continue even if they fail. This is because they are cleanup operations
-/// that may fail if no matching enrollments exist.
-Future<int> enroll({
-  required final Directory apkamKeysDirectory,
-  required final String atsign,
-  required final String which, // client|daemon
+Future<void> setUpApkamKeys({
   required final ClientBinary atActivateClientBinary,
-  required final String atDirectoryHost,
+  required final String clientAtsign,
+  required final String daemonAtsign,
+  required final String rootDomain,
+  required final Directory apkamKeysDirectory,
   required final String testRunId,
 }) async {
-  int exitCode;
-
-  if(!apkamKeysDirectory.existsSync()) {
-    apkamKeysDirectory.createSync(recursive: true);
+  // 1. validate paramters
+  if(atActivateClientBinary.binaryType != ClientBinaryType.at_activate) {
+    throw ArgumentError('atActivateClientBinary must be of type at_activate');
   }
 
-  print('Generating OTP for ${atsign}');
-  final List<String> otpArgs = [
-    'otp',
-    '-a', atsign,
-    '-r', atDirectoryHost,
-  ];
-  print('Executing: ${atActivateClientBinary.binaryPath} ${otpArgs.join(' ')}');
-
-  final Process otpProcess = await Process.start(
-    atActivateClientBinary.binaryPath,
-    otpArgs,
-  );
-
-  final StringBuffer otpStdout = StringBuffer();
-  final StringBuffer otpStderr = StringBuffer();
-
-  otpProcess.stdout.transform(utf8.decoder).listen((data) {
-    stdout.write(data);
-    otpStdout.write(data);
-  });
-  otpProcess.stderr.transform(utf8.decoder).listen((data) {
-    stderr.write(data);
-    otpStderr.write(data);
-  });
-
-  exitCode = await otpProcess.exitCode;
-  if(exitCode != 0) {
-    print('Failed to generate OTP for ${atsign}. Exit code: $exitCode');
-    return exitCode;
-  }
-  final String otp = otpStdout.toString().trim();
-  print('Generated OTP: $otp');
-
-  // Buffer between at_activate commands
-  await Future.delayed(const Duration(seconds: 2));
-
-  final String apkamApp = getApkamApp();
-  final String apkamDeviceName = getApkamDeviceName(which: which, testRunId: testRunId);
-  final String apkamKeysFilePath = getApkamKeysFileName(
-    apkamKeysDirectory: apkamKeysDirectory,
-    clientAtSign: atsign,
-    apkamApp: apkamApp,
-    apkamDeviceName: apkamDeviceName,
-  );
-
-  File potentiallyExistingKeysFile = File(apkamKeysFilePath);
-  
-  // if(potentiallyExistingKeysFile.existsSync()) {
-  //   print('Keys file already exists for ${atsign} at ${potentiallyExistingKeysFile.path}. Deleting it before enrollment.');
-  //   potentiallyExistingKeysFile.deleteSync();
-  // }
-
-  // print('Denying any pending enrollment requests for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
-  // final List<String> denyArgs = [
-  //   'deny',
-  //   '-r', atDirectoryHost,
-  //   '-a', atsign,
-  //   '--arx', apkamApp,
-  //   '--drx', apkamDeviceName,
-  // ];
-  // print('Executing: ${atActivateClientBinary.binaryPath} ${denyArgs.join(' ')}');
-  // final Process denyProcess = await Process.start(
-  //   atActivateClientBinary.binaryPath,
-  //   denyArgs,
-  // );
-  //
-  // final StringBuffer denyStdout = StringBuffer();
-  // final StringBuffer denyStderr = StringBuffer();
-  //
-  // denyProcess.stdout.transform(utf8.decoder).listen((data) {
-  //   stdout.write(data);
-  //   denyStdout.write(data);
-  // });
-  // denyProcess.stderr.transform(utf8.decoder).listen((data) {
-  //   stderr.write(data);
-  //   denyStderr.write(data);
-  // });
-  //
-  // exitCode = await denyProcess.exitCode;
-  // print('Deny exit code: $exitCode');
-  // if(exitCode != 0) {
-  //   print('Warning: deny command returned non-zero exit code. Continuing anyway...');
-  // }
-  //
-  // // Buffer between at_activate commands
-  // await Future.delayed(const Duration(seconds: 2));
-
-  // print('Revoking any approved enrollments for $atsign with $apkamApp and apkamDeviceName $apkamDeviceName');
-  // final List<String> revokeArgs = [
-  //   'revoke',
-  //   '-r', atDirectoryHost,
-  //   '-a', atsign,
-  //   '--arx', apkamApp,
-  //   '--drx', apkamDeviceName,
-  // ];
-  // print('Executing: ${atActivateClientBinary.binaryPath} ${revokeArgs.join(' ')}');
-  // final ProcessResult revokeProcessResult = await Process.run(
-  //   atActivateClientBinary.binaryPath,
-  //   revokeArgs,
-  // );
-  // exitCode = await revokeProcessResult.exitCode;
-  // print('Revoke stdout: ${revokeProcessResult.stdout}');
-  // print('Revoke stderr: ${revokeProcessResult.stderr}');
-  // print('Revoke exit code: $exitCode');
-  // if(exitCode != 0) {
-  //   print('Warning: revoke command returned non-zero exit code. Continuing anyway...');
-  // }
-  //
-  // // Buffer between at_activate commands
-  // await Future.delayed(const Duration(seconds: 2));
-
-  print('Submitting enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
-  final List<String> enrollArgs = [
-    'enroll',
-    '-r', atDirectoryHost,
-    '-a', atsign,
-    '--app', apkamApp,
-    '--device', apkamDeviceName,
-    '--namespaces', 'sshnp:rw,sshrvd:rw',
-    '--keys', apkamKeysFilePath,
-    '--passcode', otp,
-  ];
-  print('Executing: ${atActivateClientBinary.binaryPath} ${enrollArgs.join(' ')}');
-  final Process enrollProcess = await Process.start(
-    atActivateClientBinary.binaryPath,
-    enrollArgs,
-  );
-
-  // Capture stdout and stderr from enroll process
-  final StringBuffer enrollStdout = StringBuffer();
-  final StringBuffer enrollStderr = StringBuffer();
-  enrollProcess.stdout.transform(utf8.decoder).listen((data) {
-    stdout.write(data);
-    enrollStdout.write(data);
-  });
-  enrollProcess.stderr.transform(utf8.decoder).listen((data) {
-    stderr.write(data);
-    enrollStderr.write(data);
-  });
-
-  print('Waiting for enrollment approval for ${atsign}...');
-  sleep(const Duration(seconds: 5));
-
-  // approve enrollment
-  print('Approving enrollment request for $atsign with apkamApp $apkamApp and apkamDeviceName $apkamDeviceName');
-  final List<String> approveArgs = [
-    'approve',
-    '-a', atsign,
-    '-r', atDirectoryHost,
-    '--drx', apkamDeviceName,
-  ];
-  print('Executing: ${atActivateClientBinary.binaryPath} ${approveArgs.join(' ')}');
-  final Process approveProcess = await Process.start(
-    atActivateClientBinary.binaryPath,
-    approveArgs,
-  );
-
-  final StringBuffer approveStdout = StringBuffer();
-  final StringBuffer approveStderr = StringBuffer();
-
-  approveProcess.stdout.transform(utf8.decoder).listen((data) {
-    stdout.write(data);
-    approveStdout.write(data);
-  });
-  approveProcess.stderr.transform(utf8.decoder).listen((data) {
-    stderr.write(data);
-    approveStderr.write(data);
-  });
-
-  exitCode = await approveProcess.exitCode;
-  print('Approve exit code: $exitCode');
-  if(exitCode != 0) {
-    print('Failed to approve ${atsign}.');
-    return exitCode;
-  }
-  print('Approval completed for ${atsign}');
-
-  // Ensure enrollment process exits
-  print('Waiting for enrollment process to complete for ${atsign}...');
-  exitCode = await enrollProcess.exitCode;
-  print('Enroll exit code: $exitCode');
-  if(exitCode != 0) {
-    print('Failed to enroll ${atsign}.');
-    return exitCode;
-  }
-  print('Enrollment process completed for ${atsign}');
-
-  // Ensure keys file exists
-  File potentiallyExistingKeysFile2 =  File(apkamKeysFilePath);
-  if(!potentiallyExistingKeysFile2.existsSync()) {
-    print('Enrollment process for ${atsign} completed but keys file not found at ${potentiallyExistingKeysFile2.path}');
-    return 1;
+  if(!(await atActivateClientBinary.exists())) {
+    throw ArgumentError('atActivateClientBinary does not exist at path: ${atActivateClientBinary.file.path}');
   }
 
+  if(!(await apkamKeysDirectory.exists())) {
+    throw ArgumentError('apkamKeysDirectory does not exist at path: ${apkamKeysDirectory.path}');
+  }
 
-  return exitCode;
+  for(final (String, String) entry in [
+    ('client', clientAtsign),
+    ('daemon', daemonAtsign),
+  ]) {
+    final String which = entry.$1;
+    final String atsign = entry.$2;
+
+    // 2. otp
+    final ProcessResult otpProcess = await runCommand(
+      atActivateClientBinary.file.path,
+      [
+        'otp',
+        '-a', atsign,
+        '-r', rootDomain,
+      ],
+    );
+    if(otpProcess.exitCode != 0) {
+      print('Error generating OTP for $clientAtsign: ${otpProcess.stderr}');
+      throw Exception('Error generating OTP for $clientAtsign: ${otpProcess.stderr}');
+    }
+    final String otp = otpProcess.stdout.toString().trim();
+
+    // 3. enroll
+    final String apkamApp = getApkamApp();
+    final String apkamDeviceName = getApkamDeviceName(which: which, testRunId: testRunId);
+    final String apkamKeysPath = getApkamKeysFilePath(
+      apkamKeysDirectory: apkamKeysDirectory,
+      atsign: atsign,
+      apkamApp: apkamApp,
+      apkamDeviceName: apkamDeviceName,
+    );
+
+    final Process enrollProcess = await startCommand(
+      atActivateClientBinary.file.path,
+      [
+        'enroll',
+        '-a', clientAtsign,
+        '-s', otp,
+        '-p', apkamApp,
+        '-k', apkamKeysPath,
+        '-d', apkamDeviceName,
+        '-r', rootDomain,
+        '-n', 'sshnp:rw,sshrvd:rw',
+      ],
+    );
+
+    // 4. approve
+    final ProcessResult approveProcess = await runCommand(
+      atActivateClientBinary.file.path,
+      [
+        'approve',
+        '-a', atsign,
+        '--arx', apkamApp,
+        '--drx', apkamDeviceName,
+        '-r', rootDomain,
+      ],
+    );
+    if(approveProcess.exitCode != 0) {
+      print('Error approving $clientAtsign: ${approveProcess.stderr}');
+      throw Exception('Error approving $clientAtsign: ${approveProcess.stderr}');
+    }
+
+    final int enrollProcessExitCode = await enrollProcess.exitCode;
+    if(enrollProcessExitCode != 0) {
+      print('Error enrolling $clientAtsign: ${enrollProcess.stderr}');
+      throw Exception('Error enrolling $clientAtsign: ${enrollProcess.stderr}');
+    }
+  }
 }
 
