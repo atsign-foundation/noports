@@ -50,18 +50,29 @@ Future<int> enroll({
   ];
   print('Executing: ${atActivateClientBinary.binaryPath} ${otpArgs.join(' ')}');
 
-  final ProcessResult otpProcessResult = await Process.run(
+  final Process otpProcess = await Process.start(
     atActivateClientBinary.binaryPath,
     otpArgs,
   );
-  exitCode = await otpProcessResult.exitCode;
-  print('OTP stdout: ${otpProcessResult.stdout}');
-  print('OTP stderr: ${otpProcessResult.stderr}');
+
+  final StringBuffer otpStdout = StringBuffer();
+  final StringBuffer otpStderr = StringBuffer();
+
+  otpProcess.stdout.transform(utf8.decoder).listen((data) {
+    stdout.write(data);
+    otpStdout.write(data);
+  });
+  otpProcess.stderr.transform(utf8.decoder).listen((data) {
+    stderr.write(data);
+    otpStderr.write(data);
+  });
+
+  exitCode = await otpProcess.exitCode;
   if(exitCode != 0) {
     print('Failed to generate OTP for ${atsign}. Exit code: $exitCode');
     return exitCode;
   }
-  final String otp = otpProcessResult.stdout.toString().trim();
+  final String otp = otpStdout.toString().trim();
   print('Generated OTP: $otp');
 
   // Buffer between at_activate commands
@@ -92,13 +103,24 @@ Future<int> enroll({
     '--drx', apkamDeviceName,
   ];
   print('Executing: ${atActivateClientBinary.binaryPath} ${denyArgs.join(' ')}');
-  final ProcessResult denyProcessResult = await Process.run(
+  final Process denyProcess = await Process.start(
     atActivateClientBinary.binaryPath,
     denyArgs,
   );
-  exitCode = await denyProcessResult.exitCode;
-  print('Deny stdout: ${denyProcessResult.stdout}');
-  print('Deny stderr: ${denyProcessResult.stderr}');
+
+  final StringBuffer denyStdout = StringBuffer();
+  final StringBuffer denyStderr = StringBuffer();
+
+  denyProcess.stdout.transform(utf8.decoder).listen((data) {
+    stdout.write(data);
+    denyStdout.write(data);
+  });
+  denyProcess.stderr.transform(utf8.decoder).listen((data) {
+    stderr.write(data);
+    denyStderr.write(data);
+  });
+
+  exitCode = await denyProcess.exitCode;
   print('Deny exit code: $exitCode');
   if(exitCode != 0) {
     print('Warning: deny command returned non-zero exit code. Continuing anyway...');
@@ -151,8 +173,14 @@ Future<int> enroll({
   // Capture stdout and stderr from enroll process
   final StringBuffer enrollStdout = StringBuffer();
   final StringBuffer enrollStderr = StringBuffer();
-  enrollProcess.stdout.transform(utf8.decoder).listen((data) => enrollStdout.write(data));
-  enrollProcess.stderr.transform(utf8.decoder).listen((data) => enrollStderr.write(data));
+  enrollProcess.stdout.transform(utf8.decoder).listen((data) {
+    stdout.write(data);
+    enrollStdout.write(data);
+  });
+  enrollProcess.stderr.transform(utf8.decoder).listen((data) {
+    stderr.write(data);
+    enrollStderr.write(data);
+  });
 
   print('Waiting for enrollment approval for ${atsign}...');
   sleep(const Duration(seconds: 5));
@@ -166,13 +194,24 @@ Future<int> enroll({
     '--drx', apkamDeviceName,
   ];
   print('Executing: ${atActivateClientBinary.binaryPath} ${approveArgs.join(' ')}');
-  final ProcessResult approveProcessResult = await Process.run(
+  final Process approveProcess = await Process.start(
     atActivateClientBinary.binaryPath,
     approveArgs,
   );
-  exitCode = await approveProcessResult.exitCode;
-  print('Approve stdout: ${approveProcessResult.stdout}');
-  print('Approve stderr: ${approveProcessResult.stderr}');
+
+  final StringBuffer approveStdout = StringBuffer();
+  final StringBuffer approveStderr = StringBuffer();
+
+  approveProcess.stdout.transform(utf8.decoder).listen((data) {
+    stdout.write(data);
+    approveStdout.write(data);
+  });
+  approveProcess.stderr.transform(utf8.decoder).listen((data) {
+    stderr.write(data);
+    approveStderr.write(data);
+  });
+
+  exitCode = await approveProcess.exitCode;
   print('Approve exit code: $exitCode');
   if(exitCode != 0) {
     print('Failed to approve ${atsign}.');
@@ -183,8 +222,6 @@ Future<int> enroll({
   // Ensure enrollment process exits
   print('Waiting for enrollment process to complete for ${atsign}...');
   exitCode = await enrollProcess.exitCode;
-  print('Enroll stdout: ${enrollStdout.toString()}');
-  print('Enroll stderr: ${enrollStderr.toString()}');
   print('Enroll exit code: $exitCode');
   if(exitCode != 0) {
     print('Failed to enroll ${atsign}.');
