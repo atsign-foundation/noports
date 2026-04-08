@@ -18,7 +18,7 @@ class RelaySelector with AtClientBindings {
   late final AtClient atClient;
 
   @override
-  final AtSignLogger logger = AtSignLogger('RvSelector');
+  final AtSignLogger logger = AtSignLogger('RelaySelector');
 
   final String rvServerListUrl =
       'https://atsign-foundation.github.io/noports/standard_relays.json';
@@ -28,82 +28,6 @@ class RelaySelector with AtClientBindings {
   late Map<String, dynamic> defaultRvList = {};
 
   RelaySelector(this.atClient);
-
-  /// Fetches the RV servers map from [rvServerListUrl].
-  /// Returns a map of RV atSign → list of IP/hostname strings.
-  /// Throws if the URL is unreachable or returns a non-200 status.
-  Future<Map<String, dynamic>> _fetchStandardRelays() async {
-    final client = HttpClient();
-    try {
-      final request = await client.getUrl(Uri.parse(rvServerListUrl));
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
-        return jsonDecode(body) as Map<String, dynamic>;
-      }
-      throw StateError(
-        'Unexpected status ${response.statusCode} fetching RV list',
-      );
-    } catch (e) {
-      logger.warning('Failed to fetch RV list: $e');
-      rethrow;
-    } finally {
-      client.close();
-    }
-  }
-
-  Future<Map<String, dynamic>> _requestRelayIpAddress(Atsign rvAtSign) async {
-    Completer<Map<String, dynamic>> completer = Completer();
-
-    final String fixedRvAtSign = AtUtils.fixAtSign(rvAtSign.toString());
-    final String clientAtSign = AtUtils.fixAtSign(atClient.getCurrentAtSign()!);
-
-    // The srvd will respond with a key 'discover.sshrvd' sharedBy the srvd
-    // e.g. @client:discover.sshrvd@rv_am
-    String regex = 'discover\\.${Srvd.namespace}$fixedRvAtSign';
-
-    late StreamSubscription<AtNotification> subscription;
-    subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
-      notification,
-    ) {
-      if (!completer.isCompleted &&
-          notification.from == fixedRvAtSign &&
-          notification.value != null) {
-        final ipAddress = jsonDecode(notification.value!);
-        completer.complete(ipAddress);
-        subscription.cancel();
-      }
-    });
-
-    final atKey = AtKey()
-      // embed namespace in key, matching the request_ports convention:
-      // namespaceAware=false prevents the client's own namespace being appended
-      ..key = 'discover.${Srvd.namespace}'
-      ..sharedBy = clientAtSign
-      ..sharedWith = fixedRvAtSign
-      ..metadata = (Metadata()
-        ..isPublic = false
-        ..isEncrypted = true
-        ..namespaceAware = false);
-
-    await notify(
-      atKey,
-      'discover',
-      checkForFinalDeliveryStatus: false,
-      waitForFinalDeliveryStatus: false,
-      ttln: Duration(minutes: 1),
-    );
-
-    return completer.future.timeout(
-      Duration(seconds: 10),
-      onTimeout: () {
-        subscription.cancel();
-        throw TimeoutException(
-          'Timed out waiting for discover response from $rvAtSign',
-        );
-      },
-    );
-  }
 
   /// Selects the best RV atsign for a given connection.
   ///
@@ -116,10 +40,10 @@ class RelaySelector with AtClientBindings {
   /// If [channel] is provided (e.g. reusing an already-created session channel),
   /// it will be used directly. Otherwise a temporary channel is created.
   Future<String> selectBestRelay(
-    SshnpParams params, {
-    List<Atsign>? rvAtSigns,
-    SshnpdChannel? channel,
-  }) async {
+      SshnpParams params, {
+        List<Atsign>? rvAtSigns,
+        SshnpdChannel? channel,
+      }) async {
     List<Atsign> toCheck = [];
 
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
@@ -128,7 +52,7 @@ class RelaySelector with AtClientBindings {
       // fetch a list of available RVs from [rvServerListUrl]
       final standardRelaysRaw = await _fetchStandardRelays();
       defaultRvList =
-          standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
+      standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
       toCheck = defaultRvList.keys.map((s) => s.toAtsign()).toList();
     }
     logger.info('Checking latency for RVs: $toCheck');
@@ -159,19 +83,99 @@ class RelaySelector with AtClientBindings {
       namespace: DefaultArgs.namespace,
     );
 
-    final deviceLatency = await channel.getRvLatencyDevice(rvIpMap);
+    final deviceLatency = await channel.fetchDeviceRelayLatencies(rvIpMap);
     logger.info('Fetched latencies for device -> RV: $deviceLatency');
     channel = null;
 
     return _lowestAverageLatency(deviceLatency, clientLatency);
   }
 
+  /// Fetches the RV servers map from [rvServerListUrl].
+  /// Returns a map of RV atSign → list of IP/hostname strings.
+  /// Throws if the URL is unreachable or returns a non-200 status.
+  ///
+  /// Expected format from the URL:
+  /// ```json
+  /// { "standard_relays": { "@rv_am": {...}, "@rv_eu": {...} } }
+  /// ```
+  Future<Map<String, dynamic>> _fetchStandardRelays() async {
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(rvServerListUrl));
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final body = await response.transform(utf8.decoder).join();
+        return jsonDecode(body) as Map<String, dynamic>;
+      }
+      throw StateError(
+        'Unexpected status ${response.statusCode} fetching RV list',
+      );
+    } catch (e) {
+      logger.warning('Failed to fetch RV list: $e');
+      rethrow;
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<Map<String, dynamic>> _requestRelayIpAddress(Atsign rvAtSign) async {
+    Completer<Map<String, dynamic>> completer = Completer();
+
+    // The srvd will respond with a key 'discover.sshrvd' sharedBy the srvd
+    // e.g. @client:discover.sshrvd@rv_am
+    String regex = 'discover\\.${Srvd.namespace}$rvAtSign';
+
+    late StreamSubscription<AtNotification> subscription;
+    subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
+      notification,
+    ) {
+      if (!completer.isCompleted &&
+          notification.from == rvAtSign &&
+          notification.value != null) {
+        final ipAddress = jsonDecode(notification.value!);
+        completer.complete(ipAddress);
+        subscription.cancel();
+      }
+    });
+
+    final atKey = AtKey()
+      // embed namespace in key
+      // namespaceAware=false prevents the client's own namespace being appended
+      ..key = 'discover.${Srvd.namespace}'
+      ..sharedBy = atClient.getCurrentAtSign()
+      ..sharedWith = rvAtSign
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = false);
+
+    await notify(
+      atKey,
+      'discover',
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(seconds: 10),
+    );
+
+    return completer.future.timeout(
+      Duration(seconds: 10),
+      onTimeout: () {
+        subscription.cancel();
+        throw TimeoutException(
+          'Timed out waiting for discover response from $rvAtSign',
+        );
+      },
+    );
+  }
+
+  /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
+  /// the atsign of the RV with the lowest combined average latency.
   String _lowestAverageLatency(
     Map<String, int> daemonLatencies,
     Map<String, int> clientLatencies,
   ) {
     String? bestRv;
-    double bestAverage = -1;
+    double bestAverage = double.infinity;
 
     for (final rv in daemonLatencies.keys) {
       final d = daemonLatencies[rv] ?? -1;
@@ -179,7 +183,7 @@ class RelaySelector with AtClientBindings {
       if (d == -1 || c == -1) continue; // skip unreachable RVs
 
       final average = (d + c) / 2;
-      if (bestAverage == -1 || average < bestAverage) {
+      if (average < bestAverage) {
         bestAverage = average;
         bestRv = rv;
       }

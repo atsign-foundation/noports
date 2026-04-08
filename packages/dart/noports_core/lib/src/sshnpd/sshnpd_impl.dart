@@ -622,11 +622,18 @@ class SshnpdImpl
         'No srvd IPs provided in latency check request. Ignoring.',
       );
       return;
-      // in this case the client will just timeout and throw an exception
     }
-    Map<String, dynamic> rvServers = jsonDecode(notification.value!);
+    final Map<String, dynamic> rvServers;
+    try {
+      rvServers = jsonDecode(notification.value!) as Map<String, dynamic>;
+    } on FormatException {
+      logger.warning(
+        'Malformed latency check request from ${notification.from}. Ignoring.',
+      );
+      return;
+    }
     final rvLatencyMap = await RelayLatencyChecker.measureLatencies(rvServers);
-    logger.finer('Latency per relay (ms): $rvLatencyMap');
+    logger.info('Latency per relay (ms): $rvLatencyMap');
 
     var atKey = AtKey()
       ..key = 'rv_latency.$device'
@@ -636,7 +643,7 @@ class SshnpdImpl
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttl = 60000
+        ..ttl = 10000
         ..namespaceAware = true);
 
     await _notify(atKey: atKey, value: jsonEncode(rvLatencyMap));

@@ -328,28 +328,38 @@ abstract class SshnpdChannel
   /// ```
   ///
   /// Returns a map of RV atSign → latency in milliseconds, or -1 if unreachable.
-  Future<Map<String, int>> getRvLatencyDevice(
+  ///
+  /// Throws [TimeoutException] if the device does not respond within 1 minute.
+  /// Throws [FormatException] if the device responds with a malformed payload.
+  Future<Map<String, int>> fetchDeviceRelayLatencies(
     Map<String, dynamic> rvServers,
   ) async {
     final completer = Completer<Map<String, int>>();
+    final regex = 'rv_latency.${params.device}.${DefaultArgs.namespace}';
+
     late StreamSubscription<AtNotification> subscription;
-    subscription =
-        subscribe(
-          regex: 'rv_latency.${params.device}.${DefaultArgs.namespace}',
-          shouldDecrypt: true,
-        ).listen((notification) {
-          logger.info(
-            'Received rv_latencies from device: ${notification.value}',
+    subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
+      notification,
+    ) {
+      logger.info('Received rv_latencies from device: ${notification.value}');
+      if (notification.from == params.sshnpdAtSign && !completer.isCompleted) {
+        try {
+          final Map<String, dynamic> raw = jsonDecode(notification.value!);
+          completer.complete(Map<String, int>.from(raw));
+        } catch (e) {
+          logger.warning('Failed to decode rv_latencies from device: $e');
+          logger.finer('Response from device: ${notification.value}');
+
+          completer.completeError(
+            FormatException(
+              'Malformed latency check response from ${params.sshnpdAtSign}',
+            ),
           );
-          if (notification.from == params.sshnpdAtSign &&
-              !completer.isCompleted) {
-            final Map<String, dynamic> raw = jsonDecode(
-              notification.value ?? '{}',
-            );
-            completer.complete(Map<String, int>.from(raw));
-            subscription.cancel();
-          }
-        });
+        } finally {
+          subscription.cancel();
+        }
+      }
+    });
 
     /// Send a latency check notification
     await notify(

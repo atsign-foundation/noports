@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:at_utils/at_logger.dart';
 
 class RelayLatencyChecker {
-  static final AtSignLogger logger = AtSignLogger('AtLatencyChecker');
+  static final AtSignLogger logger = AtSignLogger('RelayLatencyChecker');
 
-  static Future<int> _getLatency(
-    String host, {
-    int port = 443,
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
+  static Future<int> _probeLatency(
+    String host,
+    int port,
+    Duration timeout,
+  ) async {
     final stopwatch = Stopwatch()..start();
     try {
       final socket = await Socket.connect(host, port, timeout: timeout);
@@ -39,9 +39,10 @@ class RelayLatencyChecker {
   ///
   /// Returns a map of RV atSign → latency in milliseconds, or -1 if unreachable.
   static Future<Map<String, int>> measureLatencies(
-    Map<String, dynamic> rvServers,
-  ) async {
-    final latencyMap = <String, int>{};
+    Map<String, dynamic> rvServers, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final latencies = <String, int>{};
 
     for (final rv in rvServers.keys) {
       final addr = rvServers[rv] as Map<String, dynamic>;
@@ -49,13 +50,13 @@ class RelayLatencyChecker {
       final port = addr['port'] as int?;
 
       if (ip == null || port == null) {
-        logger.warning('Missing ip or port for $rv, skipping');
-        latencyMap[rv] = -1;
+        logger.warning('Missing ip for $rv, skipping');
+        latencies[rv] = -1;
         continue;
       }
-      latencyMap[rv] = await _getLatency(ip, port: port);
+      latencies[rv] = await _probeLatency(ip, port, timeout);
     }
 
-    return latencyMap;
+    return latencies;
   }
 }
