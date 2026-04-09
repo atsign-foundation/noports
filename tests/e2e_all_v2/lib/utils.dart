@@ -455,12 +455,6 @@ Future<List<DockerInstance>> startDockerDaemons({
       ],
     );
     dockerInstances.add(dockerInstance1);
-    dockerInstance1.process!.stdout.transform(SystemEncoding().decoder).listen((data) {
-      print('Docker instance ${dockerInstance1.containerName} stdout: $data');
-    });
-    dockerInstance1.process!.stderr.transform(SystemEncoding().decoder).listen((data) {
-      print('Docker instance ${dockerInstance1.containerName} stdout: $data');
-    });
     final DockerInstance dockerInstance2 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
@@ -473,8 +467,8 @@ Future<List<DockerInstance>> startDockerDaemons({
         '-c',
         'sudo service ssh start && '
         '/usr/local/bin/sshnpd '
-        '-m ${clientAtsign} '
         '-a ${daemonAtsign} '
+        '-m ${clientAtsign} '
         '-k ${daemonAtsignKeyFilePath} '
         '--root-domain ${rootDomain} '
         '-d ${deviceName2} '
@@ -490,9 +484,6 @@ Future<List<DockerInstance>> startDockerDaemons({
       ],
     ); 
     dockerInstances.add(dockerInstance2);
-    dockerInstance2.process!.stdout.transform(SystemEncoding().decoder).listen((data) {
-      print('Docker instance ${dockerInstance2.containerName} stdout: $data');
-    });
   }
   return dockerInstances;
 }

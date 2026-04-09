@@ -112,8 +112,20 @@ Future<void> main(List<String> args) async {
     print('Started ${dockerInstances.length} docker daemon instances');
     for(final DockerInstance dockerInstance in dockerInstances) {
       print('    ${dockerInstance.containerName}');
+      await dockerInstance.process!.stdout.transform(utf8.decoder).listen((line) {
+        print('        $line');
+      });
+      await dockerInstance.process!.stderr.transform(utf8.decoder).listen((line) {
+        print('        [ERR] $line');
+      });
     }
     print('');
+
+    for (final DockerInstance dockerInstance in dockerInstances) {
+      if(await dockerInstance.isActive()) {
+        await dockerInstance.process!.exitCode;
+      }
+    }
 
     exit(0);
   } catch (e) {

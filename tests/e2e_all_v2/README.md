@@ -27,7 +27,8 @@ rm -rf e2e_all_v2/ && docker stop $(docker ps -q) 2>/dev/null ; dart run tests/e
     --relay-atsign "@rv_am" \
     --policy-atsign "@policy_jttest" \
     --events-atsign "@events_jttest" \
-    --base-directory "e2e_all_v2"
+    --base-directory "e2e_all_v2" \
+    --root-domain "root.atsign.org"
 ```
 
 notes:
