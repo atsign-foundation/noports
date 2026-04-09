@@ -403,45 +403,28 @@ Future<List<DockerInstance>> startDockerDaemons({
     dockerImages.add(dockerImage);
   }
 
-
-  List<DockerImage> completeDockerImages = [];
-
-  List<(Process, DockerImage)> pullProcesses = [];
+  // ensure all docker images exist on machine
   for(final DockerImage dockerImage in dockerImages) {
-    if(dockerImage.imageType == DockerImageType.current) {
-      // don't try pulling 'current'
-      continue;
-    }
-    final Process pullProcess = await dockerImage.pull(quiet: true);
-    pullProcesses.add((pullProcess, dockerImage));
-  }
-
-  List<(Process, DockerImage)> buildProcesses = [];
-  for(final (Process, DockerImage) e in pullProcesses) {
-    final Process pullProcess = e.$1;
-    final DockerImage dockerImage = e.$2;
-    if((await pullProcess.exitCode) == 0) {
-      completeDockerImages.add(dockerImage);
+    if(!(await dockerImage.existsOnMachine())) {
+      print('Docker image not found on machine: ${dockerImage.fullImageName}. Pulling from registry...');
+      final Process pullProcess = await dockerImage.pull(quiet: true);
+      if((await pullProcess.exitCode) != 0) {
+        print('Failed to pull docker image ${dockerImage.fullImageName}. Exit code: ${await pullProcess.exitCode}');
+        print('Building instead...');
+        final Process buildProcess = await dockerImage.build(quiet: true);
+        if((await buildProcess.exitCode) != 0) {
+          throw Exception('Failed to build docker image ${dockerImage.fullImageName}. Exit code: ${await buildProcess.exitCode}');
+        }
+      }
     } else {
-      final Process buildProcess = await dockerImage.build(quiet: true);
-      buildProcesses.add((buildProcess, dockerImage));
-    }
-  }
-
-  for(final (Process, DockerImage) e in buildProcesses) {
-    final Process buildProcess = e.$1;
-    final DockerImage dockerImage = e.$2;
-    if((await buildProcess.exitCode) == 0) {
-      completeDockerImages.add(dockerImage);
-    } else {
-      throw Exception('Failed to build docker image ${dockerImage.fullImageName}: ${await buildProcess.exitCode}');
+      print('Docker image already exists on machine: ${dockerImage.fullImageName}');
     }
   }
 
   List<DockerInstance> dockerInstances = [];
-  for(final DockerImage completeDockerImage in completeDockerImages) {
+  for(final DockerImage dockerImage in dockerImages) {
     final DockerInstance dockerInstance1 = DockerInstance(
-      dockerImage: completeDockerImage,
+      dockerImage: dockerImage,
       testRunId: testRunId,
     );
     await dockerInstance1.run(
@@ -457,7 +440,7 @@ Future<List<DockerInstance>> startDockerDaemons({
     );
     dockerInstances.add(dockerInstance1);
     final DockerInstance dockerInstance2 = DockerInstance(
-      dockerImage: completeDockerImage,
+      dockerImage: dockerImage,
       testRunId: testRunId,
       uniqueIdentifier: 'f',
     );
