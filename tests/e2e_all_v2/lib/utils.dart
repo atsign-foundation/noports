@@ -381,7 +381,7 @@ bool isCommandAvailable(String command) {
   }
 }
 
-Future<List<Process>> startDockerDaemons({
+Future<List<DockerInstance>> startDockerDaemons({
   required final List<String> daemonVersions,
   required final String daemonAtsign,
   required final String rootDomain,
@@ -408,6 +408,10 @@ Future<List<Process>> startDockerDaemons({
 
   List<(Process, DockerImage)> pullProcesses = [];
   for(final DockerImage dockerImage in dockerImages) {
+    if(dockerImage.imageType == DockerImageType.current) {
+      // don't try pulling 'current'
+      continue;
+    }
     final Process pullProcess = await dockerImage.pull(quiet: true);
     pullProcesses.add((pullProcess, dockerImage));
   }
@@ -434,17 +438,41 @@ Future<List<Process>> startDockerDaemons({
     }
   }
 
-  List<Process> dockerInstanceProcesses = [];
+  List<DockerInstance> dockerInstances = [];
   for(final DockerImage completeDockerImage in completeDockerImages) {
-    final DockerInstance dockerInstance = DockerInstance(
+    final DockerInstance dockerInstance1 = DockerInstance(
       dockerImage: completeDockerImage,
       testRunId: testRunId,
     );
-    final Process dockerInstanceProcess = await dockerInstance.run(
+    await dockerInstance1.run(
       entrypoint: [
+        '/bin/bash',
+        '-c',
+        'sudo service ssh start && '
+        '/usr/local/bin/sshnpd '
+        '-a ${daemonAtsign} '
+        '-r ${rootDomain} '
+        '-v '
       ],
     );
-    dockerInstanceProcesses.add(dockerInstanceProcess);
+    dockerInstances.add(dockerInstance1);
+    final DockerInstance dockerInstance2 = DockerInstance(
+      dockerImage: completeDockerImage,
+      testRunId: testRunId,
+      uniqueIdentifier: 'f',
+    );
+    await dockerInstance2.run(
+      entrypoint: [
+        '/bin/bash',
+        '-c',
+        'sudo service ssh start && '
+        '/usr/local/bin/sshnpd '
+        '-a ${daemonAtsign}f '
+        '-r ${rootDomain} '
+        '-v -s -u'
+      ],
+    ); 
+    dockerInstances.add(dockerInstance2);
   }
-  return dockerInstanceProcesses;
+  return dockerInstances;
 }

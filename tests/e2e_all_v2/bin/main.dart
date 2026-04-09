@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_image.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
 import 'package:e2e_all_v2/apkam_setup.dart';
 import 'package:e2e_all_v2/language.dart';
@@ -99,13 +100,19 @@ Future<void> main(List<String> args) async {
     );
 
     // 7. set up docker daemons
-    final List<Process> dockerInstanceProcesses = await startDockerDaemons(
+    final List<DockerInstance> dockerInstances = await startDockerDaemons(
       daemonVersions: daemonVersions,
       daemonAtsign: e2eAllV2Params.daemonAtsign,
       rootDomain: e2eAllV2Params.rootDomain,
       testRunId: testRunId,
     );
-    print('Started ${dockerInstanceProcesses.length} docker daemon instances');
+    print('');
+    print('Started ${dockerInstances.length} docker daemon instances');
+    for(final DockerInstance dockerInstance in dockerInstances) {
+      print('    ${dockerInstance.containerName}');
+    }
+    print('');
+
     exit(0);
   } catch (e) {
     print(e);
