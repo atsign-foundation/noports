@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:e2e_all_v2/client_binary.dart';
-import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/e2e_all_v2_params.dart';
 import 'package:e2e_all_v2/apkam_setup.dart';
@@ -90,7 +90,7 @@ Future<void> main(List<String> args) async {
 
     // 6. set up client and daemon apkam keys
     final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.version == 'current');
-    await setUpApkamKeys(
+    Map<String, File> apkamKeys = await setUpApkamKeys(
       atActivateClientBinary: atActivateClientBinary,
       clientAtsign: e2eAllV2Params.clientAtsign,
       daemonAtsign: e2eAllV2Params.daemonAtsign,
@@ -101,11 +101,13 @@ Future<void> main(List<String> args) async {
 
     // 7. set up docker daemons
     final List<DockerInstance> dockerInstances = await startDockerDaemons(
+      clientAtsign: e2eAllV2Params.clientAtsign,
       daemonVersions: daemonVersions,
       daemonAtsign: e2eAllV2Params.daemonAtsign,
       rootDomain: e2eAllV2Params.rootDomain,
       testRunId: testRunId,
-    );
+      apkamKeysDirectory: apkamKeysDirectory,
+      daemonAtsignKeyFilePath: '/atsign/.atsign/keys/${apkamKeys[e2eAllV2Params.daemonAtsign]!.path.split('/').last}');
     print('');
     print('Started ${dockerInstances.length} docker daemon instances');
     for(final DockerInstance dockerInstance in dockerInstances) {

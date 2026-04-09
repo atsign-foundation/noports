@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:e2e_all_v2/apkam_setup.dart';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -383,9 +384,12 @@ bool isCommandAvailable(String command) {
 
 Future<List<DockerInstance>> startDockerDaemons({
   required final List<String> daemonVersions,
+  required final String clientAtsign,
   required final String daemonAtsign,
+  required final String daemonAtsignKeyFilePath,
   required final String rootDomain,
   required final String testRunId,
+  required final Directory apkamKeysDirectory,
 }) async {
   List<DockerImage> dockerImages = [];
   for(final String daemonVersion in daemonVersions) {
@@ -427,6 +431,7 @@ Future<List<DockerInstance>> startDockerDaemons({
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
+    final String deviceName1 = getApkamDeviceName(which: 'daemon', testRunId: testRunId);
     await dockerInstance1.run(
       entrypoint: [
         '/bin/bash',
@@ -434,28 +439,60 @@ Future<List<DockerInstance>> startDockerDaemons({
         'sudo service ssh start && '
         '/usr/local/bin/sshnpd '
         '-a ${daemonAtsign} '
-        '-r ${rootDomain} '
+        '-m ${clientAtsign} '
+        '-k ${daemonAtsignKeyFilePath} '
+        '--root-domain ${rootDomain} '
+        '-d ${deviceName1} '
         '-v '
+      ],
+      quiet: false,
+      removeWhenStopped: true,
+      volumeMappings: [
+        VolumeMapping(
+          localDirectory: apkamKeysDirectory,
+          containerDirectory: '/atsign/.atsign/keys',
+        ),
       ],
     );
     dockerInstances.add(dockerInstance1);
+    dockerInstance1.process!.stdout.transform(SystemEncoding().decoder).listen((data) {
+      print('Docker instance ${dockerInstance1.containerName} stdout: $data');
+    });
+    dockerInstance1.process!.stderr.transform(SystemEncoding().decoder).listen((data) {
+      print('Docker instance ${dockerInstance1.containerName} stdout: $data');
+    });
     final DockerInstance dockerInstance2 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
       uniqueIdentifier: 'f',
     );
+    final String deviceName2 = '${deviceName1}f';
     await dockerInstance2.run(
       entrypoint: [
         '/bin/bash',
         '-c',
         'sudo service ssh start && '
         '/usr/local/bin/sshnpd '
-        '-a ${daemonAtsign}f '
-        '-r ${rootDomain} '
+        '-m ${clientAtsign} '
+        '-a ${daemonAtsign} '
+        '-k ${daemonAtsignKeyFilePath} '
+        '--root-domain ${rootDomain} '
+        '-d ${deviceName2} '
         '-v -s -u'
+      ],
+      quiet: false,
+      removeWhenStopped: true,
+      volumeMappings: [
+        VolumeMapping(
+          localDirectory: apkamKeysDirectory,
+          containerDirectory: '/atsign/.atsign/keys',
+        ),
       ],
     ); 
     dockerInstances.add(dockerInstance2);
+    dockerInstance2.process!.stdout.transform(SystemEncoding().decoder).listen((data) {
+      print('Docker instance ${dockerInstance2.containerName} stdout: $data');
+    });
   }
   return dockerInstances;
 }

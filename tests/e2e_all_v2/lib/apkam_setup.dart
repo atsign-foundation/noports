@@ -22,7 +22,7 @@ String getApkamKeysFilePath({
   return path.join(apkamKeysDirectory.path, '${atsign}.${apkamApp}.${apkamDeviceName}.atKeys');
 }
 
-Future<void> setUpApkamKeys({
+Future<Map<String, File>> setUpApkamKeys({
   required final ClientBinary atActivateClientBinary,
   required final String clientAtsign,
   required final String daemonAtsign,
@@ -43,6 +43,7 @@ Future<void> setUpApkamKeys({
     throw ArgumentError('apkamKeysDirectory does not exist at path: ${apkamKeysDirectory.path}');
   }
 
+  Map<String, File> result = {};
   for(final (String, String) entry in [
     ('client', clientAtsign),
     ('daemon', daemonAtsign),
@@ -150,6 +151,13 @@ Future<void> setUpApkamKeys({
       print('Error enrolling $atsign: ${enrollProcess.stderr.toString()}');
       throw Exception('Error enrolling $atsign: ${enrollProcess.stderr}');
     }
+
+    final File apkamKeysFile = File(apkamKeysPath);
+    if(!(await apkamKeysFile.exists())) {
+      throw Exception('Error: apkam keys file was not created for $atsign at expected path: $apkamKeysPath');
+    }
+    result[atsign] = File(apkamKeysPath);
   }
+  return result;
 }
 
