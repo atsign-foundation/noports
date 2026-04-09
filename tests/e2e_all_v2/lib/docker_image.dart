@@ -119,7 +119,7 @@ class DockerImage {
       throw Exception('Dockerfile does not exist: $dockerfile');
     }
     final String executable = 'docker';
-    List<String> args = [
+    final List<String> args = [
       'build',
       '-f', dockerfile,
       '-t', fullImageName,

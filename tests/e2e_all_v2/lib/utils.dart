@@ -442,10 +442,7 @@ Future<List<Process>> startDockerDaemons({
     );
     final Process dockerInstanceProcess = await dockerInstance.run(
       entrypoint: [
-        '-a', daemonAtsign,
-        '-r', rootDomain,
       ],
-      logDirectory: joinPath('logs', part2: completeDockerImage.language.name, part3: completeDockerImage.tag).path,
     );
     dockerInstanceProcesses.add(dockerInstanceProcess);
   }
