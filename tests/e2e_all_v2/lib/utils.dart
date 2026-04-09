@@ -13,6 +13,7 @@ Future<ProcessResult> runCommand(
   String? workingDirectory,
   Map<String, String>? environment,
   printCommand = false,
+  dynamic stdinData,
 }) async {
   print('> $executable ${arguments.join(' ')}');
   final ProcessResult result = await Process.run(
@@ -51,6 +52,22 @@ Future<Process> startCommand(
     });
   }
   return process;
+}
+
+String versionForDeviceName(final String version) {
+  if(version == 'current') {
+    return 'c';
+  }
+  // v5.9.4 -> 594
+  // c0.0.1 --> 001
+  return version.replaceAll('.', '').replaceAll('v', '').replaceAll('c', '');
+}
+
+String getDeviceNameNoFlags({
+  required final String testRunId,
+  required final Language language,
+  required final String version}) {
+  return '${testRunId}${language.name.substring(0, 1)}${versionForDeviceName(version)}';
 }
 
 String getOsString() {
@@ -382,7 +399,7 @@ bool isCommandAvailable(String command) {
   }
 }
 
-Future<List<DockerInstance>> startDockerDaemons({
+Future<List<(String, DockerInstance)>> startDockerDaemons({
   required final List<String> daemonVersions,
   required final String clientAtsign,
   required final String daemonAtsign,
@@ -425,13 +442,15 @@ Future<List<DockerInstance>> startDockerDaemons({
     }
   }
 
-  List<DockerInstance> dockerInstances = [];
+  List<(String, DockerInstance)> dockerInstances = [];
   for(final DockerImage dockerImage in dockerImages) {
     final DockerInstance dockerInstance1 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
-    final String deviceName1 = getApkamDeviceName(which: 'daemon', testRunId: testRunId);
+    final String deviceName1 = getDeviceNameNoFlags(testRunId: testRunId,
+      language: dockerInstance1.dockerImage.language,
+      version: dockerInstance1.dockerImage.tag);
     await dockerInstance1.run(
       entrypoint: [
         '/bin/bash',
@@ -454,13 +473,13 @@ Future<List<DockerInstance>> startDockerDaemons({
         ),
       ],
     );
-    dockerInstances.add(dockerInstance1);
+    dockerInstances.add((deviceName1, dockerInstance1));
     final DockerInstance dockerInstance2 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
-      uniqueIdentifier: 'f',
+      uniqueIdentifier: '_f',
     );
-    final String deviceName2 = '${deviceName1}f';
+    final String deviceName2 = '${deviceName1}_f';
     await dockerInstance2.run(
       entrypoint: [
         '/bin/bash',
@@ -483,7 +502,19 @@ Future<List<DockerInstance>> startDockerDaemons({
         ),
       ],
     ); 
-    dockerInstances.add(dockerInstance2);
+    dockerInstances.add((deviceName2, dockerInstance2));
   }
   return dockerInstances;
+}
+
+bool versionIsAtLeast(String versionStr, String minimumVersion) {
+  if(versionStr.startsWith('v') || versionStr.startsWith('c')) {
+    versionStr = versionStr.substring(1);
+  }
+  if(versionStr == 'current') {
+    return true; // treat "current" as a very high version for comparison purposes
+  }
+  final Version version = Version.parse(versionStr);
+  final Version minimumVersionParsed = Version.parse(minimumVersion);
+  return version >= minimumVersionParsed;
 }

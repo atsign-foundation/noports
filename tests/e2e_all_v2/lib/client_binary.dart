@@ -47,20 +47,18 @@ class ClientBinary {
 
   Future<Process> execute({
     required final List<String> args,
-    final String? logDirectory,
     final String? workingDirectory,
     final Map<String, String>? environment,
   }) async {
     if (!(await exists())) {
       throw Exception('Binary file does not exist: ${file.path}');
     }
-    print('    Executing ${file.path} ${args.join(' ')}');
-    final Process process = await Process.start(
+    print('> ${file.path} ${args.join(' ')}');
+    return await Process.start(
       file.path,
       args,
       workingDirectory: workingDirectory,
       environment: environment,
     );
-    return process;
   }
 }
