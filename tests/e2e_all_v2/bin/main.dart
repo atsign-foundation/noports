@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:async';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/test_result.dart';
@@ -196,6 +197,7 @@ Future<List<TestResult>> _001_minus_s_flag({
         '-i', identityFile.path, '-d', deviceNameNoFlags,
         '-h', relayAtsign, '-u', remoteUsername,
         '--root-domain', rootDomain,
+        '-s',
     ];
     if(language == Language.c) {
       // if we're running against the C daemon,
@@ -216,25 +218,103 @@ Future<List<TestResult>> _001_minus_s_flag({
       if(!(await apkamKeys[clientAtsign]!.exists())) {
         throw Exception('Expected apkam key file for client at ${apkamKeys[clientAtsign]!.path} does not exist.');
       }
-      final String apkamKeyFileName = apkamKeys[clientAtsign]!.path.split('/').last;
       args.add('-k');
-      args.add('/${remoteUsername}/.atsign/keys/${apkamKeyFileName}');
+      args.add(apkamKeys[clientAtsign]!.path);
     }
-
-    args.add('-s');
 
     final Process process1 = await currentSshnpClientBinary.execute(
       args: args,
     );
 
-    if((await process1.exitCode) == 0) {
-      print('As expected, sshnp without -s flag failed to connect to daemon $daemonVersion');
+    process1.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+      print('sshnp stderr: $line');
+    });
+
+    process1.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+      print('sshnp stdout: $line');
+    });
+
+    final int exitCode = await process1.exitCode;
+    if(exitCode == 0) {
+      // TODO add TestResult
     } else {
-      print('Unexpectedly, sshnp without -s flag succeeded in connecting to daemon $daemonVersion');
+      // TODO add TestResult
     }
 
     // 3. Run sshnp against daemon with flags, expect pass
     final String deviceNameWithFlags = '${deviceNameNoFlags}_f';
+
+    // Make this args thing a helper function
+    args = [];
+    args = [
+        '-f', clientAtsign, '-t', daemonAtsign,
+        '-i', identityFile.path, '-d', deviceNameWithFlags,
+        '-h', relayAtsign, '-u', remoteUsername,
+        '--root-domain', rootDomain,
+        '-s',
+    ];
+    if(language == Language.c) {
+      // if we're running against the C daemon,
+      // only add -x
+      args.add('-x');
+    } else if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.0.0')) {
+      // if the client we're running as is at least v5.0.0
+      // and we're connecting to another Dart daemon,
+      // add -x, --no-ad, and --no-et
+      args.add('-x');
+      args.add('--no-ad');
+      args.add('--no-et');
+    }
+
+    if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.3.0')) {
+      // if the cleint we're running as it at least v5.3.0
+      // add -k $clientApkamKeyFilePath
+      if(!(await apkamKeys[clientAtsign]!.exists())) {
+        throw Exception('Expected apkam key file for client at ${apkamKeys[clientAtsign]!.path} does not exist.');
+      }
+      args.add('-k');
+      args.add(apkamKeys[clientAtsign]!.path);
+    }
+
+    final Process process2 = await currentSshnpClientBinary.execute(
+      args: args,
+    );
+    
+    process2.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+      print('sshnp stderr: $line');
+    });
+
+    final int exitCode2 = await process2.exitCode;
+    if(exitCode2 == 0) {
+      // TODO add TestResult
+    } else {
+      // TODO add TestResult
+    }
+
+    String sshCommand = process2.stdout.transform(utf8.decoder).join().toString().trim();
+    print('ssh command from sshnp stdout: $sshCommand');
+    // remove ssh part
+    if(sshCommand.startsWith('ssh ')) {
+      sshCommand = sshCommand.substring(4);
+    } else {
+      throw Exception('Expected ssh command from sshnp to start with "ssh ". Actual command: $sshCommand');
+    } 
+    final Process sshProcess = await Process.start(
+      'ssh',
+      sshCommand.split(' '),
+    );
+    sshProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+      print('ssh stderr: $line');
+    });
+    sshProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+      print('ssh stdout: $line');
+    });
+    final int sshExitCode = await sshProcess.exitCode;
+    if(sshExitCode == 0) {
+      // TODO add TestResult
+    } else {
+      // TODO add TestResult
+    }
   }
 
   //     b. Verify it fails

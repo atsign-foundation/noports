@@ -254,8 +254,9 @@ Future<List<ClientBinary>> _compileCurrent({
     final Process compileProcess = element.$1;
     final ClientBinaryType binaryType = element.$2;
     final String outputPath = element.$3;
-    if((await compileProcess.exitCode) != 0) {
-      print('Failed to compile ${element.$2.name}. Exit code: ${await compileProcess.exitCode}');
+    final int exitCode = await compileProcess.exitCode;
+    if(exitCode != 0) {
+      print('Failed to compile ${element.$2.name}. Exit code: $exitCode');
       compileProcess.stderr.transform(SystemEncoding().decoder).listen((data) {
         print('Compile stderr: $data');
       });
@@ -508,19 +509,27 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
 }
 
 bool versionIsAtLeast(String versionStr, String minimumVersion) {
-  if(versionStr.startsWith('v') || versionStr.startsWith('c')) {
-    versionStr = versionStr.substring(1);
-  }
-  if(minimumVersion.startsWith('v') || minimumVersion.startsWith('c')) {
-    minimumVersion = minimumVersion.substring(1);
-  }
+  // Handle 'current' version first, before stripping prefixes
   if(versionStr == 'current') {
     return true; // treat "current" as a very high version for comparison purposes
   }
   if(minimumVersion == 'current') {
     return false; // "current" is only greater than versions that are less than "current"
   }
-  final Version version = Version.parse(versionStr);
-  final Version minimumVersionParsed = Version.parse(minimumVersion);
+
+  // Strip prefixes from version strings
+  String cleanVersionStr = versionStr;
+  String cleanMinimumVersion = minimumVersion;
+
+  if(cleanVersionStr.startsWith('v') || cleanVersionStr.startsWith('c')) {
+    cleanVersionStr = cleanVersionStr.substring(1);
+  }
+  if(cleanMinimumVersion.startsWith('v') || cleanMinimumVersion.startsWith('c')) {
+    cleanMinimumVersion = cleanMinimumVersion.substring(1);
+  }
+
+  // Parse and compare versions
+  final Version version = Version.parse(cleanVersionStr);
+  final Version minimumVersionParsed = Version.parse(cleanMinimumVersion);
   return version >= minimumVersionParsed;
 }
