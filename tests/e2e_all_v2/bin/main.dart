@@ -135,6 +135,8 @@ Future<void> main(List<String> args) async {
         testRunId: testRunId, 
         allClientBinaries: clientBinaries,
         dockerInstances: dockerInstances,
+        apkamKeys: apkamKeys,
+        remoteUsername: 'atsign',
       )));
     
 
@@ -167,6 +169,7 @@ Future<List<TestResult>> _001_minus_s_flag({
   required final String testRunId,
   required final List<ClientBinary> allClientBinaries,
   required final List<(String, DockerInstance)> dockerInstances,
+  required final Map<String, File> apkamKeys,
 }) async {
   List<TestResult> testResults = [];
   // 1. generate new ssh key
@@ -188,7 +191,6 @@ Future<List<TestResult>> _001_minus_s_flag({
       language: language,
       version: version);
 
-    // Construct args
     List<String> args = [
         '-f', clientAtsign, '-t', daemonAtsign,
         '-i', identityFile.path, '-d', deviceNameNoFlags,
@@ -199,7 +201,7 @@ Future<List<TestResult>> _001_minus_s_flag({
       // if we're running against the C daemon,
       // only add -x
       args.add('-x');
-    } else if(versionIsAtLeast(version, 'v5.0.0') {
+    } else if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.0.0')) {
       // if the client we're running as is at least v5.0.0
       // and we're connecting to another Dart daemon,
       // add -x, --no-ad, and --no-et
@@ -208,10 +210,29 @@ Future<List<TestResult>> _001_minus_s_flag({
       args.add('--no-et');
     }
 
-    currentSshnpClientBinary.execute(
+    if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.3.0')) {
+      // if the cleint we're running as it at least v5.3.0
+      // add -k $clientApkamKeyFilePath
+      if(!(await apkamKeys[clientAtsign]!.exists())) {
+        throw Exception('Expected apkam key file for client at ${apkamKeys[clientAtsign]!.path} does not exist.');
+      }
+      final String apkamKeyFileName = apkamKeys[clientAtsign]!.path.split('/').last;
+      args.add('-k');
+      args.add('/${remoteUsername}/.atsign/keys/${apkamKeyFileName}');
+    }
+
+    args.add('-s');
+
+    final Process process1 = await currentSshnpClientBinary.execute(
       args: args,
     );
-  
+
+    if((await process1.exitCode) == 0) {
+      print('As expected, sshnp without -s flag failed to connect to daemon $daemonVersion');
+    } else {
+      print('Unexpectedly, sshnp without -s flag succeeded in connecting to daemon $daemonVersion');
+    }
+
     // 3. Run sshnp against daemon with flags, expect pass
     final String deviceNameWithFlags = '${deviceNameNoFlags}_f';
   }

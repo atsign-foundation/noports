@@ -511,8 +511,14 @@ bool versionIsAtLeast(String versionStr, String minimumVersion) {
   if(versionStr.startsWith('v') || versionStr.startsWith('c')) {
     versionStr = versionStr.substring(1);
   }
+  if(minimumVersion.startsWith('v') || minimumVersion.startsWith('c')) {
+    minimumVersion = minimumVersion.substring(1);
+  }
   if(versionStr == 'current') {
     return true; // treat "current" as a very high version for comparison purposes
+  }
+  if(minimumVersion == 'current') {
+    return false; // "current" is only greater than versions that are less than "current"
   }
   final Version version = Version.parse(versionStr);
   final Version minimumVersionParsed = Version.parse(minimumVersion);
