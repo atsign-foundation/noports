@@ -25,6 +25,7 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
+  pointycastle: ^4.0.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
