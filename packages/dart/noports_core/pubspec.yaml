@@ -35,6 +35,7 @@ dependencies:
   at_onboarding_cli: ^1.14.2
 
 dependency_overrides:
+  pointycastle: ^4.0.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
