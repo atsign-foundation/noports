@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/utils.dart';
 
 enum ClientBinaryType {
   sshnp,
@@ -49,16 +50,18 @@ class ClientBinary {
     required final List<String> args,
     final String? workingDirectory,
     final Map<String, String>? environment,
+    final bool printCommand = false,
   }) async {
     if (!(await exists())) {
       throw Exception('Binary file does not exist: ${file.path}');
     }
     print('> ${file.path} ${args.join(' ')}');
-    return await Process.start(
+    return await startCommand(
       file.path,
       args,
       workingDirectory: workingDirectory,
       environment: environment,
+      printCommand: printCommand,
     );
   }
 }

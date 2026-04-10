@@ -45,10 +45,10 @@ Future<Process> startCommand(
   );
   if(printCommand) {
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
-      print('$data');
+      print('${executable} stdout: $data');
     });
     process.stderr.transform(SystemEncoding().decoder).listen((data) {
-      print('$data');
+      print('${executable} stderr: $data');
     });
   }
   return process;

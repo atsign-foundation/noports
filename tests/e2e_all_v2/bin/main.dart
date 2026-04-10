@@ -279,9 +279,18 @@ Future<List<TestResult>> _001_minus_s_flag({
     final Process process2 = await currentSshnpClientBinary.execute(
       args: args,
     );
-    
-    process2.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+
+    final StringBuffer stdoutBuffer = StringBuffer();
+    final StringBuffer stderrBuffer = StringBuffer();
+
+    process2.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      print('sshnp stdout: $line');
+      stdoutBuffer.writeln(line);
+    });
+
+    process2.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
       print('sshnp stderr: $line');
+      stderrBuffer.writeln(line);
     });
 
     final int exitCode2 = await process2.exitCode;
@@ -291,24 +300,26 @@ Future<List<TestResult>> _001_minus_s_flag({
       // TODO add TestResult
     }
 
-    String sshCommand = process2.stdout.transform(utf8.decoder).join().toString().trim();
+    String sshCommand = stdoutBuffer.toString().trim();
     print('ssh command from sshnp stdout: $sshCommand');
     // remove ssh part
     if(sshCommand.startsWith('ssh ')) {
       sshCommand = sshCommand.substring(4);
     } else {
       throw Exception('Expected ssh command from sshnp to start with "ssh ". Actual command: $sshCommand');
-    } 
-    final Process sshProcess = await Process.start(
-      'ssh',
-      sshCommand.split(' '),
+    }
+    List<String> sshCommandArgs = sshCommand.split(' ');
+    sshCommandArgs.add('echo');
+    sshCommandArgs.add('`date`'); 
+    sshCommandArgs.add('`whoami`');
+    sshCommandArgs.add('`hostname`');
+    sshCommandArgs.add('TEST PASSED');
+    
+    final Process sshProcess = await startCommand(
+      'ssh', 
+      sshCommandArgs,
+      // printCommand: true,
     );
-    sshProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
-      print('ssh stderr: $line');
-    });
-    sshProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
-      print('ssh stdout: $line');
-    });
     final int sshExitCode = await sshProcess.exitCode;
     if(sshExitCode == 0) {
       // TODO add TestResult
