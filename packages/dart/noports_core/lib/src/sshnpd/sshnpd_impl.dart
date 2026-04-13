@@ -438,12 +438,12 @@ class SshnpdImpl
           _handleNptRequestNotification(notification, auth);
           break;
 
-        case 'latency_check':
+        case 'relay_latency_request':
           logger.info(
             '$messageType received from ${notification.from}'
             ' ( ${notification.value})',
           );
-          await _handleLatencyCheckRequest(notification);
+          await _handleRelayLatencyCheckRequest(notification);
           break;
 
         default:
@@ -616,7 +616,9 @@ class SshnpdImpl
     unawaited(_notify(atKey: atKey, value: jsonEncode(pingResponse)));
   }
 
-  Future<void> _handleLatencyCheckRequest(AtNotification notification) async {
+  Future<void> _handleRelayLatencyCheckRequest(
+    AtNotification notification,
+  ) async {
     if (notification.value == null) {
       logger.warning(
         'No srvd IPs provided in latency check request. Ignoring.',
@@ -626,24 +628,24 @@ class SshnpdImpl
     final Map<String, dynamic> rvServers;
     try {
       rvServers = jsonDecode(notification.value!) as Map<String, dynamic>;
-    } on FormatException {
+    } catch (e) {
       logger.warning(
-        'Malformed latency check request from ${notification.from}. Ignoring.',
+        'Invalid latency check request from ${notification.from}. Ignoring.',
       );
+      logger.finer('Caught: $e');
       return;
     }
     final rvLatencyMap = await RelayLatencyChecker.measureLatencies(rvServers);
     logger.info('Latency per relay (ms): $rvLatencyMap');
 
     var atKey = AtKey()
-      ..key = 'rv_latency.$device'
+      ..key = 'relay_latency.response.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
       ..namespace = DefaultArgs.namespace
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttl = 10000
         ..namespaceAware = true);
 
     await _notify(atKey: atKey, value: jsonEncode(rvLatencyMap));

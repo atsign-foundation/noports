@@ -335,19 +335,20 @@ abstract class SshnpdChannel
     Map<String, dynamic> rvServers,
   ) async {
     final completer = Completer<Map<String, int>>();
-    final regex = 'rv_latency.${params.device}.${DefaultArgs.namespace}';
+    final regex =
+        'relay_latency_response.${params.device}.${DefaultArgs.namespace}';
 
     late StreamSubscription<AtNotification> subscription;
     subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
       notification,
     ) {
-      logger.info('Received rv_latencies from device: ${notification.value}');
+      logger.info('Received relay latencies from device: ${notification.value}');
       if (notification.from == params.sshnpdAtSign && !completer.isCompleted) {
         try {
           final Map<String, dynamic> raw = jsonDecode(notification.value!);
           completer.complete(Map<String, int>.from(raw));
         } catch (e) {
-          logger.warning('Failed to decode rv_latencies from device: $e');
+          logger.warning('Failed to decode relay latencies from device: $e');
           logger.finer('Response from device: ${notification.value}');
 
           completer.completeError(
@@ -364,11 +365,10 @@ abstract class SshnpdChannel
     /// Send a latency check notification
     await notify(
       AtKey()
-        ..key = 'latency_check.${params.device}'
+        ..key = 'relay_latency_request.${params.device}'
         ..namespace = DefaultArgs.namespace
         ..sharedBy = params.clientAtSign
-        ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 60000),
+        ..sharedWith = params.sshnpdAtSign,
       jsonEncode(rvServers),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,

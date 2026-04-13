@@ -20,6 +20,7 @@ class RelaySelector with AtClientBindings {
   @override
   final AtSignLogger logger = AtSignLogger('RelaySelector');
 
+  /// ToDo: this needs to be constructed using the root address
   final String rvServerListUrl =
       'https://atsign-foundation.github.io/noports/standard_relays.json';
 
@@ -39,11 +40,10 @@ class RelaySelector with AtClientBindings {
   ///
   /// If [channel] is provided (e.g. reusing an already-created session channel),
   /// it will be used directly. Otherwise a temporary channel is created.
-  Future<String> selectBestRelay(
-      SshnpParams params, {
-        List<Atsign>? rvAtSigns,
-        SshnpdChannel? channel,
-      }) async {
+  Future<String> selectBestRelay(SshnpdChannelParams params, {
+    List<Atsign>? rvAtSigns,
+    SshnpdChannel? channel,
+  }) async {
     List<Atsign> toCheck = [];
 
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
@@ -52,7 +52,7 @@ class RelaySelector with AtClientBindings {
       // fetch a list of available RVs from [rvServerListUrl]
       final standardRelaysRaw = await _fetchStandardRelays();
       defaultRvList =
-      standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
+          standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
       toCheck = defaultRvList.keys.map((s) => s.toAtsign()).toList();
     }
     logger.info('Checking latency for RVs: $toCheck');
@@ -73,9 +73,6 @@ class RelaySelector with AtClientBindings {
       throw StateError('No RV servers could be resolved');
     }
 
-    final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
-    logger.info('Fetched latencies for client -> RV: $clientLatency');
-
     channel ??= SshnpdDefaultChannel(
       atClient: atClient,
       params: params,
@@ -83,9 +80,14 @@ class RelaySelector with AtClientBindings {
       namespace: DefaultArgs.namespace,
     );
 
-    final deviceLatency = await channel.fetchDeviceRelayLatencies(rvIpMap);
+    //Start device latency fetch concurrently while we measure the client latency
+    final deviceLatencyFuture = channel.fetchDeviceRelayLatencies(rvIpMap);
+
+    final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
+    logger.info('Fetched latencies for client -> RV: $clientLatency');
+
+    final deviceLatency = await deviceLatencyFuture;
     logger.info('Fetched latencies for device -> RV: $deviceLatency');
-    channel = null;
 
     return _lowestAverageLatency(deviceLatency, clientLatency);
   }
@@ -123,7 +125,7 @@ class RelaySelector with AtClientBindings {
 
     // The srvd will respond with a key 'discover.sshrvd' sharedBy the srvd
     // e.g. @client:discover.sshrvd@rv_am
-    String regex = 'discover\\.${Srvd.namespace}$rvAtSign';
+    String regex = 'discover_response\\.${Srvd.namespace}$rvAtSign';
 
     late StreamSubscription<AtNotification> subscription;
     subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
@@ -132,8 +134,8 @@ class RelaySelector with AtClientBindings {
       if (!completer.isCompleted &&
           notification.from == rvAtSign &&
           notification.value != null) {
-        final ipAddress = jsonDecode(notification.value!);
-        completer.complete(ipAddress);
+        final discoverResponse = jsonDecode(notification.value!);
+        completer.complete(discoverResponse);
         subscription.cancel();
       }
     });
@@ -141,7 +143,7 @@ class RelaySelector with AtClientBindings {
     final atKey = AtKey()
       // embed namespace in key
       // namespaceAware=false prevents the client's own namespace being appended
-      ..key = 'discover.${Srvd.namespace}'
+      ..key = 'discover_request.${Srvd.namespace}'
       ..sharedBy = atClient.getCurrentAtSign()
       ..sharedWith = rvAtSign
       ..metadata = (Metadata()
@@ -149,9 +151,10 @@ class RelaySelector with AtClientBindings {
         ..isEncrypted = true
         ..namespaceAware = false);
 
+    Map<String, dynamic> discoverItems = {'items': ['ipaddr', 'port']};
     await notify(
       atKey,
-      'discover',
+      jsonEncode(discoverItems),
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(seconds: 10),
@@ -169,8 +172,9 @@ class RelaySelector with AtClientBindings {
   }
 
   /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
+
   /// the atsign of the RV with the lowest combined average latency.
-  String _lowestAverageLatency(
+  Atsign _lowestAverageLatency(
     Map<String, int> daemonLatencies,
     Map<String, int> clientLatencies,
   ) {
@@ -194,6 +198,6 @@ class RelaySelector with AtClientBindings {
     }
 
     logger.info('Selecting fastest RV: $bestRv');
-    return bestRv;
+    return bestRv.toAtsign();
   }
 }

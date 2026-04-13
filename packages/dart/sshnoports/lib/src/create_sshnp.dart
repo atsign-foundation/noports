@@ -25,14 +25,15 @@ Future<Sshnp> createSshnp(
 
   // If srvdAtSign is not provided, or is a comma-separated list,
   // auto select the best rv
-  if (params.srvdAtSign.isEmpty || params.srvdAtSign.contains(',')) {
+  if (params.srvdAtSign.replaceAll(' ', '').isEmpty || params.srvdAtSign.contains(',')) {
     final rvSelector = RelaySelector(atClient);
     List<Atsign>? rvAtSigns;
     if (params.srvdAtSign.contains(',')) {
       // parse comma-separated list of rvAtSigns
       rvAtSigns = params.srvdAtSign
+          .replaceAll(' ', '')
           .split(',')
-          .map((s) => s.trim().toAtsign())
+          .map((s) => s.toAtsign())
           .toList();
     }
     final bestRv = await rvSelector.selectBestRelay(params, rvAtSigns: rvAtSigns);

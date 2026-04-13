@@ -199,9 +199,9 @@ class SrvdImpl
           return await handleRequestPorts(n);
         case 'sessions':
           return await handleSessionMessages(topic, n);
-        case 'discover':
+        case 'discover_request':
           logger.info('Received discover request from ${n.from}');
-          return await handleDiscover(n.from);
+          return await handleDiscover(n);
         default:
           logger.warning(
             'unknown "$messageType" request received from ${n.from}'
@@ -464,25 +464,37 @@ class SrvdImpl
     );
   }
 
-  Future<void> handleDiscover(String requestingAtsign) async {
+  Future<void> handleDiscover(AtNotification n) async {
     final metadata = Metadata()
       ..isPublic = false
       ..isEncrypted = true
-      ..ttl = 10000
       ..namespaceAware = true;
 
+    if (n.value == null) {
+      logger.info('Received discover request with an empty value. Ignoring.');
+      return;
+    }
+    final requestedItems = jsonDecode(n.value!)['items'] ?? ['ipaddr', 'port'];
+    final response = <String, dynamic>{};
+    for (final item in requestedItems) {
+      switch (item) {
+        case 'ipaddr':
+          response['ipaddr'] = ipAddress;
+        case 'port':
+          response['port'] = bind443 ? 443 : null;
+      }
+    }
+
     final atKey = AtKey()
-      ..key = 'discover'
+      ..key = 'discover_response'
       ..sharedBy = atSign
-      ..sharedWith = requestingAtsign
+      ..sharedWith = n.from
       ..namespace = Srvd.namespace
       ..metadata = metadata;
 
-    final toSendIpAddr = {'ip': ipAddress, 'port': bind443 ? 443 : null};
-
     final notificationParams = NotificationParams.forUpdate(
       atKey,
-      value: jsonEncode(toSendIpAddr),
+      value: jsonEncode(response),
       notificationExpiry: Duration(minutes: 1),
     );
 
