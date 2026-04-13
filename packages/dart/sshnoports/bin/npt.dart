@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
@@ -303,7 +304,8 @@ void main(List<String> args) async {
       verbose = parsedArgs['verbose'];
       String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
-      String srvdAtSign = parsedArgs['srvd'] ?? '';
+      // accepts a list of comma separated srvd atsigns e.g. @alice,@bob
+      String srvdAtSign = (parsedArgs['srvd'] ?? '').replaceAll(' ', '');
       try {
         clientAtSign = AtUtils.fixAtSign(clientAtSign);
         daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
@@ -501,6 +503,19 @@ void main(List<String> args) async {
         localHost: resolvedLocalHost,
         only443: parsedArgs['443'],
       );
+
+      // auto select the best relay if none is specified
+      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        List<Atsign>? rvAtSigns;
+
+        if (srvdAtSign.isNotEmpty) {
+          rvAtSigns =
+              srvdAtSign.split(',').map((a) => a.trim().toAtsign()).toList();
+        }
+
+        RelaySelector rs = RelaySelector(cliBase.atClient);
+        srvdAtSign = await rs.selectBestRelay(params, rvAtSigns: rvAtSigns);
+      }
 
       while (true) {
         final npt = Npt.create(

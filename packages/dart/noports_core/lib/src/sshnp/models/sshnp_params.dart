@@ -68,7 +68,7 @@ abstract class ClientParamsBase implements ClientParams {
   final String sshnpdAtSign;
 
   @override
-  final String srvdAtSign;
+  String srvdAtSign;
 
   @override
   final bool authenticateClientToRvd;
@@ -202,7 +202,6 @@ class NptParams extends ClientParamsBase
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
-      AtUtils.fixAtSign(srvdAtSign);
     } on InvalidAtSignException catch (e) {
       throw ArgumentError(e.message);
     }
