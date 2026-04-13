@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
@@ -12,7 +13,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
   required final List<String> daemonVersions,
   required final String clientAtsign,
   required final String daemonAtsign,
-  required final String daemonAtsignKeyFilePath,
+  required final String daemonAtsignContainerKeyFilePath,
   required final String rootDomain,
   required final String testRunId,
   required final Directory apkamKeysDirectory,
@@ -69,7 +70,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
         '/usr/local/bin/sshnpd '
           '-a ${daemonAtsign} '
           '-m ${clientAtsign} '
-          '-k ${daemonAtsignKeyFilePath} '
+          '-k ${daemonAtsignContainerKeyFilePath} '
           '--root-domain ${rootDomain} '
           '-d ${deviceNameNoFlags} '
           '-v '
@@ -84,6 +85,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
       ],
     );
     dockerInstances.add((deviceNameNoFlags, dockerInstance1));
+
     final DockerInstance dockerInstance2 = DockerInstance(
       dockerImage: dockerImage,
       testRunId: testRunId,
@@ -98,7 +100,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
         '/usr/local/bin/sshnpd '
         '-a ${daemonAtsign} '
         '-m ${clientAtsign} '
-        '-k ${daemonAtsignKeyFilePath} '
+        '-k ${daemonAtsignContainerKeyFilePath} '
         '--root-domain ${rootDomain} '
         '-d ${deviceNameWithFlags} '
         '-v -s -u'
@@ -115,6 +117,33 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }
 
-  // TODO: ensure that they have fully started by reading logs and look for 'monitor started'
+  for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
+    switch(dockerInstance.dockerImage.language) {
+    case Language.dart: {
+      // check docker logs for 'Monitor started'
+      final Process logsProcess = await Process.start('docker', ['logs', '-f', dockerInstance.containerName]);
+      logsProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+        print('[$deviceName] $line');
+        if(line.contains('Monitor started')) {
+          print('[$deviceName] Monitor started, SSH server is ready');
+          logsProcess.kill();
+        }
+      });
+      logsProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+        print('[$deviceName] $line');
+        if(line.contains('Monitor started')) {
+          print('[$deviceName] Monitor started, SSH server is ready');
+          logsProcess.kill();
+        }
+      }); 
+    }
+    case Language.c: {
+    }
+    default: {
+      throw Exception('Language not supported: ${dockerInstance.dockerImage.language}');
+    }
+    }
+  }
+
   return dockerInstances;
 }

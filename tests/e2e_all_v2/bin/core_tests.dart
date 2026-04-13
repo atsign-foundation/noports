@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
+import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/noports_version.dart';
+import 'package:path/path.dart' as path;
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/core_tests/client_binary_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_test_result.dart';
+import 'package:e2e_all_v2/core_tests/docker_utils.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
-import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
@@ -74,8 +77,9 @@ Future<void> main(List<String> args) async {
     // 5. download client binaries
     List<(Language, String, ClientBinaryType)> clientBinaryTuples = [];
     clientVersions.forEach((languageVersionStr) {
-      final Language language = getLanguage(languageVersionStr);
-      final String version = getVersionStr(languageVersionStr);
+      NoPortsVersion noPortsVersion = NoPortsVersion.fromLanguageVersionString(languageVersionStr);
+      final Language language = noPortsVersion.language;
+      final String version = noPortsVersion.version;
       clientBinaryTuples.add((language, version, ClientBinaryType.sshnp));
       clientBinaryTuples.add((language, version, ClientBinaryType.srv));
       clientBinaryTuples.add((language, version, ClientBinaryType.npt));
@@ -90,12 +94,12 @@ Future<void> main(List<String> args) async {
     print('');
     print('Fetched client binaries (${clientBinaries.length}):');
     for(final ClientBinary clientBinary in clientBinaries) {
-      print('    ${clientBinary.binaryType.name} | ${clientBinary.language.name} | ${clientBinary.version} | ${clientBinary.file.path}');
+      print('    ${clientBinary.binaryType.name} | ${clientBinary.noPortsVersion.language.name} | ${clientBinary.noPortsVersion.version} | ${clientBinary.file.path}');
     }
     print('');
 
     // 6. set up client and daemon apkam keys
-    final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.version == 'current');
+    final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.noPortsVersion.version == 'current');
     Map<String, File> apkamKeys = await setUpApkamKeys(
       atActivateClientBinary: atActivateClientBinary,
       clientAtsign: e2eAllV2Params.clientAtsign,
@@ -113,7 +117,7 @@ Future<void> main(List<String> args) async {
       rootDomain: e2eAllV2Params.rootDomain,
       testRunId: testRunId,
       apkamKeysDirectory: apkamKeysDirectory,
-      daemonAtsignKeyFilePath: '/atsign/.atsign/keys/${apkamKeys[e2eAllV2Params.daemonAtsign]!.path.split('/').last}');
+      daemonAtsignContainerKeyFilePath: '/atsign/.atsign/keys/${apkamKeys[e2eAllV2Params.daemonAtsign]!.path.split('/').last}');
     print('');
     print('Started ${dockerInstances.length} docker daemon instances');
     for(final (String, DockerInstance) dockerInstance in dockerInstances) {
@@ -194,11 +198,12 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
 
   final ClientBinary currentSshnpClientBinary = allClientBinaries.firstWhere((cb) => 
     cb.binaryType == ClientBinaryType.sshnp &&
-    cb.version == 'current');
+    cb.noPortsVersion.version == 'current');
 
   for(final String daemonVersion in daemonVersions) {
-    final Language language = getLanguage(daemonVersion);
-    final String version = getVersionStr(daemonVersion);
+    final NoPortsVersion noPortsVersion = NoPortsVersion.fromLanguageVersionString(daemonVersion);
+    final Language language = noPortsVersion.language;
+    final String version = noPortsVersion.version;
     
     // 2. Run sshnp against daemon without flags, expect failure
     final String deviceNameNoFlags = getDeviceNameNoFlags( 
@@ -217,7 +222,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       // if we're running against the C daemon,
       // only add -x
       args.add('-x');
-    } else if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.0.0')) {
+    } else if(versionIsAtLeast(currentSshnpClientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
       // if the client we're running as is at least v5.0.0
       // and we're connecting to another Dart daemon,
       // add -x, --no-ad, and --no-et
@@ -226,7 +231,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       args.add('--no-et');
     }
 
-    if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.3.0')) {
+    if(versionIsAtLeast(currentSshnpClientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
       // if the cleint we're running as it at least v5.3.0
       // add -k $clientApkamKeyFilePath
       if(!(await apkamKeys[clientAtsign]!.exists())) {
@@ -252,10 +257,10 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       process1.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
         stderrBuffer.writeln(line);
       });
-      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.version} | Device Name: ${deviceNameNoFlags} Test Failed | exitCode=$exitCode');
+      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.noPortsVersion.version} | Device Name: ${deviceNameNoFlags} Test Failed | exitCode=$exitCode');
       CoreTestResult tr = CoreTestResult(
         testName: '001_minus_s_flag_no_flags',
-        clientVersion: currentSshnpClientBinary.version,
+        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
         daemonVersion: daemonVersion,
         status: TestStatus.failed,
         exitCode: exitCode,
@@ -267,7 +272,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
     } else {
       CoreTestResult tr = CoreTestResult(
         testName: '001_minus_s_flag_no_flags',
-        clientVersion: currentSshnpClientBinary.version,
+        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
         daemonVersion: daemonVersion,
         status: TestStatus.passed,
         exitCode: exitCode,
@@ -291,7 +296,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       // if we're running against the C daemon,
       // only add -x
       args.add('-x');
-    } else if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.0.0')) {
+    } else if(versionIsAtLeast(currentSshnpClientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
       // if the client we're running as is at least v5.0.0
       // and we're connecting to another Dart daemon,
       // add -x, --no-ad, and --no-et
@@ -300,7 +305,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       args.add('--no-et');
     }
 
-    if(versionIsAtLeast(currentSshnpClientBinary.version, 'v5.3.0')) {
+    if(versionIsAtLeast(currentSshnpClientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
       // if the cleint we're running as it at least v5.3.0
       // add -k $clientApkamKeyFilePath
       if(!(await apkamKeys[clientAtsign]!.exists())) {
@@ -323,10 +328,10 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
     final int exitCode2 = await process2.exitCode;
     if(exitCode2 == 0) {
     } else {
-      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.version} | Device Name: ${deviceNameWithFlags} Test Failed | exitCode=$exitCode2');
+      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.noPortsVersion} | Device Name: ${deviceNameWithFlags} Test Failed | exitCode=$exitCode2');
       CoreTestResult tr = CoreTestResult(
         testName: '001_minus_s_flag',
-        clientVersion: currentSshnpClientBinary.version,
+        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
         daemonVersion: daemonVersion,
         status: TestStatus.failed,
         exitCode: exitCode2,
@@ -358,7 +363,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
     if(sshExitCode == 0) {
       CoreTestResult tr = CoreTestResult(
         testName: testName,
-        clientVersion: currentSshnpClientBinary.version,
+        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
         daemonVersion: daemonVersion,
         status: TestStatus.passed,
         exitCode: sshExitCode,
@@ -376,7 +381,7 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
       });
       CoreTestResult tr = CoreTestResult(
         testName: testName,
-        clientVersion: currentSshnpClientBinary.version,
+        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
         daemonVersion: daemonVersion,
         status: TestStatus.failed,
         exitCode: sshExitCode,

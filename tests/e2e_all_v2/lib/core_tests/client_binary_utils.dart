@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:e2e_all_v2/client_binary.dart';
-import 'package:e2e_all_v2/docker_image.dart';
-import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/os_utils.dart';
@@ -47,12 +45,13 @@ Future<List<ClientBinary>> fetchClientBinaries({
       final Directory dir = Directory(path.join(binariesDirectory.path, language.name, version));
       ensureDirectoryExists(dir);
       final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
+      NoPortsVersion noPortsVersion = NoPortsVersion(language: language, version: version);
       if(version == 'current') {
-        allClientBinaries.addAll(await _compileCurrent(language: language, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        allClientBinaries.addAll(await _compileCurrent(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       } else if(version.startsWith('v')) {
-        allClientBinaries.addAll(await _downloadRelease(language: language, version: version, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        allClientBinaries.addAll(await _downloadRelease(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       } else {
-        allClientBinaries.addAll(await _compileBranch(language: language, branch: version, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        allClientBinaries.addAll(await _compileBranch(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       }
     }
   }
@@ -60,14 +59,14 @@ Future<List<ClientBinary>> fetchClientBinaries({
 }
 
 Future<List<ClientBinary>> _compileCurrent({
-  required final Language language,
+  required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory directory,
 }) async {
   // 1. validate funciton arguments
   // 1a. language
-  if(language != Language.dart) {
-    throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
+  if(noPortsVersion.language != Language.dart) {
+    throw Exception('Currently only dart client binaries are supported. Found language: ${noPortsVersion.language.name}');
   }
 
   // 1b. directory
@@ -109,8 +108,7 @@ Future<List<ClientBinary>> _compileCurrent({
     
     clientBinaries.add(ClientBinary(
       binaryType: binaryType,
-      language: Language.dart, 
-      version: 'current',
+      noPortsVersion: noPortsVersion,
       file: outputFile,
     ));
   }
@@ -119,13 +117,12 @@ Future<List<ClientBinary>> _compileCurrent({
 }
 
 Future<List<ClientBinary>> _downloadRelease({
-  required final Language language,
-  required final String version,
+  required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory directory,
 }) async {
-  if(language != Language.dart) {
-    throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
+  if(noPortsVersion.language != Language.dart) {
+    throw Exception('Currently only dart client binaries are supported. Found language: ${noPortsVersion.language.name}');
   }
   // 1. construct $archiveName and $downloadUrl
   final String osStr = getOsString();   
@@ -143,7 +140,7 @@ Future<List<ClientBinary>> _downloadRelease({
       throw Exception('Unsupported platform: ${Platform.operatingSystem}');
   }
   final String archiveName = 'sshnp-$osStr-$archStr.$archiveExt';
-  final String downloadUrl = 'https://github.com/atsign-foundation/noports/releases/download/$version/$archiveName';
+  final String downloadUrl = 'https://github.com/atsign-foundation/noports/releases/download/${noPortsVersion.version}/$archiveName';
 
   // 2. get tgz/zip
   final ProcessResult curlProcessResult = await runCommand(
@@ -202,8 +199,7 @@ Future<List<ClientBinary>> _downloadRelease({
     } 
     clientBinaries.add(ClientBinary(
         binaryType: binaryType,
-        language: language,
-        version: version,
+        noPortsVersion: noPortsVersion,
         file: binary,
     ));
   }
@@ -219,12 +215,11 @@ Future<List<ClientBinary>> _downloadRelease({
 }
 
 Future<List<ClientBinary>> _compileBranch({
-  required final Language language,
-  required final String branch,
+  required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory directory,
 }) async {
-  throw Exception('Compiling from branch is not yet implemented. Found branch: $branch');
+  throw Exception('Compiling from branch is not yet implemented. Found branch: ${noPortsVersion.version}');
 }
 
 bool isCommandAvailable(String command) {

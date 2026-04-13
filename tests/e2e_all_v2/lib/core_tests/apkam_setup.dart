@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:e2e_all_v2/utils.dart';
+import 'package:e2e_all_v2/process_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/client_binary.dart';
 

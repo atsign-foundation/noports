@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/noports_version.dart';
 
 enum ClientBinaryType {
   sshnp,
@@ -27,15 +27,13 @@ String getDartSourcePath(ClientBinaryType binaryType) {
 }
 
 class ClientBinary {
+  final NoPortsVersion noPortsVersion;
   final ClientBinaryType binaryType; // sshnp, npt, srv, npp_client, etc,.
-  final Language language; // dart or c
-  final String version; // "current", "v5.9.4", "v5.11.2", "v5.13.0"
   final File file; // binary
 
   ClientBinary({
     required this.binaryType,
-    required this.language,
-    required this.version,
+    required this.noPortsVersion,
     required this.file,
   });
 
