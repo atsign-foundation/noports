@@ -64,7 +64,7 @@ Future<Map<String, File>> setUpApkamKeys({
         '--arx', apkamApp,
         '--drx', apkamDeviceName,
       ],
-      printCommand: true,
+      // printCommand: true,
     );
     if(revokeProcess.exitCode != 0) {
       print('Error revoking $atsign: ${revokeProcess.stderr.toString()}');
@@ -81,7 +81,7 @@ Future<Map<String, File>> setUpApkamKeys({
         '--arx', apkamApp,
         '--drx', apkamDeviceName,
       ],
-      printCommand: true,
+      // printCommand: true,
     );
     if(denyProcessResult.exitCode != 0) {
       print('Error denying $atsign: ${denyProcessResult.stderr.toString()}');
@@ -96,7 +96,7 @@ Future<Map<String, File>> setUpApkamKeys({
         '-a', atsign,
         '-r', rootDomain,
       ],
-      printCommand: true,
+      // printCommand: true,
     );
     if(otpProcess.exitCode != 0) {
       print('Error generating OTP for $clientAtsign: ${otpProcess.stderr}');
@@ -124,7 +124,7 @@ Future<Map<String, File>> setUpApkamKeys({
         '-r', rootDomain,
         '-n', 'sshnp:rw,sshrvd:rw',
       ],
-      printCommand: true,
+      // printCommand: true,
     );
 
     sleep(const Duration(seconds: 3)); 
@@ -139,7 +139,7 @@ Future<Map<String, File>> setUpApkamKeys({
         '--drx', apkamDeviceName,
         '-r', rootDomain,
       ],
-      printCommand: true,
+      // printCommand: true,
     );
     if(approveProcess.exitCode != 0) {
       print('Error approving $atsign: ${approveProcess.stderr.toString()}');

@@ -139,6 +139,18 @@ Future<void> main(List<String> args) async {
         apkamKeys: apkamKeys,
         remoteUsername: 'atsign',
       )));
+
+    print('');
+    print('Test Results Summary:');
+    for(final TestResult testResult in allTestResults) {
+      if(testResult is CoreTestResult) {
+        print('    ${testResult.testName} | Client: ${testResult.clientVersion} | Daemon: ${testResult.daemonVersion} | Status: ${testResult.status.name.toUpperCase()} | Exit Code: ${testResult.exitCode}');
+      } else {
+        print('    ${testResult.testName} | Status: ${testResult.status.name.toUpperCase()} | Exit Code: ${testResult.exitCode}');
+      }
+    }
+    print('');
+
     
 
     exit(0);
@@ -172,6 +184,7 @@ Future<List<TestResult>> _001_minus_s_flag({
   required final List<(String, DockerInstance)> dockerInstances,
   required final Map<String, File> apkamKeys,
 }) async {
+  const String testName = '001_minus_s_flag';
   List<TestResult> testResults = [];
   // 1. generate new ssh key
   final (File, File) sshKeys = await _generateNewSshKey(testRunId: testRunId);
@@ -222,30 +235,49 @@ Future<List<TestResult>> _001_minus_s_flag({
       args.add(apkamKeys[clientAtsign]!.path);
     }
 
+    // 3. Run sshnp against daemon without flags, expect failure
     final Process process1 = await currentSshnpClientBinary.execute(
       args: args,
     );
 
-    process1.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
-      print('sshnp stderr: $line');
-    });
-
-    process1.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
-      print('sshnp stdout: $line');
-    });
-
     final int exitCode = await process1.exitCode;
     if(exitCode == 0) {
-      // TODO add TestResult
+      StringBuffer stdoutBuffer = StringBuffer();
+      process1.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+        stdoutBuffer.writeln(line);
+      });
+      StringBuffer stderrBuffer = StringBuffer();
+      process1.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+        stderrBuffer.writeln(line);
+      });
+      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.version} | Device Name: ${deviceNameNoFlags} Test Failed | exitCode=$exitCode');
+      CoreTestResult tr = CoreTestResult(
+        testName: '001_minus_s_flag_no_flags',
+        clientVersion: currentSshnpClientBinary.version,
+        daemonVersion: daemonVersion,
+        status: TestStatus.failed,
+        exitCode: exitCode,
+        stdout: stdoutBuffer,
+        stderr: stderrBuffer,
+      );
+      tr.printResult(printStdout: true, printStderr: false);
+      testResults.add(tr);
     } else {
-      // TODO add TestResult
+      CoreTestResult tr = CoreTestResult(
+        testName: '001_minus_s_flag_no_flags',
+        clientVersion: currentSshnpClientBinary.version,
+        daemonVersion: daemonVersion,
+        status: TestStatus.passed,
+        exitCode: exitCode,
+      );
+      tr.printResult(printStdout: false, printStderr: false);
+      testResults.add(tr);
     }
 
-    // 3. Run sshnp against daemon with flags, expect pass
+    // 4. Run sshnp against daemon with flags, expect success
     final String deviceNameWithFlags = '${deviceNameNoFlags}_f';
 
-    // Make this args thing a helper function
-    args = [];
+    // TODO: Make this args thing a helper function
     args = [
         '-f', clientAtsign, '-t', daemonAtsign,
         '-i', identityFile.path, '-d', deviceNameWithFlags,
@@ -281,32 +313,32 @@ Future<List<TestResult>> _001_minus_s_flag({
     );
 
     final StringBuffer stdoutBuffer = StringBuffer();
-    final StringBuffer stderrBuffer = StringBuffer();
-
+    // put sshnp -x output into stdout buffer
     process2.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      print('sshnp stdout: $line');
       stdoutBuffer.writeln(line);
     });
-
-    process2.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      print('sshnp stderr: $line');
-      stderrBuffer.writeln(line);
-    });
-
     final int exitCode2 = await process2.exitCode;
     if(exitCode2 == 0) {
-      // TODO add TestResult
     } else {
-      // TODO add TestResult
+      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.version} | Device Name: ${deviceNameWithFlags} Test Failed | exitCode=$exitCode2');
+      CoreTestResult tr = CoreTestResult(
+        testName: '001_minus_s_flag',
+        clientVersion: currentSshnpClientBinary.version,
+        daemonVersion: daemonVersion,
+        status: TestStatus.failed,
+        exitCode: exitCode2,
+        stdout: stdoutBuffer,
+      );
+      tr.printResult();
+      testResults.add(tr);
     }
 
     String sshCommand = stdoutBuffer.toString().trim();
-    print('ssh command from sshnp stdout: $sshCommand');
     // remove ssh part
     if(sshCommand.startsWith('ssh ')) {
       sshCommand = sshCommand.substring(4);
     } else {
-      throw Exception('Expected ssh command from sshnp to start with "ssh ". Actual command: $sshCommand');
+      throw Exception('Expected stdout from sshnp to start with "ssh ". Actual output: "$sshCommand"');
     }
     List<String> sshCommandArgs = sshCommand.split(' ');
     sshCommandArgs.add('echo');
@@ -318,13 +350,38 @@ Future<List<TestResult>> _001_minus_s_flag({
     final Process sshProcess = await startCommand(
       'ssh', 
       sshCommandArgs,
-      // printCommand: true,
     );
     final int sshExitCode = await sshProcess.exitCode;
     if(sshExitCode == 0) {
-      // TODO add TestResult
+      CoreTestResult tr = CoreTestResult(
+        testName: testName,
+        clientVersion: currentSshnpClientBinary.version,
+        daemonVersion: daemonVersion,
+        status: TestStatus.passed,
+        exitCode: sshExitCode,
+      );
+      tr.printResult(printStdout: false, printStderr: false);
+      testResults.add(tr);
     } else {
-      // TODO add TestResult
+      final StringBuffer sshStdoutBuffer = StringBuffer();
+      sshProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+        sshStdoutBuffer.writeln(line);
+      });
+      final StringBuffer sshStderrBuffer = StringBuffer();  
+      sshProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
+        sshStderrBuffer.writeln(line);
+      });
+      CoreTestResult tr = CoreTestResult(
+        testName: testName,
+        clientVersion: currentSshnpClientBinary.version,
+        daemonVersion: daemonVersion,
+        status: TestStatus.failed,
+        exitCode: sshExitCode,
+        stdout: sshStdoutBuffer,
+        stderr: sshStderrBuffer,
+      );
+      tr.printResult(printStdout: true, printStderr: true);
+      testResults.add(tr);
     }
   }
 
