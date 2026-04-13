@@ -109,6 +109,7 @@ dependency_overrides:
   meta: ^1.17.0
   chalkdart: ^2.2.1
   at_utils: ^3.0.15
+  pointycastle: ^4.0.0
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
