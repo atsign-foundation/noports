@@ -2,34 +2,20 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:e2e_all_v2/core_tests/client_binary_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_test_result.dart';
+import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
-import 'package:e2e_all_v2/e2e_all_v2_params.dart';
-import 'package:e2e_all_v2/apkam_setup.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
+import 'package:e2e_all_v2/core_tests/apkam_setup.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/utils.dart';
 
 Future<void> main(List<String> args) async {
-
-  // 1. parse args
-  E2EAllV2Params e2eAllV2Params;
-  try {
-    e2eAllV2Params = E2EAllV2Params.parse(args);
-    if(e2eAllV2Params.help) {
-      E2EAllV2Params.printUsage();
-      exit(1);
-    }
-  } catch(e) {
-    E2EAllV2Params.printUsage();
-    exit(1);
-  }
-  print('');
-  _printLoadedParameters(e2eAllV2Params);
-  print('');
-
-  // 2. declare const variables
+  // 1. declare const variables
   const List<String> clientVersions = [
     'd:v5.9.4',
     'd:v5.11.2',
@@ -45,9 +31,25 @@ Future<void> main(List<String> args) async {
     'd:v5.13.0',
   ];
 
+  // 2. parse args
+  CoreTestsParams e2eAllV2Params;
+  try {
+    e2eAllV2Params = CoreTestsParams.parse(args);
+    if(e2eAllV2Params.help) {
+      CoreTestsParams.printUsage();
+      exit(1);
+    }
+  } catch(e) {
+    CoreTestsParams.printUsage();
+    exit(1);
+  }
+  print('');
+  _printLoadedParameters(e2eAllV2Params);
+  print('');
+
   try {
     // 3. $testRunId = git rev-parse --short HEAD (shortened git commit hash)
-    final String testRunId = await getShortenedGitCommitHash();
+    final String testRunId = await _getShortenedGitCommitHash();
     print('\ntestRunId: $testRunId\n');
 
     // 4. create directory structure: 
@@ -121,7 +123,7 @@ Future<void> main(List<String> args) async {
 
     // 8. Run tests
 
-    List<TestResult> allTestResults = [];
+    List<CoreTestResult> allTestResults = [];
 
     // a. 001_minus_s_flag
     // generate new ssh key
@@ -140,18 +142,17 @@ Future<void> main(List<String> args) async {
         remoteUsername: 'atsign',
       )));
 
+
+    final int totalTests = allTestResults.length;
+    final int passedTests = allTestResults.where((tr) => tr.status == TestStatus.passed).length;
+    final int failedTests = allTestResults.where((tr) => tr.status == TestStatus.failed).length;
+
     print('');
     print('Test Results Summary:');
-    for(final TestResult testResult in allTestResults) {
-      if(testResult is CoreTestResult) {
-        print('    ${testResult.testName} | Client: ${testResult.clientVersion} | Daemon: ${testResult.daemonVersion} | Status: ${testResult.status.name.toUpperCase()} | Exit Code: ${testResult.exitCode}');
-      } else {
-        print('    ${testResult.testName} | Status: ${testResult.status.name.toUpperCase()} | Exit Code: ${testResult.exitCode}');
-      }
-    }
+    print('    Total tests: $totalTests');
+    print('    Passed: $passedTests');
+    print('    Failed: $failedTests');
     print('');
-
-    
 
     exit(0);
   } catch (e) {
@@ -172,7 +173,7 @@ Future<void> main(List<String> args) async {
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-Future<List<TestResult>> _001_minus_s_flag({
+Future<List<CoreTestResult>> _001_minus_s_flag({
   required final String clientAtsign,
   required final String daemonAtsign,
   required final String relayAtsign,
@@ -185,7 +186,7 @@ Future<List<TestResult>> _001_minus_s_flag({
   required final Map<String, File> apkamKeys,
 }) async {
   const String testName = '001_minus_s_flag';
-  List<TestResult> testResults = [];
+  List<CoreTestResult> testResults = [];
   // 1. generate new ssh key
   final (File, File) sshKeys = await _generateNewSshKey(testRunId: testRunId);
   final File identityFile = sshKeys.$2;
@@ -236,8 +237,9 @@ Future<List<TestResult>> _001_minus_s_flag({
     }
 
     // 3. Run sshnp against daemon without flags, expect failure
-    final Process process1 = await currentSshnpClientBinary.execute(
-      args: args,
+    final Process process1 = await startCommand(
+      currentSshnpClientBinary.file.path,
+      args,
     );
 
     final int exitCode = await process1.exitCode;
@@ -308,8 +310,9 @@ Future<List<TestResult>> _001_minus_s_flag({
       args.add(apkamKeys[clientAtsign]!.path);
     }
 
-    final Process process2 = await currentSshnpClientBinary.execute(
-      args: args,
+    final Process process2 = await startCommand(
+      currentSshnpClientBinary.file.path,
+      args,
     );
 
     final StringBuffer stdoutBuffer = StringBuffer();
@@ -446,7 +449,7 @@ Future<(File, File)> _generateNewSshKey({required final String testRunId}) async
   return (publicIdentityFile, identityFile);
 }
 
-void _printLoadedParameters(E2EAllV2Params e2eAllV2Params) {
+void _printLoadedParameters(CoreTestsParams e2eAllV2Params) {
   print('e2e_all_v2 Loaded Parameters:');
   print('    help: ${e2eAllV2Params.help}');
   print('    client-atsign: ${e2eAllV2Params.clientAtsign}');
@@ -458,3 +461,15 @@ void _printLoadedParameters(E2EAllV2Params e2eAllV2Params) {
   print('    verbose: ${e2eAllV2Params.verbose}');
   print('    base-directory: ${e2eAllV2Params.baseDirectory}');
 }
+
+Future<String> _getShortenedGitCommitHash() async {
+  final ProcessResult gitResult = await runCommand(
+    'git',
+    ['rev-parse', '--short', 'HEAD']);
+  if (gitResult.exitCode != 0) {
+    print('stderr: ${gitResult.stderr}');
+    exit(1);
+  }
+  return gitResult.stdout.toString().trim();
+}
+

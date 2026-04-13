@@ -3,7 +3,7 @@ import 'package:args/args.dart';
 // Usage
 // E2EAllV2Params params = E2EAllV2Params.fromArgs(args);
 // print(params.clientAtsign);
-class E2EAllV2Params {
+class CoreTestsParams {
   // Parameter cases
   // Case 1: mandatory (no defaults)
   // Case 2a: non-mandatory, compile-time default
@@ -27,11 +27,11 @@ class E2EAllV2Params {
   late String baseDirectory;
 
   // Private constructor
-  E2EAllV2Params._();
+  CoreTestsParams._();
 
-  factory E2EAllV2Params.parse(List<String> args) {
+  factory CoreTestsParams.parse(List<String> args) {
     final ArgResults argResults = argParser.parse(args);
-    final E2EAllV2Params e2eAllV2Params = E2EAllV2Params._();
+    final CoreTestsParams e2eAllV2Params = CoreTestsParams._();
     e2eAllV2Params.help = argResults['help'];
     e2eAllV2Params.clientAtsign = argResults['client-atsign'];
     e2eAllV2Params.daemonAtsign = argResults['daemon-atsign'];

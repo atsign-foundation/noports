@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/language.dart';
-import 'package:e2e_all_v2/utils.dart';
 
 enum ClientBinaryType {
   sshnp,
@@ -28,7 +26,6 @@ String getDartSourcePath(ClientBinaryType binaryType) {
   }
 }
 
-
 class ClientBinary {
   final ClientBinaryType binaryType; // sshnp, npt, srv, npp_client, etc,.
   final Language language; // dart or c
@@ -44,24 +41,5 @@ class ClientBinary {
 
   Future<bool> exists() async {
     return file.exists();
-  }
-
-  Future<Process> execute({
-    required final List<String> args,
-    final String? workingDirectory,
-    final Map<String, String>? environment,
-    final bool printCommand = false,
-  }) async {
-    if (!(await exists())) {
-      throw Exception('Binary file does not exist: ${file.path}');
-    }
-    print('> ${file.path} ${args.join(' ')}');
-    return await startCommand(
-      file.path,
-      args,
-      workingDirectory: workingDirectory,
-      environment: environment,
-      printCommand: printCommand,
-    );
   }
 }
