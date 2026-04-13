@@ -474,7 +474,14 @@ class SrvdImpl
       logger.info('Received discover request with an empty value. Ignoring.');
       return;
     }
-    final requestedItems = jsonDecode(n.value!)['items'] ?? ['ipaddr', 'port'];
+    if (!bind443) {
+      logger.info(
+        'Received discover request but this relay is not bound to port 443. Ignoring.',
+      );
+      return;
+    }
+
+    final requestedItems = jsonDecode(n.value!)['items'];
     final response = <String, dynamic>{};
     for (final item in requestedItems) {
       switch (item) {

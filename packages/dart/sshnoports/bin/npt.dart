@@ -80,7 +80,9 @@ void main(List<String> args) async {
         'srvd',
         abbr: 'r',
         mandatory: false,
-        help: 'The socket rendezvous\'s atSign',
+        help: 'The Socket Rendezvous (SRVD) atSign to use. Omit to auto-select '
+            'the fastest available relay, or provide a comma-separated list to '
+            'pick the best among them.',
       );
       parser.addOption(
         'device',
@@ -304,12 +306,12 @@ void main(List<String> args) async {
       verbose = parsedArgs['verbose'];
       String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
-      // accepts a list of comma separated srvd atsigns e.g. @alice,@bob
-      String srvdAtSign = (parsedArgs['srvd'] ?? '').replaceAll(' ', '');
+      String srvdAtSign = parsedArgs['srvd'] ?? '';
+
       try {
         clientAtSign = AtUtils.fixAtSign(clientAtSign);
         daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
-        // Users can now pass multiple srvd's
+        // Only fix srvd atSign if it's not a list
         if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
           srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
         }
@@ -515,6 +517,9 @@ void main(List<String> args) async {
 
         RelaySelector rs = RelaySelector(cliBase.atClient);
         srvdAtSign = await rs.selectBestRelay(params, rvAtSigns: rvAtSigns);
+
+        // update the params to reflect the selected relay
+        params.srvdAtSign = srvdAtSign;
       }
 
       while (true) {

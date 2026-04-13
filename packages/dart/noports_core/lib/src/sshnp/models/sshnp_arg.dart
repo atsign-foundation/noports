@@ -230,7 +230,10 @@ class SshnpArg {
   static const srvdArg = SshnpArg(
     name: 'srvd',
     abbr: 'r',
-    help: 'atSign of srvd daemon',
+    help:
+        'The Socket Rendezvous (SRVD) atSign to use. Omit to auto-select '
+        'the fastest available relay, or provide a comma-separated list to '
+        'pick the fastest among them.',
   );
   static const legacySrvdArg = SshnpArg(
     name: 'host',
