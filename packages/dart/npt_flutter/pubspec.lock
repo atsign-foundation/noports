@@ -492,14 +492,13 @@ packages:
     source: hosted
     version: "3.1.7"
   dartssh2:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "."
-      ref: trunk
-      resolved-ref: "36329826504e50f3d8f18ecc3b8865f4b469cc87"
-      url: "https://github.com/atsign-foundation/dartssh2"
-    source: git
-    version: "2.9.1-atsignfork-1"
+      name: dartssh2
+      sha256: c139babed0d6851449100010639115e1ed88decf0db7eb714ce13935c7eb590c
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.17.1"
   dbus:
     dependency: transitive
     description:
