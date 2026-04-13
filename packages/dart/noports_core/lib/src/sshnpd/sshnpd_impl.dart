@@ -639,7 +639,7 @@ class SshnpdImpl
     logger.info('Latency per relay (ms): $rvLatencyMap');
 
     var atKey = AtKey()
-      ..key = 'relay_latency.response.$device'
+      ..key = 'relay_latency_response.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
       ..namespace = DefaultArgs.namespace

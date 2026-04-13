@@ -68,7 +68,7 @@ abstract class ClientParamsBase implements ClientParams {
   final String sshnpdAtSign;
 
   @override
-  String srvdAtSign;
+  final String srvdAtSign;
 
   @override
   final bool authenticateClientToRvd;

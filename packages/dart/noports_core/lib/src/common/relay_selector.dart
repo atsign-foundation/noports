@@ -5,13 +5,9 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/srvd.dart';
-import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/src/common/default_args.dart';
-import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
-import 'package:uuid/uuid.dart';
 
 class RelaySelector with AtClientBindings {
   @override
@@ -20,15 +16,26 @@ class RelaySelector with AtClientBindings {
   @override
   final AtSignLogger logger = AtSignLogger('RelaySelector');
 
+  final String clientAtSign;
+  final String sshnpdAtSign;
+  final String device;
+  final String rootDomain;
+
   /// ToDo: this needs to be constructed using the root address
   final String rvServerListUrl =
       'https://atsign-foundation.github.io/noports/standard_relays.json';
 
   final Map<String, Map<String, dynamic>> rvIpMap = {};
 
-  late Map<String, dynamic> defaultRvList = {};
-
-  RelaySelector(this.atClient);
+  RelaySelector({
+    required this.atClient,
+    required this.clientAtSign,
+    required this.sshnpdAtSign,
+    required this.device,
+    required this.rootDomain,
+  }) {
+    this.atClient = atClient;
+  }
 
   /// Selects the best RV atsign for a given connection.
   ///
@@ -37,13 +44,7 @@ class RelaySelector with AtClientBindings {
   ///
   /// If [rvAtSigns] is provided, it will select the best from that list.
   /// Otherwise, it will fetch the standard relays from [rvServerListUrl].
-  ///
-  /// If [channel] is provided (e.g. reusing an already-created session channel),
-  /// it will be used directly. Otherwise a temporary channel is created.
-  Future<String> selectBestRelay(SshnpdChannelParams params, {
-    List<Atsign>? rvAtSigns,
-    SshnpdChannel? channel,
-  }) async {
+  Future<String> selectBestRelay({List<Atsign>? rvAtSigns}) async {
     List<Atsign> toCheck = [];
 
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
@@ -51,7 +52,7 @@ class RelaySelector with AtClientBindings {
     } else {
       // fetch a list of available RVs from [rvServerListUrl]
       final standardRelaysRaw = await _fetchStandardRelays();
-      defaultRvList =
+      final defaultRvList =
           standardRelaysRaw['standard_relays'] as Map<String, dynamic>;
       toCheck = defaultRvList.keys.map((s) => s.toAtsign()).toList();
     }
@@ -64,7 +65,7 @@ class RelaySelector with AtClientBindings {
           final ipInfo = await _requestRelayIpAddress(rv);
           rvIpMap[rv.toString()] = ipInfo;
         } catch (e) {
-          logger.warning('Failed to get IP for $rv: $e');
+          logger.warning('Failed to get IP/Port for $rv: $e');
         }
       }),
     );
@@ -73,15 +74,8 @@ class RelaySelector with AtClientBindings {
       throw StateError('No RV servers could be resolved');
     }
 
-    channel ??= SshnpdDefaultChannel(
-      atClient: atClient,
-      params: params,
-      sessionId: Uuid().v4(),
-      namespace: DefaultArgs.namespace,
-    );
-
     //Start device latency fetch concurrently while we measure the client latency
-    final deviceLatencyFuture = channel.fetchDeviceRelayLatencies(rvIpMap);
+    final deviceLatencyFuture = _fetchDeviceLatencies(rvIpMap);
 
     final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
     logger.info('Fetched latencies for client -> RV: $clientLatency');
@@ -151,7 +145,9 @@ class RelaySelector with AtClientBindings {
         ..isEncrypted = true
         ..namespaceAware = false);
 
-    Map<String, dynamic> discoverItems = {'items': ['ipaddr', 'port']};
+    Map<String, dynamic> discoverItems = {
+      'items': ['ipaddr', 'port'],
+    };
     await notify(
       atKey,
       jsonEncode(discoverItems),
@@ -171,8 +167,64 @@ class RelaySelector with AtClientBindings {
     );
   }
 
-  /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
+  /// Sends [rvServers] to the device daemon and waits for it to respond with
+  /// its measured latency to each RV. Uses this selector's own AtClientBindings
+  /// directly, avoiding the need to create and initialize a full SshnpdChannel.
+  Future<Map<String, int>> _fetchDeviceLatencies(
+    Map<String, dynamic> rvServers,
+  ) async {
+    final completer = Completer<Map<String, int>>();
+    final regex = 'relay_latency_response.$device.${DefaultArgs.namespace}';
 
+    late StreamSubscription<AtNotification> subscription;
+    subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
+      notification,
+    ) {
+      logger.info(
+        'Received relay latencies from device: ${notification.value}',
+      );
+      if (notification.from == sshnpdAtSign && !completer.isCompleted) {
+        try {
+          final Map<String, dynamic> raw = jsonDecode(notification.value!);
+          completer.complete(Map<String, int>.from(raw));
+        } catch (e) {
+          logger.warning('Failed to decode relay latencies from device: $e');
+          logger.finer('Response from device: ${notification.value}');
+          completer.completeError(
+            FormatException(
+              'Malformed latency check response from $sshnpdAtSign',
+            ),
+          );
+        } finally {
+          subscription.cancel();
+        }
+      }
+    });
+
+    await notify(
+      AtKey()
+        ..key = 'relay_latency_request.$device'
+        ..namespace = DefaultArgs.namespace
+        ..sharedBy = clientAtSign
+        ..sharedWith = sshnpdAtSign,
+      jsonEncode(rvServers),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
+    );
+
+    return completer.future.timeout(
+      Duration(minutes: 1),
+      onTimeout: () {
+        subscription.cancel();
+        throw TimeoutException(
+          'Timeout waiting for relay latencies from device',
+        );
+      },
+    );
+  }
+
+  /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
   /// the atsign of the RV with the lowest combined average latency.
   Atsign _lowestAverageLatency(
     Map<String, int> daemonLatencies,

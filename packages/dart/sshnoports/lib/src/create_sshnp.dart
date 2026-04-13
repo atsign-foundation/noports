@@ -25,18 +25,23 @@ Future<Sshnp> createSshnp(
 
   // If srvdAtSign is not provided, or is a comma-separated list,
   // auto select the best rv
-  if (params.srvdAtSign.replaceAll(' ', '').isEmpty || params.srvdAtSign.contains(',')) {
-    final rvSelector = RelaySelector(atClient);
+  if (params.srvdAtSign.isEmpty || params.srvdAtSign.contains(',')) {
+    final srvd = params.srvdAtSign.replaceAll(' ', '');
+    final rvSelector = RelaySelector(
+      atClient: atClient,
+      clientAtSign: params.clientAtSign,
+      sshnpdAtSign: params.sshnpdAtSign,
+      device: params.device,
+      rootDomain: params.rootDomain,
+    );
     List<Atsign>? rvAtSigns;
-    if (params.srvdAtSign.contains(',')) {
+
+    if (srvd.contains(',')) {
       // parse comma-separated list of rvAtSigns
-      rvAtSigns = params.srvdAtSign
-          .replaceAll(' ', '')
-          .split(',')
-          .map((s) => s.toAtsign())
-          .toList();
+      rvAtSigns = srvd.split(',').map((s) => s.toAtsign()).toList();
     }
-    final bestRv = await rvSelector.selectBestRelay(params, rvAtSigns: rvAtSigns);
+
+    final bestRv = await rvSelector.selectBestRelay(rvAtSigns: rvAtSigns);
     params = SshnpParams.merge(params, SshnpPartialParams(srvdAtSign: bestRv));
   }
 

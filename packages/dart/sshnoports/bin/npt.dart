@@ -484,6 +484,23 @@ void main(List<String> args) async {
         exitProgram(exitCode: 1);
       }
 
+      // auto select the best relay if none is specified
+      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        List<Atsign>? rvAtSigns;
+        if (srvdAtSign.isNotEmpty) {
+          rvAtSigns =
+              srvdAtSign.split(',').map((a) => a.trim().toAtsign()).toList();
+        }
+        final rs = RelaySelector(
+          atClient: cliBase.atClient,
+          clientAtSign: clientAtSign,
+          sshnpdAtSign: daemonAtSign,
+          device: device,
+          rootDomain: rootDomain,
+        );
+        srvdAtSign = await rs.selectBestRelay(rvAtSigns: rvAtSigns);
+      }
+
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -505,22 +522,6 @@ void main(List<String> args) async {
         localHost: resolvedLocalHost,
         only443: parsedArgs['443'],
       );
-
-      // auto select the best relay if none is specified
-      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
-        List<Atsign>? rvAtSigns;
-
-        if (srvdAtSign.isNotEmpty) {
-          rvAtSigns =
-              srvdAtSign.split(',').map((a) => a.trim().toAtsign()).toList();
-        }
-
-        RelaySelector rs = RelaySelector(cliBase.atClient);
-        srvdAtSign = await rs.selectBestRelay(params, rvAtSigns: rvAtSigns);
-
-        // update the params to reflect the selected relay
-        params.srvdAtSign = srvdAtSign;
-      }
 
       while (true) {
         final npt = Npt.create(
