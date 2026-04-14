@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.2.0"
-sshnp_version="5.14.10"
+sshnp_version="5.14.13"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 
@@ -15,9 +15,6 @@ repo_url="https://github.com/atsign-foundation/sshnoports"
 # shellcheck disable=SC2034
 GREP_COLOR=never
 unset GREP_OPTIONS
-
-# used to rerun as sudo to install to systemd
-original_command="$0 $*"
 
 ### Constants
 systemd_config_path="/etc/systemd/system/sshnpd.service.d/override.conf"
@@ -656,22 +653,24 @@ get_atsign() {
 }
 
 suggest_sudo() {
+  if ! check_cmd sudo; then
+    echo
+    echo "This script requires root privileges to continue, but sudo is not installed."
+    echo "Please run this script as root."
+    exit 1
+  fi
   echo
-  echo "Systemd is present but this script is not running with sudo"
-  echo "We recommend that you install to systemd (requires root privileges to write the unit file)"
-  echo
-  echo "Rerunning the script with command: 'sudo $original_command'"
-  echo
-  echo "If you'd rather proceed with a non systemd installation,"
-  echo "then press Ctrl+C and then run the following command:"
-  echo
-  echo "sh universal.sh --no-sudo"
-  echo
-  echo "NB: Issues with installation through --no-sudo is not covered by support."
-  echo "    It is not a reliable installation method and it is NOT RECOMMENDED."
-  echo
-  echo "Executing 'sudo $original_command':"
-  sudo $original_command
+  if is_systemd_available; then
+    echo "Systemd is present but this script is not running with sudo"
+    echo "We recommend that you install to systemd, which requires root"
+    echo "privileges to write the unit file"
+    echo
+    echo "Use --no-sudo to install without systemd integration (NOT RECOMMENDED)"
+    echo
+  else
+    echo "This script requires root privileges to continue."
+  fi
+  echo "Please re-run this script with sudo"
   exit $?
 }
 
@@ -1232,13 +1231,12 @@ install_via_rpm() {
     exit 1
   fi
 
-  if ! check_cmd sudo; then
-    >&2 echo "Error: sudo is required for rpm installation"
-    exit 1
+  if ! is_root; then
+    suggest_sudo
   fi
 
   # Create the repository file
-  sudo tee /etc/yum.repos.d/noports.repo <<EOF
+  tee /etc/yum.repos.d/noports.repo <<EOF
 [noports]
 name=NoPorts Repository
 baseurl=https://rpm.noports.com/\$basearch/
@@ -1249,9 +1247,9 @@ gpgkey=https://rpm.noports.com/noports.pub.asc
 EOF
 
   if check_cmd dnf; then
-    sudo dnf install -y noports
+    dnf install -y noports
   else
-    sudo yum install -y noports
+    yum install -y noports
   fi
 
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
@@ -1282,26 +1280,25 @@ install_via_apt() {
     exit 1
   fi
 
-  if ! check_cmd sudo; then
-    >&2 echo "Error: sudo is required for apt installation"
-    exit 1
+  if ! is_root; then
+    suggest_sudo
   fi
 
   if ! check_cmd curl; then
     echo "curl not found, installing curl..."
-    sudo apt update && sudo apt install -y curl
+    apt update && apt install -y curl
   fi
 
   if ! check_cmd gpg; then
     echo "gpg not found, installing gnupg..."
-    sudo apt update && sudo apt install -y gnupg
+    apt update && apt install -y gnupg
   fi
 
-  sudo mkdir -p /usr/share/keyrings
-  curl -fsSL https://apt.noports.com/noports.pub.asc | sudo gpg --dearmor -o /usr/share/keyrings/noports-archive-keyring.gpg
-  echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | sudo tee /etc/apt/sources.list.d/noports.list
-  sudo apt update
-  sudo apt install -y noports
+  mkdir -p /usr/share/keyrings
+  curl -fsSL https://apt.noports.com/noports.pub.asc | gpg --dearmor -o /usr/share/keyrings/noports-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/noports-archive-keyring.gpg] https://apt.noports.com/ stable main" | tee /etc/apt/sources.list.d/noports.list
+  apt update
+  apt install -y noports
 
   if [ -f "/etc/systemd/system/sshnpd.service" ]; then
     migrate_systemd_config_to_yaml
@@ -1320,13 +1317,18 @@ main() {
   print_env
   parse_args "$@"
 
+  if $as_root && $no_sudo; then
+    >&2 echo "Error: --no-sudo cannot be used when running as root/sudo"
+    exit 1
+  fi
+
   if [ -n "$local_archive" ]; then
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
-  elif [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
   elif [ "$platform_name" = "macos" ] && check_cmd brew; then
     if [ "$quiet" = true ]; then
