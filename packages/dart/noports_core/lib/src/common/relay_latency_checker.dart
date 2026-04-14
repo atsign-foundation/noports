@@ -32,8 +32,8 @@ class RelayLatencyChecker {
   /// [rvServers] format:
   /// ```json
   /// {
-  ///   "@rv_am": { "ip": "192.0.2.1", "port": 443 },
-  ///   "@rv_eu": { "ip": "192.0.2.2", "port": 443 }
+  ///   "@rv_am": { "ipaddr": "192.0.2.1", "port": 443 },
+  ///   "@rv_eu": { "ipaddr": "192.0.2.2", "port": 443 }
   /// }
   /// ```
   ///
@@ -44,18 +44,19 @@ class RelayLatencyChecker {
   }) async {
     final latencies = <String, int>{};
 
-    for (final rv in rvServers.keys) {
+    await Future.wait(rvServers.keys.map((rv) async {
       final addr = rvServers[rv] as Map<String, dynamic>;
       final ip = addr['ipaddr'] as String?;
       final port = addr['port'] as int?;
 
       if (ip == null || port == null) {
-        logger.warning('Missing ip for $rv, skipping');
+        logger.warning('Missing ipaddr or port for $rv, skipping');
+        logger.finer('Received: $rvServers');
         latencies[rv] = -1;
-        continue;
+        return;
       }
       latencies[rv] = await _probeLatency(ip, port, timeout);
-    }
+    }));
 
     return latencies;
   }

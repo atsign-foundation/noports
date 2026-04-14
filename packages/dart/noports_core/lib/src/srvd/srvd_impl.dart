@@ -475,7 +475,13 @@ class SrvdImpl
       return;
     }
 
-    final requestedItems = jsonDecode(n.value!)['items'];
+    final decoded = jsonDecode(n.value!);
+    if (decoded is! Map || decoded['items'] is! List) {
+      logger.warning('Malformed discover request from ${n.from}. Ignoring.');
+      return;
+    }
+    
+    final requestedItems = decoded['items'] as List;
     final response = <String, dynamic>{};
     for (final item in requestedItems) {
       switch (item) {

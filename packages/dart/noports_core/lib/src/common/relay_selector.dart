@@ -11,28 +11,29 @@ import 'package:noports_core/src/common/relay_latency_checker.dart';
 
 class RelaySelector with AtClientBindings {
   @override
-  late final AtClient atClient;
-
-  @override
   final AtSignLogger logger = AtSignLogger('RelaySelector');
 
+  @override
+  late final AtClient atClient;
   final String clientAtSign;
   final String sshnpdAtSign;
   final String device;
-  final String rootDomain;
 
-  late final String rvServerListUrl =
-      'https://atsign-foundation.github.io/noports/$rootDomain/standard_relays.json';
-
-  final Map<String, Map<String, dynamic>> rvIpMap = {};
+  late final String rvServerListUrl;
 
   RelaySelector({
     required this.atClient,
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.device,
-    required this.rootDomain,
-  });
+    required String rootDomain,
+  }) {
+    final domain = rootDomain.startsWith('proxy:')
+        ? rootDomain.replaceFirst('proxy:', '')
+        : rootDomain;
+    rvServerListUrl =
+        'https://atsign-foundation.github.io/noports/$domain/standard_relays.json';
+  }
 
   /// Selects the best RV atsign for a given connection.
   ///
@@ -56,6 +57,7 @@ class RelaySelector with AtClientBindings {
     logger.info('Checking latency for RVs: $toCheck');
 
     // fetch IP for each RV in parallel
+    final rvIpMap = <String, Map<String, dynamic>>{};
     await Future.wait(
       toCheck.map((rv) async {
         try {
@@ -177,9 +179,6 @@ class RelaySelector with AtClientBindings {
     subscription = subscribe(regex: regex, shouldDecrypt: true).listen((
       notification,
     ) {
-      logger.info(
-        'Received relay latencies from device: ${notification.value}',
-      );
       if (notification.from == sshnpdAtSign && !completer.isCompleted) {
         try {
           final Map<String, dynamic> raw = jsonDecode(notification.value!);
