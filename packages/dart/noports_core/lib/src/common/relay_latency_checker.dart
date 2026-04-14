@@ -46,7 +46,7 @@ class RelayLatencyChecker {
 
     for (final rv in rvServers.keys) {
       final addr = rvServers[rv] as Map<String, dynamic>;
-      final ip = addr['ip'] as String?;
+      final ip = addr['ipaddr'] as String?;
       final port = addr['port'] as int?;
 
       if (ip == null || port == null) {

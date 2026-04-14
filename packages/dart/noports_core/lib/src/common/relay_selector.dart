@@ -21,9 +21,8 @@ class RelaySelector with AtClientBindings {
   final String device;
   final String rootDomain;
 
-  /// ToDo: this needs to be constructed using the root address
-  final String rvServerListUrl =
-      'https://atsign-foundation.github.io/noports/standard_relays.json';
+  late final String rvServerListUrl =
+      'https://atsign-foundation.github.io/noports/$rootDomain/standard_relays.json';
 
   final Map<String, Map<String, dynamic>> rvIpMap = {};
 
@@ -33,9 +32,7 @@ class RelaySelector with AtClientBindings {
     required this.sshnpdAtSign,
     required this.device,
     required this.rootDomain,
-  }) {
-    this.atClient = atClient;
-  }
+  });
 
   /// Selects the best RV atsign for a given connection.
   ///
