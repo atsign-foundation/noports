@@ -630,7 +630,7 @@ class SshnpdImpl
       rvServers = jsonDecode(notification.value!) as Map<String, dynamic>;
     } catch (e) {
       logger.warning(
-        'Invalid latency check request from ${notification.from}. Ignoring.',
+        'Malformed latency check request from ${notification.from}. Ignoring.',
       );
       logger.finer('Caught: $e');
       return;

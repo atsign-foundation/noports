@@ -480,7 +480,7 @@ class SrvdImpl
       logger.warning('Malformed discover request from ${n.from}. Ignoring.');
       return;
     }
-    
+
     final requestedItems = decoded['items'] as List;
     final response = <String, dynamic>{};
     for (final item in requestedItems) {
