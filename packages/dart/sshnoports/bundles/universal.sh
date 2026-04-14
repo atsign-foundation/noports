@@ -671,7 +671,7 @@ suggest_sudo() {
     echo "This script requires root privileges to continue."
   fi
   echo "Please re-run this script with sudo"
-  exit $?
+  exit 1
 }
 
 check_ssh_keys() {
