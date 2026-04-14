@@ -54,13 +54,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
+          - os: macos-15-intel
             output-name: sshnpd-macos-x64
             ext: ""
             bundle: "shell"
             compiler: "clang"
             flags: "-Wno-error -pthread"
-          - os: macos-14
+          - os: macos-latest
             output-name: sshnpd-macos-arm64
             ext: ""
             bundle: "shell"
