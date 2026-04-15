@@ -1,11 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:at_auth/at_auth.dart';
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
@@ -129,7 +125,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> activateAll() async {
     //0. Prompt to atKeys file location to save files.
     final context = App.navState.currentContext!;
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
       dialogTitle: AppLocalizations.of(
         context,
       )!.activationAtsignFileStorageLocation,
@@ -154,7 +150,8 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       state.fileContent.entries,
     );
 
-    final onboardingService = OnboardingService.getInstance();
+    final authService = AuthService();
+    // final authService = OnboardingService.getInstance();
     final onboardingUtil = await NoPortsOnboardingUtil.create(
       App.navState.currentContext!,
     );
@@ -201,7 +198,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         String cramSecret = entry.activationKey;
 
         // 2. Reset the current atsign on the singleton
-        onboardingService.setAtsign = atsign;
+        // authService. .setAtsign = atsign;
         // TODO: Consider replacing this when using at_client_flutter
         AtClientPreference atClientPreference = AtClientPreference()
           // ..rootDomain = 'vip.ve.atsign.zone'
@@ -211,19 +208,16 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
           ..commitLogPath = path.join(appSupportDir.path, 'commitLog')
           ..cramSecret = cramSecret;
 
-        onboardingService.setAtClientPreference = atClientPreference;
+        // authService.setAtClientPreference = atClientPreference;
 
         // 5. Execute Onboard
-        var onboardingRequest = AtOnboardingRequest(atsign)
-          ..rootDomain = 'root.atsign.org';
+        var onboardingRequest = AtOnboardingRequest(atsign);
+        // ..rootDomain = 'root.atsign.org';
 
-        bool success = await onboardingService.onboard(
-          cramSecret: cramSecret,
-          atOnboardingRequest: onboardingRequest,
-        );
+        var response = await authService.onboard(onboardingRequest, cramSecret);
 
         // 6. Update Result
-        if (success) {
+        if (response.isSuccessful) {
           await backUpActivatedAtsigns(selectedDirectory, atsign);
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.activated,
@@ -298,14 +292,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   ) async {
     //
     // TODO: Refactor so that it user BackupKeyCubit. Can't be used now because it is tightly coupled with the OnboardingCubit/Single Atsign Activation flow. This will be refactored when we migrate to at_client_flutter.
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
+    // var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
 
-    final codeUnits = jsonEncode(aesEncryptedKeys).codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
+    // final codeUnits = jsonEncode(aesEncryptedKeys).codeUnits;
+    // final Uint8List data = Uint8List.fromList(codeUnits);
 
-    final file = File(path.join(fileLocation, '${atsign}_key.atKeys'));
-    await file.create(recursive: true);
-    await file.writeAsBytes(data);
+    AtKeys? atKeys = await KeychainStorage().getAtsign(atsign);
+    FileAtKeysIo atKeysIo = FileAtKeysIo(
+      filePath: (_) => '$fileLocation/${atsign}_key.atKeys',
+    );
+    atKeysIo.write(atsign, atKeys!);
+    // final file = File(path.join(fileLocation, '${atsign}_key.atKeys'));
+    // await file.create(recursive: true);
+    // await file.writeAsBytes(data);
   }
 
   /// Check if any Atsign is still waiting for activation.
