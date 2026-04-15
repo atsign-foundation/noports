@@ -190,7 +190,8 @@ Future<List<CoreTestResult>> _001_minus_s_flag({
   required final Map<String, File> apkamKeys,
 }) async {
   const String testName = '001_minus_s_flag';
-  List<CoreTestResult> testResults = [];
+  final List<CoreTestResult> testResults = [];
+
   // 1. generate new ssh key
   final (File, File) sshKeys = await _generateNewSshKey(testRunId: testRunId);
   final File identityFile = sshKeys.$2;

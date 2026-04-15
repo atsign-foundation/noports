@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -117,11 +118,44 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }
 
+  // ensure monitor has started
+  for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
+    final Language language = dockerInstance.dockerImage.language;
+    String regex;
+    if(language == Language.dart) {
+      regex = '*Monitor started*';
+    } else if(language == Language.c) {
+      regex = '*monitor started*';
+    } else {
+      throw Exception('Language not supported: $language');
+    }
+    final Completer<void> monitorStartedCompleter = Completer<void>();
+    dockerInstance.process!.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+      print('[$deviceName] $line');
+      if(line.contains(regex)) {
+        print('[$deviceName] Monitor started, SSH server is ready');
+        monitorStartedCompleter.complete();
+      }
+    });
+    dockerInstance.process!.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+      print('[$deviceName] $line');
+      if(line.contains(regex)) {
+        print('[$deviceName] Monitor started, SSH server is ready');
+        monitorStartedCompleter.complete();
+      }
+    });
+    await monitorStartedCompleter.future;
+  }
+
+  final List<Process> logProcesses = [];
+
   for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
     switch(dockerInstance.dockerImage.language) {
-    case Language.dart: {
+    case Language.dart: 
+    case Language.c: {
       // check docker logs for 'Monitor started'
       final Process logsProcess = await Process.start('docker', ['logs', '-f', dockerInstance.containerName]);
+      logProcesses.add(logsProcess);
       logsProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
         print('[$deviceName] $line');
         if(line.contains('Monitor started')) {
@@ -137,13 +171,23 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
         }
       }); 
     }
-    case Language.c: {
-    }
+    // case Language.c: {
+    // }
     default: {
       throw Exception('Language not supported: ${dockerInstance.dockerImage.language}');
     }
     }
   }
+
+  // for(final Process logProcess in logProcesses) {
+  //   final int exitCode = await logProcess.exitCode;
+  //   if(exitCode != 0) {
+  //     print('Log process exited with code $exitCode');
+  //     exit(1);
+  //   } else {
+  //     print('Log process exited successfully');
+  //   }
+  // }
 
   return dockerInstances;
 }

@@ -9,6 +9,22 @@ enum ClientBinaryType {
   at_activate,
 }
 
+class ClientBinary {
+  final NoPortsVersion noPortsVersion;
+  final ClientBinaryType binaryType; // sshnp, npt, srv, npp_client, etc,.
+  final File file; // binary
+
+  ClientBinary({
+    required this.binaryType,
+    required this.noPortsVersion,
+    required this.file,
+  });
+
+  Future<bool> exists() async {
+    return file.exists();
+  }
+}
+
 String getDartSourcePath(ClientBinaryType binaryType) {
   switch(binaryType) {
     case ClientBinaryType.sshnp:
@@ -26,18 +42,3 @@ String getDartSourcePath(ClientBinaryType binaryType) {
   }
 }
 
-class ClientBinary {
-  final NoPortsVersion noPortsVersion;
-  final ClientBinaryType binaryType; // sshnp, npt, srv, npp_client, etc,.
-  final File file; // binary
-
-  ClientBinary({
-    required this.binaryType,
-    required this.noPortsVersion,
-    required this.file,
-  });
-
-  Future<bool> exists() async {
-    return file.exists();
-  }
-}

@@ -3,18 +3,6 @@ import 'package:e2e_all_v2/process_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/language.dart';
 
-String _getDockerfilesPath() {
-  return 'tests/e2e_all_v2/tools/dockerfiles';
-}
-
-String _getFullImageName({
-  required final Language language,
-  required final DockerImageType imageType,
-  required final String tag,
-}) {
-  return 'atsigncompany/noports_e2e_all_${language.name}:$tag';
-}
-
 enum DockerImageType {
   release, // "v5.9.4", "v5.11.3", "c0.0.1"
   branch, // "trunk", *commithash*
@@ -138,4 +126,16 @@ class DockerImage {
     args.add('.'); // context is this directory
     return startCommand(executable, args);
   }
+}
+
+String _getDockerfilesPath() {
+  return 'tests/e2e_all_v2/tools/dockerfiles';
+}
+
+String _getFullImageName({
+  required final Language language,
+  required final DockerImageType imageType,
+  required final String tag,
+}) {
+  return 'atsigncompany/noports_e2e_all_${language.name}:$tag';
 }
