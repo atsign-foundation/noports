@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/process_utils.dart';
@@ -17,16 +18,47 @@ class DockerInstance {
   final String testRunId;
   late String containerName; // image tag
   Process? process; // instantiated from run()
+  Process? logProcess; // instantiated from run()
 
   DockerInstance({
     required this.dockerImage,
     required this.testRunId,
     String uniqueIdentifier = '',
+    String? containerName,
   }) {
-    containerName = 'e2e_all_v2_${dockerImage.language.name}_${dockerImage.tag}_$testRunId';
-    if(uniqueIdentifier.isNotEmpty) {
-      containerName += '$uniqueIdentifier';  
+    if(containerName != null) {
+      this.containerName = containerName;
+    } else {
+      this.containerName = _generateDockerContainerName(language: dockerImage.language.name, tag: dockerImage.tag, testRunId: testRunId);
+      if(uniqueIdentifier.isNotEmpty) {
+        this.containerName += '$uniqueIdentifier';  
+      }
     }
+  }
+
+  Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
+    final Process logProcess = await startCommand(
+      'docker',
+      [
+        'logs',
+        '-f', // follow log output
+        containerName,
+      ],
+    );
+    logProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+      stdoutLogFile.writeAsStringSync(line + '\n', mode: FileMode.append);
+    });
+    logProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+      stderrLogFile.writeAsStringSync(line + '\n', mode: FileMode.append);
+    });
+    this.logProcess = logProcess;
+  }
+
+  bool _stopDockerLogProcess() {
+    if(logProcess != null) {
+      return logProcess!.kill();
+    }
+    return true;
   }
 
   Future<Process> run({
@@ -34,6 +66,8 @@ class DockerInstance {
     final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
     final bool quiet = false,
     final bool removeWhenStopped = true,
+    File? stdoutLogFile,
+    File? stderrLogFile,
   }) async {
     const String executable = 'docker';
 
@@ -56,9 +90,14 @@ class DockerInstance {
     args.addAll(entrypoint);
 
     // use start, spawns a process
-    final Process pr = await startCommand(executable, args);
-    process = pr;
-    return pr;
+    final Process process = await startCommand(executable, args);
+    this.process = process;
+    if(stdoutLogFile != null && stderrLogFile != null) {
+      _startDockerLogProcess(stdoutLogFile: stdoutLogFile, stderrLogFile: stderrLogFile);
+    } else if(stdoutLogFile == null && stderrLogFile != null || stdoutLogFile != null && stderrLogFile == null) {
+      throw Exception('Both stdoutLogFile and stderrLogFile must be provided to capture logs.');
+    }
+    return process;
   }
 
   Future<bool> isActive() async {
@@ -85,6 +124,17 @@ class DockerInstance {
       containerName,
     ];
     final ProcessResult processResult = await runCommand(executable, args);
+    _stopDockerLogProcess();
     return processResult;
   }
+
+}
+
+String _generateDockerContainerName({
+  required final String language,
+  required final String tag,
+  required final String testRunId,
+}) {
+  final String containerName = 'e2e_all_v2_${language}_${tag}_$testRunId';
+  return containerName;
 }
