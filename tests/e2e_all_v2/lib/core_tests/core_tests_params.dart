@@ -1,5 +1,9 @@
 import 'package:args/args.dart';
 
+// Default version strings
+const String defaultClientVersions = 'd:v5.9.4,d:v5.11.2,d:v5.13.0,d:current';
+const String defaultDaemonVersions = 'd:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current';
+
 // Usage
 // E2EAllV2Params params = E2EAllV2Params.fromArgs(args);
 // print(params.clientAtsign);
@@ -25,6 +29,11 @@ class CoreTestsParams {
   late String rootDomain;
   late bool verbose;
   late String baseDirectory;
+  late String clientVersions;
+  late String daemonVersions;
+
+  // Case 2b - run-time defaults
+  late String? testRunId;
 
   // Private constructor
   CoreTestsParams._();
@@ -41,6 +50,9 @@ class CoreTestsParams {
     e2eAllV2Params.rootDomain = argResults['root-domain'];
     e2eAllV2Params.verbose = argResults['verbose'];
     e2eAllV2Params.baseDirectory = argResults['base-directory'];
+    e2eAllV2Params.clientVersions = argResults['client-versions'];
+    e2eAllV2Params.daemonVersions = argResults['daemon-versions'];
+    e2eAllV2Params.testRunId = argResults['test-run-id'];
     return e2eAllV2Params;
   }
 
@@ -83,6 +95,20 @@ class CoreTestsParams {
       mandatory: false,
       defaultsTo: 'e2e_all_v2',
       help: 'Directory where all test related artifacts are stored',
+    );
+    argParser.addOption('client-versions',
+      mandatory: false,
+      defaultsTo: defaultClientVersions,
+      help: 'Comma-separated list of client versions in format language:version (e.g., d:v5.9.4,c:current)',
+    );
+    argParser.addOption('daemon-versions',
+      mandatory: false,
+      defaultsTo: defaultDaemonVersions,
+      help: 'Comma-separated list of daemon versions in format language:version (e.g., d:v5.9.4,c:current)',
+    );
+    argParser.addOption('test-run-id',
+      mandatory: false,
+      help: 'Test run identifier (defaults to shortened git commit hash if not provided)',
     );
     return argParser;
   }

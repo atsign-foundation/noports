@@ -16,23 +16,16 @@ import 'package:e2e_all_v2/utils.dart';
 /// Main entry point for running core tests
 /// Takes parsed parameters and returns test results
 Future<void> coreTests(CoreTestsParams params) async {
-  final List<NoPortsVersion> clientVersions = [
-    NoPortsVersion(language: Language.dart, version: 'v5.9.4'),
-    NoPortsVersion(language: Language.dart, version: 'v5.11.2'),
-    NoPortsVersion(language: Language.dart, version: 'v5.13.0'),
-    NoPortsVersion(language: Language.dart, version: 'current'),
-   ];
+  // Parse version strings from params
+  final List<NoPortsVersion> clientVersions = params.clientVersions.split(',').map((entry) {
+    return NoPortsVersion.fromLanguageVersionString(entry.trim());
+  }).toList();
+  final List<NoPortsVersion> daemonVersions = params.daemonVersions.split(',').map((entry) {
+    return NoPortsVersion.fromLanguageVersionString(entry.trim());
+  }).toList();
 
-  final List<NoPortsVersion> daemonVersions = [
-    NoPortsVersion(language: Language.dart, version: 'v5.9.4'),
-    NoPortsVersion(language: Language.dart, version: 'v5.11.2'),
-    NoPortsVersion(language: Language.dart, version: 'v5.13.0'), 
-    NoPortsVersion(language: Language.dart, version: 'current'),
-    NoPortsVersion(language: Language.c, version: 'current'),
-  ];
-
-  // 2. Get testRunId = git rev-parse --short HEAD (shortened git commit hash)
-  final String testRunId = await getShortenedGitCommitHash();
+  // 2. Get testRunId - use provided value or default to git commit hash
+  final String testRunId = params.testRunId ?? await getShortenedGitCommitHash();
   print('\ntestRunId: $testRunId\n');
 
   // 3. create directory structure:
