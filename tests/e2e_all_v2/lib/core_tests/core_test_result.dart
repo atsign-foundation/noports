@@ -15,11 +15,28 @@ class CoreTestResult extends TestResult {
   });
 
   void printResult({bool printStdout = false, bool printStderr = false}) {
-    print('$testName (client: $clientVersion, daemon: $daemonVersion) - ${status.name.toUpperCase()} (exit code: $exitCode)');
-    if (stdout != null && stdout!.isNotEmpty) {
+    // ANSI color codes
+    const String green = '\x1B[32m';
+    const String red = '\x1B[31m';
+    const String reset = '\x1B[0m';
+
+    String statusText;
+    String color;
+
+    if (status == TestStatus.passed) {
+      statusText = 'TEST PASSED';
+      color = green;
+    } else {
+      statusText = 'TEST FAILED';
+      color = red;
+    }
+
+    print('\t$testName (client: $clientVersion, daemon: $daemonVersion) $color$statusText$reset');
+
+    if (printStdout && stdout != null && stdout!.isNotEmpty) {
       print('STDOUT:\n$stdout');
     }
-    if (stderr != null && stderr!.isNotEmpty) {
+    if (printStderr && stderr != null && stderr!.isNotEmpty) {
       print('STDERR:\n$stderr');
     }
   }
