@@ -118,76 +118,56 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }
 
+  sleep(const Duration(seconds: 2));
+
   // ensure monitor has started
+  final List<(String deviceName, Completer<void> completer, Process process)> monitors = [];
+
   for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
-    final Language language = dockerInstance.dockerImage.language;
-    String regex;
-    if(language == Language.dart) {
-      regex = '*Monitor started*';
-    } else if(language == Language.c) {
-      regex = '*monitor started*';
-    } else {
-      throw Exception('Language not supported: $language');
-    }
+    const String monitorMessage = 'monitor started';
     final Completer<void> monitorStartedCompleter = Completer<void>();
-    dockerInstance.process!.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-      print('[$deviceName] $line');
-      if(line.contains(regex)) {
-        print('[$deviceName] Monitor started, SSH server is ready');
-        monitorStartedCompleter.complete();
+    final Process logsProcess = await Process.start('docker', ['logs', '-f', dockerInstance.containerName]);
+
+    logsProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+      // print('stdout [$deviceName] $line');
+      if(line.toLowerCase().contains(monitorMessage)) {
+        // print('stdout [$deviceName] Monitor started, SSH server is ready');
+        if(!monitorStartedCompleter.isCompleted) {
+          monitorStartedCompleter.complete();
+        }
+        logsProcess.kill();
       }
     });
-    dockerInstance.process!.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-      print('[$deviceName] $line');
-      if(line.contains(regex)) {
-        print('[$deviceName] Monitor started, SSH server is ready');
-        monitorStartedCompleter.complete();
+
+    logsProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+      // print('stderr [$deviceName] $line');
+      if(line.toLowerCase().contains(monitorMessage)) {
+        // print('stderr [$deviceName] Monitor started, SSH server is ready');
+        if(!monitorStartedCompleter.isCompleted) {
+          monitorStartedCompleter.complete();
+        }
+        logsProcess.kill();
       }
     });
-    await monitorStartedCompleter.future;
+
+    monitors.add((deviceName, monitorStartedCompleter, logsProcess));
   }
 
-  final List<Process> logProcesses = [];
-
-  for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
-    switch(dockerInstance.dockerImage.language) {
-    case Language.dart: 
-    case Language.c: {
-      // check docker logs for 'Monitor started'
-      final Process logsProcess = await Process.start('docker', ['logs', '-f', dockerInstance.containerName]);
-      logProcesses.add(logsProcess);
-      logsProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-        print('[$deviceName] $line');
-        if(line.contains('Monitor started')) {
-          print('[$deviceName] Monitor started, SSH server is ready');
-          logsProcess.kill();
-        }
-      });
-      logsProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-        print('[$deviceName] $line');
-        if(line.contains('Monitor started')) {
-          print('[$deviceName] Monitor started, SSH server is ready');
-          logsProcess.kill();
-        }
-      }); 
-    }
-    // case Language.c: {
-    // }
-    default: {
-      throw Exception('Language not supported: ${dockerInstance.dockerImage.language}');
-    }
-    }
+  // now wait for all monitors to complete
+  for(final (String deviceName, Completer<void> completer, Process process) in monitors) {
+    await completer.future.timeout(
+      Duration(seconds: 60),
+      onTimeout: () {
+        process.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+          print('stderr [$deviceName] $line');
+        });
+        process.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
+          print('stdout [$deviceName] $line');
+        });
+        throw TimeoutException('[$deviceName] Monitor did not start within 60 seconds');
+      },
+    );
   }
-
-  // for(final Process logProcess in logProcesses) {
-  //   final int exitCode = await logProcess.exitCode;
-  //   if(exitCode != 0) {
-  //     print('Log process exited with code $exitCode');
-  //     exit(1);
-  //   } else {
-  //     print('Log process exited successfully');
-  //   }
-  // }
 
   return dockerInstances;
 }
