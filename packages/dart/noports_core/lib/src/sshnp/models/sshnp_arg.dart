@@ -231,7 +231,7 @@ class SshnpArg {
     name: 'srvd',
     abbr: 'r',
     help:
-        'The Socket Rendezvous (SRVD) atSign to use. Omit to auto-select '
+        'The Relay atSign to use. Omit to auto-select '
         'the fastest available relay, or provide a comma-separated list to '
         'pick the fastest among them.',
   );

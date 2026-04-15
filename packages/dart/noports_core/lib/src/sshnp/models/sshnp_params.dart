@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -198,14 +197,7 @@ class NptParams extends ClientParamsBase
     this.controlChannelHeartbeat,
     this.localHost,
     super.only443 = false,
-  }) {
-    try {
-      AtUtils.fixAtSign(clientAtSign);
-      AtUtils.fixAtSign(sshnpdAtSign);
-    } on InvalidAtSignException catch (e) {
-      throw ArgumentError(e.message);
-    }
-  }
+  });
 
   /// not relevant for Npt
   @override
@@ -347,7 +339,7 @@ class SshnpParams extends ClientParamsBase
           (throw ArgumentError(
             'Option to is mandatory, unless list-devices is passed.',
           ));
-      }
+    }
 
     String device = partial.device ?? DefaultSshnpArgs.device;
     device = snakifyDeviceName(device);

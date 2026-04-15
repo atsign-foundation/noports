@@ -80,7 +80,7 @@ void main(List<String> args) async {
         'srvd',
         abbr: 'r',
         mandatory: false,
-        help: 'The Socket Rendezvous (SRVD) atSign to use. Omit to auto-select '
+        help: 'The Relay atSign to use. Omit to auto-select '
             'the fastest available relay, or provide a comma-separated list to '
             'pick the best among them.',
       );
