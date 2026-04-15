@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:e2e_all_v2/core_tests.dart';
+import 'package:e2e_all_v2/core_tests/core_tests.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
 
 Future<void> main(List<String> args) async {
@@ -12,7 +12,7 @@ Future<void> main(List<String> args) async {
   }
 
   // 2. Check required commands are available
-  final List<String> requiredCommands = [
+  const List<String> requiredCommands = [
     'docker',
     'git',
     'ssh-keygen',
@@ -24,7 +24,6 @@ Future<void> main(List<String> args) async {
   for (final String command in requiredCommands) {
     final ProcessResult result = await Process.run('which', [command]);
     if (result.exitCode != 0) {
-      print('ERROR: Required command not found: $command');
       print('Please install $command and ensure it is in your PATH');
       exit(1);
     }

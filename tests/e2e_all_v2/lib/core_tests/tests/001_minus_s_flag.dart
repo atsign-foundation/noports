@@ -7,9 +7,9 @@ import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
+import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
-import 'package:e2e_all_v2/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:at_cli_commons/at_cli_commons.dart';
 
@@ -26,13 +26,13 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-Future<List<CoreTestResult>> run001MinusSFlagTest({
+Future<List<CoreTestResult>> run001MinusSFlagTests({
   required final String clientAtsign,
   required final String daemonAtsign,
   required final String relayAtsign,
   required final String rootDomain,
   required final String remoteUsername,
-  required final List<String> daemonVersions,
+  required final List<NoPortsVersion> daemonVersions,
   required final String testRunId,
   required final List<ClientBinary> allClientBinaries,
   required final List<(String, DockerInstance)> dockerInstances,
@@ -49,17 +49,18 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
   final ClientBinary currentSshnpClientBinary = allClientBinaries.firstWhere((cb) =>
     cb.binaryType == ClientBinaryType.sshnp &&
     cb.noPortsVersion.version == 'current');
+  final String clientVersionStr = currentSshnpClientBinary.noPortsVersion.version;
 
-  for(final String daemonVersion in daemonVersions) {
-    final NoPortsVersion noPortsVersion = NoPortsVersion.fromLanguageVersionString(daemonVersion);
-    final Language language = noPortsVersion.language;
-    final String version = noPortsVersion.version;
+  for(final NoPortsVersion daemonVersion in daemonVersions) {
+    final Language daemonLanguage = daemonVersion.language;
+    final String daemonVersionStr = daemonVersion.version;
+    final String extra = '(client: ${clientVersionStr}, daemon : $daemonVersionStr)';
 
     // 2. Run sshnp against daemon without flags, expect failure
     final String deviceNameNoFlags = getDeviceNameNoFlags(
       testRunId: testRunId,
-      language: language,
-      version: version);
+      language: daemonLanguage,
+      version: daemonVersionStr);
 
     List<String> args = [
         '-f', clientAtsign, '-t', daemonAtsign,
@@ -68,7 +69,7 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
         '--root-domain', rootDomain,
         '-s',
     ];
-    if(language == Language.c) {
+    if(daemonLanguage == Language.c) {
       // if we're running against the C daemon,
       // only add -x
       args.add('-x');
@@ -92,42 +93,43 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
     }
 
     // 3. Run sshnp against daemon without flags, expect failure
+    printTestStart(testName: testName, extra: extra);
     final Process process1 = await startCommand(
       currentSshnpClientBinary.file.path,
       args,
     );
-
     final int exitCode = await process1.exitCode;
     if(exitCode == 0) {
-      StringBuffer stdoutBuffer = StringBuffer();
+      final StringBuffer stdoutBuffer = StringBuffer();
+      final StringBuffer stderrBuffer = StringBuffer();
       process1.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
         stdoutBuffer.writeln(line);
       });
-      StringBuffer stderrBuffer = StringBuffer();
       process1.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
         stderrBuffer.writeln(line);
       });
-      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.noPortsVersion.version} | Device Name: ${deviceNameNoFlags} Test Failed | exitCode=$exitCode');
+      print('Daemon version: $daemonVersionStr | Client version: ${currentSshnpClientBinary.noPortsVersion.version} | Device Name: ${deviceNameNoFlags} Test Failed | exitCode=$exitCode');
       CoreTestResult tr = CoreTestResult(
-        testName: '001_minus_s_flag_no_flags',
+        testName: testName,
         clientVersion: currentSshnpClientBinary.noPortsVersion.version,
-        daemonVersion: daemonVersion,
+        daemonVersion: daemonVersionStr,
         status: TestStatus.failed,
         exitCode: exitCode,
         stdout: stdoutBuffer,
         stderr: stderrBuffer,
       );
-      tr.printResult(printStdout: true, printStderr: false);
+      printTestResult(testResult: tr, extra: extra);
+      print(stderrBuffer.toString());
       testResults.add(tr);
     } else {
       CoreTestResult tr = CoreTestResult(
-        testName: '001_minus_s_flag_no_flags',
+        testName: testName,
         clientVersion: currentSshnpClientBinary.noPortsVersion.version,
-        daemonVersion: daemonVersion,
+        daemonVersion: daemonVersionStr,
         status: TestStatus.passed,
         exitCode: exitCode,
       );
-      tr.printResult(printStdout: false, printStderr: false);
+      printTestResult(testResult: tr, extra: extra);
       testResults.add(tr);
     }
 
@@ -142,7 +144,7 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
         '--root-domain', rootDomain,
         '-s',
     ];
-    if(language == Language.c) {
+    if(daemonLanguage == Language.c) {
       // if we're running against the C daemon,
       // only add -x
       args.add('-x');
@@ -165,29 +167,35 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
       args.add(apkamKeys[clientAtsign]!.path);
     }
 
+    printTestStart(testName: testName, extra: extra);
     final Process process2 = await startCommand(
       currentSshnpClientBinary.file.path,
       args,
     );
 
     final StringBuffer stdoutBuffer = StringBuffer();
+    final StringBuffer stderrBuffer = StringBuffer(); 
     // put sshnp -x output into stdout buffer
     process2.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
       stdoutBuffer.writeln(line);
     });
+    process2.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      stderrBuffer.writeln(line);
+    });
     final int exitCode2 = await process2.exitCode;
     if(exitCode2 == 0) {
     } else {
-      print('Daemon version: $daemonVersion | Client version: ${currentSshnpClientBinary.noPortsVersion} | Device Name: ${deviceNameWithFlags} Test Failed | exitCode=$exitCode2');
-      CoreTestResult tr = CoreTestResult(
-        testName: '001_minus_s_flag',
-        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
-        daemonVersion: daemonVersion,
+      print('Daemon version: $daemonVersionStr | Client version: ${clientVersionStr} | Device Name: ${deviceNameWithFlags} Test Failed | exitCode=$exitCode2');
+      final CoreTestResult tr = CoreTestResult(
+        testName: testName,
+        clientVersion: clientVersionStr,
+        daemonVersion: daemonVersionStr,
         status: TestStatus.failed,
         exitCode: exitCode2,
         stdout: stdoutBuffer,
       );
-      tr.printResult();
+      printTestResult(testResult: tr, extra: extra);
+      print(stderrBuffer.toString());
       testResults.add(tr);
     }
 
@@ -211,14 +219,15 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
     );
     final int sshExitCode = await sshProcess.exitCode;
     if(sshExitCode == 0) {
-      CoreTestResult tr = CoreTestResult(
+      final String clientVersion = currentSshnpClientBinary.noPortsVersion.version;
+      final CoreTestResult tr = CoreTestResult(
         testName: testName,
-        clientVersion: currentSshnpClientBinary.noPortsVersion.version,
-        daemonVersion: daemonVersion,
+        clientVersion: clientVersion,
+        daemonVersion: daemonVersionStr,
         status: TestStatus.passed,
         exitCode: sshExitCode,
       );
-      tr.printResult(printStdout: false, printStderr: false);
+      printTestResult(testResult: tr, extra: extra);
       testResults.add(tr);
     } else {
       final StringBuffer sshStdoutBuffer = StringBuffer();
@@ -229,16 +238,16 @@ Future<List<CoreTestResult>> run001MinusSFlagTest({
       sshProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
         sshStderrBuffer.writeln(line);
       });
-      CoreTestResult tr = CoreTestResult(
+      final CoreTestResult tr = CoreTestResult(
         testName: testName,
         clientVersion: currentSshnpClientBinary.noPortsVersion.version,
-        daemonVersion: daemonVersion,
+        daemonVersion: daemonVersionStr,
         status: TestStatus.failed,
         exitCode: sshExitCode,
         stdout: sshStdoutBuffer,
         stderr: sshStderrBuffer,
       );
-      tr.printResult(printStdout: true, printStderr: true);
+      printTestResult(testResult: tr, extra: extra);
       testResults.add(tr);
     }
   }

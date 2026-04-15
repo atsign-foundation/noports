@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
@@ -221,16 +220,3 @@ Future<List<ClientBinary>> _compileBranch({
 }) async {
   throw Exception('Compiling from branch is not yet implemented. Found branch: ${noPortsVersion.version}');
 }
-
-bool isCommandAvailable(String command) {
-  try {
-    final ProcessResult result = Process.runSync(
-      Platform.isWindows ? 'where' : 'which',
-      [command],
-    );
-    return result.exitCode == 0;
-  } catch (e) {
-    return false;
-  }
-}
-
