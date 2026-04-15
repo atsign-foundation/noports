@@ -61,6 +61,8 @@ mixin SrvdUtilMixin {
               }
               return false;
           }
+        case 'discover_request':
+          return true;
 
         default:
           if (throwIfFalse) {
