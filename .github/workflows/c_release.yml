@@ -83,8 +83,7 @@ jobs:
           mkdir tarball
           mv build/sshnpd .
           mv build/at_activate .
-      - if: ${{ matrix.os == 'macOS-13' || matrix.os == 'macos-14'}}
-        name: Zip the build
+      - name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
