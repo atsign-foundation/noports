@@ -11,7 +11,7 @@ enum DockerImageType {
 
 class DockerImage {
   final Language language;
-  final DockerImageType imageType;
+  final DockerImageType imageType; // imageType = release means tag is a release version like "v5.9.4". imageType = branch means tag is a branch name like "trunk" or a commit hash. imageType = current means tag is "current" and represents the current code on the machine (latest)
   final String tag; // e.g. "v5.9.4", "trunk", "commit hash", "current"
   late String fullImageName; // e.g. 'atsigncompany/e2e_lal_v2_dart:v5.9.4'
 
