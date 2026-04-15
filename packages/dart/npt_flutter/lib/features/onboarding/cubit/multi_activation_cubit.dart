@@ -72,7 +72,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> getFilePickerPath() async {
     emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['yaml'],
     );
