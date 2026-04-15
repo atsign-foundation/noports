@@ -44,6 +44,7 @@ class BackupKeyCubit extends Cubit<bool> {
   /// If the backup is successful, it shows a success message.
   /// If the backup fails, it shows an error message.
   /// It also pops the dialog if the backup is successful & [popDialog] is true.
+  // TODO: Update so It works for single activation as well as multi activation.
   Future<void> backUpKeys({bool popDialog = true}) async {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
@@ -60,10 +61,6 @@ class BackupKeyCubit extends Cubit<bool> {
     try {
       if (atKeys == null) throw Exception('No keys found for $atsign');
 
-      FileAtKeysIo atKeysIo = FileAtKeysIo(
-        filePath: (_) => '/path/to/${atsign}_key.atKeys',
-      );
-      atKeysIo.write(atsign, atKeys);
       final result = await BackUpKeyRepository().saveAtKeysToPath(
         atsign: atsign,
         atKeys: atKeys,
