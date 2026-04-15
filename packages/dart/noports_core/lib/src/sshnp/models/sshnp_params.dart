@@ -202,6 +202,10 @@ class NptParams extends ClientParamsBase
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
+      // Only fix srvd atSign if it's not a list
+      if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+        AtUtils.fixAtSign(srvdAtSign);
+      }
     } on InvalidAtSignException catch (e) {
       throw ArgumentError(e.message);
     }
