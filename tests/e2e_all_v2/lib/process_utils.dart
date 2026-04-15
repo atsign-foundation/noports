@@ -1,21 +1,23 @@
 import 'dart:io';
 
 Future<ProcessResult> runCommand(
-  String executable,
-  List<String> arguments, {
-  String? workingDirectory,
-  Map<String, String>? environment,
-  printCommand = false,
-  dynamic stdinData,
+  final String executable,
+  final List<String> arguments, {
+  final String? workingDirectory,
+  final Map<String, String>? environment,
+  final bool printCommand = true,
+  final bool printOutput = false,
 }) async {
-  print('> $executable ${arguments.join(' ')}');
+  if(printCommand) {
+    print('> $executable ${arguments.join(' ')}');
+  }
   final ProcessResult result = await Process.run(
     executable,
     arguments,
     workingDirectory: workingDirectory,
     environment: environment,
   );
-  if(printCommand) {
+  if(printOutput) {
     print('stdout:\n\t${result.stdout}');
     print('stderr:\n\t${result.stderr}');
   }
@@ -23,20 +25,23 @@ Future<ProcessResult> runCommand(
 }
 
 Future<Process> startCommand(
-  String executable,
-  List<String> arguments, {
-  String? workingDirectory,
-  Map<String, String>? environment,
-  bool printCommand = false,
+  final String executable,
+  final List<String> arguments, {
+  final String? workingDirectory,
+  final Map<String, String>? environment,
+  final bool printCommand = true,
+  final bool printOutput = false,
 }) async {
-  print('> $executable ${arguments.join(' ')}');
+  if(printOutput) {
+    print('> $executable ${arguments.join(' ')}');
+  }
   final Process process = await Process.start(
     executable,
     arguments,
     workingDirectory: workingDirectory,
     environment: environment,
   );
-  if(printCommand) {
+  if(printOutput) {
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
       print('${executable} stdout: $data');
     });
