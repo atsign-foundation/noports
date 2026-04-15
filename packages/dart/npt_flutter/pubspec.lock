@@ -101,10 +101,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client_flutter
-      sha256: c2a60091e2ffe22b0189f9715be3eb516d47e41348c18edb5aa4f474b08d271d
+      sha256: "2d5710ce32891d635963691b5fdcd0fa5291e9c0b69376b133fb54048edfca9c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.1.0"
   at_client_mobile:
     dependency: transitive
     description:

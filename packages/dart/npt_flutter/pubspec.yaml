@@ -40,7 +40,7 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^3.0.1
   at_client: ^3.11.0
-  at_client_flutter: ^1.0.2
+  at_client_flutter: ^1.1.0
   at_contact: ^3.0.8
   at_contacts_flutter: ^4.0.15
   at_server_status: ^1.1.1

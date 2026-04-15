@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'dart:typed_data';
 
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
+import 'package:at_auth/at_auth.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
@@ -49,17 +48,27 @@ class BackupKeyCubit extends Cubit<bool> {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
     var atsign = context.read<OnboardingCubit>().getAtsign();
+    //TODO: Test that backUpKeys works and then remove legacy commented code below
     // Build file data
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
-    var keyString = jsonEncode(aesEncryptedKeys);
-    final List<int> codeUnits = keyString.codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
+    // var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
+    // var keyString = jsonEncode(aesEncryptedKeys);
+    // final List<int> codeUnits = keyString.codeUnits;
+    // final Uint8List data = Uint8List.fromList(codeUnits);
+
+    AtKeys? atKeys = await KeychainStorage().getAtsign(atsign);
 
     try {
+      if (atKeys == null) throw Exception('No keys found for $atsign');
+
+      FileAtKeysIo atKeysIo = FileAtKeysIo(
+        filePath: (_) => '/path/to/${atsign}_key.atKeys',
+      );
+      atKeysIo.write(atsign, atKeys);
       final result = await BackUpKeyRepository().saveAtKeysToPath(
-        data: data,
+        atsign: atsign,
+        atKeys: atKeys,
         dialogTitle: strings.backupKeyDialogTitle,
-        fileName: '${atsign}_key.atKeys',
+        // fileName: '${atsign}_key.atKeys',
       );
       if (result) {
         // File saved Successfully

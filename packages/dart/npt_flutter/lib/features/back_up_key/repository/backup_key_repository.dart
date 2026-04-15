@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:npt_flutter/app.dart';
@@ -53,21 +52,27 @@ class BackUpKeyRepository {
 
   /// This method is used to save the atKeys to a file.
   Future<bool> saveAtKeysToPath({
-    required Uint8List data,
+    // required Uint8List data,
+    required Atsign atsign,
+    required AtKeys atKeys,
     required String dialogTitle,
-    required String fileName,
   }) async {
     // Get file path to write to
     String? outputFile = await FilePicker.saveFile(
       dialogTitle: dialogTitle,
-      fileName: fileName,
+      fileName: '${atsign}_key.atKeys',
     );
     if (outputFile == null) return false;
     // Create and write the file
     try {
-      var f = File(outputFile);
-      await f.create(recursive: true);
-      await f.writeAsBytes(data);
+      FileAtKeysIo atKeysIo = FileAtKeysIo(
+        // filePath: (_) => '/path/to/${atsign}_key.atKeys',
+        filePath: (_) => outputFile,
+      );
+      atKeysIo.write(atsign, atKeys);
+      // var f = File(outputFile);
+      // await f.create(recursive: true);
+      // await f.writeAsBytes(data);
       return true;
     } catch (e) {
       rethrow;
