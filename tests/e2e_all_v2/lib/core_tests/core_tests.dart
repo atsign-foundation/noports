@@ -10,6 +10,7 @@
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:e2e_all_v2/client_binary.dart';
@@ -18,6 +19,8 @@ import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
+import 'package:e2e_all_v2/process_utils.dart';
+import 'package:e2e_all_v2/test_result.dart';
 
 Future<List<CoreTestResult>> _001_minus_s_flag({
   required final String clientAtsign,

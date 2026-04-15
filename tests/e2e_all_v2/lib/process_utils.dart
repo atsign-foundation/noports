@@ -32,7 +32,7 @@ Future<Process> startCommand(
   final bool printCommand = true,
   final bool printOutput = false,
 }) async {
-  if(printOutput) {
+  if(printCommand) {
     print('> $executable ${arguments.join(' ')}');
   }
   final Process process = await Process.start(

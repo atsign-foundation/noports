@@ -19,6 +19,8 @@ class DockerInstance {
   late String containerName; // image tag
   Process? process; // instantiated from run()
   Process? logProcess; // instantiated from run()
+  File? stdoutLogFile; // instantiated from run()
+  File? stderrLogFile; // instantiated from run()
 
   DockerInstance({
     required this.dockerImage,
@@ -37,20 +39,14 @@ class DockerInstance {
   }
 
   Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
-    final Process logProcess = await startCommand(
-      'docker',
+    // Use shell redirection to write stdout and stderr to files
+    final Process logProcess = await Process.start(
+      'sh',
       [
-        'logs',
-        '-f', // follow log output
-        containerName,
+        '-c',
+        'docker logs -f $containerName 1>> ${stdoutLogFile.absolute.path} 2>> ${stderrLogFile.absolute.path}',
       ],
     );
-    logProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-      stdoutLogFile.writeAsStringSync(line + '\n', mode: FileMode.append);
-    });
-    logProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-      stderrLogFile.writeAsStringSync(line + '\n', mode: FileMode.append);
-    });
     this.logProcess = logProcess;
   }
 
@@ -93,7 +89,11 @@ class DockerInstance {
     final Process process = await startCommand(executable, args);
     this.process = process;
     if(stdoutLogFile != null && stderrLogFile != null) {
-      _startDockerLogProcess(stdoutLogFile: stdoutLogFile, stderrLogFile: stderrLogFile);
+      this.stdoutLogFile = stdoutLogFile;
+      this.stderrLogFile = stderrLogFile;
+      // Wait a moment for the container to be created before starting log capture
+      await Future.delayed(Duration(milliseconds: 500));
+      await _startDockerLogProcess(stdoutLogFile: stdoutLogFile, stderrLogFile: stderrLogFile);
     } else if(stdoutLogFile == null && stderrLogFile != null || stdoutLogFile != null && stderrLogFile == null) {
       throw Exception('Both stdoutLogFile and stderrLogFile must be provided to capture logs.');
     }

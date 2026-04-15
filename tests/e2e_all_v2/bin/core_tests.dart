@@ -18,7 +18,35 @@ import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/utils.dart';
 
 Future<void> main(List<String> args) async {
-  // 1. declare const variables
+  // 1. Check OS compatibility
+  if (!Platform.isMacOS && !Platform.isLinux) {
+    print('ERROR: This script only supports macOS and Linux');
+    print('Current platform: ${Platform.operatingSystem}');
+    exit(1);
+  }
+
+  // 2. Check required commands are available
+  final List<String> requiredCommands = [
+    'docker',
+    'git',
+    'ssh-keygen',
+    'chmod',
+    'sh',
+  ];
+
+  print('Checking required commands...');
+  for (final String command in requiredCommands) {
+    final ProcessResult result = await Process.run('which', [command]);
+    if (result.exitCode != 0) {
+      print('ERROR: Required command not found: $command');
+      print('Please install $command and ensure it is in your PATH');
+      exit(1);
+    }
+    print('  ✓ $command: ${result.stdout.toString().trim()}');
+  }
+  print('');
+
+  // 3. declare const variables
   const List<String> clientVersions = [
     'd:v5.9.4',
     'd:v5.11.2',
@@ -34,7 +62,7 @@ Future<void> main(List<String> args) async {
     'd:v5.13.0',
   ];
 
-  // 2. parse args
+  // 4. parse args
   CoreTestsParams e2eAllV2Params;
   try {
     e2eAllV2Params = CoreTestsParams.parse(args);
@@ -51,11 +79,11 @@ Future<void> main(List<String> args) async {
   print('');
 
   try {
-    // 3. $testRunId = git rev-parse --short HEAD (shortened git commit hash)
+    // 5. $testRunId = git rev-parse --short HEAD (shortened git commit hash)
     final String testRunId = await _getShortenedGitCommitHash();
     print('\ntestRunId: $testRunId\n');
 
-    // 4. create directory structure: 
+    // 6. create directory structure: 
     //  ./e2e_all_v2/$testRunId/
     //    ├── apkamKeys/
     //    ├── logs/
@@ -74,7 +102,7 @@ Future<void> main(List<String> args) async {
     ensureDirectoryExists(logsDirectory);
     ensureDirectoryExists(binariesDirectory);
 
-    // 5. download client binaries
+    // 7. download client binaries
     List<(Language, String, ClientBinaryType)> clientBinaryTuples = [];
     clientVersions.forEach((languageVersionStr) {
       NoPortsVersion noPortsVersion = NoPortsVersion.fromLanguageVersionString(languageVersionStr);
@@ -98,7 +126,7 @@ Future<void> main(List<String> args) async {
     }
     print('');
 
-    // 6. set up client and daemon apkam keys
+    // 8. set up client and daemon apkam keys
     final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.noPortsVersion.version == 'current');
     Map<String, File> apkamKeys = await setUpApkamKeys(
       atActivateClientBinary: atActivateClientBinary,
@@ -109,15 +137,17 @@ Future<void> main(List<String> args) async {
       testRunId: testRunId
     );
 
-    // 7. set up docker daemons
+    // 9. set up docker daemons
     final List<(String, DockerInstance)> dockerInstances = await startDockerDaemons(
       clientAtsign: e2eAllV2Params.clientAtsign,
       daemonVersions: daemonVersions,
       daemonAtsign: e2eAllV2Params.daemonAtsign,
+      daemonAtsignContainerKeyFilePath: '/atsign/.atsign/keys/${apkamKeys[e2eAllV2Params.daemonAtsign]!.path.split('/').last}',
       rootDomain: e2eAllV2Params.rootDomain,
       testRunId: testRunId,
       apkamKeysDirectory: apkamKeysDirectory,
-      daemonAtsignContainerKeyFilePath: '/atsign/.atsign/keys/${apkamKeys[e2eAllV2Params.daemonAtsign]!.path.split('/').last}');
+      logsDirectory: logsDirectory,
+    );
     print('');
     print('Started ${dockerInstances.length} docker daemon instances');
     for(final (String, DockerInstance) dockerInstance in dockerInstances) {
@@ -125,7 +155,7 @@ Future<void> main(List<String> args) async {
     }
     print('');
 
-    // 8. Run tests
+    // 10. Run tests
 
     List<CoreTestResult> allTestResults = [];
 

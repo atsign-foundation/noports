@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-
+import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -18,6 +17,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
   required final String rootDomain,
   required final String testRunId,
   required final Directory apkamKeysDirectory,
+  required final Directory logsDirectory,
 }) async {
   final List<DockerImage> dockerImages = [];
   for(final String daemonVersion in daemonVersions) {
@@ -54,10 +54,10 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     }
   }
 
-  // Create log directory structure
-  final Directory logDirectory = Directory('e2e_all_v2/$testRunId/daemons');
-  if (!logDirectory.existsSync()) {
-    logDirectory.createSync(recursive: true);
+  // create log directory structure
+  final Directory daemonsLogsDirectory = Directory(path.join(logsDirectory.path, 'daemons'));
+  if (!daemonsLogsDirectory.existsSync()) {
+    daemonsLogsDirectory.createSync(recursive: true);
   }
 
   final List<(String, DockerInstance)> dockerInstances = [];
@@ -70,8 +70,8 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
       language: dockerInstance1.dockerImage.language,
       version: dockerInstance1.dockerImage.tag);
 
-    final File stdout1 = File('${logDirectory.path}/${dockerInstance1.containerName}_stdout.log');
-    final File stderr1 = File('${logDirectory.path}/${dockerInstance1.containerName}_stderr.log');
+    final File stdout1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stdout.log');
+    final File stderr1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stderr.log');
 
     await dockerInstance1.run(
       entrypoint: [
@@ -106,8 +106,8 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     );
     final String deviceNameWithFlags = '${deviceNameNoFlags}_f';
 
-    final File stdout2 = File('${logDirectory.path}/${dockerInstance2.containerName}_stdout.log');
-    final File stderr2 = File('${logDirectory.path}/${dockerInstance2.containerName}_stderr.log');
+    final File stdout2 = File('${daemonsLogsDirectory.path}/${dockerInstance2.containerName}_stdout.log');
+    final File stderr2 = File('${daemonsLogsDirectory.path}/${dockerInstance2.containerName}_stderr.log');
 
     await dockerInstance2.run(
       entrypoint: [
@@ -136,85 +136,70 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }
 
-  // ensure monitor has started by monitoring the log processes
-  final List<(String deviceName, Completer<void> completer)> monitors = [];
+  sleep(Duration(seconds: 5));
 
+  // now wait for all monitors to complete by polling log files
+  const String monitorMessage = 'monitor started';
   for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
-    const String monitorMessage = 'monitor started';
-    final Completer<void> monitorStartedCompleter = Completer<void>();
-
-    // Use the logProcess that was already started by DockerInstance.run()
-    final Process? logProcess = dockerInstance.logProcess;
-    if (logProcess == null) {
-      throw Exception('[$deviceName] Log process not started for docker instance');
+    final File? stdoutLog = dockerInstance.stdoutLogFile;
+    final File? stderrLog = dockerInstance.stderrLogFile;
+    if (stdoutLog == null || stderrLog == null) {
+      throw Exception('[${dockerInstance.containerName}] Log files not set on docker instance');
     }
 
-    logProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-      if(line.toLowerCase().contains(monitorMessage)) {
-        if(!monitorStartedCompleter.isCompleted) {
-          monitorStartedCompleter.complete();
+    final DateTime startTime = DateTime.now();
+    const Duration timeout = Duration(seconds: 60);
+    bool monitorStarted = false;
+
+    while (!monitorStarted && DateTime.now().difference(startTime) < timeout) {
+      // Check if log files exist and contain the monitor started message
+      if (stderrLog.existsSync()) {
+        final String content = stderrLog.readAsStringSync();
+        if (content.toLowerCase().contains(monitorMessage)) {
+          print('[${dockerInstance.containerName}] Monitor started (detected in stderr)');
+          monitorStarted = true;
+          break;
         }
       }
-    });
+      await Future.delayed(Duration(seconds: 1));
+    }
 
-    logProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((String line) {
-      if(line.toLowerCase().contains(monitorMessage)) {
-        if(!monitorStartedCompleter.isCompleted) {
-          monitorStartedCompleter.complete();
+    if (!monitorStarted) {
+      print('[${dockerInstance.containerName}] TIMEOUT: Monitor did not start within 60 seconds');
+      print('[${dockerInstance.containerName}] Dumping recent stderr logs:');
+
+      if (stderrLog.existsSync()) {
+        final String stderrContent = stderrLog.readAsStringSync();
+        final List<String> stderrLines = stderrContent.split('\n');
+        // Print last 50 lines of stderr
+        final int startLine = stderrLines.length > 50 ? stderrLines.length - 50 : 0;
+        for (int i = startLine; i < stderrLines.length; i++) {
+          if (stderrLines[i].isNotEmpty) {
+            print('  stderr: ${stderrLines[i]}');
+          }
         }
+      } else {
+        print('  (stderr log file not found)');
       }
-    });
 
-    monitors.add((deviceName, monitorStartedCompleter));
-  }
-
-  // now wait for all monitors to complete
-  for(final (String deviceName, Completer<void> completer) in monitors) {
-    // Find the corresponding docker instance to access its log files
-    final DockerInstance dockerInstance = dockerInstances.firstWhere((tuple) => tuple.$1 == deviceName).$2;
-
-    await completer.future.timeout(
-      Duration(seconds: 60),
-      onTimeout: () async {
-        print('[$deviceName] TIMEOUT: Monitor did not start within 60 seconds');
-        print('[$deviceName] Dumping recent stderr logs:');
-
-        // Read the stderr log file to show what went wrong
-        final File stderrLogFile = File('${logDirectory.path}/${dockerInstance.containerName}_stderr.log');
-        final File stdoutLogFile = File('${logDirectory.path}/${dockerInstance.containerName}_stdout.log');
-
-        if (stderrLogFile.existsSync()) {
-          final String stderrContent = stderrLogFile.readAsStringSync();
-          final List<String> stderrLines = stderrContent.split('\n');
-          // Print last 50 lines of stderr
-          final int startLine = stderrLines.length > 50 ? stderrLines.length - 50 : 0;
-          for (int i = startLine; i < stderrLines.length; i++) {
-            if (stderrLines[i].isNotEmpty) {
-              print('  stderr: ${stderrLines[i]}');
-            }
+      print('[${dockerInstance.containerName}] Dumping recent stdout logs:');
+      if (stdoutLog.existsSync()) {
+        final String stdoutContent = stdoutLog.readAsStringSync();
+        final List<String> stdoutLines = stdoutContent.split('\n');
+        final int startLine = stdoutLines.length > 50 ? stdoutLines.length - 50 : 0;
+        for (int i = startLine; i < stdoutLines.length; i++) {
+          if (stdoutLines[i].isNotEmpty) {
+            print('  stdout: ${stdoutLines[i]}');
           }
-        } else {
-          print('  (stderr log file not found)');
         }
+      } else {
+        print('  (stdout log file not found)');
+      }
 
-        print('[$deviceName] Dumping recent stdout logs:');
-        if (stdoutLogFile.existsSync()) {
-          final String stdoutContent = stdoutLogFile.readAsStringSync();
-          final List<String> stdoutLines = stdoutContent.split('\n');
-          // Print last 50 lines of stdout
-          final int startLine = stdoutLines.length > 50 ? stdoutLines.length - 50 : 0;
-          for (int i = startLine; i < stdoutLines.length; i++) {
-            if (stdoutLines[i].isNotEmpty) {
-              print('  stdout: ${stdoutLines[i]}');
-            }
-          }
-        } else {
-          print('  (stdout log file not found)');
-        }
-
-        throw TimeoutException('[$deviceName] Monitor did not start within 60 seconds');
-      },
-    );
+      throw TimeoutException('[$deviceName] Monitor did not start within 60 seconds');
+    } else {
+      print('[${dockerInstance.containerName}] Docker instance is ready');
+    }
   }
 
   return dockerInstances;
