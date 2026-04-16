@@ -219,6 +219,7 @@ Future<List<CoreTestResult>> run001MinusSFlagTests({
     );
     final int sshExitCode = await sshProcess.exitCode;
     if(sshExitCode == 0) {
+      // TODO read stdout for 'TEST PASSED'
       final String clientVersion = currentSshnpClientBinary.noPortsVersion.version;
       final CoreTestResult tr = CoreTestResult(
         testName: testName,

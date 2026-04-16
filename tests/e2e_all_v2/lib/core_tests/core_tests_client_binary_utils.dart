@@ -9,7 +9,8 @@ import 'package:path/path.dart' as path;
 
 Future<List<ClientBinary>> fetchClientBinaries({
   required final Directory binariesDirectory,
-  required final List<(Language, String, ClientBinaryType)> clientBinaryTuples}) async {
+  required final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload
+}) async {
   // 1. ensure binariesDirectory exists
   final bool dirExists = await ensureDirectoryExists(binariesDirectory);
   if(!dirExists) {
@@ -23,21 +24,20 @@ Future<List<ClientBinary>> fetchClientBinaries({
   //   'current': [ClientBinaryType.at_activate,...]
   // }
   final Map<Language, Map<String, List<ClientBinaryType>>> map = {};
-  for(final (Language, String, ClientBinaryType) e in clientBinaryTuples) {
-    final Language language = e.$1;
+  for(final (NoPortsVersion noPortsVersion, ClientBinaryType clientBinaryType) in clientBinariesToDownload) {
+    final Language language = noPortsVersion.language;
+    final String version = noPortsVersion.version;
     if(language != Language.dart) {
       throw Exception('Currently only dart client binaries are supported. Found language: ${language.name}');
     }
-    final String version = e.$2;
-    final ClientBinaryType binaryType = e.$3;
     map.putIfAbsent(language, () => {});
     map[language]!.putIfAbsent(version, () => []);
-    map[language]![version]!.add(binaryType);
+    map[language]![version]!.add(clientBinaryType);
   }
 
 
   // 3. fetch binaries sorted by version and language
-  final List<ClientBinary> allClientBinaries = [];
+  final List<ClientBinary> clientBinaries = [];
   for(final Language language in map.keys) {
     final Map<String, List<ClientBinaryType>> versionMap = map[language]!;
     for(final String version in versionMap.keys) {
@@ -46,15 +46,15 @@ Future<List<ClientBinary>> fetchClientBinaries({
       final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
       NoPortsVersion noPortsVersion = NoPortsVersion(language: language, version: version);
       if(version == 'current') {
-        allClientBinaries.addAll(await _compileCurrent(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        clientBinaries.addAll(await _compileCurrent(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       } else if(version.startsWith('v')) {
-        allClientBinaries.addAll(await _downloadRelease(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        clientBinaries.addAll(await _downloadRelease(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       } else {
-        allClientBinaries.addAll(await _compileBranch(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        clientBinaries.addAll(await _compileBranch(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
       }
     }
   }
-  return allClientBinaries;
+  return clientBinaries;
 }
 
 Future<List<ClientBinary>> _compileCurrent({
@@ -213,6 +213,7 @@ Future<List<ClientBinary>> _downloadRelease({
   return clientBinaries;
 }
 
+// TODO : implement
 Future<List<ClientBinary>> _compileBranch({
   required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,

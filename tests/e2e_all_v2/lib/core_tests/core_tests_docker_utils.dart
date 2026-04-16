@@ -39,7 +39,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
   for(final DockerImage dockerImage in dockerImages) {
     if(!(await dockerImage.existsOnMachine())) {
       print('Docker image not found on machine: ${dockerImage.fullImageName}. Pulling from registry...');
-      final Process pullProcess = await dockerImage.pull(quiet: true);
+      final Process pullProcess = await dockerImage.pull(quiet: true); // sudo docker pull <imageName>
       if((await pullProcess.exitCode) != 0) {
         print('Failed to pull docker image ${dockerImage.fullImageName}. Exit code: ${await pullProcess.exitCode}');
         print('Building instead...');
@@ -72,7 +72,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     final File stdout1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stdout.log');
     final File stderr1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stderr.log');
 
-    await dockerInstance1.run(
+    await dockerInstance1.run( // sudo docker run 
       entrypoint: [
         '/bin/bash',
         '-c',

@@ -49,19 +49,17 @@ Future<void> coreTests(CoreTestsParams params) async {
   ensureDirectoryExists(binariesDirectory);
 
   // 4. download client binaries
-  List<(Language, String, ClientBinaryType)> clientBinaryTuples = [];
-  clientVersions.forEach((noPortsVersion) {
-    final Language language = noPortsVersion.language;
-    final String version = noPortsVersion.version;
-    clientBinaryTuples.add((language, version, ClientBinaryType.sshnp));
-    clientBinaryTuples.add((language, version, ClientBinaryType.srv));
-    clientBinaryTuples.add((language, version, ClientBinaryType.npt));
-  });
-  clientBinaryTuples.add((Language.dart, 'current', ClientBinaryType.at_activate));
+  final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload = [];
+  for(final NoPortsVersion clientVersion in clientVersions) {
+    clientBinariesToDownload.add((clientVersion, ClientBinaryType.sshnp));
+    clientBinariesToDownload.add((clientVersion, ClientBinaryType.npt));
+    clientBinariesToDownload.add((clientVersion, ClientBinaryType.srv));
+  }
+  clientBinariesToDownload.add((NoPortsVersion(language: Language.dart, version: 'current'), ClientBinaryType.at_activate));
 
-  print('Fetching ${clientBinaryTuples.length} client binaries...');
-  List<ClientBinary> clientBinaries = await fetchClientBinaries(
-      clientBinaryTuples: clientBinaryTuples,
+  print('Fetching ${clientBinariesToDownload.length} client binaries...');
+  final List<ClientBinary> clientBinaries = await fetchClientBinaries(
+      clientBinariesToDownload: clientBinariesToDownload,
       binariesDirectory: binariesDirectory);
 
   print('');
@@ -73,7 +71,7 @@ Future<void> coreTests(CoreTestsParams params) async {
 
   // 5. set up client and daemon apkam keys
   final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.noPortsVersion.version == 'current');
-  Map<String, File> apkamKeys = await setUpApkamKeys(
+  final Map<String, File> apkamKeys = await setUpApkamKeys(
     atActivateClientBinary: atActivateClientBinary,
     clientAtsign: params.clientAtsign,
     daemonAtsign: params.daemonAtsign,
@@ -118,6 +116,13 @@ Future<void> coreTests(CoreTestsParams params) async {
       remoteUsername: 'atsign',
     )));
 
+  // stop docker instances without the `_f`
+  for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
+    if(!deviceName.endsWith('_f')) {
+      await dockerInstance.stop();
+    }
+  }
+
   allTestResults.addAll(
     (await runMinusRFlagTests(
       clientAtsign: params.clientAtsign,
@@ -127,7 +132,7 @@ Future<void> coreTests(CoreTestsParams params) async {
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
       testRunId: testRunId,
-      allClientBinaries: clientBinaries,
+      clientBinaries: clientBinaries,
       dockerInstances: dockerInstances,
       apkamKeys: apkamKeys,
       remoteUsername: 'atsign',

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/process_utils.dart';
@@ -18,7 +17,7 @@ class DockerInstance {
   final String testRunId;
   late String containerName; // image tag
   Process? process; // instantiated from run()
-  Process? logProcess; // instantiated from run()
+  Process? logProcess; // instantiated from run() // sudo docker logs -f <containerName> 1>> <stdoutLogFile> 2>> <stderrLogFile>
   File? stdoutLogFile; // instantiated from run()
   File? stderrLogFile; // instantiated from run()
 
@@ -40,7 +39,7 @@ class DockerInstance {
 
   Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
     // Use shell redirection to write stdout and stderr to files
-    final Process logProcess = await Process.start(
+    final Process logProcess = await startCommand(
       'sh',
       [
         '-c',

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 
 // 1. Run with --host
@@ -29,7 +32,10 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
   required final String rootDomain,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
+  required final List<ClientBinary> clientBinaries,
   required final List<(String, DockerInstance)> dockerInstances,
+  required final Map<String, File> apkamKeys,
+  required final String remoteUsername,
 }) async {
   final List<(NoPortsVersion, NoPortsVersion)> versionCombinations = _generateVersionCombinations();
   print('Generated version combinations:');
