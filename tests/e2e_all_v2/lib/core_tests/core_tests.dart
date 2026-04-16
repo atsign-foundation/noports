@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
-import 'package:e2e_all_v2/core_tests/apkam_setup.dart';
-import 'package:e2e_all_v2/core_tests/client_binary_utils.dart';
-import 'package:e2e_all_v2/core_tests/core_test_result.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_apkam_setup.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_client_binary_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
-import 'package:e2e_all_v2/core_tests/docker_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
+import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
@@ -109,6 +110,21 @@ Future<void> coreTests(CoreTestsParams params) async {
       daemonAtsign: params.daemonAtsign,
       relayAtsign: params.relayAtsign,
       rootDomain: params.rootDomain,
+      daemonVersions: daemonVersions,
+      testRunId: testRunId,
+      allClientBinaries: clientBinaries,
+      dockerInstances: dockerInstances,
+      apkamKeys: apkamKeys,
+      remoteUsername: 'atsign',
+    )));
+
+  allTestResults.addAll(
+    (await runMinusRFlagTests(
+      clientAtsign: params.clientAtsign,
+      daemonAtsign: params.daemonAtsign,
+      relayAtsign: params.relayAtsign,
+      rootDomain: params.rootDomain,
+      clientVersions: clientVersions,
       daemonVersions: daemonVersions,
       testRunId: testRunId,
       allClientBinaries: clientBinaries,
