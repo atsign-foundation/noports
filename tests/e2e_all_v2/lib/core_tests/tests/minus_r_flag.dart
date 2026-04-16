@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/noports_version.dart';
@@ -37,15 +38,25 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
   required final Map<String, File> apkamKeys,
   required final String remoteUsername,
 }) async {
-  final List<(NoPortsVersion, NoPortsVersion)> versionCombinations = _generateVersionCombinations();
+  final List<(NoPortsVersion, NoPortsVersion)> versionCombinations = 
+    _generateVersionCombinations(
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    );
   print('Generated version combinations:');
   for(final (clientVersion, daemonVersion) in versionCombinations) {
     print('Client: ${clientVersion.version}, Daemon: ${daemonVersion.version}'); 
   }
+
+
+
   final List<CoreTestResult> results = [];
   return results;
 }
 
+// we only want to check:
+//   a. non-current client with current daemon
+//   b. current cleint with non-current daemon
 List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
