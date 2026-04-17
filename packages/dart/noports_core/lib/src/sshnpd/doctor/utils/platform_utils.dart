@@ -397,7 +397,8 @@ class LinuxUtils implements PlatformUtils {
     try {
       for (final name in apkNames) {
         final opkg = await Process.run('opkg', ['status', name]);
-        if (opkg.exitCode == 0 && opkg.stdout.toString().contains('Status: install')) {
+        if (opkg.exitCode == 0 &&
+            opkg.stdout.toString().contains('Status: install')) {
           return 'opkg update && opkg upgrade $name';
         }
       }
@@ -550,7 +551,6 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<String?> detectPackageManagerInstall(String packageName) async {
-    // No supported package manager detection on Windows
     return null;
   }
 }
