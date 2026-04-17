@@ -71,8 +71,8 @@ class VersionCheck extends DiagnosticCheck {
         print('New version: $cleanLatest');
 
         // Check if sshnpd was installed via a package manager
-        String? packageManagerCmd =
-            await PlatformUtils.instance.detectPackageManagerInstall('sshnpd');
+        String? packageManagerCmd = await PlatformUtils.instance
+            .detectPackageManagerInstall('noports');
 
         if (packageManagerCmd != null) {
           print(
@@ -161,7 +161,6 @@ class VersionCheck extends DiagnosticCheck {
     }
   }
 
-  // Function to download the update
   Future<bool> _performUpdate(String downloadUrl, String fileName) async {
     print('\n  Downloading $fileName from GitHub...');
 
@@ -189,7 +188,8 @@ class VersionCheck extends DiagnosticCheck {
       // and the script crashes. We need to handle two cases:
       // 1. Already root → inject SUDO_USER into the environment
       // 2. Not root on Linux → run via sudo
-      final isRoot = Platform.isLinux &&
+      final isRoot =
+          Platform.isLinux &&
           (await Process.run('id', ['-u'])).stdout.toString().trim() == '0';
 
       String executable;
@@ -230,9 +230,8 @@ class VersionCheck extends DiagnosticCheck {
         return false;
       }
     } catch (e) {
-      print(' Download error: $e');
+      print(' Update error: $e');
       return false;
     }
   }
-
 }
