@@ -37,6 +37,13 @@ class NoPortsVersion {
     final String cleanVersionString = getCleanVersionString(); // e.g. 'current', '5.9.4', '0.0.1'
     return '$languageInitial:$cleanVersionString';
   }
+
+  operator ==(Object other) {
+    if(other is NoPortsVersion) {
+      return language == other.language && version == other.version;
+    }
+    return false;
+  }
 }
 
 bool versionIsAtLeast(NoPortsVersion versionToCheck, NoPortsVersion minimumVersion) {
@@ -54,4 +61,21 @@ bool versionIsAtLeast(NoPortsVersion versionToCheck, NoPortsVersion minimumVersi
   final Version version = Version.parse(cleanVersionStr);
   final Version minimumVersionParsed = Version.parse(cleanMinimumVersion);
   return version >= minimumVersionParsed;
+}
+
+bool versionIsLessThan(NoPortsVersion versionToCheck, NoPortsVersion maximumVersion) {
+  if(versionToCheck.version == 'current') {
+    return false; // treat "current" as a very high version for comparison purposes
+  }
+  if(maximumVersion.version == 'current') {
+    return true; // "current" is only greater than versions that are less than "current"
+  }
+
+  final String cleanVersionStr = versionToCheck.getCleanVersionString(); // e.g. '5.9.4', 'trunk', '0.0.1'
+  final String cleanMaximumVersion = maximumVersion.getCleanVersionString(); // e.g. '5.9.4', 'trunk', '0.0.1'
+
+  // Parse and compare versions
+  final Version version = Version.parse(cleanVersionStr);
+  final Version maximumVersionParsed = Version.parse(cleanMaximumVersion);
+  return version < maximumVersionParsed;
 }

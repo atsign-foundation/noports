@@ -1,5 +1,6 @@
 import 'dart:io';
-
+import 'package:path/path.dart' as path;
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_apkam_setup.dart';
@@ -11,6 +12,7 @@ import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
+import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 import 'package:e2e_all_v2/utils.dart';
 
@@ -98,7 +100,12 @@ Future<void> coreTests(CoreTestsParams params) async {
   }
   print('');
 
-  // 7. Run tests
+  // 7. generate new ssh key
+  final (File, File) sshKeys = await _generateNewSshKey(testRunId: testRunId);
+  final File identityFile = sshKeys.$2;
+  print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
+
+  // 8. Run tests
   List<CoreTestResult> allTestResults = [];
 
   // a. 001_minus_s_flag
@@ -114,14 +121,18 @@ Future<void> coreTests(CoreTestsParams params) async {
       dockerInstances: dockerInstances,
       apkamKeys: apkamKeys,
       remoteUsername: 'atsign',
+      identityFilePath: identityFile.path,
     )));
 
   // stop docker instances without the `_f`
+  final List<(String, DockerInstance)> dockerInstancesToRemove = [];
   for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
     if(!deviceName.endsWith('_f')) {
       await dockerInstance.stop();
+      dockerInstancesToRemove.add((deviceName, dockerInstance));
     }
   }
+  dockerInstancesToRemove.forEach((instance) => dockerInstances.remove(instance));
 
   allTestResults.addAll(
     (await runMinusRFlagTests(
@@ -136,6 +147,7 @@ Future<void> coreTests(CoreTestsParams params) async {
       dockerInstances: dockerInstances,
       apkamKeys: apkamKeys,
       remoteUsername: 'atsign',
+      identityFilePath: identityFile.path,
     )));
 
   // 8. Print test results summary
@@ -149,4 +161,50 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('    Passed: $passedTests');
   print('    Failed: $failedTests');
   print('');
+}
+
+String _getIdentitfyFilePath({required final String testRunId}) {
+  final String? homeDirectoryPath = getHomeDirectory(throwIfNull: false);
+  if(homeDirectoryPath == null) {
+    throw Exception('Unable to determine home directory path for current user.');
+  }
+  return path.join(homeDirectoryPath, '.ssh', 'e2e_all_v2.${testRunId}');
+}
+
+Future<(File, File)> _generateNewSshKey({required final String testRunId}) async {
+  final String? homeDirectoryPath = getHomeDirectory(throwIfNull: false);
+  if(homeDirectoryPath == null) {
+    throw Exception('Unable to determine home directory path for current user.');
+  }
+
+  final Directory sshDirectory = Directory(path.join(homeDirectoryPath, '.ssh'));
+  if(!(await sshDirectory.exists())) {
+    throw Exception('SSH directory does not exist: ${sshDirectory.path}');
+  }
+
+  // Change the permissions of the authorized_keys file so that we can add public keys to it
+  await runCommand(
+    'chmod',
+    ['go-rwx', path.join(sshDirectory.path, 'authorized_keys')],
+  );
+
+  // ssh-keygen -t ed25519 -q -N '' -f $identityFileName -C $testRunId <<<y >/dev/null 2>&1
+  final String identityFilePath = _getIdentitfyFilePath(testRunId: testRunId);
+  await runCommand(
+    'ssh-keygen',
+    [
+      '-t', 'ed25519',
+      '-q',
+      '-N', '',
+      '-f', identityFilePath,
+      '-C', testRunId,
+    ],
+  );
+
+  final File identityFile = File(identityFilePath);
+  final File publicIdentityFile = File('$identityFilePath.pub');
+  if(!(await identityFile.exists()) || !(await publicIdentityFile.exists())) {
+    throw Exception('Failed to generate ssh key pair. Expected files not found: $identityFilePath and ${publicIdentityFile.path}');
+  }
+  return (publicIdentityFile, identityFile);
 }
