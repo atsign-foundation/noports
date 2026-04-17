@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.14.13
+version: 5.15.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -15,7 +15,7 @@ dependencies:
   at_client: ^3.11.0
   args: 2.7.0
   socket_connector: 2.4.1
-  dartssh2: 2.11.0
+  dartssh2: ^2.17.1
   duration: 4.0.3
   at_utils: 3.4.0
   logging: 1.3.0
@@ -25,10 +25,7 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
-  dartssh2:
-    git:
-      url: https://github.com/atsign-foundation/dartssh2
-      ref: trunk
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   lints: ^6.1.0

@@ -202,7 +202,10 @@ class NptParams extends ClientParamsBase
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
-      AtUtils.fixAtSign(srvdAtSign);
+      // Only fix srvd atSign if it's not a list
+      if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+        AtUtils.fixAtSign(srvdAtSign);
+      }
     } on InvalidAtSignException catch (e) {
       throw ArgumentError(e.message);
     }
@@ -348,7 +351,7 @@ class SshnpParams extends ClientParamsBase
           (throw ArgumentError(
             'Option to is mandatory, unless list-devices is passed.',
           ));
-      }
+    }
 
     String device = partial.device ?? DefaultSshnpArgs.device;
     device = snakifyDeviceName(device);

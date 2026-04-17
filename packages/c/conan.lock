@@ -1,9 +1,9 @@
 {
     "version": "0.5",
     "requires": [
-        "mbedtls/3.6.5#a0bef4f6a5008d9e0f323072fbd6fe36%1761228374.4601321",
+        "mbedtls/3.6.6#e80b3d1702067f8f0bd1994f7627b80f%1776087206.665706",
         "cjson/1.7.19#0f1d9770c2c7898029ef69e0df621838%1757507235.3264372",
-        "at_c/0.3.7#7bc8270c89de979be1bfaad62e258f91%1761232095.1807199"
+        "at_c/0.3.8#2a9a91492336ac1bf75f66cb78de036e%1776155693.9677823"
     ],
     "build_requires": [],
     "python_requires": [],

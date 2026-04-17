@@ -2,6 +2,11 @@
 
 <!-- pyml disable md034-->
 
+## v5.15.0
+
+* feat: auto select best RV
+* fix: Better handling of sudo for universal.sh
+
 ## v5.14.13
 
 * feat: sshnpd doctor by @LilianGRD
