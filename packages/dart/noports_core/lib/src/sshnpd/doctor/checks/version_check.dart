@@ -183,10 +183,38 @@ class VersionCheck extends DiagnosticCheck {
 
       print(' Download completed: $path');
       await Process.run('chmod', ['+x', path]);
+
+      // universal.sh uses `set -eu` then reads $SUDO_USER in parse_env.
+      // When running as root directly (not via sudo), SUDO_USER is unset
+      // and the script crashes. We need to handle two cases:
+      // 1. Already root → inject SUDO_USER into the environment
+      // 2. Not root on Linux → run via sudo
+      final isRoot = Platform.isLinux &&
+          (await Process.run('id', ['-u'])).stdout.toString().trim() == '0';
+
+      String executable;
+      List<String> args;
+      Map<String, String>? environment;
+
+      if (Platform.isLinux && !isRoot) {
+        // Not root: need sudo to run the installer
+        executable = 'sudo';
+        args = [path];
+      } else {
+        executable = path;
+        args = [];
+        if (isRoot && !Platform.environment.containsKey('SUDO_USER')) {
+          // Root without sudo: inject SUDO_USER so universal.sh doesn't crash
+          environment = Map<String, String>.from(Platform.environment);
+          environment['SUDO_USER'] = Platform.environment['USER'] ?? 'root';
+        }
+      }
+
       final process = await Process.start(
-        path,
-        [],
+        executable,
+        args,
         mode: ProcessStartMode.inheritStdio,
+        environment: environment,
       );
       final exitCode = await process.exitCode;
       if (exitCode == 0) {
