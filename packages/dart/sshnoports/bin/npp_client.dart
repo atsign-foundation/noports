@@ -85,44 +85,48 @@ Future<void> main(List<String> args) async {
       break;
     }
     case '2': { // simulate
-      print(chalk.blue('\nSending simulate request...'));
-      stdout.write(chalk.white('\nEnter daemon atSign: '));
-      final String? daemonAtsign = stdin.readLineSync();
-      if (daemonAtsign == null || daemonAtsign.isEmpty) {
-        print(chalk.red('\n Invalid daemon atSign: $daemonAtsign'));
-        break;
-      }
-      stdout.write(chalk.white('Enter device name (press Enter to default to "default"): '));
-      String? deviceName = stdin.readLineSync();
-      if(deviceName == null || deviceName.isEmpty) {
-        deviceName = 'default';
-      }
-      stdout.write(chalk.white('Enter device group name (press Enter to default to "__none__"): '));
-      String? deviceGroupName = stdin.readLineSync();
-      if(deviceGroupName == null || deviceGroupName.isEmpty) {
-        deviceGroupName = '__none__';
-      }
-      stdout.write(chalk.white('Enter client atSign: '));
-      final String? clientAtsign = stdin.readLineSync();
-      if (clientAtsign == null || clientAtsign.isEmpty) {
-        print(chalk.red('\n Invalid client atSign: $clientAtsign'));
-        break;
-      }
       try {
-        final NPAAuthCheckResponse authCheckResponse = await nppClient.simulate(
-          daemonAtsign: daemonAtsign,
-          deviceName: deviceName,
-          deviceGroupName: deviceGroupName,
-          clientAtsign: clientAtsign,
-        );
-        print(chalk.green('\n✓ Simulate successful!'));
-        print('  ${chalk.cyan('status')}: ${authCheckResponse.authorized}');
-        print('  ${chalk.cyan('message')}: ${authCheckResponse.message}');
-        if (authCheckResponse.authorized){
-          print('  ${chalk.cyan('permitOpen')}: ${authCheckResponse.permitOpen}');
+        print(chalk.blue('\nSending simulate request...'));
+        stdout.write(chalk.white('\nEnter daemon atSign: '));
+        final String daemonAtsign =
+            AtUtils.fixAtSign(stdin.readLineSync()!);
+
+        stdout.write(chalk.white(
+            'Enter device name (press Enter to default to "default"): '));
+        String? deviceName = stdin.readLineSync();
+        if (deviceName == null || deviceName.isEmpty) {
+          deviceName = 'default';
+        }
+        stdout.write(chalk.white(
+            'Enter device group name (press Enter to default to "__none__"): '));
+        String? deviceGroupName = stdin.readLineSync();
+        if (deviceGroupName == null || deviceGroupName.isEmpty) {
+          deviceGroupName = '__none__';
+        }
+
+        stdout.write(chalk.white('Enter client atSign: '));
+        final String clientAtsign =
+            AtUtils.fixAtSign(stdin.readLineSync()!);
+
+        try {
+          final NPAAuthCheckResponse authCheckResponse =
+            await nppClient.simulate(
+              daemonAtsign: daemonAtsign,
+              deviceName: deviceName,
+              deviceGroupName: deviceGroupName,
+              clientAtsign: clientAtsign,
+            );
+          print(chalk.green('\n✓ Simulate successful!'));
+          print('  ${chalk.cyan('status')}: ${authCheckResponse.authorized}');
+          print('  ${chalk.cyan('message')}: ${authCheckResponse.message}');
+          if (authCheckResponse.authorized) {
+            print('  ${chalk.cyan('permitOpen')}: ${authCheckResponse.permitOpen}');
+          }
+        } catch (e) {
+          print(chalk.red('\n✗ Simulate failed: $e'));
         }
       } catch (e) {
-        print(chalk.red('\n✗ Simulate failed: $e'));
+        print(chalk.red('\n✗ Invalid daemon atSign: $e'));
       }
       break;
     }
