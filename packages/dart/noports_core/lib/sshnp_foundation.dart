@@ -18,7 +18,7 @@ export 'src/sshnp/models/sshnp_device_list.dart';
 // Sshnp Utils
 export 'src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
-export 'src/sshnp/util/rv_selector.dart';
+export 'src/common/relay_selector.dart';
 
 export 'src/sshnp/util/srvd_channel/srvd_channel.dart';
 export 'src/sshnp/util/srvd_channel/srvd_dart_channel.dart';

@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
-import 'package:noports_core/src/common/srvd_latency_checker.dart';
+import 'package:noports_core/src/common/relay_latency_checker.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -438,12 +438,12 @@ class SshnpdImpl
           _handleNptRequestNotification(notification, auth);
           break;
 
-        case 'latency_check':
+        case 'relay_latency_request':
           logger.info(
             '$messageType received from ${notification.from}'
             ' ( ${notification.value})',
           );
-          await _handleLatencyCheckRequest(notification);
+          await _handleRelayLatencyCheckRequest(notification);
           break;
 
         default:
@@ -616,20 +616,36 @@ class SshnpdImpl
     unawaited(_notify(atKey: atKey, value: jsonEncode(pingResponse)));
   }
 
-  Future<void> _handleLatencyCheckRequest(AtNotification notification) async {
-    final rvLatencyMap = await AtLatencyChecker().getRvLatencyMap();
-    logger.finer('Got latency map: $rvLatencyMap');
+  Future<void> _handleRelayLatencyCheckRequest(
+    AtNotification notification,
+  ) async {
+    if (notification.value == null) {
+      logger.warning(
+        'No srvd IPs provided in latency check request. Ignoring.',
+      );
+      return;
+    }
+    final Map<String, dynamic> rvServers;
+    try {
+      rvServers = jsonDecode(notification.value!) as Map<String, dynamic>;
+    } catch (e) {
+      logger.warning(
+        'Malformed latency check request from ${notification.from}. Ignoring.',
+      );
+      logger.finer('Caught: $e');
+      return;
+    }
+    final rvLatencyMap = await RelayLatencyChecker.measureLatencies(rvServers);
+    logger.info('Latency per relay (ms): $rvLatencyMap');
 
     var atKey = AtKey()
-      ..key = 'rv_latency.$device'
+      ..key = 'relay_latency_response.$device'
       ..sharedBy = deviceAtsign
       ..sharedWith = notification.from
       ..namespace = DefaultArgs.namespace
       ..metadata = (Metadata()
         ..isPublic = false
         ..isEncrypted = true
-        ..ttl =
-            10000 // allow only ten seconds before this record expires
         ..namespaceAware = true);
 
     await _notify(atKey: atKey, value: jsonEncode(rvLatencyMap));
@@ -2099,7 +2115,10 @@ Future<AesKeyBundle> genBundle(
       AtChops atChops = AtChopsImpl(
         AtChopsKeys.create(AtEncryptionKeyPair.create(encPubKey, 'n/a'), null),
       );
-      aesKeyEncrypted = (await atChops.encryptString(aesKey, encKeyType)).result;
+      aesKeyEncrypted = (await atChops.encryptString(
+        aesKey,
+        encKeyType,
+      )).result;
       ivEncrypted = (await atChops.encryptString(iv, encKeyType)).result;
       break;
     default:

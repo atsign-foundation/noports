@@ -34,7 +34,8 @@ void main() {
         throwsA(TypeMatcher<ArgumentError>()),
       );
     });
-    test('malformed relay atSign missing prefix', () {
+    
+    test('relay atSign may be empty', () {
       expect(
         () => NptParams(
           clientAtSign: '@client',
@@ -46,7 +47,7 @@ void main() {
           remotePort: 3389,
           timeout: DefaultArgs.srvTimeout,
         ),
-        throwsA(TypeMatcher<ArgumentError>()),
+        returnsNormally,
       );
     });
   });

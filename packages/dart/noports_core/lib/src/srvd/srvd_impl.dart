@@ -167,6 +167,7 @@ class SrvdImpl
   }
 
   Future<void> notificationHandler(AtNotification n) async {
+    logger.info('Received notification: ${n.key} from ${n.from} to ${n.to}');
     try {
       if (!wellFormedRequest(n)) {
         logger.shout('Un-handled notification key: ${n.key}');
@@ -198,6 +199,9 @@ class SrvdImpl
           return await handleRequestPorts(n);
         case 'sessions':
           return await handleSessionMessages(topic, n);
+        case 'discover_request':
+          logger.info('Received discover request from ${n.from}');
+          return await handleDiscover(n);
         default:
           logger.warning(
             'unknown "$messageType" request received from ${n.from}'
@@ -457,6 +461,54 @@ class SrvdImpl
       Future.delayed(
         Duration(seconds: 30),
       ).whenComplete(() => preFetched.remove(sessionParams.sessionId)),
+    );
+  }
+
+  Future<void> handleDiscover(AtNotification n) async {
+    final metadata = Metadata()
+      ..isPublic = false
+      ..isEncrypted = true
+      ..namespaceAware = true;
+
+    if (n.value == null) {
+      logger.info('Received discover request with an empty value. Ignoring.');
+      return;
+    }
+
+    final decoded = jsonDecode(n.value!);
+    if (decoded is! Map || decoded['items'] is! List) {
+      logger.warning('Malformed discover request from ${n.from}. Ignoring.');
+      return;
+    }
+
+    final requestedItems = decoded['items'] as List;
+    final response = <String, dynamic>{};
+    for (final item in requestedItems) {
+      switch (item) {
+        case 'ipaddr':
+          response['ipaddr'] = ipAddress;
+        case 'port':
+          response['port'] = bind443 ? 443 : null;
+      }
+    }
+
+    final atKey = AtKey()
+      ..key = 'discover_response'
+      ..sharedBy = atSign
+      ..sharedWith = n.from
+      ..namespace = Srvd.namespace
+      ..metadata = metadata;
+
+    final notificationParams = NotificationParams.forUpdate(
+      atKey,
+      value: jsonEncode(response),
+      notificationExpiry: Duration(minutes: 1),
+    );
+
+    await atClient.notificationService.notify(
+      notificationParams,
+      waitForFinalDeliveryStatus: false,
+      checkForFinalDeliveryStatus: false,
     );
   }
 
