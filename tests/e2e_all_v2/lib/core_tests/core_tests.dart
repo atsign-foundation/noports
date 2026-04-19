@@ -125,14 +125,16 @@ Future<void> coreTests(CoreTestsParams params) async {
     )));
 
   // stop docker instances without the `_f`
-  final List<(String, DockerInstance)> dockerInstancesToRemove = [];
-  for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
-    if(!deviceName.endsWith('_f')) {
-      await dockerInstance.stop();
-      dockerInstancesToRemove.add((deviceName, dockerInstance));
+  if (!params.keepDockerContainersOn) {
+    final List<(String, DockerInstance)> dockerInstancesToRemove = [];
+    for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
+      if(!deviceName.endsWith('_f')) {
+        await dockerInstance.stop();
+        dockerInstancesToRemove.add((deviceName, dockerInstance));
+      }
     }
+    dockerInstancesToRemove.forEach((instance) => dockerInstances.remove(instance));
   }
-  dockerInstancesToRemove.forEach((instance) => dockerInstances.remove(instance));
 
   allTestResults.addAll(
     (await runMinusRFlagTests(

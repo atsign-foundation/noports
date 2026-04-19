@@ -102,14 +102,16 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
       printTestResult(testResult: coreTestResult, extra: extra);
       testResults.add(coreTestResult);
     } else {
+      // TODO make this core test result thing 
+      // maybe take in a file so that we keep logs
       final CoreTestResult coreTestResult = CoreTestResult(
         testName: testName,
         clientVersion: clientVersion.version,
         daemonVersion: daemonVersion.version,
         status: TestStatus.passed,
         exitCode: processResult1.exitCode,
-        stdout: processResult1.stdout,
-        stderr: processResult1.stderr,
+        stdout: stdoutBuffer1,
+        stderr: stderrBuffer1,
       );
       printTestResult(testResult: coreTestResult, extra: extra);
       testResults.add(coreTestResult);
