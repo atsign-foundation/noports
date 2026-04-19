@@ -9,6 +9,25 @@ TODOs:
 - sample ssh command from e2e_all
 /home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/binaries/dart.branch/sshnp -f @npe2e_client -d 36b57d4ccf -i /home/runner/.ssh/e2e_all.36b57d4  -t @npe2e_daemon -h @rv_dev -u atsign   --root-domain root.atsign.wtf  -x -k /home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/apkam/@npe2e_client.e2e_all.client_36b57d4.atKeys -s
 
+
+TODOs:
+- add v4 to daemon list
+- core_tests
+    - 001_minus_s_flag (DONE)
+    - minus_r_flag
+    - minus_u_flag
+    - npt_to_port_22
+    - npt_to_port_22_no_encrypt_traffic
+    - v4_dart_inline
+    - v4_openssh_print
+    - v5_dart_inline
+    - v5_openssh_inline
+    - v5_openssh_print
+- time start timestamp and time end timestamp of core tests
+- make the core tests run `curl` in parallel
+- make the core tests run all tests except `001_minus_s_flag` in parallel
+- daemon log fragments
+
 ## Usage
 
 ```bash
@@ -28,6 +47,7 @@ rm -rf e2e_all_v2/ && docker stop $(docker ps -q) 2>/dev/null ; dart run tests/e
     --policy-atsign "@policy_jttest" \
     --events-atsign "@events_jttest" \
     --base-directory "e2e_all_v2" \
+    --keep-docker-containers-on \
     --root-domain "root.atsign.org"
 ```
 
