@@ -48,14 +48,14 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
     final String deviceName = '${getDeviceNameNoFlags(
       testRunId: context.testRunId,
       noPortsVersion: daemonVersion)}_f';
-    Future<CoreTestResult> testFuture = _runMinusRFlagTest(
+    final Future<CoreTestResult> testFuture = _runMinusRFlagTest(
       coreTestLogger: coreTestLogger,
       context: context,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       deviceName: deviceName);
     testFutures.add(testFuture);
-    await Future.delayed(Duration(seconds: 1)); 
+    await Future.delayed(Duration(seconds: 2)); 
   }
   final List<CoreTestResult> testResults =  await Future.wait(testFutures);
   return testResults;

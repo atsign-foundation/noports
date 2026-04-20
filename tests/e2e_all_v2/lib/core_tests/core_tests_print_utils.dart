@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 

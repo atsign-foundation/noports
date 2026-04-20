@@ -24,23 +24,21 @@ TODOs:
     - v5_openssh_inline
     - v5_openssh_print
 - time start timestamp and time end timestamp of core tests (DONE)
-- make the core tests run `curl` in parallel
-- make the core tests run all tests except `001_minus_s_flag` in parallel
 - daemon log fragments (DONE)
-- CoreTestResult does not need stdout and stderr anymore
-- Make CoreTestLogger easire with NoPortsVersion and define testMEtadata and daemonInfo accordingly
-- Ensure --always-output-logs is honoured or maybe just remove it...
-- Fix lettering in core_tests.dart
+- CoreTestResult does not need stdout and stderr anymore (DONE)
+- Make CoreTestLogger easire with NoPortsVersion and define testMEtadata and daemonInfo accordingly (DONE)
 - Clean up old ssh key
-- getTestSshCommand
-
-- Always rebuild docker image c:current d:current
+- Always rebuild docker image c:current d:current (DONE)
 - Client logs should be separate for each test, and not append to same one
 - Remove --always-output-logs entirely from params (it is unused)
 - Do this setup in parallel:
   - 1. get at_activate client binary -> apkam setup
   - 2. fetch client binaries
   - 3. build docker images -> run docker instances
+- Process output captures for Docker building, in case error occurs
+- Process output cature for checking docker readiness, in case error occurs
+- Process otuput captures for apkam setup, in case error occurs
+- Process output captures for fetching client binaries, in case error occurs
 
 ## Usage
 

@@ -37,8 +37,9 @@ Future<void> coreTests(CoreTestsParams params) async {
   }).toList();
 
   // 2. Get testRunId - use provided value or default to git commit hash
+  print('');
   final String testRunId = params.testRunId ?? await getShortenedGitCommitHash();
-  print('\ntestRunId: $testRunId\n');
+  print('testRunId: $testRunId');
 
   // 3. create directory structure:
   //  ./e2e_all_v2/$testRunId/
@@ -68,17 +69,15 @@ Future<void> coreTests(CoreTestsParams params) async {
   }
   clientBinariesToDownload.add((NoPortsVersion(language: Language.dart, version: 'current'), ClientBinaryType.at_activate));
 
-  print('Fetching ${clientBinariesToDownload.length} client binaries...');
+  print('\nFetching ${clientBinariesToDownload.length} client binaries...');
   final List<ClientBinary> clientBinaries = await fetchClientBinaries(
       clientBinariesToDownload: clientBinariesToDownload,
       binariesDirectory: binariesDirectory);
 
-  print('');
-  print('Fetched client binaries (${clientBinaries.length}):');
+  print('\nFetched client binaries (${clientBinaries.length}):');
   for(final ClientBinary clientBinary in clientBinaries) {
     print('    ${clientBinary.binaryType.name} | ${clientBinary.noPortsVersion.language.name} | ${clientBinary.noPortsVersion.version} | ${clientBinary.file.path}');
   }
-  print('');
 
   // 5. set up client and daemon apkam keys
   final ClientBinary atActivateClientBinary = clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.at_activate && cb.noPortsVersion.version == 'current');
@@ -139,13 +138,13 @@ Future<void> coreTests(CoreTestsParams params) async {
       daemonVersions: daemonVersions,
     )));
 
-  // // b. minus_r_flag
-  // allTestResults.addAll(
-  //   (await runMinusRFlagTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // b. minus_r_flag
+  allTestResults.addAll(
+    (await runMinusRFlagTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
   //
   // // c. minus_u_flag
   // allTestResults.addAll(

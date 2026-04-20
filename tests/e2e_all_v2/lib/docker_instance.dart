@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
@@ -120,10 +121,13 @@ class DockerInstance {
       stdoutFile: stdoutFile,
       stderrFile: stderrFile,
       processStarter: () => startCommand(
-        'sh',
+        'docker',
         [
-          '-c',
-          'docker logs -f --tail 0 $containerName 1>> ${stdoutFile.absolute.path} 2>> ${stderrFile.absolute.path}',
+          'logs',
+          '-f',
+          containerName,
+          '1>>', stdoutFile.absolute.path,
+          '2>>', stderrFile.absolute.path,
         ],
       ),
     );
@@ -146,12 +150,19 @@ class DockerInstance {
   Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
     // Use shell redirection to write stdout and stderr to files
     final Process logProcess = await startCommand(
-      'sh',
+      'docker',
       [
-        '-c',
-        'docker logs -f $containerName 1>> ${stdoutLogFile.absolute.path} 2>> ${stderrLogFile.absolute.path}',
+        'logs',
+        '-f',
+        containerName
       ],
     );
+    logProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+      stdoutLogFile.writeAsStringSync('$line\n', mode: FileMode.append);
+    });
+    logProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+      stderrLogFile.writeAsStringSync('$line\n', mode: FileMode.append);
+    });
     this.logProcess = logProcess;
   }
 
