@@ -49,7 +49,11 @@ Future<void> main(List<String> args) async {
 
   try {
     // 4. Run core tests
+    final DateTime startTime = DateTime.now();
     await coreTests(params);
+    final DateTime endTime = DateTime.now();
+    final Duration duration = endTime.difference(startTime);
+    print('Core tests completed in ${duration.inMinutes}m ${duration.inSeconds % 60}s');
     exit(0);
   } catch (e) {
     print('Error: $e');
