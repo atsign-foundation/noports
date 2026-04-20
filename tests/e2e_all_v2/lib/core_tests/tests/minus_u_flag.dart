@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:e2e_all_v2/client_binary.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -12,21 +14,12 @@ import 'package:e2e_all_v2/test_result.dart';
 
 // 1. Run sshnp without `-u <username>` talking to device daemon which does not have `-u` flag enabled (expect to fail)
 // 2. Run sshnp without `-u <username>` talking to device daemon which does have `-u` flag enabled (expect to pass)
-//
 // - Client: Dart (current) | Daemon: Dart (current)
 Future<List<CoreTestResult>> runMinusUFlagTests({
-  required final String testRunId,
-  required final String clientAtsign,
-  required final String daemonAtsign,
-  required final String relayAtsign,
-  required final String rootDomain,
-  required final List<ClientBinary> clientBinaries,
-  required final List<(String, DockerInstance)> dockerInstances,
-  required final Map<String, File> apkamKeys,
-  required final String remoteUsername,
-  required final String identityFilePath,
+  required final CoreTestsContext context,
 }) async {
   const String testName = 'minus_u_flag';
+  final CoreTestLogger coreTestLogger = CoreTestLogger(testName: testName, logsDirectory: context.logsDirectory);
   final List<CoreTestResult> testResults = [];
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
     if(versionIsLessThan(daemonVersion, NoPortsVersion(language: Language.dart, version: 'v5.2.0'))) {

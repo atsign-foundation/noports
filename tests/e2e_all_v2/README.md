@@ -23,10 +23,10 @@ TODOs:
     - v5_dart_inline
     - v5_openssh_inline
     - v5_openssh_print
-- time start timestamp and time end timestamp of core tests
+- time start timestamp and time end timestamp of core tests (DONE)
 - make the core tests run `curl` in parallel
 - make the core tests run all tests except `001_minus_s_flag` in parallel
-- daemon log fragments
+- daemon log fragments (DONE)
 
 ## Usage
 
@@ -48,6 +48,7 @@ rm -rf e2e_all_v2/ && docker stop $(docker ps -q) 2>/dev/null ; dart run tests/e
     --events-atsign "@events_jttest" \
     --base-directory "e2e_all_v2" \
     --keep-docker-containers-on \
+    --always-output-logs \
     --root-domain "root.atsign.org"
 ```
 

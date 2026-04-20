@@ -5,6 +5,7 @@ import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_apkam_setup.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_client_binary_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
@@ -106,22 +107,28 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
 
   // 8. Run tests
-  List<CoreTestResult> allTestResults = [];
+  final List<CoreTestResult> allTestResults = [];
+
+  final CoreTestsContext context = CoreTestsContext(
+    testRunId: testRunId,
+    clientAtsign: params.clientAtsign,
+    daemonAtsign: params.daemonAtsign,
+    relayAtsign: params.relayAtsign,
+    rootDomain: params.rootDomain,
+    remoteUsername: 'atsign',
+    identityFilePath: identityFile.path,
+    clientBinaries: clientBinaries,
+    dockerInstances: dockerInstances,
+    apkamKeys: apkamKeys,
+    logsDirectory: logsDirectory,
+    alwaysOutputLogs: params.alwaysOutputLogs,
+  );
 
   // a. 001_minus_s_flag
   allTestResults.addAll(
     (await run001MinusSFlagTests(
-      clientAtsign: params.clientAtsign,
-      daemonAtsign: params.daemonAtsign,
-      relayAtsign: params.relayAtsign,
-      rootDomain: params.rootDomain,
+      context: context,
       daemonVersions: daemonVersions,
-      testRunId: testRunId,
-      allClientBinaries: clientBinaries,
-      dockerInstances: dockerInstances,
-      apkamKeys: apkamKeys,
-      remoteUsername: 'atsign',
-      identityFilePath: identityFile.path,
     )));
 
   // stop docker instances without the `_f`
@@ -138,18 +145,9 @@ Future<void> coreTests(CoreTestsParams params) async {
 
   allTestResults.addAll(
     (await runMinusRFlagTests(
-      clientAtsign: params.clientAtsign,
-      daemonAtsign: params.daemonAtsign,
-      relayAtsign: params.relayAtsign,
-      rootDomain: params.rootDomain,
+      context: context,
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
-      testRunId: testRunId,
-      clientBinaries: clientBinaries,
-      dockerInstances: dockerInstances,
-      apkamKeys: apkamKeys,
-      remoteUsername: 'atsign',
-      identityFilePath: identityFile.path,
     )));
 
   // 8. Print test results summary

@@ -32,6 +32,7 @@ class CoreTestsParams {
   late String clientVersions;
   late String daemonVersions;
   late bool keepDockerContainersOn;
+  late bool alwaysOutputLogs;
 
   // Case 2b - run-time defaults
   late String? testRunId;
@@ -54,6 +55,7 @@ class CoreTestsParams {
     e2eAllV2Params.clientVersions = argResults['client-versions'];
     e2eAllV2Params.daemonVersions = argResults['daemon-versions'];
     e2eAllV2Params.keepDockerContainersOn = argResults['keep-docker-containers-on'];
+    e2eAllV2Params.alwaysOutputLogs = argResults['always-output-logs'];
     e2eAllV2Params.testRunId = argResults['test-run-id'];
     return e2eAllV2Params;
   }
@@ -111,6 +113,10 @@ class CoreTestsParams {
     argParser.addFlag('keep-docker-containers-on',
       defaultsTo: false,
       help: 'Keep docker containers running after tests complete',
+    );
+    argParser.addFlag('always-output-logs',
+      defaultsTo: false,
+      help: 'Always output client and daemon logs even when tests pass',
     );
     argParser.addOption('test-run-id',
       mandatory: false,

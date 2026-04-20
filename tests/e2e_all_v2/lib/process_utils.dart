@@ -1,4 +1,64 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+
+class ProcessOutputCapture {
+  final Process process;
+  final StringBuffer stdoutBuffer = StringBuffer();
+  final StringBuffer stderrBuffer = StringBuffer();
+  final File? stdoutLogFile;
+  final File? stderrLogFile;
+
+  ProcessOutputCapture({
+    required this.process,
+    this.stdoutLogFile,
+    this.stderrLogFile,
+  }) {
+    process.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      stdoutBuffer.writeln(line);
+      if (stdoutLogFile != null) {
+        stdoutLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
+      }
+    });
+
+    process.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      stderrBuffer.writeln(line);
+      if (stderrLogFile != null) {
+        stderrLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
+      }
+    });
+  }
+
+  Future<int> get exitCode => process.exitCode;
+
+  String get stdout => stdoutBuffer.toString();
+  String get stderr => stderrBuffer.toString();
+}
+
+Future<ProcessOutputCapture> startCommandWithCapture(
+  final String executable,
+  final List<String> arguments, {
+  final String? workingDirectory,
+  final Map<String, String>? environment,
+  final bool printCommand = true,
+  final File? stdoutLogFile,
+  final File? stderrLogFile,
+}) async {
+  if(printCommand) {
+    print('> $executable ${arguments.join(' ')}');
+  }
+  final Process process = await Process.start(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+    environment: environment,
+  );
+  return ProcessOutputCapture(
+    process: process,
+    stdoutLogFile: stdoutLogFile,
+    stderrLogFile: stderrLogFile,
+  );
+}
 
 Future<ProcessResult> runCommand(
   final String executable,

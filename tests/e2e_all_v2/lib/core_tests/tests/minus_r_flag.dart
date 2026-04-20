@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:e2e_all_v2/client_binary.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -10,15 +12,12 @@ import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
-// 1. Run with --host
-//  - expect this test to pass
-// 2. Run with -h && -r (-h set to an invalid rvd atSign)
-//  - expect this test to pass
-//
-// TODO: Would like to add a test for, but this causes the test to timeout waiting for the bad srvd
-// 3. Run with -h && -r (-r set to an invalid rvd atSign)
-//  - expect this test to fail
-//
+const String _metadataDashDashHost = 'dashDashHost';
+const String _metadataInvalidHostValidR = 'invalidHostValidR';
+const String _metadataValidHostInvalidR = 'validHostInvalidR';
+const String testName = 'minus_r_flag';
+
+// The --host and -r flag are the same thing. This is a test to ensure backwards compatibility
 // 1. Run sshnp with `--host` (expect to pass)
 // 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
 // 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
@@ -31,126 +30,481 @@ import 'package:e2e_all_v2/test_result.dart';
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
 Future<List<CoreTestResult>> runMinusRFlagTests({
-  required final String testRunId,
-  required final String clientAtsign,
-  required final String daemonAtsign,
-  required final String relayAtsign,
-  required final String rootDomain,
+  required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
-  required final List<ClientBinary> clientBinaries,
-  required final List<(String, DockerInstance)> dockerInstances,
-  required final Map<String, File> apkamKeys,
-  required final String remoteUsername,
-  required final String identityFilePath,
 }) async {
-  const String testName = 'minus_r_flag';
-  final List<(NoPortsVersion, NoPortsVersion)> versionCombinations = 
+  final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
+  final List<(NoPortsVersion, NoPortsVersion)> versionCombinations =
     _generateVersionCombinations(
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
     );
   print('Generated version combinations:');
   for(final (clientVersion, daemonVersion) in versionCombinations) {
-    print('client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}'); 
+    print('client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}');
   }
 
   final List<CoreTestResult> testResults = [];
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
     if(versionIsLessThan(daemonVersion, NoPortsVersion(language: Language.dart, version: 'v5.2.0'))) {
-      // N/A C daemon doesn't need to test a client-side only feature
       continue;
     }
     if(versionIsLessThan(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.2.0'))) {
-      // -r was added in v5.2.0
-      continue; 
+      continue;
     }
-    final String extra = 'client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}';
-    printTestStart(testName: testName, extra: extra);
-    final ClientBinary sshnpClientBinary = clientBinaries.firstWhere((cb) => cb.noPortsVersion == clientVersion);
-    final String deviceName = '${getDeviceNameNoFlags(testRunId: testRunId, language: daemonVersion.language, version: daemonVersion.version)}_f';
-    final List<String> baseArgs = _generateBaseSshnpArgs(
-      clientVersion: clientVersion,
-      testRunId: testRunId, 
-      clientAtsign: clientAtsign,
-      daemonAtsign: daemonAtsign,
-      localClientAtsignAtKeysFilePath: apkamKeys[clientAtsign]!.path,
-      identityFilePath: identityFilePath,
-      remoteUsername: remoteUsername,
-      rootDomain: rootDomain,
-      deviceName: deviceName,
-    );
+    final String extra = '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version})';
+    final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere((cb) => cb.noPortsVersion == clientVersion);
+    final String deviceName = '${getDeviceNameNoFlags(testRunId: context.testRunId, language: daemonVersion.language, version: daemonVersion.version)}_f';
+    final String daemonInfo = '${daemonVersion.language.name}_${daemonVersion.version}';
 
-    // 1. Run with --host (expect to pass)
-    final List<String> args1 = List.from(baseArgs)..addAll(['--host', relayAtsign]);
-    final ProcessResult processResult1 = await runCommand(
-      sshnpClientBinary.file.path,
-      args1,
-    );
-    final StringBuffer stdoutBuffer1 = StringBuffer();
-    final StringBuffer stderrBuffer1 = StringBuffer();
-    stdoutBuffer1.writeln(processResult1.stdout.toString());
-    stderrBuffer1.writeln(processResult1.stderr.toString());
-    if(processResult1.exitCode != 0) {
-      final CoreTestResult coreTestResult = CoreTestResult(
-        testName: testName,
-        clientVersion: clientVersion.version,
-        daemonVersion: daemonVersion.version,
-        status: TestStatus.failed,
-        exitCode: processResult1.exitCode,
-      );
-      printTestResult(testResult: coreTestResult, extra: extra);
-      testResults.add(coreTestResult);
-    } else {
-      // TODO make this core test result thing 
-      // maybe take in a file so that we keep logs
-      final CoreTestResult coreTestResult = CoreTestResult(
-        testName: testName,
-        clientVersion: clientVersion.version,
-        daemonVersion: daemonVersion.version,
-        status: TestStatus.passed,
-        exitCode: processResult1.exitCode,
-        stdout: stdoutBuffer1,
-        stderr: stderrBuffer1,
-      );
-      printTestResult(testResult: coreTestResult, extra: extra);
-      testResults.add(coreTestResult);
-    }
+    testResults.add(await _runTestWithDashDashHost(
+      context: context,
+      testLogger: testLogger,
+      clientBinary: sshnpClientBinary,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      daemonInfo: daemonInfo,
+      extra: extra,
+    ));
+
+    testResults.add(await _runTestWithInvalidHostValidR(
+      context: context,
+      testLogger: testLogger,
+      clientBinary: sshnpClientBinary,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      daemonInfo: daemonInfo,
+      extra: extra,
+    ));
+
+    testResults.add(await _runTestWithValidHostInvalidR(
+      context: context,
+      testLogger: testLogger,
+      clientBinary: sshnpClientBinary,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      daemonInfo: daemonInfo,
+      extra: extra,
+    ));
   }
   return testResults;
 }
 
-List<String> _generateBaseSshnpArgs({
-  required final NoPortsVersion clientVersion,
-  required final String testRunId,
-  required final String clientAtsign,
-  required final String daemonAtsign,
-  required final String localClientAtsignAtKeysFilePath,
-  required final String identityFilePath,
-  required final String remoteUsername,
-  required final String rootDomain,
-  required final String deviceName,
+List<String> _buildBaseSshnpArgs({
+  required CoreTestsContext context,
+  required ClientBinary clientBinary,
+  required String deviceName,
 }) {
   final List<String> args = [];
-  if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
+  if(versionIsAtLeast(clientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
     args.add('-x');
     args.add('--no-ad');
     args.add('--no-et');
   }
-  if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+  if(versionIsAtLeast(clientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
     args.add('-k');
-    args.add(localClientAtsignAtKeysFilePath);
+    args.add(context.apkamKeys[context.clientAtsign]!.path);
   }
   args.addAll([
-    '-f', clientAtsign,
-    '-t', daemonAtsign,
-    '-i', identityFilePath,
-    '-u', remoteUsername,
-    '--root-domain', rootDomain,
+    '-f', context.clientAtsign,
+    '-t', context.daemonAtsign,
+    '-i', context.identityFilePath,
+    '-u', context.remoteUsername,
+    '--root-domain', context.rootDomain,
     '-d', deviceName,
     '-s',
   ]);
   return args;
+}
+
+Future<CoreTestResult> _runTestWithDashDashHost({
+  required CoreTestsContext context,
+  required CoreTestLogger testLogger,
+  required ClientBinary clientBinary,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required String deviceName,
+  required String daemonInfo,
+  required String extra,
+}) async {
+  final String clientVersionStr = clientVersion.version;
+  final String daemonVersionStr = daemonVersion.version;
+
+  final List<String> baseArgs = _buildBaseSshnpArgs(
+    context: context,
+    clientBinary: clientBinary,
+    deviceName: deviceName,
+  );
+  final List<String> args = List.from(baseArgs)..addAll(['--host', context.relayAtsign]);
+
+  printTestStart(testName: testName, extra: extra);
+
+  final DockerInstance daemonDockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final DaemonLogCapture daemonLogCapture = DaemonLogCapture(
+    dockerInstance: daemonDockerInstance,
+    stdoutFragmentFile: testLogger.getDaemonStdoutLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataDashDashHost,
+    ),
+    stderrFragmentFile: testLogger.getDaemonStderrLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataDashDashHost,
+    ),
+  );
+  await daemonLogCapture.start();
+
+  final ProcessResult processResult = await runCommand(
+    clientBinary.file.path,
+    args,
+    stdoutLogFile: testLogger.getClientStdoutLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataDashDashHost,
+      daemonInfo: daemonInfo,
+    ),
+    stderrLogFile: testLogger.getClientStderrLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataDashDashHost,
+      daemonInfo: daemonInfo,
+    ),
+  );
+  await daemonLogCapture.stop();
+
+  final StringBuffer stdoutBuffer = StringBuffer();
+  final StringBuffer stderrBuffer = StringBuffer();
+  stdoutBuffer.writeln(processResult.stdout.toString());
+  stderrBuffer.writeln(processResult.stderr.toString());
+
+  if(processResult.exitCode != 0) {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.failed,
+      exitCode: processResult.exitCode,
+    );
+    printTestResult(testResult: result, extra: extra);
+    print('Client stderr:');
+    print(stderrBuffer.toString());
+    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+      print('Daemon stdout fragment:');
+      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+    }
+    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+      print('Daemon stderr fragment:');
+      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+    }
+    return result;
+  } else {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.passed,
+      exitCode: processResult.exitCode,
+      stdout: stdoutBuffer,
+      stderr: stderrBuffer,
+    );
+    printTestResult(testResult: result, extra: extra);
+    if(context.alwaysOutputLogs) {
+      final File clientStdoutFile = testLogger.getClientStdoutLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataDashDashHost,
+        daemonInfo: daemonInfo,
+      );
+      final File clientStderrFile = testLogger.getClientStderrLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataDashDashHost,
+        daemonInfo: daemonInfo,
+      );
+      if(clientStdoutFile.existsSync()) {
+        print('Client stdout:');
+        print(clientStdoutFile.readAsStringSync());
+      }
+      if(clientStderrFile.existsSync()) {
+        print('Client stderr:');
+        print(clientStderrFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+        print('Daemon stdout fragment:');
+        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+        print('Daemon stderr fragment:');
+        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+      }
+    }
+    return result;
+  }
+}
+
+Future<CoreTestResult> _runTestWithInvalidHostValidR({
+  required CoreTestsContext context,
+  required CoreTestLogger testLogger,
+  required ClientBinary clientBinary,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required String deviceName,
+  required String daemonInfo,
+  required String extra,
+}) async {
+  final String clientVersionStr = clientVersion.version;
+  final String daemonVersionStr = daemonVersion.version;
+
+  final List<String> baseArgs = _buildBaseSshnpArgs(
+    context: context,
+    clientBinary: clientBinary,
+    deviceName: deviceName,
+  );
+  final List<String> args = List.from(baseArgs)..addAll(['-h', '@do_not_activate', '-r', context.relayAtsign]);
+
+  printTestStart(testName: testName, extra: extra);
+
+  final DockerInstance daemonDockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final DaemonLogCapture daemonLogCapture = DaemonLogCapture(
+    dockerInstance: daemonDockerInstance,
+    stdoutFragmentFile: testLogger.getDaemonStdoutLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataInvalidHostValidR,
+    ),
+    stderrFragmentFile: testLogger.getDaemonStderrLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataInvalidHostValidR,
+    ),
+  );
+  await daemonLogCapture.start();
+
+  final ProcessResult processResult = await runCommand(
+    clientBinary.file.path,
+    args,
+    stdoutLogFile: testLogger.getClientStdoutLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataInvalidHostValidR,
+      daemonInfo: daemonInfo,
+    ),
+    stderrLogFile: testLogger.getClientStderrLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataInvalidHostValidR,
+      daemonInfo: daemonInfo,
+    ),
+  );
+  await daemonLogCapture.stop();
+
+  final StringBuffer stdoutBuffer = StringBuffer();
+  final StringBuffer stderrBuffer = StringBuffer();
+  stdoutBuffer.writeln(processResult.stdout.toString());
+  stderrBuffer.writeln(processResult.stderr.toString());
+
+  if(processResult.exitCode != 0) {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.failed,
+      exitCode: processResult.exitCode,
+    );
+    printTestResult(testResult: result, extra: extra);
+    print('Client stderr:');
+    print(stderrBuffer.toString());
+    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+      print('Daemon stdout fragment:');
+      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+    }
+    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+      print('Daemon stderr fragment:');
+      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+    }
+    return result;
+  } else {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.passed,
+      exitCode: processResult.exitCode,
+      stdout: stdoutBuffer,
+      stderr: stderrBuffer,
+    );
+    printTestResult(testResult: result, extra: extra);
+    if(context.alwaysOutputLogs) {
+      final File clientStdoutFile = testLogger.getClientStdoutLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataInvalidHostValidR,
+        daemonInfo: daemonInfo,
+      );
+      final File clientStderrFile = testLogger.getClientStderrLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataInvalidHostValidR,
+        daemonInfo: daemonInfo,
+      );
+      if(clientStdoutFile.existsSync()) {
+        print('Client stdout:');
+        print(clientStdoutFile.readAsStringSync());
+      }
+      if(clientStderrFile.existsSync()) {
+        print('Client stderr:');
+        print(clientStderrFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+        print('Daemon stdout fragment:');
+        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+        print('Daemon stderr fragment:');
+        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+      }
+    }
+    return result;
+  }
+}
+
+Future<CoreTestResult> _runTestWithValidHostInvalidR({
+  required CoreTestsContext context,
+  required CoreTestLogger testLogger,
+  required ClientBinary clientBinary,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required String deviceName,
+  required String daemonInfo,
+  required String extra,
+}) async {
+  final String clientVersionStr = clientVersion.version;
+  final String daemonVersionStr = daemonVersion.version;
+
+  final List<String> baseArgs = _buildBaseSshnpArgs(
+    context: context,
+    clientBinary: clientBinary,
+    deviceName: deviceName,
+  );
+  final List<String> args = List.from(baseArgs)..addAll(['-h', context.relayAtsign, '-r', '@do_not_activate']);
+
+  printTestStart(testName: testName, extra: extra);
+
+  final DockerInstance daemonDockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final DaemonLogCapture daemonLogCapture = DaemonLogCapture(
+    dockerInstance: daemonDockerInstance,
+    stdoutFragmentFile: testLogger.getDaemonStdoutLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataValidHostInvalidR,
+    ),
+    stderrFragmentFile: testLogger.getDaemonStderrLogFile(
+      language: daemonVersion.language,
+      version: daemonVersionStr,
+      deviceName: deviceName,
+      testMetadata: _metadataValidHostInvalidR,
+    ),
+  );
+  await daemonLogCapture.start();
+
+  final ProcessResult processResult = await runCommand(
+    clientBinary.file.path,
+    args,
+    stdoutLogFile: testLogger.getClientStdoutLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataValidHostInvalidR,
+      daemonInfo: daemonInfo,
+    ),
+    stderrLogFile: testLogger.getClientStderrLogFile(
+      language: clientVersion.language,
+      version: clientVersionStr,
+      testMetadata: _metadataValidHostInvalidR,
+      daemonInfo: daemonInfo,
+    ),
+  );
+  await daemonLogCapture.stop();
+
+  final StringBuffer stdoutBuffer = StringBuffer();
+  final StringBuffer stderrBuffer = StringBuffer();
+  stdoutBuffer.writeln(processResult.stdout.toString());
+  stderrBuffer.writeln(processResult.stderr.toString());
+
+  if(processResult.exitCode == 0) {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.failed,
+      exitCode: processResult.exitCode,
+      stdout: stdoutBuffer,
+      stderr: stderrBuffer,
+    );
+    printTestResult(testResult: result, extra: extra);
+    print('Client stdout:');
+    print(stdoutBuffer.toString());
+    print('Client stderr:');
+    print(stderrBuffer.toString());
+    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+      print('Daemon stdout fragment:');
+      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+    }
+    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+      print('Daemon stderr fragment:');
+      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+    }
+    return result;
+  } else {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersionStr,
+      daemonVersion: daemonVersionStr,
+      status: TestStatus.passed,
+      exitCode: processResult.exitCode,
+    );
+    printTestResult(testResult: result, extra: extra);
+    if(context.alwaysOutputLogs) {
+      final File clientStdoutFile = testLogger.getClientStdoutLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataValidHostInvalidR,
+        daemonInfo: daemonInfo,
+      );
+      final File clientStderrFile = testLogger.getClientStderrLogFile(
+        language: clientVersion.language,
+        version: clientVersionStr,
+        testMetadata: _metadataValidHostInvalidR,
+        daemonInfo: daemonInfo,
+      );
+      if(clientStdoutFile.existsSync()) {
+        print('Client stdout:');
+        print(clientStdoutFile.readAsStringSync());
+      }
+      if(clientStderrFile.existsSync()) {
+        print('Client stderr:');
+        print(clientStderrFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
+        print('Daemon stdout fragment:');
+        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
+      }
+      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
+        print('Daemon stderr fragment:');
+        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
+      }
+    }
+    return result;
+  }
 }
 
 
