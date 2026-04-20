@@ -34,6 +34,14 @@ TODOs:
 - Clean up old ssh key
 - getTestSshCommand
 
+- Always rebuild docker image c:current d:current
+- Client logs should be separate for each test, and not append to same one
+- Remove --always-output-logs entirely from params (it is unused)
+- Do this setup in parallel:
+  - 1. get at_activate client binary -> apkam setup
+  - 2. fetch client binaries
+  - 3. build docker images -> run docker instances
+
 ## Usage
 
 ```bash
@@ -46,16 +54,17 @@ dart run bin/main.dart \
     --root-domain "root.atsign.wtf:64" \
     --log-directory "logs"
 
-rm -rf e2e_all_v2/ && docker stop $(docker ps -q) 2>/dev/null ; dart run tests/e2e_all_v2/bin/core_tests.dart \
+docker stop $(docker ps -q) 2>/dev/null ; rm -rf e2e_all_v2/ && dart run tests/e2e_all_v2/bin/core_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
     --policy-atsign "@policy_jttest" \
     --events-atsign "@events_jttest" \
     --base-directory "e2e_all_v2" \
-    --keep-docker-containers-on \
-    --always-output-logs \
     --root-domain "root.atsign.org"
+
+
+--always-output-logs \
 ```
 
 notes:

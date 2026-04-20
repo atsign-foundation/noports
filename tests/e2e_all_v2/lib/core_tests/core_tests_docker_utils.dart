@@ -36,20 +36,28 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
   }
 
   // ensure all docker images exist on machine
-  for(final DockerImage dockerImage in dockerImages) {
-    if(!(await dockerImage.existsOnMachine())) {
-      print('Docker image not found on machine: ${dockerImage.fullImageName}. Pulling from registry...');
-      final Process pullProcess = await dockerImage.pull(quiet: true); // sudo docker pull <imageName>
-      if((await pullProcess.exitCode) != 0) {
-        print('Failed to pull docker image ${dockerImage.fullImageName}. Exit code: ${await pullProcess.exitCode}');
-        print('Building instead...');
-        final Process buildProcess = await dockerImage.build(quiet: true);
-        if((await buildProcess.exitCode) != 0) {
-          throw Exception('Failed to build docker image ${dockerImage.fullImageName}. Exit code: ${await buildProcess.exitCode}');
-        }
+  for (final DockerImage dockerImage in dockerImages) {
+    if (dockerImage.tag != 'current' && await dockerImage.existsOnMachine()) { // TODO: --skip-current-build flag to skip build for daemon and clinet bianries
+      print('Docker image found on machine: ${dockerImage.fullImageName}');
+      continue;
+    }
+
+    if (dockerImage.tag != 'current') {
+      print('Docker image not found on machine: ${dockerImage.fullImageName}. Attempting docker pull from registry...');
+      final pullProcess = await dockerImage.pull(quiet: true); // sudo docker pull <imageName>
+      final pullExitCode = await pullProcess.exitCode;
+      if (pullExitCode == 0) {
+        print('Successfully pulled docker image ${dockerImage.fullImageName} from registry');
+        continue;
       }
-    } else {
-      print('Docker image already exists on machine: ${dockerImage.fullImageName}');
+      print('Failed to pull docker image ${dockerImage.fullImageName}. Exit code: $pullExitCode');
+    }
+
+    print('Building DockerImage ${dockerImage.fullImageName} locally...');
+    final buildProcess = await dockerImage.build(quiet: true);
+    final buildExitCode = await buildProcess.exitCode;
+    if (buildExitCode != 0) {
+      throw Exception('Failed to build docker image ${dockerImage.fullImageName}. Exit code: $buildExitCode');
     }
   }
 
@@ -150,7 +158,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
     }
 
     final DateTime startTime = DateTime.now();
-    const Duration timeout = Duration(seconds: 60);
+    const Duration timeout = Duration(seconds: 60); // TODO add a flag that configures daemon monitor wait timeout duration
     bool monitorStarted = false;
 
     while (!monitorStarted && DateTime.now().difference(startTime) < timeout) {

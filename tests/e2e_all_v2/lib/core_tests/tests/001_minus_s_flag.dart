@@ -41,17 +41,17 @@ Future<List<CoreTestResult>> run001MinusSFlagTests({
     testName: testName,
   );
 
-  final List<CoreTestResult> testResults = [];
+  final List<Future<CoreTestResult>> testFutures = [];
   for(final NoPortsVersion daemonVersion in daemonVersions) {
-    final CoreTestResult coreTestResult = await _run001MinusSFlagTest(
+    testFutures.add(_run001MinusSFlagTest(
       context: context,
       coreTestLogger: coreTestLogger,
       daemonVersion: daemonVersion,
       clientVersion: NoPortsVersion(language: Language.dart, version: 'current'),
-    );
-    testResults.add(coreTestResult);
+    ));
+    await Future.delayed(Duration(seconds: 1));
   }
-  return testResults;
+  return await Future.wait(testFutures);
 }
 
 Future<CoreTestResult> _run001MinusSFlagTest({
@@ -100,8 +100,8 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     // it succeeded, not expected.
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
-      clientVersion: clientVersion.version,
-      daemonVersion: daemonVersion.version,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       status: TestStatus.failed,
       exitCode: exitCode1
     );
@@ -149,8 +149,8 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     // it failed, not expected.
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
-      clientVersion: clientVersion.version,
-      daemonVersion: daemonVersion.version,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       status: TestStatus.failed,
       exitCode: exitCode2
     );
@@ -196,8 +196,8 @@ Future<CoreTestResult> _run001MinusSFlagTest({
   final int exitCode3 = await capture3.exitCode;
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
-    clientVersion: clientVersion.version,
-    daemonVersion: daemonVersion.version,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
     status: exitCode3 == 0 ? TestStatus.passed : TestStatus.failed,
     exitCode: exitCode3
   );
