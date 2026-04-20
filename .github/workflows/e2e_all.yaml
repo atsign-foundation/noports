@@ -116,14 +116,15 @@ jobs:
 
       - name: Run e2e_all_v2 tests
         run: |
-          dart run tests/e2e_all_v2/bin/main.dart \
+          dart run tests/e2e_all_v2/bin/core_tests.dart \
             --client-atsign "@npe2e_client" \
             --daemon-atsign "@npe2e_daemon" \
             --relay-atsign "@rv_dev" \
             --policy-atsign "@npe2e_policy" \
             --events-atsign "@npe2e_events" \
             --root-domain "root.atsign.wtf:64" \
-            --log-directory "$LOGS_DIR"
+            --base-directory "$LOGS_DIR"
+
 
       - name: Zip e2e_all_v2 artifacts
         if: always()
