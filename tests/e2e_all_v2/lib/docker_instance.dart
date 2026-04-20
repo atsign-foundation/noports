@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
+import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/process_utils.dart';
+import 'package:e2e_all_v2/utils.dart';
 
 class VolumeMapping {
   final Directory localDirectory;
@@ -21,6 +23,8 @@ class DockerInstance {
   File? stdoutLogFile; // instantiated from run()
   File? stderrLogFile; // instantiated from run()
 
+  final List<LogFragment> _activeFragments = [];
+
   DockerInstance({
     required this.dockerImage,
     required this.testRunId,
@@ -30,30 +34,11 @@ class DockerInstance {
     if(containerName != null) {
       this.containerName = containerName;
     } else {
-      this.containerName = _generateDockerContainerName(language: dockerImage.language.name, tag: dockerImage.tag, testRunId: testRunId);
+      this.containerName = _getDockerContainerName(language: dockerImage.language.name, tag: dockerImage.tag, testRunId: testRunId);
       if(uniqueIdentifier.isNotEmpty) {
         this.containerName += '$uniqueIdentifier';  
       }
     }
-  }
-
-  Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
-    // Use shell redirection to write stdout and stderr to files
-    final Process logProcess = await startCommand(
-      'sh',
-      [
-        '-c',
-        'docker logs -f $containerName 1>> ${stdoutLogFile.absolute.path} 2>> ${stderrLogFile.absolute.path}',
-      ],
-    );
-    this.logProcess = logProcess;
-  }
-
-  bool _stopDockerLogProcess() {
-    if(logProcess != null) {
-      return logProcess!.kill();
-    }
-    return true;
   }
 
   Future<Process> run({
@@ -61,8 +46,8 @@ class DockerInstance {
     final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
     final bool quiet = false,
     final bool removeWhenStopped = true,
-    File? stdoutLogFile,
-    File? stderrLogFile,
+    File? stdoutLogFile, // holds logs for full container life-time
+    File? stderrLogFile, // holds logs for full container life-time
   }) async {
     const String executable = 'docker';
 
@@ -127,9 +112,58 @@ class DockerInstance {
     return processResult;
   }
 
+  LogFragment createLogFragment({
+    required File stdoutFile,
+    required File stderrFile,
+  }) {
+    final fragment = LogFragment(
+      stdoutFile: stdoutFile,
+      stderrFile: stderrFile,
+      processStarter: () => startCommand(
+        'sh',
+        [
+          '-c',
+          'docker logs -f --tail 0 $containerName 1>> ${stdoutFile.absolute.path} 2>> ${stderrFile.absolute.path}',
+        ],
+      ),
+    );
+
+    _activeFragments.add(fragment);
+    return fragment;
+  }
+
+  void removeLogFragment(LogFragment fragment) {
+    _activeFragments.remove(fragment);
+  }
+
+  Future<void> stopAllLogFragments() async {
+    for (final fragment in List.from(_activeFragments)) {
+      await fragment.stop();
+      removeLogFragment(fragment);
+    }
+  }
+
+  Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
+    // Use shell redirection to write stdout and stderr to files
+    final Process logProcess = await startCommand(
+      'sh',
+      [
+        '-c',
+        'docker logs -f $containerName 1>> ${stdoutLogFile.absolute.path} 2>> ${stderrLogFile.absolute.path}',
+      ],
+    );
+    this.logProcess = logProcess;
+  }
+
+  bool _stopDockerLogProcess() {
+    if(logProcess != null) {
+      return logProcess!.kill();
+    }
+    return true;
+  }
 }
 
-String _generateDockerContainerName({
+String _getDockerContainerName({
   required final String language,
   required final String tag,
   required final String testRunId,

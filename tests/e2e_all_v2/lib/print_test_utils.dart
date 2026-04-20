@@ -17,5 +17,5 @@ void printTestStart({
 }) {
   final String color = '\x1B[34m'; // Blue for test start
   const String reset = '\x1B[0m';
-  print('\n\t${color}STARTING TEST:$reset $testName');
+  print('\n\t${color}STARTING TEST:$reset $testName $extra\n');
 }

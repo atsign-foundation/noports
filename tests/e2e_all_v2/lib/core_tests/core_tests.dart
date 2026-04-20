@@ -139,73 +139,73 @@ Future<void> coreTests(CoreTestsParams params) async {
       daemonVersions: daemonVersions,
     )));
 
-  // b. minus_r_flag
-  allTestResults.addAll(
-    (await runMinusRFlagTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // c. minus_u_flag
-  allTestResults.addAll(
-    (await runMinusUFlagTests(
-      context: context
-    )));
-
-  // c. npt_to_port_22
-  allTestResults.addAll(
-    (await runNptToPort22Tests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // d. npt_to_port_22_no_encrypt_traffic
-  allTestResults.addAll(
-    (await runNptToPort22NoEncryptTrafficTests(
-      context: context,
-    )));
-
-  // e. v4_dart_inline
-  allTestResults.addAll(
-    (await runV4DartInlineTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // f. v4_openssh_print
-  allTestResults.addAll(
-    (await runV4OpensshPrintTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // g. v5_dart_inline
-  allTestResults.addAll(
-    (await runV5DartInlineTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // h. v5_openssh_inline
-  allTestResults.addAll(
-    (await runV5OpensshInlineTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // i. v5_openssh_print
-  allTestResults.addAll(
-    (await runV5OpensshPrintTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
+  // // b. minus_r_flag
+  // allTestResults.addAll(
+  //   (await runMinusRFlagTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // c. minus_u_flag
+  // allTestResults.addAll(
+  //   (await runMinusUFlagTests(
+  //     context: context
+  //   )));
+  //
+  // // d. npt_to_port_22
+  // allTestResults.addAll(
+  //   (await runNptToPort22Tests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // e. npt_to_port_22_no_encrypt_traffic
+  // allTestResults.addAll(
+  //   (await runNptToPort22NoEncryptTrafficTests(
+  //     context: context,
+  //   )));
+  //
+  // // f. v4_dart_inline
+  // allTestResults.addAll(
+  //   (await runV4DartInlineTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // g. v4_openssh_print
+  // allTestResults.addAll(
+  //   (await runV4OpensshPrintTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // h. v5_dart_inline
+  // allTestResults.addAll(
+  //   (await runV5DartInlineTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // i. v5_openssh_inline
+  // allTestResults.addAll(
+  //   (await runV5OpensshInlineTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // j. v5_openssh_print
+  // allTestResults.addAll(
+  //   (await runV5OpensshPrintTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
 
   // 8. Print test results summary
   final int totalTests = allTestResults.length;

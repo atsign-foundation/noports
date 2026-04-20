@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
+import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 
-/// Prints client stdout if not empty
-/// [label] - Optional custom label (defaults to 'Client stdout:')
 void printClientStdout(String stdout, {String? label}) {
   if (stdout.isNotEmpty) {
     print(label ?? 'Client stdout:');
@@ -11,8 +10,6 @@ void printClientStdout(String stdout, {String? label}) {
   }
 }
 
-/// Prints client stderr if not empty
-/// [label] - Optional custom label (defaults to 'Client stderr:')
 void printClientStderr(String stderr, {String? label}) {
   if (stderr.isNotEmpty) {
     print(label ?? 'Client stderr:');
@@ -20,15 +17,11 @@ void printClientStderr(String stderr, {String? label}) {
   }
 }
 
-/// Prints both client stdout and stderr from a ProcessOutputCapture
-/// [label] - Optional custom label prefix
 void printClientLogs(ProcessOutputCapture capture, {String? label}) {
   printClientStdout(capture.stdout, label: label != null ? '$label stdout:' : null);
   printClientStderr(capture.stderr, label: label != null ? '$label stderr:' : null);
 }
 
-/// Prints daemon stdout fragment from a log file if it exists
-/// [label] - Optional custom label (defaults to 'Daemon stdout fragment:')
 void printDaemonStdoutFragment(File stdoutFragmentFile, {String? label}) {
   if (stdoutFragmentFile.existsSync()) {
     print(label ?? 'Daemon stdout fragment:');
@@ -36,8 +29,6 @@ void printDaemonStdoutFragment(File stdoutFragmentFile, {String? label}) {
   }
 }
 
-/// Prints daemon stderr fragment from a log file if it exists
-/// [label] - Optional custom label (defaults to 'Daemon stderr fragment:')
 void printDaemonStderrFragment(File stderrFragmentFile, {String? label}) {
   if (stderrFragmentFile.existsSync()) {
     print(label ?? 'Daemon stderr fragment:');
@@ -45,29 +36,25 @@ void printDaemonStderrFragment(File stderrFragmentFile, {String? label}) {
   }
 }
 
-/// Prints both daemon stdout and stderr fragments from a DaemonLogCapture
-/// [label] - Optional custom label prefix
-void printDaemonLogFragments(DaemonLogCapture daemonLogCapture, {String? label}) {
+void printDaemonLogFragments(LogFragment daemonLogCapture, {String? label}) {
   printDaemonStdoutFragment(
-    daemonLogCapture.stdoutFragmentFile,
+    daemonLogCapture.stdoutFile,
     label: label != null ? '$label stdout fragment:' : null,
   );
   printDaemonStderrFragment(
-    daemonLogCapture.stderrFragmentFile,
+    daemonLogCapture.stderrFile,
     label: label != null ? '$label stderr fragment:' : null,
   );
 }
 
-/// Prints all client and daemon logs (convenience method)
-/// Typically used when a test fails or when alwaysOutputLogs is true
 void printAllLogs({
   required ProcessOutputCapture clientCapture,
-  required DaemonLogCapture daemonLogCapture,
+  required LogFragment daemonLogFragment,
   String? clientLabel,
   String? daemonLabel,
 }) {
   printClientLogs(clientCapture, label: clientLabel);
-  printDaemonLogFragments(daemonLogCapture, label: daemonLabel);
+  printDaemonLogFragments(daemonLogFragment, label: daemonLabel);
 }
 
 /// Prints client logs from log files instead of capture buffers
@@ -92,7 +79,7 @@ void printClientLogsFromFiles({
 void printAllLogsFromFiles({
   required File clientStdoutFile,
   required File clientStderrFile,
-  required DaemonLogCapture daemonLogCapture,
+  required LogFragment daemonLogFragment,
   String? clientLabel,
   String? daemonLabel,
 }) {
@@ -101,5 +88,5 @@ void printAllLogsFromFiles({
     stderrFile: clientStderrFile,
     label: clientLabel,
   );
-  printDaemonLogFragments(daemonLogCapture, label: daemonLabel);
+  printDaemonLogFragments(daemonLogFragment, label: daemonLabel);
 }

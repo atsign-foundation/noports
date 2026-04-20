@@ -1,4 +1,5 @@
 import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/noports_version.dart';
 
 // e.g. 'v5.9.4' --> '594', 'c0.0.1' --> '001', 'current' --> 'c'
 // '5.9.4' --> '594', '0.0.1' --> '001'
@@ -21,7 +22,9 @@ String _versionForDeviceName(final String version) {
 
 String getDeviceNameNoFlags({
   required final String testRunId,
-  required final Language language,
-  required final String version}) {
+  required final NoPortsVersion noPortsVersion,
+}) {
+  final Language language = noPortsVersion.language;
+  final String version = noPortsVersion.version;
   return '${testRunId}${language.name.substring(0, 1)}${_versionForDeviceName(version)}';
 }

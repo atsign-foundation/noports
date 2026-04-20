@@ -65,9 +65,12 @@ Future<List<(String, DockerInstance)>> startDockerDaemons({
       dockerImage: dockerImage,
       testRunId: testRunId,
     );
-    final String deviceNameNoFlags = getDeviceNameNoFlags(testRunId: testRunId,
-      language: dockerInstance1.dockerImage.language,
-      version: dockerInstance1.dockerImage.tag);
+    final String deviceNameNoFlags = getDeviceNameNoFlags(
+      testRunId: testRunId,
+      noPortsVersion: NoPortsVersion(
+        language: dockerInstance1.dockerImage.language,
+        version: dockerInstance1.dockerImage.tag),
+    );
 
     final File stdout1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stdout.log');
     final File stderr1 = File('${daemonsLogsDirectory.path}/${dockerInstance1.containerName}_stderr.log');

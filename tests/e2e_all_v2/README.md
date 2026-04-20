@@ -14,10 +14,10 @@ TODOs:
 - add v4 to daemon list
 - core_tests
     - 001_minus_s_flag (DONE)
-    - minus_r_flag (DONE)
+    - minus_r_flag
     - minus_u_flag
-    - npt_to_port_22 (DONE)
-    - npt_to_port_22_no_encrypt_traffic (DONE)
+    - npt_to_port_22
+    - npt_to_port_22_no_encrypt_traffic
     - v4_dart_inline
     - v4_openssh_print
     - v5_dart_inline
@@ -31,6 +31,8 @@ TODOs:
 - Make CoreTestLogger easire with NoPortsVersion and define testMEtadata and daemonInfo accordingly
 - Ensure --always-output-logs is honoured or maybe just remove it...
 - Fix lettering in core_tests.dart
+- Clean up old ssh key
+- getTestSshCommand
 
 ## Usage
 

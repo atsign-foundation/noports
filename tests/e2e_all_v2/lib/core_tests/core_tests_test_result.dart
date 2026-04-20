@@ -9,9 +9,7 @@ class CoreTestResult extends TestResult {
     required this.clientVersion,
     required this.daemonVersion,
     required super.status,
-    required super.exitCode,
-    super.stdout,
-    super.stderr
+    required super.exitCode
   });
 
   void printResult({bool printStdout = false, bool printStderr = false}) {
@@ -32,12 +30,5 @@ class CoreTestResult extends TestResult {
     }
 
     print('\t$testName (client: $clientVersion, daemon: $daemonVersion) $color$statusText$reset');
-
-    if (printStdout && stdout != null && stdout!.isNotEmpty) {
-      print('STDOUT:\n$stdout');
-    }
-    if (printStderr && stderr != null && stderr!.isNotEmpty) {
-      print('STDERR:\n$stderr');
-    }
   }
 }

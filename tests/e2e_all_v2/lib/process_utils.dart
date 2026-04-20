@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:e2e_all_v2/log_fragment.dart';
 
 class ProcessOutputCapture {
   final Process process;
@@ -38,20 +39,18 @@ class ProcessOutputCapture {
 Future<ProcessOutputCapture> startCommandWithCapture(
   final String executable,
   final List<String> arguments, {
+  required final File stdoutLogFile,
+  required final File stderrLogFile,
   final String? workingDirectory,
   final Map<String, String>? environment,
   final bool printCommand = true,
-  final File? stdoutLogFile,
-  final File? stderrLogFile,
 }) async {
-  if(printCommand) {
-    print('> $executable ${arguments.join(' ')}');
-  }
-  final Process process = await Process.start(
+  final Process process = await startCommand(
     executable,
     arguments,
     workingDirectory: workingDirectory,
     environment: environment,
+    printCommand: printCommand
   );
   return ProcessOutputCapture(
     process: process,
