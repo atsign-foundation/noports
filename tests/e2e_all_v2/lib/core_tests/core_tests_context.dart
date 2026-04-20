@@ -11,7 +11,7 @@ class CoreTestsContext {
   final String remoteUsername;
   final String identityFilePath;
   final List<ClientBinary> clientBinaries;
-  final List<(String, DockerInstance)> dockerInstances;
+  final List<(String, DockerInstance)> dockerInstances; // deviceName, DockerInstance
   final Map<String, File> apkamKeys;
   final Directory logsDirectory;
   final bool alwaysOutputLogs;

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -193,16 +194,8 @@ Future<CoreTestResult> _runTestWithDashDashHost({
       exitCode: processResult.exitCode,
     );
     printTestResult(testResult: result, extra: extra);
-    print('Client stderr:');
-    print(stderrBuffer.toString());
-    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-    }
+    printClientStderr(stderrBuffer.toString());
+    printDaemonLogFragments(daemonLogCapture);
     return result;
   } else {
     final CoreTestResult result = CoreTestResult(
@@ -228,22 +221,11 @@ Future<CoreTestResult> _runTestWithDashDashHost({
         testMetadata: _metadataDashDashHost,
         daemonInfo: daemonInfo,
       );
-      if(clientStdoutFile.existsSync()) {
-        print('Client stdout:');
-        print(clientStdoutFile.readAsStringSync());
-      }
-      if(clientStderrFile.existsSync()) {
-        print('Client stderr:');
-        print(clientStderrFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment:');
-        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment:');
-        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-      }
+      printAllLogsFromFiles(
+        clientStdoutFile: clientStdoutFile,
+        clientStderrFile: clientStderrFile,
+        daemonLogCapture: daemonLogCapture,
+      );
     }
     return result;
   }
@@ -321,16 +303,8 @@ Future<CoreTestResult> _runTestWithInvalidHostValidR({
       exitCode: processResult.exitCode,
     );
     printTestResult(testResult: result, extra: extra);
-    print('Client stderr:');
-    print(stderrBuffer.toString());
-    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-    }
+    printClientStderr(stderrBuffer.toString());
+    printDaemonLogFragments(daemonLogCapture);
     return result;
   } else {
     final CoreTestResult result = CoreTestResult(
@@ -356,22 +330,11 @@ Future<CoreTestResult> _runTestWithInvalidHostValidR({
         testMetadata: _metadataInvalidHostValidR,
         daemonInfo: daemonInfo,
       );
-      if(clientStdoutFile.existsSync()) {
-        print('Client stdout:');
-        print(clientStdoutFile.readAsStringSync());
-      }
-      if(clientStderrFile.existsSync()) {
-        print('Client stderr:');
-        print(clientStderrFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment:');
-        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment:');
-        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-      }
+      printAllLogsFromFiles(
+        clientStdoutFile: clientStdoutFile,
+        clientStderrFile: clientStderrFile,
+        daemonLogCapture: daemonLogCapture,
+      );
     }
     return result;
   }
@@ -451,18 +414,9 @@ Future<CoreTestResult> _runTestWithValidHostInvalidR({
       stderr: stderrBuffer,
     );
     printTestResult(testResult: result, extra: extra);
-    print('Client stdout:');
-    print(stdoutBuffer.toString());
-    print('Client stderr:');
-    print(stderrBuffer.toString());
-    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-    }
+    printClientStdout(stdoutBuffer.toString());
+    printClientStderr(stderrBuffer.toString());
+    printDaemonLogFragments(daemonLogCapture);
     return result;
   } else {
     final CoreTestResult result = CoreTestResult(
@@ -486,22 +440,11 @@ Future<CoreTestResult> _runTestWithValidHostInvalidR({
         testMetadata: _metadataValidHostInvalidR,
         daemonInfo: daemonInfo,
       );
-      if(clientStdoutFile.existsSync()) {
-        print('Client stdout:');
-        print(clientStdoutFile.readAsStringSync());
-      }
-      if(clientStderrFile.existsSync()) {
-        print('Client stderr:');
-        print(clientStderrFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment:');
-        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment:');
-        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-      }
+      printAllLogsFromFiles(
+        clientStdoutFile: clientStdoutFile,
+        clientStderrFile: clientStderrFile,
+        daemonLogCapture: daemonLogCapture,
+      );
     }
     return result;
   }

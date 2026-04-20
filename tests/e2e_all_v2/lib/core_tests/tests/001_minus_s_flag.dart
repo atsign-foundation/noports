@@ -1,6 +1,7 @@
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
@@ -181,22 +182,7 @@ Future<CoreTestResult> _runTestWithoutFlags({
       stderr: StringBuffer(capture.stderr),
     );
     printTestResult(testResult: result, extra: extra);
-    if(capture.stdout.isNotEmpty) {
-      print('Client stdout:');
-      print(capture.stdout);
-    }
-    if(capture.stderr.isNotEmpty) {
-      print('Client stderr:');
-      print(capture.stderr);
-    }
-    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-    }
+    printAllLogs(clientCapture: capture, daemonLogCapture: daemonLogCapture);
     return result;
   } else {
     final CoreTestResult result = CoreTestResult(
@@ -208,22 +194,7 @@ Future<CoreTestResult> _runTestWithoutFlags({
     );
     printTestResult(testResult: result, extra: extra);
     if(context.alwaysOutputLogs) {
-      if(capture.stdout.isNotEmpty) {
-        print('Client stdout:');
-        print(capture.stdout);
-      }
-      if(capture.stderr.isNotEmpty) {
-        print('Client stderr:');
-        print(capture.stderr);
-      }
-      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment:');
-        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment:');
-        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-      }
+      printAllLogs(clientCapture: capture, daemonLogCapture: daemonLogCapture);
     }
     return result;
   }
@@ -301,22 +272,7 @@ Future<List<CoreTestResult>> _runTestWithFlags({
       stdout: StringBuffer(capture.stdout),
     );
     printTestResult(testResult: result, extra: extra);
-    if(capture.stdout.isNotEmpty) {
-      print('Client stdout:');
-      print(capture.stdout);
-    }
-    if(capture.stderr.isNotEmpty) {
-      print('Client stderr:');
-      print(capture.stderr);
-    }
-    if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-    }
+    printAllLogs(clientCapture: capture, daemonLogCapture: daemonLogCapture);
     results.add(result);
     return results;
   }
@@ -366,30 +322,13 @@ Future<List<CoreTestResult>> _runTestWithFlags({
     );
     printTestResult(testResult: result, extra: extra);
     if(context.alwaysOutputLogs) {
-      if(capture.stdout.isNotEmpty) {
-        print('Client stdout (sshnp with flags):');
-        print(capture.stdout);
-      }
-      if(capture.stderr.isNotEmpty) {
-        print('Client stderr (sshnp with flags):');
-        print(capture.stderr);
-      }
-      if(daemonLogCapture.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment (withFlags):');
-        print(daemonLogCapture.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment (withFlags):');
-        print(daemonLogCapture.stderrFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture2.stdoutFragmentFile.existsSync()) {
-        print('Daemon stdout fragment (sshTest):');
-        print(daemonLogCapture2.stdoutFragmentFile.readAsStringSync());
-      }
-      if(daemonLogCapture2.stderrFragmentFile.existsSync()) {
-        print('Daemon stderr fragment (sshTest):');
-        print(daemonLogCapture2.stderrFragmentFile.readAsStringSync());
-      }
+      printAllLogs(
+        clientCapture: capture,
+        daemonLogCapture: daemonLogCapture,
+        clientLabel: 'Client (sshnp with flags)',
+        daemonLabel: 'Daemon (withFlags)',
+      );
+      printDaemonLogFragments(daemonLogCapture2, label: 'Daemon (sshTest)');
     }
     results.add(result);
   } else {
@@ -403,22 +342,11 @@ Future<List<CoreTestResult>> _runTestWithFlags({
       stderr: StringBuffer(sshCapture.stderr),
     );
     printTestResult(testResult: result, extra: extra);
-    if(sshCapture.stdout.isNotEmpty) {
-      print('SSH command stdout:');
-      print(sshCapture.stdout);
-    }
-    if(sshCapture.stderr.isNotEmpty) {
-      print('SSH command stderr:');
-      print(sshCapture.stderr);
-    }
-    if(daemonLogCapture2.stdoutFragmentFile.existsSync()) {
-      print('Daemon stdout fragment:');
-      print(daemonLogCapture2.stdoutFragmentFile.readAsStringSync());
-    }
-    if(daemonLogCapture2.stderrFragmentFile.existsSync()) {
-      print('Daemon stderr fragment:');
-      print(daemonLogCapture2.stderrFragmentFile.readAsStringSync());
-    }
+    printAllLogs(
+      clientCapture: sshCapture,
+      daemonLogCapture: daemonLogCapture2,
+      clientLabel: 'SSH command',
+    );
     results.add(result);
   }
 

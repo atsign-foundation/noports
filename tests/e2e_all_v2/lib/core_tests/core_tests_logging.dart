@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:e2e_all_v2/process_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
@@ -21,10 +22,6 @@ class CoreTestLogger {
     daemonsDirectory = Directory(path.join(testLogsDirectory.path, 'daemons'));
     clientsDirectory = Directory(path.join(testLogsDirectory.path, 'clients'));
 
-    _ensureDirectoriesExist();
-  }
-
-  void _ensureDirectoriesExist() {
     ensureDirectoryExists(testLogsDirectory);
     ensureDirectoryExists(daemonsDirectory);
     ensureDirectoryExists(clientsDirectory);
@@ -126,7 +123,7 @@ class DaemonLogCapture {
   });
 
   Future<void> start() async {
-    _captureProcess = await Process.start(
+    _captureProcess = await startCommand(
       'docker',
       ['logs', '--follow', '--tail', '0', dockerInstance.containerName],
     );
