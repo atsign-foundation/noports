@@ -1,8 +1,6 @@
 import 'dart:io';
-import 'package:e2e_all_v2/process_utils.dart';
 import 'package:path/path.dart' as path;
-import 'package:e2e_all_v2/docker_instance.dart';
-import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/utils.dart';
 
 // each test gets its own log directory with subdirectories for daemons and clients
@@ -27,118 +25,90 @@ class CoreTestLogger {
     ensureDirectoryExists(clientsDirectory);
   }
 
-  String generateClientLogFileName({
-    required Language language,
-    required String version,
-    required String testMetadata,
-    String? daemonInfo,
+  String _getClientLogFileName({
+    required NoPortsVersion clientVersion,
+    String? testMetadata,
+    String? suffix,
   }) {
-    if (daemonInfo != null) {
-      return 'e2e_all_v2_client_${language.name}_${version}_daemon_${daemonInfo}_$testMetadata.log';
+    final String language = clientVersion.language.name;
+    final String version = clientVersion.version;
+    String s = 'e2e_all_v2_client_${language}_${version}';
+    if(testMetadata != null) {
+      s += '_${testMetadata}';
     }
-    return 'e2e_all_v2_client_${language.name}_${version}_$testMetadata.log';
+    if (suffix != null) {
+      s += '_$suffix';
+    }
+    return '$s.log';
   }
 
-  String generateDaemonLogFileName({
-    required Language language,
-    required String version,
+  String _getDaemonLogFileName({
+    required NoPortsVersion daemonVersion,
     required String deviceName,
-    required String testMetadata,
+    String? testMetadata,
+    String? suffix,
   }) {
-    return 'e2e_all_v2_${language.name}_${version}_${deviceName}_$testMetadata.log';
+    final String language = daemonVersion.language.name;
+    final String version = daemonVersion.version;
+    String s = 'e2e_all_v2_${language}_${version}_${deviceName}';
+    if(testMetadata != null) {
+      s += '_${testMetadata}';
+    }
+    if (suffix != null) {
+      s += '_$suffix';
+    }
+    return '$s.log';
   }
 
   File getClientStdoutLogFile({
-    required Language language,
-    required String version,
+    required NoPortsVersion clientVersion,
     required String testMetadata,
-    String? daemonInfo,
   }) {
-    final String fileName = generateClientLogFileName(
-      language: language,
-      version: version,
-      testMetadata: '${testMetadata}_stdout',
-      daemonInfo: daemonInfo,
+    final String fileName = _getClientLogFileName(
+      clientVersion: clientVersion,
+      testMetadata: testMetadata,
+      suffix: 'stdout',
     );
     return File(path.join(clientsDirectory.path, fileName));
   }
 
   File getClientStderrLogFile({
-    required Language language,
-    required String version,
-    required String testMetadata,
-    String? daemonInfo,
+    required NoPortsVersion clientVersion,
+    String? testMetadata,
   }) {
-    final String fileName = generateClientLogFileName(
-      language: language,
-      version: version,
-      testMetadata: '${testMetadata}_stderr',
-      daemonInfo: daemonInfo,
+    final String fileName = _getClientLogFileName(
+      clientVersion: clientVersion,
+      testMetadata: testMetadata,
     );
     return File(path.join(clientsDirectory.path, fileName));
   }
 
   File getDaemonStdoutLogFile({
-    required Language language,
-    required String version,
+    required NoPortsVersion daemonVersion,
     required String deviceName,
-    required String testMetadata,
+    String? testMetadata,
   }) {
-    final String fileName = generateDaemonLogFileName(
-      language: language,
-      version: version,
+    final String fileName = _getDaemonLogFileName(
+      daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: '${testMetadata}_stdout',
+      testMetadata: testMetadata,
+      suffix: 'stdout',
     );
     return File(path.join(daemonsDirectory.path, fileName));
   }
 
   File getDaemonStderrLogFile({
-    required Language language,
-    required String version,
+    required NoPortsVersion daemonVersion,
     required String deviceName,
-    required String testMetadata,
+    String? testMetadata,
   }) {
-    final String fileName = generateDaemonLogFileName(
-      language: language,
-      version: version,
+    final String fileName = _getDaemonLogFileName(
+      daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: '${testMetadata}_stderr',
+      testMetadata: testMetadata,
+      suffix: 'stderr',
     );
     return File(path.join(daemonsDirectory.path, fileName));
   }
 }
 
-class DaemonLogCapture {
-  final DockerInstance dockerInstance;
-  final File stdoutFragmentFile;
-  final File stderrFragmentFile;
-
-  Process? _captureProcess;
-
-  DaemonLogCapture({
-    required this.dockerInstance,
-    required this.stdoutFragmentFile,
-    required this.stderrFragmentFile,
-  });
-
-  Future<void> start() async {
-    _captureProcess = await startCommand(
-      'docker',
-      ['logs', '--follow', '--tail', '0', dockerInstance.containerName],
-    );
-
-    _captureProcess!.stdout.listen((data) {
-      stdoutFragmentFile.writeAsBytesSync(data, mode: FileMode.append);
-    });
-
-    _captureProcess!.stderr.listen((data) {
-      stderrFragmentFile.writeAsBytesSync(data, mode: FileMode.append);
-    });
-  }
-
-  Future<void> stop() async {
-    _captureProcess?.kill();
-    await _captureProcess?.exitCode;
-  }
-}
