@@ -40,10 +40,10 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
     );
-  print('Generated version combinations:');
-  for(final (clientVersion, daemonVersion) in versionCombinations) {
-    print('client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}');
-  }
+  // print('Generated version combinations:');
+  // for(final (clientVersion, daemonVersion) in versionCombinations) {
+  //   print('client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}');
+  // }
 
   final List<CoreTestResult> testResults = [];
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
