@@ -171,7 +171,6 @@ Future<CoreTestResult> _runTestWithoutFlags({
   await daemonLogCapture.stop();
 
   if(exitCode == 0) {
-    print('Daemon version: $daemonVersionStr | Client version: $clientVersionStr | Device Name: $deviceName Test Failed | exitCode=$exitCode');
     final CoreTestResult result = CoreTestResult(
       testName: testName,
       clientVersion: clientVersionStr,

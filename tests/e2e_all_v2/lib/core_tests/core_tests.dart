@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
 import 'package:path/path.dart' as path;
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/client_binary.dart';
@@ -10,6 +11,13 @@ import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
+import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22.dart';
+import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22_no_encrypt_traffic.dart';
+import 'package:e2e_all_v2/core_tests/tests/v4_dart_inline.dart';
+import 'package:e2e_all_v2/core_tests/tests/v4_openssh_print.dart';
+import 'package:e2e_all_v2/core_tests/tests/v5_dart_inline.dart';
+import 'package:e2e_all_v2/core_tests/tests/v5_openssh_inline.dart';
+import 'package:e2e_all_v2/core_tests/tests/v5_openssh_print.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
@@ -131,20 +139,69 @@ Future<void> coreTests(CoreTestsParams params) async {
       daemonVersions: daemonVersions,
     )));
 
-  // stop docker instances without the `_f`
-  if (!params.keepDockerContainersOn) {
-    final List<(String, DockerInstance)> dockerInstancesToRemove = [];
-    for(final (String deviceName, DockerInstance dockerInstance) in dockerInstances) {
-      if(!deviceName.endsWith('_f')) {
-        await dockerInstance.stop();
-        dockerInstancesToRemove.add((deviceName, dockerInstance));
-      }
-    }
-    dockerInstancesToRemove.forEach((instance) => dockerInstances.remove(instance));
-  }
-
+  // b. minus_r_flag
   allTestResults.addAll(
     (await runMinusRFlagTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // c. minus_u_flag
+  allTestResults.addAll(
+    (await runMinusUFlagTests(
+      context: context
+    )));
+
+  // c. npt_to_port_22
+  allTestResults.addAll(
+    (await runNptToPort22Tests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // d. npt_to_port_22_no_encrypt_traffic
+  allTestResults.addAll(
+    (await runNptToPort22NoEncryptTrafficTests(
+      context: context,
+    )));
+
+  // e. v4_dart_inline
+  allTestResults.addAll(
+    (await runV4DartInlineTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // f. v4_openssh_print
+  allTestResults.addAll(
+    (await runV4OpensshPrintTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // g. v5_dart_inline
+  allTestResults.addAll(
+    (await runV5DartInlineTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // h. v5_openssh_inline
+  allTestResults.addAll(
+    (await runV5OpensshInlineTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
+
+  // i. v5_openssh_print
+  allTestResults.addAll(
+    (await runV5OpensshPrintTests(
       context: context,
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
