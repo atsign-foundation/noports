@@ -7,6 +7,8 @@ Future<ProcessResult> runCommand(
   final Map<String, String>? environment,
   final bool printCommand = true,
   final bool printOutput = false,
+  final File? stdoutLogFile,
+  final File? stderrLogFile,
 }) async {
   if(printCommand) {
     print('> $executable ${arguments.join(' ')}');
@@ -21,6 +23,12 @@ Future<ProcessResult> runCommand(
     print('stdout:\n\t${result.stdout}');
     print('stderr:\n\t${result.stderr}');
   }
+  if(stdoutLogFile != null) {
+    await stdoutLogFile.writeAsString(result.stdout.toString());
+  }
+  if(stderrLogFile != null) {
+    await stderrLogFile.writeAsString(result.stderr.toString());
+  }
   return result;
 }
 
@@ -31,6 +39,8 @@ Future<Process> startCommand(
   final Map<String, String>? environment,
   final bool printCommand = true,
   final bool printOutput = false,
+  final File? stdoutLogFile,
+  final File? stderrLogFile,
 }) async {
   if(printCommand) {
     print('> $executable ${arguments.join(' ')}');
@@ -47,6 +57,16 @@ Future<Process> startCommand(
     });
     process.stderr.transform(SystemEncoding().decoder).listen((data) {
       print('${executable} stderr: $data');
+    });
+  }
+  if(stdoutLogFile != null) {
+    process.stdout.transform(SystemEncoding().decoder).listen((data) {
+      stdoutLogFile.writeAsStringSync(data, mode: FileMode.append);
+    });
+  }
+  if(stderrLogFile != null) {
+    process.stderr.transform(SystemEncoding().decoder).listen((data) {
+      stderrLogFile.writeAsStringSync(data, mode: FileMode.append);
     });
   }
   return process;
