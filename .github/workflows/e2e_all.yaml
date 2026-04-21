@@ -122,7 +122,7 @@ jobs:
             --relay-atsign "@rv_dev" \
             --policy-atsign "@npe2e_policy" \
             --events-atsign "@npe2e_events" \
-            --root-domain "root.atsign.wtf:64" \
+            --root-domain "root.atsign.wtf" \
             --base-directory "$LOGS_DIR"
 
 
