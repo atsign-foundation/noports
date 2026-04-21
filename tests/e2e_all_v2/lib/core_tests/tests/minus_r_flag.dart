@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -99,10 +97,12 @@ Future<CoreTestResult> _runMinusRFlagTest({
     [...args1, '--host', relayAtsign],
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataDashDashHost,
     ),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataDashDashHost,
     ),
   );
@@ -144,10 +144,12 @@ Future<CoreTestResult> _runMinusRFlagTest({
     [...args2, '-h', '@do_not_activate', '-r', relayAtsign], // TODO make @do_not_activate a constant somewhere
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataInvalidHostValidR,
     ),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataInvalidHostValidR,
     ),
   );
@@ -189,10 +191,12 @@ Future<CoreTestResult> _runMinusRFlagTest({
     [...args3, '-h', relayAtsign, '-r', '@do_not_activate'], // TODO make @do_not_activate a constant somewhere
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataValidHostInvalidR,
     ),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataValidHostInvalidR,
     ),
   );

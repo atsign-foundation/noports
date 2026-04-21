@@ -91,9 +91,11 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     sshnpArgs1,
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataNoFlags),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataNoFlags));
   final int exitCode1 = await capture1.exitCode;
   if(exitCode1 == 0) {
@@ -137,10 +139,12 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     sshnpArgs2,
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataWithFlags,
     ),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataWithFlags,
     ),
   );
@@ -186,10 +190,12 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     sshCommandArgs,
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataSshTest,
     ),
     stderrLogFile: coreTestLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: _metadataSshTest,
     ),
   );

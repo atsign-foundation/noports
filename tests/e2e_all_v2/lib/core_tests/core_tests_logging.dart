@@ -27,12 +27,11 @@ class CoreTestLogger {
 
   String _getClientLogFileName({
     required NoPortsVersion clientVersion,
+    required NoPortsVersion daemonVersion,
     String? testMetadata,
     String? suffix,
   }) {
-    final String language = clientVersion.language.name;
-    final String version = clientVersion.version;
-    String s = 'e2e_all_v2_client_${language}_${version}';
+    String s = 'e2e_all_v2_client_${clientVersion.language.name}_${clientVersion.version}_${daemonVersion.language.name}_${daemonVersion.version}';
     if(testMetadata != null) {
       s += '_${testMetadata}';
     }
@@ -62,10 +61,12 @@ class CoreTestLogger {
 
   File getClientStdoutLogFile({
     required NoPortsVersion clientVersion,
+    required NoPortsVersion daemonVersion,
     required String testMetadata,
   }) {
     final String fileName = _getClientLogFileName(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: testMetadata,
       suffix: 'stdout',
     );
@@ -74,10 +75,12 @@ class CoreTestLogger {
 
   File getClientStderrLogFile({
     required NoPortsVersion clientVersion,
+    required NoPortsVersion daemonVersion, 
     String? testMetadata,
   }) {
     final String fileName = _getClientLogFileName(
       clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
       testMetadata: testMetadata,
     );
     return File(path.join(clientsDirectory.path, fileName));
