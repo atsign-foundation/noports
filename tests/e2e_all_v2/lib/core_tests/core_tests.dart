@@ -148,12 +148,14 @@ Future<void> coreTests(CoreTestsParams params) async {
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
     )));
-  //
-  // // c. minus_u_flag
-  // allTestResults.addAll(
-  //   (await runMinusUFlagTests(
-  //     context: context
-  //   )));
+
+  // c. minus_u_flag
+  allTestResults.addAll(
+    (await runMinusUFlagTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
   //
   // // d. npt_to_port_22
   // allTestResults.addAll(
