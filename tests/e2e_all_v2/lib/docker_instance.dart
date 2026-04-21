@@ -120,16 +120,28 @@ class DockerInstance {
     final fragment = LogFragment(
       stdoutFile: stdoutFile,
       stderrFile: stderrFile,
-      processStarter: () => startCommand(
-        'docker',
-        [
-          'logs',
-          '-f',
-          containerName,
-          '1>>', stdoutFile.absolute.path,
-          '2>>', stderrFile.absolute.path,
-        ],
-      ),
+      processStarter: () async {
+        final Process process = await startCommand(
+          'docker',
+          [
+            'logs',
+            '-f',
+            containerName,
+          ],
+        );
+
+        // Listen to stdout and write to file
+        process.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+          stdoutFile.writeAsStringSync('$line\n', mode: FileMode.append);
+        });
+
+        // Listen to stderr and write to file
+        process.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
+          stderrFile.writeAsStringSync('$line\n', mode: FileMode.append);
+        });
+
+        return process;
+      },
     );
 
     _activeFragments.add(fragment);

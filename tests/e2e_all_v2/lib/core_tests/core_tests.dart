@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
 import 'package:path/path.dart' as path;
+import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
@@ -10,7 +10,6 @@ import 'package:e2e_all_v2/core_tests/core_tests_client_binary_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
 import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22.dart';
@@ -54,14 +53,14 @@ Future<void> coreTests(CoreTestsParams params) async {
   //            v5.13.0/
   //            current/
   final Directory baseDirectory = Directory('${params.baseDirectory}/$testRunId');
-  ensureDirectoryExists(baseDirectory);
+  await ensureDirectoryExists(baseDirectory);
 
   final Directory apkamKeysDirectory = Directory('${baseDirectory.path}/apkamKeys');
   final Directory logsDirectory = Directory('${baseDirectory.path}/logs');
   final Directory binariesDirectory = Directory('${baseDirectory.path}/binaries');
-  ensureDirectoryExists(apkamKeysDirectory);
-  ensureDirectoryExists(logsDirectory);
-  ensureDirectoryExists(binariesDirectory);
+  await ensureDirectoryExists(apkamKeysDirectory);
+  await ensureDirectoryExists(logsDirectory);
+  await ensureDirectoryExists(binariesDirectory);
 
   final Directory sshDirectory = Directory(path.join(getHomeDirectory()!, '.ssh'));
   ensureDirectoryExists(sshDirectory);
