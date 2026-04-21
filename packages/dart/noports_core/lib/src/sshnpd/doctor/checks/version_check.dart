@@ -62,21 +62,12 @@ class VersionCheck extends DiagnosticCheck {
           );
         }
       } else {
-        // A newer version is available
-        print('\n A NEW UPDATE IS AVAILABLE!');
-        print('Current version: $currentVersion');
-        print('New version: $cleanLatest');
 
         // Check if sshnpd was installed via a package manager
         String? packageManagerCmd = await PlatformUtils.instance
             .detectPackageManagerInstall('noports');
 
         if (packageManagerCmd != null) {
-          print(
-            '\n sshnpd appears to have been installed via a package manager.',
-          );
-          print(' Please update using your package manager:');
-          print('\n   $packageManagerCmd\n');
           return CheckResult(
             checkName: name,
             status: CheckStatus.warning,
