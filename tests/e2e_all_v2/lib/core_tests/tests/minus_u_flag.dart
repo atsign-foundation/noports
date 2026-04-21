@@ -27,6 +27,9 @@ Future<List<CoreTestResult>> runMinusUFlagTests({
 
   for(final NoPortsVersion clientVersion in clientVersions) {
     for(final NoPortsVersion daemonVersion in daemonVersions) {
+      if(clientVersion.version != 'current' || daemonVersion.version != 'current') {
+        continue; // for now, only run this test with current versions since it's testing a current feature
+      }
       testFutures.add(_runMinusUFlagTest(
         context: context,
         coreTestLogger: CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName),

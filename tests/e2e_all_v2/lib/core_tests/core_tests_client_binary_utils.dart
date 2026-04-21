@@ -42,7 +42,7 @@ Future<List<ClientBinary>> fetchClientBinaries({
     final Map<String, List<ClientBinaryType>> versionMap = map[language]!;
     for(final String version in versionMap.keys) {
       final Directory dir = Directory(path.join(binariesDirectory.path, language.name, version));
-      ensureDirectoryExists(dir);
+      await ensureDirectoryExists(dir);
       final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
       NoPortsVersion noPortsVersion = NoPortsVersion(language: language, version: version);
       if(version == 'current') {
@@ -151,7 +151,7 @@ Future<List<ClientBinary>> _downloadRelease({
 
   // 3. create temporary extraction directory: $directory/temp_extract/
   final Directory tempExtractDir = Directory(path.join(directory.path, 'temp_extract'));
-  ensureDirectoryExists(tempExtractDir);
+  await ensureDirectoryExists(tempExtractDir);
 
   // 4. extract archive to temporary directory
   ProcessResult extractResult;
