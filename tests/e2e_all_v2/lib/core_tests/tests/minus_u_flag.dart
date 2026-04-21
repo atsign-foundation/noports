@@ -25,6 +25,18 @@ Future<List<CoreTestResult>> runMinusUFlagTests({
 }) async {
   final List<Future<CoreTestResult>> testFutures = [];
 
+  for(final NoPortsVersion clientVersion in clientVersions) {
+    for(final NoPortsVersion daemonVersion in daemonVersions) {
+      testFutures.add(_runMinusUFlagTest(
+        context: context,
+        coreTestLogger: CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName),
+        clientVersion: clientVersion,
+        daemonVersion: daemonVersion,
+      ));
+      await Future.delayed(Duration(seconds: 1));
+    }
+  }
+
   return await Future.wait(testFutures);
 }
 
