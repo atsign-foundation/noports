@@ -59,14 +59,16 @@ class DiagnosticRunner {
       for (final result in results.where((r) => r.failed)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
-    } else if (warnings > 0) {
-      buffer.writeln(
-          '\n  WARNING: sshnpd may work, but check the items above.');
+    }
+
+    if (warnings > 0) {
       buffer.writeln('\nWarnings:');
       for (final result in results.where((r) => r.hasWarning)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
-    } else {
+    }
+
+    if (failed == 0 && warnings == 0) {
       buffer.writeln('\n SUCCESS: Everything seems ready to use sshnpd!');
     }
 

@@ -74,6 +74,13 @@ abstract class PlatformUtils {
   /// Detects if a package was installed via a system package manager.
   /// Returns the recommended update command, or null if not package-managed.
   Future<String?> detectPackageManagerInstall(String packageName);
+
+  /// Returns platform-specific advice for installing/updating the package
+  /// when it was NOT installed via a detected package manager.
+  Future<String> getRecommendedInstallAdvice(
+    String packageName,
+    String latestVersion,
+  );
 }
 
 /// MacOS Implementation
@@ -235,6 +242,18 @@ class MacOSUtils implements PlatformUtils {
     }
 
     return null;
+  }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(
+    String packageName,
+    String latestVersion,
+  ) async {
+    return 'Install or update via Homebrew:\n'
+        'brew tap atsign-foundation/homebrew-tap\n'
+        'brew install $packageName\n'
+        '\n'
+        ' If already tapped: brew upgrade $packageName';
   }
 }
 
@@ -408,6 +427,48 @@ class LinuxUtils implements PlatformUtils {
 
     return null;
   }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(
+    String packageName,
+    String latestVersion,
+  ) async {
+    // Detect which package manager is available on the system
+    try {
+      final aptCheck = await Process.run('which', ['apt']);
+      if (aptCheck.exitCode == 0) {
+        return 'Install via apt (requires repo setup):\n'
+            'sudo apt update && sudo apt install -y $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#apt-package';
+      }
+    } catch (_) {}
+
+    try {
+      final dnfCheck = await Process.run('which', ['dnf']);
+      if (dnfCheck.exitCode == 0) {
+        return 'Install via dnf (requires repo setup):\n'
+            'sudo dnf install $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#rpm-package';
+      }
+    } catch (_) {}
+
+    try {
+      final yumCheck = await Process.run('which', ['yum']);
+      if (yumCheck.exitCode == 0) {
+        return 'Install via yum (requires repo setup):\n'
+            'sudo yum install $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#rpm-package';
+      }
+    } catch (_) {}
+
+    return 'Please visit https://docs.noports.com/installation/advanced-installation-guides for installation instructions.';
+  }
 }
 
 /// Windows Implementation
@@ -552,5 +613,14 @@ class WindowsUtils implements PlatformUtils {
   @override
   Future<String?> detectPackageManagerInstall(String packageName) async {
     return null;
+  }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(
+    String packageName,
+    String latestVersion,
+  ) async {
+    return 'Please download and run the MSI installer from:\n'
+        '   https://github.com/atsign-foundation/noports/releases/latest\n';
   }
 }
