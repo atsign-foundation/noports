@@ -60,6 +60,9 @@ Future<void> coreTests(CoreTestsParams params) async {
   ensureDirectoryExists(logsDirectory);
   ensureDirectoryExists(binariesDirectory);
 
+  final Directory sshDirectory = Directory(path.join(getHomeDirectory()!, '.ssh'));
+  ensureDirectoryExists(sshDirectory);
+
   // 4. download client binaries
   final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload = [];
   for(final NoPortsVersion clientVersion in clientVersions) {
