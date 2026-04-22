@@ -47,6 +47,10 @@ Future<void> main(List<String> args) async {
   _printLoadedParameters(params);
   print('');
 
+  // look into:
+  // look into multibuild 
+  // at_client_sdk test matrix
+
   try {
     // 4. Run core tests
     final DateTime startTime = DateTime.now();

@@ -188,14 +188,14 @@ Future<void> coreTests(CoreTestsParams params) async {
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
     )));
-  //
-  // // d. npt_to_port_22
-  // allTestResults.addAll(
-  //   (await runNptToPort22Tests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+
+  // d. npt_to_port_22
+  allTestResults.addAll(
+    (await runNptToPort22Tests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    )));
   //
   // // e. npt_to_port_22_no_encrypt_traffic
   // allTestResults.addAll(

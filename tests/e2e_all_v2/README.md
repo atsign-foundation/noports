@@ -33,8 +33,8 @@ TODOs:
 - Remove --always-output-logs entirely from params (it is unused)
 - Do this setup in parallel:
   - 1. get at_activate client binary -> apkam setup
-  - 2. fetch client binaries
-  - 3. build docker images -> run docker instances
+  - 2. fetch all olther clinet binaries (except for at_activate dart current)
+  - 3. try pull docker images -> build docker images -> run docker instances
 - Process output captures for Docker building, in case error occurs
 - Process output cature for checking docker readiness, in case error occurs
 - Process otuput captures for apkam setup, in case error occurs
@@ -43,15 +43,6 @@ TODOs:
 ## Usage
 
 ```bash
-dart run bin/main.dart \
-    --client-atsign "@npe2e_client" \
-    --daemon-atsign "@npe2e_daemon" \
-    --relay-atsign "@npe2e_relay" \
-    --policy-atsign "@npe2e_policy" \
-    --events-atsign "@npe2e_events" \
-    --root-domain "root.atsign.wtf:64" \
-    --log-directory "logs"
-
 docker stop $(docker ps -q) 2>/dev/null ; rm -rf e2e_all_v2/ && dart run tests/e2e_all_v2/bin/core_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
