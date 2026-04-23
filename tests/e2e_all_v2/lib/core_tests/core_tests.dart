@@ -248,7 +248,7 @@ Future<void> coreTests(CoreTestsParams params) async {
   //   daemonVersions: daemonVersions,
   // ));
 
-  const int batchSize = 3;
+  const int batchSize = 6;
   for(int i = 0; i < otherTestFunctions.length; i += batchSize) {
     final List<Future<CoreTestResult>> batch = otherTestFunctions
       .skip(i)
