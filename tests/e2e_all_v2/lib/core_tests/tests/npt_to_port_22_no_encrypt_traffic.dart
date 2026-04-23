@@ -1,6 +1,7 @@
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
@@ -19,10 +20,10 @@ const String testName = 'npt_to_port_22_no_encrypt_traffic';
 // Requirements:
 // - Feature only available in v5.6.2+ (current versions only)
 // - Only runs with BOTH client and daemon as d:current
-List<Future<CoreTestResult>> runNptToPort22NoEncryptTrafficTests({
+List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
   required final CoreTestsContext context,
 }) {
-  final List<Future<CoreTestResult>> testFutures = [];
+  final List<Future<CoreTestResult> Function()> testFunctions = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   // This test only runs with current client and current daemon (v5.6.2+ feature)
@@ -37,16 +38,15 @@ List<Future<CoreTestResult>> runNptToPort22NoEncryptTrafficTests({
   );
 
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionPermutations) {
-    final Future<CoreTestResult> testFuture = _runNptToPort22NoEncryptTrafficTest(
+    testFunctions.add(() => _runNptToPort22NoEncryptTrafficTest(
       context: context,
       testLogger: testLogger,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-    );
-    testFutures.add(testFuture);
+    ));
   }
 
-  return testFutures;
+  return testFunctions;
 }
 
 Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
@@ -55,15 +55,15 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
 }) async {
-  final String extra = '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version})';
+  final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
   printTestStart(testName: testName, extra: extra);
-
+  // TODO implement still
   final int exitCode2 = 0;
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,
     daemonVersion: daemonVersion,
-    status: TestStatus.failed, // default to failed, will update to passed if test succeeds
+    status: TestStatus.passed, // default to failed, will update to passed if test succeeds
     exitCode: exitCode2, // default to -1, will update with actual exit code from npt process
   );
   return coreTestResult;

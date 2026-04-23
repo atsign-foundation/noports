@@ -63,7 +63,7 @@ Future<CoreTestResult> _runNptToPort22Test({
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
 }) async {
-  final String extra = '(client: ${clientVersion.language.name}:${clientVersion.version}, daemon: ${daemonVersion.language.name}:${daemonVersion.version})';
+  final String extra = generateExtraString(clientVersion, daemonVersion);
   printTestStart(testName: testName, extra: extra);
   final String deviceName = '${getDeviceNameNoFlags(
     testRunId: context.testRunId,

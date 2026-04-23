@@ -18,29 +18,29 @@ const String _metadataNoFlags = 'noFlags';
 // 1. Run sshnp without `-u <username>` talking to device daemon which does not have `-u` flag enabled (expect to fail)
 // 2. Run sshnp without `-u <username>` talking to device daemon which does have `-u` flag enabled (expect to pass)
 // - Client: Dart (current) | Daemon: Dart (current)
-Future<List<CoreTestResult>> runMinusUFlagTests({
+List<Future<CoreTestResult> Function()> runMinusUFlagTests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
-}) async {
-  final List<Future<CoreTestResult>> testFutures = [];
+}) {
+  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final CoreTestLogger coreTestLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   for(final NoPortsVersion clientVersion in clientVersions) {
     for(final NoPortsVersion daemonVersion in daemonVersions) {
       if(clientVersion.version != 'current' || daemonVersion.version != 'current') {
         continue; // for now, only run this test with current versions since it's testing a current feature
       }
-      testFutures.add(_runMinusUFlagTest(
+      testFunctions.add(() => _runMinusUFlagTest(
         context: context,
-        coreTestLogger: CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName),
+        coreTestLogger: coreTestLogger,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
       ));
-      await Future.delayed(Duration(seconds: 1));
     }
   }
 
-  return await Future.wait(testFutures);
+  return testFunctions;
 }
 
 Future<CoreTestResult> _runMinusUFlagTest({
@@ -49,7 +49,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
 }) async {
-  final String extra = '(client: ${clientVersion.language.name}:${clientVersion.version}, daemon: ${daemonVersion.language.name}:${daemonVersion.version})';
+  final String extra = generateExtraString(clientVersion, daemonVersion);
   printTestStart(testName: testName, extra: extra);
 
   final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere((cb) =>

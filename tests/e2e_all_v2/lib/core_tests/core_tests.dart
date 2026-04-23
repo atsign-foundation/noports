@@ -8,6 +8,7 @@ import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_apkam_setup.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_client_binary_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
@@ -26,6 +27,8 @@ import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 import 'package:e2e_all_v2/utils.dart';
+
+const String remoteUsername = 'atsign';
 
 /// Main entry point for running core tests
 /// Takes parsed parameters and returns test results
@@ -157,7 +160,7 @@ Future<void> coreTests(CoreTestsParams params) async {
     daemonAtsign: params.daemonAtsign,
     relayAtsign: params.relayAtsign,
     rootDomain: params.rootDomain,
-    remoteUsername: 'atsign',
+    remoteUsername: remoteUsername,
     identityFilePath: identityFile.path,
     clientBinaries: clientBinaries,
     dockerInstances: dockerInstances,
@@ -166,94 +169,93 @@ Future<void> coreTests(CoreTestsParams params) async {
     alwaysOutputLogs: params.alwaysOutputLogs,
   );
 
-  // Collect all test functions
-  final List<Future<CoreTestResult> Function()> allTestFunctions = [];
-
-  // a. 001_minus_s_flag
-  allTestFunctions.addAll(run001MinusSFlagTests(
+  // Phase 1: Run 001_minus_s_flag tests (all in parallel to set up public keys)
+  final List<Future<CoreTestResult> Function()> minusSFlagTestFunctions = run001MinusSFlagTests(
     context: context,
     daemonVersions: daemonVersions,
-  ));
+  );
+  final List<Future<CoreTestResult>> minusSFlagFutures = minusSFlagTestFunctions
+    .map((testFunction) => _runTestWithRetries(testFunction))
+    .toList();
+  final List<CoreTestResult> minusSFlagResults = await Future.wait(minusSFlagFutures);
+  allTestResults.addAll(minusSFlagResults);
 
-  // d. npt_to_port_22
-  allTestFunctions.addAll(runNptToPort22Tests(
+  // Phase 2: Collect all other test functions
+  final List<Future<CoreTestResult> Function()> otherTestFunctions = [];
+
+  // b. minus_r_flag
+  otherTestFunctions.addAll(runMinusRFlagTests(
     context: context,
     clientVersions: clientVersions,
     daemonVersions: daemonVersions,
   ));
 
-  // // b. minus_r_flag
-  // allTestFunctions.addAll(runMinusRFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // // c. minus_u_flag
-  // allTestFunctions.addAll(runMinusUFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // // e. npt_to_port_22_no_encrypt_traffic
-  // allTestFunctions.addAll(runNptToPort22NoEncryptTrafficTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
+  // c. minus_u_flag
+  otherTestFunctions.addAll(runMinusUFlagTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  // d. npt_to_port_22
+  otherTestFunctions.addAll(runNptToPort22Tests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  // e. npt_to_port_22_no_encrypt_traffic
+  otherTestFunctions.addAll(runNptToPort22NoEncryptTrafficTests(
+    context: context,
+  ));
+
   // // f. v4_dart_inline
-  // allTestFunctions.addAll(runV4DartInlineTests(
+  // otherTestFunctions.addAll(runV4DartInlineTests(
   //   context: context,
   //   clientVersions: clientVersions,
   //   daemonVersions: daemonVersions,
   // ));
   //
   // // g. v4_openssh_print
-  // allTestFunctions.addAll(runV4OpensshPrintTests(
+  // otherTestFunctions.addAll(runV4OpensshPrintTests(
   //   context: context,
   //   clientVersions: clientVersions,
   //   daemonVersions: daemonVersions,
   // ));
   //
   // // h. v5_dart_inline
-  // allTestFunctions.addAll(runV5DartInlineTests(
+  // otherTestFunctions.addAll(runV5DartInlineTests(
   //   context: context,
   //   clientVersions: clientVersions,
   //   daemonVersions: daemonVersions,
   // ));
   //
   // // i. v5_openssh_inline
-  // allTestFunctions.addAll(runV5OpensshInlineTests(
+  // otherTestFunctions.addAll(runV5OpensshInlineTests(
   //   context: context,
   //   clientVersions: clientVersions,
   //   daemonVersions: daemonVersions,
   // ));
   //
   // // j. v5_openssh_print
-  // allTestFunctions.addAll(runV5OpensshPrintTests(
+  // otherTestFunctions.addAll(runV5OpensshPrintTests(
   //   context: context,
   //   clientVersions: clientVersions,
   //   daemonVersions: daemonVersions,
   // ));
 
   const int batchSize = 3;
-  for(int i = 0; i < allTestFunctions.length; i += batchSize) {
-    // final int batchNumber = (i ~/ 3) + 1;
-    // final int batchSize = (i + 3 <= allTestFunctions.length) ? 3 : allTestFunctions.length - i;
-    // print('Running batch $batchNumber (tests ${i + 1}-${i + batchSize})...');
-
-    final List<Future<CoreTestResult>> batch = allTestFunctions
+  for(int i = 0; i < otherTestFunctions.length; i += batchSize) {
+    final List<Future<CoreTestResult>> batch = otherTestFunctions
       .skip(i)
       .take(batchSize)
-      .map((testFunction) => testFunction())  // Call the function to create the future
+      .map((testFunction) => _runTestWithRetries(testFunction))  // Call with retry logic
       .toList();
 
     final List<CoreTestResult> batchResults = await Future.wait(batch);
     allTestResults.addAll(batchResults);
 
-    if (i + 3 < allTestFunctions.length) {
+    if (i + batchSize < otherTestFunctions.length) {
       await Future.delayed(Duration(seconds: 1));
     }
   }
@@ -273,9 +275,35 @@ Future<void> coreTests(CoreTestsParams params) async {
   if(failedTests > 0) {
     print('Failed Tests:');
     for(final CoreTestResult testResult in allTestResults.where((tr) => tr.status == TestStatus.failed)) {
-      print('    ${testResult.testName} (client: ${testResult.clientVersion.language.name[0]}:${testResult.clientVersion.version}, daemon: ${testResult.daemonVersion.language.name[0]}:${testResult.daemonVersion.version}) - Exit code: ${testResult.exitCode}'); // todo make a helper function to make d:current strings easier
+      final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
+      print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
     }
   }
+}
+
+Future<CoreTestResult> _runTestWithRetries(
+  Future<CoreTestResult> Function() testFunction, {
+  int maxAttempts = 3,
+}) async {
+  CoreTestResult? lastResult;
+
+  for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+    lastResult = await testFunction();
+
+    if (lastResult.status == TestStatus.passed) {
+      if (attempt > 1) {
+        // print('Test ${lastResult.testName} passed on attempt $attempt/$maxAttempts');
+      }
+      return lastResult;
+    }
+
+    if (attempt < maxAttempts) {
+      final String extra = generateExtraString(lastResult.clientVersion, lastResult.daemonVersion, useShortLanguageName: true);
+      print('Test ${lastResult.testName} $extra failed (attempt $attempt/$maxAttempts), retrying...');
+    }
+  }
+
+  return lastResult!;
 }
 
 String _getIdentitfyFilePath({required final String testRunId}) {

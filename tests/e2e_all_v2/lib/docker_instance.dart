@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/process_utils.dart';
-import 'package:e2e_all_v2/utils.dart';
 
 class VolumeMapping {
   final Directory localDirectory;

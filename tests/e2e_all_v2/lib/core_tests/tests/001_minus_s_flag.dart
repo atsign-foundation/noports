@@ -61,7 +61,7 @@ Future<CoreTestResult> _run001MinusSFlagTest({
   required NoPortsVersion daemonVersion,
   required NoPortsVersion clientVersion,
 }) async {
-  final String extra = '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version})';
+  final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
   printTestStart(testName: testName, extra: extra);
   final ClientBinary currentSshnpClientBinary = context.clientBinaries.firstWhere((cb) =>
     cb.binaryType == ClientBinaryType.sshnp &&

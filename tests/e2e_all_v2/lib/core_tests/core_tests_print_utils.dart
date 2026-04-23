@@ -1,6 +1,27 @@
 import 'dart:io';
 import 'package:e2e_all_v2/log_fragment.dart';
+import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/process_utils.dart';
+
+/// Generates a string describing the client and daemon versions for test output
+///
+/// Examples:
+/// - `generateExtraString(dartV5_9_4, dartCurrent)` → "(client: dart:v5.9.4, daemon: dart:current)"
+/// - `generateExtraString(dartV5_9_4, dartCurrent, useShortLanguageName: true)` → "(client: d:v5.9.4, daemon: d:current)"
+String generateExtraString(
+  NoPortsVersion clientVersion,
+  NoPortsVersion daemonVersion, {
+  bool useShortLanguageName = false,
+}) {
+  final String clientLanguage = useShortLanguageName
+    ? clientVersion.language.name[0]
+    : clientVersion.language.name;
+  final String daemonLanguage = useShortLanguageName
+    ? daemonVersion.language.name[0]
+    : daemonVersion.language.name;
+
+  return '(client: $clientLanguage:${clientVersion.version}, daemon: $daemonLanguage:${daemonVersion.version})';
+}
 
 void printClientStdout(String stdout, {String? label}) {
   if (stdout.isNotEmpty) {

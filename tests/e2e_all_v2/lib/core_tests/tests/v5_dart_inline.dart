@@ -61,7 +61,7 @@
 //       continue;
 //     }
 //
-//     final String extra = '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version})';
+//     final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
 //     final String clientVersionStr = clientVersion.version;
 //     final String daemonVersionStr = daemonVersion.version;
 //

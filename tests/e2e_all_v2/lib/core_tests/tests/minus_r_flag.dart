@@ -29,11 +29,11 @@ const String testName = 'minus_r_flag';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-Future<List<CoreTestResult>> runMinusRFlagTests({
+List<Future<CoreTestResult> Function()> runMinusRFlagTests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
-}) async {
+}) {
   final CoreTestLogger coreTestLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
   final Set<(NoPortsVersion, NoPortsVersion)> versionCombinations =
     _generateVersionCombinations(
@@ -41,22 +41,20 @@ Future<List<CoreTestResult>> runMinusRFlagTests({
       daemonVersions: daemonVersions,
     );
 
-  final List<Future<CoreTestResult>> testFutures = [];
+  final List<Future<CoreTestResult> Function()> testFunctions = [];
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
     final String deviceName = '${getDeviceNameNoFlags(
       testRunId: context.testRunId,
       noPortsVersion: daemonVersion)}_f';
-    final Future<CoreTestResult> testFuture = _runMinusRFlagTest(
+    testFunctions.add(() => _runMinusRFlagTest(
       coreTestLogger: coreTestLogger,
       context: context,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-      deviceName: deviceName);
-    testFutures.add(testFuture);
-    await Future.delayed(Duration(seconds: 2)); 
+      deviceName: deviceName,
+    ));
   }
-  final List<CoreTestResult> testResults =  await Future.wait(testFutures);
-  return testResults;
+  return testFunctions;
 }
 
 Future<CoreTestResult> _runMinusRFlagTest({
@@ -66,7 +64,7 @@ Future<CoreTestResult> _runMinusRFlagTest({
   required final NoPortsVersion daemonVersion,
   required final String deviceName,
 }) async {
-  final String extra = '(client: ${clientVersion.language.name}:${clientVersion.version}, daemon: ${daemonVersion.language.name}:${daemonVersion.version})';
+  final String extra = generateExtraString(clientVersion, daemonVersion);
   final String relayAtsign = context.relayAtsign;
 
   final ClientBinary sshnpClientBinary = 
