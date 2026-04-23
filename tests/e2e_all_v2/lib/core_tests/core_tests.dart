@@ -166,84 +166,97 @@ Future<void> coreTests(CoreTestsParams params) async {
     alwaysOutputLogs: params.alwaysOutputLogs,
   );
 
+  // Collect all test functions
+  final List<Future<CoreTestResult> Function()> allTestFunctions = [];
+
   // a. 001_minus_s_flag
-  allTestResults.addAll(
-    (await Future.wait(run001MinusSFlagTests(
-      context: context,
-      daemonVersions: daemonVersions,
-    ))));
-  //
-  // // b. minus_r_flag
-  // allTestResults.addAll(
-  //   (await runMinusRFlagTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
-  //
-  // // c. minus_u_flag
-  // allTestResults.addAll(
-  //   (await runMinusUFlagTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  allTestFunctions.addAll(run001MinusSFlagTests(
+    context: context,
+    daemonVersions: daemonVersions,
+  ));
 
   // d. npt_to_port_22
-  allTestResults.addAll(
-    (await Future.wait(runNptToPort22Tests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    ))));
+  allTestFunctions.addAll(runNptToPort22Tests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
 
+  // // b. minus_r_flag
+  // allTestFunctions.addAll(runMinusRFlagTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // // c. minus_u_flag
+  // allTestFunctions.addAll(runMinusUFlagTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
   // // e. npt_to_port_22_no_encrypt_traffic
-  // allTestResults.addAll(
-  //   (await Future.wait(runNptToPort22NoEncryptTrafficTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runNptToPort22NoEncryptTrafficTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
   //
   // // f. v4_dart_inline
-  // allTestResults.addAll(
-  //   (await runV4DartInlineTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runV4DartInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
   //
   // // g. v4_openssh_print
-  // allTestResults.addAll(
-  //   (await runV4OpensshPrintTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runV4OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
   //
   // // h. v5_dart_inline
-  // allTestResults.addAll(
-  //   (await runV5DartInlineTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runV5DartInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
   //
   // // i. v5_openssh_inline
-  // allTestResults.addAll(
-  //   (await runV5OpensshInlineTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runV5OpensshInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
   //
   // // j. v5_openssh_print
-  // allTestResults.addAll(
-  //   (await runV5OpensshPrintTests(
-  //     context: context,
-  //     clientVersions: clientVersions,
-  //     daemonVersions: daemonVersions,
-  //   )));
+  // allTestFunctions.addAll(runV5OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+
+  const int batchSize = 3;
+  for(int i = 0; i < allTestFunctions.length; i += batchSize) {
+    // final int batchNumber = (i ~/ 3) + 1;
+    // final int batchSize = (i + 3 <= allTestFunctions.length) ? 3 : allTestFunctions.length - i;
+    // print('Running batch $batchNumber (tests ${i + 1}-${i + batchSize})...');
+
+    final List<Future<CoreTestResult>> batch = allTestFunctions
+      .skip(i)
+      .take(batchSize)
+      .map((testFunction) => testFunction())  // Call the function to create the future
+      .toList();
+
+    final List<CoreTestResult> batchResults = await Future.wait(batch);
+    allTestResults.addAll(batchResults);
+
+    if (i + 3 < allTestFunctions.length) {
+      await Future.delayed(Duration(seconds: 1));
+    }
+  }
 
   // 8. Print test results summary
   final int totalTests = allTestResults.length;
@@ -256,6 +269,13 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('    Passed: $passedTests');
   print('    Failed: $failedTests');
   print('');
+  
+  if(failedTests > 0) {
+    print('Failed Tests:');
+    for(final CoreTestResult testResult in allTestResults.where((tr) => tr.status == TestStatus.failed)) {
+      print('    ${testResult.testName} (client: ${testResult.clientVersion.language.name[0]}:${testResult.clientVersion.version}, daemon: ${testResult.daemonVersion.language.name[0]}:${testResult.daemonVersion.version}) - Exit code: ${testResult.exitCode}'); // todo make a helper function to make d:current strings easier
+    }
+  }
 }
 
 String _getIdentitfyFilePath({required final String testRunId}) {

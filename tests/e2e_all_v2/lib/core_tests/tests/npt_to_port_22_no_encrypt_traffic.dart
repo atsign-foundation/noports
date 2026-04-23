@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -46,7 +44,6 @@ List<Future<CoreTestResult>> runNptToPort22NoEncryptTrafficTests({
       daemonVersion: daemonVersion,
     );
     testFutures.add(testFuture);
-    sleep(const Duration(seconds: 5));  
   }
 
   return testFutures;

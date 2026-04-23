@@ -14,6 +14,18 @@ Future<bool> ensureDirectoryExists(final Directory directory) async {
   }
 }
 
+bool ensureDirectoryExistsSync(final Directory directory) {
+  if (directory.existsSync()) {
+    return true;
+  }
+  try {
+    directory.createSync(recursive: true);
+    return true;
+  } catch (e) {
+    throw Exception('Failed to create directory ${directory.path}: $e');
+  }
+}
+
 Future<String> getShortenedGitCommitHash() async {
   final ProcessResult gitResult = await runCommand(
     'git',

@@ -20,9 +20,9 @@ class CoreTestLogger {
     daemonsDirectory = Directory(path.join(testLogsDirectory.path, 'daemons'));
     clientsDirectory = Directory(path.join(testLogsDirectory.path, 'clients'));
 
-    ensureDirectoryExists(testLogsDirectory);
-    ensureDirectoryExists(daemonsDirectory);
-    ensureDirectoryExists(clientsDirectory);
+    ensureDirectoryExistsSync(testLogsDirectory);
+    ensureDirectoryExistsSync(daemonsDirectory);
+    ensureDirectoryExistsSync(clientsDirectory);
   }
 
   String _getClientLogFileName({

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -33,12 +31,12 @@ const String testName = 'npt_to_port_22';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-List<Future<CoreTestResult>> runNptToPort22Tests({
+List<Future<CoreTestResult> Function()> runNptToPort22Tests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
 }) {
-  final List<Future<CoreTestResult>> testFutures = [];
+  final List<Future<CoreTestResult> Function()> testFunctions = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   final List<(NoPortsVersion, NoPortsVersion)> versionCombinations =
@@ -48,17 +46,15 @@ List<Future<CoreTestResult>> runNptToPort22Tests({
     );
 
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
-    final Future<CoreTestResult> testFuture = _runNptToPort22Test(
+    testFunctions.add(() => _runNptToPort22Test(
       context: context,
       testLogger: testLogger,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-    );
-    testFutures.add(testFuture);
-    sleep(const Duration(seconds: 3));
+    ));
   }
 
-  return testFutures;
+  return testFunctions;
 }
 
 Future<CoreTestResult> _runNptToPort22Test({

@@ -32,7 +32,7 @@ const String _metadataSshTest = 'sshTest';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-List<Future<CoreTestResult>> run001MinusSFlagTests({
+List<Future<CoreTestResult> Function()> run001MinusSFlagTests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> daemonVersions,
 }) {
@@ -42,18 +42,17 @@ List<Future<CoreTestResult>> run001MinusSFlagTests({
     testName: testName,
   );
 
-  final List<Future<CoreTestResult>> testFutures = [];
+  final List<Future<CoreTestResult> Function()> testFunctions = [];
   for(final NoPortsVersion daemonVersion in daemonVersions) {
-    testFutures.add(_run001MinusSFlagTest(
+    testFunctions.add(() => _run001MinusSFlagTest(
       context: context,
       coreTestLogger: coreTestLogger,
       daemonVersion: daemonVersion,
       clientVersion: NoPortsVersion(language: Language.dart, version: 'current'),
     ));
-    sleep(const Duration(seconds: 2));
   }
 
-  return testFutures;
+  return testFunctions;
 }
 
 Future<CoreTestResult> _run001MinusSFlagTest({
