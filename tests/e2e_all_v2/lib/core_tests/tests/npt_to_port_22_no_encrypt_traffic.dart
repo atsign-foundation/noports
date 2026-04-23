@@ -3,9 +3,13 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
+import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
 const String _metadataNptExecution = 'nptExecution';
@@ -57,8 +61,120 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
 }) async {
   final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
   printTestStart(testName: testName, extra: extra);
-  // TODO implement still
-  final int exitCode2 = 0;
+
+  final String deviceName = getDeviceNameNoFlags(
+    testRunId: context.testRunId,
+    noPortsVersion: daemonVersion);
+
+  final ClientBinary nptClientBinary = context.clientBinaries.firstWhere((cb) =>
+    cb.binaryType == ClientBinaryType.npt &&
+    cb.noPortsVersion == clientVersion);
+  final List<String> nptArgs = _buildNptArgs(
+    context: context,
+    deviceName: deviceName);
+
+  final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final LogFragment logFragment1 = dockerInstance.createLogFragment(
+    stdoutFile: testLogger.getDaemonStdoutLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadataNptExecution),
+    stderrFile: testLogger.getDaemonStderrLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadataNptExecution));
+  logFragment1.start();
+  final ProcessOutputCapture nptOutput = await startCommandWithCapture(
+    nptClientBinary.file.path,
+    nptArgs,
+    stdoutLogFile: testLogger.getClientStdoutLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      testMetadata: _metadataNptExecution),
+    stderrLogFile: testLogger.getClientStderrLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      testMetadata: _metadataNptExecution),
+  );
+  logFragment1.stop();
+  final int exitCode1 = await nptOutput.exitCode;
+  if(exitCode1 != 0) {
+    final CoreTestResult coreTestResult = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode1,
+    );
+    printTestResult(testResult: coreTestResult, extra: extra);
+    printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment1);
+    return coreTestResult;
+  }
+
+  final String localPortStr = nptOutput.stdout;
+  final int? localPort = int.tryParse(localPortStr.trim());
+  if(localPort == null) {
+    final CoreTestResult coreTestResult = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode1,
+    );
+    printTestResult(testResult: coreTestResult, extra: extra);
+    printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment1);
+    return coreTestResult;
+  }
+
+  final String remoteUsername = context.remoteUsername;
+
+  final List<String> sshArgs = [
+    '-p', localPort.toString(),
+    '-o', 'StrictHostKeyChecking=accept-new',
+    '-i', context.identityFilePath,
+    '${remoteUsername}@localhost',
+    'echo', '`whoami`',
+    '`date`', '`hostname`', 'TEST PASSED'
+  ];
+  final LogFragment logFragment2 = dockerInstance.createLogFragment(
+    stdoutFile: testLogger.getDaemonStdoutLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadataSshExecution),
+    stderrFile: testLogger.getDaemonStderrLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadataSshExecution));
+  logFragment2.start();
+  final ProcessOutputCapture sshOutput = await startCommandWithCapture(
+    'ssh',
+    sshArgs,
+    stdoutLogFile: testLogger.getClientStdoutLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      testMetadata: _metadataSshExecution,
+    ),
+    stderrLogFile: testLogger.getClientStderrLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      testMetadata: _metadataSshExecution,
+    ),
+  );
+  final int exitCode2 = await sshOutput.process.exitCode;
+  logFragment2.stop();
+  if(exitCode2 != 0) {
+    final CoreTestResult coreTestResult = CoreTestResult( 
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode2,
+    );
+    printTestResult(testResult: coreTestResult, extra: extra);
+    printAllLogs(clientCapture: sshOutput, daemonLogFragment: logFragment2);
+    return coreTestResult;
+  }
+
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,
