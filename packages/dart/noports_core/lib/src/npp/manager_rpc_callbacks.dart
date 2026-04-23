@@ -1,6 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/src/version.dart' as core_version;
 
 /// Callbacks for handling policy manager RPC requests
@@ -9,12 +10,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   final NppCache nppCache;
   final NppOperationHooks? nppOperationHooks;
   final String binariesVersion;
+  final NPARequestHandler handler;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
   ManagerRpcCallbacks({
     required this.atClient,
     required this.nppCache,
     required this.binariesVersion,
+    required this.handler,
     this.nppOperationHooks,
   });
 
@@ -65,6 +68,22 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         responsePayload['timestamp'] = DateTime.now().toIso8601String();
         success = true;
         message = 'pong';
+        break;
+      }
+      case 'simulate': {
+        logger.info('Received simulate request from $fromAtSign');
+        try {
+          final NPAAuthCheckRequest authCheckRequest = 
+            NPAAuthCheckRequest.fromJson(requestPayload);
+          final NPAAuthCheckResponse authCheckResponse = 
+            await handler.doAuthCheck(authCheckRequest);
+         responsePayload.addAll(authCheckResponse.toJson());
+          success = true;
+          message = 'Auth check completed.';
+        } catch (e) {
+          success = false;
+          message = 'Failed to check auth: $e';
+        }
         break;
       }
       case 'get': {
