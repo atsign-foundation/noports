@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -30,11 +32,10 @@ const String _metadataSshTest = 'sshTest';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-Future<List<CoreTestResult>> run001MinusSFlagTests({
+List<Future<CoreTestResult>> run001MinusSFlagTests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> daemonVersions,
-}) async {
-
+}) {
   // an object that helps with managing logs
   final CoreTestLogger coreTestLogger = CoreTestLogger(
     logsDirectory: context.logsDirectory,
@@ -49,9 +50,10 @@ Future<List<CoreTestResult>> run001MinusSFlagTests({
       daemonVersion: daemonVersion,
       clientVersion: NoPortsVersion(language: Language.dart, version: 'current'),
     ));
-    await Future.delayed(Duration(seconds: 1));
+    sleep(const Duration(seconds: 2));
   }
-  return await Future.wait(testFutures);
+
+  return testFutures;
 }
 
 Future<CoreTestResult> _run001MinusSFlagTest({

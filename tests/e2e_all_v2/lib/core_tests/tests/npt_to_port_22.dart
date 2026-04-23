@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -31,11 +33,11 @@ const String testName = 'npt_to_port_22';
 // - Client: Dart (current) | Daemon: Dart v5.9.4
 // - Client: Dart (current) | Daemon: Dart v5.11.2
 // - Client: Dart (current) | Daemon: Dart v5.13.0
-Future<List<CoreTestResult>> runNptToPort22Tests({
+List<Future<CoreTestResult>> runNptToPort22Tests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
-}) async {
+}) {
   final List<Future<CoreTestResult>> testFutures = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
@@ -53,10 +55,10 @@ Future<List<CoreTestResult>> runNptToPort22Tests({
       daemonVersion: daemonVersion,
     );
     testFutures.add(testFuture);
-    await Future.delayed(Duration(seconds: 1));
+    sleep(const Duration(seconds: 3));
   }
 
-  return await Future.wait(testFutures);
+  return testFutures;
 }
 
 Future<CoreTestResult> _runNptToPort22Test({
@@ -203,10 +205,6 @@ List<String> _buildNptArgs({
   return args;
 }
 
-// Generate version combinations:
-// - Released client with current daemon
-// - Current client with released daemon
-// Skip: released client with released daemon (already tested)
 List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,

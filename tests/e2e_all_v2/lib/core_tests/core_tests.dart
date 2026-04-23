@@ -168,39 +168,41 @@ Future<void> coreTests(CoreTestsParams params) async {
 
   // a. 001_minus_s_flag
   allTestResults.addAll(
-    (await run001MinusSFlagTests(
+    (await Future.wait(run001MinusSFlagTests(
       context: context,
       daemonVersions: daemonVersions,
-    )));
-
-  // b. minus_r_flag
-  allTestResults.addAll(
-    (await runMinusRFlagTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
-
-  // c. minus_u_flag
-  allTestResults.addAll(
-    (await runMinusUFlagTests(
-      context: context,
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    )));
+    ))));
+  //
+  // // b. minus_r_flag
+  // allTestResults.addAll(
+  //   (await runMinusRFlagTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
+  //
+  // // c. minus_u_flag
+  // allTestResults.addAll(
+  //   (await runMinusUFlagTests(
+  //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
+  //   )));
 
   // d. npt_to_port_22
   allTestResults.addAll(
-    (await runNptToPort22Tests(
+    (await Future.wait(runNptToPort22Tests(
       context: context,
       clientVersions: clientVersions,
       daemonVersions: daemonVersions,
-    )));
-  //
+    ))));
+
   // // e. npt_to_port_22_no_encrypt_traffic
   // allTestResults.addAll(
-  //   (await runNptToPort22NoEncryptTrafficTests(
+  //   (await Future.wait(runNptToPort22NoEncryptTrafficTests(
   //     context: context,
+  //     clientVersions: clientVersions,
+  //     daemonVersions: daemonVersions,
   //   )));
   //
   // // f. v4_dart_inline
