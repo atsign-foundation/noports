@@ -173,15 +173,16 @@ Future<void> coreTests(CoreTestsParams params) async {
     alwaysOutputLogs: params.alwaysOutputLogs,
   );
 
-  // Phase 1: Run 001_minus_s_flag tests (all in parallel to set up public keys)
+  // Phase 1: Run 001_minus_s_flag tests (with max 6 concurrent at a time to set up public keys)
   final List<Future<CoreTestResult> Function()> minusSFlagTestFunctions = run001MinusSFlagTests(
     context: context,
     daemonVersions: daemonVersions,
   );
-  final List<Future<CoreTestResult>> minusSFlagFutures = minusSFlagTestFunctions
-    .map((testFunction) => _runTestWithRetries(testFunction))
-    .toList();
-  final List<CoreTestResult> minusSFlagResults = await Future.wait(minusSFlagFutures);
+
+  final List<CoreTestResult> minusSFlagResults = await _runTestsWithConcurrencyLimit(
+    minusSFlagTestFunctions,
+    maxConcurrency: 6,
+  );
   allTestResults.addAll(minusSFlagResults);
 
   // Phase 2: Collect all other test functions
@@ -248,21 +249,12 @@ Future<void> coreTests(CoreTestsParams params) async {
   //   daemonVersions: daemonVersions,
   // ));
 
-  const int batchSize = 6;
-  for(int i = 0; i < otherTestFunctions.length; i += batchSize) {
-    final List<Future<CoreTestResult>> batch = otherTestFunctions
-      .skip(i)
-      .take(batchSize)
-      .map((testFunction) => _runTestWithRetries(testFunction))  // Call with retry logic
-      .toList();
-
-    final List<CoreTestResult> batchResults = await Future.wait(batch);
-    allTestResults.addAll(batchResults);
-
-    if (i + batchSize < otherTestFunctions.length) {
-      await Future.delayed(Duration(seconds: 1));
-    }
-  }
+  // Run Phase 2 tests with max 6 concurrent at a time
+  final List<CoreTestResult> otherTestResults = await _runTestsWithConcurrencyLimit(
+    otherTestFunctions,
+    maxConcurrency: 6,
+  );
+  allTestResults.addAll(otherTestResults);
 
   testExecutionStopwatch.stop();
 
@@ -302,6 +294,43 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
 }
 
+Future<List<CoreTestResult>> _runTestsWithConcurrencyLimit(
+  List<Future<CoreTestResult> Function()> testFunctions, {
+  int maxConcurrency = 6,
+}) async {
+  final List<CoreTestResult> results = [];
+  final List<Future<CoreTestResult>> running = [];
+  int nextTestIndex = 0;
+
+  while (nextTestIndex < testFunctions.length || running.isNotEmpty) {
+    while (running.length < maxConcurrency && nextTestIndex < testFunctions.length) {
+      final testFunction = testFunctions[nextTestIndex];
+      running.add(_runTestWithRetries(testFunction));
+      nextTestIndex++;
+
+      if (running.length < maxConcurrency && nextTestIndex < testFunctions.length) {
+        await Future.delayed(Duration(seconds: 2));
+      }
+    }
+
+    if (running.isNotEmpty) {
+      final completedResult = await Future.any(running.map((future) async {
+        final result = await future;
+        return (future, result);
+      }));
+
+      running.remove(completedResult.$1);
+      results.add(completedResult.$2);
+
+      if (nextTestIndex < testFunctions.length) {
+        await Future.delayed(Duration(seconds: 2));
+      }
+    }
+  }
+
+  return results;
+}
+
 Future<CoreTestResult> _runTestWithRetries(
   Future<CoreTestResult> Function() testFunction, {
   int maxAttempts = 3,
@@ -312,9 +341,6 @@ Future<CoreTestResult> _runTestWithRetries(
     lastResult = await testFunction();
 
     if (lastResult.status == TestStatus.passed) {
-      if (attempt > 1) {
-        // print('Test ${lastResult.testName} passed on attempt $attempt/$maxAttempts');
-      }
       return lastResult;
     }
 
@@ -373,7 +399,6 @@ Future<(File, File)> _generateNewSshKey({required final String testRunId}) async
   return (publicIdentityFile, identityFile);
 }
 
-/// Build docker images for all daemon versions (can run in parallel with other setup)
 Future<List<DockerImage>> _buildDockerImages({
   required final List<NoPortsVersion> daemonVersions,
 }) async {
