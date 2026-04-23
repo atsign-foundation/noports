@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
@@ -30,10 +31,9 @@ import 'package:e2e_all_v2/utils.dart';
 
 const String remoteUsername = 'atsign';
 
-/// Main entry point for running core tests
-/// Takes parsed parameters and returns test results
 Future<void> coreTests(CoreTestsParams params) async {
-  // Parse version strings from params
+  final Stopwatch overallStopwatch = Stopwatch()..start();
+
   final List<NoPortsVersion> clientVersions = params.clientVersions.split(',').map((entry) {
     return NoPortsVersion.fromLanguageVersionString(entry.trim());
   }).toList();
@@ -78,6 +78,7 @@ Future<void> coreTests(CoreTestsParams params) async {
   clientBinariesToDownload.add((NoPortsVersion(language: Language.dart, version: 'current'), ClientBinaryType.at_activate));
 
   // 5. Run setup flows in parallel
+  final Stopwatch setupStopwatch = Stopwatch()..start();
   print('\nRunning setup flows in parallel...');
   print('  Flow 1: Fetching ${clientBinariesToDownload.length} client binaries...');
   print('  Flow 2: Building/pulling docker images...');
@@ -151,7 +152,10 @@ Future<void> coreTests(CoreTestsParams params) async {
   final File identityFile = sshKeys.$2;
   print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
 
+  setupStopwatch.stop();
+
   // 8. Run tests
+  final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final List<CoreTestResult> allTestResults = [];
 
   final CoreTestsContext context = CoreTestsContext(
@@ -260,7 +264,17 @@ Future<void> coreTests(CoreTestsParams params) async {
     }
   }
 
+  testExecutionStopwatch.stop();
+
   // 8. Print test results summary
+
+  print('');
+  print('\tResults:');
+  for(final CoreTestResult testResult in allTestResults) {
+    printTestResult(testResult: testResult, extra: generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true));
+  }
+  print('');
+
   final int totalTests = allTestResults.length;
   final int passedTests = allTestResults.where((tr) => tr.status == TestStatus.passed).length;
   final int failedTests = allTestResults.where((tr) => tr.status == TestStatus.failed).length;
@@ -279,6 +293,13 @@ Future<void> coreTests(CoreTestsParams params) async {
       print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
     }
   }
+
+  overallStopwatch.stop();
+  print('');
+  print('Execution Time Summary:');
+  print('    Setup time: ${setupStopwatch.elapsed.inSeconds}s');
+  print('    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s');
+  print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
 }
 
 Future<CoreTestResult> _runTestWithRetries(
