@@ -62,9 +62,9 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
   final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
   printTestStart(testName: testName, extra: extra);
 
-  final String deviceName = getDeviceNameNoFlags(
+  final String deviceName = '${getDeviceNameNoFlags(
     testRunId: context.testRunId,
-    noPortsVersion: daemonVersion);
+    noPortsVersion: daemonVersion)}_f';
 
   final ClientBinary nptClientBinary = context.clientBinaries.firstWhere((cb) =>
     cb.binaryType == ClientBinaryType.npt &&
