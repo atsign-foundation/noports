@@ -256,3 +256,104 @@ Configuration:
 - Client: Dart (current) | Daemon: Dart v5.9.4
 - Client: Dart (current) | Daemon: Dart v5.11.2
 - Client: Dart (current) | Daemon: Dart v5.13.0
+
+## General Form of a Test
+
+1. There's a core function called "run____Tests" that runs the group of tests given:
+
+```dart
+List<Future<CoreTestResult>> run____Tests({
+required final CoreTestsContext context, // contians stuff like clientAtsign, daemonAtsign, ...
+required final List<NoPortsVersion> clientVersions, // list of client versions to run against
+required final List<NoPortsVersion> daemonVersions, // list of daemon versions to run against
+}) {
+    // ...
+}
+```
+
+This function returns `List<Future<CoreTestResult>>` which is a list of started tests that can be awaited using `await Future.wait(run____Tests(...))`. This way, the caller has control and flexibility of how to run the tests (in parallel, sequentially, etc).
+
+2. Typically in this function, there's a `CoreTestLogger`
+
+The CoreTestLogger describes how to log the results of the test.
+
+```dart
+final CoreTestLogger testLogger = 
+    CoreTestLogger(
+        logsDirectory: context.logsDirectory, // the directory where a `cleints/` and `daemons/` directory will be created in
+        testName: testName // the name of the test,
+    );
+```
+
+This testLogger will create a directory structure within `context.logsDirectory` like this:
+
+```logsDirectory/
+    testName/
+        clients/
+            clientVersion1.log
+            clientVersion2.log
+            ...
+        daemons/
+            daemonVersion1.log
+            daemonVersion2.log
+            ...
+```
+
+3. In the `run___Tests` function, there will be a private `_generateVersionPermutations` that is called that takes `clientVersions` and `daemonVersions` then creates
+related version permutations.
+
+E.g. 
+
+```
+clientVersions: [current, v5.9.4, v5.11.2, v5.13.0]
+daemonVersions: [current, v5.9.4, v5.11.2]
+```
+
+```dart
+List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
+  required final List<NoPortsVersion> clientVersions,
+  required final List<NoPortsVersion> daemonVersions,
+}) {
+  List<(NoPortsVersion, NoPortsVersion)> combinations = [];
+  for(final clientVersion in clientVersions) {
+    for(final daemonVersion in daemonVersions) {
+      final bool isClientCurrent = clientVersion.version == 'current';
+      final bool isDaemonCurrent = daemonVersion.version == 'current';
+      // we only want to test against current clients/daemons
+      if(!isClientCurrent && !isDaemonCurrent) {
+        continue;
+      }
+      // this test does not support clientVersion < v5.3.0, because of the way it uses the `-s` flag, which was added in v5.3.0
+      if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+      }
+      combinations.add((clientVersion, daemonVersion));
+    }
+  }
+  return combinations;
+}
+```
+
+Generates:
+
+```
+(current, current)
+(current, v5.9.4)
+(current, v5.11.2)
+(current, v5.13.0)
+(v5.9.4, current)
+(v5.11.2, current)
+(v5.13.0, current)
+```
+
+4. Commonly used functions and classes:
+
+- `ProcessOutputCapture` and `startCommandWithCapture` -> starts a command and captures its output; output used in `printAllLogs`
+- `LogFragment` and `dockerInstance.createLogFragment` -> captures logs of a Docker instance, made via dockerInstance.createLogFragment; output used in `printAllLogs`
+
+- `getDeviceNameNoFlags` -> get device name for a given daemon version. Append this with `_f` to get teh docker daemon with `-s -u` flags.
+
+- `printTestStart` -> used at the beginning of `_run____Test` to print test start
+- `printTestResult` -> for printing the result of a test in fail or pass
+- `printAllLogs` -> print ProcessOutputCapture and LogFragment (typically client/daemon)
+
+5. If it's related to the test, we have `_buildNptArgs` or `_buildSshnpArgs` to buidl a base set of `List<String> args` that will be used in functions.
