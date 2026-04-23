@@ -106,6 +106,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture1, daemonLogFragment: logFragment1);
+    return coreTestResult;
   }
 
   // 2. Run sshnp without `-u` to sshnpd with `-u`:w
@@ -154,6 +155,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture2, daemonLogFragment: logFragment2);
+    return coreTestResult;
   }
 
   // 2b. Run ssh command from sshnp output

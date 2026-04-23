@@ -65,6 +65,7 @@ Future<CoreTestResult> _runMinusRFlagTest({
   required final String deviceName,
 }) async {
   final String extra = generateExtraString(clientVersion, daemonVersion);
+  printTestStart(testName: testName, extra: extra);
   final String relayAtsign = context.relayAtsign;
 
   final ClientBinary sshnpClientBinary = 
