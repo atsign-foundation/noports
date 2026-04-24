@@ -43,13 +43,8 @@ Future<void> main(List<String> args) async {
     CoreTestsParams.printUsage();
     exit(1);
   }
-  print('');
   _printLoadedParameters(params);
   print('');
-
-  // look into:
-  // look into multibuild 
-  // at_client_sdk test matrix
 
   try {
     // 4. Run core tests

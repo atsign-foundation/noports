@@ -5,12 +5,12 @@ import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 
 class VolumeMapping {
-  final Directory localDirectory;
-  final String containerDirectory;
+  final String local;
+  final String container;
 
   VolumeMapping({
-    required this.localDirectory,
-    required this.containerDirectory,
+    required this.local,
+    required this.container,
   });
 }
 
@@ -64,7 +64,7 @@ class DockerInstance {
     }
     for(final VolumeMapping volumeMapping in volumeMappings) {
       args.add('--volume');
-      args.add('${volumeMapping.localDirectory.absolute.path}/:${volumeMapping.containerDirectory}/');
+      args.add('${volumeMapping.local}:${volumeMapping.container}');
     }
     args.add(dockerImage.fullImageName);
     args.addAll(entrypoint);

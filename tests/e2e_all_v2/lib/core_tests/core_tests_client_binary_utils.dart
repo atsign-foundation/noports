@@ -7,8 +7,8 @@ import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/utils.dart';
 import 'package:path/path.dart' as path;
 
-Future<List<ClientBinary>> fetchClientBinaries({
-  required final Directory binariesDirectory,
+Future<List<ClientBinary>> fetchClientBinariesParallel({
+  required final Directory binariesDirectory, // where all binaries will go (subdirectories will be created in here according to version)
   required final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload
 }) async {
   // 1. ensure binariesDirectory exists
@@ -34,91 +34,115 @@ Future<List<ClientBinary>> fetchClientBinaries({
     map[language]!.putIfAbsent(version, () => []);
     map[language]![version]!.add(clientBinaryType);
   }
-
-
-  // 3. fetch binaries sorted by version and language
-  final List<ClientBinary> clientBinaries = [];
+  
+  // 3. Create subdirectories
+  // Have a map that will have associated directory objects
+  // E.g.:
+  // 'dart': {
+  //   'v5.9.4': Directory('path/to/binaries/dart/v5.9.4'),
+  final Map<Language, Map<String, Directory>> dirMap = {};
   for(final Language language in map.keys) {
     final Map<String, List<ClientBinaryType>> versionMap = map[language]!;
     for(final String version in versionMap.keys) {
-      final Directory dir = Directory(path.join(binariesDirectory.path, language.name, version));
-      await ensureDirectoryExists(dir);
+      final String dirPath = path.join(binariesDirectory.path, language.name, version);
+      final Directory dir = Directory(dirPath);
+      final bool dirExists = await ensureDirectoryExists(dir);
+      if(!dirExists) {
+        throw Exception('Failed to create directory for binaries: ${dir.path}');
+      }
+      dirMap.putIfAbsent(language, () => {});
+      dirMap[language]![version] = dir;
+    }
+  }
+
+  // 4. For each language and version, trigger the appropriate download/compilation functions in parallel
+  final List<Future<List<ClientBinary>>> futures = [];
+  for(final Language language in map.keys) {
+    final Map<String, List<ClientBinaryType>> versionMap = map[language]!;
+    for(final String version in versionMap.keys) {
       final List<ClientBinaryType> clientBinaryTypes = versionMap[version]!;
-      NoPortsVersion noPortsVersion = NoPortsVersion(language: language, version: version);
+      final Directory outputDirectory = dirMap[language]![version]!;
       if(version == 'current') {
-        clientBinaries.addAll(await _compileCurrent(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
-      } else if(version.startsWith('v')) {
-        clientBinaries.addAll(await _downloadRelease(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        futures.add(Future.wait(compileDartCurrentBinariesList(
+          noPortsVersion: NoPortsVersion(language: language, version: version),
+          clientBinaryTypes: clientBinaryTypes,
+          outputDirectory: outputDirectory,
+        )));
       } else {
-        clientBinaries.addAll(await _compileBranch(noPortsVersion: noPortsVersion, clientBinaryTypes: clientBinaryTypes, directory: dir));
+        futures.add(downloadDartReleaseBinariesList(
+          noPortsVersion: NoPortsVersion(language: language, version: version),
+          clientBinaryTypes: clientBinaryTypes,
+          outputDirectory: outputDirectory,
+        ));
       }
     }
   }
+
+  // 5. wait for all to complete and flatten results
+  final List<List<ClientBinary>> listOfLists = await Future.wait(futures);
+  final List<ClientBinary> clientBinaries = listOfLists.expand((x) => x).toList();
   return clientBinaries;
 }
 
-Future<List<ClientBinary>> _compileCurrent({
+Future<ClientBinary> compileDartCurrentBinary({
   required final NoPortsVersion noPortsVersion,
-  required final List<ClientBinaryType> clientBinaryTypes,
-  required final Directory directory,
+  required final ClientBinaryType clientBinaryType,
+  required final Directory outputDirectory,
 }) async {
-  // 1. validate funciton arguments
-  // 1a. language
   if(noPortsVersion.language != Language.dart) {
     throw Exception('Currently only dart client binaries are supported. Found language: ${noPortsVersion.language.name}');
   }
 
-  // 1b. directory
-  final bool dirExists = await ensureDirectoryExists(directory);
+  final bool dirExists = await ensureDirectoryExists(outputDirectory);
   if(!dirExists) {
-    throw Exception('Failed to create directory for compiling current binaries: ${directory.path}');
+    throw Exception('Failed to create directory for compiling current binaries: ${outputDirectory.path}');
   }
 
-  // 2. compile binaries using dart compile exe
-  final List<(Process, ClientBinaryType, String)> compileProcesses = [];
-  final List<ClientBinary> clientBinaries = [];
-  for(final ClientBinaryType binaryType in clientBinaryTypes) {
-    final String dartSourcePath = getDartSourcePath(binaryType);
-    final String outputPath = path.join(directory.path, binaryType.name); // e.g. /path/to/binaries/dart/current/sshnp
-    final Process compileProcess = await startCommand(
-      'dart', 
-      ['compile', 'exe', dartSourcePath, '-o', outputPath]);
-    compileProcesses.add((compileProcess, binaryType, outputPath));
+  final String outputPath = path.join(outputDirectory.path, clientBinaryType.name);
+  const String executable = 'dart';
+  final List<String> args = [
+    'compile', 'exe',
+    path.join('packages', 'dart', 'sshnoports', 'bin', '${clientBinaryType.name}.dart'),
+    '-o', outputPath,
+  ];
+
+  final ProcessResult processResult = await runCommand(executable, args);
+  if(processResult.exitCode != 0) {
+    throw Exception('Failed to compile current binary for ${clientBinaryType.name}: ${processResult.stderr}');
   }
 
-  // 3. wait for processes to finish and check exit codes
-  for(final (Process, ClientBinaryType, String) element in compileProcesses) {
-    final Process compileProcess = element.$1;
-    final ClientBinaryType binaryType = element.$2;
-    final String outputPath = element.$3;
-    final int exitCode = await compileProcess.exitCode;
-    if(exitCode != 0) {
-      print('Failed to compile ${element.$2.name}. Exit code: $exitCode');
-      compileProcess.stderr.transform(SystemEncoding().decoder).listen((data) {
-        print('Compile stderr: $data');
-      });
-      throw Exception('Failed to compile ${element.$2.name}. Exit code: $exitCode');
-    }
-
-    final File outputFile = File(outputPath);
-    if(!(await outputFile.exists())) {
-      throw Exception('Expected output binary not found after compilation: ${outputFile.path}');
-    }
-    
-    clientBinaries.add(ClientBinary(
-      binaryType: binaryType,
-      noPortsVersion: noPortsVersion,
-      file: outputFile,
-    ));
+  final File outputFile = File(outputPath);
+  if(!(await outputFile.exists())) {
+    throw Exception('Expected output binary not found after compilation: ${outputFile.path}');
   }
 
-  return clientBinaries;
+  return ClientBinary(
+    binaryType: clientBinaryType,
+    noPortsVersion: noPortsVersion,
+    file: outputFile,
+  );
 }
 
-Future<List<ClientBinary>> _downloadRelease({
+List<Future<ClientBinary>> compileDartCurrentBinariesList({
   required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
-  required final Directory directory,
+  required final Directory outputDirectory, // where the compiled binaries will be placed
+}) {
+  final List<Future<ClientBinary>> futures = [];
+  for(final ClientBinaryType clientBinaryType in clientBinaryTypes) {
+    futures.add(compileDartCurrentBinary(
+      noPortsVersion: noPortsVersion,
+      clientBinaryType: clientBinaryType, 
+      outputDirectory: outputDirectory,
+    ));
+  }
+  return futures;
+}
+
+Future<List<ClientBinary>> downloadDartReleaseBinariesList({
+  required final NoPortsVersion noPortsVersion,
+  required final List<ClientBinaryType> clientBinaryTypes,
+  required final Directory outputDirectory,
 }) async {
   if(noPortsVersion.language != Language.dart) {
     throw Exception('Currently only dart client binaries are supported. Found language: ${noPortsVersion.language.name}');
@@ -144,13 +168,13 @@ Future<List<ClientBinary>> _downloadRelease({
   // 2. get tgz/zip
   final ProcessResult curlProcessResult = await runCommand(
     'curl', 
-    ['-L', '-o', path.join(directory.path, archiveName), downloadUrl]);
+    ['-L', '-o', path.join(outputDirectory.path, archiveName), downloadUrl]);
   if(curlProcessResult.exitCode != 0) {
     throw Exception('Failed to download archive from $downloadUrl: ${curlProcessResult.stderr}');
   }
 
   // 3. create temporary extraction directory: $directory/temp_extract/
-  final Directory tempExtractDir = Directory(path.join(directory.path, 'temp_extract'));
+  final Directory tempExtractDir = Directory(path.join(outputDirectory.path, 'temp_extract'));
   await ensureDirectoryExists(tempExtractDir);
 
   // 4. extract archive to temporary directory
@@ -159,25 +183,24 @@ Future<List<ClientBinary>> _downloadRelease({
     case 'linux':
       extractResult = await runCommand(
         'tar',
-        ['-xzf', path.join(directory.path, archiveName), '-C', tempExtractDir.path],
+        ['-xzf', path.join(outputDirectory.path, archiveName), '-C', tempExtractDir.path],
       );
       break;
     case 'windows':
       extractResult = await runCommand(
         'powershell',
-        ['-Command', 'Expand-Archive', '-Path', path.join(directory.path, archiveName), '-DestinationPath', tempExtractDir.path],
+        ['-Command', 'Expand-Archive', '-Path', path.join(outputDirectory.path, archiveName), '-DestinationPath', tempExtractDir.path],
       );
       break;
     case 'macos':
       extractResult = await runCommand(
         'unzip',
-        ['-q', path.join(directory.path, archiveName), '-d', tempExtractDir.path],
+        ['-q', path.join(outputDirectory.path, archiveName), '-d', tempExtractDir.path],
       );
       break;
     default:
       throw Exception('Unsupported platform: ${Platform.operatingSystem}');
   }
-
   if(extractResult.exitCode != 0) {
     throw Exception('Failed to extract archive: ${extractResult.stderr}');
   }
@@ -191,7 +214,7 @@ Future<List<ClientBinary>> _downloadRelease({
     if(!(await extractedBinary.exists())) {
       throw Exception('Expected binary not found in extracted archive: ${extractedBinary.path}');
     }
-    final String finalBinaryPath = path.join(directory.path, binaryName);
+    final String finalBinaryPath = path.join(outputDirectory.path, binaryName);
     final File binary = await extractedBinary.copy(finalBinaryPath);
     if(!(await binary.exists())) {
       throw Exception('Failed to move binary to final location: ${binary.path}');
@@ -206,18 +229,9 @@ Future<List<ClientBinary>> _downloadRelease({
   // 6. clean up temporary extraction directory and archive
   try {
     await tempExtractDir.delete(recursive: true);
-    await File(path.join(directory.path, archiveName)).delete();
   } catch (e) {
     print('Warning: Failed to clean up temporary files: $e');
   }
   return clientBinaries;
 }
 
-// TODO : implement
-Future<List<ClientBinary>> _compileBranch({
-  required final NoPortsVersion noPortsVersion,
-  required final List<ClientBinaryType> clientBinaryTypes,
-  required final Directory directory,
-}) async {
-  throw Exception('Compiling from branch is not yet implemented. Found branch: ${noPortsVersion.version}');
-}

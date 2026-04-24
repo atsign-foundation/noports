@@ -52,7 +52,6 @@ docker stop $(docker ps -q) 2>/dev/null ; rm -rf e2e_all_v2/ && dart run tests/e
     --base-directory "e2e_all_v2" \
     --root-domain "root.atsign.org"
 
-
 --always-output-logs \
 ```
 
