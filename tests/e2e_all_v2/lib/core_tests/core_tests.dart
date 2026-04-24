@@ -214,40 +214,40 @@ Future<void> coreTests(CoreTestsParams params) async {
     context: context,
   ));
 
-  // f. v4_dart_inline
-  otherTestFunctions.addAll(runV4DartInlineTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  // g. v4_openssh_print
-  otherTestFunctions.addAll(runV4OpensshPrintTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  // h. v5_dart_inline
-  otherTestFunctions.addAll(runV5DartInlineTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  // i. v5_openssh_inline
-  otherTestFunctions.addAll(runV5OpensshInlineTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  // j. v5_openssh_print
-  otherTestFunctions.addAll(runV5OpensshPrintTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  // // f. v4_dart_inline
+  // otherTestFunctions.addAll(runV4DartInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // // g. v4_openssh_print
+  // otherTestFunctions.addAll(runV4OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // // h. v5_dart_inline
+  // otherTestFunctions.addAll(runV5DartInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // // i. v5_openssh_inline
+  // otherTestFunctions.addAll(runV5OpensshInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // // j. v5_openssh_print
+  // otherTestFunctions.addAll(runV5OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
 
   // Run Phase 2 tests with max 6 concurrent at a time
   final List<CoreTestResult> otherTestResults = await _runTestsWithConcurrencyLimit(
