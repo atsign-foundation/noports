@@ -170,7 +170,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemonsParallel({
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }
 
-  await Future.delayed(Duration(seconds: 5));
+  await Future.delayed(Duration(milliseconds: 100));
 
   // now wait for all monitors to complete by polling log files
   const String monitorMessage = 'monitor started';
