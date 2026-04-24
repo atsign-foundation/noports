@@ -69,8 +69,6 @@ jobs:
           path: tmp_e2e_all_artifacts.zip
 
   e2e_all_v2:
-    # Wait for e2e_all job to complete successfully before running
-    needs: e2e_all
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
