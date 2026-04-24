@@ -105,7 +105,7 @@ Future<void> coreTests(CoreTestsParams params) async {
       (cb) => cb.binaryType == ClientBinaryType.at_activate
         && cb.noPortsVersion.version == 'current'
     );
-    return setUpApkamKeys(
+    return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
       clientAtsign: params.clientAtsign,
       daemonAtsign: params.daemonAtsign,

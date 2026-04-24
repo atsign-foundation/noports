@@ -182,3 +182,47 @@ Future<Map<String, File>> setUpApkamKeys({
   }
   return result;
 }
+
+Future<Map<String, File>> setUpApkamKeysParallel({
+  required final ClientBinary atActivateClientBinary,
+  required final String clientAtsign,
+  required final String daemonAtsign,
+  required final String rootDomain,
+  required final Directory apkamKeysDirectory,
+  required final String testRunId,
+}) async {
+  if(atActivateClientBinary.binaryType != ClientBinaryType.at_activate) {
+    throw ArgumentError('atActivateClientBinary must be of type at_activate');
+  }
+
+  if(!(await atActivateClientBinary.exists())) {
+    throw ArgumentError('atActivateClientBinary does not exist at path: ${atActivateClientBinary.file.path}');
+  }
+
+  if(!(await apkamKeysDirectory.exists())) {
+    throw ArgumentError('apkamKeysDirectory does not exist at path: ${apkamKeysDirectory.path}');
+  }
+
+  final List<Future<(String, File)>> futures = [
+    setUpApkamKeyForAtsign(
+      atActivateClientBinary: atActivateClientBinary,
+      atsign: clientAtsign,
+      which: 'client',
+      rootDomain: rootDomain,
+      apkamKeysDirectory: apkamKeysDirectory,
+      testRunId: testRunId,
+    ).then((file) => (clientAtsign, file)),
+    setUpApkamKeyForAtsign(
+      atActivateClientBinary: atActivateClientBinary,
+      atsign: daemonAtsign,
+      which: 'daemon',
+      rootDomain: rootDomain,
+      apkamKeysDirectory: apkamKeysDirectory,
+      testRunId: testRunId,
+    ).then((file) => (daemonAtsign, file)),
+  ];
+
+  final List<(String, File)> results = await Future.wait(futures);
+
+  return Map.fromEntries(results.map((entry) => MapEntry(entry.$1, entry.$2)));
+}
