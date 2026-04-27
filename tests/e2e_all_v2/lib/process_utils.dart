@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:e2e_all_v2/print_test_utils.dart' as print_utils;
+
 class ProcessOutputCapture {
   final Process process;
   final StringBuffer stdoutBuffer = StringBuffer();
@@ -14,19 +16,25 @@ class ProcessOutputCapture {
     this.stdoutLogFile,
     this.stderrLogFile,
   }) {
-    process.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      stdoutBuffer.writeln(line);
-      if (stdoutLogFile != null) {
-        stdoutLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
-      }
-    });
+    process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          stdoutBuffer.writeln(line);
+          if (stdoutLogFile != null) {
+            stdoutLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
+          }
+        });
 
-    process.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      stderrBuffer.writeln(line);
-      if (stderrLogFile != null) {
-        stderrLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
-      }
-    });
+    process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          stderrBuffer.writeln(line);
+          if (stderrLogFile != null) {
+            stderrLogFile!.writeAsStringSync('$line\n', mode: FileMode.append);
+          }
+        });
   }
 
   Future<int> get exitCode => process.exitCode;
@@ -49,7 +57,7 @@ Future<ProcessOutputCapture> startCommandWithCapture(
     arguments,
     workingDirectory: workingDirectory,
     environment: environment,
-    printCommand: printCommand
+    printCommand: printCommand,
   );
   return ProcessOutputCapture(
     process: process,
@@ -68,8 +76,8 @@ Future<ProcessResult> runCommand(
   final File? stdoutLogFile,
   final File? stderrLogFile,
 }) async {
-  if(printCommand) {
-    print('> $executable ${arguments.join(' ')}');
+  if (printCommand) {
+    print_utils.printCommand(executable, arguments);
   }
   final ProcessResult result = await Process.run(
     executable,
@@ -77,14 +85,14 @@ Future<ProcessResult> runCommand(
     workingDirectory: workingDirectory,
     environment: environment,
   );
-  if(printOutput) {
+  if (printOutput) {
     print('stdout:\n\t${result.stdout}');
     print('stderr:\n\t${result.stderr}');
   }
-  if(stdoutLogFile != null) {
+  if (stdoutLogFile != null) {
     await stdoutLogFile.writeAsString(result.stdout.toString());
   }
-  if(stderrLogFile != null) {
+  if (stderrLogFile != null) {
     await stderrLogFile.writeAsString(result.stderr.toString());
   }
   return result;
@@ -100,8 +108,8 @@ Future<Process> startCommand(
   final File? stdoutLogFile,
   final File? stderrLogFile,
 }) async {
-  if(printCommand) {
-    print('> $executable ${arguments.join(' ')}');
+  if (printCommand) {
+    print_utils.printCommand(executable, arguments);
   }
   final Process process = await Process.start(
     executable,
@@ -109,7 +117,7 @@ Future<Process> startCommand(
     workingDirectory: workingDirectory,
     environment: environment,
   );
-  if(printOutput) {
+  if (printOutput) {
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
       print('${executable} stdout: $data');
     });
@@ -117,12 +125,12 @@ Future<Process> startCommand(
       print('${executable} stderr: $data');
     });
   }
-  if(stdoutLogFile != null) {
+  if (stdoutLogFile != null) {
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
       stdoutLogFile.writeAsStringSync(data, mode: FileMode.append);
     });
   }
-  if(stderrLogFile != null) {
+  if (stderrLogFile != null) {
     process.stderr.transform(SystemEncoding().decoder).listen((data) {
       stderrLogFile.writeAsStringSync(data, mode: FileMode.append);
     });
