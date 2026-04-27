@@ -14,11 +14,11 @@ String generateExtraString(
   bool useShortLanguageName = false,
 }) {
   final String clientLanguage = useShortLanguageName
-    ? clientVersion.language.name[0]
-    : clientVersion.language.name;
+      ? clientVersion.language.name[0]
+      : clientVersion.language.name;
   final String daemonLanguage = useShortLanguageName
-    ? daemonVersion.language.name[0]
-    : daemonVersion.language.name;
+      ? daemonVersion.language.name[0]
+      : daemonVersion.language.name;
 
   return '(client: $clientLanguage:${clientVersion.version}, daemon: $daemonLanguage:${daemonVersion.version})';
 }
@@ -38,8 +38,14 @@ void printClientStderr(String stderr, {String? label}) {
 }
 
 void printClientLogs(ProcessOutputCapture capture, {String? label}) {
-  printClientStdout(capture.stdout, label: label != null ? '$label stdout:' : null);
-  printClientStderr(capture.stderr, label: label != null ? '$label stderr:' : null);
+  printClientStdout(
+    capture.stdout,
+    label: label != null ? '$label stdout:' : null,
+  );
+  printClientStderr(
+    capture.stderr,
+    label: label != null ? '$label stderr:' : null,
+  );
 }
 
 void printDaemonStdoutFragment(File stdoutFragmentFile, {String? label}) {
@@ -77,36 +83,32 @@ void printAllLogs({
   printDaemonLogFragments(daemonLogFragment, label: daemonLabel);
 }
 
-/// Prints client logs from log files instead of capture buffers
-/// Useful when logs were written to files but capture is not available
-void printClientLogsFromFiles({
-  required File stdoutFile,
-  required File stderrFile,
-  String? label,
-}) {
-  if (stdoutFile.existsSync()) {
-    print(label != null ? '$label stdout:' : 'Client stdout:');
-    print(stdoutFile.readAsStringSync());
-  }
-  if (stderrFile.existsSync()) {
-    print(label != null ? '$label stderr:' : 'Client stderr:');
-    print(stderrFile.readAsStringSync());
-  }
-}
-
-/// Prints all logs from files (client and daemon)
-/// Useful when using ProcessResult instead of ProcessOutputCapture
-void printAllLogsFromFiles({
-  required File clientStdoutFile,
-  required File clientStderrFile,
-  required LogFragment daemonLogFragment,
+void printAllLogsFromStringBuffers({
+  required StringBuffer clientStdoutBuffer,
+  required StringBuffer clientStderrBuffer,
+  required StringBuffer daemonStdoutBuffer,
+  required StringBuffer daemonStderrBuffer,
   String? clientLabel,
   String? daemonLabel,
 }) {
-  printClientLogsFromFiles(
-    stdoutFile: clientStdoutFile,
-    stderrFile: clientStderrFile,
-    label: clientLabel,
+  printClientStdout(
+    clientStdoutBuffer.toString(),
+    label: clientLabel != null ? '$clientLabel stdout:' : null,
   );
-  printDaemonLogFragments(daemonLogFragment, label: daemonLabel);
+  printClientStderr(
+    clientStderrBuffer.toString(),
+    label: clientLabel != null ? '$clientLabel stderr:' : null,
+  );
+  printClientStdout(
+    daemonStdoutBuffer.toString(),
+    label: daemonLabel != null
+        ? '$daemonLabel stdout fragment:'
+        : 'Daemon stdout fragment:',
+  );
+  printClientStderr(
+    daemonStderrBuffer.toString(),
+    label: daemonLabel != null
+        ? '$daemonLabel stderr fragment:'
+        : 'Daemon stderr fragment:',
+  );
 }
