@@ -34,15 +34,22 @@ const String remoteUsername = 'atsign';
 Future<void> coreTests(CoreTestsParams params) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
 
-  final List<NoPortsVersion> clientVersions = params.clientVersions.split(',').map((entry) {
-    return NoPortsVersion.fromLanguageVersionString(entry.trim());
-  }).toList();
-  final List<NoPortsVersion> daemonVersions = params.daemonVersions.split(',').map((entry) {
-    return NoPortsVersion.fromLanguageVersionString(entry.trim());
-  }).toList();
+  final List<NoPortsVersion> clientVersions = params.clientVersions
+      .split(',')
+      .map((entry) {
+        return NoPortsVersion.fromLanguageVersionString(entry.trim());
+      })
+      .toList();
+  final List<NoPortsVersion> daemonVersions = params.daemonVersions
+      .split(',')
+      .map((entry) {
+        return NoPortsVersion.fromLanguageVersionString(entry.trim());
+      })
+      .toList();
 
   // 2. Get testRunId - use provided value or default to git commit hash
-  final String testRunId = params.testRunId ?? await getShortenedGitCommitHash();
+  final String testRunId =
+      params.testRunId ?? await getShortenedGitCommitHash();
   print('testRunId: $testRunId\n');
 
   // 3. create directory structure:
@@ -55,32 +62,45 @@ Future<void> coreTests(CoreTestsParams params) async {
   //            v5.11.2/
   //            v5.13.0/
   //            current/
-  final Directory baseDirectory = Directory('${params.baseDirectory}/$testRunId');
+  final Directory baseDirectory = Directory(
+    '${params.baseDirectory}/$testRunId',
+  );
   await ensureDirectoryExists(baseDirectory);
 
-  final Directory apkamKeysDirectory = Directory('${baseDirectory.path}/apkamKeys');
+  final Directory apkamKeysDirectory = Directory(
+    '${baseDirectory.path}/apkamKeys',
+  );
   await ensureDirectoryExists(apkamKeysDirectory);
 
   final Directory logsDirectory = Directory('${baseDirectory.path}/logs');
   await ensureDirectoryExists(logsDirectory);
 
-  final Directory binariesDirectory = Directory('${baseDirectory.path}/binaries');
+  final Directory binariesDirectory = Directory(
+    '${baseDirectory.path}/binaries',
+  );
   await ensureDirectoryExists(binariesDirectory);
 
-  final Directory sshDirectory = Directory(path.join(getHomeDirectory()!, '.ssh'));
+  final Directory sshDirectory = Directory(
+    path.join(getHomeDirectory()!, '.ssh'),
+  );
   await ensureDirectoryExists(sshDirectory);
 
-  final Directory daemonLogsDirectory = Directory('${logsDirectory.path}/daemons');
+  final Directory daemonLogsDirectory = Directory(
+    '${logsDirectory.path}/daemons',
+  );
   await ensureDirectoryExists(daemonLogsDirectory);
 
   // 4. Prepare client binaries list based on clientVersions to test against
   final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload = [];
-  for(final NoPortsVersion clientVersion in clientVersions) {
+  for (final NoPortsVersion clientVersion in clientVersions) {
     clientBinariesToDownload.add((clientVersion, ClientBinaryType.sshnp));
     clientBinariesToDownload.add((clientVersion, ClientBinaryType.npt));
     clientBinariesToDownload.add((clientVersion, ClientBinaryType.srv));
   }
-  clientBinariesToDownload.add((NoPortsVersion(language: Language.dart, version: 'current'), ClientBinaryType.at_activate));
+  clientBinariesToDownload.add((
+    NoPortsVersion(language: Language.dart, version: 'current'),
+    ClientBinaryType.at_activate,
+  ));
 
   // 5. Run setup flows in parallel
   final Stopwatch setUpStopwatch = Stopwatch()..start();
@@ -92,17 +112,19 @@ Future<void> coreTests(CoreTestsParams params) async {
 
   // Flow 1:
   // Flow 1.1: Fetch client binaries in parallel (sorted by language and version to optimize caching)
-  final Future<List<ClientBinary>> clientBinariesFuture = fetchClientBinariesParallel(
-    clientBinariesToDownload: clientBinariesToDownload,
-    binariesDirectory: binariesDirectory,
-  );
-  
+  final Future<List<ClientBinary>> clientBinariesFuture =
+      fetchClientBinariesParallel(
+        clientBinariesToDownload: clientBinariesToDownload,
+        binariesDirectory: binariesDirectory,
+      );
+
   // Flow 1.2: Once we have the client binaries, set up APKAM keys (which depends on at_activate binary)
   final Future<Map<String, File>> apkamKeysFuture = Future.microtask(() async {
     final List<ClientBinary> clientBinaries = await clientBinariesFuture;
     final ClientBinary atActivateClientBinary = clientBinaries.firstWhere(
-      (cb) => cb.binaryType == ClientBinaryType.at_activate
-        && cb.noPortsVersion.version == 'current'
+      (cb) =>
+          cb.binaryType == ClientBinaryType.at_activate &&
+          cb.noPortsVersion.version == 'current',
     );
     return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
@@ -114,12 +136,17 @@ Future<void> coreTests(CoreTestsParams params) async {
     );
   });
 
-  final Future<List<DockerImage>> dockerImagesFuture = ensureDockerDaemonsBuiltParallel(
-    daemonVersions: daemonVersions,
-    skipBuildCurrent: false,
-  );
+  final Future<List<DockerImage>> dockerImagesFuture =
+      ensureDockerDaemonsBuiltParallel(
+        daemonVersions: daemonVersions,
+        skipBuildCurrent: false,
+      );
 
-  final List<dynamic> results = await Future.wait([clientBinariesFuture, apkamKeysFuture, dockerImagesFuture]);
+  final List<dynamic> results = await Future.wait([
+    clientBinariesFuture,
+    apkamKeysFuture,
+    dockerImagesFuture,
+  ]);
   final List<ClientBinary> clientBinaries = results[0] as List<ClientBinary>;
   final Map<String, File> apkamKeys = results[1] as Map<String, File>;
   final List<DockerImage> dockerImages = results[2] as List<DockerImage>;
@@ -129,40 +156,45 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('');
 
   print('Fetched client binaries (${clientBinaries.length}):');
-  for(final ClientBinary clientBinary in clientBinaries) {
-    print('    ${clientBinary.binaryType.name} | ${clientBinary.noPortsVersion.language.name} | ${clientBinary.noPortsVersion.version} | ${clientBinary.file.path}');
+  for (final ClientBinary clientBinary in clientBinaries) {
+    print(
+      '    ${clientBinary.binaryType.name} | ${clientBinary.noPortsVersion.language.name} | ${clientBinary.noPortsVersion.version} | ${clientBinary.file.path}',
+    );
   }
   print('');
 
   print('APKAM keys ready:');
-  for(final String atsign in apkamKeys.keys) {
+  for (final String atsign in apkamKeys.keys) {
     print('    $atsign: ${apkamKeys[atsign]!.path}');
   }
   print('');
 
   print('Docker images ready (${dockerImages.length}):');
-  for(final DockerImage dockerImage in dockerImages) {
+  for (final DockerImage dockerImage in dockerImages) {
     print('    ${dockerImage.fullImageName}');
   }
   print('');
 
   // Flow 3: Start Docker daemon instances
   print('Starting docker daemon instances...');
-  final List<(String, DockerInstance)> dockerInstances = await startDockerDaemonsParallel(
-    allDockerImages: dockerImages,
-    daemonVersions: daemonVersions,
-    clientAtsign: params.clientAtsign,
-    daemonAtsign: params.daemonAtsign,
-    rootDomain: params.rootDomain,
-    testRunId: testRunId,
-    daemonLogsDirectory: daemonLogsDirectory,
-    daemonApkamKeysFile: apkamKeys[params.daemonAtsign]!,
-  );
+  final List<(String, DockerInstance)> dockerInstances =
+      await startDockerDaemonsParallel(
+        allDockerImages: dockerImages,
+        daemonVersions: daemonVersions,
+        clientAtsign: params.clientAtsign,
+        daemonAtsign: params.daemonAtsign,
+        rootDomain: params.rootDomain,
+        testRunId: testRunId,
+        daemonLogsDirectory: daemonLogsDirectory,
+        daemonApkamKeysFile: apkamKeys[params.daemonAtsign]!,
+      );
   print('');
 
   print('Started ${dockerInstances.length} docker daemon instances');
-  for(final (String, DockerInstance) dockerInstance in dockerInstances) {
-    print('    Daemon (-d ${dockerInstance.$1}): ${dockerInstance.$2.containerName}');
+  for (final (String, DockerInstance) dockerInstance in dockerInstances) {
+    print(
+      '    Daemon (-d ${dockerInstance.$1}): ${dockerInstance.$2.containerName}',
+    );
   }
   print('');
 
@@ -172,7 +204,9 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
 
   setUpStopwatch.stop();
-  print('Set up completed in ${setUpStopwatch.elapsed.inMinutes}m ${setUpStopwatch.elapsed.inSeconds % 60}s');
+  print(
+    'Set up completed in ${setUpStopwatch.elapsed.inMinutes}m ${setUpStopwatch.elapsed.inSeconds % 60}s',
+  );
 
   // // 8. Run tests
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
@@ -193,25 +227,34 @@ Future<void> coreTests(CoreTestsParams params) async {
   );
 
   // Part 1: Do all 001_minus_s_flag tests first, since they bootstrap the daemons.
-  final List<Future<CoreTestResult> Function()> minusSFlagFactories = run001MinusSFlagTests(
-    context: context,
-    daemonVersions: daemonVersions,
-  );
-  final List<CoreTestResult> minusSFlagResults = await _runFuturesWithConcurrency(
-    minusSFlagFactories,
-    batchSize: params.batchSize,
-  );
+  final List<Future<CoreTestResult> Function()> minusSFlagFactories =
+      run001MinusSFlagTests(context: context, daemonVersions: daemonVersions);
+  final List<CoreTestResult> minusSFlagResults =
+      await _runFuturesWithConcurrency(
+        minusSFlagFactories,
+        batchSize: params.batchSize,
+      );
   allTestResults.addAll(minusSFlagResults);
 
   // Check if any of the minus_s_flag tests failed. If so, we should not proceed with the other tests since they depend on the daemons being properly set up and running.
-  final List<CoreTestResult> failedMinusSFlagResults = minusSFlagResults.where((tr) => tr.status == TestStatus.failed).toList();
-  if(failedMinusSFlagResults.isNotEmpty) {
+  final List<CoreTestResult> failedMinusSFlagResults = minusSFlagResults
+      .where((tr) => tr.status == TestStatus.failed)
+      .toList();
+  if (failedMinusSFlagResults.isNotEmpty) {
     print('');
-    print('One or more 001_minus_s_flag tests failed. Since these tests are critical for verifying that the daemons are properly set up and running, we will not proceed with the other tests. Please investigate the failed 001_minus_s_flag tests and fix the underlying issues before re-running the tests.');
+    print(
+      'One or more 001_minus_s_flag tests failed. Since these tests are critical for verifying that the daemons are properly set up and running, we will not proceed with the other tests. Please investigate the failed 001_minus_s_flag tests and fix the underlying issues before re-running the tests.',
+    );
     print('Failed 001_minus_s_flag tests:');
-    for(final CoreTestResult testResult in failedMinusSFlagResults) {
-      final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
-      print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
+    for (final CoreTestResult testResult in failedMinusSFlagResults) {
+      final String extra = generateExtraString(
+        testResult.clientVersion,
+        testResult.daemonVersion,
+        useShortLanguageName: true,
+      );
+      print(
+        '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
+      );
     }
     return;
   }
@@ -219,33 +262,35 @@ Future<void> coreTests(CoreTestsParams params) async {
   // Part 2: do all other tests
   final List<Future<CoreTestResult> Function()> remainingTestFactories = [];
 
-  remainingTestFactories.addAll(runMinusRFlagTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  // remainingTestFactories.addAll(runMinusRFlagTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runMinusUFlagTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runNptToPort22Tests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
+  //   context: context,
+  // ));
 
-  remainingTestFactories.addAll(runMinusUFlagTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  remainingTestFactories.addAll(runNptToPort22Tests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
-
-  remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
-    context: context,
-  ));
-
-  remainingTestFactories.addAll(runV4DartInlineTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  remainingTestFactories.addAll(
+    getV4DartInLineFactories(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
   //
   // remainingTestFactories.addAll(runV4OpensshPrintTests(
   //   context: context,
@@ -271,24 +316,36 @@ Future<void> coreTests(CoreTestsParams params) async {
   //   daemonVersions: daemonVersions,
   // ));
 
-  final List<CoreTestResult> remainingResults = await _runFuturesWithConcurrency(
-    remainingTestFactories,
-    batchSize: params.batchSize,
-  );
+  final List<CoreTestResult> remainingResults =
+      await _runFuturesWithConcurrency(
+        remainingTestFactories,
+        batchSize: params.batchSize,
+      );
   allTestResults.addAll(remainingResults);
   testExecutionStopwatch.stop();
 
   // 8. Print test results summary
   print('');
   print('\tResults:');
-  for(final CoreTestResult testResult in allTestResults) {
-    printTestResult(testResult: testResult, extra: generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true));
+  for (final CoreTestResult testResult in allTestResults) {
+    printTestResult(
+      testResult: testResult,
+      extra: generateExtraString(
+        testResult.clientVersion,
+        testResult.daemonVersion,
+        useShortLanguageName: true,
+      ),
+    );
   }
   print('');
 
   final int totalTests = allTestResults.length;
-  final int passedTests = allTestResults.where((tr) => tr.status == TestStatus.passed).length;
-  final int failedTests = allTestResults.where((tr) => tr.status == TestStatus.failed).length;
+  final int passedTests = allTestResults
+      .where((tr) => tr.status == TestStatus.passed)
+      .length;
+  final int failedTests = allTestResults
+      .where((tr) => tr.status == TestStatus.failed)
+      .length;
 
   print('');
   print('Test Results Summary:');
@@ -297,11 +354,19 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('    Failed: $failedTests');
   print('');
 
-  if(failedTests > 0) {
+  if (failedTests > 0) {
     print('Failed Tests:');
-    for(final CoreTestResult testResult in allTestResults.where((tr) => tr.status == TestStatus.failed)) {
-      final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
-      print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
+    for (final CoreTestResult testResult in allTestResults.where(
+      (tr) => tr.status == TestStatus.failed,
+    )) {
+      final String extra = generateExtraString(
+        testResult.clientVersion,
+        testResult.daemonVersion,
+        useShortLanguageName: true,
+      );
+      print(
+        '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
+      );
     }
   }
 
@@ -309,52 +374,65 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('');
   print('Execution Time Summary:');
   print('    Setup time: ${setUpStopwatch.elapsed.inSeconds}s');
-  print('    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s');
+  print(
+    '    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s',
+  );
   print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
 }
 
 String _getIdentitfyFilePath({required final String testRunId}) {
   final String? homeDirectoryPath = getHomeDirectory(throwIfNull: false);
-  if(homeDirectoryPath == null) {
-    throw Exception('Unable to determine home directory path for current user.');
+  if (homeDirectoryPath == null) {
+    throw Exception(
+      'Unable to determine home directory path for current user.',
+    );
   }
   return path.join(homeDirectoryPath, '.ssh', 'e2e_all_v2.${testRunId}');
 }
 
-Future<(File, File)> _generateNewSshKey({required final String testRunId}) async {
+Future<(File, File)> _generateNewSshKey({
+  required final String testRunId,
+}) async {
   final String? homeDirectoryPath = getHomeDirectory(throwIfNull: false);
-  if(homeDirectoryPath == null) {
-    throw Exception('Unable to determine home directory path for current user.');
+  if (homeDirectoryPath == null) {
+    throw Exception(
+      'Unable to determine home directory path for current user.',
+    );
   }
 
-  final Directory sshDirectory = Directory(path.join(homeDirectoryPath, '.ssh'));
-  if(!(await sshDirectory.exists())) {
+  final Directory sshDirectory = Directory(
+    path.join(homeDirectoryPath, '.ssh'),
+  );
+  if (!(await sshDirectory.exists())) {
     throw Exception('SSH directory does not exist: ${sshDirectory.path}');
   }
 
   // Change the permissions of the authorized_keys file so that we can add public keys to it
-  await runCommand(
-    'chmod',
-    ['go-rwx', path.join(sshDirectory.path, 'authorized_keys')],
-  );
+  await runCommand('chmod', [
+    'go-rwx',
+    path.join(sshDirectory.path, 'authorized_keys'),
+  ]);
 
   // ssh-keygen -t ed25519 -q -N '' -f $identityFileName -C $testRunId <<<y >/dev/null 2>&1
   final String identityFilePath = _getIdentitfyFilePath(testRunId: testRunId);
-  await runCommand(
-    'ssh-keygen',
-    [
-      '-t', 'ed25519',
-      '-q',
-      '-N', '',
-      '-f', identityFilePath,
-      '-C', testRunId,
-    ],
-  );
+  await runCommand('ssh-keygen', [
+    '-t',
+    'ed25519',
+    '-q',
+    '-N',
+    '',
+    '-f',
+    identityFilePath,
+    '-C',
+    testRunId,
+  ]);
 
   final File identityFile = File(identityFilePath);
   final File publicIdentityFile = File('$identityFilePath.pub');
-  if(!(await identityFile.exists()) || !(await publicIdentityFile.exists())) {
-    throw Exception('Failed to generate ssh key pair. Expected files not found: $identityFilePath and ${publicIdentityFile.path}');
+  if (!(await identityFile.exists()) || !(await publicIdentityFile.exists())) {
+    throw Exception(
+      'Failed to generate ssh key pair. Expected files not found: $identityFilePath and ${publicIdentityFile.path}',
+    );
   }
   return (publicIdentityFile, identityFile);
 }
@@ -376,7 +454,6 @@ Future<List<CoreTestResult>> _runFuturesWithConcurrency(
   if (testFactories.isEmpty) {
     return [];
   }
-
 
   final List<CoreTestResult> allResults = [];
   final List<(Future<CoreTestResult>, int)> active = [];
@@ -401,20 +478,29 @@ Future<List<CoreTestResult>> _runFuturesWithConcurrency(
   }
 
   while (active.isNotEmpty) {
-    final completedEntry = await Future.any(active.map((entry) async {
-      final result = await entry.$1;
-      return (entry, result);
-    }));
+    final completedEntry = await Future.any(
+      active.map((entry) async {
+        final result = await entry.$1;
+        return (entry, result);
+      }),
+    );
 
-    final ((Future<CoreTestResult>, int) entry, CoreTestResult testResult) = completedEntry;
+    final ((Future<CoreTestResult>, int) entry, CoreTestResult testResult) =
+        completedEntry;
 
     active.remove(entry);
     allResults.add(testResult);
     completedCount++;
 
     final String status = testResult.status == TestStatus.passed ? '✓' : '✗';
-    final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
-    print('$status ($completedCount/${testFactories.length}) ${testResult.testName} $extra');
+    final String extra = generateExtraString(
+      testResult.clientVersion,
+      testResult.daemonVersion,
+      useShortLanguageName: true,
+    );
+    print(
+      '$status ($completedCount/${testFactories.length}) ${testResult.testName} $extra',
+    );
 
     await startNextTest();
   }
