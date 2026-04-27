@@ -119,10 +119,10 @@ jobs:
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
-        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
       - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: '1.25.6'
           cache: false
@@ -253,7 +253,7 @@ jobs:
           security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           # codesign
-          DBINS="${BINS} srvd debug/srvd"
+          DBINS="debug/srvd ${BINS} np_admin srvd"
           for BINARY in ${DBINS}; do \
             /usr/bin/codesign \
               --force \
@@ -289,7 +289,7 @@ jobs:
             --password "$MACOS_APPLE_ID_PASSWORD" \
             --wait
       - name: Upload the build
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name:
             ${{ matrix.output-name
@@ -306,7 +306,7 @@ jobs:
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup node-version
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24.2.0'
       - name: Build admin webapp
@@ -319,7 +319,7 @@ jobs:
           cp -r dist/* sshnp/web/admin/
           tar -cvzf tarball/sshnp-web-admin-noarch.tgz sshnp
       - name: Upload the build
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name:
             sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
@@ -348,7 +348,7 @@ jobs:
           REF=${{ github.ref }}
           TAG=${REF:11}
           write_metadata universal.sh sshnp_version "$TAG"
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: universal.sh-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/bundles/universal.sh
@@ -376,7 +376,7 @@ jobs:
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        uses: sbomify/github-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
@@ -413,7 +413,8 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+      - name: GitHub attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: "tarballs/**"
 
@@ -431,6 +432,7 @@ jobs:
   cleanup:
     name: Clean up temporary branch
     needs: [main_build]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write # Needed to delete workflow branch

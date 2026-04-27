@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 import '../../logging/models/loggable.dart';
@@ -111,7 +112,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
         if (isClosed) return;
 
         if (success) {
-          onSuccess?.call('Role saved successfully', currentState.currentRole.id);
+          onSuccess?.call(
+            'Role saved successfully',
+            currentState.currentRole.id,
+          );
           if (!isClosed) {
             emit(const PolicyFormLoading());
           }
@@ -240,10 +244,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  void updateDaemonAtSigns(List<String> daemonAtSigns) {
+  void updateDaemonAtsigns(List<Atsign> daemonAtsigns) {
     final currentRole = _getCurrentRole();
     if (currentRole != null) {
-      updateRole(currentRole.copyWith(daemonAtSigns: daemonAtSigns));
+      updateRole(currentRole.copyWith(daemonAtsigns: daemonAtsigns));
     }
   }
 
@@ -261,10 +265,10 @@ class PolicyFormCubit extends LoggingCubit<PolicyFormState> {
     }
   }
 
-  void updateUserAtSigns(List<String> userAtSigns) {
+  void updateUserAtsigns(List<Atsign> userAtsigns) {
     final currentRole = _getCurrentRole();
     if (currentRole != null) {
-      updateRole(currentRole.copyWith(userAtSigns: userAtSigns));
+      updateRole(currentRole.copyWith(userAtsigns: userAtsigns));
     }
   }
 }

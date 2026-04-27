@@ -13,6 +13,23 @@ class NppDataOperation {
     );
   }
 
+  factory NppDataOperation.simulate({
+    required String daemonAtsign,
+    required String deviceName,
+    required String deviceGroupName,
+    required String clientAtsign,
+  }) {
+    return NppDataOperation(
+      atRpcPayload: {
+        'operation': 'simulate',
+        'daemonAtsign': daemonAtsign,
+        'daemonDeviceName': deviceName,
+        'daemonDeviceGroupName': deviceGroupName,
+        'clientAtsign': clientAtsign,
+      },
+    );
+  }
+
   factory NppDataOperation.getAllClients() {
     return NppDataOperation(
       atRpcPayload: {

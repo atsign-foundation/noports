@@ -10,8 +10,8 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.0.0",
-    "svelte": "5.53.12",
-    "vite": "8.0.0"
+    "svelte": "5.55.4",
+    "vite": "8.0.9"
   },
   "overrides": {
     "vite": {

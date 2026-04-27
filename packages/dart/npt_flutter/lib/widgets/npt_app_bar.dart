@@ -40,7 +40,7 @@ class _NptAppBarState extends State<NptAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final atsign = context.watch<OnboardingCubit>().getAtSign();
+    final atsign = context.watch<OnboardingCubit>().getAtsign();
     final strings = AppLocalizations.of(context)!;
     return BlocBuilder<SubNavCubit, String>(
       builder: (context, state) {

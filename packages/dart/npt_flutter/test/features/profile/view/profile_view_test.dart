@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,18 +36,18 @@ void main() {
     late MockFavoriteRepository mockFavoriteRepository;
 
     const testUuid = 'test-uuid-123';
-    const testProfile = Profile(
+    final testProfile = Profile(
       testUuid,
       displayName: 'Test Profile',
-      sshnpdAtsign: '@test_device',
+      sshnpdAtsign: '@test_device'.toAtsign(),
       deviceName: 'test-device',
       remotePort: 22,
       localPort: 2222,
-      relayAtsign: '@relay_test',
+      relayAtsign: '@relay_test'.toAtsign(),
     );
 
-    const testSettings = Settings(
-      relayAtsign: '@rv_eu',
+    final testSettings = Settings(
+      relayAtsign: '@rv_eu'.toAtsign(),
       overrideRelay: false,
       viewLayout: PreferredViewLayout.minimal,
       darkMode: false,
@@ -133,7 +134,7 @@ void main() {
         'should trigger ProfileLoadEvent when state is ProfileInitial',
         (tester) async {
           const profileState = ProfileInitial(testUuid);
-          const settingsState = SettingsLoaded(settings: testSettings);
+          final settingsState = SettingsLoaded(settings: testSettings);
 
           await tester.pumpWidget(
             createTestWidget(
@@ -153,7 +154,7 @@ void main() {
         tester,
       ) async {
         const profileState = ProfileInitial(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
+        final settingsState = SettingsLoaded(settings: testSettings);
 
         await tester.pumpWidget(
           createTestWidget(
@@ -174,7 +175,7 @@ void main() {
         tester,
       ) async {
         const profileState = ProfileLoading(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
+        final settingsState = SettingsLoaded(settings: testSettings);
 
         await tester.pumpWidget(
           createTestWidget(
@@ -200,7 +201,7 @@ void main() {
         tester,
       ) async {
         const profileState = ProfileFailedLoad(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
+        final settingsState = SettingsLoaded(settings: testSettings);
 
         await tester.pumpWidget(
           createTestWidget(
@@ -225,7 +226,7 @@ void main() {
 
       testWidgets('should space the error content', (tester) async {
         const profileState = ProfileFailedLoad(testUuid);
-        const settingsState = SettingsLoaded(settings: testSettings);
+        final settingsState = SettingsLoaded(settings: testSettings);
 
         await tester.pumpWidget(
           createTestWidget(
@@ -245,8 +246,8 @@ void main() {
         testWidgets(
           'should display ProfileViewMinimal when viewLayout is minimal',
           (tester) async {
-            const profileState = ProfileLoaded(testUuid, profile: testProfile);
-            const settingsState = SettingsLoaded(settings: testSettings);
+            final profileState = ProfileLoaded(testUuid, profile: testProfile);
+            final settingsState = SettingsLoaded(settings: testSettings);
 
             await tester.pumpWidget(
               createTestWidget(
@@ -265,15 +266,15 @@ void main() {
         testWidgets(
           'should display ProfileViewSshStyle when viewLayout is sshStyle',
           (tester) async {
-            const profileState = ProfileLoaded(testUuid, profile: testProfile);
-            const settingsWithSshStyle = Settings(
-              relayAtsign: '@rv_eu',
+            final profileState = ProfileLoaded(testUuid, profile: testProfile);
+            final settingsWithSshStyle = Settings(
+              relayAtsign: '@rv_eu'.toAtsign(),
               overrideRelay: false,
               viewLayout: PreferredViewLayout.sshStyle,
               darkMode: false,
               language: Language.english,
             );
-            const settingsState = SettingsLoaded(
+            final settingsState = SettingsLoaded(
               settings: settingsWithSshStyle,
             );
 
@@ -294,7 +295,7 @@ void main() {
         testWidgets(
           'should display Spinner when SettingsState is not SettingsLoadedState',
           (tester) async {
-            const profileState = ProfileLoaded(testUuid, profile: testProfile);
+            final profileState = ProfileLoaded(testUuid, profile: testProfile);
             const settingsState = SettingsInitial();
 
             await tester.pumpWidget(
@@ -313,7 +314,7 @@ void main() {
         testWidgets(
           'should display Spinner when SettingsState is SettingsLoading',
           (tester) async {
-            const profileState = ProfileLoaded(testUuid, profile: testProfile);
+            final profileState = ProfileLoaded(testUuid, profile: testProfile);
             const settingsState = SettingsLoading();
 
             await tester.pumpWidget(
@@ -339,7 +340,7 @@ void main() {
       }) {
         // Setup the bloc state mocks
         when(mockProfileBloc.state).thenReturn(
-          profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+          profileState ?? ProfileLoaded(testUuid, profile: testProfile),
         );
         when(
           mockProfilesSelectedCubit.state,
@@ -351,7 +352,7 @@ void main() {
         // Setup the stream mocks
         when(mockProfileBloc.stream).thenAnswer(
           (_) => Stream.value(
-            profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+            profileState ?? ProfileLoaded(testUuid, profile: testProfile),
           ),
         );
         when(mockProfilesSelectedCubit.stream).thenAnswer(
@@ -438,7 +439,7 @@ void main() {
       }) {
         // Setup the bloc state mocks
         when(mockProfileBloc.state).thenReturn(
-          profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+          profileState ?? ProfileLoaded(testUuid, profile: testProfile),
         );
         when(
           mockProfilesSelectedCubit.state,
@@ -450,7 +451,7 @@ void main() {
         // Setup the stream mocks
         when(mockProfileBloc.stream).thenAnswer(
           (_) => Stream.value(
-            profileState ?? const ProfileLoaded(testUuid, profile: testProfile),
+            profileState ?? ProfileLoaded(testUuid, profile: testProfile),
           ),
         );
         when(mockProfilesSelectedCubit.stream).thenAnswer(

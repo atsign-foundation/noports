@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -18,16 +19,16 @@ void main() {
     late SettingsBloc settingsBloc;
     late MockSettingsRepository mockRepository;
 
-    const testSettings = Settings(
-      relayAtsign: '@rv_eu',
+    final testSettings = Settings(
+      relayAtsign: '@rv_eu'.toAtsign(),
       overrideRelay: true,
       viewLayout: PreferredViewLayout.sshStyle,
       darkMode: true,
       language: Language.spanish,
     );
 
-    const defaultSettings = Settings(
-      relayAtsign: '@rv_am',
+    final defaultSettings = Settings(
+      relayAtsign: '@rv_am'.toAtsign(),
       overrideRelay: false,
       viewLayout: PreferredViewLayout.minimal,
       darkMode: false,
@@ -50,7 +51,7 @@ void main() {
     group('clear', () {
       test('should emit SettingsInitial when clear is called', () {
         // Arrange: Set bloc to a loaded state first
-        settingsBloc.emit(const SettingsLoaded(settings: testSettings));
+        settingsBloc.emit(SettingsLoaded(settings: testSettings));
 
         // Act
         settingsBloc.clear();
@@ -72,7 +73,7 @@ void main() {
         act: (bloc) => bloc.add(const SettingsLoadEvent()),
         expect: () => [
           const SettingsLoading(),
-          const SettingsLoaded(settings: testSettings),
+          SettingsLoaded(settings: testSettings),
         ],
         verify: (_) {
           verify(mockRepository.getSettings()).called(1);
@@ -89,7 +90,7 @@ void main() {
         act: (bloc) => bloc.add(const SettingsLoadEvent()),
         expect: () => [
           const SettingsLoading(),
-          const SettingsFailedLoad(settings: defaultSettings),
+          SettingsFailedLoad(settings: defaultSettings),
         ],
         verify: (_) {
           verify(mockRepository.getSettings()).called(1);
@@ -109,7 +110,7 @@ void main() {
         act: (bloc) => bloc.add(const SettingsLoadEvent()),
         expect: () => [
           const SettingsLoading(),
-          const SettingsFailedLoad(settings: defaultSettings),
+          SettingsFailedLoad(settings: defaultSettings),
         ],
         verify: (_) {
           verify(mockRepository.getSettings()).called(1);
@@ -122,10 +123,9 @@ void main() {
       blocTest<SettingsBloc, SettingsState>(
         'emits [SettingsLoaded] when editing without saving',
         build: () => settingsBloc,
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: false),
-        ),
-        expect: () => [const SettingsLoaded(settings: testSettings)],
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: false)),
+        expect: () => [SettingsLoaded(settings: testSettings)],
         verify: (_) {
           // Verify putSettings was never called
           verifyZeroInteractions(mockRepository);
@@ -140,10 +140,9 @@ void main() {
           ).thenAnswer((_) async => true);
           return settingsBloc;
         },
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsLoaded(settings: testSettings)],
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsLoaded(settings: testSettings)],
         verify: (_) {
           verify(mockRepository.putSettings(testSettings)).called(1);
         },
@@ -157,10 +156,9 @@ void main() {
           ).thenAnswer((_) async => false);
           return settingsBloc;
         },
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsFailedSave(settings: testSettings)],
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsFailedSave(settings: testSettings)],
         verify: (_) {
           verify(mockRepository.putSettings(testSettings)).called(1);
         },
@@ -174,10 +172,9 @@ void main() {
           ).thenThrow(Exception('Save failed'));
           return settingsBloc;
         },
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsFailedSave(settings: testSettings)],
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsFailedSave(settings: testSettings)],
         verify: (_) {
           verify(mockRepository.putSettings(testSettings)).called(1);
         },
@@ -187,9 +184,8 @@ void main() {
         'does not emit state when bloc is in loading state',
         build: () => settingsBloc,
         seed: () => const SettingsLoading(),
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
         expect: () => [],
         verify: (_) {
           // Verify putSettings was never called when in loading state
@@ -207,11 +203,10 @@ void main() {
           ).thenAnswer((_) async => true);
           return settingsBloc;
         },
-        seed: () => const SettingsLoaded(settings: defaultSettings),
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsLoaded(settings: testSettings)],
+        seed: () => SettingsLoaded(settings: defaultSettings),
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsLoaded(settings: testSettings)],
       );
 
       blocTest<SettingsBloc, SettingsState>(
@@ -222,11 +217,10 @@ void main() {
           ).thenAnswer((_) async => true);
           return settingsBloc;
         },
-        seed: () => const SettingsFailedLoad(settings: defaultSettings),
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsLoaded(settings: testSettings)],
+        seed: () => SettingsFailedLoad(settings: defaultSettings),
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsLoaded(settings: testSettings)],
       );
 
       blocTest<SettingsBloc, SettingsState>(
@@ -237,11 +231,10 @@ void main() {
           ).thenAnswer((_) async => true);
           return settingsBloc;
         },
-        seed: () => const SettingsFailedSave(settings: testSettings),
-        act: (bloc) => bloc.add(
-          const SettingsEditEvent(settings: testSettings, save: true),
-        ),
-        expect: () => [const SettingsLoaded(settings: testSettings)],
+        seed: () => SettingsFailedSave(settings: testSettings),
+        act: (bloc) =>
+            bloc.add(SettingsEditEvent(settings: testSettings, save: true)),
+        expect: () => [SettingsLoaded(settings: testSettings)],
       );
     });
 
@@ -255,17 +248,13 @@ void main() {
           return settingsBloc;
         },
         act: (bloc) async {
-          bloc.add(
-            const SettingsEditEvent(settings: testSettings, save: false),
-          );
+          bloc.add(SettingsEditEvent(settings: testSettings, save: false));
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(
-            const SettingsEditEvent(settings: defaultSettings, save: true),
-          );
+          bloc.add(SettingsEditEvent(settings: defaultSettings, save: true));
         },
         expect: () => [
-          const SettingsLoaded(settings: testSettings),
-          const SettingsLoaded(settings: defaultSettings),
+          SettingsLoaded(settings: testSettings),
+          SettingsLoaded(settings: defaultSettings),
         ],
       );
 
@@ -283,14 +272,12 @@ void main() {
         act: (bloc) async {
           bloc.add(const SettingsLoadEvent());
           await Future.delayed(const Duration(milliseconds: 10));
-          bloc.add(
-            const SettingsEditEvent(settings: defaultSettings, save: true),
-          );
+          bloc.add(SettingsEditEvent(settings: defaultSettings, save: true));
         },
         expect: () => [
           const SettingsLoading(),
-          const SettingsLoaded(settings: testSettings),
-          const SettingsLoaded(settings: defaultSettings),
+          SettingsLoaded(settings: testSettings),
+          SettingsLoaded(settings: defaultSettings),
         ],
       );
     });

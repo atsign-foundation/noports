@@ -68,8 +68,8 @@ class App extends StatelessWidget {
           ),
 
           /// - A list of all the uuids for profiles which have been found in persistence
-          ///   - This list is ALL of the profiles which are loaded in the app for the onboarded atSign
-          ///     Note that multiple client atSigns have not been considered as part of the current implementation
+          ///   - This list is ALL of the profiles which are loaded in the app for the onboarded atsign
+          ///     Note that multiple client atsigns have not been considered as part of the current implementation
           BlocProvider<ProfileListBloc>(
             create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
           ),

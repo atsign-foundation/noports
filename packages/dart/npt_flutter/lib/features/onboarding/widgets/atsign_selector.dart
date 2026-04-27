@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
@@ -5,7 +6,6 @@ import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/util/form_validator.dart';
-import 'package:npt_flutter/util/general_extensions.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AtsignSelector extends StatefulWidget {
@@ -33,19 +33,19 @@ class _AtsignSelectorState extends State<AtsignSelector> {
       child: BlocBuilder<OnboardingCubit, OnboardingState>(
         builder: (context, state) {
           // Only update controller if the state value is different (e.g., from dropdown selection)
-          if (controller.text != state.atSign && widget.isInSignInFlow) {
+          if (controller.text != state.atsign && widget.isInSignInFlow) {
             controller.value = TextEditingValue(
-              text: state.atSign,
-              selection: TextSelection.collapsed(offset: state.atSign.length),
+              text: state.atsign ?? '',
+              selection: TextSelection.collapsed(
+                offset: (state.atsign ?? '').length,
+              ),
             );
           }
           return TextFormField(
             controller: controller,
             onChanged: (atsign) {
-              atsign = atsign.atsignify();
-
               context.read<OnboardingCubit>().setState(
-                atSign: atsign,
+                atsign: atsign.toAtsign(),
                 rootDomain: widget.options?[atsign]?.rootDomain,
               );
               // Resetting the multiActivationCubitState will set the MultiActivationFileUploadState to idle allowing the "Next" button (manual activation button) to be visible in the dialog. This is only required when multiActivationCubitState is error.
@@ -77,7 +77,7 @@ class _AtsignSelectorState extends State<AtsignSelector> {
                                   child: Text(atsign),
                                   onPressed: () {
                                     context.read<OnboardingCubit>().setState(
-                                      atSign: atsign,
+                                      atsign: atsign.toAtsign(),
                                       rootDomain:
                                           widget.options?[atsign]?.rootDomain,
                                     );

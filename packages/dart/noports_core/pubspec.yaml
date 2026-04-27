@@ -11,14 +11,14 @@ dependencies:
   args: ^2.4.2
   at_auth: ^3.0.1
   at_chops: ^3.0.0
-  at_client: ^3.10.0
+  at_client: ^3.11.0
   at_commons: ^5.8.0
   at_cli_commons: ^3.0.1
   at_utils: ^3.4.0
   at_base2e15: ^1.0.0
   archive: ^4.0.7
   cryptography: ^2.7.0
-  dartssh2: ^2.8.2
+  dartssh2: ^2.17.1
   file: ^6.0.0
   logging: ^1.2.0
   meta: ^1.9.1
@@ -35,26 +35,27 @@ dependencies:
   at_onboarding_cli: ^1.14.2
 
 dependency_overrides:
-  at_client:
-    git:
-      ref: trunk
-      url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_client
+#  at_client:
+#    git:
+#      ref: trunk
+#      url: https://github.com/atsign-foundation/at_client_sdk
+#      path: packages/at_client
   archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
-  at_onboarding_cli:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_onboarding_cli
-      ref: st/onb-cli-remove-wait-pkam-auth
+#  at_onboarding_cli:
+#    git:
+#      url: https://github.com/atsign-foundation/at_client_sdk
+#      path: packages/at_onboarding_cli
+#      ref: st/onb-cli-remove-wait-pkam-auth
   at_auth:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
       path: packages/at_auth
       ref: st/onb-cli-remove-wait-pkam-auth
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   build_runner: ^2.4.12

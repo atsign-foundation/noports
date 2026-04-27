@@ -30,19 +30,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup dart
-        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
       - name: Set stuff up 
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_CLIENT_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_client_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_DAEMON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_daemon_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_latest_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_latest_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_EVENTS_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_events_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_E2E_ALL_V2_SINGLETON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_singleton_jttest_key.atKeys
+
       - name: Install expect
         run: |
           sudo apt-get install -y expect
@@ -50,17 +51,19 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_client @npe2e_daemon @rv_dev @npe2e_relay_latest @npe2e_policy @npe2e_policy_latest @npe2e_events -p -r root.atsign.wtf
+          tests/e2e_all/scripts/main.sh @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest @rv_am @e2e_all_v2_relay_latest_jttest @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest @e2e_all_v2_events_jttest -p -r root.atsign.org
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
       - name: Zip /tmp/e2e_all
+        if: ${{ always() }} # run even if test fails
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
       - name: Upload /tmp/e2e_all as artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: ${{ always() }} # run even if test fails
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip 

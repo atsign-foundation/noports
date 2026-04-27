@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
@@ -78,8 +79,10 @@ void main(List<String> args) async {
       parser.addOption(
         'srvd',
         abbr: 'r',
-        mandatory: true,
-        help: 'The socket rendezvous\'s atSign',
+        mandatory: false,
+        help: 'The Relay atSign to use. Omit to auto-select '
+            'the fastest available relay, or provide a comma-separated list to '
+            'pick the best among them.',
       );
       parser.addOption(
         'device',
@@ -303,11 +306,15 @@ void main(List<String> args) async {
       verbose = parsedArgs['verbose'];
       String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
-      String srvdAtSign = parsedArgs['srvd'];
+      String srvdAtSign = parsedArgs['srvd'] ?? '';
+
       try {
         clientAtSign = AtUtils.fixAtSign(clientAtSign);
         daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
-        srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
+        // Only fix srvd atSign if it's not a list
+        if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+          srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
+        }
       } catch (e) {
         throw ArgumentError(e.toString());
       }
@@ -475,6 +482,23 @@ void main(List<String> args) async {
         stderr.writeln(
             'Error: No bindable hosts found for port $localPort in: ${parsedHosts.join(', ')}$addressTypeStr');
         exitProgram(exitCode: 1);
+      }
+
+      // auto select the best relay if none is specified
+      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        List<Atsign>? rvAtSigns;
+        if (srvdAtSign.isNotEmpty) {
+          rvAtSigns =
+              srvdAtSign.split(',').map((a) => a.trim().toAtsign()).toList();
+        }
+        final rs = RelaySelector(
+          atClient: cliBase.atClient,
+          clientAtSign: clientAtSign,
+          sshnpdAtSign: daemonAtSign,
+          device: device,
+          rootDomain: rootDomain,
+        );
+        srvdAtSign = await rs.selectBestRelay(rvAtSigns: rvAtSigns);
       }
 
       NptParams params = NptParams(

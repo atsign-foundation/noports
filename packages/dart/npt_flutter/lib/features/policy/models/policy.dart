@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
@@ -35,6 +36,21 @@ part 'policy.g.dart';
 ///  ]
 /// }
 
+/// Converts the `String` atsigns saved to the `atServer` to `Atsign`.
+class AtsignConverter implements JsonConverter<Atsign, String> {
+  const AtsignConverter();
+
+  @override
+  Atsign fromJson(String json) {
+    return json.toAtsign();
+  }
+
+  @override
+  String toJson(Atsign object) {
+    return object;
+  }
+}
+
 @JsonSerializable()
 class Device {
   final String name;
@@ -64,19 +80,19 @@ class RoleInProgress {
   String? tempId; // temporary id for UI purposes only
   final String name;
   final String description;
-  final List<String> daemonAtSigns;
+  final List<Atsign> daemonAtsigns;
   final List<Device> devices;
   final List<DeviceGroup> deviceGroups;
-  final List<String> userAtSigns;
+  final List<Atsign> userAtsigns;
 
   RoleInProgress({
     this.tempId,
     required this.name,
     required this.description,
-    required this.daemonAtSigns,
+    required this.daemonAtsigns,
     required this.devices,
     required this.deviceGroups,
-    required this.userAtSigns,
+    required this.userAtsigns,
   }) {
     tempId ??= Uuid.generate();
   }
@@ -85,10 +101,10 @@ class RoleInProgress {
     return RoleInProgress(
       name: '',
       description: '',
-      daemonAtSigns: [],
+      daemonAtsigns: [],
       devices: [],
       deviceGroups: [],
-      userAtSigns: [],
+      userAtsigns: [],
     );
   }
 
@@ -96,25 +112,26 @@ class RoleInProgress {
     String? tempId,
     String? name,
     String? description,
-    List<String>? daemonAtSigns,
+    List<Atsign>? daemonAtsigns,
     List<Device>? devices,
     List<DeviceGroup>? deviceGroups,
-    List<String>? userAtSigns,
+    List<Atsign>? userAtsigns,
   }) {
     return RoleInProgress(
       tempId: tempId ?? this.tempId,
       name: name ?? this.name,
       description: description ?? this.description,
-      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      daemonAtsigns: daemonAtsigns ?? this.daemonAtsigns,
       devices: devices ?? this.devices,
       deviceGroups: deviceGroups ?? this.deviceGroups,
-      userAtSigns: userAtSigns ?? this.userAtSigns,
+      userAtsigns: userAtsigns ?? this.userAtsigns,
     );
   }
 }
 
 /// Represents a Role that we fetched from an AtKey (id exists)
 @JsonSerializable()
+@AtsignConverter()
 class FetchedRole extends RoleInProgress {
   final String id;
 
@@ -122,10 +139,10 @@ class FetchedRole extends RoleInProgress {
     required this.id,
     required super.name,
     required super.description,
-    required super.daemonAtSigns,
+    @JsonKey(name: 'daemonAtSigns') required super.daemonAtsigns,
     required super.devices,
     required super.deviceGroups,
-    required super.userAtSigns,
+    @JsonKey(name: 'userAtSigns') required super.userAtsigns,
   }) : super(tempId: id);
 
   factory FetchedRole.fromRoleInProgress({
@@ -136,10 +153,10 @@ class FetchedRole extends RoleInProgress {
       id: id,
       name: roleInProgress.name,
       description: roleInProgress.description,
-      daemonAtSigns: roleInProgress.daemonAtSigns,
+      daemonAtsigns: roleInProgress.daemonAtsigns,
       devices: roleInProgress.devices,
       deviceGroups: roleInProgress.deviceGroups,
-      userAtSigns: roleInProgress.userAtSigns,
+      userAtsigns: roleInProgress.userAtsigns,
     );
   }
 
@@ -153,19 +170,19 @@ class FetchedRole extends RoleInProgress {
     String? tempId,
     String? name,
     String? description,
-    List<String>? daemonAtSigns,
+    List<Atsign>? daemonAtsigns,
     List<Device>? devices,
     List<DeviceGroup>? deviceGroups,
-    List<String>? userAtSigns,
+    List<Atsign>? userAtsigns,
   }) {
     return FetchedRole(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      daemonAtSigns: daemonAtSigns ?? this.daemonAtSigns,
+      daemonAtsigns: daemonAtsigns ?? this.daemonAtsigns,
       devices: devices ?? this.devices,
       deviceGroups: deviceGroups ?? this.deviceGroups,
-      userAtSigns: userAtSigns ?? this.userAtSigns,
+      userAtsigns: userAtsigns ?? this.userAtsigns,
     );
   }
 }

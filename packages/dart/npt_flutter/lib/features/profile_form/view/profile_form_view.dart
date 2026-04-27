@@ -48,7 +48,7 @@ class ProfileFormView extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  ProfileDeviceAtSignTextField(),
+                                  ProfileDeviceAtsignTextField(),
                                   gapW143,
                                   ProfileDeviceNameTextField(),
                                 ],

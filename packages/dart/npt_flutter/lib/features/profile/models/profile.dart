@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:npt_flutter/app.dart';
@@ -13,8 +14,8 @@ final class Profile extends Loggable with Favoritable {
   @JsonKey(defaultValue: '', includeToJson: false)
   final String uuid;
   final String displayName;
-  final String? relayAtsign;
-  final String sshnpdAtsign;
+  final Atsign? relayAtsign;
+  final Atsign? sshnpdAtsign;
   final String deviceName;
   final String remoteHost;
   final int remotePort;
@@ -54,7 +55,7 @@ final class Profile extends Loggable with Favoritable {
     this.uuid, {
     required this.displayName,
     this.relayAtsign,
-    required this.sshnpdAtsign,
+    this.sshnpdAtsign,
     required this.deviceName,
     this.remoteHost = StringConst.localhost,
     required this.remotePort,
@@ -70,8 +71,8 @@ final class Profile extends Loggable with Favoritable {
   Profile copyWith({
     String? uuid,
     String? displayName,
-    String? relayAtsign,
-    String? sshnpdAtsign,
+    Atsign? relayAtsign,
+    Atsign? sshnpdAtsign,
     String? deviceName,
     String? remoteHost,
     int? remotePort,
@@ -148,21 +149,21 @@ final class Profile extends Loggable with Favoritable {
   bool get stringify => true;
 
   NptParams toNptParams({
-    required String clientAtsign,
+    required Atsign clientAtsign,
     required String rootDomain,
-    required String fallbackRelayAtsign,
+    required Atsign fallbackRelayAtsign,
     bool overrideRelayWithFallback = false,
   }) {
-    String srvdAtSign = fallbackRelayAtsign;
+    Atsign srvdAtsign = fallbackRelayAtsign;
     if (!overrideRelayWithFallback &&
         relayAtsign != null &&
         relayAtsign!.isNotEmpty) {
-      srvdAtSign = relayAtsign!;
+      srvdAtsign = relayAtsign!;
     }
     return NptParams(
       clientAtSign: clientAtsign,
-      sshnpdAtSign: sshnpdAtsign,
-      srvdAtSign: srvdAtSign,
+      sshnpdAtSign: sshnpdAtsign!,
+      srvdAtSign: srvdAtsign,
       remoteHost: remoteHost,
       remotePort: remotePort,
       device: deviceName,

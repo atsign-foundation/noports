@@ -202,7 +202,10 @@ class NptParams extends ClientParamsBase
     try {
       AtUtils.fixAtSign(clientAtSign);
       AtUtils.fixAtSign(sshnpdAtSign);
-      AtUtils.fixAtSign(srvdAtSign);
+      // Only fix srvd atSign if it's not a list
+      if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+        AtUtils.fixAtSign(srvdAtSign);
+      }
     } on InvalidAtSignException catch (e) {
       throw ArgumentError(e.message);
     }
@@ -343,14 +346,10 @@ class SshnpParams extends ClientParamsBase
         (throw ArgumentError('from (clientAtSign) is mandatory'));
 
     if (!(partial.listDevices ?? DefaultSshnpArgs.listDevices)) {
-      // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
+      // if list-devices is not set, then ensure sshnpdAtSign is set
       partial.sshnpdAtSign ??
           (throw ArgumentError(
             'Option to is mandatory, unless list-devices is passed.',
-          ));
-      partial.srvdAtSign ??
-          (throw ArgumentError(
-            'srvdAtSign is mandatory, unless list-devices is passed.',
           ));
     }
 

@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.14.12
+version: 5.15.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -12,10 +12,10 @@ dependencies:
   at_onboarding_cli: ^1.14.2
   at_commons: ^5.7.0
   at_cli_commons: ^3.0.1
-  at_client: ^3.10.0
+  at_client: ^3.11.0
   args: 2.7.0
   socket_connector: 2.4.1
-  dartssh2: 2.11.0
+  dartssh2: ^2.17.1
   duration: 4.0.3
   at_utils: 3.4.0
   logging: 1.3.0
@@ -25,26 +25,27 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
-  at_client:
-    git:
-      ref: trunk
-      url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_client
+#  at_client:
+#    git:
+#      ref: trunk
+#      url: https://github.com/atsign-foundation/at_client_sdk
+#      path: packages/at_client
   archive: ^4.0.7
   dartssh2:
     git:
       url: https://github.com/atsign-foundation/dartssh2
       ref: trunk
-  at_onboarding_cli:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_onboarding_cli
-      ref: st/onb-cli-remove-wait-pkam-auth
+#  at_onboarding_cli:
+#    git:
+#      url: https://github.com/atsign-foundation/at_client_sdk
+#      path: packages/at_onboarding_cli
+#      ref: st/onb-cli-remove-wait-pkam-auth
   at_auth:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
       path: packages/at_auth
       ref: st/onb-cli-remove-wait-pkam-auth
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   lints: ^6.1.0

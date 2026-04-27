@@ -121,7 +121,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get atsignDialogSubtitle => '请选择您的 Atsign';
 
   @override
-  String get atsignDialogTitle => 'AtSign';
+  String get atsignDialogTitle => 'Atsign';
 
   @override
   String get atsignFrom => '来自 Atsign';
@@ -374,15 +374,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAtServerUnreachable => '无法连接到 atServer，请确保您有稳定的互联网连接。';
 
   @override
-  String errorAtSignAlreadyPaired(Object atsign) {
+  String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配对，请联系支持人员。';
   }
 
   @override
-  String get errorAtSignNotExist => '您请求的 Atsign 在此根域中不存在。';
+  String get errorAtsignNotExist => '您请求的 Atsign 在此根域中不存在。';
 
   @override
-  String get errorAtSignUnavailable =>
+  String get errorAtsignUnavailable =>
       'Atsign 不可用。请确保您已从仪表板按下“激活”并且具有稳定的互联网连接。';
 
   @override
@@ -410,7 +410,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
 
   @override
-  String get errorSwitchAtSignFailed => '激活后切换 Atsign 失败。';
+  String get errorSwitchAtsignFailed => '激活后切换 Atsign 失败。';
 
   @override
   String errorWithDetails(Object errorMessage) {
@@ -932,13 +932,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get success => '成功';
 
   @override
-  String get switchAtSign => '切换 Atsign';
+  String get switchAtsign => '切换 Atsign';
 
   @override
-  String get switchAtSignDescription => '您确定要切换 Atsign 吗？';
+  String get switchAtsignDescription => '您确定要切换 Atsign 吗？';
 
   @override
-  String get switchAtSignNote => '注意：切换 Atsign 会结束所有连接。';
+  String get switchAtsignNote => '注意：切换 Atsign 会结束所有连接。';
 
   @override
   String get syncCompleted => '同步完成。所有配置文件已加载。';
@@ -1124,7 +1124,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get atsignDialogSubtitle => '请选择您的 Atsign';
 
   @override
-  String get atsignDialogTitle => 'AtSign';
+  String get atsignDialogTitle => 'Atsign';
 
   @override
   String get atsignFrom => '来自 Atsign';
@@ -1377,15 +1377,15 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAtServerUnreachable => '无法连接到 atServer，请确保您有稳定的互联网连接。';
 
   @override
-  String errorAtSignAlreadyPaired(Object atsign) {
+  String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配对，请联系支持人员。';
   }
 
   @override
-  String get errorAtSignNotExist => '您请求的 Atsign 在此根域中不存在。';
+  String get errorAtsignNotExist => '您请求的 Atsign 在此根域中不存在。';
 
   @override
-  String get errorAtSignUnavailable =>
+  String get errorAtsignUnavailable =>
       'Atsign 不可用。请确保您已从仪表板按下“激活”并且具有稳定的互联网连接。';
 
   @override
@@ -1413,7 +1413,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
 
   @override
-  String get errorSwitchAtSignFailed => '激活后切换 Atsign 失败。';
+  String get errorSwitchAtsignFailed => '激活后切换 Atsign 失败。';
 
   @override
   String errorWithDetails(Object errorMessage) {
@@ -1935,13 +1935,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get success => '成功';
 
   @override
-  String get switchAtSign => '切换 Atsign';
+  String get switchAtsign => '切换 Atsign';
 
   @override
-  String get switchAtSignDescription => '您确定要切换 Atsign 吗？';
+  String get switchAtsignDescription => '您确定要切换 Atsign 吗？';
 
   @override
-  String get switchAtSignNote => '注意：切换 Atsign 会结束所有连接。';
+  String get switchAtsignNote => '注意：切换 Atsign 会结束所有连接。';
 
   @override
   String get syncCompleted => '同步完成。所有配置文件已加载。';
@@ -2127,7 +2127,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get atsignDialogSubtitle => '請選取您的 Atsign';
 
   @override
-  String get atsignDialogTitle => 'AtSign';
+  String get atsignDialogTitle => 'Atsign';
 
   @override
   String get atsignFrom => '來自 Atsign';
@@ -2381,15 +2381,15 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAtServerUnreachable => '無法連線至 atServer，請確認您有穩定的網路連線。';
 
   @override
-  String errorAtSignAlreadyPaired(Object atsign) {
+  String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配對，請聯絡支援人員。';
   }
 
   @override
-  String get errorAtSignNotExist => '您要求的 Atsign 在此根網域中不存在。';
+  String get errorAtsignNotExist => '您要求的 Atsign 在此根網域中不存在。';
 
   @override
-  String get errorAtSignUnavailable => 'Atsign 無法使用。請確認您已從儀表板按下「啟動」並具有穩定的網路連線。';
+  String get errorAtsignUnavailable => 'Atsign 無法使用。請確認您已從儀表板按下「啟動」並具有穩定的網路連線。';
 
   @override
   String get errorAuthenticatinFailed => '身分驗證失敗。';
@@ -2416,7 +2416,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorRootDomainNotSupported => '自動啟動不支援指定的根網域。';
 
   @override
-  String get errorSwitchAtSignFailed => '啟動後切換 Atsign 失敗。';
+  String get errorSwitchAtsignFailed => '啟動後切換 Atsign 失敗。';
 
   @override
   String errorWithDetails(Object errorMessage) {
@@ -2937,13 +2937,13 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get success => '成功';
 
   @override
-  String get switchAtSign => '切換 Atsign';
+  String get switchAtsign => '切換 Atsign';
 
   @override
-  String get switchAtSignDescription => '您確定要切換 Atsign 嗎？';
+  String get switchAtsignDescription => '您確定要切換 Atsign 嗎？';
 
   @override
-  String get switchAtSignNote => '注意：切換 Atsign 會結束所有連線。';
+  String get switchAtsignNote => '注意：切換 Atsign 會結束所有連線。';
 
   @override
   String get syncCompleted => '同步完成。所有設定檔已載入。';

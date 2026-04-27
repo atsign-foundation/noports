@@ -125,7 +125,9 @@ class _BackupKeyAlertDialogState extends State<BackupKeyAlertDialog> {
             gapH10,
             CustomContainer.background(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: widget.isBackup == false
+                    ? MainAxisAlignment.spaceEvenly
+                    : MainAxisAlignment.center,
                 children: [
                   widget.isBackup == false
                       ? ElevatedButton(

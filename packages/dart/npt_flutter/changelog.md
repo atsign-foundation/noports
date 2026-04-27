@@ -1,8 +1,18 @@
+## 1.9.4+31
+
+-REFACTOR: replaced the use of `String` atsign with the `Atsign` class.
+-REFACTOR: where a String atsign is hardcoded or retrieved for packages `.toAtsign()` method is applied to convert it to the `Atsign` class.
+-REFACTOR: rename all use of the old 'atSign, AtSign' spelling with new 'atsign, Atsign' spelling.
+
+## 1.9.3+30
+
+-FIX: Back Up Dialog Save button is centered when back button isn't shown.
+
 ## 1.9.2+29
 
--Fix: Activation Dialog Final Title Text changed and Title Icon removed.
--Fix: Back button added to the Save Back Up Dialog.
--Fix: Sign In occurs with the last Atsign in the activation file When Multi-Activation completes.
+-FIX: Activation Dialog Final Title Text changed and Title Icon removed.
+-FIX: Back button added to the Save Back Up Dialog.
+-FIX: Sign In occurs with the last Atsign in the activation file When Multi-Activation completes.
 
 ## 1.9.1+28
 

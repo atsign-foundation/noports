@@ -54,13 +54,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
+          - os: macos-15-intel
             output-name: sshnpd-macos-x64
             ext: ""
             bundle: "shell"
             compiler: "clang"
             flags: "-Wno-error -pthread"
-          - os: macos-14
+          - os: macos-latest
             output-name: sshnpd-macos-arm64
             ext: ""
             bundle: "shell"
@@ -83,11 +83,10 @@ jobs:
           mkdir tarball
           mv build/sshnpd .
           mv build/at_activate .
-      - if: ${{ matrix.os == 'macOS-13' || matrix.os == 'macos-14'}}
-        name: Zip the build
+      - name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.output-name }}_${{ matrix.compiler
             }}-${{  github.ref_name
@@ -146,7 +145,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - name: Upload tarballs
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{
             matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
@@ -170,7 +169,7 @@ jobs:
         working-directory: ./packages/c
         run: |
           cmake --workflow --preset package-source
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
@@ -210,7 +209,7 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        uses: sbomify/github-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
@@ -235,7 +234,8 @@ jobs:
         working-directory: tarballs
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+      - name: GitHub attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: "tarballs/**"
 

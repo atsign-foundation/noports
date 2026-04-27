@@ -7,53 +7,56 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 class AtsignInformation extends Loggable {
-  final String atSign;
+  final Atsign atsign;
   final String rootDomain;
 
-  const AtsignInformation({required this.atSign, required this.rootDomain});
+  const AtsignInformation({required this.atsign, required this.rootDomain});
 
-  Map<String, String> toJson() => {"atsign": atSign, "root-domain": rootDomain};
+  Map<String, dynamic> toJson() => {
+    "atsign": atsign,
+    "root-domain": rootDomain,
+  };
 
   static AtsignInformation? fromJson(Map json) {
     if (json["atsign"] is! String || json["root-domain"] is! String) {
       return null;
     }
     return AtsignInformation(
-      atSign: json["atsign"],
+      atsign: json["atsign"],
       rootDomain: json["root-domain"],
     );
   }
 
   @override
-  List<Object?> get props => [atSign, rootDomain];
+  List<Object?> get props => [atsign, rootDomain];
 
   @override
   String toString() {
-    return 'AtsignInformation($atSign, $rootDomain)';
+    return 'AtsignInformation($atsign, $rootDomain)';
   }
 }
 
 // This will return a map which looks like:
 //
 // {
-//   "@alice": AtsignInformation{ atSign: "@alice", rootDomain: "root.atsign.org" },
-//   "@bob": AtsignInformation{ atSign: "@alice", rootDomain: "vip.ve.atsign.zone" },
+//   "@alice": AtsignInformation{ atsign: "@alice", rootDomain: "root.atsign.org" },
+//   "@bob": AtsignInformation{ atsign: "@alice", rootDomain: "vip.ve.atsign.zone" },
 // }
 //
 // Note: AtsignInformation is a class, so usage will look like
 //
-// var atSign = "@alice";
-// var atSignInfo = await getAtsignEntries();
-// var rootDomain = atSignInfo[atSign].rootDomain;
+// var atsign = "@alice";
+// var atsignInfo = await getAtsignEntries();
+// var rootDomain = atsignInfo[atsign].rootDomain;
 //
-// Now you have the rootDomain for the existing atSign and can use it to onboard
+// Now you have the rootDomain for the existing atsign and can use it to onboard
 // correctly
 
 Future<Map<String, AtsignInformation>> getAtsignEntries() async {
-  var keychainAtSigns = await KeychainUtil.getAtsignList() ?? [];
-  var atSignInfo = <AtsignInformation>[];
+  var keychainAtsigns = await KeychainUtil.getAtsignList() ?? [];
+  var atsignInfo = <AtsignInformation>[];
   try {
-    atSignInfo = await _getAtsignInformationFromFile();
+    atsignInfo = await _getAtsignInformationFromFile();
   } catch (e) {
     App.log(
       "Failed get Atsign Information, ignoring invalid file: ${e.toString()}"
@@ -61,22 +64,22 @@ Future<Map<String, AtsignInformation>> getAtsignEntries() async {
     );
     return {};
   }
-  var atSignMap = <String, AtsignInformation>{};
-  for (var item in atSignInfo) {
-    if (keychainAtSigns.contains(item.atSign)) {
-      atSignMap[item.atSign] = item;
+  var atsignMap = <String, AtsignInformation>{};
+  for (var item in atsignInfo) {
+    if (keychainAtsigns.contains(item.atsign)) {
+      atsignMap[item.atsign] = item;
     }
   }
-  return atSignMap;
+  return atsignMap;
 }
 
-// This class will allow you to store atSign information
-// you need to call this after onboarding a NEW atSign
+// This class will allow you to store atsign information
+// you need to call this after onboarding a NEW atsign
 Future<bool> saveAtsignInformation(AtsignInformation info) async {
   var f = await _getAtsignInformationFile();
-  final List<AtsignInformation> atSignInfo;
+  final List<AtsignInformation> atsignInfo;
   try {
-    atSignInfo = await _getAtsignInformationFromFile(f);
+    atsignInfo = await _getAtsignInformationFromFile(f);
   } catch (e) {
     // We only end up here if we failed to create, get, or read the file
     // we don't want to overwrite it in that scenario, so return false
@@ -90,19 +93,19 @@ Future<bool> saveAtsignInformation(AtsignInformation info) async {
 
   // Replace the existing entry with the new one if it exists
   bool found = false;
-  for (int i = 0; i < atSignInfo.length; i++) {
-    if (atSignInfo[i].atSign == info.atSign) {
+  for (int i = 0; i < atsignInfo.length; i++) {
+    if (atsignInfo[i].atsign == info.atsign) {
       found = true;
-      atSignInfo[i] = info;
+      atsignInfo[i] = info;
     }
   }
   // Otherwise add it as a new entry
   if (!found) {
-    atSignInfo.add(info);
+    atsignInfo.add(info);
   }
   try {
     f.writeAsString(
-      jsonEncode(atSignInfo.map((e) => e.toJson()).toList()),
+      jsonEncode(atsignInfo.map((e) => e.toJson()).toList()),
       mode: FileMode.writeOnly,
       flush: true,
     );
