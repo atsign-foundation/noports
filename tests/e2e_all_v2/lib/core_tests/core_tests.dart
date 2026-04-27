@@ -200,9 +200,7 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
 
   setUpStopwatch.stop();
-  print(
-    'Set up completed in ${setUpStopwatch.elapsed.inMinutes}m ${setUpStopwatch.elapsed.inSeconds % 60}s',
-  );
+  print('Set up completed in ${formatDuration(setUpStopwatch.elapsed)}');
 
   // // 8. Run tests
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
@@ -377,11 +375,11 @@ Future<void> coreTests(CoreTestsParams params) async {
   overallStopwatch.stop();
   print('');
   print('Execution Time Summary:');
-  print('    Setup time: ${setUpStopwatch.elapsed.inSeconds}s');
+  print('    Setup time: ${formatDuration(setUpStopwatch.elapsed)}');
   print(
-    '    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s',
+    '    Test execution time: ${formatDuration(testExecutionStopwatch.elapsed)}',
   );
-  print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
+  print('    Overall time: ${formatDuration(overallStopwatch.elapsed)}');
 }
 
 String _getIdentitfyFilePath({required final String testRunId}) {

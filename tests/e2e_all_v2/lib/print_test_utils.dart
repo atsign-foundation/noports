@@ -4,6 +4,10 @@ void printCommand(String executable, List<String> arguments) {
   print('> $executable ${arguments.join(' ')}');
 }
 
+String formatDuration(Duration duration) {
+  return '${duration.inMinutes}m ${duration.inSeconds % 60}s';
+}
+
 void printTestResult({
   required final TestResult testResult,
   final String extra = '',

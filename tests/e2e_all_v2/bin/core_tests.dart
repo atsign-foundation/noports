@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:e2e_all_v2/core_tests/core_tests.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
+import 'package:e2e_all_v2/print_test_utils.dart';
 
 Future<void> main(List<String> args) async {
   // 1. Check OS compatibility
@@ -53,9 +54,7 @@ Future<void> main(List<String> args) async {
     await coreTests(params);
     final DateTime endTime = DateTime.now();
     final Duration duration = endTime.difference(startTime);
-    print(
-      'Core tests completed in ${duration.inMinutes}m ${duration.inSeconds % 60}s',
-    );
+    print('Core tests completed in ${formatDuration(duration)}');
     exit(0);
   } catch (e) {
     print('Error: $e');
