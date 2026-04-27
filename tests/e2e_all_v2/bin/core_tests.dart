@@ -18,6 +18,7 @@ Future<void> main(List<String> args) async {
     'ssh-keygen',
     'chmod',
     'sh',
+    'expect',
   ];
 
   print('Checking required commands...');
