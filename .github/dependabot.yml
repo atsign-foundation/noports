@@ -22,6 +22,8 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+      exclude:
+      - "atsigncompany/*"
     groups:
       docker:
         patterns:
@@ -35,6 +37,8 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+      exclude:
+      - "at_*"
     groups:
       pub:
         patterns:
