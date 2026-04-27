@@ -36,11 +36,11 @@ Future<void> main(List<String> args) async {
   CoreTestsParams params;
   try {
     params = CoreTestsParams.parse(args);
-    if(params.help) {
+    if (params.help) {
       CoreTestsParams.printUsage();
       exit(1);
     }
-  } catch(e) {
+  } catch (e) {
     CoreTestsParams.printUsage();
     exit(1);
   }
@@ -53,7 +53,9 @@ Future<void> main(List<String> args) async {
     await coreTests(params);
     final DateTime endTime = DateTime.now();
     final Duration duration = endTime.difference(startTime);
-    print('Core tests completed in ${duration.inMinutes}m ${duration.inSeconds % 60}s');
+    print(
+      'Core tests completed in ${duration.inMinutes}m ${duration.inSeconds % 60}s',
+    );
     exit(0);
   } catch (e) {
     print('Error: $e');
