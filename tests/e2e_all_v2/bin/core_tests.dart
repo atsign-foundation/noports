@@ -71,5 +71,5 @@ void _printLoadedParameters(CoreTestsParams params) {
   print('    root-domain: ${params.rootDomain}');
   print('    verbose: ${params.verbose}');
   print('    base-directory: ${params.baseDirectory}');
-  print('    always-output-logs: ${params.alwaysOutputLogs}');
+  print('    batch-size: ${params.batchSize}');
 }

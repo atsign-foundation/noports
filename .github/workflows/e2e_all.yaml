@@ -121,7 +121,8 @@ jobs:
             --policy-atsign "@npe2e_policy" \
             --events-atsign "@npe2e_events" \
             --root-domain "root.atsign.wtf" \
-            --base-directory "$LOGS_DIR"
+            --base-directory "$LOGS_DIR" \
+            --batch-size 3
 
 
       - name: Zip e2e_all_v2 artifacts

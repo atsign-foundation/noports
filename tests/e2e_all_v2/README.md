@@ -50,9 +50,8 @@ docker stop $(docker ps -q) 2>/dev/null ; rm -rf e2e_all_v2/ && dart run tests/e
     --policy-atsign "@policy_jttest" \
     --events-atsign "@events_jttest" \
     --base-directory "e2e_all_v2" \
-    --root-domain "root.atsign.org"
-
---always-output-logs \
+    --root-domain "root.atsign.org" \
+    --batch-size 3
 ```
 
 notes:

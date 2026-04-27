@@ -36,7 +36,7 @@ List<Future<CoreTestResult> Function()> runNptToPort22Tests({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
 }) {
-  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final List<Future<CoreTestResult> Function()> testFactories = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   final List<(NoPortsVersion, NoPortsVersion)> versionCombinations =
@@ -46,7 +46,7 @@ List<Future<CoreTestResult> Function()> runNptToPort22Tests({
     );
 
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
-    testFunctions.add(() => _runNptToPort22Test(
+    testFactories.add(() => _runNptToPort22Test(
       context: context,
       testLogger: testLogger,
       clientVersion: clientVersion,
@@ -54,7 +54,7 @@ List<Future<CoreTestResult> Function()> runNptToPort22Tests({
     ));
   }
 
-  return testFunctions;
+  return testFactories;
 }
 
 Future<CoreTestResult> _runNptToPort22Test({
@@ -77,7 +77,7 @@ Future<CoreTestResult> _runNptToPort22Test({
     deviceName: deviceName,
   );
   final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
-  final LogFragment logFragment1 = dockerInstance.createLogFragment(
+  final LogFragment logFragment1 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
@@ -116,7 +116,7 @@ Future<CoreTestResult> _runNptToPort22Test({
     printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment1);
     return coreTestResult;
   }
-  final LogFragment logFragment2 = dockerInstance.createLogFragment(
+  final LogFragment logFragment2 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,

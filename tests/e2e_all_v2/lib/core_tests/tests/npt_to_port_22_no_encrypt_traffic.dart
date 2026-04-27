@@ -27,7 +27,7 @@ const String testName = 'npt_to_port_22_no_encrypt_traffic';
 List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
   required final CoreTestsContext context,
 }) {
-  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final List<Future<CoreTestResult> Function()> testFactories = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   // This test only runs with current client and current daemon (v5.6.2+ feature)
@@ -42,7 +42,7 @@ List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
   );
 
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionPermutations) {
-    testFunctions.add(() => _runNptToPort22NoEncryptTrafficTest(
+    testFactories.add(() => _runNptToPort22NoEncryptTrafficTest(
       context: context,
       testLogger: testLogger,
       clientVersion: clientVersion,
@@ -50,7 +50,7 @@ List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
     ));
   }
 
-  return testFunctions;
+  return testFactories;
 }
 
 Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
@@ -74,7 +74,7 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
     deviceName: deviceName);
 
   final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
-  final LogFragment logFragment1 = dockerInstance.createLogFragment(
+  final LogFragment logFragment1 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
@@ -136,7 +136,7 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
     'echo', '`whoami`',
     '`date`', '`hostname`', 'TEST PASSED'
   ];
-  final LogFragment logFragment2 = dockerInstance.createLogFragment(
+  final LogFragment logFragment2 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
@@ -179,9 +179,10 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
     testName: testName,
     clientVersion: clientVersion,
     daemonVersion: daemonVersion,
-    status: TestStatus.passed, // default to failed, will update to passed if test succeeds
-    exitCode: exitCode2, // default to -1, will update with actual exit code from npt process
+    status: TestStatus.passed,
+    exitCode: exitCode2,
   );
+  printTestResult(testResult: coreTestResult, extra: extra);
   return coreTestResult;
 }
 

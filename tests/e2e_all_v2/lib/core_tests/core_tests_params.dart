@@ -31,8 +31,7 @@ class CoreTestsParams {
   late String baseDirectory;
   late String clientVersions;
   late String daemonVersions;
-  late bool keepDockerContainersOn;
-  late bool alwaysOutputLogs;
+  late int batchSize;
 
   // Case 2b - run-time defaults
   late String? testRunId;
@@ -54,8 +53,7 @@ class CoreTestsParams {
     e2eAllV2Params.baseDirectory = argResults['base-directory'];
     e2eAllV2Params.clientVersions = argResults['client-versions'];
     e2eAllV2Params.daemonVersions = argResults['daemon-versions'];
-    e2eAllV2Params.keepDockerContainersOn = argResults['keep-docker-containers-on'];
-    e2eAllV2Params.alwaysOutputLogs = argResults['always-output-logs'];
+    e2eAllV2Params.batchSize = int.parse(argResults['batch-size']);
     e2eAllV2Params.testRunId = argResults['test-run-id'];
     return e2eAllV2Params;
   }
@@ -110,13 +108,10 @@ class CoreTestsParams {
       defaultsTo: defaultDaemonVersions,
       help: 'Comma-separated list of daemon versions in format language:version (e.g., d:v5.9.4,c:current)',
     );
-    argParser.addFlag('keep-docker-containers-on',
-      defaultsTo: false,
-      help: 'Keep docker containers running after tests complete',
-    );
-    argParser.addFlag('always-output-logs',
-      defaultsTo: false,
-      help: 'Always output client and daemon logs even when tests pass',
+    argParser.addOption('batch-size',
+      mandatory: false,
+      defaultsTo: '4',
+      help: 'Number of tests to run concurrently in each batch',
     );
     argParser.addOption('test-run-id',
       mandatory: false,

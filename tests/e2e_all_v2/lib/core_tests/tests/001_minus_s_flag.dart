@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
@@ -42,17 +40,18 @@ List<Future<CoreTestResult> Function()> run001MinusSFlagTests({
     testName: testName,
   );
 
-  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final List<Future<CoreTestResult> Function()> testFactories = [];
   for(final NoPortsVersion daemonVersion in daemonVersions) {
-    testFunctions.add(() => _run001MinusSFlagTest(
+    // Create a factory function that will create the future when called
+    testFactories.add(() => _run001MinusSFlagTest(
       context: context,
       coreTestLogger: coreTestLogger,
       daemonVersion: daemonVersion,
-      clientVersion: NoPortsVersion(language: Language.dart, version: 'current'),
+      clientVersion: context.clientBinaries.firstWhere((cb) => cb.binaryType == ClientBinaryType.sshnp).noPortsVersion,
     ));
   }
 
-  return testFunctions;
+  return testFactories;
 }
 
 Future<CoreTestResult> _run001MinusSFlagTest({
@@ -99,6 +98,7 @@ Future<CoreTestResult> _run001MinusSFlagTest({
       daemonVersion: daemonVersion,
       testMetadata: _metadataNoFlags));
   final int exitCode1 = await capture1.exitCode;
+  logFragment1.stop();
   if(exitCode1 == 0) {
     // it succeeded, not expected.
     final CoreTestResult coreTestResult = CoreTestResult(
@@ -110,8 +110,8 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture1, daemonLogFragment: logFragment1);
+    return coreTestResult;
   }
-  logFragment1.stop();
 
   // Step 2: Run sshnp against dameon with `-s -u`
   final String deviceNameWithFlags = '${deviceNameNoFlags}_f';
@@ -150,6 +150,7 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     ),
   );
   final int exitCode2 = await capture2.exitCode;
+  logFragment2.stop();
   if(exitCode2 != 0) {
     // it failed, not expected.
     final CoreTestResult coreTestResult = CoreTestResult(
@@ -161,8 +162,8 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture2, daemonLogFragment: logFragment2);
+    return coreTestResult;
   }
-  logFragment2.stop();
 
   // 3. Use the stdout from step 2 then execute ssh command
   final LogFragment logFragment3 = await dockerInstance2.createLogFragment(
@@ -201,6 +202,7 @@ Future<CoreTestResult> _run001MinusSFlagTest({
     ),
   );
   final int exitCode3 = await capture3.exitCode;
+  logFragment3.stop();
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,

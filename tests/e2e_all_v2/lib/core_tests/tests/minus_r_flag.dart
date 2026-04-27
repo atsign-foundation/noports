@@ -41,20 +41,20 @@ List<Future<CoreTestResult> Function()> runMinusRFlagTests({
       daemonVersions: daemonVersions,
     );
 
-  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final List<Future<CoreTestResult> Function()> testFactories = [];
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
     final String deviceName = '${getDeviceNameNoFlags(
       testRunId: context.testRunId,
       noPortsVersion: daemonVersion)}_f';
-    testFunctions.add(() => _runMinusRFlagTest(
-      coreTestLogger: coreTestLogger,
+    testFactories.add(() => _runMinusRFlagTest(
       context: context,
+      coreTestLogger: coreTestLogger,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       deviceName: deviceName,
     ));
   }
-  return testFunctions;
+  return testFactories;
 }
 
 Future<CoreTestResult> _runMinusRFlagTest({

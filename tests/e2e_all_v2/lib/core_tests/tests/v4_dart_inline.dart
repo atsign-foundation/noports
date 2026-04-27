@@ -1,295 +1,206 @@
-// import 'dart:async';
-// import 'dart:io';
-//
-// import 'package:e2e_all_v2/client_binary.dart';
-// import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
-// import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
-// import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
-// import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
-// import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
-// import 'package:e2e_all_v2/docker_instance.dart';
-// import 'package:e2e_all_v2/language.dart';
-// import 'package:e2e_all_v2/noports_version.dart';
-// import 'package:e2e_all_v2/print_test_utils.dart';
-// import 'package:e2e_all_v2/test_result.dart';
-//
-// const String testName = 'v4_dart_inline';
-// const String _metadata = 'v4DartInline';
-//
-// // Test: v4_dart_inline
-// // Tests v4 daemon features with Dart SSH client running inline
-// // - Uses --ssh-client dart flag
-// // - Dart client manages SSH session internally
-// // - Expects successful inline SSH execution
-// // Requirements:
-// // - Dart SSH client always runs inline (doesn't support print mode)
-// // - v4 features: Compatible with v4 daemons
-// // - v5+ clients need --no-ad --no-et flags for v4 compatibility
-// // Test matrix:
-// // - Released client with current daemon
-// // - Current client with released daemon
-// // - Skips C daemon (incompatible with this test type)
-// Future<List<CoreTestResult>> runV4DartInlineTests({
-//   required final CoreTestsContext context,
-//   required final List<NoPortsVersion> clientVersions,
-//   required final List<NoPortsVersion> daemonVersions,
-// }) async {
-//   final List<CoreTestResult> testResults = [];
-//   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
-//
-//   final List<(NoPortsVersion, NoPortsVersion)> versionCombinations =
-//     _generateVersionCombinations(
-//       clientVersions: clientVersions,
-//       daemonVersions: daemonVersions,
-//     );
-//
-//   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
-//     final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
-//     final String clientVersionStr = clientVersion.version;
-//     final String daemonVersionStr = daemonVersion.version;
-//
-//     final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere((cb) =>
-//       cb.binaryType == ClientBinaryType.sshnp &&
-//       cb.noPortsVersion == clientVersion);
-//
-//     final String deviceName = '${getDeviceNameNoFlags(
-//       testRunId: context.testRunId,
-//       language: daemonVersion.language,
-//       version: daemonVersionStr)}_f';
-//     final String daemonInfo = '${daemonVersion.language.name}_${daemonVersionStr}';
-//
-//     final List<String> sshnpArgs = _buildSshnpArgs(
-//       context: context,
-//       clientVersion: clientVersion,
-//       deviceName: deviceName,
-//     );
-//
-//     printTestStart(testName: testName, extra: extra);
-//
-//     final DockerInstance daemonDockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
-//     final DaemonLogCapture daemonLogCapture = DaemonLogCapture(
-//       dockerInstance: daemonDockerInstance,
-//       stdoutFragmentFile: testLogger.getDaemonStdoutLogFile(
-//         language: daemonVersion.language,
-//         version: daemonVersionStr,
-//         deviceName: deviceName,
-//         testMetadata: _metadata,
-//       ),
-//       stderrFragmentFile: testLogger.getDaemonStderrLogFile(
-//         language: daemonVersion.language,
-//         version: daemonVersionStr,
-//         deviceName: deviceName,
-//         testMetadata: _metadata,
-//       ),
-//     );
-//     await daemonLogCapture.start();
-//
-//     // Execute sshnp with dart client inline mode
-//     // The Dart SSH client will handle the SSH session internally
-//     final Process process = await Process.start(
-//       sshnpClientBinary.file.path,
-//       sshnpArgs,
-//     );
-//
-//     final File stdoutLogFile = testLogger.getClientStdoutLogFile(
-//       language: clientVersion.language,
-//       version: clientVersionStr,
-//       testMetadata: _metadata,
-//       daemonInfo: daemonInfo,
-//     );
-//     final File stderrLogFile = testLogger.getClientStderrLogFile(
-//       language: clientVersion.language,
-//       version: clientVersionStr,
-//       testMetadata: _metadata,
-//       daemonInfo: daemonInfo,
-//     );
-//
-//     // Ensure files exist before opening
-//     if (!stdoutLogFile.existsSync()) {
-//       stdoutLogFile.createSync(recursive: true);
-//     }
-//     if (!stderrLogFile.existsSync()) {
-//       stderrLogFile.createSync(recursive: true);
-//     }
-//
-//     final IOSink stdoutSink = stdoutLogFile.openWrite();
-//     final IOSink stderrSink = stderrLogFile.openWrite();
-//     final StringBuffer stdoutBuffer = StringBuffer();
-//     final StringBuffer stderrBuffer = StringBuffer();
-//
-//     // Capture both to buffers and log files
-//     final StreamSubscription stdoutSub = process.stdout.listen((data) {
-//       final str = String.fromCharCodes(data);
-//       stdoutBuffer.write(str);
-//       stdoutSink.add(data);
-//     });
-//     final StreamSubscription stderrSub = process.stderr.listen((data) {
-//       final str = String.fromCharCodes(data);
-//       stderrBuffer.write(str);
-//       stderrSink.add(data);
-//     });
-//
-//     // Wait for "Last login:" prompt indicating SSH session is ready
-//     bool loginPromptSeen = false;
-//     final completer = Completer<void>();
-//     Timer? timeoutTimer;
-//
-//     final stdoutLineController = StreamController<String>();
-//     String currentLine = '';
-//
-//     final stdoutLineSub = stdoutLineController.stream.listen((line) {
-//       if(line.contains('Last login:')) {
-//         loginPromptSeen = true;
-//         // Send test command
-//         process.stdin.writeln('echo `date` `whoami` `hostname` SCOOBY DOO');
-//         // Give it a moment then exit the session
-//         Future.delayed(Duration(seconds: 2), () {
-//           process.stdin.writeln('exit');
-//           completer.complete();
-//         });
-//       }
-//     });
-//
-//     // Parse stdout into lines
-//     stdoutSub.onData((data) {
-//       final str = String.fromCharCodes(data);
-//       for(int i = 0; i < str.length; i++) {
-//         if(str[i] == '\n') {
-//           stdoutLineController.add(currentLine);
-//           currentLine = '';
-//         } else {
-//           currentLine += str[i];
-//         }
-//       }
-//     });
-//
-//     // Set timeout
-//     timeoutTimer = Timer(Duration(seconds: 30), () {
-//       if(!completer.isCompleted) {
-//         completer.completeError('Timeout waiting for SSH session');
-//       }
-//     });
-//
-//     try {
-//       await completer.future;
-//     } catch(e) {
-//       // Timeout or error
-//       process.kill();
-//     }
-//
-//     timeoutTimer.cancel();
-//     await stdoutLineSub.cancel();
-//     await stdoutLineController.close();
-//
-//     final int exitCode = await process.exitCode;
-//     await stdoutSub.cancel();
-//     await stderrSub.cancel();
-//     await stdoutSink.close();
-//     await stderrSink.close();
-//     await daemonLogCapture.stop();
-//
-//     // Check if test passed
-//     final String stdout = stdoutBuffer.toString();
-//     final String stderr = stderrBuffer.toString();
-//     final bool sshSucceeded = exitCode == 0 && loginPromptSeen && stdout.contains('SCOOBY DOO');
-//
-//     if(sshSucceeded) {
-//       final CoreTestResult result = CoreTestResult(
-//         testName: testName,
-//         clientVersion: clientVersionStr,
-//         daemonVersion: daemonVersionStr,
-//         status: TestStatus.passed,
-//         exitCode: exitCode,
-//       );
-//       printTestResult(testResult: result, extra: extra);
-//       if(context.alwaysOutputLogs) {
-//         printAllLogsFromFiles(
-//           clientStdoutFile: stdoutLogFile,
-//           clientStderrFile: stderrLogFile,
-//           daemonLogCapture: daemonLogCapture,
-//         );
-//       }
-//       testResults.add(result);
-//     } else {
-//       final CoreTestResult result = CoreTestResult(
-//         testName: testName,
-//         clientVersion: clientVersionStr,
-//         daemonVersion: daemonVersionStr,
-//         status: TestStatus.failed,
-//         exitCode: exitCode == 0 ? 1 : exitCode,
-//         stdout: StringBuffer(stdout),
-//         stderr: StringBuffer(stderr),
-//       );
-//       printTestResult(testResult: result, extra: extra);
-//       printAllLogsFromFiles(
-//         clientStdoutFile: stdoutLogFile,
-//         clientStderrFile: stderrLogFile,
-//         daemonLogCapture: daemonLogCapture,
-//       );
-//       testResults.add(result);
-//     }
-//   }
-//
-//   return testResults;
-// }
-//
-// List<String> _buildSshnpArgs({
-//   required CoreTestsContext context,
-//   required NoPortsVersion clientVersion,
-//   required String deviceName,
-// }) {
-//   final List<String> args = [
-//     '-f', context.clientAtsign,
-//     '-t', context.daemonAtsign,
-//     '-d', deviceName,
-//     '-h', context.relayAtsign,
-//     '-u', context.remoteUsername,
-//     '--root-domain', context.rootDomain,
-//     '-s',
-//     '--ssh-client', 'dart',
-//   ];
-//
-//   // v5+ clients need backward compatibility flags for v4 daemons
-//   if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
-//     args.add('--no-ad');
-//     args.add('--no-et');
-//   }
-//
-//   if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
-//     args.add('-k');
-//     args.add(context.apkamKeys[context.clientAtsign]!.path);
-//   }
-//
-//   return args;
-// }
-//
-// // Generate version combinations:
-// // - Released client with current daemon
-// // - Current client with released daemon
-// // Skip: released client with released daemon (already tested)
-// // Skip: C daemon (incompatible)
-// List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
-//   required final List<NoPortsVersion> clientVersions,
-//   required final List<NoPortsVersion> daemonVersions,
-// }) {
-//   List<(NoPortsVersion, NoPortsVersion)> combinations = [];
-//   for(final clientVersion in clientVersions) {
-//     for(final daemonVersion in daemonVersions) {
-//       final bool isClientCurrent = clientVersion.version == 'current';
-//       final bool isDaemonCurrent = daemonVersion.version == 'current';
-//
-//       // Skip if both are not current
-//       if(!isClientCurrent && !isDaemonCurrent) {
-//         continue;
-//       }
-//
-//       // Skip C daemon (not applicable for this test)
-//       if(daemonVersion.language == Language.c) {
-//         continue;
-//       }
-//
-//       combinations.add((clientVersion, daemonVersion));
-//     }
-//   }
-//   return combinations;
-// }
+import 'dart:async';
+import 'dart:io';
+
+import 'package:e2e_all_v2/client_binary.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
+import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/log_fragment.dart';
+import 'package:e2e_all_v2/noports_version.dart';
+import 'package:e2e_all_v2/print_test_utils.dart';
+import 'package:e2e_all_v2/test_result.dart';
+
+const String testName = 'v4_dart_inline';
+const String _metadata = 'v4DartInline';
+
+List<Future<CoreTestResult> Function()> runV4DartInlineTests({
+  required final CoreTestsContext context,
+  required final List<NoPortsVersion> clientVersions,
+  required final List<NoPortsVersion> daemonVersions,
+}) {
+  final List<Future<CoreTestResult> Function()> testFactories = [];
+  final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
+
+  final List<(NoPortsVersion, NoPortsVersion)> versionCombinations = _generateVersionCombinations(
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  );
+
+  for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
+    if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0')) &&
+       versionIsLessThan(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.1.0'))) {
+      continue;
+    }
+
+    testFactories.add(() => _runV4DartInlineTest(
+      context: context,
+      testLogger: testLogger,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+    ));
+  }
+
+  return testFactories;
+}
+
+Future<CoreTestResult> _runV4DartInlineTest({
+  required CoreTestsContext context,
+  required CoreTestLogger testLogger,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+}) async {
+  final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
+  printTestStart(testName: testName, extra: extra);
+
+  final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere((cb) =>
+    cb.binaryType == ClientBinaryType.sshnp &&
+    cb.noPortsVersion == clientVersion);
+
+  final String deviceName = '${getDeviceNameNoFlags(
+    testRunId: context.testRunId,
+    noPortsVersion: daemonVersion)}_f';
+
+  final List<String> sshnpArgs = _buildSshnpArgs(
+    context: context,
+    clientVersion: clientVersion,
+    deviceName: deviceName,
+  );
+
+  final DockerInstance daemonDockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final LogFragment daemonLogCapture = await daemonDockerInstance.createLogFragment(
+    stdoutFile: testLogger.getDaemonStdoutLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadata,
+    ),
+    stderrFile: testLogger.getDaemonStderrLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: _metadata,
+    ),
+  );
+  daemonLogCapture.start();
+
+  final Process process = await Process.start(
+    sshnpClientBinary.file.path,
+    sshnpArgs,
+  );
+
+  final StringBuffer stdoutBuffer = StringBuffer();
+  final StringBuffer stderrBuffer = StringBuffer();
+
+  bool commandSent = false;
+  final completer = Completer<int>();
+
+  process.stdout.listen((data) {
+    final str = String.fromCharCodes(data);
+    stdoutBuffer.write(str);
+    if(!commandSent && str.contains('Last login:')) {
+      commandSent = true;
+      process.stdin.writeln('echo `date` `whoami` `hostname` SCOOBY DOO');
+      Future.delayed(Duration(seconds: 2), () {
+        process.stdin.writeln('exit');
+      });
+    }
+  });
+
+  process.stderr.listen((data) {
+    final str = String.fromCharCodes(data);
+    stderrBuffer.write(str);
+  });
+
+  process.exitCode.then((code) {
+    if(!completer.isCompleted) {
+      completer.complete(code);
+    }
+  });
+
+  Timer(Duration(seconds: 30), () {
+    if(!completer.isCompleted) {
+      process.kill();
+      completer.complete(1);
+    }
+  });
+
+  final int exitCode = await completer.future;
+  daemonLogCapture.stop();
+
+  final String stdout = stdoutBuffer.toString();
+  final String stderr = stderrBuffer.toString();
+  final bool sshSucceeded = exitCode == 0 && commandSent && stdout.contains('SCOOBY DOO');
+
+  final CoreTestResult result = CoreTestResult(
+    testName: testName,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+    status: sshSucceeded ? TestStatus.passed : TestStatus.failed,
+    exitCode: exitCode,
+  );
+  printTestResult(testResult: result, extra: extra);
+
+  if(!sshSucceeded) {
+    print('Client stdout: $stdout');
+    print('Client stderr: $stderr');
+    print('Daemon logs available at: ${daemonLogCapture.stdoutFile.path}');
+  }
+
+  return result;
+}
+
+List<String> _buildSshnpArgs({
+  required CoreTestsContext context,
+  required NoPortsVersion clientVersion,
+  required String deviceName,
+}) {
+  final List<String> args = [
+    '-f', context.clientAtsign,
+    '-t', context.daemonAtsign,
+    '-d', deviceName,
+    '-h', context.relayAtsign,
+    '-u', context.remoteUsername,
+    '-i', context.identityFilePath,
+    '--root-domain', context.rootDomain,
+    '-s',
+    '--ssh-client', 'dart',
+  ];
+
+  if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
+    args.add('--no-ad');
+    args.add('--no-et');
+  }
+
+  if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+    args.add('-k');
+    args.add(context.apkamKeys[context.clientAtsign]!.path);
+  }
+
+  return args;
+}
+
+List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
+  required final List<NoPortsVersion> clientVersions,
+  required final List<NoPortsVersion> daemonVersions,
+}) {
+  List<(NoPortsVersion, NoPortsVersion)> combinations = [];
+  for(final clientVersion in clientVersions) {
+    for(final daemonVersion in daemonVersions) {
+      final bool isClientCurrent = clientVersion.version == 'current';
+      final bool isDaemonCurrent = daemonVersion.version == 'current';
+
+      if(!isClientCurrent && !isDaemonCurrent) {
+        continue;
+      }
+
+      if(daemonVersion.language == Language.c) {
+        continue;
+      }
+
+      combinations.add((clientVersion, daemonVersion));
+    }
+  }
+  return combinations;
+}

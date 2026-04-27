@@ -23,7 +23,7 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
 }) {
-  final List<Future<CoreTestResult> Function()> testFunctions = [];
+  final List<Future<CoreTestResult> Function()> testFactories = [];
   final CoreTestLogger coreTestLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
   for(final NoPortsVersion clientVersion in clientVersions) {
@@ -31,7 +31,7 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
       if(clientVersion.version != 'current' || daemonVersion.version != 'current') {
         continue; // for now, only run this test with current versions since it's testing a current feature
       }
-      testFunctions.add(() => _runMinusUFlagTest(
+      testFactories.add(() => _runMinusUFlagTest(
         context: context,
         coreTestLogger: coreTestLogger,
         clientVersion: clientVersion,
@@ -40,7 +40,7 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
     }
   }
 
-  return testFunctions;
+  return testFactories;
 }
 
 Future<CoreTestResult> _runMinusUFlagTest({
@@ -70,7 +70,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
     daemonVersion: daemonVersion,
     deviceName: deviceNameNoFlags,
   );
-  final LogFragment logFragment1 = dockerInstanceWithoutFlags.createLogFragment(
+  final LogFragment logFragment1 = await dockerInstanceWithoutFlags.createLogFragment(
     stdoutFile: coreTestLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceNameNoFlags,
@@ -119,7 +119,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
     daemonVersion: daemonVersion,
     deviceName: deviceNameWithFlags,
   );
-  final LogFragment logFragment2 = dockerInstanceWithFlags.createLogFragment(
+  final LogFragment logFragment2 = await dockerInstanceWithFlags.createLogFragment(
     stdoutFile: coreTestLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceNameWithFlags,

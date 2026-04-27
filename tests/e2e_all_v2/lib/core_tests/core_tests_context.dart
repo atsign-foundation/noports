@@ -14,7 +14,6 @@ class CoreTestsContext {
   final List<(String, DockerInstance)> dockerInstances; // deviceName, DockerInstance
   final Map<String, File> apkamKeys;
   final Directory logsDirectory;
-  final bool alwaysOutputLogs;
 
   CoreTestsContext({
     required this.testRunId,
@@ -28,6 +27,5 @@ class CoreTestsContext {
     required this.dockerInstances,
     required this.apkamKeys,
     required this.logsDirectory,
-    required this.alwaysOutputLogs,
   });
 }

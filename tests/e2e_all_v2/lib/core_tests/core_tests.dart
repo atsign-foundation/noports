@@ -13,7 +13,6 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
 import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
 import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22.dart';
 import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22_no_encrypt_traffic.dart';
@@ -176,202 +175,142 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('Set up completed in ${setUpStopwatch.elapsed.inMinutes}m ${setUpStopwatch.elapsed.inSeconds % 60}s');
 
   // // 8. Run tests
-  // final Stopwatch testExecutionStopwatch = Stopwatch()..start();
-  // final List<CoreTestResult> allTestResults = [];
+  final Stopwatch testExecutionStopwatch = Stopwatch()..start();
+  final List<CoreTestResult> allTestResults = [];
   //
-  // final CoreTestsContext context = CoreTestsContext(
-  //   testRunId: testRunId,
-  //   clientAtsign: params.clientAtsign,
-  //   daemonAtsign: params.daemonAtsign,
-  //   relayAtsign: params.relayAtsign,
-  //   rootDomain: params.rootDomain,
-  //   remoteUsername: remoteUsername,
-  //   identityFilePath: identityFile.path,
-  //   clientBinaries: clientBinaries,
-  //   dockerInstances: dockerInstances,
-  //   apkamKeys: apkamKeys,
-  //   logsDirectory: logsDirectory,
-  //   alwaysOutputLogs: params.alwaysOutputLogs,
-  // );
-  //
-  // // Phase 1: Run 001_minus_s_flag tests (with max 6 concurrent at a time to set up public keys)
-  // final List<Future<CoreTestResult> Function()> minusSFlagTestFunctions = run001MinusSFlagTests(
-  //   context: context,
-  //   daemonVersions: daemonVersions,
-  // );
-  //
-  // final List<CoreTestResult> minusSFlagResults = await _runTestsWithConcurrencyLimit(
-  //   minusSFlagTestFunctions,
-  //   maxConcurrency: 6,
-  // );
-  // allTestResults.addAll(minusSFlagResults);
-  //
-  // // Phase 2: Collect all other test functions
-  // final List<Future<CoreTestResult> Function()> otherTestFunctions = [];
-  //
-  // // b. minus_r_flag
-  // otherTestFunctions.addAll(runMinusRFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // // c. minus_u_flag
-  // otherTestFunctions.addAll(runMinusUFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // // d. npt_to_port_22
-  // otherTestFunctions.addAll(runNptToPort22Tests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // // e. npt_to_port_22_no_encrypt_traffic
-  // otherTestFunctions.addAll(runNptToPort22NoEncryptTrafficTests(
-  //   context: context,
-  // ));
-  //
-  // // // f. v4_dart_inline
-  // // otherTestFunctions.addAll(runV4DartInlineTests(
-  // //   context: context,
-  // //   clientVersions: clientVersions,
-  // //   daemonVersions: daemonVersions,
-  // // ));
-  // //
-  // // // g. v4_openssh_print
-  // // otherTestFunctions.addAll(runV4OpensshPrintTests(
-  // //   context: context,
-  // //   clientVersions: clientVersions,
-  // //   daemonVersions: daemonVersions,
-  // // ));
-  // //
-  // // // h. v5_dart_inline
-  // // otherTestFunctions.addAll(runV5DartInlineTests(
-  // //   context: context,
-  // //   clientVersions: clientVersions,
-  // //   daemonVersions: daemonVersions,
-  // // ));
-  // //
-  // // // i. v5_openssh_inline
-  // // otherTestFunctions.addAll(runV5OpensshInlineTests(
-  // //   context: context,
-  // //   clientVersions: clientVersions,
-  // //   daemonVersions: daemonVersions,
-  // // ));
-  // //
-  // // // j. v5_openssh_print
-  // // otherTestFunctions.addAll(runV5OpensshPrintTests(
-  // //   context: context,
-  // //   clientVersions: clientVersions,
-  // //   daemonVersions: daemonVersions,
-  // // ));
-  //
-  // // Run Phase 2 tests with max 6 concurrent at a time
-  // final List<CoreTestResult> otherTestResults = await _runTestsWithConcurrencyLimit(
-  //   otherTestFunctions,
-  //   maxConcurrency: 6,
-  // );
-  // allTestResults.addAll(otherTestResults);
-  //
-  // testExecutionStopwatch.stop();
-  //
-  // // 8. Print test results summary
-  //
-  // print('');
-  // print('\tResults:');
-  // for(final CoreTestResult testResult in allTestResults) {
-  //   printTestResult(testResult: testResult, extra: generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true));
-  // }
-  // print('');
-  //
-  // final int totalTests = allTestResults.length;
-  // final int passedTests = allTestResults.where((tr) => tr.status == TestStatus.passed).length;
-  // final int failedTests = allTestResults.where((tr) => tr.status == TestStatus.failed).length;
-  //
-  // print('');
-  // print('Test Results Summary:');
-  // print('    Total tests: $totalTests');
-  // print('    Passed: $passedTests');
-  // print('    Failed: $failedTests');
-  // print('');
-  //
-  // if(failedTests > 0) {
-  //   print('Failed Tests:');
-  //   for(final CoreTestResult testResult in allTestResults.where((tr) => tr.status == TestStatus.failed)) {
-  //     final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
-  //     print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
-  //   }
-  // }
-  //
-  // overallStopwatch.stop();
-  // print('');
-  // print('Execution Time Summary:');
-  // print('    Setup time: ${setupStopwatch.elapsed.inSeconds}s');
-  // print('    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s');
-  // print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
-}
+  final CoreTestsContext context = CoreTestsContext(
+    testRunId: testRunId,
+    clientAtsign: params.clientAtsign,
+    daemonAtsign: params.daemonAtsign,
+    relayAtsign: params.relayAtsign,
+    rootDomain: params.rootDomain,
+    remoteUsername: remoteUsername,
+    identityFilePath: identityFile.path,
+    clientBinaries: clientBinaries,
+    dockerInstances: dockerInstances,
+    apkamKeys: apkamKeys,
+    logsDirectory: logsDirectory,
+  );
 
-Future<List<CoreTestResult>> _runTestsWithConcurrencyLimit(
-  List<Future<CoreTestResult> Function()> testFunctions, {
-  int maxConcurrency = 6,
-}) async {
-  final List<CoreTestResult> results = [];
-  final List<Future<CoreTestResult>> running = [];
-  int nextTestIndex = 0;
+  // Part 1: Do all 001_minus_s_flag tests first, since they bootstrap the daemons.
+  final List<Future<CoreTestResult> Function()> minusSFlagFactories = run001MinusSFlagTests(
+    context: context,
+    daemonVersions: daemonVersions,
+  );
+  final List<CoreTestResult> minusSFlagResults = await _runFuturesWithConcurrency(
+    minusSFlagFactories,
+    batchSize: params.batchSize,
+  );
+  allTestResults.addAll(minusSFlagResults);
 
-  while (nextTestIndex < testFunctions.length || running.isNotEmpty) {
-    while (running.length < maxConcurrency && nextTestIndex < testFunctions.length) {
-      final testFunction = testFunctions[nextTestIndex];
-      running.add(_runTestWithRetries(testFunction));
-      nextTestIndex++;
-
-      if (running.length < maxConcurrency && nextTestIndex < testFunctions.length) {
-        await Future.delayed(Duration(seconds: 2));
-      }
+  // Check if any of the minus_s_flag tests failed. If so, we should not proceed with the other tests since they depend on the daemons being properly set up and running.
+  final List<CoreTestResult> failedMinusSFlagResults = minusSFlagResults.where((tr) => tr.status == TestStatus.failed).toList();
+  if(failedMinusSFlagResults.isNotEmpty) {
+    print('');
+    print('One or more 001_minus_s_flag tests failed. Since these tests are critical for verifying that the daemons are properly set up and running, we will not proceed with the other tests. Please investigate the failed 001_minus_s_flag tests and fix the underlying issues before re-running the tests.');
+    print('Failed 001_minus_s_flag tests:');
+    for(final CoreTestResult testResult in failedMinusSFlagResults) {
+      final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
+      print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
     }
+    return;
+  }
 
-    if (running.isNotEmpty) {
-      final completedResult = await Future.any(running.map((future) async {
-        final result = await future;
-        return (future, result);
-      }));
+  // Part 2: do all other tests
+  final List<Future<CoreTestResult> Function()> remainingTestFactories = [];
 
-      running.remove(completedResult.$1);
-      results.add(completedResult.$2);
+  remainingTestFactories.addAll(runMinusRFlagTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
 
-      if (nextTestIndex < testFunctions.length) {
-        await Future.delayed(Duration(seconds: 2));
-      }
+  remainingTestFactories.addAll(runMinusUFlagTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  remainingTestFactories.addAll(runNptToPort22Tests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
+    context: context,
+  ));
+
+  remainingTestFactories.addAll(runV4DartInlineTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+  //
+  // remainingTestFactories.addAll(runV4OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runV5DartInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runV5OpensshInlineTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+  //
+  // remainingTestFactories.addAll(runV5OpensshPrintTests(
+  //   context: context,
+  //   clientVersions: clientVersions,
+  //   daemonVersions: daemonVersions,
+  // ));
+
+  final List<CoreTestResult> remainingResults = await _runFuturesWithConcurrency(
+    remainingTestFactories,
+    batchSize: params.batchSize,
+  );
+  allTestResults.addAll(remainingResults);
+  testExecutionStopwatch.stop();
+
+  // 8. Print test results summary
+  print('');
+  print('\tResults:');
+  for(final CoreTestResult testResult in allTestResults) {
+    printTestResult(testResult: testResult, extra: generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true));
+  }
+  print('');
+
+  final int totalTests = allTestResults.length;
+  final int passedTests = allTestResults.where((tr) => tr.status == TestStatus.passed).length;
+  final int failedTests = allTestResults.where((tr) => tr.status == TestStatus.failed).length;
+
+  print('');
+  print('Test Results Summary:');
+  print('    Total tests: $totalTests');
+  print('    Passed: $passedTests');
+  print('    Failed: $failedTests');
+  print('');
+
+  if(failedTests > 0) {
+    print('Failed Tests:');
+    for(final CoreTestResult testResult in allTestResults.where((tr) => tr.status == TestStatus.failed)) {
+      final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
+      print('    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}');
     }
   }
 
-  return results;
-}
-
-Future<CoreTestResult> _runTestWithRetries(
-  Future<CoreTestResult> Function() testFunction, {
-  int maxAttempts = 3,
-}) async {
-  CoreTestResult? lastResult;
-
-  for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-    lastResult = await testFunction();
-
-    if (lastResult.status == TestStatus.passed) {
-      return lastResult;
-    }
-
-    if (attempt < maxAttempts) {
-      final String extra = generateExtraString(lastResult.clientVersion, lastResult.daemonVersion, useShortLanguageName: true);
-      print('Test ${lastResult.testName} $extra failed (attempt $attempt/$maxAttempts), retrying...');
-    }
-  }
-
-  return lastResult!;
+  overallStopwatch.stop();
+  print('');
+  print('Execution Time Summary:');
+  print('    Setup time: ${setUpStopwatch.elapsed.inSeconds}s');
+  print('    Test execution time: ${testExecutionStopwatch.elapsed.inSeconds}s');
+  print('    Overall time: ${overallStopwatch.elapsed.inSeconds}s');
 }
 
 String _getIdentitfyFilePath({required final String testRunId}) {
@@ -418,4 +357,67 @@ Future<(File, File)> _generateNewSshKey({required final String testRunId}) async
     throw Exception('Failed to generate ssh key pair. Expected files not found: $identityFilePath and ${publicIdentityFile.path}');
   }
   return (publicIdentityFile, identityFile);
+}
+
+/// Runs a list of test factory functions with controlled concurrency
+///
+/// This function maintains a pool of at most [batchSize] running tests at any time.
+/// As tests complete, new tests are started (with a 1-second delay between starts)
+/// to keep the pool at capacity until all tests are complete.
+///
+/// [testFactories] - List of functions that create test futures when called
+/// [batchSize] - Maximum number of tests to run in parallel at once
+///
+/// Returns a list of CoreTestResult from all test executions
+Future<List<CoreTestResult>> _runFuturesWithConcurrency(
+  List<Future<CoreTestResult> Function()> testFactories, {
+  required int batchSize,
+}) async {
+  if (testFactories.isEmpty) {
+    return [];
+  }
+
+
+  final List<CoreTestResult> allResults = [];
+  final List<(Future<CoreTestResult>, int)> active = [];
+  int nextIndex = 0;
+  int completedCount = 0;
+
+  Future<void> startNextTest() async {
+    if (nextIndex < testFactories.length) {
+      if (nextIndex > 0) {
+        await Future.delayed(Duration(seconds: 1));
+      }
+
+      final testIndex = nextIndex;
+      final Future<CoreTestResult> testFuture = testFactories[nextIndex]();
+      active.add((testFuture, testIndex));
+      nextIndex++;
+    }
+  }
+
+  for (int i = 0; i < batchSize && i < testFactories.length; i++) {
+    await startNextTest();
+  }
+
+  while (active.isNotEmpty) {
+    final completedEntry = await Future.any(active.map((entry) async {
+      final result = await entry.$1;
+      return (entry, result);
+    }));
+
+    final ((Future<CoreTestResult>, int) entry, CoreTestResult testResult) = completedEntry;
+
+    active.remove(entry);
+    allResults.add(testResult);
+    completedCount++;
+
+    final String status = testResult.status == TestStatus.passed ? '✓' : '✗';
+    final String extra = generateExtraString(testResult.clientVersion, testResult.daemonVersion, useShortLanguageName: true);
+    print('$status ($completedCount/${testFactories.length}) ${testResult.testName} $extra');
+
+    await startNextTest();
+  }
+
+  return allResults;
 }
