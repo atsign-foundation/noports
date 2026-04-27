@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:path/path.dart' as path;
-import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:e2e_all_v2/client_binary.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
@@ -13,9 +12,6 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_params.dart';
-import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
-import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22.dart';
-import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22_no_encrypt_traffic.dart';
 import 'package:e2e_all_v2/core_tests/tests/v4_dart_inline.dart';
 import 'package:e2e_all_v2/core_tests/tests/v4_openssh_print.dart';
 import 'package:e2e_all_v2/core_tests/tests/v5_dart_inline.dart';
@@ -291,30 +287,38 @@ Future<void> coreTests(CoreTestsParams params) async {
       daemonVersions: daemonVersions,
     ),
   );
-  //
-  // remainingTestFactories.addAll(runV4OpensshPrintTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runV5DartInlineTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runV5OpensshInlineTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runV5OpensshPrintTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
+
+  remainingTestFactories.addAll(
+    runV4OpensshPrintTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
+
+  remainingTestFactories.addAll(
+    runV5DartInlineTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
+
+  remainingTestFactories.addAll(
+    runV5OpensshInlineTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
+
+  remainingTestFactories.addAll(
+    runV5OpensshPrintTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
 
   final List<CoreTestResult> remainingResults =
       await _runFuturesWithConcurrency(
