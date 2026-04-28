@@ -1,4 +1,4 @@
-# e2e_all_v2
+# core_tests
 
 TODOs:
 - add v4 to dameon list
