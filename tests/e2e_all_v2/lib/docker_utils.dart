@@ -1,0 +1,113 @@
+import 'dart:io';
+
+import 'package:e2e_all_v2/docker_image.dart';
+import 'package:e2e_all_v2/docker_instance.dart';
+import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/noports_version.dart';
+
+DockerImage dockerImageForVersion(final NoPortsVersion version) {
+  final Language language = version.language;
+  final String versionTag = version.version;
+
+  if (versionTag == 'current') {
+    return DockerImage.current(language: language);
+  } else if (versionTag.startsWith('v')) {
+    return DockerImage.release(language: language, version: versionTag);
+  } else {
+    return DockerImage.branch(language: language, branch: versionTag);
+  }
+}
+
+Future<DockerImage> ensureDockerImageVersion({
+  required final NoPortsVersion daemonVersion,
+  final bool skipBuildCurrent = false,
+}) async {
+  final DockerImage dockerImage = dockerImageForVersion(daemonVersion);
+
+  if (dockerImage.tag == 'current') {
+    if (!skipBuildCurrent) {
+      final Process buildProcess = await dockerImage.build(quiet: true);
+      final int buildExitCode = await buildProcess.exitCode;
+      if (buildExitCode != 0) {
+        throw Exception(
+          'Failed to build docker image ${dockerImage.fullImageName}. Exit code: $buildExitCode',
+        );
+      }
+    }
+  } else {
+    final Process pullProcess = await dockerImage.pull(quiet: true);
+    final int pullExitCode = await pullProcess.exitCode;
+    if (pullExitCode != 0) {
+      final Process buildProcess = await dockerImage.build(quiet: true);
+      final int buildExitCode = await buildProcess.exitCode;
+      if (buildExitCode != 0) {
+        throw Exception(
+          'Failed to build docker image ${dockerImage.fullImageName}. Exit code: $buildExitCode',
+        );
+      }
+    }
+  }
+
+  if (!(await dockerImage.existsOnMachine())) {
+    throw Exception(
+      'Docker image ${dockerImage.fullImageName} should have been built or pulled, but it does not exist on machine',
+    );
+  }
+
+  return dockerImage;
+}
+
+Future<List<DockerImage>> ensureDockerImagesVersionBuiltParallel({
+  required final List<NoPortsVersion> versions,
+  final bool skipBuildCurrent = false,
+}) {
+  final Map<String, NoPortsVersion> deduped = {};
+  for (final NoPortsVersion version in versions) {
+    deduped['${version.language.name}:${version.version}'] = version;
+  }
+
+  return Future.wait(
+    deduped.values.map((version) {
+      return ensureDockerImageVersion(
+        daemonVersion: version,
+        skipBuildCurrent: skipBuildCurrent,
+      );
+    }),
+  );
+}
+
+Future<DockerInstance> runDockerInstance({
+  required final DockerImage dockerImage,
+  required final String testRunId,
+  required final Directory logsDirectory,
+  required final List<String> entrypoint,
+  final String uniqueIdentifier = '',
+  final String? containerName,
+  final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
+  final bool quiet = false,
+  final bool removeWhenStopped = true,
+}) async {
+  final DockerInstance dockerInstance = DockerInstance(
+    dockerImage: dockerImage,
+    testRunId: testRunId,
+    uniqueIdentifier: uniqueIdentifier,
+    containerName: containerName,
+  );
+  final File stdoutLogFile = File(
+    '${logsDirectory.path}/${dockerInstance.containerName}_stdout.log',
+  );
+  final File stderrLogFile = File(
+    '${logsDirectory.path}/${dockerInstance.containerName}_stderr.log',
+  );
+
+  await dockerInstance.run(
+    entrypoint: entrypoint,
+    quiet: quiet,
+    removeWhenStopped: removeWhenStopped,
+    volumeMappings: volumeMappings,
+    stdoutLogFile: stdoutLogFile,
+    stderrLogFile: stderrLogFile,
+  );
+
+  return dockerInstance;
+}
