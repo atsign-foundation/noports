@@ -8,10 +8,10 @@ import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22_no_encrypt_traffic.da
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:e2e_all_v2/apkam_setup.dart';
 import 'package:e2e_all_v2/client_binary.dart';
+import 'package:e2e_all_v2/client_binary_utils.dart';
 import 'package:e2e_all_v2/core_tests/tests/001_minus_s_flag.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_apkam_setup.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_client_binary_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
@@ -30,6 +30,7 @@ import 'package:e2e_all_v2/test_result.dart';
 import 'package:e2e_all_v2/utils.dart';
 
 const String remoteUsername = 'atsign';
+const String coreTestsApkamApp = 'e2e_all_v2';
 
 Future<void> coreTests(CoreTestsParams params) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
@@ -128,11 +129,14 @@ Future<void> coreTests(CoreTestsParams params) async {
     );
     return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
-      clientAtsign: params.clientAtsign,
-      daemonAtsign: params.daemonAtsign,
+      atsigns: [
+        (which: 'client', atsign: params.clientAtsign),
+        (which: 'daemon', atsign: params.daemonAtsign),
+      ],
       rootDomain: params.rootDomain,
       apkamKeysDirectory: apkamKeysDirectory,
       testRunId: testRunId,
+      apkamApp: coreTestsApkamApp,
     );
   });
 
@@ -209,7 +213,6 @@ Future<void> coreTests(CoreTestsParams params) async {
   // // 8. Run tests
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final List<CoreTestResult> allTestResults = [];
-  //
   final CoreTestsContext context = CoreTestsContext(
     testRunId: testRunId,
     clientAtsign: params.clientAtsign,
@@ -260,27 +263,33 @@ Future<void> coreTests(CoreTestsParams params) async {
   // Part 2: do all other tests
   final List<Future<CoreTestResult> Function()> remainingTestFactories = [];
 
-  remainingTestFactories.addAll(runMinusRFlagTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  remainingTestFactories.addAll(
+    runMinusRFlagTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
 
-  remainingTestFactories.addAll(runMinusUFlagTests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  remainingTestFactories.addAll(
+    runMinusUFlagTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
 
-  remainingTestFactories.addAll(runNptToPort22Tests(
-    context: context,
-    clientVersions: clientVersions,
-    daemonVersions: daemonVersions,
-  ));
+  remainingTestFactories.addAll(
+    runNptToPort22Tests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
 
-  remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
-    context: context,
-  ));
+  remainingTestFactories.addAll(
+    runNptToPort22NoEncryptTrafficTests(context: context),
+  );
 
   remainingTestFactories.addAll(
     getV4DartInLineFactories(

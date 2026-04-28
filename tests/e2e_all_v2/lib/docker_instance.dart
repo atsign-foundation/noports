@@ -8,10 +8,7 @@ class VolumeMapping {
   final String local;
   final String container;
 
-  VolumeMapping({
-    required this.local,
-    required this.container,
-  });
+  VolumeMapping({required this.local, required this.container});
 }
 
 class DockerInstance {
@@ -19,7 +16,6 @@ class DockerInstance {
   final String testRunId;
   late String containerName; // image tag
   Process? process; // instantiated from run()
-  Process? logProcess; // instantiated from run() // sudo docker logs -f <containerName> 1>> <stdoutLogFile> 2>> <stderrLogFile>
   File? stdoutLogFile; // instantiated from run()
   File? stderrLogFile; // instantiated from run()
 
@@ -31,12 +27,16 @@ class DockerInstance {
     String uniqueIdentifier = '',
     String? containerName,
   }) {
-    if(containerName != null) {
+    if (containerName != null) {
       this.containerName = containerName;
     } else {
-      this.containerName = _getDockerContainerName(language: dockerImage.language.name, tag: dockerImage.tag, testRunId: testRunId);
-      if(uniqueIdentifier.isNotEmpty) {
-        this.containerName += '$uniqueIdentifier';  
+      this.containerName = _getDockerContainerName(
+        language: dockerImage.language.name,
+        tag: dockerImage.tag,
+        testRunId: testRunId,
+      );
+      if (uniqueIdentifier.isNotEmpty) {
+        this.containerName += '$uniqueIdentifier';
       }
     }
   }
@@ -52,35 +52,41 @@ class DockerInstance {
     const String executable = 'docker';
 
     // construct args
-    final List<String> args = [
-      'run',
-      '--name', containerName,
-    ];
-    if(quiet) {
+    final List<String> args = ['run', '--name', containerName];
+    if (quiet) {
       args.add('--quiet');
     }
-    if(removeWhenStopped) {
+    if (removeWhenStopped) {
       args.add('--rm');
     }
-    for(final VolumeMapping volumeMapping in volumeMappings) {
+    for (final VolumeMapping volumeMapping in volumeMappings) {
       args.add('--volume');
       args.add('${volumeMapping.local}:${volumeMapping.container}');
     }
     args.add(dockerImage.fullImageName);
     args.addAll(entrypoint);
 
-    // use start, spawns a process
-    final Process process = await startCommand(executable, args);
-    this.process = process;
-    if(stdoutLogFile != null && stderrLogFile != null) {
+    if (stdoutLogFile != null && stderrLogFile != null) {
       this.stdoutLogFile = stdoutLogFile;
       this.stderrLogFile = stderrLogFile;
-      // Wait a moment for the container to be created before starting log capture
-      await Future.delayed(Duration(milliseconds: 500));
-      await _startDockerLogProcess(stdoutLogFile: stdoutLogFile, stderrLogFile: stderrLogFile);
-    } else if(stdoutLogFile == null && stderrLogFile != null || stdoutLogFile != null && stderrLogFile == null) {
-      throw Exception('Both stdoutLogFile and stderrLogFile must be provided to capture logs.');
+      await stdoutLogFile.create(recursive: true);
+      await stderrLogFile.create(recursive: true);
+    } else if (stdoutLogFile == null && stderrLogFile != null ||
+        stdoutLogFile != null && stderrLogFile == null) {
+      throw Exception(
+        'Both stdoutLogFile and stderrLogFile must be provided to capture logs.',
+      );
     }
+
+    // `docker run` stays attached to the container process, so capturing its
+    // stdout/stderr gives us full-life container logs from process start.
+    final Process process = await startCommand(
+      executable,
+      args,
+      stdoutLogFile: stdoutLogFile,
+      stderrLogFile: stderrLogFile,
+    );
+    this.process = process;
     return process;
   }
 
@@ -90,11 +96,13 @@ class DockerInstance {
     final List<String> args = [
       'ps',
       '-q' // quiet , if container is found, it will print something out in stdout
-      '--filter', containerName
+          '--filter',
+      containerName,
     ];
 
     final ProcessResult processResult = await runCommand(executable, args);
-    if(processResult.stdout.length > 0) { // since we're using `-q`, the length will be > 0 if the container is active
+    if (processResult.stdout.length > 0) {
+      // since we're using `-q`, the length will be > 0 if the container is active
       return true;
     } else {
       return false;
@@ -102,13 +110,9 @@ class DockerInstance {
   }
 
   Future<ProcessResult> stop({String? logDirectory}) async {
-    const String executable  = 'docker';
-    final List<String> args = [
-      'container', 'stop',
-      containerName,
-    ];
+    const String executable = 'docker';
+    final List<String> args = ['container', 'stop', containerName];
     final ProcessResult processResult = await runCommand(executable, args);
-    _stopDockerLogProcess();
     return processResult;
   }
 
@@ -120,24 +124,27 @@ class DockerInstance {
       stdoutFile: stdoutFile,
       stderrFile: stderrFile,
       processStarter: () async {
-        final Process process = await startCommand(
-          'docker',
-          [
-            'logs',
-            '-f',
-            containerName,
-          ],
-        );
+        final Process process = await startCommand('docker', [
+          'logs',
+          '-f',
+          containerName,
+        ]);
 
         // Listen to stdout and write to file
-        process.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-          stdoutFile.writeAsStringSync('$line\n', mode: FileMode.append);
-        });
+        process.stdout
+            .transform(SystemEncoding().decoder)
+            .transform(const LineSplitter())
+            .listen((line) {
+              stdoutFile.writeAsStringSync('$line\n', mode: FileMode.append);
+            });
 
         // Listen to stderr and write to file
-        process.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-          stderrFile.writeAsStringSync('$line\n', mode: FileMode.append);
-        });
+        process.stderr
+            .transform(SystemEncoding().decoder)
+            .transform(const LineSplitter())
+            .listen((line) {
+              stderrFile.writeAsStringSync('$line\n', mode: FileMode.append);
+            });
 
         return process;
       },
@@ -156,32 +163,6 @@ class DockerInstance {
       await fragment.stop();
       removeLogFragment(fragment);
     }
-  }
-
-  Future<void> _startDockerLogProcess({required final File stdoutLogFile, required final File stderrLogFile}) async {
-    // Use shell redirection to write stdout and stderr to files
-    final Process logProcess = await startCommand(
-      'docker',
-      [
-        'logs',
-        '-f',
-        containerName
-      ],
-    );
-    logProcess.stdout.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-      stdoutLogFile.writeAsStringSync('$line\n', mode: FileMode.append);
-    });
-    logProcess.stderr.transform(SystemEncoding().decoder).transform(const LineSplitter()).listen((line) {
-      stderrLogFile.writeAsStringSync('$line\n', mode: FileMode.append);
-    });
-    this.logProcess = logProcess;
-  }
-
-  bool _stopDockerLogProcess() {
-    if(logProcess != null) {
-      return logProcess!.kill();
-    }
-    return true;
   }
 }
 

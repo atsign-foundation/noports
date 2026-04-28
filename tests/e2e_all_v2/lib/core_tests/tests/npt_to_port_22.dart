@@ -3,7 +3,7 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
@@ -37,21 +37,27 @@ List<Future<CoreTestResult> Function()> runNptToPort22Tests({
   required final List<NoPortsVersion> daemonVersions,
 }) {
   final List<Future<CoreTestResult> Function()> testFactories = [];
-  final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
+  final CoreTestLogger testLogger = CoreTestLogger(
+    logsDirectory: context.logsDirectory,
+    testName: testName,
+  );
 
   final List<(NoPortsVersion, NoPortsVersion)> versionCombinations =
-    _generateVersionCombinations(
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    );
+      _generateVersionCombinations(
+        clientVersions: clientVersions,
+        daemonVersions: daemonVersions,
+      );
 
-  for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
-    testFactories.add(() => _runNptToPort22Test(
-      context: context,
-      testLogger: testLogger,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-    ));
+  for (final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion)
+      in versionCombinations) {
+    testFactories.add(
+      () => _runNptToPort22Test(
+        context: context,
+        testLogger: testLogger,
+        clientVersion: clientVersion,
+        daemonVersion: daemonVersion,
+      ),
+    );
   }
 
   return testFactories;
@@ -65,27 +71,32 @@ Future<CoreTestResult> _runNptToPort22Test({
 }) async {
   final String extra = generateExtraString(clientVersion, daemonVersion);
   printTestStart(testName: testName, extra: extra);
-  final String deviceName = '${getDeviceNameNoFlags(
-    testRunId: context.testRunId,
-    noPortsVersion: daemonVersion,
-  )}_f';
+  final String deviceName =
+      '${getDeviceNameNoFlags(testRunId: context.testRunId, noPortsVersion: daemonVersion)}_f';
   final ClientBinary nptClientBinary = context.clientBinaries.firstWhere(
-    (cb) => cb.binaryType == ClientBinaryType.npt && cb.noPortsVersion == clientVersion);
+    (cb) =>
+        cb.binaryType == ClientBinaryType.npt &&
+        cb.noPortsVersion == clientVersion,
+  );
   final List<String> nptArgs = _buildNptArgs(
     context: context,
     clientVersion: clientVersion,
     deviceName: deviceName,
   );
-  final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final DockerInstance dockerInstance = context.dockerInstances
+      .firstWhere((di) => di.$1 == deviceName)
+      .$2;
   final LogFragment logFragment1 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution),
+      testMetadata: _metadataNptExecution,
+    ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution),
+      testMetadata: _metadataNptExecution,
+    ),
   );
   logFragment1.start();
   final ProcessOutputCapture nptOutput = await startCommandWithCapture(
@@ -104,7 +115,7 @@ Future<CoreTestResult> _runNptToPort22Test({
   );
   final int exitCode1 = await nptOutput.exitCode;
   logFragment1.stop();
-  if(exitCode1 != 0) {
+  if (exitCode1 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -120,23 +131,32 @@ Future<CoreTestResult> _runNptToPort22Test({
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataSshExecution),
+      testMetadata: _metadataSshExecution,
+    ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataSshExecution),
+      testMetadata: _metadataSshExecution,
+    ),
   );
   final String nptStdout = nptOutput.stdout;
   final int localPort = int.parse(nptStdout.trim());
   const String executable = 'ssh';
   final List<String> sshArgs = [
-    '-p', localPort.toString(),
-    '-o', 'StrictHostKeyChecking=accept-new',
-    '-o', 'IdentitiesOnly=yes',
+    '-p',
+    localPort.toString(),
+    '-o',
+    'StrictHostKeyChecking=accept-new',
+    '-o',
+    'IdentitiesOnly=yes',
     '${context.remoteUsername}@localhost',
-    '-i', context.identityFilePath,
-    'echo', '`whoami`',
-    '`date`', '`hostname`', 'TEST PASSED'
+    '-i',
+    context.identityFilePath,
+    'echo',
+    '`whoami`',
+    '`date`',
+    '`hostname`',
+    'TEST PASSED',
   ];
   logFragment2.start();
   final ProcessOutputCapture sshOutput = await startCommandWithCapture(
@@ -155,7 +175,7 @@ Future<CoreTestResult> _runNptToPort22Test({
   );
   final int exitCode2 = await sshOutput.exitCode;
   logFragment2.stop();
-  if(exitCode2 != 0) {
+  if (exitCode2 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -167,7 +187,7 @@ Future<CoreTestResult> _runNptToPort22Test({
     printAllLogs(clientCapture: sshOutput, daemonLogFragment: logFragment2);
     return coreTestResult;
   }
-  
+
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,
@@ -185,16 +205,25 @@ List<String> _buildNptArgs({
   required String deviceName,
 }) {
   final List<String> args = [
-    '-f', context.clientAtsign,
-    '-t', context.daemonAtsign,
-    '-d', deviceName,
-    '-r', context.relayAtsign,
-    '--root-domain', context.rootDomain,
-    '--remote-port', '22',
+    '-f',
+    context.clientAtsign,
+    '-t',
+    context.daemonAtsign,
+    '-d',
+    deviceName,
+    '-r',
+    context.relayAtsign,
+    '--root-domain',
+    context.rootDomain,
+    '--remote-port',
+    '22',
     '--exit-when-connected',
     '--verbose',
   ];
-  if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+  if (versionIsAtLeast(
+    clientVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.3.0'),
+  )) {
     args.add('-k');
     args.add(context.apkamKeys[context.clientAtsign]!.path);
   }
@@ -206,16 +235,18 @@ List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
   required final List<NoPortsVersion> daemonVersions,
 }) {
   List<(NoPortsVersion, NoPortsVersion)> combinations = [];
-  for(final clientVersion in clientVersions) {
-    for(final daemonVersion in daemonVersions) {
+  for (final clientVersion in clientVersions) {
+    for (final daemonVersion in daemonVersions) {
       final bool isClientCurrent = clientVersion.version == 'current';
       final bool isDaemonCurrent = daemonVersion.version == 'current';
       // Skip if both are not current (released client already tested with released daemon)
-      if(!isClientCurrent && !isDaemonCurrent) {
+      if (!isClientCurrent && !isDaemonCurrent) {
         continue;
       }
-      if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
-      }
+      if (versionIsAtLeast(
+        clientVersion,
+        NoPortsVersion(language: Language.dart, version: 'v5.3.0'),
+      )) {}
       combinations.add((clientVersion, daemonVersion));
     }
   }

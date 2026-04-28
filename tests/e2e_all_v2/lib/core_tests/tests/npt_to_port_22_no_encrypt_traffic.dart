@@ -3,7 +3,7 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
@@ -28,20 +28,31 @@ List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
   required final CoreTestsContext context,
 }) {
   final List<Future<CoreTestResult> Function()> testFactories = [];
-  final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
-
-  final List<(NoPortsVersion, NoPortsVersion)> versionPermutations = _generateVersionPermutations(
-    clientVersions: [NoPortsVersion(language: Language.dart, version: 'current')],
-    daemonVersions: [NoPortsVersion(language: Language.dart, version: 'current')],
+  final CoreTestLogger testLogger = CoreTestLogger(
+    logsDirectory: context.logsDirectory,
+    testName: testName,
   );
 
-  for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionPermutations) {
-    testFactories.add(() => _runNptToPort22NoEncryptTrafficTest(
-      context: context,
-      testLogger: testLogger,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-    ));
+  final List<(NoPortsVersion, NoPortsVersion)> versionPermutations =
+      _generateVersionPermutations(
+        clientVersions: [
+          NoPortsVersion(language: Language.dart, version: 'current'),
+        ],
+        daemonVersions: [
+          NoPortsVersion(language: Language.dart, version: 'current'),
+        ],
+      );
+
+  for (final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion)
+      in versionPermutations) {
+    testFactories.add(
+      () => _runNptToPort22NoEncryptTrafficTest(
+        context: context,
+        testLogger: testLogger,
+        clientVersion: clientVersion,
+        daemonVersion: daemonVersion,
+      ),
+    );
   }
 
   return testFactories;
@@ -53,28 +64,39 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
 }) async {
-  final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
+  final String extra = generateExtraString(
+    clientVersion,
+    daemonVersion,
+    useShortLanguageName: true,
+  );
   printTestStart(testName: testName, extra: extra);
-  final String deviceName = '${getDeviceNameNoFlags(
-    testRunId: context.testRunId,
-    noPortsVersion: daemonVersion)}_f';
-  final ClientBinary nptClientBinary = context.clientBinaries.firstWhere((cb) =>
-    cb.binaryType == ClientBinaryType.npt &&
-    cb.noPortsVersion == clientVersion);
+  final String deviceName =
+      '${getDeviceNameNoFlags(testRunId: context.testRunId, noPortsVersion: daemonVersion)}_f';
+  final ClientBinary nptClientBinary = context.clientBinaries.firstWhere(
+    (cb) =>
+        cb.binaryType == ClientBinaryType.npt &&
+        cb.noPortsVersion == clientVersion,
+  );
   final List<String> nptArgs = _buildNptArgs(
     context: context,
-    deviceName: deviceName);
+    deviceName: deviceName,
+  );
 
-  final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == deviceName).$2;
+  final DockerInstance dockerInstance = context.dockerInstances
+      .firstWhere((di) => di.$1 == deviceName)
+      .$2;
   final LogFragment logFragment1 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution),
+      testMetadata: _metadataNptExecution,
+    ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution));
+      testMetadata: _metadataNptExecution,
+    ),
+  );
   logFragment1.start();
   final ProcessOutputCapture nptOutput = await startCommandWithCapture(
     nptClientBinary.file.path,
@@ -82,15 +104,17 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
     stdoutLogFile: testLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-      testMetadata: _metadataNptExecution),
+      testMetadata: _metadataNptExecution,
+    ),
     stderrLogFile: testLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-      testMetadata: _metadataNptExecution),
+      testMetadata: _metadataNptExecution,
+    ),
   );
   logFragment1.stop();
   final int exitCode1 = await nptOutput.exitCode;
-  if(exitCode1 != 0) {
+  if (exitCode1 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -105,7 +129,7 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
 
   final String localPortStr = nptOutput.stdout;
   final int? localPort = int.tryParse(localPortStr.trim());
-  if(localPort == null) {
+  if (localPort == null) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -121,22 +145,31 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
   final String remoteUsername = context.remoteUsername;
 
   final List<String> sshArgs = [
-    '-p', localPort.toString(),
-    '-o', 'StrictHostKeyChecking=accept-new',
-    '-i', context.identityFilePath,
+    '-p',
+    localPort.toString(),
+    '-o',
+    'StrictHostKeyChecking=accept-new',
+    '-i',
+    context.identityFilePath,
     '${remoteUsername}@localhost',
-    'echo', '`whoami`',
-    '`date`', '`hostname`', 'TEST PASSED'
+    'echo',
+    '`whoami`',
+    '`date`',
+    '`hostname`',
+    'TEST PASSED',
   ];
   final LogFragment logFragment2 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataSshExecution),
+      testMetadata: _metadataSshExecution,
+    ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataSshExecution));
+      testMetadata: _metadataSshExecution,
+    ),
+  );
   logFragment2.start();
   final ProcessOutputCapture sshOutput = await startCommandWithCapture(
     'ssh',
@@ -154,8 +187,8 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
   );
   final int exitCode2 = await sshOutput.process.exitCode;
   logFragment2.stop();
-  if(exitCode2 != 0) {
-    final CoreTestResult coreTestResult = CoreTestResult( 
+  if (exitCode2 != 0) {
+    final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -183,16 +216,23 @@ List<String> _buildNptArgs({
   required String deviceName,
 }) {
   final List<String> args = [
-    '-f', context.clientAtsign,
-    '-t', context.daemonAtsign,
-    '-d', deviceName,
-    '-r', context.relayAtsign,
-    '--root-domain', context.rootDomain,
-    '--remote-port', '22',
+    '-f',
+    context.clientAtsign,
+    '-t',
+    context.daemonAtsign,
+    '-d',
+    deviceName,
+    '-r',
+    context.relayAtsign,
+    '--root-domain',
+    context.rootDomain,
+    '--remote-port',
+    '22',
     '--exit-when-connected',
     '--no-encrypt-rvd-traffic',
     '--verbose',
-    '-k', context.apkamKeys[context.clientAtsign]!.path,
+    '-k',
+    context.apkamKeys[context.clientAtsign]!.path,
   ];
 
   return args;
@@ -203,9 +243,10 @@ List<(NoPortsVersion, NoPortsVersion)> _generateVersionPermutations({
   required List<NoPortsVersion> daemonVersions,
 }) {
   List<(NoPortsVersion, NoPortsVersion)> permutations = [];
-  for(final clientVersion in clientVersions) {
-    for(final daemonVersion in daemonVersions) {
-      if(clientVersion.version != 'current' || daemonVersion.version != 'current') {
+  for (final clientVersion in clientVersions) {
+    for (final daemonVersion in daemonVersions) {
+      if (clientVersion.version != 'current' ||
+          daemonVersion.version != 'current') {
         continue;
       }
       permutations.add((clientVersion, daemonVersion));

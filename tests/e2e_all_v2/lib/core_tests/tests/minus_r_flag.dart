@@ -3,7 +3,7 @@ import 'package:e2e_all_v2/core_tests/core_tests_context.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_logging.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_print_utils.dart';
 import 'package:e2e_all_v2/core_tests/core_tests_test_result.dart';
-import 'package:e2e_all_v2/core_tests/core_tests_utils.dart';
+import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/log_fragment.dart';
@@ -34,25 +34,30 @@ List<Future<CoreTestResult> Function()> runMinusRFlagTests({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
 }) {
-  final CoreTestLogger coreTestLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
+  final CoreTestLogger coreTestLogger = CoreTestLogger(
+    logsDirectory: context.logsDirectory,
+    testName: testName,
+  );
   final Set<(NoPortsVersion, NoPortsVersion)> versionCombinations =
-    _generateVersionCombinations(
-      clientVersions: clientVersions,
-      daemonVersions: daemonVersions,
-    );
+      _generateVersionCombinations(
+        clientVersions: clientVersions,
+        daemonVersions: daemonVersions,
+      );
 
   final List<Future<CoreTestResult> Function()> testFactories = [];
-  for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionCombinations) {
-    final String deviceName = '${getDeviceNameNoFlags(
-      testRunId: context.testRunId,
-      noPortsVersion: daemonVersion)}_f';
-    testFactories.add(() => _runMinusRFlagTest(
-      context: context,
-      coreTestLogger: coreTestLogger,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-      deviceName: deviceName,
-    ));
+  for (final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion)
+      in versionCombinations) {
+    final String deviceName =
+        '${getDeviceNameNoFlags(testRunId: context.testRunId, noPortsVersion: daemonVersion)}_f';
+    testFactories.add(
+      () => _runMinusRFlagTest(
+        context: context,
+        coreTestLogger: coreTestLogger,
+        clientVersion: clientVersion,
+        daemonVersion: daemonVersion,
+        deviceName: deviceName,
+      ),
+    );
   }
   return testFactories;
 }
@@ -68,28 +73,40 @@ Future<CoreTestResult> _runMinusRFlagTest({
   printTestStart(testName: testName, extra: extra);
   final String relayAtsign = context.relayAtsign;
 
-  final ClientBinary sshnpClientBinary = 
-    context.clientBinaries.firstWhere((cb) =>
-      cb.binaryType == ClientBinaryType.sshnp &&
-      cb.noPortsVersion == clientVersion);
-  final DockerInstance dockerInstance = context.dockerInstances.firstWhere((di) => di.$1 == getDeviceNameNoFlags(
-    testRunId: context.testRunId,
-    noPortsVersion: daemonVersion)).$2;
+  final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere(
+    (cb) =>
+        cb.binaryType == ClientBinaryType.sshnp &&
+        cb.noPortsVersion == clientVersion,
+  );
+  final DockerInstance dockerInstance = context.dockerInstances
+      .firstWhere(
+        (di) =>
+            di.$1 ==
+            getDeviceNameNoFlags(
+              testRunId: context.testRunId,
+              noPortsVersion: daemonVersion,
+            ),
+      )
+      .$2;
 
   // 1. Run sshnp with `--host` (expect to pass)
   final List<String> args1 = _buildBaseSshnpArgs(
     context: context,
     clientBinary: sshnpClientBinary,
-    deviceName: deviceName);
+    deviceName: deviceName,
+  );
   final LogFragment logFragment1 = await dockerInstance.createLogFragment(
     stdoutFile: coreTestLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataDashDashHost),
+      testMetadata: _metadataDashDashHost,
+    ),
     stderrFile: coreTestLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataDashDashHost));
+      testMetadata: _metadataDashDashHost,
+    ),
+  );
   logFragment1.start();
   final ProcessOutputCapture capture1 = await startCommandWithCapture(
     sshnpClientBinary.file.path,
@@ -107,13 +124,13 @@ Future<CoreTestResult> _runMinusRFlagTest({
   );
   final int exitCode1 = await capture1.exitCode;
   logFragment1.stop();
-  if(exitCode1 != 0) {
+  if (exitCode1 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       status: TestStatus.failed,
-      exitCode: exitCode1
+      exitCode: exitCode1,
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture1, daemonLogFragment: logFragment1);
@@ -124,7 +141,8 @@ Future<CoreTestResult> _runMinusRFlagTest({
   final List<String> args2 = _buildBaseSshnpArgs(
     context: context,
     clientBinary: sshnpClientBinary,
-    deviceName: deviceName);
+    deviceName: deviceName,
+  );
   final LogFragment logFragment2 = await dockerInstance.createLogFragment(
     stdoutFile: coreTestLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
@@ -140,7 +158,13 @@ Future<CoreTestResult> _runMinusRFlagTest({
   logFragment2.start();
   final ProcessOutputCapture capture2 = await startCommandWithCapture(
     sshnpClientBinary.file.path,
-    [...args2, '-h', '@do_not_activate', '-r', relayAtsign], // TODO make @do_not_activate a constant somewhere
+    [
+      ...args2,
+      '-h',
+      '@do_not_activate',
+      '-r',
+      relayAtsign,
+    ], // TODO make @do_not_activate a constant somewhere
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -154,13 +178,13 @@ Future<CoreTestResult> _runMinusRFlagTest({
   );
   final int exitCode2 = await capture2.exitCode;
   logFragment2.stop();
-  if(exitCode2 != 0) {
+  if (exitCode2 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       status: TestStatus.failed,
-      exitCode: exitCode2
+      exitCode: exitCode2,
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture2, daemonLogFragment: logFragment2);
@@ -171,7 +195,8 @@ Future<CoreTestResult> _runMinusRFlagTest({
   final List<String> args3 = _buildBaseSshnpArgs(
     context: context,
     clientBinary: sshnpClientBinary,
-    deviceName: deviceName);
+    deviceName: deviceName,
+  );
   final LogFragment logFragment3 = await dockerInstance.createLogFragment(
     stdoutFile: coreTestLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
@@ -187,7 +212,13 @@ Future<CoreTestResult> _runMinusRFlagTest({
   logFragment3.start();
   final ProcessOutputCapture capture3 = await startCommandWithCapture(
     sshnpClientBinary.file.path,
-    [...args3, '-h', relayAtsign, '-r', '@do_not_activate'], // TODO make @do_not_activate a constant somewhere
+    [
+      ...args3,
+      '-h',
+      relayAtsign,
+      '-r',
+      '@do_not_activate',
+    ], // TODO make @do_not_activate a constant somewhere
     stdoutLogFile: coreTestLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -201,25 +232,25 @@ Future<CoreTestResult> _runMinusRFlagTest({
   );
   final int exitCode3 = await capture3.exitCode;
   logFragment3.stop();
-  if(exitCode3 == 0) {
+  if (exitCode3 == 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       status: TestStatus.failed,
-      exitCode: exitCode3
+      exitCode: exitCode3,
     );
     printTestResult(testResult: coreTestResult, extra: extra);
     printAllLogs(clientCapture: capture3, daemonLogFragment: logFragment3);
     return coreTestResult;
   }
-  
+
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,
     daemonVersion: daemonVersion,
     status: TestStatus.passed,
-    exitCode: exitCode3
+    exitCode: exitCode3,
   );
   printTestResult(testResult: coreTestResult, extra: extra);
   return coreTestResult;
@@ -231,27 +262,38 @@ List<String> _buildBaseSshnpArgs({
   required String deviceName,
 }) {
   final List<String> args = [];
-  if(versionIsAtLeast(clientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.0.0'))) {
+  if (versionIsAtLeast(
+    clientBinary.noPortsVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
+  )) {
     args.add('-x');
     args.add('--no-ad');
     args.add('--no-et');
   }
-  if(versionIsAtLeast(clientBinary.noPortsVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+  if (versionIsAtLeast(
+    clientBinary.noPortsVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.3.0'),
+  )) {
     args.add('-k');
     args.add(context.apkamKeys[context.clientAtsign]!.path);
   }
   args.addAll([
-    '-f', context.clientAtsign,
-    '-t', context.daemonAtsign,
-    '-i', context.identityFilePath,
-    '-u', context.remoteUsername,
-    '--root-domain', context.rootDomain,
-    '-d', deviceName,
+    '-f',
+    context.clientAtsign,
+    '-t',
+    context.daemonAtsign,
+    '-i',
+    context.identityFilePath,
+    '-u',
+    context.remoteUsername,
+    '--root-domain',
+    context.rootDomain,
+    '-d',
+    deviceName,
     '-s',
   ]);
   return args;
 }
-
 
 // we only want to check:
 //   a. non-current client with current daemon
@@ -261,25 +303,29 @@ Set<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
   required final List<NoPortsVersion> daemonVersions,
 }) {
   Set<(NoPortsVersion, NoPortsVersion)> combinations = {};
-  for(final clientVersion in clientVersions) {
-    for(final daemonVersion in daemonVersions) {
-      if(combinations.contains((clientVersion, daemonVersion))) {
+  for (final clientVersion in clientVersions) {
+    for (final daemonVersion in daemonVersions) {
+      if (combinations.contains((clientVersion, daemonVersion))) {
         // if permutation already exists, skip
         continue;
       }
       final bool isClientCurrent = clientVersion.version == 'current';
       final bool isDaemonCurrent = daemonVersion.version == 'current';
       // skip if both client and daemon are not current
-      if(!isClientCurrent && !isDaemonCurrent) {
+      if (!isClientCurrent && !isDaemonCurrent) {
         continue;
       }
-      if(daemonVersion.language == Language.c) {
+      if (daemonVersion.language == Language.c) {
         // C daemon doesn't need to test a client side only feature
         continue;
       }
-      if(clientVersion.language == Language.dart && versionIsLessThan(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.2.0'))) {
+      if (clientVersion.language == Language.dart &&
+          versionIsLessThan(
+            clientVersion,
+            NoPortsVersion(language: Language.dart, version: 'v5.2.0'),
+          )) {
         // -r was added in v5.2.0
-        continue; 
+        continue;
       }
       combinations.add((clientVersion, daemonVersion));
     }
