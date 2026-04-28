@@ -15,10 +15,6 @@ import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
-enum _SshnpProtocol { v4 }
-
-enum _SshnpClient { dart }
-
 const String _remoteCommandObservedMarker =
     'EXPECT: observed remote SCOOBY DOO marker';
 
@@ -52,8 +48,6 @@ List<Future<CoreTestResult> Function()> getV4DartInLineFactories({
         testLogger: testLogger,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
-        protocol: _SshnpProtocol.v4,
-        sshClient: _SshnpClient.dart,
       ),
     );
   }
@@ -68,8 +62,6 @@ Future<CoreTestResult> _runInlineSshnpTest({
   required CoreTestLogger testLogger,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
-  required _SshnpProtocol protocol,
-  required _SshnpClient sshClient,
 }) async {
   final String extra = generateExtraString(
     clientVersion,
@@ -77,7 +69,6 @@ Future<CoreTestResult> _runInlineSshnpTest({
     useShortLanguageName: true,
   );
   printTestStart(testName: testName, extra: extra);
-
   final ClientBinary sshnpClientBinary = _getSshnpClientBinary(
     context: context,
     clientVersion: clientVersion,
@@ -92,11 +83,7 @@ Future<CoreTestResult> _runInlineSshnpTest({
     context: context,
     clientVersion: clientVersion,
     deviceName: deviceName,
-    protocol: protocol,
-    sshClient: sshClient,
-    printSshCommand: false,
   );
-
   final LogFragment daemonLogCapture = await daemonDockerInstance
       .createLogFragment(
         stdoutFile: testLogger.getDaemonStdoutLogFile(
@@ -126,7 +113,6 @@ Future<CoreTestResult> _runInlineSshnpTest({
   if (expectTranscriptLogFile.existsSync()) {
     expectTranscriptLogFile.deleteSync();
   }
-
   daemonLogCapture.start();
   late final ProcessResult expectResult;
   try {
@@ -214,9 +200,6 @@ List<String> _buildSshnpArgs({
   required CoreTestsContext context,
   required NoPortsVersion clientVersion,
   required String deviceName,
-  required _SshnpProtocol protocol,
-  required _SshnpClient sshClient,
-  required bool printSshCommand,
 }) {
   final List<String> args = [
     '-f',
@@ -234,21 +217,16 @@ List<String> _buildSshnpArgs({
     '--root-domain',
     context.rootDomain,
     '--ssh-client',
-    sshClient.name,
+    'dart',
     '-s',
   ];
 
-  if (protocol == _SshnpProtocol.v4 &&
-      versionIsAtLeast(
-        clientVersion,
-        NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
-      )) {
+  if (versionIsAtLeast(
+    clientVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
+  )) {
     args.add('--no-ad');
     args.add('--no-et');
-  }
-
-  if (printSshCommand) {
-    args.add('-x');
   }
 
   if (versionIsAtLeast(

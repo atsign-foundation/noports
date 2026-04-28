@@ -12,10 +12,6 @@ import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/process_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
 
-enum _SshnpProtocol { v4 }
-
-enum _SshnpClient { openssh }
-
 const String _remotePrintCommandMarker = 'TEST PASSED';
 
 const String testName = 'v4_openssh_print';
@@ -53,7 +49,6 @@ List<Future<CoreTestResult> Function()> runV4OpensshPrintTests({
         testLogger: testLogger,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
-        protocol: _SshnpProtocol.v4,
       ),
     );
   }
@@ -69,7 +64,6 @@ Future<CoreTestResult> _runPrintSshnpTest({
   required CoreTestLogger testLogger,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
-  required _SshnpProtocol protocol,
 }) async {
   final String extra = generateExtraString(
     clientVersion,
@@ -92,9 +86,6 @@ Future<CoreTestResult> _runPrintSshnpTest({
     context: context,
     clientVersion: clientVersion,
     deviceName: deviceName,
-    protocol: protocol,
-    sshClient: _SshnpClient.openssh,
-    printSshCommand: true,
   );
 
   final LogFragment sshnpDaemonLogCapture = await daemonDockerInstance
@@ -261,9 +252,6 @@ List<String> _buildSshnpArgs({
   required CoreTestsContext context,
   required NoPortsVersion clientVersion,
   required String deviceName,
-  required _SshnpProtocol protocol,
-  required _SshnpClient sshClient,
-  required bool printSshCommand,
 }) {
   final List<String> args = [
     '-f',
@@ -281,22 +269,19 @@ List<String> _buildSshnpArgs({
     '--root-domain',
     context.rootDomain,
     '--ssh-client',
-    sshClient.name,
+    'openssh',
     '-s',
   ];
 
-  if (protocol == _SshnpProtocol.v4 &&
-      versionIsAtLeast(
-        clientVersion,
-        NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
-      )) {
+  if (versionIsAtLeast(
+    clientVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
+  )) {
     args.add('--no-ad');
     args.add('--no-et');
   }
 
-  if (printSshCommand) {
-    args.add('-x');
-  }
+  args.add('-x');
 
   if (versionIsAtLeast(
     clientVersion,
