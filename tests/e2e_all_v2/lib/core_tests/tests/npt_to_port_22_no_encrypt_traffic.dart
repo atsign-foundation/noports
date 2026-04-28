@@ -30,15 +30,9 @@ List<Future<CoreTestResult> Function()> runNptToPort22NoEncryptTrafficTests({
   final List<Future<CoreTestResult> Function()> testFactories = [];
   final CoreTestLogger testLogger = CoreTestLogger(logsDirectory: context.logsDirectory, testName: testName);
 
-  // This test only runs with current client and current daemon (v5.6.2+ feature)
-  final ClientBinary currentNptClientBinary = context.clientBinaries.firstWhere((cb) =>
-    cb.binaryType == ClientBinaryType.npt &&
-    cb.noPortsVersion.version == 'current' &&
-    cb.noPortsVersion.language == Language.dart);
-
   final List<(NoPortsVersion, NoPortsVersion)> versionPermutations = _generateVersionPermutations(
-    clientVersions: [currentNptClientBinary.noPortsVersion],
-    daemonVersions: [currentNptClientBinary.noPortsVersion],
+    clientVersions: [NoPortsVersion(language: Language.dart, version: 'current')],
+    daemonVersions: [NoPortsVersion(language: Language.dart, version: 'current')],
   );
 
   for(final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion) in versionPermutations) {
@@ -61,11 +55,9 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
 }) async {
   final String extra = generateExtraString(clientVersion, daemonVersion, useShortLanguageName: true);
   printTestStart(testName: testName, extra: extra);
-
   final String deviceName = '${getDeviceNameNoFlags(
     testRunId: context.testRunId,
     noPortsVersion: daemonVersion)}_f';
-
   final ClientBinary nptClientBinary = context.clientBinaries.firstWhere((cb) =>
     cb.binaryType == ClientBinaryType.npt &&
     cb.noPortsVersion == clientVersion);
