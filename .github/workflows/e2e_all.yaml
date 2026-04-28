@@ -73,7 +73,38 @@ jobs:
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
       'dependabot[bot]'}}
+    name: e2e_all_v2 (${{ matrix.test_suite }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_suite: core_tests
+            output_artifact: e2e_all_v2_core_tests_artifacts
+            logs_dir: e2e_all_v2_core_tests
+            command: |
+              dart run tests/e2e_all_v2/bin/core_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --relay-atsign "@rv_dev" \
+                --policy-atsign "@npe2e_policy" \
+                --events-atsign "@npe2e_events" \
+                --root-domain "root.atsign.wtf" \
+                --base-directory "$LOGS_DIR" \
+                --batch-size 3
+          - test_suite: policy_tests
+            output_artifact: e2e_all_v2_policy_tests_artifacts
+            logs_dir: e2e_all_v2_policy_tests
+            command: |
+              dart run tests/e2e_all_v2/bin/policy_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --relay-atsign "@rv_dev" \
+                --npp-atsign "@npe2e_policy" \
+                --npp-atserver-atsign "@npe2e_policy_latest" \
+                --root-domain "root.atsign.wtf" \
+                --base-directory "$LOGS_DIR" \
+                --batch-size 3
 
     steps:
       - name: Checkout
@@ -113,20 +144,12 @@ jobs:
 
       - name: Env variables
         run: |
-          echo "OUTPUT_ARTIFACT=e2e_all_v2_artifacts" >> $GITHUB_ENV
-          echo "LOGS_DIR=e2e_all_v2" >> $GITHUB_ENV
+          echo "OUTPUT_ARTIFACT=${{ matrix.output_artifact }}" >> $GITHUB_ENV
+          echo "LOGS_DIR=${{ matrix.logs_dir }}" >> $GITHUB_ENV
 
-      - name: Run e2e_all_v2 tests
+      - name: Run e2e_all_v2 ${{ matrix.test_suite }}
         run: |
-          dart run tests/e2e_all_v2/bin/core_tests.dart \
-            --client-atsign "@npe2e_client" \
-            --daemon-atsign "@npe2e_daemon" \
-            --relay-atsign "@rv_dev" \
-            --policy-atsign "@npe2e_policy" \
-            --events-atsign "@npe2e_events" \
-            --root-domain "root.atsign.wtf" \
-            --base-directory "$LOGS_DIR" \
-            --batch-size 3
+          ${{ matrix.command }}
 
 
       - name: Zip e2e_all_v2 artifacts
@@ -143,6 +166,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: e2e_all_v2_artifacts
+          name: ${{ env.OUTPUT_ARTIFACT }}
           path: ${{ env.OUTPUT_ARTIFACT }}.zip
           if-no-files-found: warn
