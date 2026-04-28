@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:e2e_all_v2/core_tests/core_tests_docker_utils.dart';
+import 'package:e2e_all_v2/core_tests/tests/minus_r_flag.dart';
+import 'package:e2e_all_v2/core_tests/tests/minus_u_flag.dart';
+import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22.dart';
+import 'package:e2e_all_v2/core_tests/tests/npt_to_port_22_no_encrypt_traffic.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:at_cli_commons/at_cli_commons.dart';
@@ -256,27 +260,27 @@ Future<void> coreTests(CoreTestsParams params) async {
   // Part 2: do all other tests
   final List<Future<CoreTestResult> Function()> remainingTestFactories = [];
 
-  // remainingTestFactories.addAll(runMinusRFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runMinusUFlagTests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runNptToPort22Tests(
-  //   context: context,
-  //   clientVersions: clientVersions,
-  //   daemonVersions: daemonVersions,
-  // ));
-  //
-  // remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
-  //   context: context,
-  // ));
+  remainingTestFactories.addAll(runMinusRFlagTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  remainingTestFactories.addAll(runMinusUFlagTests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  remainingTestFactories.addAll(runNptToPort22Tests(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+  ));
+
+  remainingTestFactories.addAll(runNptToPort22NoEncryptTrafficTests(
+    context: context,
+  ));
 
   remainingTestFactories.addAll(
     getV4DartInLineFactories(
