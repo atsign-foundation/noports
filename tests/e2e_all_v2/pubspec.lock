@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "3.0.1"
   at_client:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_client
       sha256: ef6490ce6a001fc38095bf6d53c1e98af1d9cb1242a87c9944890dfb9f9220d4
@@ -106,7 +106,7 @@ packages:
     source: hosted
     version: "3.5.0"
   at_onboarding_cli:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_onboarding_cli
       sha256: "40b9b40ff88bbfba50412bbc6fe4d5991958e6ccab9a1f434bba0eaa9af115b9"
@@ -173,10 +173,10 @@ packages:
     dependency: transitive
     description:
       name: chalkdart
-      sha256: "7dcf37e0b3d8dcec8c4ae0420d85aad9b3167d6a759601fd5b0f2b1958746581"
+      sha256: "82dfa884e3cf97641eb0742a3b9ffd41490666b9ece548b2e32cbfefe540bf86"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "2.4.0"
   charcode:
     dependency: transitive
     description:
@@ -209,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  config:
+    dependency: transitive
+    description:
+      name: config
+      sha256: "7ab448e904baf3991878881be208b4298b2c1737852529238340dc780c575bda"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.4"
   convert:
     dependency: transitive
     description:
@@ -265,6 +273,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.20"
+  dartssh2:
+    dependency: transitive
+    description:
+      name: dartssh2
+      sha256: c139babed0d6851449100010639115e1ed88decf0db7eb714ce13935c7eb590c
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.17.1"
   duration:
     dependency: transitive
     description:
@@ -309,10 +325,10 @@ packages:
     dependency: transitive
     description:
       name: file
-      sha256: a3b4f84adafef897088c160faf7dfffb7696046cb13ae90b508c2cbc95d3b8d4
+      sha256: "1b92bec4fc2a72f59a8e15af5f52cd441e4a7860b49499d69dfa817af20e925d"
       url: "https://pub.dev"
     source: hosted
-    version: "7.0.1"
+    version: "6.1.4"
   fixnum:
     dependency: transitive
     description:
@@ -473,6 +489,21 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
+  noports_core:
+    dependency: "direct main"
+    description:
+      path: "../../packages/dart/noports_core"
+      relative: true
+    source: path
+    version: "6.12.0"
+  openssh_ed25519:
+    dependency: transitive
+    description:
+      name: openssh_ed25519
+      sha256: eb65bfb9158c05c294d653f639bb9b4b18aca6dfd010986e4f325e439a93655f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   package_config:
     dependency: transitive
     description:
@@ -497,6 +528,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
+  pinenacl:
+    dependency: transitive
+    description:
+      name: pinenacl
+      sha256: "57e907beaacbc3c024a098910b6240758e899674de07d6949a67b52fd984cbdf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   platform:
     dependency: transitive
     description:
@@ -506,13 +545,13 @@ packages:
     source: hosted
     version: "3.1.6"
   pointycastle:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: pointycastle
-      sha256: "4be0097fcf3fd3e8449e53730c631200ebc7b88016acecab2b0da2f0149222fe"
+      sha256: "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"
       url: "https://pub.dev"
     source: hosted
-    version: "3.9.1"
+    version: "4.0.0"
   pool:
     dependency: "direct main"
     description:
@@ -545,6 +584,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  rfc_6901:
+    dependency: transitive
+    description:
+      name: rfc_6901
+      sha256: "6a43b1858dca2febaf93e15639aa6b0c49ccdfd7647775f15a499f872b018154"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   shelf:
     dependency: transitive
     description:
@@ -577,6 +624,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  socket_connector:
+    dependency: transitive
+    description:
+      name: socket_connector
+      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
   source_map_stack_trace:
     dependency: transitive
     description:

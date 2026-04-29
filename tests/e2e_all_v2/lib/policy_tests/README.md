@@ -5,7 +5,6 @@ Daemons: current
 npp_atserver: v5.13.0
 npp: current
 
-test01_basic_test.dart
 0. Set up actors
 0a. Run `npp_atserver|npp -a <policy_atsign> -v`
 0b. Run `sshnpd -a <atsign> -p <policy_atsign> --permit-open "localhost:22"`
@@ -49,3 +48,15 @@ docker stop $(docker ps -q) 2>/dev/null ; \
         --root-domain "root.atsign.org:64" \
         --batch-size 3
 ```
+
+## Placing policy rules for npp_atserver
+
+Hints:
+
+~/GitHub/policy_temp/npp_atserver
+
+## Placing policy rules for npp
+
+Hints:
+
+~/GitHub/policy_temp/npp

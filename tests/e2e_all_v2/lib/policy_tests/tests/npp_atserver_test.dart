@@ -5,9 +5,12 @@ import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/policy_tests/policy_server.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests_context.dart';
+import 'package:e2e_all_v2/policy_tests/policy_tests_logging.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests_test_result.dart';
+import 'package:e2e_all_v2/policy_tests/tests/policy_flow_shared.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
+import 'package:noports_core/admin.dart' as admin;
 
 const String nppAtServerTestName = 'npp_atserver_test';
 final NoPortsVersion _minimumNppAtServerVersion = NoPortsVersion(
@@ -22,6 +25,10 @@ List<Future<PolicyTestResult> Function()> runNppAtServerTests({
   required final List<NoPortsVersion> nppAtServerVersions,
 }) {
   final List<Future<PolicyTestResult> Function()> testFactories = [];
+  final PolicyTestLogger testLogger = PolicyTestLogger(
+    logsDirectory: context.logsDirectory,
+    testName: nppAtServerTestName,
+  );
   final List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> permutations =
       _generateVersionPermutationsNppAtServer(
         clientVersions: clientVersions,
@@ -35,6 +42,7 @@ List<Future<PolicyTestResult> Function()> runNppAtServerTests({
     testFactories.add(
       () => _runNppAtServerTest(
         context: context,
+        testLogger: testLogger,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
         policyVersion: policyVersion,
@@ -68,6 +76,7 @@ _generateVersionPermutationsNppAtServer({
 
 Future<PolicyTestResult> _runNppAtServerTest({
   required final PolicyTestsContext context,
+  required final PolicyTestLogger testLogger,
   required final NoPortsVersion clientVersion,
   required final NoPortsVersion daemonVersion,
   required final NoPortsVersion policyVersion,
@@ -102,27 +111,61 @@ Future<PolicyTestResult> _runNppAtServerTest({
       'Docker image for language ${policyVersion.language.name} and version ${policyVersion.version} not found in dockerImages list',
     ),
   );
+  final String uniqueIdentifier = _uniqueIdentifier(
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+  );
   final PolicyServer policyServer = PolicyServer(
     type: PolicyServerType.nppAtServer,
     version: policyVersion,
     atsign: context.nppAtServerAtsign,
     rootDomain: context.rootDomain,
     testRunId: context.testRunId,
-    logsDirectory: Directory('${context.logsDirectory.path}/policies'),
+    logsDirectory: testLogger.policiesDirectory,
     apkamKeysFile: policyApkamKeysFile,
     dockerImage: policyDockerImage,
+    uniqueIdentifierSuffix: uniqueIdentifier,
   );
-  await policyServer.start();
-  await policyServer.ensureProcessMessage();
 
-  return PolicyTestResult(
-    testName: nppAtServerTestName,
-    clientVersion: clientVersion,
-    daemonVersion: daemonVersion,
-    policyVersion: policyVersion,
-    status: TestStatus.passed,
-    exitCode: 0,
-  );
+  try {
+    await policyServer.start();
+    await policyServer.ensureProcessMessage();
+    final atClient = await createPolicyAtClient(
+      atsign: context.nppAtServerAtsign,
+      apkamKeysFile: policyApkamKeysFile,
+      rootDomain: context.rootDomain,
+      storageDirectory: Directory(
+        '${context.baseDirectory.path}/atClientStorage/npp_atserver$uniqueIdentifier',
+      ),
+    );
+    final policyService = admin.PolicyServiceWithAtClient(atClient: atClient);
+    await policyService.init();
+    final PolicyTestResult testResult = await runPolicyFlow(
+      context: context,
+      testLogger: testLogger,
+      testName: nppAtServerTestName,
+      policyLabel: 'npp_atserver',
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      policyManagerAtsign: context.nppAtServerAtsign,
+      policyRules: NppAtServerPolicyRules(policyService),
+    );
+    printTestResult(testResult: testResult, extra: extra);
+    return testResult;
+  } finally {
+    try {
+      await policyServer.stop();
+    } catch (_) {}
+  }
+}
+
+String _uniqueIdentifier({
+  required final NoPortsVersion clientVersion,
+  required final NoPortsVersion daemonVersion,
+}) {
+  return '_${clientVersion.language.name}_${clientVersion.version}'
+      '_${daemonVersion.language.name}_${daemonVersion.version}';
 }
 
 String _generateExtraString({

@@ -74,6 +74,7 @@ Future<void> policyTests(PolicyTestsParams params) async {
   for (final NoPortsVersion clientVersion in clientVersions) {
     clientBinariesToDownload.add((clientVersion, ClientBinaryType.sshnp));
     clientBinariesToDownload.add((clientVersion, ClientBinaryType.npt));
+    clientBinariesToDownload.add((clientVersion, ClientBinaryType.srv));
   }
   // Add d:current at_activate so we can apkam with that
   clientBinariesToDownload.add((

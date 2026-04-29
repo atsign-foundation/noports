@@ -5,9 +5,12 @@ import 'package:e2e_all_v2/language.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/policy_tests/policy_server.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests_context.dart';
+import 'package:e2e_all_v2/policy_tests/policy_tests_logging.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests_test_result.dart';
+import 'package:e2e_all_v2/policy_tests/tests/policy_flow_shared.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/test_result.dart';
+import 'package:noports_core/npp.dart' as npp;
 
 const String nppTestName = 'npp_test';
 final NoPortsVersion _minimumNppVersion = NoPortsVersion(
@@ -22,6 +25,10 @@ List<Future<PolicyTestResult> Function()> runNppTests({
   required final List<NoPortsVersion> nppVersions,
 }) {
   final List<Future<PolicyTestResult> Function()> testFactories = [];
+  final PolicyTestLogger testLogger = PolicyTestLogger(
+    logsDirectory: context.logsDirectory,
+    testName: nppTestName,
+  );
   final List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> permutations =
       _generateVersionPermutations(
         clientVersions: clientVersions,
@@ -29,10 +36,16 @@ List<Future<PolicyTestResult> Function()> runNppTests({
         nppVersions: nppVersions,
       );
 
-  for (final (NoPortsVersion clientVersion, NoPortsVersion daemonVersion, NoPortsVersion policyVersion) in permutations) {
+  for (final (
+        NoPortsVersion clientVersion,
+        NoPortsVersion daemonVersion,
+        NoPortsVersion policyVersion,
+      )
+      in permutations) {
     testFactories.add(
       () => _runNppTest(
         context: context,
+        testLogger: testLogger,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
         policyVersion: policyVersion,
@@ -43,12 +56,14 @@ List<Future<PolicyTestResult> Function()> runNppTests({
   return testFactories;
 }
 
-List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> _generateVersionPermutations({
+List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)>
+_generateVersionPermutations({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
   required final List<NoPortsVersion> nppVersions,
 }) {
-  final List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> permutations = [];
+  final List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> permutations =
+      [];
   for (final NoPortsVersion clientVersion in clientVersions) {
     for (final NoPortsVersion daemonVersion in daemonVersions) {
       for (final NoPortsVersion nppVersion in nppVersions) {
@@ -64,6 +79,7 @@ List<(NoPortsVersion, NoPortsVersion, NoPortsVersion)> _generateVersionPermutati
 
 Future<PolicyTestResult> _runNppTest({
   required final PolicyTestsContext context,
+  required final PolicyTestLogger testLogger,
   required final NoPortsVersion clientVersion,
   required final NoPortsVersion daemonVersion,
   required final NoPortsVersion policyVersion,
@@ -76,7 +92,9 @@ Future<PolicyTestResult> _runNppTest({
   printTestStart(testName: nppTestName, extra: extra);
 
   final File policyApkamKeysFile = context.apkamKeys[context.nppAtsign]!;
-  if (!(await policyApkamKeysFile.exists())) {
+  final File clientApkamKeysFile = context.apkamKeys[context.clientAtsign]!;
+  if (!(await policyApkamKeysFile.exists()) ||
+      !(await clientApkamKeysFile.exists())) {
     final PolicyTestResult testResult = PolicyTestResult(
       testName: nppTestName,
       clientVersion: clientVersion,
@@ -97,27 +115,73 @@ Future<PolicyTestResult> _runNppTest({
       'Docker image for language ${policyVersion.language.name} and version ${policyVersion.version} not found in dockerImages list',
     ),
   );
+  final String uniqueIdentifier = _uniqueIdentifier(
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+  );
   final PolicyServer policyServer = PolicyServer(
     type: PolicyServerType.npp,
     version: policyVersion,
     atsign: context.nppAtsign,
     rootDomain: context.rootDomain,
     testRunId: context.testRunId,
-    logsDirectory: Directory('${context.logsDirectory.path}/policies'),
+    logsDirectory: testLogger.policiesDirectory,
     apkamKeysFile: policyApkamKeysFile,
     dockerImage: policyDockerImage,
+    uniqueIdentifierSuffix: uniqueIdentifier,
+    additionalArgs: [
+      '--persistence-method',
+      'none',
+      '--manager-allow-list',
+      context.clientAtsign,
+    ],
   );
-  await policyServer.start();
-  await policyServer.ensureProcessMessage();
 
-  return PolicyTestResult(
-    testName: nppTestName,
-    clientVersion: clientVersion,
-    daemonVersion: daemonVersion,
-    policyVersion: policyVersion,
-    status: TestStatus.passed,
-    exitCode: 0,
-  );
+  try {
+    await policyServer.start();
+    await policyServer.ensureProcessMessage();
+    final atClient = await createPolicyAtClient(
+      atsign: context.clientAtsign,
+      apkamKeysFile: clientApkamKeysFile,
+      rootDomain: context.rootDomain,
+      storageDirectory: Directory(
+        '${context.baseDirectory.path}/atClientStorage/npp$uniqueIdentifier',
+      ),
+    );
+    final policyRules = NppPolicyRules(
+      npp.NppClient(
+        atClient: atClient,
+        serverAtSign: context.nppAtsign,
+        baseNameSpace: 'sshnp',
+        domainNameSpace: 'npp',
+      ),
+    );
+    final PolicyTestResult testResult = await runPolicyFlow(
+      context: context,
+      testLogger: testLogger,
+      testName: nppTestName,
+      policyLabel: 'npp',
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      policyManagerAtsign: context.nppAtsign,
+      policyRules: policyRules,
+    );
+    printTestResult(testResult: testResult, extra: extra);
+    return testResult;
+  } finally {
+    try {
+      await policyServer.stop();
+    } catch (_) {}
+  }
+}
+
+String _uniqueIdentifier({
+  required final NoPortsVersion clientVersion,
+  required final NoPortsVersion daemonVersion,
+}) {
+  return '_${clientVersion.language.name}_${clientVersion.version}'
+      '_${daemonVersion.language.name}_${daemonVersion.version}';
 }
 
 String _generateExtraString({

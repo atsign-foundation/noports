@@ -59,7 +59,7 @@ extension PolicyServerTypeProperties on PolicyServerType {
   String get processReadyMessage {
     switch (this) {
       case PolicyServerType.npp:
-        return 'Successfully loaded';
+        return 'monitor started';
       case PolicyServerType.nppAtServer:
         return 'Load complete';
     }
@@ -79,6 +79,8 @@ class PolicyServer {
   final File apkamKeysFile;
   final DockerImage dockerImage;
   final String testRunId;
+  final String uniqueIdentifierSuffix;
+  final List<String> additionalArgs;
   late DockerInstance dockerInstance;
 
   PolicyServer({
@@ -90,6 +92,8 @@ class PolicyServer {
     required this.apkamKeysFile,
     required this.dockerImage,
     required this.testRunId,
+    this.uniqueIdentifierSuffix = '',
+    this.additionalArgs = const <String>[],
   });
 
   String get containerName => dockerInstance.containerName;
@@ -118,7 +122,7 @@ class PolicyServer {
       dockerImage: dockerImage,
       testRunId: testRunId,
       logsDirectory: logsDirectory,
-      uniqueIdentifier: type.uniqueIdentifier,
+      uniqueIdentifier: '${type.uniqueIdentifier}$uniqueIdentifierSuffix',
       entrypoint: [
         type.executablePath,
         '-a',
@@ -128,6 +132,7 @@ class PolicyServer {
         containerKeyFilePath,
         '--root-domain',
         rootDomain,
+        ...additionalArgs,
       ],
       volumeMappings: [
         VolumeMapping(
