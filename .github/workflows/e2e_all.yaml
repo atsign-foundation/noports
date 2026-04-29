@@ -102,7 +102,7 @@ jobs:
                 --relay-atsign "@rv_dev" \
                 --npp-atsign "@npe2e_policy" \
                 --npp-atserver-atsign "@npe2e_policy_latest" \
-                --root-domain "root.atsign.wtf" \
+                --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 3
 
