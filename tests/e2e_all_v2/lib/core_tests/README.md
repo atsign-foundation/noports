@@ -9,7 +9,6 @@ TODOs:
 - sample ssh command from e2e_all
 /home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/binaries/dart.branch/sshnp -f @npe2e_client -d 36b57d4ccf -i /home/runner/.ssh/e2e_all.36b57d4  -t @npe2e_daemon -h @rv_dev -u atsign   --root-domain root.atsign.wtf  -x -k /home/runner/work/noports/noports/tests/e2e_all/runtime/36b57d4/apkam/@npe2e_client.e2e_all.client_36b57d4.atKeys -s
 
-
 TODOs:
 - add v4 to daemon list
 - core_tests

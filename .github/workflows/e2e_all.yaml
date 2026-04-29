@@ -105,6 +105,21 @@ jobs:
                 --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 3
+          - test_suite: relay_tests
+            output_artifact: e2e_all_v2_relay_tests_artifacts
+            logs_dir: e2e_all_v2_relay_tests
+            command: |
+              dart run tests/e2e_all_v2/bin/relay_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --prod-relay-atsign "@rv_dev" \
+                --self-relay-atsigns "@npe2e_relay,@npe2e_relay_latest,@npe2e_singleton" \
+                --root-domain "root.atsign.wtf" \
+                --base-directory "$LOGS_DIR" \
+                --client-versions "d:v5.10.0,d:current" \
+                --daemon-versions "d:v5.10.0,d:current" \
+                --self-relay-versions "d:v5.10.0,d:current" \
+                --batch-size 3
 
     steps:
       - name: Checkout

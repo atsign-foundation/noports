@@ -60,3 +60,8 @@ Hints:
 Hints:
 
 ~/GitHub/policy_temp/npp
+
+- manage a living document of context , a plan a record, shows current state, weaknesses, comparisons and similarities
+- assessments
+- virtualenv
+- ~/AGENTS.md

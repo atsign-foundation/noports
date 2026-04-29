@@ -11,6 +11,31 @@ class VolumeMapping {
   VolumeMapping({required this.local, required this.container});
 }
 
+class PortMapping {
+  final String? hostIp;
+  final String? hostPort;
+  final String containerPort;
+  final String protocol;
+
+  PortMapping({
+    this.hostIp,
+    this.hostPort,
+    required this.containerPort,
+    this.protocol = 'tcp',
+  });
+
+  String toDockerArg() {
+    final String suffix = protocol.isEmpty ? '' : '/$protocol';
+    if (hostPort == null || hostPort!.isEmpty) {
+      return '$containerPort$suffix';
+    }
+    if (hostIp == null || hostIp!.isEmpty) {
+      return '$hostPort:$containerPort$suffix';
+    }
+    return '$hostIp:$hostPort:$containerPort$suffix';
+  }
+}
+
 class DockerInstance {
   final DockerImage dockerImage;
   final String testRunId;
@@ -44,6 +69,11 @@ class DockerInstance {
   Future<Process> run({
     final List<String> entrypoint = const <String>[],
     final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
+    final List<PortMapping> portMappings = const <PortMapping>[],
+    final Map<String, String> environment = const <String, String>{},
+    final String? networkName,
+    final String? networkAlias,
+    final List<String> additionalDockerArgs = const <String>[],
     final bool quiet = false,
     final bool removeWhenStopped = true,
     File? stdoutLogFile, // holds logs for full container life-time
@@ -59,10 +89,27 @@ class DockerInstance {
     if (removeWhenStopped) {
       args.add('--rm');
     }
+    if (networkName != null) {
+      args.add('--network');
+      args.add(networkName);
+    }
+    if (networkAlias != null) {
+      args.add('--network-alias');
+      args.add(networkAlias);
+    }
+    for (final PortMapping portMapping in portMappings) {
+      args.add('--publish');
+      args.add(portMapping.toDockerArg());
+    }
+    for (final MapEntry<String, String> entry in environment.entries) {
+      args.add('--env');
+      args.add('${entry.key}=${entry.value}');
+    }
     for (final VolumeMapping volumeMapping in volumeMappings) {
       args.add('--volume');
       args.add('${volumeMapping.local}:${volumeMapping.container}');
     }
+    args.addAll(additionalDockerArgs);
     args.add(dockerImage.fullImageName);
     args.addAll(entrypoint);
 

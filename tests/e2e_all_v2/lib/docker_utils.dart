@@ -84,6 +84,11 @@ Future<DockerInstance> runDockerInstance({
   final String uniqueIdentifier = '',
   final String? containerName,
   final List<VolumeMapping> volumeMappings = const <VolumeMapping>[],
+  final List<PortMapping> portMappings = const <PortMapping>[],
+  final Map<String, String> environment = const <String, String>{},
+  final String? networkName,
+  final String? networkAlias,
+  final List<String> additionalDockerArgs = const <String>[],
   final bool quiet = false,
   final bool removeWhenStopped = true,
 }) async {
@@ -105,6 +110,11 @@ Future<DockerInstance> runDockerInstance({
     quiet: quiet,
     removeWhenStopped: removeWhenStopped,
     volumeMappings: volumeMappings,
+    portMappings: portMappings,
+    environment: environment,
+    networkName: networkName,
+    networkAlias: networkAlias,
+    additionalDockerArgs: additionalDockerArgs,
     stdoutLogFile: stdoutLogFile,
     stderrLogFile: stderrLogFile,
   );
