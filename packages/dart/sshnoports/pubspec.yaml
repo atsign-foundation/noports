@@ -44,7 +44,12 @@ dependency_overrides:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
       path: packages/at_auth
-      ref: st/onb-cli-remove-wait-pkam-auth
+      ref: trunk
+  at_commmons:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      path: packages/at_commmons
+      ref: trunk
   pointycastle: ^4.0.0
 
 dev_dependencies:
