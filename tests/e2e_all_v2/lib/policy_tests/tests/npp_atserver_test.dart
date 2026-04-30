@@ -150,6 +150,7 @@ Future<PolicyTestResult> _runNppAtServerTest({
       policyVersion: policyVersion,
       policyManagerAtsign: context.nppAtServerAtsign,
       policyRules: NppAtServerPolicyRules(policyService),
+      policyServer: policyServer.dockerInstance,
     );
     printTestResult(testResult: testResult, extra: extra);
     return testResult;

@@ -76,6 +76,7 @@ class DockerInstance {
     final List<String> additionalDockerArgs = const <String>[],
     final bool quiet = false,
     final bool removeWhenStopped = true,
+    final bool printCommand = true,
     File? stdoutLogFile, // holds logs for full container life-time
     File? stderrLogFile, // holds logs for full container life-time
   }) async {
@@ -130,6 +131,7 @@ class DockerInstance {
     final Process process = await startCommand(
       executable,
       args,
+      printCommand: printCommand,
       stdoutLogFile: stdoutLogFile,
       stderrLogFile: stderrLogFile,
     );
@@ -147,7 +149,11 @@ class DockerInstance {
       containerName,
     ];
 
-    final ProcessResult processResult = await runCommand(executable, args);
+    final ProcessResult processResult = await runCommand(
+      executable,
+      args,
+      printCommand: false,
+    );
     if (processResult.stdout.length > 0) {
       // since we're using `-q`, the length will be > 0 if the container is active
       return true;
@@ -159,23 +165,31 @@ class DockerInstance {
   Future<ProcessResult> stop({String? logDirectory}) async {
     const String executable = 'docker';
     final List<String> args = ['container', 'stop', containerName];
-    final ProcessResult processResult = await runCommand(executable, args);
+    final ProcessResult processResult = await runCommand(
+      executable,
+      args,
+      printCommand: false,
+    );
     return processResult;
   }
 
   LogFragment createLogFragment({
     required File stdoutFile,
     required File stderrFile,
+    bool printCommand = true,
   }) {
     final fragment = LogFragment(
       stdoutFile: stdoutFile,
       stderrFile: stderrFile,
       processStarter: () async {
+        final String since = DateTime.now().toUtc().toIso8601String();
         final Process process = await startCommand('docker', [
           'logs',
+          '--since',
+          since,
           '-f',
           containerName,
-        ]);
+        ], printCommand: printCommand);
 
         // Listen to stdout and write to file
         process.stdout

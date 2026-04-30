@@ -92,9 +92,7 @@ Future<PolicyTestResult> _runNppTest({
   printTestStart(testName: nppTestName, extra: extra);
 
   final File policyApkamKeysFile = context.apkamKeys[context.nppAtsign]!;
-  final File clientApkamKeysFile = context.apkamKeys[context.clientAtsign]!;
-  if (!(await policyApkamKeysFile.exists()) ||
-      !(await clientApkamKeysFile.exists())) {
+  if (!(await policyApkamKeysFile.exists())) {
     final PolicyTestResult testResult = PolicyTestResult(
       testName: nppTestName,
       clientVersion: clientVersion,
@@ -133,7 +131,7 @@ Future<PolicyTestResult> _runNppTest({
       '--persistence-method',
       'none',
       '--manager-allow-list',
-      context.clientAtsign,
+      context.nppAtsign,
     ],
   );
 
@@ -141,8 +139,8 @@ Future<PolicyTestResult> _runNppTest({
     await policyServer.start();
     await policyServer.ensureProcessMessage();
     final atClient = await createPolicyAtClient(
-      atsign: context.clientAtsign,
-      apkamKeysFile: clientApkamKeysFile,
+      atsign: context.nppAtsign,
+      apkamKeysFile: policyApkamKeysFile,
       rootDomain: context.rootDomain,
       storageDirectory: Directory(
         '${context.baseDirectory.path}/atClientStorage/npp$uniqueIdentifier',
@@ -166,6 +164,7 @@ Future<PolicyTestResult> _runNppTest({
       policyVersion: policyVersion,
       policyManagerAtsign: context.nppAtsign,
       policyRules: policyRules,
+      policyServer: policyServer.dockerInstance,
     );
     printTestResult(testResult: testResult, extra: extra);
     return testResult;

@@ -140,6 +140,7 @@ class PolicyServer {
           container: containerKeyFilePath,
         ),
       ],
+      printCommand: false,
     );
   }
 
@@ -174,7 +175,6 @@ class PolicyServer {
         message: successMessage,
       );
       if (matchingLine != null) {
-        print('$containerName found: "$matchingLine"');
         return;
       }
 

@@ -91,6 +91,7 @@ Future<DockerInstance> runDockerInstance({
   final List<String> additionalDockerArgs = const <String>[],
   final bool quiet = false,
   final bool removeWhenStopped = true,
+  final bool printCommand = true,
 }) async {
   final DockerInstance dockerInstance = DockerInstance(
     dockerImage: dockerImage,
@@ -109,6 +110,7 @@ Future<DockerInstance> runDockerInstance({
     entrypoint: entrypoint,
     quiet: quiet,
     removeWhenStopped: removeWhenStopped,
+    printCommand: printCommand,
     volumeMappings: volumeMappings,
     portMappings: portMappings,
     environment: environment,

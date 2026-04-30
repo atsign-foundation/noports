@@ -29,6 +29,12 @@ const String policyDaemonDeniedPermitOpen = 'localhost:2233';
 abstract class PolicyRules {
   Future<void> clear();
 
+  Future<List<String>> permitOpensFor({
+    required String clientAtsign,
+    required String daemonAtsign,
+    required String deviceName,
+  });
+
   Future<void> allowPermitOpen({
     required String clientAtsign,
     required String daemonAtsign,
@@ -73,6 +79,67 @@ class NppPolicyRules implements PolicyRules {
   }
 
   @override
+  Future<List<String>> permitOpensFor({
+    required String clientAtsign,
+    required String daemonAtsign,
+    required String deviceName,
+  }) async {
+    final clients = await client.getAllClients();
+    final clientIds = clients
+        .where((policyClient) => policyClient.atSign == clientAtsign)
+        .map((policyClient) => policyClient.id)
+        .whereType<String>()
+        .toSet();
+    if (clientIds.isEmpty) {
+      return const [];
+    }
+
+    final members = await client.getAllClientGroupMembers();
+    final clientGroupIds = members
+        .where((member) => clientIds.contains(member.clientId))
+        .map((member) => member.clientGroupId)
+        .toSet();
+    if (clientGroupIds.isEmpty) {
+      return const [];
+    }
+
+    final daemons = await client.getAllDaemons();
+    final daemonIds = daemons
+        .where((daemon) => daemon.atSign == daemonAtsign)
+        .map((daemon) => daemon.id)
+        .whereType<String>()
+        .toSet();
+    if (daemonIds.isEmpty) {
+      return const [];
+    }
+
+    final services = await client.getAllServices();
+    final serviceIds = services
+        .where(
+          (service) =>
+              daemonIds.contains(service.daemonId) &&
+              service.deviceName == deviceName &&
+              service.deviceGroupName == policyDeviceGroupName,
+        )
+        .map((service) => service.id)
+        .whereType<String>()
+        .toSet();
+    if (serviceIds.isEmpty) {
+      return const [];
+    }
+
+    final serviceACLs = await client.getAllServiceACLs();
+    return serviceACLs
+        .where(
+          (acl) =>
+              serviceIds.contains(acl.serviceId) &&
+              clientGroupIds.contains(acl.clientGroupId),
+        )
+        .map((acl) => acl.permitOpen)
+        .toList();
+  }
+
+  @override
   Future<void> allowPermitOpen({
     required String clientAtsign,
     required String daemonAtsign,
@@ -114,6 +181,7 @@ class NppPolicyRules implements PolicyRules {
 
 class NppAtServerPolicyRules implements PolicyRules {
   final admin.PolicyServiceWithAtClient service;
+  int _generation = 0;
 
   NppAtServerPolicyRules(this.service);
 
@@ -129,6 +197,33 @@ class NppAtServerPolicyRules implements PolicyRules {
   }
 
   @override
+  Future<List<String>> permitOpensFor({
+    required String clientAtsign,
+    required String daemonAtsign,
+    required String deviceName,
+  }) async {
+    final groups = await service.getUserGroups();
+    final permitOpens = <String>[];
+    for (final group in groups) {
+      if (!group.userAtSigns.contains(clientAtsign) ||
+          !group.daemonAtSigns.contains(daemonAtsign)) {
+        continue;
+      }
+      for (final device in group.devices) {
+        if (device.name == deviceName) {
+          permitOpens.addAll(device.permitOpens);
+        }
+      }
+      for (final deviceGroup in group.deviceGroups) {
+        if (deviceGroup.name == policyDeviceGroupName) {
+          permitOpens.addAll(deviceGroup.permitOpens);
+        }
+      }
+    }
+    return permitOpens;
+  }
+
+  @override
   Future<void> allowPermitOpen({
     required String clientAtsign,
     required String daemonAtsign,
@@ -136,6 +231,19 @@ class NppAtServerPolicyRules implements PolicyRules {
     required String permitOpen,
   }) async {
     await clear();
+    _generation++;
+    for (int i = 0; i < _generation; i++) {
+      await service.createUserGroup(
+        admin.UserGroup(
+          name: 'policy_e2e_generation_$i',
+          description: 'Policy e2e non-matching generation marker',
+          userAtSigns: ['@policy_e2e_generation_$i'],
+          daemonAtSigns: ['@policy_e2e_generation_$i'],
+          devices: const [],
+          deviceGroups: const [],
+        ),
+      );
+    }
     await service.createUserGroup(
       admin.UserGroup(
         name: 'policy_e2e_clients',
@@ -153,6 +261,37 @@ class NppAtServerPolicyRules implements PolicyRules {
 
   @override
   Future<void> close() async {}
+}
+
+Future<void> _checkPolicyRules({
+  required PolicyRules policyRules,
+  required String clientAtsign,
+  required String daemonAtsign,
+  required String deviceName,
+  required String? expectedPermitOpen,
+  required String stage,
+  bool allowAny = false,
+}) async {
+  final permitOpens = await policyRules.permitOpensFor(
+    clientAtsign: clientAtsign,
+    daemonAtsign: daemonAtsign,
+    deviceName: deviceName,
+  );
+  final actual = permitOpens.toSet();
+  if (allowAny) {
+    return;
+  }
+  final expected = expectedPermitOpen == null
+      ? const <String>{}
+      : <String>{expectedPermitOpen};
+  if (actual.length == expected.length && actual.containsAll(expected)) {
+    return;
+  }
+  throw StateError(
+    'Policy rule check failed ($stage) for client=$clientAtsign '
+    'daemon=$daemonAtsign device=$deviceName. '
+    'Expected permitOpen=$expected but found $actual',
+  );
 }
 
 Future<AtClient> createPolicyAtClient({
@@ -195,6 +334,7 @@ Future<PolicyTestResult> runPolicyFlow({
   required NoPortsVersion policyVersion,
   required String policyManagerAtsign,
   required PolicyRules policyRules,
+  required DockerInstance policyServer,
 }) async {
   final String extra =
       '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, '
@@ -220,7 +360,24 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
     );
 
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: null,
+      stage: 'initial check',
+      allowAny: true,
+    );
     await policyRules.clear();
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: null,
+      stage: 'after initial teardown',
+    );
     final result1 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
@@ -234,6 +391,8 @@ Future<PolicyTestResult> runPolicyFlow({
       expectSuccess: false,
       metadata: '01_no_rules',
       extra: extra,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
     );
     if (result1 != null) return result1;
 
@@ -242,6 +401,14 @@ Future<PolicyTestResult> runPolicyFlow({
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       permitOpen: policyWrongPortPermitOpen,
+    );
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: policyWrongPortPermitOpen,
+      stage: 'after wrong-port put',
     );
     final result2 = await runNptPolicyExpectation(
       context: context,
@@ -256,14 +423,33 @@ Future<PolicyTestResult> runPolicyFlow({
       expectSuccess: false,
       metadata: '02_wrong_policy_port',
       extra: extra,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
     );
     if (result2 != null) return result2;
 
+    await policyRules.clear();
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: null,
+      stage: 'before allowed put teardown',
+    );
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       permitOpen: policySshPermitOpen,
+    );
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: policySshPermitOpen,
+      stage: 'after allowed put',
     );
     final result3 = await runNptPolicyExpectation(
       context: context,
@@ -278,14 +464,33 @@ Future<PolicyTestResult> runPolicyFlow({
       expectSuccess: true,
       metadata: '03_allowed',
       extra: extra,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
     );
     if (result3 != null) return result3;
 
+    await policyRules.clear();
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: null,
+      stage: 'before daemon-denied put teardown',
+    );
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       permitOpen: policyDaemonDeniedPermitOpen,
+    );
+    await _checkPolicyRules(
+      policyRules: policyRules,
+      clientAtsign: context.clientAtsign,
+      daemonAtsign: context.daemonAtsign,
+      deviceName: deviceName,
+      expectedPermitOpen: policyDaemonDeniedPermitOpen,
+      stage: 'after daemon-denied put',
     );
     final result4 = await runNptPolicyExpectation(
       context: context,
@@ -300,6 +505,8 @@ Future<PolicyTestResult> runPolicyFlow({
       expectSuccess: false,
       metadata: '04_daemon_permit_open_denied',
       extra: extra,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
     );
     if (result4 != null) return result4;
 
@@ -387,7 +594,9 @@ Future<DockerInstance> startPolicyFlowDaemon({
     testRunId: context.testRunId,
     logsDirectory: testLogger.daemonsDirectory,
     uniqueIdentifier:
-        '_${policyLabel}_${clientVersion.language.name}_${clientVersion.version}'
+        '_daemon_$policyLabel'
+        '_${clientVersion.language.name}_${clientVersion.version}'
+        '_${daemonVersion.language.name}_${daemonVersion.version}'
         '_${policyVersion.language.name}_${policyVersion.version}',
     entrypoint: [
       '/bin/bash',
@@ -402,6 +611,7 @@ Future<DockerInstance> startPolicyFlowDaemon({
           '--permit-open "$policySshPermitOpen" '
           '-v -s -u',
     ],
+    printCommand: false,
     volumeMappings: [
       VolumeMapping(
         local: daemonApkamKeysFile.absolute.path,
@@ -409,7 +619,7 @@ Future<DockerInstance> startPolicyFlowDaemon({
       ),
     ],
   );
-  await waitForLogMessage(daemon, 'monitor started');
+  await waitForLogMessage(daemon, 'Daemon is running');
   return daemon;
 }
 
@@ -426,6 +636,9 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
   required bool expectSuccess,
   required String metadata,
   required String extra,
+  required String policyLabel,
+  required DockerInstance policyServer,
+  bool allowSuccessRetry = true,
 }) async {
   final ClientBinary nptClientBinary = context.clientBinaries.firstWhere(
     (cb) =>
@@ -443,8 +656,23 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
       deviceName: deviceName,
       testMetadata: metadata,
     ),
+    printCommand: false,
+  );
+  final LogFragment policyLogFragment = policyServer.createLogFragment(
+    stdoutFile: testLogger.getPolicyStdoutLogFile(
+      policyVersion: policyVersion,
+      policyName: policyLabel,
+      testMetadata: metadata,
+    ),
+    stderrFile: testLogger.getPolicyStderrLogFile(
+      policyVersion: policyVersion,
+      policyName: policyLabel,
+      testMetadata: metadata,
+    ),
+    printCommand: false,
   );
   daemonLogFragment.start();
+  policyLogFragment.start();
   final ProcessOutputCapture output = await startCommandWithCapture(
     nptClientBinary.file.path,
     _buildNptArgs(
@@ -453,6 +681,7 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
       deviceName: deviceName,
       remotePort: remotePort,
     ),
+    printCommand: false,
     stdoutLogFile: testLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -474,10 +703,32 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     },
   );
   await daemonLogFragment.stop();
+  await policyLogFragment.stop();
 
   final bool passed = expectSuccess ? exitCode == 0 : exitCode != 0;
   if (passed) {
     return null;
+  }
+
+  if (expectSuccess && allowSuccessRetry) {
+    await Future<void>.delayed(const Duration(seconds: 3));
+    return runNptPolicyExpectation(
+      context: context,
+      testLogger: testLogger,
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      daemon: daemon,
+      deviceName: deviceName,
+      remotePort: remotePort,
+      expectSuccess: expectSuccess,
+      metadata: '${metadata}_retry',
+      extra: extra,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
+      allowSuccessRetry: false,
+    );
   }
 
   final policyTestResult = PolicyTestResult(
@@ -491,8 +742,10 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
   printAllLogs(
     clientCapture: output,
     daemonLogFragment: daemonLogFragment,
+    policyLogFragment: policyLogFragment,
     clientLabel: metadata,
     daemonLabel: metadata,
+    policyLabel: metadata,
   );
   return policyTestResult;
 }
