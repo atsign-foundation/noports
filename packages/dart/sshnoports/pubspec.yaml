@@ -45,10 +45,10 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk
       path: packages/at_auth
       ref: trunk
-  at_commmons:
+  at_commons:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      path: packages/at_commmons
+      path: packages/at_commons
       ref: trunk
   pointycastle: ^4.0.0
 

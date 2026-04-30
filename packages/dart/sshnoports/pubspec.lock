@@ -18,7 +18,7 @@ packages:
     source: hosted
     version: "12.1.0"
   archive:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: archive
       sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
@@ -53,11 +53,11 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/at_auth"
-      ref: "st/onb-cli-remove-wait-pkam-auth"
-      resolved-ref: "5e8b51b3d96c39c218349191d5e6f9b581f5a73d"
+      ref: trunk
+      resolved-ref: "75617df2ef10351d35325fa4b4225d25e6294632"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
-    version: "3.0.2"
+    version: "3.1.0"
   at_base2e15:
     dependency: transitive
     description:
@@ -93,11 +93,12 @@ packages:
   at_commons:
     dependency: "direct main"
     description:
-      name: at_commons
-      sha256: a8a07fff913a36524b95757ff72fcde448ae461b1647c8e8aee3276395452ae7
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.8.0"
+      path: "packages/at_commons"
+      ref: trunk
+      resolved-ref: "75617df2ef10351d35325fa4b4225d25e6294632"
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "5.10.0"
   at_lookup:
     dependency: transitive
     description:
@@ -109,12 +110,11 @@ packages:
   at_onboarding_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_onboarding_cli"
-      ref: "st/onb-cli-remove-wait-pkam-auth"
-      resolved-ref: "5e8b51b3d96c39c218349191d5e6f9b581f5a73d"
-      url: "https://github.com/atsign-foundation/at_client_sdk"
-    source: git
-    version: "1.16.0"
+      name: at_onboarding_cli
+      sha256: "40b9b40ff88bbfba50412bbc6fe4d5991958e6ccab9a1f434bba0eaa9af115b9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.15.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -374,11 +374,12 @@ packages:
   dartssh2:
     dependency: "direct main"
     description:
-      name: dartssh2
-      sha256: c139babed0d6851449100010639115e1ed88decf0db7eb714ce13935c7eb590c
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.17.1"
+      path: "."
+      ref: trunk
+      resolved-ref: "11a3839459903aef62108df63d6defb4a283c74f"
+      url: "https://github.com/atsign-foundation/dartssh2"
+    source: git
+    version: "2.17.0"
   duration:
     dependency: "direct main"
     description:
