@@ -24,46 +24,29 @@ Future<void> policyTests(PolicyTestsParams params) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
 
   // 1. Parse versions
-  final List<NoPortsVersion> clientVersions = _parseVersions(
-    params.clientVersions,
-  );
-  final List<NoPortsVersion> daemonVersions = _parseVersions(
-    params.daemonVersions,
-  );
-  final List<NoPortsVersion> nppAtServerVersions = _parseVersions(
-    params.nppAtServerVersions,
-  );
+  final List<NoPortsVersion> clientVersions = _parseVersions(params.clientVersions);
+  final List<NoPortsVersion> daemonVersions = _parseVersions(params.daemonVersions);
+  final List<NoPortsVersion> nppAtServerVersions = _parseVersions(params.nppAtServerVersions);
   final List<NoPortsVersion> nppVersions = _parseVersions(params.nppVersions);
 
   // 2. Get testRunId
-  final String testRunId =
-      params.testRunId ?? await getShortenedGitCommitHash();
+  final String testRunId = params.testRunId ?? await getShortenedGitCommitHash();
   print('testRunId: $testRunId\n');
 
   // 3. Set up directories
-  final Directory baseDirectory = Directory(
-    '${params.baseDirectory}/$testRunId',
-  );
+  final Directory baseDirectory = Directory('${params.baseDirectory}/$testRunId');
   await ensureDirectoryExists(baseDirectory);
 
-  final Directory apkamKeysDirectory = Directory(
-    '${baseDirectory.path}/apkamKeys',
-  );
-  final Directory binariesDirectory = Directory(
-    '${baseDirectory.path}/binaries',
-  );
+  final Directory apkamKeysDirectory = Directory('${baseDirectory.path}/apkamKeys');
+  final Directory binariesDirectory = Directory('${baseDirectory.path}/binaries');
   final Directory logsDirectory = Directory('${baseDirectory.path}/logs');
   await ensureDirectoryExists(apkamKeysDirectory);
   await ensureDirectoryExists(binariesDirectory);
   await ensureDirectoryExists(logsDirectory);
 
-  final Directory daemonLogsDirectory = Directory(
-    '${logsDirectory.path}/daemons',
-  );
+  final Directory daemonLogsDirectory = Directory('${logsDirectory.path}/daemons');
   final Directory nppLogsDirectory = Directory('${logsDirectory.path}/npp');
-  final Directory nppAtServerLogsDirectory = Directory(
-    '${logsDirectory.path}/npp_atserver',
-  );
+  final Directory nppAtServerLogsDirectory = Directory('${logsDirectory.path}/npp_atserver');
   await ensureDirectoryExists(daemonLogsDirectory);
   await ensureDirectoryExists(nppLogsDirectory);
   await ensureDirectoryExists(nppAtServerLogsDirectory);
@@ -90,10 +73,10 @@ Future<void> policyTests(PolicyTestsParams params) async {
 
   // Flow 1:
   final Future<List<ClientBinary>> clientBinariesFuture =
-      fetchClientBinariesParallel(
-        clientBinariesToDownload: clientBinariesToDownload,
-        binariesDirectory: binariesDirectory,
-      );
+    fetchClientBinariesParallel(
+      clientBinariesToDownload: clientBinariesToDownload,
+      binariesDirectory: binariesDirectory,
+    );
 
   final Future<Map<String, File>> apkamKeysFuture = Future.microtask(() async {
     final List<ClientBinary> clientBinaries = await clientBinariesFuture;
