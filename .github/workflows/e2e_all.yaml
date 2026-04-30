@@ -113,7 +113,7 @@ jobs:
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --prod-relay-atsign "@rv_dev" \
-                --self-relay-atsigns "@npe2e_relay,@npe2e_relay_latest,@npe2e_singleton" \
+                --self-relay-atsigns "@npe2e_relay,@npe2e_relay_latest,@npe2e_singleton,@npe2e_policy,@npe2e_policy_latest,@npe2e_events" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
                 --client-versions "d:v5.10.0,d:current" \
