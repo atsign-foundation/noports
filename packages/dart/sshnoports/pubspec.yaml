@@ -30,11 +30,6 @@ dependency_overrides:
 #      ref: trunk
 #      url: https://github.com/atsign-foundation/at_client_sdk
 #      path: packages/at_client
-  archive: ^4.0.7
-  dartssh2:
-    git:
-      url: https://github.com/atsign-foundation/dartssh2
-      ref: trunk
 #  at_onboarding_cli:
 #    git:
 #      url: https://github.com/atsign-foundation/at_client_sdk
