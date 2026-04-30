@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:at_utils/at_logger.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests.dart';
 import 'package:e2e_all_v2/policy_tests/policy_tests_params.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 
 Future<void> main(List<String> args) async {
+  AtSignLogger.root_level = 'SEVERE';
+
   if (!Platform.isMacOS && !Platform.isLinux) {
     print('ERROR: This script only supports macOS and Linux');
     print('Current platform: ${Platform.operatingSystem}');
