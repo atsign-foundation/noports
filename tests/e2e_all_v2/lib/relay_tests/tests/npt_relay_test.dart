@@ -671,7 +671,7 @@ String _daemonDeviceName(
   NoPortsVersion daemonVersion,
   RelayCase relayCase,
 ) {
-  return sanitizeForDockerName(
+  return sanitizeForDeviceName(
     'r${context.testRunId}'
     'd${daemonVersion.language.name[0]}${_shortVersion(daemonVersion.version)}'
     '_${relayCase.metadata}',

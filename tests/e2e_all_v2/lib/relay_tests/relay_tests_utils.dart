@@ -117,3 +117,15 @@ String sanitizeForDockerName(String value, {int maxLength = 48}) {
   }
   return cleaned.substring(0, maxLength);
 }
+
+String sanitizeForDeviceName(String value, {int maxLength = 36}) {
+  final String cleaned = value
+      .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .toLowerCase();
+  final String withValidStart = cleaned.startsWith('-') ? '_$cleaned' : cleaned;
+  if (withValidStart.length <= maxLength) {
+    return withValidStart;
+  }
+  return withValidStart.substring(0, maxLength);
+}
