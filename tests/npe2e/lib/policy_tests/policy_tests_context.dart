@@ -20,7 +20,6 @@ class PolicyTestsContext {
   final String nppAtServerAtsign;
   final String rootDomain;
   final String remoteUsername;
-  final String identityFilePath;
 
   PolicyTestsContext({
     required this.testRunId,
@@ -39,6 +38,5 @@ class PolicyTestsContext {
     required this.nppAtServerAtsign,
     required this.rootDomain,
     required this.remoteUsername,
-    required this.identityFilePath,
   });
 }

@@ -809,8 +809,6 @@ _runPolicyConnectionAttempt({
         'StrictHostKeyChecking=accept-new',
         '-o',
         'IdentitiesOnly=yes',
-        '-i',
-        context.identityFilePath,
         '${context.remoteUsername}@localhost',
         'echo',
         '`whoami`',

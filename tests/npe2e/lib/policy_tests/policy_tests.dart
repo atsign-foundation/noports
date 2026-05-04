@@ -15,7 +15,6 @@ import 'package:npe2e/policy_tests/policy_tests_test_result.dart';
 import 'package:npe2e/policy_tests/tests/npp_atserver_test.dart';
 import 'package:npe2e/policy_tests/tests/npp_test.dart';
 import 'package:npe2e/print_test_utils.dart';
-import 'package:npe2e/ssh_key_utils.dart';
 import 'package:npe2e/test_result.dart';
 import 'package:npe2e/utils.dart';
 
@@ -162,11 +161,6 @@ Future<void> policyTests(PolicyTestsParams params) async {
   }
   print('');
 
-  final (File, File) sshKeys = await generateNewSshKey(testRunId: testRunId);
-  final File identityFile = sshKeys.$2;
-  print('Generated ${sshKeys.$1.path} and ${sshKeys.$2.path}');
-  print('');
-
   // 7. Prepare context object to pass to tests
   final PolicyTestsContext context = PolicyTestsContext(
     testRunId: testRunId,
@@ -185,7 +179,6 @@ Future<void> policyTests(PolicyTestsParams params) async {
     nppAtServerAtsign: params.nppAtServerAtsign,
     rootDomain: params.rootDomain,
     remoteUsername: remoteUsername,
-    identityFilePath: identityFile.path,
   );
   setUpStopwatch.stop();
 
