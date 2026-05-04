@@ -68,12 +68,12 @@ jobs:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip
 
-  e2e_all_v2:
+  npe2e:
     # Don't run on PRs from a fork or Dependabot as the secrets aren't available
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
       'dependabot[bot]'}}
-    name: e2e_all_v2 (${{ matrix.test_suite }})
+    name: npe2e (${{ matrix.test_suite }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -83,7 +83,7 @@ jobs:
             output_artifact: npe2e_core_tests_artifacts
             logs_dir: npe2e_core_tests
             command: |
-              dart run tests/e2e_all_v2/bin/core_tests.dart \
+              dart run tests/npe2e/bin/core_tests.dart \
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
@@ -91,10 +91,10 @@ jobs:
                 --base-directory "$LOGS_DIR" \
                 --batch-size 5
           - test_suite: policy_tests
-            output_artifact: e2e_all_v2_policy_tests_artifacts
+            output_artifact: npe2e_policy_tests_artifacts
             logs_dir: npe2e_policy_tests
             command: |
-              dart run tests/e2e_all_v2/bin/policy_tests.dart \
+              dart run tests/npe2e/bin/policy_tests.dart \
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
@@ -107,7 +107,7 @@ jobs:
             output_artifact: npe2e_relay_tests_artifacts
             logs_dir: npe2e_relay_tests
             command: |
-              dart run tests/e2e_all_v2/bin/relay_tests.dart \
+              dart run tests/npe2e/bin/relay_tests.dart \
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --prod-relay-atsign "@rv_dev" \
@@ -155,8 +155,8 @@ jobs:
           echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
 
-      - name: dart pub get (tests/e2e_all_v2)
-        working-directory: tests/e2e_all_v2
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
         run: |
           dart pub get
 
@@ -170,12 +170,12 @@ jobs:
           echo "OUTPUT_ARTIFACT=${{ matrix.output_artifact }}" >> $GITHUB_ENV
           echo "LOGS_DIR=${{ matrix.logs_dir }}" >> $GITHUB_ENV
 
-      - name: Run e2e_all_v2 ${{ matrix.test_suite }}
+      - name: Run npe2e ${{ matrix.test_suite }}
         run: |
           ${{ matrix.command }}
 
 
-      - name: Zip e2e_all_v2 artifacts
+      - name: Zip npe2e artifacts
         if: always()
         run: |
           if [ -d "$LOGS_DIR" ]; then
@@ -185,7 +185,7 @@ jobs:
             echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
           fi
 
-      - name: Upload e2e_all_v2 artifacts
+      - name: Upload npe2e artifacts
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
