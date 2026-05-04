@@ -46,8 +46,6 @@ docker stop $(docker ps -q) 2>/dev/null ; rm -rf e2e_all_v2/ && dart run tests/e
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
-    --policy-atsign "@policy_jttest" \
-    --events-atsign "@events_jttest" \
     --base-directory "e2e_all_v2" \
     --root-domain "root.atsign.org" \
     --batch-size 3
@@ -68,7 +66,7 @@ notes:
 1. Developer runs `dart run bin/main.dart`
 2. Tear down (if old existing session running)
 3. Set up
-  a. Build and start up necessary Docker containers (client, daemons, policy, events)
+  a. Build and start up necessary Docker containers (client and daemons)
   b. Check docker readiness
 4. Execute tests
   a. Execute commands in container

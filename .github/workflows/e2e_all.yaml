@@ -80,34 +80,32 @@ jobs:
       matrix:
         include:
           - test_suite: core_tests
-            output_artifact: e2e_all_v2_core_tests_artifacts
-            logs_dir: e2e_all_v2_core_tests
+            output_artifact: npe2e_core_tests_artifacts
+            logs_dir: npe2e_core_tests
             command: |
               dart run tests/e2e_all_v2/bin/core_tests.dart \
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
-                --policy-atsign "@npe2e_policy01" \
-                --events-atsign "@npe2e_events" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 3
           - test_suite: policy_tests
             output_artifact: e2e_all_v2_policy_tests_artifacts
-            logs_dir: e2e_all_v2_policy_tests
+            logs_dir: npe2e_policy_tests
             command: |
               dart run tests/e2e_all_v2/bin/policy_tests.dart \
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
-                --npp-atsign "@npe2e_policy02" \
-                --npp-atserver-atsign "@npe2e_policy03" \
+                --npp-atsign "@npe2e_policy01" \
+                --npp-atserver-atsign "@npe2e_policy02" \
                 --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 3
           - test_suite: relay_tests
-            output_artifact: e2e_all_v2_relay_tests_artifacts
-            logs_dir: e2e_all_v2_relay_tests
+            output_artifact: npe2e_relay_tests_artifacts
+            logs_dir: npe2e_relay_tests
             command: |
               dart run tests/e2e_all_v2/bin/relay_tests.dart \
                 --client-atsign "@npe2e_client" \

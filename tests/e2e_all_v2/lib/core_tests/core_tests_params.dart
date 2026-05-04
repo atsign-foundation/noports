@@ -2,7 +2,8 @@ import 'package:args/args.dart';
 
 // Default version strings
 const String defaultClientVersions = 'd:v5.9.4,d:v5.11.2,d:v5.13.0,d:current';
-const String defaultDaemonVersions = 'd:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current';
+const String defaultDaemonVersions =
+    'd:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current';
 
 // Usage
 // E2EAllV2Params params = E2EAllV2Params.fromArgs(args);
@@ -11,7 +12,7 @@ class CoreTestsParams {
   // Parameter cases
   // Case 1: mandatory (no defaults)
   // Case 2a: non-mandatory, compile-time default
-  // Case 2b: non-mandatory, run-time 
+  // Case 2b: non-mandatory, run-time
   // Case 3: Non-mandatorry, with no default
 
   static final ArgParser argParser = _createArgParser();
@@ -20,8 +21,6 @@ class CoreTestsParams {
   late String clientAtsign;
   late String daemonAtsign;
   late String relayAtsign;
-  late String policyAtsign;
-  late String eventsAtsign;
 
   // Case 2a - compile time defaults
   late bool help;
@@ -46,8 +45,6 @@ class CoreTestsParams {
     e2eAllV2Params.clientAtsign = argResults['client-atsign'];
     e2eAllV2Params.daemonAtsign = argResults['daemon-atsign'];
     e2eAllV2Params.relayAtsign = argResults['relay-atsign'];
-    e2eAllV2Params.policyAtsign = argResults['policy-atsign'];
-    e2eAllV2Params.eventsAtsign = argResults['events-atsign'];
     e2eAllV2Params.rootDomain = argResults['root-domain'];
     e2eAllV2Params.verbose = argResults['verbose'];
     e2eAllV2Params.baseDirectory = argResults['base-directory'];
@@ -60,62 +57,64 @@ class CoreTestsParams {
 
   static ArgParser _createArgParser() {
     final ArgParser argParser = ArgParser();
-    argParser.addFlag('help',
+    argParser.addFlag(
+      'help',
       defaultsTo: false,
       help: 'Shows usage instructions',
     );
-    argParser.addOption('client-atsign',
-      mandatory: true, 
-      help: 'Client Atsign that will be used in tests', 
+    argParser.addOption(
+      'client-atsign',
+      mandatory: true,
+      help: 'Client Atsign that will be used in tests',
     );
-    argParser.addOption('daemon-atsign',
+    argParser.addOption(
+      'daemon-atsign',
       mandatory: true,
       help: 'Daemon Atsign that will be used in tests',
     );
-    argParser.addOption('relay-atsign',
+    argParser.addOption(
+      'relay-atsign',
       mandatory: true,
       help: 'Relay Atsign that will be used in tests',
     );
-    argParser.addOption('policy-atsign',
-      mandatory: true,
-      help: 'Policy Atsign will be used in tests',
-    );
-    argParser.addOption('events-atsign',
-      mandatory: true,
-      help: 'The events Atsign that will be used against the most recent code changes',
-    );
-    argParser.addOption('root-domain',
+    argParser.addOption(
+      'root-domain',
       mandatory: false,
       defaultsTo: 'root.atsign.org:64', // TODO make into a constant somewhere
-      help: 'Host and port of atDirectory server'
+      help: 'Host and port of atDirectory server',
     );
-    argParser.addFlag('verbose',
-      defaultsTo: false,
-      help: 'More logging',
-    );
-    argParser.addOption('base-directory',
+    argParser.addFlag('verbose', defaultsTo: false, help: 'More logging');
+    argParser.addOption(
+      'base-directory',
       mandatory: false,
       defaultsTo: 'e2e_all_v2',
       help: 'Directory where all test related artifacts are stored',
     );
-    argParser.addOption('client-versions',
+    argParser.addOption(
+      'client-versions',
       mandatory: false,
       defaultsTo: defaultClientVersions,
-      help: 'Comma-separated list of client versions in format language:version (e.g., d:v5.9.4,c:current)',
+      help:
+          'Comma-separated list of client versions in format language:version (e.g., d:v5.9.4,c:current)',
     );
-    argParser.addOption('daemon-versions',
+    argParser.addOption(
+      'daemon-versions',
       mandatory: false,
       defaultsTo: defaultDaemonVersions,
-      help: 'Comma-separated list of daemon versions in format language:version (e.g., d:v5.9.4,c:current)',
+      help:
+          'Comma-separated list of daemon versions in format language:version (e.g., d:v5.9.4,c:current)',
     );
-    argParser.addOption('batch-size',
+    argParser.addOption(
+      'batch-size',
       mandatory: false,
       defaultsTo: '4',
       help: 'Number of tests to run concurrently in each batch',
     );
-    argParser.addOption('test-run-id',
+    argParser.addOption(
+      'test-run-id',
       mandatory: false,
-      help: 'Test run identifier (defaults to shortened git commit hash if not provided)',
+      help:
+          'Test run identifier (defaults to shortened git commit hash if not provided)',
     );
     return argParser;
   }
@@ -124,5 +123,4 @@ class CoreTestsParams {
     print('e2e_all_v2 usage:');
     print(argParser.usage);
   }
-
 }

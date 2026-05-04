@@ -68,8 +68,6 @@ void _printLoadedParameters(CoreTestsParams params) {
   print('    client-atsign: ${params.clientAtsign}');
   print('    daemon-atsign: ${params.daemonAtsign}');
   print('    relay-atsign: ${params.relayAtsign}');
-  print('    policy-atsign: ${params.policyAtsign}');
-  print('    events-atsign: ${params.eventsAtsign}');
   print('    root-domain: ${params.rootDomain}');
   print('    verbose: ${params.verbose}');
   print('    base-directory: ${params.baseDirectory}');
