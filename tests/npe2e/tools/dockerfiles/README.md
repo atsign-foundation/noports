@@ -28,7 +28,7 @@ Build the shared base image first:
 ```bash
 sudo docker build \
     -f tests/npe2e/tools/dockerfiles/Dockerfile.base.runtime \
-    -t atsigncompany/noports_npe2e_base_runtime:latest \
+    -t atsigncompany/noports_e2e_all_base_runtime:latest \
     tests/npe2e
 ```
 
