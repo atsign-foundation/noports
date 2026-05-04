@@ -30,12 +30,28 @@ Future<void> relayTests(RelayTestsParams params) async {
   final List<NoPortsVersion> selfRelayVersions = _parseVersions(
     params.selfRelayVersions,
   );
-  final List<String> selfRelayAtsigns = _parseAtsigns(params.selfRelayAtsigns);
+  List<String> selfRelayAtsigns = _parseAtsigns(params.selfRelayAtsigns);
   final int requiredSelfRelayAtsigns = selfRelayVersions.length * 3;
   if (selfRelayAtsigns.length < requiredSelfRelayAtsigns) {
     throw ArgumentError(
       'self-relay-atsigns must contain at least $requiredSelfRelayAtsigns '
       'atSigns for ${selfRelayVersions.length} self relay version(s)',
+    );
+  }
+  if (selfRelayAtsigns.length > requiredSelfRelayAtsigns) {
+    print(
+      'self-relay-atsigns has ${selfRelayAtsigns.length} atSigns; '
+      'only the first $requiredSelfRelayAtsigns are required and will be used.',
+    );
+    print('');
+    selfRelayAtsigns = selfRelayAtsigns.take(requiredSelfRelayAtsigns).toList();
+  }
+  if (selfRelayAtsigns.toSet().length != selfRelayAtsigns.length) {
+    throw ArgumentError('self-relay-atsigns must be distinct');
+  }
+  if (selfRelayAtsigns.contains(params.prodRelayAtsign)) {
+    throw ArgumentError(
+      'prod-relay-atsign and self-relay-atsigns must be distinct',
     );
   }
 

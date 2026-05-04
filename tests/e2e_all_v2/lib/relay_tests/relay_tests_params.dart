@@ -39,21 +39,12 @@ class RelayTestsParams {
     params.selfRelayVersions = argResults['self-relay-versions'];
     params.batchSize = int.parse(argResults['batch-size']);
     params.testRunId = argResults['test-run-id'];
-    final List<String> selfRelayAtsigns = params.selfRelayAtsigns
+    if (params.selfRelayAtsigns
         .split(',')
         .map((atsign) => atsign.trim())
         .where((atsign) => atsign.isNotEmpty)
-        .toList();
-    if (selfRelayAtsigns.isEmpty) {
+        .isEmpty) {
       throw ArgumentError('self-relay-atsigns must not be empty');
-    }
-    if (selfRelayAtsigns.toSet().length != selfRelayAtsigns.length) {
-      throw ArgumentError('self-relay-atsigns must be distinct');
-    }
-    if (selfRelayAtsigns.contains(params.prodRelayAtsign)) {
-      throw ArgumentError(
-        'prod-relay-atsign and self-relay-atsigns must be distinct',
-      );
     }
     return params;
   }
