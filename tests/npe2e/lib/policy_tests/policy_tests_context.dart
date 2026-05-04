@@ -19,7 +19,6 @@ class PolicyTestsContext {
   final String nppAtsign;
   final String nppAtServerAtsign;
   final String rootDomain;
-  final String remoteUsername;
 
   PolicyTestsContext({
     required this.testRunId,
@@ -37,6 +36,5 @@ class PolicyTestsContext {
     required this.nppAtsign,
     required this.nppAtServerAtsign,
     required this.rootDomain,
-    required this.remoteUsername,
   });
 }

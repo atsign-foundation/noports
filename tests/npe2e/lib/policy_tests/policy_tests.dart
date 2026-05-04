@@ -19,7 +19,6 @@ import 'package:npe2e/test_result.dart';
 import 'package:npe2e/utils.dart';
 
 const String policyTestsApkamApp = 'npe2e_policy';
-const String remoteUsername = 'atsign';
 
 Future<void> policyTests(PolicyTestsParams params) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
@@ -178,7 +177,6 @@ Future<void> policyTests(PolicyTestsParams params) async {
     nppAtsign: params.nppAtsign,
     nppAtServerAtsign: params.nppAtServerAtsign,
     rootDomain: params.rootDomain,
-    remoteUsername: remoteUsername,
   );
   setUpStopwatch.stop();
 

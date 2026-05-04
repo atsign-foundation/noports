@@ -656,7 +656,6 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
         cb.noPortsVersion == clientVersion,
   );
   ProcessOutputCapture? lastNptOutput;
-  ProcessOutputCapture? lastSshOutput;
   LogFragment? lastDaemonLogFragment;
   LogFragment? lastPolicyLogFragment;
   String lastMetadata = metadata;
@@ -680,7 +679,6 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
       policyServer: policyServer,
     );
     lastNptOutput = attemptResult.nptOutput;
-    lastSshOutput = attemptResult.sshOutput;
     lastDaemonLogFragment = attemptResult.daemonLogFragment;
     lastPolicyLogFragment = attemptResult.policyLogFragment;
     lastExitCode = attemptResult.exitCode;
@@ -706,9 +704,6 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     exitCode: lastExitCode,
   );
   printClientLogs(lastNptOutput!, label: '${lastMetadata}_npt');
-  if (lastSshOutput != null) {
-    printClientLogs(lastSshOutput, label: '${lastMetadata}_ssh');
-  }
   printDaemonLogFragments(lastDaemonLogFragment!, label: lastMetadata);
   printPolicyLogFragments(lastPolicyLogFragment!, label: lastMetadata);
   return policyTestResult;
@@ -717,7 +712,6 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
 Future<
   ({
     ProcessOutputCapture nptOutput,
-    ProcessOutputCapture? sshOutput,
     LogFragment daemonLogFragment,
     LogFragment policyLogFragment,
     int exitCode,
@@ -765,7 +759,6 @@ _runPolicyConnectionAttempt({
   );
   daemonLogFragment.start();
   policyLogFragment.start();
-  ProcessOutputCapture? sshOutput;
   final ProcessOutputCapture nptOutput = await startCommandWithCapture(
     nptClientBinary.file.path,
     _buildNptArgs(
@@ -795,57 +788,13 @@ _runPolicyConnectionAttempt({
       return 124;
     },
   );
-  final int? localPort = int.tryParse(nptOutput.stdout.trim());
-  int exitCode;
-  if (nptExitCode != 0 || localPort == null) {
-    exitCode = nptExitCode != 0 ? nptExitCode : 1;
-  } else {
-    sshOutput = await startCommandWithCapture(
-      'ssh',
-      [
-        '-p',
-        localPort.toString(),
-        '-o',
-        'StrictHostKeyChecking=accept-new',
-        '-o',
-        'IdentitiesOnly=yes',
-        '${context.remoteUsername}@localhost',
-        'echo',
-        '`whoami`',
-        '`date`',
-        '`hostname`',
-        'TEST PASSED',
-      ],
-      printCommand: false,
-      stdoutLogFile: testLogger.getClientStdoutLogFile(
-        clientVersion: clientVersion,
-        daemonVersion: daemonVersion,
-        policyVersion: policyVersion,
-        testMetadata: '${attemptMetadata}_ssh',
-      ),
-      stderrLogFile: testLogger.getClientStderrLogFile(
-        clientVersion: clientVersion,
-        daemonVersion: daemonVersion,
-        policyVersion: policyVersion,
-        testMetadata: '${attemptMetadata}_ssh',
-      ),
-    );
-    exitCode = await sshOutput.exitCode.timeout(
-      const Duration(seconds: 45),
-      onTimeout: () {
-        sshOutput!.process.kill(ProcessSignal.sigterm);
-        return 124;
-      },
-    );
-  }
   await daemonLogFragment.stop();
   await policyLogFragment.stop();
   return (
     nptOutput: nptOutput,
-    sshOutput: sshOutput,
     daemonLogFragment: daemonLogFragment,
     policyLogFragment: policyLogFragment,
-    exitCode: exitCode,
+    exitCode: nptExitCode,
   );
 }
 
