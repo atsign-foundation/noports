@@ -32,7 +32,7 @@ class RelayTestsParams {
     }
     params.clientAtsign = argResults['client-atsign'];
     params.daemonAtsign = argResults['daemon-atsign'];
-    params.prodRelayAtsign = argResults['prod-relay-atsign'];
+    params.prodRelayAtsign = argResults['prod-relay'];
     params.selfRelayAtsigns = argResults['self-relay-atsigns'];
     params.rootDomain = argResults['root-domain'];
     params.verbose = argResults['verbose'];
@@ -62,7 +62,11 @@ class RelayTestsParams {
     );
     parser.addOption('client-atsign', abbr: 'c', help: 'Atsign for the client');
     parser.addOption('daemon-atsign', abbr: 'd', help: 'Atsign for the daemon');
-    parser.addOption('prod-relay-atsign', help: 'Atsign for the prod relay');
+    parser.addOption(
+      'prod-relay',
+      aliases: ['prod-relay-atsign'],
+      help: 'Atsign for the prod relay',
+    );
     parser.addOption(
       'self-relay-atsigns',
       aliases: ['self-relay-atsign'],

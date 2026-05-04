@@ -50,9 +50,7 @@ Future<void> relayTests(RelayTestsParams params) async {
     throw ArgumentError('self-relay-atsigns must be distinct');
   }
   if (selfRelayAtsigns.contains(params.prodRelayAtsign)) {
-    throw ArgumentError(
-      'prod-relay-atsign and self-relay-atsigns must be distinct',
-    );
+    throw ArgumentError('prod-relay and self-relay-atsigns must be distinct');
   }
 
   final String testRunId =
@@ -115,7 +113,12 @@ Future<void> relayTests(RelayTestsParams params) async {
 
   final Future<List<DockerImage>> dockerImagesFuture =
       ensureDockerImagesVersionBuiltParallel(
-        versions: [...clientVersions, ...daemonVersions, ...selfRelayVersions],
+        versions: [
+          ...clientVersions,
+          NoPortsVersion(language: Language.dart, version: 'current'),
+          ...daemonVersions,
+          ...selfRelayVersions,
+        ],
       );
 
   final List<dynamic> setupResults = await Future.wait([
@@ -190,7 +193,6 @@ Future<void> relayTests(RelayTestsParams params) async {
     final List<RelayTestResult> setupResults = await runRelay001MinusSFlagSetup(
       context: context,
       environment: environment,
-      clientVersions: clientVersions,
     );
     testResults.addAll(setupResults);
     final int failedSetupTests = setupResults

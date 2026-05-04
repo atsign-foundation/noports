@@ -70,7 +70,7 @@ void _printLoadedParameters(RelayTestsParams params) {
   print('    help: ${params.help}');
   print('    client-atsign: ${params.clientAtsign}');
   print('    daemon-atsign: ${params.daemonAtsign}');
-  print('    prod-relay-atsign: ${params.prodRelayAtsign}');
+  print('    prod-relay: ${params.prodRelayAtsign}');
   print('    self-relay-atsigns: ${params.selfRelayAtsigns}');
   print('    root-domain: ${params.rootDomain}');
   print('    verbose: ${params.verbose}');

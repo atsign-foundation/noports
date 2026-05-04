@@ -27,7 +27,7 @@ Example:
 rm -rf npe2e_relay/ && dart run tests/npe2e/bin/relay_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
-    --prod-relay-atsign "@rv_am" \
+    --prod-relay "@rv_am" \
     --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
     --root-domain "root.atsign.org" \
     --base-directory "npe2e_relay" \

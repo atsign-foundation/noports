@@ -179,33 +179,21 @@ Future<NptRelayEnvironment> startNptRelayEnvironment({
 Future<List<RelayTestResult>> runRelay001MinusSFlagSetup({
   required RelayTestsContext context,
   required NptRelayEnvironment environment,
-  required List<NoPortsVersion> clientVersions,
 }) async {
   final RelayTestLogger testLogger = RelayTestLogger(
     logsDirectory: context.logsDirectory,
     testName: relay001MinusSFlagTestName,
   );
   final List<RelayTestResult> results = [];
+  final Set<String> primedDeviceNames = {};
+  final NoPortsVersion clientVersion = NoPortsVersion(
+    language: Language.dart,
+    version: 'current',
+  );
+  final RelayCase relayCase = _prodPrimingRelayCase(context);
 
   for (final RelayDaemonTarget daemonTarget in environment.daemonTargets) {
-    final NoPortsVersion? clientVersion = _primingClientVersion(
-      clientVersions: clientVersions,
-      daemonTarget: daemonTarget,
-    );
-    if (clientVersion == null) {
-      results.add(
-        RelayTestResult(
-          testName: relay001MinusSFlagTestName,
-          clientVersion: clientVersions.first,
-          daemonVersion: daemonTarget.daemonVersion,
-          relayVersion: daemonTarget.relayCase.relayVersion,
-          relayKind: daemonTarget.relayCase.relayKind.name,
-          relayAuthMode: daemonTarget.relayCase.relayAuthMode,
-          only443: daemonTarget.relayCase.only443,
-          status: TestStatus.failed,
-          exitCode: 1,
-        ),
-      );
+    if (!primedDeviceNames.add(daemonTarget.deviceName)) {
       continue;
     }
     results.add(
@@ -215,12 +203,25 @@ Future<List<RelayTestResult>> runRelay001MinusSFlagSetup({
         environment: environment,
         clientVersion: clientVersion,
         daemonTarget: daemonTarget,
-        relayCase: daemonTarget.relayCase,
+        relayCase: relayCase,
       ),
     );
   }
 
   return results;
+}
+
+RelayCase _prodPrimingRelayCase(RelayTestsContext context) {
+  return RelayCase(
+    relayKind: RelayKind.prod,
+    relayAuthMode: _payloadMode,
+    only443: false,
+    relayVersion: null,
+    relayInstance: null,
+    relayAtsign: context.prodRelayAtsign,
+    relayAlias: null,
+    metadata: 'prod_payload',
+  );
 }
 
 Future<void> stopNptRelayEnvironment(NptRelayEnvironment? environment) async {
@@ -816,6 +817,8 @@ Future<DockerInstance> _runSshnpPrimeCommand({
   final String script = _sshnpPrimeScript(
     context: context,
     relayCase: relayCase,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
     deviceName: deviceName,
     clientKeyPath: containerKeyFilePath,
   );
@@ -892,6 +895,8 @@ ssh -p "\$PORT" -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i /at
 String _sshnpPrimeScript({
   required RelayTestsContext context,
   required RelayCase relayCase,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
   required String deviceName,
   required String clientKeyPath,
 }) {
@@ -914,6 +919,10 @@ String _sshnpPrimeScript({
     '-s',
     '-k',
     clientKeyPath,
+    ..._sshnpNonInteractiveArgs(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+    ),
     if (relayCase.relayAuthMode == _escrMode) ...['--relay-auth-mode', 'escr'],
     if (relayCase.only443) '--443',
   ];
@@ -922,6 +931,22 @@ String _sshnpPrimeScript({
 set -e
 $sshnpCommand
 ''';
+}
+
+List<String> _sshnpNonInteractiveArgs({
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+}) {
+  if (daemonVersion.language == Language.c) {
+    return ['-x'];
+  }
+  if (versionIsAtLeast(
+    clientVersion,
+    NoPortsVersion(language: Language.dart, version: 'v5.0.0'),
+  )) {
+    return ['-x', '--no-ad', '--no-et'];
+  }
+  return const [];
 }
 
 Future<void> _printFailureLogs(
@@ -1006,22 +1031,6 @@ bool _supportsRelayCase(
   );
   return versionIsAtLeast(clientVersion, earliestEscr) &&
       versionIsAtLeast(daemonVersion, earliestEscr);
-}
-
-NoPortsVersion? _primingClientVersion({
-  required List<NoPortsVersion> clientVersions,
-  required RelayDaemonTarget daemonTarget,
-}) {
-  for (final NoPortsVersion clientVersion in clientVersions) {
-    if (_supportsRelayCase(
-      clientVersion,
-      daemonTarget.daemonVersion,
-      daemonTarget.relayCase,
-    )) {
-      return clientVersion;
-    }
-  }
-  return null;
 }
 
 String _metadata({
