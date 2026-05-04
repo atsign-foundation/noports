@@ -87,7 +87,7 @@ jobs:
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
-                --policy-atsign "@npe2e_policy" \
+                --policy-atsign "@npe2e_policy01" \
                 --events-atsign "@npe2e_events" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
@@ -100,8 +100,8 @@ jobs:
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --relay-atsign "@rv_dev" \
-                --npp-atsign "@npe2e_policy" \
-                --npp-atserver-atsign "@npe2e_policy_latest" \
+                --npp-atsign "@npe2e_policy02" \
+                --npp-atserver-atsign "@npe2e_policy03" \
                 --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 3
@@ -113,7 +113,7 @@ jobs:
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --prod-relay-atsign "@rv_dev" \
-                --self-relay-atsigns "@npe2e_relay,@npe2e_relay_latest,@npe2e_singleton,@npe2e_policy,@npe2e_policy_latest,@npe2e_events" \
+                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06,@npe2e_relay,@npe2e_relay_latest" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
                 --client-versions "d:v5.10.0,d:current" \
@@ -140,8 +140,18 @@ jobs:
           mkdir -p ~/.atsign/keys/
           echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY01 }}' > ~/.atsign/keys/@npe2e_policy01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY02 }}' > ~/.atsign/keys/@npe2e_policy02_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY03 }}' > ~/.atsign/keys/@npe2e_policy03_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY04 }}' > ~/.atsign/keys/@npe2e_policy04_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY01 }}' > ~/.atsign/keys/@npe2e_relay01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY02 }}' > ~/.atsign/keys/@npe2e_relay02_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY03 }}' > ~/.atsign/keys/@npe2e_relay03_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY04 }}' > ~/.atsign/keys/@npe2e_relay04_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY05 }}' > ~/.atsign/keys/@npe2e_relay05_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY06 }}' > ~/.atsign/keys/@npe2e_relay06_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
