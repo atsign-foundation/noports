@@ -184,20 +184,40 @@ Future<void> relayTests(RelayTestsParams params) async {
     print('Set up completed in ${formatDuration(setUpStopwatch.elapsed)}');
     print('');
 
-    final List<Future<RelayTestResult> Function()> testFactories =
-        runNptRelayTests(
-          context: context,
-          environment: environment,
-          clientVersions: clientVersions,
-        );
-
-    print('Running ${testFactories.length} relay test(s)...');
-    testResults.addAll(
-      await _runFuturesWithConcurrency(
-        testFactories,
-        batchSize: params.batchSize,
-      ),
+    print(
+      'Running ${environment.daemonTargets.length} relay SSH key setup test(s)...',
     );
+    final List<RelayTestResult> setupResults = await runRelay001MinusSFlagSetup(
+      context: context,
+      environment: environment,
+      clientVersions: clientVersions,
+    );
+    testResults.addAll(setupResults);
+    final int failedSetupTests = setupResults
+        .where((result) => result.status == TestStatus.failed)
+        .length;
+    if (failedSetupTests == 0) {
+      print('');
+
+      final List<Future<RelayTestResult> Function()> testFactories =
+          runNptRelayTests(
+            context: context,
+            environment: environment,
+            clientVersions: clientVersions,
+          );
+
+      print('Running ${testFactories.length} relay test(s)...');
+      testResults.addAll(
+        await _runFuturesWithConcurrency(
+          testFactories,
+          batchSize: params.batchSize,
+        ),
+      );
+    } else {
+      print(
+        'Skipping relay npt tests because $failedSetupTests SSH key setup test(s) failed.',
+      );
+    }
   } finally {
     await stopNptRelayEnvironment(environment);
   }
