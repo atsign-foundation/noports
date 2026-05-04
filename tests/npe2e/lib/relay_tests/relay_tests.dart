@@ -187,9 +187,11 @@ Future<void> relayTests(RelayTestsParams params) async {
     print('Set up completed in ${formatDuration(setUpStopwatch.elapsed)}');
     print('');
 
-    print(
-      'Running ${environment.daemonTargets.length} relay SSH key setup test(s)...',
-    );
+    final int sshKeySetupTestCount = environment.daemonTargets
+        .map((target) => target.deviceName)
+        .toSet()
+        .length;
+    print('Running $sshKeySetupTestCount relay SSH key setup test(s)...');
     final List<RelayTestResult> setupResults = await runRelay001MinusSFlagSetup(
       context: context,
       environment: environment,

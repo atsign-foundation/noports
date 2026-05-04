@@ -1052,12 +1052,25 @@ String _daemonDeviceName(
   NoPortsVersion daemonVersion,
   RelayCase relayCase,
 ) {
+  final String runId = sanitizeForDeviceName(context.testRunId, maxLength: 7);
+  final String daemon =
+      '${daemonVersion.language.name[0]}${_shortVersion(daemonVersion.version)}';
   return sanitizeForDeviceName(
-    'r${context.testRunId}'
-    'd${daemonVersion.language.name[0]}${_shortVersion(daemonVersion.version)}'
-    '_${relayCase.metadata}',
+    'r${runId}_d${daemon}_${_relayDeviceNamePart(relayCase)}',
     maxLength: 32,
   );
+}
+
+String _relayDeviceNamePart(RelayCase relayCase) {
+  final String mode = relayCase.relayAuthMode == _payloadMode ? 'p' : 'e';
+  final String port = relayCase.only443 ? '443' : '';
+  if (relayCase.relayKind == RelayKind.prod) {
+    return 'p$mode$port';
+  }
+  final NoPortsVersion relayVersion = relayCase.relayVersion!;
+  final String relay =
+      '${relayVersion.language.name[0]}${_shortVersion(relayVersion.version)}';
+  return 's$mode$port$relay';
 }
 
 String _extra({
