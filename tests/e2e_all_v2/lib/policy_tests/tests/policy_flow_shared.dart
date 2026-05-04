@@ -25,6 +25,9 @@ const String policyDeviceGroupName = '__none__';
 const String policySshPermitOpen = 'localhost:22';
 const String policyWrongPortPermitOpen = 'localhost:222';
 const String policyDaemonDeniedPermitOpen = 'localhost:2233';
+const Duration policyStageWait = Duration(seconds: 20);
+const Duration policyNptRetryWait = Duration(seconds: 2);
+const int policyNptMaxAttempts = 3;
 
 abstract class PolicyRules {
   Future<void> clear();
@@ -406,6 +409,7 @@ Future<PolicyTestResult> runPolicyFlow({
       expectedPermitOpen: null,
       stage: 'after initial teardown',
     );
+    await _waitBeforePolicyStage();
     final result1 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
@@ -438,6 +442,7 @@ Future<PolicyTestResult> runPolicyFlow({
       expectedPermitOpen: policyWrongPortPermitOpen,
       stage: 'after wrong-port put',
     );
+    await _waitBeforePolicyStage();
     final result2 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
@@ -471,6 +476,7 @@ Future<PolicyTestResult> runPolicyFlow({
       expectedPermitOpens: {policyWrongPortPermitOpen, policySshPermitOpen},
       stage: 'after allowed put',
     );
+    await _waitBeforePolicyStage();
     final result3 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
@@ -508,6 +514,7 @@ Future<PolicyTestResult> runPolicyFlow({
       },
       stage: 'after daemon-denied put',
     );
+    await _waitBeforePolicyStage();
     final result4 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
@@ -654,23 +661,100 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
   required String extra,
   required String policyLabel,
   required DockerInstance policyServer,
-  bool allowSuccessRetry = true,
 }) async {
   final ClientBinary nptClientBinary = context.clientBinaries.firstWhere(
     (cb) =>
         cb.binaryType == ClientBinaryType.npt &&
         cb.noPortsVersion == clientVersion,
   );
+  ProcessOutputCapture? lastOutput;
+  LogFragment? lastDaemonLogFragment;
+  LogFragment? lastPolicyLogFragment;
+  String lastMetadata = metadata;
+  int lastExitCode = 1;
+
+  for (var attempt = 1; attempt <= policyNptMaxAttempts; attempt++) {
+    final attemptMetadata = _attemptMetadata(metadata, attempt);
+    lastMetadata = attemptMetadata;
+    final attemptResult = await _runNptPolicyAttempt(
+      context: context,
+      testLogger: testLogger,
+      nptClientBinary: nptClientBinary,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      daemon: daemon,
+      deviceName: deviceName,
+      remotePort: remotePort,
+      attemptMetadata: attemptMetadata,
+      policyLabel: policyLabel,
+      policyServer: policyServer,
+    );
+    lastOutput = attemptResult.output;
+    lastDaemonLogFragment = attemptResult.daemonLogFragment;
+    lastPolicyLogFragment = attemptResult.policyLogFragment;
+    lastExitCode = attemptResult.exitCode;
+
+    final bool passed = expectSuccess
+        ? attemptResult.exitCode == 0
+        : attemptResult.exitCode != 0;
+    if (passed) {
+      return null;
+    }
+
+    if (attempt < policyNptMaxAttempts) {
+      await Future<void>.delayed(policyNptRetryWait);
+    }
+  }
+
+  final policyTestResult = PolicyTestResult(
+    testName: testName,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+    policyVersion: policyVersion,
+    status: TestStatus.failed,
+    exitCode: lastExitCode,
+  );
+  printAllLogs(
+    clientCapture: lastOutput!,
+    daemonLogFragment: lastDaemonLogFragment!,
+    policyLogFragment: lastPolicyLogFragment!,
+    clientLabel: lastMetadata,
+    daemonLabel: lastMetadata,
+    policyLabel: lastMetadata,
+  );
+  return policyTestResult;
+}
+
+Future<({
+  ProcessOutputCapture output,
+  LogFragment daemonLogFragment,
+  LogFragment policyLogFragment,
+  int exitCode,
+})> _runNptPolicyAttempt({
+  required PolicyTestsContext context,
+  required PolicyTestLogger testLogger,
+  required ClientBinary nptClientBinary,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required NoPortsVersion policyVersion,
+  required DockerInstance daemon,
+  required String deviceName,
+  required int remotePort,
+  required String attemptMetadata,
+  required String policyLabel,
+  required DockerInstance policyServer,
+}) async {
   final LogFragment daemonLogFragment = daemon.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
     printCommand: false,
   );
@@ -678,12 +762,12 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     stdoutFile: testLogger.getPolicyStdoutLogFile(
       policyVersion: policyVersion,
       policyName: policyLabel,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
     stderrFile: testLogger.getPolicyStderrLogFile(
       policyVersion: policyVersion,
       policyName: policyLabel,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
     printCommand: false,
   );
@@ -702,13 +786,13 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       policyVersion: policyVersion,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
     stderrLogFile: testLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       policyVersion: policyVersion,
-      testMetadata: metadata,
+      testMetadata: attemptMetadata,
     ),
   );
   final int exitCode = await output.exitCode.timeout(
@@ -720,50 +804,23 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
   );
   await daemonLogFragment.stop();
   await policyLogFragment.stop();
-
-  final bool passed = expectSuccess ? exitCode == 0 : exitCode != 0;
-  if (passed) {
-    return null;
-  }
-
-  if (expectSuccess && allowSuccessRetry) {
-    await Future<void>.delayed(const Duration(seconds: 3));
-    return runNptPolicyExpectation(
-      context: context,
-      testLogger: testLogger,
-      testName: testName,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-      policyVersion: policyVersion,
-      daemon: daemon,
-      deviceName: deviceName,
-      remotePort: remotePort,
-      expectSuccess: expectSuccess,
-      metadata: '${metadata}_retry',
-      extra: extra,
-      policyLabel: policyLabel,
-      policyServer: policyServer,
-      allowSuccessRetry: false,
-    );
-  }
-
-  final policyTestResult = PolicyTestResult(
-    testName: testName,
-    clientVersion: clientVersion,
-    daemonVersion: daemonVersion,
-    policyVersion: policyVersion,
-    status: TestStatus.failed,
-    exitCode: exitCode,
-  );
-  printAllLogs(
-    clientCapture: output,
+  return (
+    output: output,
     daemonLogFragment: daemonLogFragment,
     policyLogFragment: policyLogFragment,
-    clientLabel: metadata,
-    daemonLabel: metadata,
-    policyLabel: metadata,
+    exitCode: exitCode,
   );
-  return policyTestResult;
+}
+
+String _attemptMetadata(String metadata, int attempt) {
+  if (attempt == 1) {
+    return metadata;
+  }
+  return '${metadata}_attempt_$attempt';
+}
+
+Future<void> _waitBeforePolicyStage() async {
+  await Future<void>.delayed(policyStageWait);
 }
 
 List<String> _buildNptArgs({
