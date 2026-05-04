@@ -17,17 +17,17 @@ npp: current
 2. try a session with rules in place for the client but not for the required port - verify denied
    2a. Place policy rules for @client, but for localhost:222
    2b. Run `npt --rp 22`
-   2c. Verify fail
+   2c. Verify failed because because permitOpen is localhost:22 and also policy rule is for localhost:222 (wrong port)
 
 3. try a session with rules in place for the client which cover the required port - verify permitted
    3a. Place policy rules for @client, but for localhost:22
    3b. Run `npt --rp 22`
-   3c. Verify success
+   3c. Verify success because there's policy in place for localhost:22 for @client, and also sshnpd has permit open localhost:22
 
 4. try a session where allowed by policy but restricted by daemon's permitOpen - verify denied
    4a. Place policy rules for @client, but for localhost:2233
    4b. Run `npt --rp 2233`
-   4c. Verify fail
+   4c. Verify fail because the policy rules are localhost:22, localhost:222, and lolcahost:2233, but permitOpen is only localhost:22 on sshnpd
 
 5. Tear down `npp_atserver|npp` rules
 

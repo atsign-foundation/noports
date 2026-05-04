@@ -269,6 +269,7 @@ Future<void> _checkPolicyRules({
   required String daemonAtsign,
   required String deviceName,
   required String? expectedPermitOpen,
+  Set<String>? expectedPermitOpens,
   required String stage,
   bool allowAny = false,
 }) async {
@@ -281,9 +282,11 @@ Future<void> _checkPolicyRules({
   if (allowAny) {
     return;
   }
-  final expected = expectedPermitOpen == null
-      ? const <String>{}
-      : <String>{expectedPermitOpen};
+  final expected =
+      expectedPermitOpens ??
+      (expectedPermitOpen == null
+          ? const <String>{}
+          : <String>{expectedPermitOpen});
   if (actual.length == expected.length && actual.containsAll(expected)) {
     return;
   }
@@ -428,15 +431,6 @@ Future<PolicyTestResult> runPolicyFlow({
     );
     if (result2 != null) return result2;
 
-    await policyRules.clear();
-    await _checkPolicyRules(
-      policyRules: policyRules,
-      clientAtsign: context.clientAtsign,
-      daemonAtsign: context.daemonAtsign,
-      deviceName: deviceName,
-      expectedPermitOpen: null,
-      stage: 'before allowed put teardown',
-    );
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
@@ -449,6 +443,7 @@ Future<PolicyTestResult> runPolicyFlow({
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: policySshPermitOpen,
+      expectedPermitOpens: {policyWrongPortPermitOpen, policySshPermitOpen},
       stage: 'after allowed put',
     );
     final result3 = await runNptPolicyExpectation(
@@ -469,15 +464,6 @@ Future<PolicyTestResult> runPolicyFlow({
     );
     if (result3 != null) return result3;
 
-    await policyRules.clear();
-    await _checkPolicyRules(
-      policyRules: policyRules,
-      clientAtsign: context.clientAtsign,
-      daemonAtsign: context.daemonAtsign,
-      deviceName: deviceName,
-      expectedPermitOpen: null,
-      stage: 'before daemon-denied put teardown',
-    );
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
@@ -490,6 +476,11 @@ Future<PolicyTestResult> runPolicyFlow({
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: policyDaemonDeniedPermitOpen,
+      expectedPermitOpens: {
+        policyWrongPortPermitOpen,
+        policySshPermitOpen,
+        policyDaemonDeniedPermitOpen,
+      },
       stage: 'after daemon-denied put',
     );
     final result4 = await runNptPolicyExpectation(

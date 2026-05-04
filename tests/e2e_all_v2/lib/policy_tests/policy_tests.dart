@@ -117,11 +117,9 @@ Future<void> policyTests(PolicyTestsParams params) async {
     apkamKeysFuture,
     dockerImagesFuture,
   ]);
-  final List<ClientBinary> clientBinaries =
-      setupResults[0] as List<ClientBinary>;
+  final List<ClientBinary> clientBinaries = setupResults[0] as List<ClientBinary>;
   final Map<String, File> apkamKeys = setupResults[1] as Map<String, File>;
-  final List<DockerImage> allDockerImages =
-      setupResults[2] as List<DockerImage>;
+  final List<DockerImage> allDockerImages = setupResults[2] as List<DockerImage>;
 
   print('Fetched client binaries (${clientBinaries.length}):');
   for (final ClientBinary clientBinary in clientBinaries) {
@@ -162,22 +160,20 @@ Future<void> policyTests(PolicyTestsParams params) async {
 
   // 8. Run the tests
   final List<Future<PolicyTestResult> Function()> nppTestFactories =
-      runNppTests(
-        context: context,
-        clientVersions: clientVersions,
-        daemonVersions: daemonVersions,
-        nppVersions: nppVersions,
-      );
+    runNppTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+      nppVersions: nppVersions,
+    );
   final List<Future<PolicyTestResult> Function()> nppAtServerTestFactories =
-      runNppAtServerTests(
-        context: context,
-        clientVersions: clientVersions,
-        daemonVersions: daemonVersions,
-        nppAtServerVersions: nppAtServerVersions,
-      );
-  print(
-    'Running ${nppTestFactories.length + nppAtServerTestFactories.length} policy test(s)...',
-  );
+    runNppAtServerTests(
+      context: context,
+      clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+      nppAtServerVersions: nppAtServerVersions,
+    );
+  print('Running ${nppTestFactories.length + nppAtServerTestFactories.length} policy test(s)...');
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final List<PolicyTestResult> testResults = [];
 
@@ -188,10 +184,7 @@ Future<void> policyTests(PolicyTestsParams params) async {
       batchSize: params.batchSize,
     ),
   );
-
-  print(
-    'Running ${nppAtServerTestFactories.length} NPP atServer policy test(s)...',
-  );
+  print('Running ${nppAtServerTestFactories.length} NPP atServer policy test(s)...');
   testResults.addAll(
     await _runFuturesWithConcurrency(
       nppAtServerTestFactories,
@@ -217,11 +210,11 @@ Future<void> policyTests(PolicyTestsParams params) async {
 
   final int totalTests = testResults.length;
   final int passedTests = testResults
-      .where((tr) => tr.status == TestStatus.passed)
-      .length;
+    .where((tr) => tr.status == TestStatus.passed)
+    .length;
   final int failedCount = testResults
-      .where((result) => result.status == TestStatus.failed)
-      .length;
+    .where((result) => result.status == TestStatus.failed)
+    .length;
 
   overallStopwatch.stop();
   print('');
