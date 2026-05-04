@@ -100,9 +100,9 @@ class NppService {
         throw Exception('Home directory could not be resolved.');
       }
     }
-
+    final handler = NppRequestHandler(nppCache: nppCache);
     npa = NPAImpl(
-      handler: NppRequestHandler(nppCache: nppCache),
+      handler: handler,
       atClient: atClient,
       homeDirectory: homeDir,
       eventLoggingAtsign: eventLoggingAtSign as Atsign?);
@@ -114,6 +114,7 @@ class NppService {
         nppCache: nppCache,
         nppOperationHooks: nppOperationHooks,
         binariesVersion: binariesVersion,
+        handler: handler,
       ),
       isClient: false,
       isServer: true,
