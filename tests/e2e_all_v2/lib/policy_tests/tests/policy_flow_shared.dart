@@ -47,6 +47,11 @@ abstract class PolicyRules {
 
 class NppPolicyRules implements PolicyRules {
   final npp.NppClient client;
+  String? _clientId;
+  String? _clientGroupId;
+  String? _daemonId;
+  String? _serviceId;
+  final Set<String> _permitOpens = {};
 
   NppPolicyRules(this.client);
 
@@ -76,6 +81,11 @@ class NppPolicyRules implements PolicyRules {
     for (final policyClient in clients) {
       await client.deleteClient(policyClient.id!);
     }
+    _clientId = null;
+    _clientGroupId = null;
+    _daemonId = null;
+    _serviceId = null;
+    _permitOpens.clear();
   }
 
   @override
@@ -146,30 +156,38 @@ class NppPolicyRules implements PolicyRules {
     required String deviceName,
     required String permitOpen,
   }) async {
-    await clear();
-    final String clientId = await client.putClient(
-      npp.Client(name: clientAtsign, atSign: clientAtsign),
-    );
-    final String clientGroupId = await client.putClientGroup(
-      npp.ClientGroup(name: 'policy_e2e_clients'),
-    );
-    await client.putClientGroupMember(
-      npp.ClientGroupMember(clientId: clientId, clientGroupId: clientGroupId),
-    );
-    final String daemonId = await client.putDaemon(
-      npp.Daemon(atSign: daemonAtsign),
-    );
-    final String serviceId = await client.putService(
-      npp.Service(
-        daemonId: daemonId,
-        deviceName: deviceName,
-        deviceGroupName: policyDeviceGroupName,
-      ),
-    );
+    if (_clientId == null ||
+        _clientGroupId == null ||
+        _daemonId == null ||
+        _serviceId == null) {
+      _clientId = await client.putClient(
+        npp.Client(name: clientAtsign, atSign: clientAtsign),
+      );
+      _clientGroupId = await client.putClientGroup(
+        npp.ClientGroup(name: 'policy_e2e_clients'),
+      );
+      await client.putClientGroupMember(
+        npp.ClientGroupMember(
+          clientId: _clientId!,
+          clientGroupId: _clientGroupId!,
+        ),
+      );
+      _daemonId = await client.putDaemon(npp.Daemon(atSign: daemonAtsign));
+      _serviceId = await client.putService(
+        npp.Service(
+          daemonId: _daemonId!,
+          deviceName: deviceName,
+          deviceGroupName: policyDeviceGroupName,
+        ),
+      );
+    }
+    if (!_permitOpens.add(permitOpen)) {
+      return;
+    }
     await client.putServiceACL(
       npp.ServiceACL(
-        serviceId: serviceId,
-        clientGroupId: clientGroupId,
+        serviceId: _serviceId!,
+        clientGroupId: _clientGroupId!,
         permitOpen: permitOpen,
       ),
     );
@@ -182,11 +200,17 @@ class NppPolicyRules implements PolicyRules {
 class NppAtServerPolicyRules implements PolicyRules {
   final admin.PolicyServiceWithAtClient service;
   int _generation = 0;
+  final Set<String> _permitOpens = {};
 
   NppAtServerPolicyRules(this.service);
 
   @override
   Future<void> clear() async {
+    _permitOpens.clear();
+    await _clearRemote();
+  }
+
+  Future<void> _clearRemote() async {
     final groups = await service.getUserGroups();
     for (final group in groups) {
       if (group.id != null) {
@@ -230,7 +254,8 @@ class NppAtServerPolicyRules implements PolicyRules {
     required String deviceName,
     required String permitOpen,
   }) async {
-    await clear();
+    _permitOpens.add(permitOpen);
+    await _clearRemote();
     _generation++;
     for (int i = 0; i < _generation; i++) {
       await service.createUserGroup(
@@ -251,7 +276,7 @@ class NppAtServerPolicyRules implements PolicyRules {
         userAtSigns: [clientAtsign],
         daemonAtSigns: [daemonAtsign],
         devices: [
-          admin.Device(name: deviceName, permitOpens: [permitOpen]),
+          admin.Device(name: deviceName, permitOpens: _permitOpens.toList()),
         ],
         deviceGroups: const [],
       ),

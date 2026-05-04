@@ -47,7 +47,16 @@ Hints:
 
 ~/GitHub/policy_temp/npp
 
-- manage a living document of context , a plan a record, shows current state, weaknesses, comparisons and similarities
-- assessments
-- virtualenv
-- ~/AGENTS.md
+## Command to test
+
+```bash
+dart run tests/e2e_all_v2/bin/policy_tests.dart \
+    --client-atsign "@client_jttest" \
+    --daemon-atsign "@daemon_jttest" \
+    --relay-atsign "@rv_am" \
+    --npp-atsign "@policy01_jttest" \
+    --npp-atserver-atsign "@policy02_jttest" \
+    --root-domain "root.atsign.wtf:64" \
+    --base-directory "npe2e_policy" \
+    --batch-size 2
+```
