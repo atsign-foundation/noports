@@ -89,7 +89,7 @@ jobs:
                 --relay-atsign "@rv_dev" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
-                --batch-size 3
+                --batch-size 5
           - test_suite: policy_tests
             output_artifact: e2e_all_v2_policy_tests_artifacts
             logs_dir: npe2e_policy_tests
@@ -102,7 +102,7 @@ jobs:
                 --npp-atserver-atsign "@npe2e_policy02" \
                 --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
-                --batch-size 3
+                --batch-size 2
           - test_suite: relay_tests
             output_artifact: npe2e_relay_tests_artifacts
             logs_dir: npe2e_relay_tests
@@ -117,7 +117,7 @@ jobs:
                 --client-versions "d:current" \
                 --daemon-versions "d:current" \
                 --self-relay-versions "d:v5.10.0,d:current" \
-                --batch-size 3
+                --batch-size 4
 
     steps:
       - name: Checkout
