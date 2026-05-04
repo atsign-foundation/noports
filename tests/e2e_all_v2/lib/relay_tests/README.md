@@ -20,3 +20,19 @@ Example:
 --self-relay-versions d:current \
 --self-relay-atsigns @relay_payload,@relay_escr,@relay_escr443
 ```
+
+## Command to run
+
+```bash
+dart run tests/e2e_all_v2/bin/relay_tests.dart \
+    --client-atsign "@client_jttest" \
+    --daemon-atsign "@daemon_jttest" \
+    --prod-relay-atsign "@rv_am" \
+    --self-relay-atsigns "@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
+    --root-domain "root.atsign.org" \
+    --base-directory "npe2e_relay" \
+    --client-versions "d:curent" \
+    --daemon-versions "d:current" \
+    --self-relay-versions "d:v5.10.0,d:current" \
+    --batch-size 2
+```
