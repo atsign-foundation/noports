@@ -4,6 +4,7 @@ import 'package:e2e_all_v2/docker_image.dart';
 import 'package:e2e_all_v2/docker_instance.dart';
 import 'package:e2e_all_v2/docker_utils.dart';
 import 'package:e2e_all_v2/language.dart';
+import 'package:e2e_all_v2/log_fragment.dart';
 import 'package:e2e_all_v2/noports_version.dart';
 import 'package:e2e_all_v2/print_test_utils.dart';
 import 'package:e2e_all_v2/relay_tests/relay_tests_context.dart';
@@ -342,12 +343,26 @@ Future<RelayTestResult> _runNptRelayTest({
   printTestStart(testName: nptRelayTestName, extra: extra);
 
   DockerInstance? client;
+  LogFragment? daemonLogFragment;
+  LogFragment? relayLogFragment;
   try {
     int exitCode = 1;
     for (int attempt = 1; attempt <= 2; attempt++) {
       final String attemptMetadata = attempt == 1
           ? metadata
           : '${metadata}_retry$attempt';
+      daemonLogFragment = _createDaemonLogFragment(
+        testLogger: testLogger,
+        daemonTarget: daemonTarget,
+        metadata: attemptMetadata,
+      );
+      relayLogFragment = _createRelayLogFragment(
+        testLogger: testLogger,
+        relayCase: relayCase,
+        metadata: attemptMetadata,
+      );
+      await daemonLogFragment.start();
+      await relayLogFragment?.start();
       client = await _runClientCommand(
         context: context,
         testLogger: testLogger,
@@ -365,6 +380,8 @@ Future<RelayTestResult> _runNptRelayTest({
           return 124;
         },
       );
+      await daemonLogFragment.stop();
+      await relayLogFragment?.stop();
       if (exitCode == 0 || attempt == 2) {
         break;
       }
@@ -389,10 +406,18 @@ Future<RelayTestResult> _runNptRelayTest({
     );
     printTestResult(testResult: result, extra: extra);
     if (exitCode != 0) {
-      await _printFailureLogs(client, daemonTarget.daemonInstance, relayCase);
+      await _printFailureLogs(
+        client,
+        daemonTarget.daemonInstance,
+        relayCase,
+        daemonLogFragment: daemonLogFragment,
+        relayLogFragment: relayLogFragment,
+      );
     }
     return result;
   } catch (e) {
+    await _stopLogFragmentQuietly(daemonLogFragment);
+    await _stopLogFragmentQuietly(relayLogFragment);
     final RelayTestResult result = RelayTestResult(
       testName: nptRelayTestName,
       clientVersion: clientVersion,
@@ -406,9 +431,17 @@ Future<RelayTestResult> _runNptRelayTest({
     );
     printTestResult(testResult: result, extra: extra);
     print('Relay test exception: $e');
-    await _printFailureLogs(client, daemonTarget.daemonInstance, relayCase);
+    await _printFailureLogs(
+      client,
+      daemonTarget.daemonInstance,
+      relayCase,
+      daemonLogFragment: daemonLogFragment,
+      relayLogFragment: relayLogFragment,
+    );
     return result;
   } finally {
+    await _stopLogFragmentQuietly(daemonLogFragment);
+    await _stopLogFragmentQuietly(relayLogFragment);
     await stopDockerInstanceQuietly(client);
   }
 }
@@ -503,6 +536,49 @@ Future<DockerInstance> _startSelfRelay({
         container: containerKeyFilePath,
       ),
     ],
+  );
+}
+
+LogFragment _createDaemonLogFragment({
+  required RelayTestLogger testLogger,
+  required RelayDaemonTarget daemonTarget,
+  required String metadata,
+}) {
+  return daemonTarget.daemonInstance.createLogFragment(
+    stdoutFile: testLogger.getDaemonStdoutLogFile(
+      daemonVersion: daemonTarget.daemonVersion,
+      deviceName: daemonTarget.deviceName,
+      testMetadata: metadata,
+    ),
+    stderrFile: testLogger.getDaemonStderrLogFile(
+      daemonVersion: daemonTarget.daemonVersion,
+      deviceName: daemonTarget.deviceName,
+      testMetadata: metadata,
+    ),
+    printCommand: false,
+  );
+}
+
+LogFragment? _createRelayLogFragment({
+  required RelayTestLogger testLogger,
+  required RelayCase relayCase,
+  required String metadata,
+}) {
+  if (relayCase.relayInstance == null || relayCase.relayVersion == null) {
+    return null;
+  }
+  return relayCase.relayInstance!.createLogFragment(
+    stdoutFile: testLogger.getRelayStdoutLogFile(
+      relayVersion: relayCase.relayVersion!,
+      relayKind: relayCase.relayKind.name,
+      testMetadata: metadata,
+    ),
+    stderrFile: testLogger.getRelayStderrLogFile(
+      relayVersion: relayCase.relayVersion!,
+      relayKind: relayCase.relayKind.name,
+      testMetadata: metadata,
+    ),
+    printCommand: false,
   );
 }
 
@@ -602,8 +678,10 @@ ssh -p "\$PORT" -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i /at
 Future<void> _printFailureLogs(
   DockerInstance? client,
   DockerInstance daemon,
-  RelayCase relayCase,
-) async {
+  RelayCase relayCase, {
+  LogFragment? daemonLogFragment,
+  LogFragment? relayLogFragment,
+}) async {
   for (final (String label, DockerInstance? instance) in [
     ('client', client),
     ('daemon', daemon),
@@ -620,6 +698,35 @@ Future<void> _printFailureLogs(
     if (stderr != null && await stderr.exists()) {
       print('$label stderr:\n${await stderr.readAsString()}');
     }
+  }
+  await _printLogFragment('daemon', daemonLogFragment);
+  await _printLogFragment('relay', relayLogFragment);
+}
+
+Future<void> _printLogFragment(String label, LogFragment? fragment) async {
+  if (fragment == null) {
+    return;
+  }
+  if (await fragment.stdoutFile.exists()) {
+    print(
+      '$label stdout fragment:\n${await fragment.stdoutFile.readAsString()}',
+    );
+  }
+  if (await fragment.stderrFile.exists()) {
+    print(
+      '$label stderr fragment:\n${await fragment.stderrFile.readAsString()}',
+    );
+  }
+}
+
+Future<void> _stopLogFragmentQuietly(LogFragment? fragment) async {
+  if (fragment == null) {
+    return;
+  }
+  try {
+    await fragment.stop();
+  } catch (_) {
+    // Best-effort cleanup for log followers; test failure logging is still useful.
   }
 }
 

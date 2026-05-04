@@ -79,6 +79,32 @@ class RelayTestLogger {
     );
   }
 
+  File getRelayStdoutLogFile({
+    required NoPortsVersion relayVersion,
+    required String relayKind,
+    required String testMetadata,
+  }) {
+    return File(
+      path.join(
+        relaysDirectory.path,
+        'npe2e_relay_${relayKind}_${relayVersion.language.name}_${relayVersion.version}_${testMetadata}_stdout.log',
+      ),
+    );
+  }
+
+  File getRelayStderrLogFile({
+    required NoPortsVersion relayVersion,
+    required String relayKind,
+    required String testMetadata,
+  }) {
+    return File(
+      path.join(
+        relaysDirectory.path,
+        'npe2e_relay_${relayKind}_${relayVersion.language.name}_${relayVersion.version}_${testMetadata}_stderr.log',
+      ),
+    );
+  }
+
   String _baseName(
     NoPortsVersion clientVersion,
     NoPortsVersion daemonVersion,
