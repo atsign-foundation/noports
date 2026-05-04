@@ -24,14 +24,14 @@ Example:
 ## Command to run
 
 ```bash
-dart run tests/e2e_all_v2/bin/relay_tests.dart \
+rm -rf npe2e_relay/ && dart run tests/e2e_all_v2/bin/relay_tests.dart \
     --client-atsign "@client_jttest" \
-    --daemon-atsign "@daemon_jttest" \
+    --daemon-atsign "@device_jttest" \
     --prod-relay-atsign "@rv_am" \
-    --self-relay-atsigns "@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
+    --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
     --root-domain "root.atsign.org" \
     --base-directory "npe2e_relay" \
-    --client-versions "d:curent" \
+    --client-versions "d:current" \
     --daemon-versions "d:current" \
     --self-relay-versions "d:v5.10.0,d:current" \
     --batch-size 2

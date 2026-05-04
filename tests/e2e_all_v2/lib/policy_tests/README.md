@@ -52,11 +52,11 @@ Hints:
 ```bash
 dart run tests/e2e_all_v2/bin/policy_tests.dart \
     --client-atsign "@client_jttest" \
-    --daemon-atsign "@daemon_jttest" \
+    --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
     --npp-atsign "@policy01_jttest" \
     --npp-atserver-atsign "@policy02_jttest" \
-    --root-domain "root.atsign.wtf:64" \
+    --root-domain "root.atsign.org" \
     --base-directory "npe2e_policy" \
     --batch-size 2
 ```
