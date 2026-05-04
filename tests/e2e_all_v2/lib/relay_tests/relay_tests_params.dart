@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 
-const String defaultRelayClientVersions = 'd:v5.10.0,d:current';
-const String defaultRelayDaemonVersions = 'd:v5.10.0,d:current';
+const String defaultRelayClientVersions = 'd:current';
+const String defaultRelayDaemonVersions = 'd:current';
 const String defaultSelfRelayVersions = 'd:v5.10.0,d:current';
 
 class RelayTestsParams {
