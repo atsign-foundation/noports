@@ -111,13 +111,13 @@ jobs:
                 --client-atsign "@npe2e_client" \
                 --daemon-atsign "@npe2e_daemon" \
                 --prod-relay-atsign "@rv_dev" \
-                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06,@npe2e_relay,@npe2e_relay_latest" \
+                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06,@npe2e_relay,@npe2e_relay_latest,@npe2e_singleton" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
                 --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
                 --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
                 --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
-                --batch-size 5
+                --batch-size 3
 
     steps:
       - name: Checkout
