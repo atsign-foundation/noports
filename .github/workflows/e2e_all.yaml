@@ -114,8 +114,8 @@ jobs:
                 --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06,@npe2e_relay,@npe2e_relay_latest" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
-                --client-versions "d:v5.10.0,d:current" \
-                --daemon-versions "d:v5.10.0,d:current" \
+                --client-versions "d:current" \
+                --daemon-versions "d:current" \
                 --self-relay-versions "d:v5.10.0,d:current" \
                 --batch-size 3
 
