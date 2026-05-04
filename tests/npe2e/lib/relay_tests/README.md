@@ -31,8 +31,8 @@ rm -rf npe2e_relay/ && dart run tests/npe2e/bin/relay_tests.dart \
     --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
     --root-domain "root.atsign.org" \
     --base-directory "npe2e_relay" \
-    --client-versions "d:current" \
-    --daemon-versions "d:current" \
-    --self-relay-versions "d:v5.10.0,d:current" \
-    --batch-size 2
+    --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
+    --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
+    --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
+    --batch-size 5
 ```

@@ -114,10 +114,10 @@ jobs:
                 --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06,@npe2e_relay,@npe2e_relay_latest" \
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
-                --client-versions "d:current" \
-                --daemon-versions "d:current" \
-                --self-relay-versions "d:v5.10.0,d:current" \
-                --batch-size 4
+                --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
+                --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
+                --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
+                --batch-size 5
 
     steps:
       - name: Checkout
