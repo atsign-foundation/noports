@@ -171,8 +171,6 @@ List<Future<RelayTestResult> Function()> runRelay001MinusSFlagSetup({
     language: Language.dart,
     version: 'current',
   );
-  final RelayInstanceCase bootstrapRelay =
-      environment.relayPairs.first.normalRelay;
 
   return [
     for (final RelayDaemonTarget daemonTarget in environment.daemonTargets)
@@ -182,7 +180,6 @@ List<Future<RelayTestResult> Function()> runRelay001MinusSFlagSetup({
         environment: environment,
         clientVersion: clientVersion,
         daemonTarget: daemonTarget,
-        relayInstanceCase: bootstrapRelay,
       ),
   ];
 }
@@ -450,7 +447,7 @@ Future<RelayTestResult> _runNptRelayTest({
       await _printFailureLogs(
         client,
         daemonTarget.daemonInstance,
-        relayInstanceCase,
+        relayInstanceCase: relayInstanceCase,
         daemonLogFragment: daemonLogFragment,
         relayLogFragment: relayLogFragment,
       );
@@ -473,7 +470,7 @@ Future<RelayTestResult> _runNptRelayTest({
     await _printFailureLogs(
       client,
       daemonTarget.daemonInstance,
-      relayInstanceCase,
+      relayInstanceCase: relayInstanceCase,
       daemonLogFragment: daemonLogFragment,
       relayLogFragment: relayLogFragment,
     );
@@ -491,53 +488,43 @@ Future<RelayTestResult> _runRelay001MinusSFlagSetup({
   required NptRelayEnvironment environment,
   required NoPortsVersion clientVersion,
   required RelayDaemonTarget daemonTarget,
-  required RelayInstanceCase relayInstanceCase,
 }) async {
   const NptRelayCase bootstrapCase = NptRelayCase(
-    name: 'normal client to normal relay',
-    metadata: 'normal_to_normal',
+    name: 'bootstrap ssh key setup',
+    metadata: 'bootstrap_ssh_key_setup',
     clientUses443: false,
     relayAuthMode: payloadRelayAuthMode,
     relayUses443: false,
     expectSuccess: true,
   );
-  final String metadata = _metadata(
+  final String metadata = _prodRelayMetadata(
     context: context,
     clientVersion: clientVersion,
     daemonVersion: daemonTarget.daemonVersion,
-    relayInstanceCase: relayInstanceCase,
     relayCase: bootstrapCase,
   );
-  final String extra = _extra(
+  final String extra = _prodRelayExtra(
+    context: context,
     clientVersion: clientVersion,
     daemonVersion: daemonTarget.daemonVersion,
-    relayInstanceCase: relayInstanceCase,
-    relayCase: bootstrapCase,
   );
   printTestStart(testName: relay001MinusSFlagTestName, extra: extra);
 
   DockerInstance? client;
   LogFragment? daemonLogFragment;
-  LogFragment? relayLogFragment;
   try {
     daemonLogFragment = _createDaemonLogFragment(
       testLogger: testLogger,
       daemonTarget: daemonTarget,
       metadata: metadata,
     );
-    relayLogFragment = _createRelayLogFragment(
-      testLogger: testLogger,
-      relayInstanceCase: relayInstanceCase,
-      metadata: metadata,
-    );
     await daemonLogFragment.start();
-    await relayLogFragment.start();
     client = await _runSshnpPrimeCommand(
       context: context,
       testLogger: testLogger,
       clientVersion: clientVersion,
       daemonVersion: daemonTarget.daemonVersion,
-      relayInstanceCase: relayInstanceCase,
+      relayAtsign: context.prodRelayAtsign,
       networkName: environment.networkName,
       deviceName: daemonTarget.deviceName,
       metadata: metadata,
@@ -550,12 +537,10 @@ Future<RelayTestResult> _runRelay001MinusSFlagSetup({
       },
     );
     await daemonLogFragment.stop();
-    await relayLogFragment.stop();
-    final RelayTestResult result = _relayTestResult(
+    final RelayTestResult result = _prodRelayTestResult(
       testName: relay001MinusSFlagTestName,
       clientVersion: clientVersion,
       daemonVersion: daemonTarget.daemonVersion,
-      relayInstanceCase: relayInstanceCase,
       relayCase: bootstrapCase,
       status: exitCode == 0 ? TestStatus.passed : TestStatus.failed,
       exitCode: exitCode,
@@ -565,20 +550,16 @@ Future<RelayTestResult> _runRelay001MinusSFlagSetup({
       await _printFailureLogs(
         client,
         daemonTarget.daemonInstance,
-        relayInstanceCase,
         daemonLogFragment: daemonLogFragment,
-        relayLogFragment: relayLogFragment,
       );
     }
     return result;
   } catch (e) {
     await _stopLogFragmentQuietly(daemonLogFragment);
-    await _stopLogFragmentQuietly(relayLogFragment);
-    final RelayTestResult result = _relayTestResult(
+    final RelayTestResult result = _prodRelayTestResult(
       testName: relay001MinusSFlagTestName,
       clientVersion: clientVersion,
       daemonVersion: daemonTarget.daemonVersion,
-      relayInstanceCase: relayInstanceCase,
       relayCase: bootstrapCase,
       status: TestStatus.failed,
       exitCode: 1,
@@ -588,14 +569,11 @@ Future<RelayTestResult> _runRelay001MinusSFlagSetup({
     await _printFailureLogs(
       client,
       daemonTarget.daemonInstance,
-      relayInstanceCase,
       daemonLogFragment: daemonLogFragment,
-      relayLogFragment: relayLogFragment,
     );
     return result;
   } finally {
     await _stopLogFragmentQuietly(daemonLogFragment);
-    await _stopLogFragmentQuietly(relayLogFragment);
     await stopDockerInstanceQuietly(client);
   }
 }
@@ -796,7 +774,7 @@ Future<DockerInstance> _runSshnpPrimeCommand({
   required RelayTestLogger testLogger,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
-  required RelayInstanceCase relayInstanceCase,
+  required String relayAtsign,
   required String networkName,
   required String deviceName,
   required String metadata,
@@ -810,7 +788,7 @@ Future<DockerInstance> _runSshnpPrimeCommand({
       '/atsign/.atsign/keys/${path.basename(clientApkamKeysFile.path)}';
   final String script = _sshnpPrimeScript(
     context: context,
-    relayInstanceCase: relayInstanceCase,
+    relayAtsign: relayAtsign,
     clientVersion: clientVersion,
     daemonVersion: daemonVersion,
     deviceName: deviceName,
@@ -821,8 +799,7 @@ Future<DockerInstance> _runSshnpPrimeCommand({
     testRunId: context.testRunId,
     uniqueIdentifier:
         '_relay_001_client_${clientVersion.language.name}_${clientVersion.version}'
-        '_daemon_${daemonVersion.language.name}_${daemonVersion.version}'
-        '_relay_${relayInstanceCase.relayVersion.language.name}_${relayInstanceCase.relayVersion.version}',
+        '_daemon_${daemonVersion.language.name}_${daemonVersion.version}',
   );
   return dockerInstance
       .run(
@@ -837,13 +814,11 @@ Future<DockerInstance> _runSshnpPrimeCommand({
         stdoutLogFile: testLogger.getClientStdoutLogFile(
           clientVersion: clientVersion,
           daemonVersion: daemonVersion,
-          relayVersion: relayInstanceCase.relayVersion,
           testMetadata: metadata,
         ),
         stderrLogFile: testLogger.getClientStderrLogFile(
           clientVersion: clientVersion,
           daemonVersion: daemonVersion,
-          relayVersion: relayInstanceCase.relayVersion,
           testMetadata: metadata,
         ),
       )
@@ -892,7 +867,7 @@ ssh -p "\$PORT" -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i /at
 
 String _sshnpPrimeScript({
   required RelayTestsContext context,
-  required RelayInstanceCase relayInstanceCase,
+  required String relayAtsign,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
   required String deviceName,
@@ -909,7 +884,7 @@ String _sshnpPrimeScript({
     '-d',
     deviceName,
     '-h',
-    relayInstanceCase.relayAtsign,
+    relayAtsign,
     '-u',
     _remoteUsername,
     '--root-domain',
@@ -947,15 +922,15 @@ List<String> _sshnpNonInteractiveArgs({
 
 Future<void> _printFailureLogs(
   DockerInstance? client,
-  DockerInstance daemon,
-  RelayInstanceCase relayInstanceCase, {
+  DockerInstance daemon, {
+  RelayInstanceCase? relayInstanceCase,
   LogFragment? daemonLogFragment,
   LogFragment? relayLogFragment,
 }) async {
   for (final (String label, DockerInstance? instance) in [
     ('client', client),
     ('daemon', daemon),
-    ('relay', relayInstanceCase.relayInstance),
+    ('relay', relayInstanceCase?.relayInstance),
   ]) {
     if (instance == null) {
       continue;
@@ -1056,6 +1031,30 @@ RelayTestResult _relayTestResult({
   );
 }
 
+RelayTestResult _prodRelayTestResult({
+  required String testName,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required NptRelayCase relayCase,
+  required TestStatus status,
+  required int exitCode,
+}) {
+  return RelayTestResult(
+    testName: testName,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+    relayVersion: null,
+    relayKind: 'prod',
+    relayAuthMode: relayCase.relayAuthMode,
+    clientOnly443: relayCase.clientUses443,
+    relayOnly443: false,
+    caseName: relayCase.metadata,
+    expectedSuccess: relayCase.expectSuccess,
+    status: status,
+    exitCode: exitCode,
+  );
+}
+
 String _metadata({
   required RelayTestsContext context,
   required NoPortsVersion clientVersion,
@@ -1066,6 +1065,21 @@ String _metadata({
   return sanitizeForDockerName(
     '${context.testRunId}_${relayCase.metadata}'
     '_${relayInstanceCase.metadata}'
+    '_c_${clientVersion.language.name}_${clientVersion.version}'
+    '_d_${daemonVersion.language.name}_${daemonVersion.version}',
+    maxLength: 64,
+  );
+}
+
+String _prodRelayMetadata({
+  required RelayTestsContext context,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+  required NptRelayCase relayCase,
+}) {
+  return sanitizeForDockerName(
+    '${context.testRunId}_${relayCase.metadata}'
+    '_prod'
     '_c_${clientVersion.language.name}_${clientVersion.version}'
     '_d_${daemonVersion.language.name}_${daemonVersion.version}',
     maxLength: 64,
@@ -1092,11 +1106,20 @@ String _extra({
       ? '${relayCase.relayAuthMode},443'
       : relayCase.relayAuthMode;
   final String relayMode = relayInstanceCase.relayOnly443 ? '443' : 'normal';
-  final String expectation = relayCase.expectSuccess ? 'success' : 'failure';
   return '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, '
       'daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}, '
       'relay: self:${relayInstanceCase.relayVersion.language.name[0]}:${relayInstanceCase.relayVersion.version}, '
-      'case: ${relayCase.metadata}, clientMode: $clientMode, relayMode: $relayMode, expect: $expectation)';
+      'case: ${relayCase.metadata}, clientMode: $clientMode, relayMode: $relayMode)';
+}
+
+String _prodRelayExtra({
+  required RelayTestsContext context,
+  required NoPortsVersion clientVersion,
+  required NoPortsVersion daemonVersion,
+}) {
+  return '(client: ${clientVersion.language.name[0]}:${clientVersion.version}, '
+      'daemon: ${daemonVersion.language.name[0]}:${daemonVersion.version}, '
+      'relay: ${context.prodRelayAtsign})';
 }
 
 String _shortVersion(String version) {
