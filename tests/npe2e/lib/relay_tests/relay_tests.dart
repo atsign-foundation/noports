@@ -12,7 +12,11 @@ import 'package:npe2e/print_test_utils.dart';
 import 'package:npe2e/relay_tests/relay_tests_context.dart';
 import 'package:npe2e/relay_tests/relay_tests_params.dart';
 import 'package:npe2e/relay_tests/relay_tests_test_result.dart';
-import 'package:npe2e/relay_tests/tests/npt_relay_test.dart';
+import 'package:npe2e/relay_tests/relay_test_flow_shared.dart';
+import 'package:npe2e/relay_tests/tests/normal_to_443_test.dart';
+import 'package:npe2e/relay_tests/tests/normal_to_normal_test.dart';
+import 'package:npe2e/relay_tests/tests/port_443_to_443_test.dart';
+import 'package:npe2e/relay_tests/tests/port_443_to_normal_test.dart';
 import 'package:npe2e/test_result.dart';
 import 'package:npe2e/utils.dart';
 
@@ -31,7 +35,7 @@ Future<void> relayTests(RelayTestsParams params) async {
     params.selfRelayVersions,
   );
   List<String> selfRelayAtsigns = _parseAtsigns(params.selfRelayAtsigns);
-  final int requiredSelfRelayAtsigns = selfRelayVersions.length * 3;
+  final int requiredSelfRelayAtsigns = selfRelayVersions.length * 2;
   if (selfRelayAtsigns.length < requiredSelfRelayAtsigns) {
     throw ArgumentError(
       'self-relay-atsigns must contain at least $requiredSelfRelayAtsigns '
@@ -165,21 +169,29 @@ Future<void> relayTests(RelayTestsParams params) async {
       selfRelayVersions: selfRelayVersions,
     );
     print('');
-    print('Started ${environment.daemonTargets.length} relay daemon(s):');
-    for (final RelayDaemonTarget daemonTarget in environment.daemonTargets) {
+    final Map<String, RelayDaemonTarget> daemonTargetsByContainer = {
+      for (final RelayDaemonTarget daemonTarget in environment.daemonTargets)
+        daemonTarget.daemonInstance.containerName: daemonTarget,
+    };
+    print('Started ${daemonTargetsByContainer.length} relay daemon(s):');
+    for (final RelayDaemonTarget daemonTarget
+        in daemonTargetsByContainer.values) {
       print(
         '    Daemon (-d ${daemonTarget.deviceName}): ${daemonTarget.daemonInstance.containerName}',
       );
     }
     print('');
-    print('Prepared ${environment.relayCases.length} relay option(s):');
-    for (final RelayCase relayCase in environment.relayCases) {
-      final String relay = relayCase.relayVersion == null
-          ? 'prod'
-          : '${relayCase.relayVersion!.language.name[0]}:${relayCase.relayVersion!.version}';
+    print('Prepared ${environment.relayPairs.length * 2} self relay(s):');
+    for (final RelayVersionPair relayPair in environment.relayPairs) {
+      final String relayVersion =
+          '${relayPair.relayVersion.language.name[0]}:${relayPair.relayVersion.version}';
       print(
-        '    ${relayCase.optionName}: ${relayCase.relayKind.name}:$relay'
-        '${relayCase.relayAlias == null ? '' : ' (${relayCase.relayAlias})'}',
+        '    normal: self:$relayVersion '
+        '${relayPair.normalRelay.relayAtsign} (${relayPair.normalRelay.relayAlias})',
+      );
+      print(
+        '    443: self:$relayVersion '
+        '${relayPair.relay443.relayAtsign} (${relayPair.relay443.relayAlias})',
       );
     }
     print('');
@@ -192,9 +204,11 @@ Future<void> relayTests(RelayTestsParams params) async {
         .toSet()
         .length;
     print('Running $sshKeySetupTestCount relay SSH key setup test(s)...');
-    final List<RelayTestResult> setupResults = await runRelay001MinusSFlagSetup(
-      context: context,
-      environment: environment,
+    final List<Future<RelayTestResult> Function()> setupFactories =
+        runRelay001MinusSFlagSetup(context: context, environment: environment);
+    final List<RelayTestResult> setupResults = await _runFuturesWithConcurrency(
+      setupFactories,
+      batchSize: params.batchSize,
     );
     testResults.addAll(setupResults);
     final int failedSetupTests = setupResults
@@ -203,12 +217,28 @@ Future<void> relayTests(RelayTestsParams params) async {
     if (failedSetupTests == 0) {
       print('');
 
-      final List<Future<RelayTestResult> Function()> testFactories =
-          runNptRelayTests(
-            context: context,
-            environment: environment,
-            clientVersions: clientVersions,
-          );
+      final List<Future<RelayTestResult> Function()> testFactories = [
+        ...runNormalToNormalTests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+        ...runPort443ToNormalTests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+        ...runPort443To443Tests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+        ...runNormalTo443Tests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+      ];
 
       print('Running ${testFactories.length} relay test(s)...');
       testResults.addAll(
@@ -280,12 +310,15 @@ String generateRelayExtraString(RelayTestResult result) {
   final String relay = result.relayVersion == null
       ? 'prod'
       : '${result.relayVersion!.language.name[0]}:${result.relayVersion!.version}';
-  final String mode = result.only443
+  final String clientMode = result.clientOnly443
       ? '${result.relayAuthMode},443'
       : result.relayAuthMode;
+  final String relayMode = result.relayOnly443 ? '443' : 'normal';
+  final String expectation = result.expectedSuccess ? 'success' : 'failure';
   return '(client: ${result.clientVersion.language.name[0]}:${result.clientVersion.version}, '
       'daemon: ${result.daemonVersion.language.name[0]}:${result.daemonVersion.version}, '
-      'relay: ${result.relayKind}:$relay, mode: $mode)';
+      'relay: ${result.relayKind}:$relay, case: ${result.caseName}, '
+      'clientMode: $clientMode, relayMode: $relayMode, expect: $expectation)';
 }
 
 List<NoPortsVersion> _parseVersions(String versions) {

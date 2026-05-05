@@ -7,7 +7,10 @@ class RelayTestResult extends TestResult {
   final NoPortsVersion? relayVersion;
   final String relayKind;
   final String relayAuthMode;
-  final bool only443;
+  final bool clientOnly443;
+  final bool relayOnly443;
+  final String caseName;
+  final bool expectedSuccess;
 
   RelayTestResult({
     required super.testName,
@@ -16,7 +19,10 @@ class RelayTestResult extends TestResult {
     required this.relayVersion,
     required this.relayKind,
     required this.relayAuthMode,
-    required this.only443,
+    required this.clientOnly443,
+    required this.relayOnly443,
+    required this.caseName,
+    required this.expectedSuccess,
     required super.status,
     required super.exitCode,
   });
