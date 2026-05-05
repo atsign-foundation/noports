@@ -181,8 +181,8 @@ Future<void> policyTests(PolicyTestsParams params) async {
   setUpStopwatch.stop();
 
   // 8. Run the tests
-  final List<Future<PolicyTestResult> Function()> nppTestFactories =
-      getNppTestFactories(
+  final List<List<Future<PolicyTestResult> Function()>> nppTestFactoryBatches =
+      getNppTestFactoryBatchesByPolicyVersion(
         context: context,
         clientVersions: clientVersions,
         daemonVersions: daemonVersions,
@@ -197,7 +197,10 @@ Future<void> policyTests(PolicyTestsParams params) async {
       );
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final Future<List<PolicyTestResult>> nppResultsFuture =
-      _runFuturesWithConcurrency(nppTestFactories, batchSize: params.batchSize);
+      _runFactoryBatchesWithConcurrency(
+        nppTestFactoryBatches,
+        batchSize: params.batchSize,
+      );
   final Future<List<PolicyTestResult>> nppAtServerResultsFuture =
       _runFuturesWithConcurrency(
         nppAtServerTestFactories,
@@ -332,5 +335,19 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
     await startNextTest();
   }
 
+  return allResults;
+}
+
+Future<List<PolicyTestResult>> _runFactoryBatchesWithConcurrency(
+  List<List<Future<PolicyTestResult> Function()>> testFactoryBatches, {
+  required int batchSize,
+}) async {
+  final List<PolicyTestResult> allResults = [];
+  for (final List<Future<PolicyTestResult> Function()> testFactories
+      in testFactoryBatches) {
+    allResults.addAll(
+      await _runFuturesWithConcurrency(testFactories, batchSize: batchSize),
+    );
+  }
   return allResults;
 }

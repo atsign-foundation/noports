@@ -24,6 +24,44 @@ List<Future<PolicyTestResult> Function()> getNppTestFactories({
   required final List<NoPortsVersion> daemonVersions,
   required final List<NoPortsVersion> nppVersions,
 }) {
+  return getNppTestFactoryBatchesByPolicyVersion(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+    nppVersions: nppVersions,
+  ).expand((testFactories) => testFactories).toList();
+}
+
+List<List<Future<PolicyTestResult> Function()>>
+getNppTestFactoryBatchesByPolicyVersion({
+  required final PolicyTestsContext context,
+  required final List<NoPortsVersion> clientVersions,
+  required final List<NoPortsVersion> daemonVersions,
+  required final List<NoPortsVersion> nppVersions,
+}) {
+  final List<List<Future<PolicyTestResult> Function()>> batches = [];
+  for (final NoPortsVersion nppVersion in nppVersions) {
+    final List<Future<PolicyTestResult> Function()> testFactories =
+        _getNppTestFactoriesForPolicyVersions(
+          context: context,
+          clientVersions: clientVersions,
+          daemonVersions: daemonVersions,
+          nppVersions: [nppVersion],
+        );
+    if (testFactories.isNotEmpty) {
+      batches.add(testFactories);
+    }
+  }
+  return batches;
+}
+
+List<Future<PolicyTestResult> Function()>
+_getNppTestFactoriesForPolicyVersions({
+  required final PolicyTestsContext context,
+  required final List<NoPortsVersion> clientVersions,
+  required final List<NoPortsVersion> daemonVersions,
+  required final List<NoPortsVersion> nppVersions,
+}) {
   final List<Future<PolicyTestResult> Function()> testFactories = [];
   final PolicyTestLogger testLogger = PolicyTestLogger(
     logsDirectory: context.logsDirectory,
