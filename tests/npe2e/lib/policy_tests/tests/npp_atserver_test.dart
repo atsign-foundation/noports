@@ -67,11 +67,28 @@ _generateVersionPermutationsNppAtServer({
         if (!versionIsAtLeast(nppAtServerVersion, _minimumNppAtServerVersion)) {
           continue;
         }
+        if (!_hasCurrentVersion(
+          clientVersion,
+          daemonVersion,
+          nppAtServerVersion,
+        )) {
+          continue;
+        }
         permutations.add((clientVersion, daemonVersion, nppAtServerVersion));
       }
     }
   }
   return permutations;
+}
+
+bool _hasCurrentVersion(
+  NoPortsVersion clientVersion,
+  NoPortsVersion daemonVersion,
+  NoPortsVersion policyVersion,
+) {
+  return clientVersion.version == 'current' ||
+      daemonVersion.version == 'current' ||
+      policyVersion.version == 'current';
 }
 
 Future<PolicyTestResult> _runNppAtServerTest({

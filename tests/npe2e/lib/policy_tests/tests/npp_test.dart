@@ -70,11 +70,24 @@ _generateVersionPermutations({
         if (!versionIsAtLeast(nppVersion, _minimumNppVersion)) {
           continue;
         }
+        if (!_hasCurrentVersion(clientVersion, daemonVersion, nppVersion)) {
+          continue;
+        }
         permutations.add((clientVersion, daemonVersion, nppVersion));
       }
     }
   }
   return permutations;
+}
+
+bool _hasCurrentVersion(
+  NoPortsVersion clientVersion,
+  NoPortsVersion daemonVersion,
+  NoPortsVersion policyVersion,
+) {
+  return clientVersion.version == 'current' ||
+      daemonVersion.version == 'current' ||
+      policyVersion.version == 'current';
 }
 
 Future<PolicyTestResult> _runNppTest({

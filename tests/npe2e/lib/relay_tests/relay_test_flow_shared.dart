@@ -214,6 +214,13 @@ List<Future<RelayTestResult> Function()> runNptRelayCaseTests({
   for (final NoPortsVersion clientVersion in clientVersions) {
     for (final RelayDaemonTarget daemonTarget in environment.daemonTargets) {
       for (final RelayVersionPair relayPair in environment.relayPairs) {
+        if (!_hasCurrentVersion(
+          clientVersion,
+          daemonTarget.daemonVersion,
+          relayPair.relayVersion,
+        )) {
+          continue;
+        }
         if (!_supportsRelayCase(
           clientVersion,
           daemonTarget.daemonVersion,
@@ -238,6 +245,16 @@ List<Future<RelayTestResult> Function()> runNptRelayCaseTests({
   }
 
   return testFactories;
+}
+
+bool _hasCurrentVersion(
+  NoPortsVersion clientVersion,
+  NoPortsVersion daemonVersion,
+  NoPortsVersion relayVersion,
+) {
+  return clientVersion.version == 'current' ||
+      daemonVersion.version == 'current' ||
+      relayVersion.version == 'current';
 }
 
 List<_RelayStartPlan> _relayStartPlans({
