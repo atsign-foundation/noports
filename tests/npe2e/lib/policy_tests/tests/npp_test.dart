@@ -7,7 +7,7 @@ import 'package:npe2e/policy_tests/policy_server.dart';
 import 'package:npe2e/policy_tests/policy_tests_context.dart';
 import 'package:npe2e/policy_tests/policy_tests_logging.dart';
 import 'package:npe2e/policy_tests/policy_tests_test_result.dart';
-import 'package:npe2e/policy_tests/tests/policy_flow_shared.dart';
+import 'package:npe2e/policy_tests/policy_flow_shared.dart';
 import 'package:npe2e/print_test_utils.dart';
 import 'package:npe2e/test_result.dart';
 import 'package:noports_core/npp.dart' as npp;
