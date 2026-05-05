@@ -3,7 +3,7 @@ import 'package:args/args.dart';
 const String defaultClientVersions = 'd:current';
 const String defaultDaemonVersions = 'd:current';
 const String defaultNppAtServerVersions = 'd:v5.13.0';
-const String defaultNppVersions = 'd:current,d:v5.14.13';
+const String defaultNppVersions = 'd:current';
 
 class PolicyTestsParams {
   static final ArgParser argParser = _createArgParser();

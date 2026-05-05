@@ -25,7 +25,7 @@ const String policyDeviceGroupName = '__none__';
 const String policySshPermitOpen = 'localhost:22';
 const String policyWrongPortPermitOpen = 'localhost:222';
 const String policyDaemonDeniedPermitOpen = 'localhost:2233';
-const Duration policyStageWait = Duration(seconds: 20);
+const Duration policyStageWait = Duration(seconds: 15);
 const Duration policyNptRetryWait = Duration(seconds: 2);
 const int policyNptMaxAttempts = 3;
 
