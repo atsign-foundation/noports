@@ -196,19 +196,21 @@ Future<void> policyTests(PolicyTestsParams params) async {
         nppAtServerVersions: nppAtServerVersions,
       );
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
-  final List<PolicyTestResult> testResults = [];
-  testResults.addAll(
-    await _runFuturesWithConcurrency(
-      nppTestFactories,
-      batchSize: params.batchSize,
-    ),
-  );
-  testResults.addAll(
-    await _runFuturesWithConcurrency(
-      nppAtServerTestFactories,
-      batchSize: params.batchSize,
-    ),
-  );
+  final Future<List<PolicyTestResult>> nppResultsFuture =
+      _runFuturesWithConcurrency(nppTestFactories, batchSize: params.batchSize);
+  final Future<List<PolicyTestResult>> nppAtServerResultsFuture =
+      _runFuturesWithConcurrency(
+        nppAtServerTestFactories,
+        batchSize: params.batchSize,
+      );
+  final List<List<PolicyTestResult>> parallelResults = await Future.wait([
+    nppResultsFuture,
+    nppAtServerResultsFuture,
+  ]);
+  final List<PolicyTestResult> testResults = [
+    ...parallelResults[0],
+    ...parallelResults[1],
+  ];
   testExecutionStopwatch.stop();
 
   print('Results:');
