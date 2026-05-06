@@ -1,31 +1,26 @@
 # relay_tests
 
-Client: v5.11.2, v5.13.0, v5.15.0, current
-Daemons: v5.13.0, v5.14.13, current
-Relay: v5.15.0, current
+## Test Coverage
 
-- one daemon container is started per daemon version
-- two relay containers are started per relay version:
-  one normal `srvd`, and one `srvd --443`
-- each daemon is bootstrapped once with `001_minus_s_flag`, using a `d:current`
-  client and the first normal self-run relay
-- each client/daemon/relay version permutation runs four fixed `npt` cases:
-  normal to normal (pass), 443 to normal (fail), 443 to 443 (pass), and
-  normal to 443 (pass)
-- shared startup and client execution logic lives in `relay_test_flow_shared.dart`;
-  each fixed case is defined in its own file under `tests/`
+Daemon remains the same sshnpd -a @daemon -m @client -s -v
 
-Self-run relay cases must use distinct relay atSigns because each `srvd`
-subscribes to request notifications for its atSign. Pass them with
-`--self-relay-atsigns`; each self relay version consumes two atSigns:
-one for `srvd`, and one for `srvd --443`.
+(Client, Relay)
 
-Example:
+1. Case 1: normal to normal (expect success)
+`npt -f client -t daemon -r relay --rp 22`
+`srvd -a relay -v --ip <Ip>`
 
-```sh
---self-relay-versions d:current \
---self-relay-atsigns @relay_payload,@relay_escr443
-```
+2. Case 2: 443 to normal (expect failure, relay does not support 443 mode)
+`npt -f client -t daemon -r relay --rp 22 --443 --ram escr`
+`srvd -a relay -v --ip <Ip>`
+
+3. Case 3: 443 to 443 (expect success)
+`npt -f client -t daemon -r relay --rp 22 --443 --ram escr`
+`srvd -a relay -v --ip <Ip> --443`
+
+4. Case 4: normal to 443 (expect success, relay still supports non-standard ports)
+`npt -f client -t daemon -r relay --rp 22`
+`srvd -a relay -v --ip <Ip> --443`
 
 ## Command to run
 

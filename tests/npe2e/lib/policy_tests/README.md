@@ -1,9 +1,20 @@
 # policy_tests
 
-Client: current
-Daemons: current
-npp_atserver: v5.13.0
-npp: current
+## Usage
+
+```bash
+dart run tests/npe2e/bin/policy_tests.dart \
+    --client-atsign "@client_jttest" \
+    --daemon-atsign "@device_jttest" \
+    --relay-atsign "@rv_am" \
+    --npp-atsign "@policy01_jttest" \
+    --npp-atserver-atsign "@policy02_jttest" \
+    --root-domain "root.atsign.org" \
+    --base-directory "npe2e_policy" \
+    --batch-size 2
+```
+
+## General Test Flow
 
 0. Set up actors
    0a. Run `npp_atserver|npp -a <policy_atsign> -v`
@@ -35,28 +46,3 @@ regarding 2a, 3a, and 4a:
 
 - depending on if we're running `npp_atserver` or `npp`, there is a different way of putting policy rules in place.
 
-## Placing policy rules for npp_atserver
-
-Hints:
-
-~/GitHub/policy_temp/npp_atserver
-
-## Placing policy rules for npp
-
-Hints:
-
-~/GitHub/policy_temp/npp
-
-## Command to test
-
-```bash
-dart run tests/npe2e/bin/policy_tests.dart \
-    --client-atsign "@client_jttest" \
-    --daemon-atsign "@device_jttest" \
-    --relay-atsign "@rv_am" \
-    --npp-atsign "@policy01_jttest" \
-    --npp-atserver-atsign "@policy02_jttest" \
-    --root-domain "root.atsign.org" \
-    --base-directory "npe2e_policy" \
-    --batch-size 2
-```
