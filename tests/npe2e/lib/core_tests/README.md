@@ -3,7 +3,9 @@
 ## Usage
 
 ```bash
-docker stop $(docker ps -q) 2>/dev/null ; rm -rf npe2e_core/ && dart run tests/npe2e/bin/core_tests.dart \
+docker stop $(docker ps -q) 2>/dev/null
+rm -rf npe2e_core/
+dart run tests/npe2e/bin/core_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
@@ -46,8 +48,10 @@ docker stop $(docker ps -q) 2>/dev/null ; rm -rf npe2e_core/ && dart run tests/n
 
 ### minus_u_flag
 
-1. Run sshnp without `-u <username>` talking to device daemon which does not have `-u` flag enabled (expect to fail)
-2. Run sshnp without `-u <username>` talking to device daemon which does have `-u` flag enabled (expect to pass)
+1. Run sshnp without `-u <username>` talking to device daemon which does
+   not have `-u` flag enabled (expect to fail)
+2. Run sshnp without `-u <username>` talking to device daemon which does
+   have `-u` flag enabled (expect to pass)
 
 - Client: Dart (current) | Daemon: Dart (current)
 
@@ -76,10 +80,12 @@ docker stop $(docker ps -q) 2>/dev/null ; rm -rf npe2e_core/ && dart run tests/n
 ### v4_dart_inline
 
 v4 protocol lacks advanced features; does not support:
+
 - device authentication to relay
 - end-to-end traffic encryption
 - daemon feature detection/ping
-- when a v5 cleint needs to talk to v4 daemon, client must `--no-ad` (disable device auth to rvd) `--no-et` (disable end-to-end encryption)
+- when a v5 cleint needs to talk to v4 daemon, client must use `--no-ad`
+  (disable device auth to rvd) and `--no-et` (disable end-to-end encryption)
 
 1. Configuration:
     a. SSH client: dart (client `--ssh-client dart|openssh`)
@@ -168,35 +174,48 @@ Configuration:
 
 ## General Form of a Test
 
-1. There's a core function called "run____Tests" that runs the group of tests given:
+### Runner function
+
+There's a core function called "run____Tests" that runs the group of tests
+given:
 
 ```dart
 List<Future<CoreTestResult>> run____Tests({
-required final CoreTestsContext context, // contians stuff like clientAtsign, daemonAtsign, ...
-required final List<NoPortsVersion> clientVersions, // list of client versions to run against
-required final List<NoPortsVersion> daemonVersions, // list of daemon versions to run against
+  // contains values like clientAtsign and daemonAtsign
+  required final CoreTestsContext context,
+  // list of client versions to run against
+  required final List<NoPortsVersion> clientVersions,
+  // list of daemon versions to run against
+  required final List<NoPortsVersion> daemonVersions,
 }) {
     // ...
 }
 ```
 
-This function returns `List<Future<CoreTestResult>>` which is a list of started tests that can be awaited using `await Future.wait(run____Tests(...))`. This way, the caller has control and flexibility of how to run the tests (in parallel, sequentially, etc).
+This function returns `List<Future<CoreTestResult>>`, which is a list of
+started tests that can be awaited using
+`await Future.wait(run____Tests(...))`. This way, the caller has control and
+flexibility over how to run the tests, in parallel, sequentially, etc.
 
-2. Typically in this function, there's a `CoreTestLogger`
+### Test logger
+
+Typically in this function, there's a `CoreTestLogger`.
 
 The CoreTestLogger describes how to log the results of the test.
 
 ```dart
-final CoreTestLogger testLogger = 
-    CoreTestLogger(
-        logsDirectory: context.logsDirectory, // the directory where a `cleints/` and `daemons/` directory will be created in
-        testName: testName // the name of the test,
-    );
+final CoreTestLogger testLogger = CoreTestLogger(
+  // creates `clients/` and `daemons/` directories here
+  logsDirectory: context.logsDirectory,
+  testName: testName,
+);
 ```
 
-This testLogger will create a directory structure within `context.logsDirectory` like this:
+This testLogger will create a directory structure within
+`context.logsDirectory` like this:
 
-```logsDirectory/
+```text
+logsDirectory/
     testName/
         clients/
             clientVersion1.log
@@ -208,12 +227,15 @@ This testLogger will create a directory structure within `context.logsDirectory`
             ...
 ```
 
-3. In the `run___Tests` function, there will be a private `_generateVersionPermutations` that is called that takes `clientVersions` and `daemonVersions` then creates
-related version permutations.
+### Version permutations
 
-E.g. 
+In the `run___Tests` function, there will be a private
+`_generateVersionPermutations` that takes `clientVersions` and
+`daemonVersions`, then creates related version permutations.
 
-```
+E.g.
+
+```text
 clientVersions: [current, v5.9.4, v5.11.2, v5.13.0]
 daemonVersions: [current, v5.9.4, v5.11.2]
 ```
@@ -232,8 +254,11 @@ List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
       if(!isClientCurrent && !isDaemonCurrent) {
         continue;
       }
-      // this test does not support clientVersion < v5.3.0, because of the way it uses the `-s` flag, which was added in v5.3.0
-      if(versionIsAtLeast(clientVersion, NoPortsVersion(language: Language.dart, version: 'v5.3.0'))) {
+      // this test requires the `-s` flag, which was added in v5.3.0
+      if(versionIsAtLeast(
+        clientVersion,
+        NoPortsVersion(language: Language.dart, version: 'v5.3.0'),
+      )) {
       }
       combinations.add((clientVersion, daemonVersion));
     }
@@ -244,7 +269,7 @@ List<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
 
 Generates:
 
-```
+```text
 (current, current)
 (current, v5.9.4)
 (current, v5.11.2)
@@ -254,15 +279,22 @@ Generates:
 (v5.13.0, current)
 ```
 
-4. Commonly used functions and classes:
+### Common helpers
 
-- `ProcessOutputCapture` and `startCommandWithCapture` -> starts a command and captures its output; output used in `printAllLogs`
-- `LogFragment` and `dockerInstance.createLogFragment` -> captures logs of a Docker instance, made via dockerInstance.createLogFragment; output used in `printAllLogs`
+Commonly used functions and classes:
 
-- `getDeviceNameNoFlags` -> get device name for a given daemon version. Append this with `_f` to get teh docker daemon with `-s -u` flags.
+- `ProcessOutputCapture` and `startCommandWithCapture` -> starts a
+  command and captures its output; output used in `printAllLogs`
+- `LogFragment` and `dockerInstance.createLogFragment` -> captures logs of a
+  Docker instance; output used in `printAllLogs`
+- `getDeviceNameNoFlags` -> gets the device name for a given daemon version.
+  Append this with `_f` to get the docker daemon with `-s -u` flags.
 
 - `printTestStart` -> used at the beginning of `_run____Test` to print test start
 - `printTestResult` -> for printing the result of a test in fail or pass
 - `printAllLogs` -> print ProcessOutputCapture and LogFragment (typically client/daemon)
 
-5. If it's related to the test, we have `_buildNptArgs` or `_buildSshnpArgs` to buidl a base set of `List<String> args` that will be used in functions.
+### Argument builders
+
+If it's related to the test, we have `_buildNptArgs` or `_buildSshnpArgs` to
+build a base set of `List<String> args` that will be used in functions.

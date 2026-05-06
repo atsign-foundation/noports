@@ -18,18 +18,22 @@ Daemon remains the same sshnpd -a @daemon -m @client -s -v
 `npt -f client -t daemon -r relay --rp 22 --443 --ram escr`
 `srvd -a relay -v --ip <Ip> --443`
 
-4. Case 4: normal to 443 (expect success, relay still supports non-standard ports)
+4. Case 4: normal to 443 (expect success, relay still supports non-standard
+   ports)
 `npt -f client -t daemon -r relay --rp 22`
 `srvd -a relay -v --ip <Ip> --443`
 
 ## Command to run
 
 ```bash
-docker stop $(docker ps -q) 2>/dev/null ; rm -rf npe2e_relay/ &&  dart run tests/npe2e/bin/relay_tests.dart \
+docker stop $(docker ps -q) 2>/dev/null
+rm -rf npe2e_relay/
+dart run tests/npe2e/bin/relay_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --prod-relay "@rv_am" \
-    --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,@qt_plant,@qt_beer" \
+    --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,\
+@qt_plant,@qt_beer" \
     --root-domain "root.atsign.org" \
     --base-directory "npe2e_relay" \
     --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
