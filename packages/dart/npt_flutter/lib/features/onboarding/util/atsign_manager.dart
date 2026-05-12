@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';

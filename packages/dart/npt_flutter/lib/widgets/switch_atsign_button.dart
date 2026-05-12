@@ -1,7 +1,7 @@
 import 'dart:developer';
 
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
