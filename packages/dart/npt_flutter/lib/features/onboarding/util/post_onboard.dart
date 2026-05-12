@@ -1,4 +1,4 @@
-import 'package:at_client_mobile/at_client_mobile.dart' hide OnboardingStatus;
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
@@ -16,6 +16,5 @@ Future<void> postOnboard(Atsign atsign, String rootDomain) async {
   context?.read<FavoriteBloc>().add(const FavoriteLoadEvent());
   context?.read<ProfileListBloc>().add(const ProfileListLoadEvent());
   context?.read<SettingsBloc>().add(const SettingsLoadEvent());
-  context?.read<AuthorisationService>().init();
   await context?.read<PolicyCubit>().loadRoles(AppLocalizations.of(context)!);
 }

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_cubit.dart';
@@ -38,8 +38,8 @@ class App extends StatelessWidget {
         RepositoryProvider<FavoriteRepository>(
           create: (_) => FavoriteRepository(),
         ),
-        RepositoryProvider<AuthorisationService>(
-          create: (_) => AuthorisationService(),
+        RepositoryProvider<FlutterEnrollmentService>(
+          create: (_) => FlutterEnrollmentService(),
         ),
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
@@ -100,7 +100,7 @@ class App extends StatelessWidget {
           ),
           BlocProvider<PendingRequestsCountCubit>(
             create: (ctx) =>
-                PendingRequestsCountCubit(ctx.read<AuthorisationService>()),
+                PendingRequestsCountCubit(ctx.read<FlutterEnrollmentService>()),
           ),
 
           /// A cubit which tracks the sync status of the profiles
@@ -136,7 +136,7 @@ class App extends StatelessWidget {
                 key: const Key("MaterialApp"),
                 theme: AppTheme.light(),
                 localizationsDelegates: const [
-                  AtClientMobileLocalizations.delegate,
+                  // TODO: add AtClientFlutterLocalizations.delegate when it becomes available.
                   ...AppLocalizations.localizationsDelegates,
                 ],
                 supportedLocales: AppLocalizations.supportedLocales,
