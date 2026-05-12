@@ -1,4 +1,4 @@
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
