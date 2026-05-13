@@ -1,0 +1,27 @@
+name: npe2e
+description: NoPorts end-to-end test suite
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+# Add regular dependencies here.
+dependencies:
+  args: ^2.7.0
+  at_client: ^3.11.0
+  at_utils: ^3.4.0
+  path: ^1.9.0
+  pool: ^1.5.2
+  at_cli_commons: ^3.0.1
+  at_onboarding_cli: ^1.14.2
+  noports_core:
+    path: ../../packages/dart/noports_core
+  version: ^3.0.2
+
+dependency_overrides:
+  pointycastle: ^4.0.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

@@ -66,4 +66,129 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tmp_e2e_all_artifacts
-          path: tmp_e2e_all_artifacts.zip 
+          path: tmp_e2e_all_artifacts.zip
+
+  npe2e:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    name: npe2e (${{ matrix.test_suite }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_suite: core_tests
+            output_artifact: npe2e_core_tests_artifacts
+            logs_dir: npe2e_core_tests
+            command: |
+              dart run tests/npe2e/bin/core_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --relay-atsign "@rv_dev" \
+                --root-domain "root.atsign.wtf" \
+                --base-directory "$LOGS_DIR" \
+                --batch-size 5
+          - test_suite: policy_tests
+            output_artifact: npe2e_policy_tests_artifacts
+            logs_dir: npe2e_policy_tests
+            command: |
+              dart run tests/npe2e/bin/policy_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --relay-atsign "@rv_dev" \
+                --npp-atsign "@npe2e_policy01" \
+                --npp-atserver-atsign "@npe2e_policy02" \
+                --root-domain "root.atsign.wtf:64" \
+                --base-directory "$LOGS_DIR" \
+                --batch-size 2
+          - test_suite: relay_tests
+            output_artifact: npe2e_relay_tests_artifacts
+            logs_dir: npe2e_relay_tests
+            command: |
+              dart run tests/npe2e/bin/relay_tests.dart \
+                --client-atsign "@npe2e_client" \
+                --daemon-atsign "@npe2e_daemon" \
+                --prod-relay "@rv_dev" \
+                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06" \
+                --root-domain "root.atsign.wtf" \
+                --base-directory "$LOGS_DIR" \
+                --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
+                --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
+                --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
+                --batch-size 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      - name: Install expect
+        run: |
+          sudo apt-get install -y expect
+
+      - name: Set up atKeys from GitHub secrets
+        run: |
+          mkdir -p ~/.atsign/keys/
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY01 }}' > ~/.atsign/keys/@npe2e_policy01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY02 }}' > ~/.atsign/keys/@npe2e_policy02_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY03 }}' > ~/.atsign/keys/@npe2e_policy03_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY04 }}' > ~/.atsign/keys/@npe2e_policy04_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY01 }}' > ~/.atsign/keys/@npe2e_relay01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY02 }}' > ~/.atsign/keys/@npe2e_relay02_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY03 }}' > ~/.atsign/keys/@npe2e_relay03_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY04 }}' > ~/.atsign/keys/@npe2e_relay04_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY05 }}' > ~/.atsign/keys/@npe2e_relay05_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY06 }}' > ~/.atsign/keys/@npe2e_relay06_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Env variables
+        run: |
+          echo "OUTPUT_ARTIFACT=${{ matrix.output_artifact }}" >> $GITHUB_ENV
+          echo "LOGS_DIR=${{ matrix.logs_dir }}" >> $GITHUB_ENV
+
+      - name: Run npe2e ${{ matrix.test_suite }}
+        run: |
+          ${{ matrix.command }}
+
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "$LOGS_DIR" ]; then
+            zip -r "$OUTPUT_ARTIFACT".zip "$LOGS_DIR"
+            echo "Zipped $LOGS_DIR directory contents into $OUTPUT_ARTIFACT.zip"
+          else
+            echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ${{ env.OUTPUT_ARTIFACT }}
+          path: ${{ env.OUTPUT_ARTIFACT }}.zip
+          if-no-files-found: warn
