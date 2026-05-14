@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
@@ -20,6 +21,12 @@ class RelaySelector with AtClientBindings {
   final String device;
 
   late final String rvServerListUrl;
+
+  /// Injectable latency measurer. Defaults to [RelayLatencyChecker.measureLatencies].
+  /// Override in tests to avoid real TCP connections.
+  @visibleForTesting
+  Future<Map<String, int>> Function(Map<String, dynamic>) latencyMeasurer =
+      RelayLatencyChecker.measureLatencies;
 
   RelaySelector({
     required this.atClient,
@@ -42,7 +49,10 @@ class RelaySelector with AtClientBindings {
   ///
   /// If [rvAtSigns] is provided, it will select the best from that list.
   /// Otherwise, it will fetch the standard relays from [rvServerListUrl].
-  Future<String> selectBestRelay({List<Atsign>? rvAtSigns}) async {
+  Future<String> selectBestRelay({
+    List<Atsign>? rvAtSigns,
+    Duration requestTimeout = const Duration(seconds: 10),
+  }) async {
     List<Atsign> toCheck = [];
 
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
@@ -61,7 +71,7 @@ class RelaySelector with AtClientBindings {
     await Future.wait(
       toCheck.map((rv) async {
         try {
-          final ipInfo = await _requestRelayIpAddress(rv);
+          final ipInfo = await requestRelayIpAddress(rv, timeout: requestTimeout);
           rvIpMap[rv.toString()] = ipInfo;
         } catch (e) {
           logger.warning('Failed to get IP/Port for $rv: $e');
@@ -74,15 +84,15 @@ class RelaySelector with AtClientBindings {
     }
 
     //Start device latency fetch concurrently while we measure the client latency
-    final deviceLatencyFuture = _fetchDeviceLatencies(rvIpMap);
+    final deviceLatencyFuture = fetchDeviceLatencies(rvIpMap);
 
-    final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
+    final clientLatency = await latencyMeasurer(rvIpMap);
     logger.info('Fetched latencies for client -> RV: $clientLatency');
 
     final deviceLatency = await deviceLatencyFuture;
     logger.info('Fetched latencies for device -> RV: $deviceLatency');
 
-    return _lowestAverageLatency(deviceLatency, clientLatency);
+    return lowestAverageLatency(deviceLatency, clientLatency);
   }
 
   /// Fetches the RV servers map from [rvServerListUrl].
@@ -113,7 +123,11 @@ class RelaySelector with AtClientBindings {
     }
   }
 
-  Future<Map<String, dynamic>> _requestRelayIpAddress(Atsign rvAtSign) async {
+  @visibleForTesting
+  Future<Map<String, dynamic>> requestRelayIpAddress(
+    Atsign rvAtSign, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     Completer<Map<String, dynamic>> completer = Completer();
 
     // The srvd will respond with a key 'discover.sshrvd' sharedBy the srvd
@@ -156,7 +170,7 @@ class RelaySelector with AtClientBindings {
     );
 
     return completer.future.timeout(
-      Duration(seconds: 10),
+      timeout,
       onTimeout: () {
         subscription.cancel();
         throw TimeoutException(
@@ -169,9 +183,11 @@ class RelaySelector with AtClientBindings {
   /// Sends [rvServers] to the device daemon and waits for it to respond with
   /// its measured latency to each RV. Uses this selector's own AtClientBindings
   /// directly, avoiding the need to create and initialize a full SshnpdChannel.
-  Future<Map<String, int>> _fetchDeviceLatencies(
-    Map<String, dynamic> rvServers,
-  ) async {
+  @visibleForTesting
+  Future<Map<String, int>> fetchDeviceLatencies(
+    Map<String, dynamic> rvServers, {
+    Duration timeout = const Duration(minutes: 1),
+  }) async {
     final completer = Completer<Map<String, int>>();
     final regex = 'relay_latency_response.$device.${DefaultArgs.namespace}';
 
@@ -210,7 +226,7 @@ class RelaySelector with AtClientBindings {
     );
 
     return completer.future.timeout(
-      Duration(minutes: 1),
+      timeout,
       onTimeout: () {
         subscription.cancel();
         throw TimeoutException(
@@ -222,7 +238,8 @@ class RelaySelector with AtClientBindings {
 
   /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
   /// the atsign of the RV with the lowest combined average latency.
-  Atsign _lowestAverageLatency(
+  @visibleForTesting
+  Atsign lowestAverageLatency(
     Map<String, int> daemonLatencies,
     Map<String, int> clientLatencies,
   ) {
