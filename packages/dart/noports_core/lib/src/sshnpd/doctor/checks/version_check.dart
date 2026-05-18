@@ -80,7 +80,7 @@ class VersionCheck extends DiagnosticCheck {
 
         // Not installed via a package manager — advise platform-specific install
         String advice = await PlatformUtils.instance
-            .getRecommendedInstallAdvice('noports', '$cleanLatest');
+            .getRecommendedInstallAdvice('noports');
         print('\n $advice\n');
         return CheckResult(
           checkName: name,

@@ -77,10 +77,7 @@ abstract class PlatformUtils {
 
   /// Returns platform-specific advice for installing/updating the package
   /// when it was NOT installed via a detected package manager.
-  Future<String> getRecommendedInstallAdvice(
-    String packageName,
-    String latestVersion,
-  );
+  Future<String> getRecommendedInstallAdvice(String packageName);
 }
 
 /// MacOS Implementation
@@ -245,10 +242,7 @@ class MacOSUtils implements PlatformUtils {
   }
 
   @override
-  Future<String> getRecommendedInstallAdvice(
-    String packageName,
-    String latestVersion,
-  ) async {
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
     return 'Install or update via Homebrew:\n'
         'brew tap atsign-foundation/homebrew-tap\n'
         'brew install $packageName\n'
@@ -399,8 +393,8 @@ class LinuxUtils implements PlatformUtils {
     }
 
     // Check apk (OpenWrt 25.12+ / Alpine)
-    // On OpenWrt the package is named 'csshnpd' (C implementation)
-    final apkNames = [packageName, 'c$packageName'];
+    // On OpenWrt the C implementation is packaged as 'csshnpd'
+    final apkNames = [packageName, 'csshnpd'];
     try {
       for (final name in apkNames) {
         final apk = await Process.run('apk', ['info', '-e', name]);
@@ -412,7 +406,7 @@ class LinuxUtils implements PlatformUtils {
       // apk not available
     }
 
-    // Check opkg (OpenWrt 24.10 and older)
+    // Check opkg (OpenWrt 24.10 and older) — same candidate names as apk
     try {
       for (final name in apkNames) {
         final opkg = await Process.run('opkg', ['status', name]);
@@ -429,10 +423,7 @@ class LinuxUtils implements PlatformUtils {
   }
 
   @override
-  Future<String> getRecommendedInstallAdvice(
-    String packageName,
-    String latestVersion,
-  ) async {
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
     // Detect which package manager is available on the system
     try {
       final aptCheck = await Process.run('which', ['apt']);
@@ -616,10 +607,7 @@ class WindowsUtils implements PlatformUtils {
   }
 
   @override
-  Future<String> getRecommendedInstallAdvice(
-    String packageName,
-    String latestVersion,
-  ) async {
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
     return 'Please download and run the MSI installer from:\n'
         '   https://github.com/atsign-foundation/noports/releases/latest\n';
   }
