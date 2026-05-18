@@ -1,7 +1,7 @@
 # Dockerfile.package
 # A dockerfile for packaging SSH No Ports releases using docker buildx
 
-FROM atsigncompany/cbuildimage:CMake-3.31.11@sha256:48ed145c886996c248e103254bc04c8b19da6b77f542c2593587e850016a7395 AS build
+FROM atsigncompany/cbuildimage:CMake-3.31.12@sha256:14e66b911b594451f9b1b9ad09abf6cc66d6a18d72fcc22dffc7b4cc38a3f4cb AS build
 WORKDIR /sshnpd
 COPY . .
 RUN set -eux; \

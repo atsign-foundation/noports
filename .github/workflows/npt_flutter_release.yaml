@@ -66,7 +66,7 @@ jobs:
         with:
           ref: npt-release-${{github.run_number}}
       - name: Generate SBOM
-        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        uses: sbomify/github-action@ac8b0d423c90447f3011ef8ab5f9ff2e854c6931 # v26.2.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'xUUCaZd4OWr1'
@@ -77,7 +77,7 @@ jobs:
           ENRICH: true
           UPLOAD: true
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom
           path: packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}
@@ -147,7 +147,7 @@ jobs:
             -DestinationPath $env:ASSET_NAME
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: npt_flutter_${{ needs.verify_tags.outputs.bundle_id }}_${{ github.run_number }}_${{ github.run_attempt }}
           path: packages/dart/npt_flutter/${{ needs.verify_tags.outputs.asset_name }}

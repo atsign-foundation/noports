@@ -8,6 +8,8 @@ import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/cli_menu_helper.dart';
+import 'package:noports_core/npa.dart';
+
 
 late AtSignLogger logger;
 
@@ -82,7 +84,53 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '2': { // getAllClients
+    case '2': { // simulate
+      try {
+        print(chalk.blue('\nSending simulate request...'));
+        stdout.write(chalk.white('\nEnter daemon atSign: '));
+        final String daemonAtsign =
+            AtUtils.fixAtSign(stdin.readLineSync()!);
+
+        stdout.write(chalk.white(
+            'Enter device name (press Enter to default to "default"): '));
+        String? deviceName = stdin.readLineSync();
+        if (deviceName == null || deviceName.isEmpty) {
+          deviceName = 'default';
+        }
+        stdout.write(chalk.white(
+            'Enter device group name (press Enter to default to "__none__"): '));
+        String? deviceGroupName = stdin.readLineSync();
+        if (deviceGroupName == null || deviceGroupName.isEmpty) {
+          deviceGroupName = '__none__';
+        }
+
+        stdout.write(chalk.white('Enter client atSign: '));
+        final String clientAtsign =
+            AtUtils.fixAtSign(stdin.readLineSync()!);
+
+        try {
+          final NPAAuthCheckResponse authCheckResponse =
+            await nppClient.simulate(
+              daemonAtsign: daemonAtsign,
+              deviceName: deviceName,
+              deviceGroupName: deviceGroupName,
+              clientAtsign: clientAtsign,
+            );
+          print(chalk.green('\n✓ Simulate successful!'));
+          print('  ${chalk.cyan('status')}: ${authCheckResponse.authorized}');
+          print('  ${chalk.cyan('message')}: ${authCheckResponse.message}');
+          if (authCheckResponse.authorized) {
+            print('  ${chalk.cyan('permitOpen')}: ${authCheckResponse.permitOpen}');
+          }
+        } catch (e) {
+          print(chalk.red('\n✗ Simulate failed: $e'));
+        }
+      } catch (e) {
+        print(chalk.red('\n✗ Invalid daemon atSign: $e'));
+      }
+      break;
+    }
+    case '3': { // getAllClients
       final Set<Client> allClients = await nppClient.getAllClients();
       print(chalk.green('\n✓ Obtained ${allClients.length} clients:'));
       for(int i = 0; i < allClients.length; i++) {
@@ -91,7 +139,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '3': { // getAllClientGroups
+    case '4': { // getAllClientGroups
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       print(chalk.green('\n✓ Obtained ${allClientGroups.length} client groups:'));
       for(int i = 0; i < allClientGroups.length; i++) {
@@ -100,7 +148,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '4': { // getAllClientGroupMembers
+    case '5': { // getAllClientGroupMembers
       // Fetch all data for lookups
       final Set<Client> allClients = await nppClient.getAllClients();
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
@@ -121,7 +169,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '5': { // getAllDaemons
+    case '6': { // getAllDaemons
       final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       print(chalk.green('\n✓ Obtained ${allDaemons.length} daemons:'));
       for(int i = 0; i < allDaemons.length; i++) {
@@ -130,7 +178,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '6': { // getAllServices
+    case '7': { // getAllServices
       // Fetch all data for lookups
       final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       final Set<Service> allServices = await nppClient.getAllServices();
@@ -149,7 +197,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '7': { // getAllServiceACLs
+    case '8': { // getAllServiceACLs
       // Fetch all data for lookups
       final Set<Service> allServices = await nppClient.getAllServices();
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
@@ -171,7 +219,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '8': { // putClient
+    case '9': { // putClient
       stdout.write(chalk.white('\nEnter client name: '));
       final String? clientName = stdin.readLineSync();
       if(clientName == null || clientName.isEmpty) {
@@ -201,7 +249,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client with generated id: $clientId'));
       break;
     }
-    case '9': { // putClientGroup
+    case '10': { // putClientGroup
       stdout.write(chalk.white('\nEnter client group name (e.g. "RDP Users"): '));
       final String? clientGroupName = stdin.readLineSync();
       if(clientGroupName == null || clientGroupName.isEmpty) {
@@ -223,7 +271,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client group with generated id: $clientGroupId'));
       break;
     }
-    case '10': { // putClientGroupMember
+    case '11': { // putClientGroupMember
       print(chalk.blue('Fetching available clients...'));
       final Set<Client> allClients = await nppClient.getAllClients();
       if(allClients.isEmpty) {
@@ -272,7 +320,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put client group member with generated id: $clientGroupMemberId'));
       break;
     }
-    case '11': { // putDaemon
+    case '12': { // putDaemon
       stdout.write(chalk.white('\nEnter daemon atSign: '));
       final String? daemonAtSign = stdin.readLineSync();
       if(daemonAtSign == null || daemonAtSign.isEmpty) {
@@ -294,7 +342,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put daemon with generated id: $daemonId'));
       break;
     }
-    case '12': { // putService
+    case '13': { // putService
       print(chalk.blue('Fetching available daemons...'));
       final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       if(allDaemons.isEmpty) {
@@ -349,7 +397,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put service with generated id: $serviceId'));
       break;
     }
-    case '13': { // putServiceACL
+    case '14': { // putServiceACL
       print(chalk.blue('Fetching available services...'));
       final Set<Service> allServices = await nppClient.getAllServices();
       if(allServices.isEmpty) {
@@ -407,7 +455,7 @@ Future<void> main(List<String> args) async {
       print(chalk.green('✓ Put service ACL with generated id: $serviceACLId'));
       break;
     }
-    case '14': { // deleteClient
+    case '15': { // deleteClient
       print(chalk.blue('Fetching available clients...'));
       final Set<Client> allClients = await nppClient.getAllClients();
       if(allClients.isEmpty) {
@@ -443,7 +491,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '15': { // deleteClientGroup
+    case '16': { // deleteClientGroup
       print(chalk.blue('Fetching available client groups...'));
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
       if(allClientGroups.isEmpty) {
@@ -478,7 +526,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '16': { // deleteClientGroupMember
+    case '17': { // deleteClientGroupMember
       print(chalk.blue('Fetching available client group members...'));
       final Set<Client> allClients = await nppClient.getAllClients();
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
@@ -529,7 +577,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '17': { // deleteDaemon
+    case '18': { // deleteDaemon
       print(chalk.blue('Fetching available daemons...'));
       final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       if(allDaemons.isEmpty) {
@@ -564,7 +612,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '18': { // deleteService
+    case '19': { // deleteService
       print(chalk.blue('Fetching available services...'));
       final Set<Daemon> allDaemons = await nppClient.getAllDaemons();
       final Set<Service> allServices = await nppClient.getAllServices();
@@ -606,7 +654,7 @@ Future<void> main(List<String> args) async {
       }
       break;
     }
-    case '19': { // deleteServiceACL
+    case '20': { // deleteServiceACL
       print(chalk.blue('Fetching available service ACLs...'));
       final Set<Service> allServices = await nppClient.getAllServices();
       final Set<ClientGroup> allClientGroups = await nppClient.getAllClientGroups();
@@ -674,24 +722,25 @@ String showMenuAndGetSelection() {
 
   final List<String> menuItems = [
     '${chalk.magenta('1. ')}ping',
-    '${chalk.cyan('2. ')}getAllClients',
-    '${chalk.cyan('3. ')}getAllClientGroups',
-    '${chalk.cyan('4. ')}getAllClientGroupMembers',
-    '${chalk.cyan('5. ')}getAllDaemons',
-    '${chalk.cyan('6. ')}getAllServices',
-    '${chalk.cyan('7. ')}getAllServiceACLs',
-    '${chalk.green('8. ')}putClient',
-    '${chalk.green('9. ')}putClientGroup',
-    '${chalk.green('10. ')}putClientGroupMember',
-    '${chalk.green('11. ')}putDaemon',
-    '${chalk.green('12. ')}putService',
-    '${chalk.green('13. ')}putServiceACL',
-    '${chalk.red('14. ')}deleteClient',
-    '${chalk.red('15. ')}deleteClientGroup',
-    '${chalk.red('16. ')}deleteClientGroupMember',
-    '${chalk.red('17. ')}deleteDaemon',
-    '${chalk.red('18. ')}deleteService',
-    '${chalk.red('19. ')}deleteServiceACL',
+    '${chalk.magenta('2. ')}simulate',
+    '${chalk.cyan('3. ')}getAllClients',
+    '${chalk.cyan('4. ')}getAllClientGroups',
+    '${chalk.cyan('5. ')}getAllClientGroupMembers',
+    '${chalk.cyan('6. ')}getAllDaemons',
+    '${chalk.cyan('7. ')}getAllServices',
+    '${chalk.cyan('8. ')}getAllServiceACLs',
+    '${chalk.green('9. ')}putClient',
+    '${chalk.green('10. ')}putClientGroup',
+    '${chalk.green('11. ')}putClientGroupMember',
+    '${chalk.green('12. ')}putDaemon',
+    '${chalk.green('13. ')}putService',
+    '${chalk.green('14. ')}putServiceACL',
+    '${chalk.red('15. ')}deleteClient',
+    '${chalk.red('16. ')}deleteClientGroup',
+    '${chalk.red('17. ')}deleteClientGroupMember',
+    '${chalk.red('18. ')}deleteDaemon',
+    '${chalk.red('19. ')}deleteService',
+    '${chalk.red('20. ')}deleteServiceACL',
   ];
 
   print(chalk.white('\nSelect an option (use arrow keys):'));

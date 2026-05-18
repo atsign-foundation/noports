@@ -1,0 +1,41 @@
+FROM dart:3.11.5@sha256:03b628160f6906098352a6d9c97a147afaa28cf4af97cb588aa33655d6ec3125 AS buildimage
+
+ENV URL=https://github.com/atsign-foundation/noports.git
+ENV REPO_DIR=/app/repo
+ENV OUTPUT_DIR=/output
+ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
+
+ARG branch=trunk
+
+RUN set -eux ; \
+    mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
+    apt-get update ; \
+    apt-get install -y git ; \
+    cd ${REPO_DIR} ; \
+    git clone ${URL} . ; \
+    git checkout ${branch} ; \
+    dart pub get -C ${PACKAGE_DIR} ; \
+    dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npp.dart -o ${OUTPUT_DIR}/npp ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npt.dart -o ${OUTPUT_DIR}/npt ; \
+    dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+    dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+    dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
+    dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
+    dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents
+
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:96af983d6e0fcd45e704709f70943cbdc9c2f2e249c6757c6b7000ec3d81c4f2 AS runtime
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+COPY --from=buildimage /output/ /usr/local/bin/
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+CMD sudo service ssh start

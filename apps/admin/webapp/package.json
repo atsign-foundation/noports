@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "7.0.0",
-    "svelte": "5.55.2",
-    "vite": "8.0.8"
+    "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "svelte": "5.55.7",
+    "vite": "8.0.11"
   },
   "overrides": {
     "vite": {

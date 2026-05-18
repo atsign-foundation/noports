@@ -86,7 +86,7 @@ jobs:
       - name: Zip the build
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
       - name: Upload archives
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.output-name }}_${{ matrix.compiler
             }}-${{  github.ref_name
@@ -145,7 +145,7 @@ jobs:
           mkdir tarballs
           tar -xvf bins.tar -C tarballs
       - name: Upload tarballs
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{
             matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
@@ -169,7 +169,7 @@ jobs:
         working-directory: ./packages/c
         run: |
           cmake --workflow --preset package-source
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
@@ -209,7 +209,7 @@ jobs:
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@baefdffa92817fc019bf94ecdb5a2c2e17ea8041 # v0.14
+        uses: sbomify/github-action@ac8b0d423c90447f3011ef8ab5f9ff2e854c6931 # v26.2.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'

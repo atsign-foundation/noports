@@ -1,0 +1,40 @@
+FROM atsigncompany/cbuildimage:CMake-3.31.12@sha256:14e66b911b594451f9b1b9ad09abf6cc66d6a18d72fcc22dffc7b4cc38a3f4cb AS buildimage
+
+ENV REPO_DIR=/app/repo
+ENV OUTPUT_DIR=/output
+
+# WARNING: ensure that build context is set to the root of the repo
+# e.g. `docker build -f tests/e2e_all/dockerfiles/Dockerfile.c.current -t noports-c:current .`
+COPY . ${REPO_DIR}
+
+RUN set -eux ; \
+    mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
+    apt-get update ; \
+    apt-get install -y gcc ; \
+    cd ${REPO_DIR}/packages/c/sshnpd ; \
+    rm -rf build ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake --build build ; \
+    mv ./build/at_activate ${OUTPUT_DIR}/at_activate ; \
+    mv ./build/sshnpd ${OUTPUT_DIR}/sshnpd ; \
+    mv ./build/libsshnpd-lib.a ${OUTPUT_DIR}/libsshnpd-lib.a ; \
+    cd ${REPO_DIR}/packages/c/srv ; \
+    rm -rf build ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake --build build ; \
+    mv build/srv ${OUTPUT_DIR}/srv
+
+
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:96af983d6e0fcd45e704709f70943cbdc9c2f2e249c6757c6b7000ec3d81c4f2 AS runtime
+
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+COPY --from=buildimage /output/ /usr/local/bin/
+
+USER ${USER}
+WORKDIR ${HOMEDIR}
+
+CMD sudo service ssh start

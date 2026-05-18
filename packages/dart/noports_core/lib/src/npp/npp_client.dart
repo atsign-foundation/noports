@@ -1,6 +1,8 @@
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/npa.dart';
+
 
 class NppClient {
 
@@ -271,6 +273,22 @@ class NppClient {
       throw Exception('timestamp key not found in ping response: $response');
     }
     return response;
+  }
+
+  Future<NPAAuthCheckResponse> simulate({
+    required String daemonAtsign,
+    required String deviceName,
+    required String deviceGroupName,
+    required String clientAtsign,
+  }) async {
+    final NppDataOperation nppDataOperation = NppDataOperation.simulate(
+      daemonAtsign: daemonAtsign,
+      deviceName: deviceName,
+      deviceGroupName: deviceGroupName,
+      clientAtsign: clientAtsign,
+    );
+    final Map<String, dynamic> response = await executeNppDataOperation(nppDataOperation);
+    return NPAAuthCheckResponse.fromJson(response);
   }
 
 }
