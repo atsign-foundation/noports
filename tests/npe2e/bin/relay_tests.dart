@@ -79,4 +79,6 @@ void _printLoadedParameters(RelayTestsParams params) {
   print('    daemon-versions: ${params.daemonVersions}');
   print('    self-relay-versions: ${params.selfRelayVersions}');
   print('    batch-size: ${params.batchSize}');
+  print('    max-retries: ${params.maxRetries}');
+  print('    test-timeout-seconds: ${params.testTimeoutSeconds}');
 }
