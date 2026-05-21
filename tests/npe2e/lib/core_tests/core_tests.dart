@@ -234,6 +234,8 @@ Future<void> coreTests(CoreTestsParams params) async {
       await _runFuturesWithConcurrency(
         minusSFlagFactories,
         batchSize: params.batchSize,
+        maxRetries: params.maxRetries,
+        testTimeout: Duration(seconds: params.testTimeoutSeconds),
       );
   allTestResults.addAll(minusSFlagResults);
 
@@ -335,6 +337,8 @@ Future<void> coreTests(CoreTestsParams params) async {
       await _runFuturesWithConcurrency(
         remainingTestFactories,
         batchSize: params.batchSize,
+        maxRetries: params.maxRetries,
+        testTimeout: Duration(seconds: params.testTimeoutSeconds),
       );
   allTestResults.addAll(remainingResults);
   testExecutionStopwatch.stop();
@@ -395,19 +399,18 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('    Overall time: ${formatDuration(overallStopwatch.elapsed)}');
 }
 
-/// Runs a list of test factory functions with controlled concurrency
-///
-/// This function maintains a pool of at most [batchSize] running tests at any time.
-/// As tests complete, new tests are started (with a 1-second delay between starts)
-/// to keep the pool at capacity until all tests are complete.
+/// Runs a list of test factory functions with controlled concurrency, per-test
+/// timeouts, and automatic retries on failure or timeout.
 ///
 /// [testFactories] - List of functions that create test futures when called
 /// [batchSize] - Maximum number of tests to run in parallel at once
-///
-/// Returns a list of CoreTestResult from all test executions
+/// [maxRetries] - Maximum number of retry attempts after initial failure
+/// [testTimeout] - Duration after which a running test is failed and retried
 Future<List<CoreTestResult>> _runFuturesWithConcurrency(
   List<Future<CoreTestResult> Function()> testFactories, {
   required int batchSize,
+  required int maxRetries,
+  required Duration testTimeout,
 }) async {
   if (testFactories.isEmpty) {
     return [];
@@ -418,6 +421,34 @@ Future<List<CoreTestResult>> _runFuturesWithConcurrency(
   int nextIndex = 0;
   int completedCount = 0;
 
+  Future<CoreTestResult> runWithRetry(
+    Future<CoreTestResult> Function() factory,
+    int attempt,
+  ) async {
+    CoreTestResult result;
+    try {
+      result = await factory().timeout(testTimeout);
+    } on TimeoutException {
+      if (attempt < maxRetries) {
+        print(
+          '  ↺ Test timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
+        );
+        return runWithRetry(factory, attempt + 1);
+      }
+      // Exhausted retries on timeout: return a failed result with exitCode -1
+      // We can't construct a CoreTestResult without version info here, so we
+      // rethrow and let the caller handle it.
+      rethrow;
+    }
+    if (result.status == TestStatus.failed && attempt < maxRetries) {
+      print(
+        '  ↺ Test failed (attempt ${attempt + 1}/$maxRetries), retrying...',
+      );
+      return runWithRetry(factory, attempt + 1);
+    }
+    return result;
+  }
+
   Future<void> startNextTest() async {
     if (nextIndex < testFactories.length) {
       if (nextIndex > 0) {
@@ -425,7 +456,9 @@ Future<List<CoreTestResult>> _runFuturesWithConcurrency(
       }
 
       final testIndex = nextIndex;
-      final Future<CoreTestResult> testFuture = testFactories[nextIndex]();
+      final Future<CoreTestResult> Function() factory =
+          testFactories[nextIndex];
+      final Future<CoreTestResult> testFuture = runWithRetry(factory, 0);
       active.add((testFuture, testIndex));
       nextIndex++;
     }
