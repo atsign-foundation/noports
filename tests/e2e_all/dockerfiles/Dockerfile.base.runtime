@@ -1,5 +1,5 @@
 # Dockerfile.base-runtime
-FROM debian:stable-20260406-slim@sha256:e51bfcd2226c480a5416730e0fa2c40df28b0da5ff562fc465202feeef2f1116
+FROM debian:stable-20260518-slim@sha256:5012d0517aa0075a7150a45aae67586641e898913b7af3b08228108565b5f90c
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
