@@ -96,7 +96,7 @@ jobs:
             command: |
               dart run tests/npe2e/bin/policy_tests.dart \
                 --client-atsign "@npe2e_singleton" \
-                --daemon-atsign "@npe2e_relay06" \
+                --daemon-atsign "@npe2e_policy" \
                 --relay-atsign "@rv_dev" \
                 --npp-atsign "@npe2e_policy01" \
                 --npp-atserver-atsign "@npe2e_policy02" \
