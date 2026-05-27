@@ -96,7 +96,7 @@ jobs:
             command: |
               dart run tests/npe2e/bin/policy_tests.dart \
                 --client-atsign "@npe2e_client" \
-                --daemon-atsign "@npe2e_daemon" \
+                --daemon-atsign "@npe2e_relay06" \
                 --relay-atsign "@rv_dev" \
                 --npp-atsign "@npe2e_policy01" \
                 --npp-atserver-atsign "@npe2e_policy02" \
@@ -109,7 +109,7 @@ jobs:
             command: |
               dart run tests/npe2e/bin/relay_tests.dart \
                 --client-atsign "@npe2e_client" \
-                --daemon-atsign "@npe2e_daemon" \
+                --daemon-atsign "@npe2e_relay05" \
                 --prod-relay "@rv_dev" \
                 --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06" \
                 --root-domain "root.atsign.wtf" \
