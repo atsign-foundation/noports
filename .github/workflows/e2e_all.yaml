@@ -102,6 +102,7 @@ jobs:
                 --npp-atserver-atsign "@npe2e_org_policy02_jttest" \
                 --root-domain "root.atsign.org" \
                 --base-directory "$LOGS_DIR" \
+                --test-timeout-seconds 480 \
                 --batch-size 2
           - test_suite: relay_tests
             output_artifact: npe2e_relay_tests_artifacts
