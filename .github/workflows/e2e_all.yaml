@@ -103,22 +103,6 @@ jobs:
                 --root-domain "root.atsign.wtf:64" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 2
-          - test_suite: relay_tests
-            output_artifact: npe2e_relay_tests_artifacts
-            logs_dir: npe2e_relay_tests
-            command: |
-              dart run tests/npe2e/bin/relay_tests.dart \
-                --client-atsign "@npe2e_relay" \
-                --daemon-atsign "@npe2e_relay_latest" \
-                --prod-relay "@rv_dev" \
-                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06" \
-                --root-domain "root.atsign.wtf" \
-                --base-directory "$LOGS_DIR" \
-                --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
-                --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
-                --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
-                --batch-size 5
-
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -191,4 +175,81 @@ jobs:
         with:
           name: ${{ env.OUTPUT_ARTIFACT }}
           path: ${{ env.OUTPUT_ARTIFACT }}.zip
+          if-no-files-found: warn
+
+  npe2e_relay_tests:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    name: npe2e (relay_tests)
+    runs-on: ubuntu-latest
+    needs: [npe2e]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Install expect
+        run: |
+          sudo apt-get install -y expect
+
+      - name: Set up atKeys from GitHub secrets
+        run: |
+          mkdir -p ~/.atsign/keys/
+          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY01 }}' > ~/.atsign/keys/@npe2e_relay01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY02 }}' > ~/.atsign/keys/@npe2e_relay02_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY03 }}' > ~/.atsign/keys/@npe2e_relay03_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY04 }}' > ~/.atsign/keys/@npe2e_relay04_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY05 }}' > ~/.atsign/keys/@npe2e_relay05_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY06 }}' > ~/.atsign/keys/@npe2e_relay06_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Run npe2e relay_tests
+        run: |
+          dart run tests/npe2e/bin/relay_tests.dart \
+            --client-atsign "@npe2e_client" \
+            --daemon-atsign "@npe2e_relay_latest" \
+            --prod-relay "@rv_dev" \
+            --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06" \
+            --root-domain "root.atsign.wtf" \
+            --base-directory "npe2e_relay_tests" \
+            --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
+            --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
+            --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
+            --batch-size 5
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "npe2e_relay_tests" ]; then
+            zip -r npe2e_relay_tests_artifacts.zip npe2e_relay_tests
+            echo "Zipped npe2e_relay_tests directory contents into npe2e_relay_tests_artifacts.zip"
+          else
+            echo "No npe2e_relay_tests directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npe2e_relay_tests_artifacts
+          path: npe2e_relay_tests_artifacts.zip
           if-no-files-found: warn
