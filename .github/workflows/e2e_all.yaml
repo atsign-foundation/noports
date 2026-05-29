@@ -90,19 +90,6 @@ jobs:
                 --root-domain "root.atsign.wtf" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 5
-          - test_suite: policy_tests
-            output_artifact: npe2e_policy_tests_artifacts
-            logs_dir: npe2e_policy_tests
-            command: |
-              dart run tests/npe2e/bin/policy_tests.dart \
-                --client-atsign "@npe2e_singleton" \
-                --daemon-atsign "@npe2e_policy" \
-                --relay-atsign "@rv_dev" \
-                --npp-atsign "@npe2e_policy01" \
-                --npp-atserver-atsign "@npe2e_policy02" \
-                --root-domain "root.atsign.wtf:64" \
-                --base-directory "$LOGS_DIR" \
-                --batch-size 2
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -252,4 +239,75 @@ jobs:
         with:
           name: npe2e_relay_tests_artifacts
           path: npe2e_relay_tests_artifacts.zip
+          if-no-files-found: warn
+
+  npe2e_policy_tests:
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    name: npe2e (policy_tests)
+    runs-on: ubuntu-latest
+    needs: [npe2e]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Install expect
+        run: |
+          sudo apt-get install -y expect
+
+      - name: Set up atKeys from GitHub secrets
+        run: |
+          mkdir -p ~/.atsign/keys/
+          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY01 }}' > ~/.atsign/keys/@npe2e_policy01_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_POLICY02 }}' > ~/.atsign/keys/@npe2e_policy02_key.atKeys
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Run npe2e policy_tests
+        run: |
+          dart run tests/npe2e/bin/policy_tests.dart \
+            --client-atsign "@npe2e_singleton" \
+            --daemon-atsign "@npe2e_policy" \
+            --relay-atsign "@rv_dev" \
+            --npp-atsign "@npe2e_policy01" \
+            --npp-atserver-atsign "@npe2e_policy02" \
+            --root-domain "root.atsign.wtf:64" \
+            --base-directory "npe2e_policy_tests" \
+            --batch-size 2
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "npe2e_policy_tests" ]; then
+            zip -r npe2e_policy_tests_artifacts.zip npe2e_policy_tests
+            echo "Zipped npe2e_policy_tests directory contents into npe2e_policy_tests_artifacts.zip"
+          else
+            echo "No npe2e_policy_tests directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npe2e_policy_tests_artifacts
+          path: npe2e_policy_tests_artifacts.zip
           if-no-files-found: warn
