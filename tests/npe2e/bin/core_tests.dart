@@ -77,4 +77,6 @@ void _printLoadedParameters(CoreTestsParams params) {
   print('    verbose: ${params.verbose}');
   print('    base-directory: ${params.baseDirectory}');
   print('    batch-size: ${params.batchSize}');
+  print('    max-retries: ${params.maxRetries}');
+  print('    test-timeout-seconds: ${params.testTimeoutSeconds}');
 }

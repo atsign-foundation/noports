@@ -209,6 +209,8 @@ Future<void> relayTests(RelayTestsParams params) async {
     final List<RelayTestResult> setupResults = await _runFuturesWithConcurrency(
       setupFactories,
       batchSize: params.batchSize,
+      maxRetries: params.maxRetries,
+      testTimeout: Duration(seconds: params.testTimeoutSeconds),
     );
     testResults.addAll(setupResults);
     final int failedSetupTests = setupResults
@@ -245,6 +247,8 @@ Future<void> relayTests(RelayTestsParams params) async {
         await _runFuturesWithConcurrency(
           testFactories,
           batchSize: params.batchSize,
+          maxRetries: params.maxRetries,
+          testTimeout: Duration(seconds: params.testTimeoutSeconds),
         ),
       );
     } else {
@@ -339,6 +343,8 @@ List<String> _parseAtsigns(String atsigns) {
 Future<List<RelayTestResult>> _runFuturesWithConcurrency(
   List<Future<RelayTestResult> Function()> testFactories, {
   required int batchSize,
+  required int maxRetries,
+  required Duration testTimeout,
 }) async {
   if (testFactories.isEmpty) {
     return [];
@@ -349,13 +355,40 @@ Future<List<RelayTestResult>> _runFuturesWithConcurrency(
   int nextIndex = 0;
   int completedCount = 0;
 
+  Future<RelayTestResult> runWithRetry(
+    Future<RelayTestResult> Function() factory,
+    int attempt,
+  ) async {
+    RelayTestResult result;
+    try {
+      result = await factory().timeout(testTimeout);
+    } on TimeoutException {
+      if (attempt < maxRetries) {
+        print(
+          '  ↺ Test timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
+        );
+        return runWithRetry(factory, attempt + 1);
+      }
+      rethrow;
+    }
+    if (result.status == TestStatus.failed && attempt < maxRetries) {
+      print(
+        '  ↺ Test failed (attempt ${attempt + 1}/$maxRetries), retrying...',
+      );
+      return runWithRetry(factory, attempt + 1);
+    }
+    return result;
+  }
+
   Future<void> startNextTest() async {
     if (nextIndex < testFactories.length) {
       if (nextIndex > 0) {
         await Future<void>.delayed(const Duration(seconds: 1));
       }
       final int testIndex = nextIndex;
-      final Future<RelayTestResult> testFuture = testFactories[nextIndex]();
+      final Future<RelayTestResult> Function() factory =
+          testFactories[nextIndex];
+      final Future<RelayTestResult> testFuture = runWithRetry(factory, 0);
       active.add((testFuture, testIndex));
       nextIndex++;
     }

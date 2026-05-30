@@ -31,6 +31,8 @@ class CoreTestsParams {
   late String clientVersions;
   late String daemonVersions;
   late int batchSize;
+  late int maxRetries;
+  late int testTimeoutSeconds;
 
   // Case 2b - run-time defaults
   late String? testRunId;
@@ -51,6 +53,10 @@ class CoreTestsParams {
     e2eAllV2Params.clientVersions = argResults['client-versions'];
     e2eAllV2Params.daemonVersions = argResults['daemon-versions'];
     e2eAllV2Params.batchSize = int.parse(argResults['batch-size']);
+    e2eAllV2Params.maxRetries = int.parse(argResults['max-retries']);
+    e2eAllV2Params.testTimeoutSeconds = int.parse(
+      argResults['test-timeout-seconds'],
+    );
     e2eAllV2Params.testRunId = argResults['test-run-id'];
     return e2eAllV2Params;
   }
@@ -109,6 +115,18 @@ class CoreTestsParams {
       mandatory: false,
       defaultsTo: '4',
       help: 'Number of tests to run concurrently in each batch',
+    );
+    argParser.addOption(
+      'max-retries',
+      mandatory: false,
+      defaultsTo: '3',
+      help: 'Maximum number of times to retry a failing test',
+    );
+    argParser.addOption(
+      'test-timeout-seconds',
+      mandatory: false,
+      defaultsTo: '300',
+      help: 'Timeout in seconds for each individual test before it is failed and retried',
     );
     argParser.addOption(
       'test-run-id',

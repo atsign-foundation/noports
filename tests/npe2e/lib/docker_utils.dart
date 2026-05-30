@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:npe2e/docker_image.dart';
@@ -18,6 +20,22 @@ DockerImage dockerImageForVersion(final NoPortsVersion version) {
   }
 }
 
+/// Collects stdout and stderr from a [Process] into string buffers.
+/// Returns a record of (stdout, stderr) after the process completes.
+Future<(String, String)> _captureProcessOutput(final Process process) async {
+  final StringBuffer stdoutBuf = StringBuffer();
+  final StringBuffer stderrBuf = StringBuffer();
+  await Future.wait([
+    process.stdout
+        .transform(utf8.decoder)
+        .forEach((chunk) => stdoutBuf.write(chunk)),
+    process.stderr
+        .transform(utf8.decoder)
+        .forEach((chunk) => stderrBuf.write(chunk)),
+  ]);
+  return (stdoutBuf.toString(), stderrBuf.toString());
+}
+
 Future<DockerImage> ensureDockerImageVersion({
   required final NoPortsVersion daemonVersion,
   final bool skipBuildCurrent = false,
@@ -27,22 +45,41 @@ Future<DockerImage> ensureDockerImageVersion({
   if (dockerImage.tag == 'current') {
     if (!skipBuildCurrent) {
       final Process buildProcess = await dockerImage.build(quiet: true);
+      final (String buildStdout, String buildStderr) =
+          await _captureProcessOutput(buildProcess);
       final int buildExitCode = await buildProcess.exitCode;
       if (buildExitCode != 0) {
         throw Exception(
-          'Failed to build docker image ${dockerImage.fullImageName}. Exit code: $buildExitCode',
+          'Failed to build docker image ${dockerImage.fullImageName}.'
+          ' Exit code: $buildExitCode'
+          '\nstdout:\n$buildStdout'
+          '\nstderr:\n$buildStderr',
         );
       }
     }
   } else {
     final Process pullProcess = await dockerImage.pull(quiet: true);
+    final (String pullStdout, String pullStderr) =
+        await _captureProcessOutput(pullProcess);
     final int pullExitCode = await pullProcess.exitCode;
     if (pullExitCode != 0) {
+      print(
+        'docker pull failed for ${dockerImage.fullImageName}'
+        ' (exit $pullExitCode) — falling back to build.'
+        '\npull stdout:\n$pullStdout'
+        '\npull stderr:\n$pullStderr',
+      );
       final Process buildProcess = await dockerImage.build(quiet: true);
+      final (String buildStdout, String buildStderr) =
+          await _captureProcessOutput(buildProcess);
       final int buildExitCode = await buildProcess.exitCode;
       if (buildExitCode != 0) {
         throw Exception(
-          'Failed to build docker image ${dockerImage.fullImageName}. Exit code: $buildExitCode',
+          'Failed to build docker image ${dockerImage.fullImageName}'
+          ' after pull also failed.'
+          ' Build exit code: $buildExitCode'
+          '\nbuild stdout:\n$buildStdout'
+          '\nbuild stderr:\n$buildStderr',
         );
       }
     }
