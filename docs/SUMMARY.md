@@ -84,8 +84,8 @@
 * [Copy of Troubleshooting](troubleshooting.md)
 * [Troubleshooting](troubleshooting-1.md)
 * [Resources](installation-faq/README.md)
-  * [How to activate an atSign](installation-faq/activating-your-atsigns.md)
-  * [Reuse your client atSign on another machine](installation-faq/reuse-your-client-atsign-on-another-machine/README.md)
+  * [How to activate an Atsign](installation-faq/activating-your-atsigns.md)
+  * [Reuse your client Atsign on another machine](installation-faq/reuse-your-client-atsign-on-another-machine/README.md)
     * [Generate a new set of cryptographic keys](installation-faq/reuse-your-client-atsign-on-another-machine/generate-a-new-set-of-cryptographic-keys.md)
     * [New machine: activate from the command line](installation-faq/reuse-your-client-atsign-on-another-machine/new-machine-activate-from-the-command-line.md)
     * [New machine: activate from the Windows installer](installation-faq/reuse-your-client-atsign-on-another-machine/new-machine-activate-from-the-windows-installer.md)
@@ -93,7 +93,7 @@
     * [Old machine: activate from the Windows installer](installation-faq/reuse-your-client-atsign-on-another-machine/old-machine-activate-from-the-windows-installer.md)
   * [How to name a device](installation-faq/installation-details.md)
   * [How to generate SSH keys](installation-faq/how-to-generate-ssh-keys.md)
-  * [Why activate the device atSign on the client?](installation-faq/why-activate-the-device-atsign-on-the-client.md)
+  * [Why activate the device Atsign on the client?](installation-faq/why-activate-the-device-atsign-on-the-client.md)
 
 ## Product Information <a href="#reference" id="reference"></a>
 

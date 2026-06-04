@@ -17,8 +17,8 @@ icon: arrow-progress
 Before continuing, make sure that the following steps have been completed on the machine you’ll be using to remotely connect to your MCP server:
 
 * NoPorts Desktop is installed.
-* Your NoPorts atSigns are activated, and the associated keys are saved locally.
-* You are signed in with your device atSign and have recorded your authentication passcode by opening the Authenticator tab and noting the displayed OTP.
+* Your NoPorts Atsigns are activated, and the associated keys are saved locally.
+* You are signed in with your device Atsign and have recorded your authentication passcode by opening the Authenticator tab and noting the displayed OTP.
 
 If these steps are not yet complete, please follow **Steps 1 through 5.3** in the [Quick Start guide for macOS or Windows](../installation/quick-start-for-macos-and-windows/) then return to this page.
 
@@ -74,10 +74,10 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 * Enter `device` when prompted.
 
-**Your atSigns**
+**Your Atsigns**
 
-* Client atSign: e.g., `@example01_np`
-* Device atSign: e.g., `@example02_np`
+* Client Atsign: e.g., `@example01_np`
+* Device Atsign: e.g., `@example02_np`
 
 **Your device name**
 
@@ -163,11 +163,11 @@ Run the following command to make an authorization request:&#x20;
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_np` with your **device atSign**,
+`@<REPLACE>_np` with your **device Atsign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in step 5 of the prerequisite instructions**&#x20;
 
-`@<REPLACE>_np_key` with your **device atSign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
@@ -275,9 +275,9 @@ Steps 5 through 7 are to be coompleted on the machine you'll be using to remotel
 Click on Connection and create a profile for your MCP connection. You will enter the following information
 
 1. Profile Name - The name that will be displayed in the profile list.
-2. Device atSign - Your device atSign (eg mcp\_demo\_02\_np).
+2. Device Atsign - Your device Atsign (eg mcp\_demo\_02\_np).
 3. Device Name - The name of your remote device.
-4. Relay - Select the relay sever closest to you for optimum speed.
+4. Relay - Select the relay server closest to you for optimum speed.
 5. Local Port - The port you will use on your local machine.
 6. Local Host - The hostname or IP address to bind to on your local machine.
 7. Remote Host - The hostname or IP address of the machine you are connecting to.
@@ -290,7 +290,7 @@ In this example, the we use details shown in the video. When following along, be
 |                   |                    |
 | ----------------- | ------------------ |
 | **Profile Name**  | mcp\_demo          |
-| **Device atSign** | @mcp\_demo\_02\_np |
+| **Device Atsign** | @mcp\_demo\_02\_np |
 | **Device Name**   | mcp\_demo          |
 | **Relay**         | @rv\_am            |
 | **Local Port**    | 3000               |

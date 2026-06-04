@@ -13,7 +13,7 @@ Getting Started Overview
 {% step %}
 ### <mark style="color:orange;">Sign up for NoPorts</mark>
 
-Sign up for a NoPorts subscription or free trial, which includes 2 atSigns.
+Sign up for a NoPorts subscription or free trial, which includes 2 Atsigns.
 {% endstep %}
 
 {% step %}
@@ -40,7 +40,7 @@ Use NoPorts or explore the use cases available [here](../use-cases/).
 Head over to [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans) to sign up for a subscription or free trial.
 
 {% hint style="warning" %}
-During registration, you will receive your client and device atSigns. Ensure that you make note of them for future reference.
+During registration, you will receive your client and device Atsigns. Ensure that you make note of them for future reference.
 {% endhint %}
 
 ### Quick Start for macOS and Windows Only

@@ -1,41 +1,59 @@
 ---
-description: Steps for client and device atSigns
+description: Steps for client and device Atsign
 icon: at
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
-# How to activate an atSign
+# How to activate an Atsign
 
 ## Overview
 
-NoPorts needs to be installed on both the machine you are going to connect to (device) and the machine you are going to connect from (client). NoPorts uses [atSigns](https://atsign.com/faqs/) as addresses and you will need two, one for the client and one for the device.
+NoPorts needs to be installed on both the machine you are going to connect to (device) and the machine you are going to connect from (client). NoPorts uses Atsigns as addresses and you will need two, one for the client and one for the device.
 
 {% hint style="danger" %}
-If you don't own a pair of atSigns/addresses, please visit [my.noports.com](https://my.noports.com/no-ports-plans) before continuing.
+If you don't own a pair of Atsigns/addresses, please visit [my.noports.com](https://my.noports.com/no-ports-plans) before continuing.
 {% endhint %}
 
-Example client atSign
+Example client Atsign
 
 ```
 @sshnp_client
 ```
 
-Example device atSign
+Example device Atsign
 
 ```
 @sshnp_device
 ```
 
-## Activate your atSigns
+## Activate your Atsigns
 
 {% hint style="info" %}
-Activation of a particular atSign is only done once. During activation, cryptographic keys are cut and stored on your machine.
+Activation of a particular Atsign is only done once. During activation, cryptographic keys are cut and stored on your machine.
 
-You will activate both the client atSign _**and**_ the device atSign on your client machine, and you will then authorize your device(s) to use the device atSign.
+You will activate both the client Atsign _**and**_ the device Atsign on your client machine, and you will then authorize your device(s) to use the device Atsign.
 {% endhint %}
 
-### Activate the client atSign
+### Activate the client Atsign
 
-(1) Run the at\_activate command for the client atSign
+(1) Run the at\_activate command for the client Atsign
 
 <pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate -a @&#x3C;REPLACE>_client
 </strong></code></pre>
@@ -48,11 +66,11 @@ at\_activate will pause and wait for the input of a one time pin (OTP) before yo
 If you are using a gmail.com account we have seen that sometimes the OTP gets stuck in the SPAM or PROMOTIONS folder. If you do not see the OTP check those folders.
 {% endhint %}
 
-Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them in the `~/.atsign/keys/` directory with a filename that includes the atSign.
+Once you receive the message, enter the pin into the application and press enter to continue. The application should proceed to create the cryptographic keys and store them in the `~/.atsign/keys/` directory with a filename that includes the Atsign.
 
-### Activate the device atSign
+### Activate the device Atsign
 
-1\) Run the at\_activate command for the device atSign
+1\) Run the at\_activate command for the device Atsign
 
 <pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate -a @&#x3C;REPLACE>_device
 </strong></code></pre>

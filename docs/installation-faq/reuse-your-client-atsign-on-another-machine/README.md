@@ -1,11 +1,29 @@
 ---
 description: A review of two available methods
 icon: file-import
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
-# Reuse your client atSign on another machine
+# Reuse your client Atsign on another machine
 
-## Want to use your atSign on a different machine?
+## Want to use your Atsign on a different machine?
 
 You can:
 
@@ -31,7 +49,7 @@ To generate a new set of cryptographic keys, there are three main steps. They oc
 
 ### **Option B) Copy the cryptographic keys from the machine where it's been activated in the past (Not recommended)**
 
-* The atSign keys file will be located at `~/.atsign/keys/` directory with a filename that will include the atSign. Copy this file from your other machine to the same location on the machine that you are installing SSH No Ports on, using `scp` or similar.
+* The Atsign keys file will be located at `~/.atsign/keys/` directory with a filename that will include the Atsign. Copy this file from your other machine to the same location on the machine that you are installing SSH No Ports on, using `scp` or similar.
 
 Why don't we recommend this approach?
 

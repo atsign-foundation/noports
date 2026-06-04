@@ -1,27 +1,45 @@
 ---
 description: NoPorts connection establishment and architecture
 icon: magnifying-glass
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # How It Works
 
-**What is NoPorts?** NoPorts is a zero trust security tool that uses Atsign's atPlatform to initiate connections without opening ports on either of your devices. It creates a privacy-first environment, and completely removes network attack surfaces. NoPorts is already being used in the field to do things like [replace VPNs and firewalls](https://www.noports.com/use-cases/vpn-replacement), and enable [zero trust remote access](https://www.noports.com/use-cases/remote-access).
+**What is NoPorts?** NoPorts is a zero trust security tool that uses Atsign Platform to initiate connections without opening ports on either of your devices. It creates a privacy-first environment, and completely removes network attack surfaces. NoPorts is already being used in the field to do things like [replace VPNs and firewalls](https://www.noports.com/use-cases/vpn-replacement), and enable [zero trust remote access](https://www.noports.com/use-cases/remote-access).
 
-**How does this technology work?** In the simplest explanation, NoPorts utilizes the atPlatform and atSigns to create an encrypted connection between devices over TCP/IP. An intriguing part of this technology is that TCP ports are not open on the endpoints, and the connection is completely invisible to prying eyes with no entry-point for cybersecurity attacks. Any device or application sitting behind NoPorts has no open ports, no static IP address required, and cannot be digitally hacked! This a huge leap forward in cybersecurity as there are no other solutions that can provide this level of system security. Pretty awesome right? We think so too!\
+**How does this technology work?** In the simplest explanation, NoPorts utilizes Atsign Platform and Atsigns to create an encrypted connection between devices over TCP/IP. An intriguing part of this technology is that TCP ports are not open on the endpoints, and the connection is completely invisible to prying eyes with no entry-point for cybersecurity attacks. Any device or application sitting behind NoPorts has no open ports, no static IP address required, and cannot be digitally hacked! This a huge leap forward in cybersecurity as there are no other solutions that can provide this level of system security. Pretty awesome right? We think so too!\
 \
-To further our understanding of how zero trust security is established via NoPorts, let’s briefly discuss the function of an atSign. Then, we can explore the connectivity process with easy to follow diagrams. An atSign is a resolvable address assigned to a device, person, an entire organization, or anything you like. For example, @alice could be an atSign for a person named Alice. An atSign is used to securely exchange information without any chance of surveillance, impersonation, or theft.
+To further our understanding of how zero trust security is established via NoPorts, let’s briefly discuss the function of an Atsign. Then, we can explore the connectivity process with easy to follow diagrams. An Atsign is a resolvable address assigned to a device, person, an entire organization, or anything you like. For example, @alice could be an Atsign for a person named Alice. An Atsign is used to securely exchange information without any chance of surveillance, impersonation, or theft.
 
-Now, let’s look at a diagram of a completed atSign/NoPorts connection between two devices.
+Now, let’s look at a diagram of a completed Atsign/NoPorts connection between two devices.
 
 <figure><img src="../.gitbook/assets/NoPorts-Connection-Diagram.png" alt=""><figcaption></figcaption></figure>
 
-In the diagram, you can see two devices connected with atSigns (@PointA and @PointB). The connection is established without having any open external ports on the client or remote machine and any TCP application can be setup to utilize a NoPorts connection. Because all ports are closed, the atSign encrypted tunnel is set up with outbound requests only which are sent to an atServer.&#x20;
+In the diagram, you can see two devices connected with Atsign (@PointA and @PointB). The connection is established without having any open external ports on the client or remote machine and any TCP application can be setup to utilize a NoPorts connection. Because all ports are closed, the Atsign encrypted tunnel is set up with outbound requests only which are sent to an atServer.&#x20;
 
-Now, let’s discuss what an atServer is and how it functions as part of the overall atPlatform topology. An atServer is responsible for managing identity and maintaining the key-value data store for each atSign. It performs cryptographic identity validation to ensure that each entity is who they claim to be, supporting secure interactions. It serves as a secure repository and only holds data that is either explicitly made public or data that is encrypted. The atServers cannot decrypt or view any encrypted data as they do not hold the keys to decrypt it. Each atSign utilizes a separate atServer, and the atServers complete the negotiation for setting up the connection between the endpoints.
+Now, let’s discuss what an atServer is and how it functions as part of the overall Atsign Platform topology. An atServer is responsible for managing identity and maintaining the key-value data store for each Atsign. It performs cryptographic identity validation to ensure that each entity is who they claim to be, supporting secure interactions. It serves as a secure repository and only holds data that is either explicitly made public or data that is encrypted. The atServers cannot decrypt or view any encrypted data as they do not hold the keys to decrypt it. Each Atsign utilizes a separate atServer, and the atServers complete the negotiation for setting up the connection between the endpoints.
 
-Since we now have a basic understanding of atSigns and atServers we can take a look at a more comprehensive diagram and discuss further details about the atPlatform.
+Since we now have a basic understanding of Atsigns and atServers we can take a look at a more comprehensive diagram and discuss further details about Atsign Platform.
 
-<figure><img src="../.gitbook/assets/atPlatform Diagram.png" alt=""><figcaption><p>atPlatform</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/atPlatform Diagram.png" alt=""><figcaption><p>Atsign Platform</p></figcaption></figure>
 
 **Connection Establishment**
 

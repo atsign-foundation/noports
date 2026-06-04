@@ -1,5 +1,23 @@
 ---
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Quick Start to Windows
@@ -22,20 +40,20 @@ Ensure both Core Tools & Daemon Service are being installed.
 
 <figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
-### <mark style="color:orange;">Step 8:</mark> Initiate atSign authorization request
+### <mark style="color:orange;">Step 8:</mark> Initiate Atsign authorization request
 
 Open a terminal (Command Prompt or PowerShell) and run the following command to make an authorization request.&#x20;
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_np` with your **device atSign**,
+`@<REPLACE>_np` with your **device Atsign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 5**,&#x20;
 
 `<USER>` with your **Windows username**,&#x20;
 
-`@<REPLACE>_np_key` with your **device atSign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
@@ -95,22 +113,22 @@ With both machines now configured, the final steps bring us back to the machine 
 
 <summary>On the machine you are connecting from</summary>
 
-### <mark style="color:orange;">Step 10:</mark> Approve the atSign authorization request
+### <mark style="color:orange;">Step 10:</mark> Approve the Atsign authorization request
 
 1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
 2. After a few seconds, the request will also show as approved on the machine you are connecting to.
 
-### <mark style="color:orange;">Step 11:</mark> Switch to your client atSign (@example01\_np)
+### <mark style="color:orange;">Step 11:</mark> Switch to your client Atsign (@example01\_np)
 
-1. Click on **your atSign** in the top right corner of the screen. This will open a list of atSigns that are currently signed into the app.
-2. Select the one you would like to use as your **client atSign** in order to switch to it.
+1. Click on **your Atsign** in the top right corner of the screen. This will open a list of atSigns that are currently signed into the app.
+2. Select the one you would like to use as your **client Atsign** in order to switch to it.
 
 ### <mark style="color:orange;">Step 12:</mark> Create a Connection Profile
 
 1. If you aren't already on the Connections tab, click on **Connections** at the top of the Screen. Then click **Add New**, to create a new profile.
 2. Enter the following information into the profile then click **Submit**.
    1. Profile Name - The name that will be displayed in the profile list.
-   2. Device atSign - Your device atSign (eg example02\_np).
+   2. Device Atsign - Your device Atsign (eg example02\_np).
    3. Device Name - The name of your remote device.
    4. Relay - Select the relay sever closest to you for optimum speed.
    5. Local Port - The port you will use on your local machine.

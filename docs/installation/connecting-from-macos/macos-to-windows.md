@@ -1,6 +1,24 @@
 ---
 description: How to install NoPorts when connecting from macOS to Windows
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # macOS to Windows
@@ -14,7 +32,7 @@ These initial steps set up the machine initiating the connection.
 <summary>On the machine you are connecting from</summary>
 
 {% hint style="warning" %}
-In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
+In this installation guide, `@example01_np` will represent the client Atsign, while `@example02_np` will represent the device Atsign.
 {% endhint %}
 
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
@@ -46,38 +64,20 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 * Enter  `client` when prompted.
 
-**Your atSigns (Skip this step)**
+**Your Atsigns (Skip this step)**
 
-* To skip this step, simply press the Enter/Return key twice. Your atSigns will be activated in the upcoming steps.
+* To skip this step, simply press the Enter/Return key twice. Your Atsigns will be activated in the upcoming steps.
 
-### <mark style="color:orange;">Step 2:</mark> Activate your client atSign (@example01\_np)
+### <mark style="color:orange;">Step 2:</mark> Activate your client Atsign (@example01\_np)
 
 {% hint style="warning" %}
-If you've already activated your **client** atSign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
+If you've already activated your **client** Atsign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
 {% endhint %}
 
-This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atSign.
+This command activates your Atsign and prompts you to enter an OTP. This is only done during the setup of a brand new Atsign.
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_np` with your **client atSign.**
-{% endhint %}
-
-```
-~/.local/bin/at_activate -a @<REPLACE>_np
-```
-
-#### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
-
-at\_activate will pause and wait for the input of a one-time pin (OTP) sent to your email or phone number.\
-\
-Once activated, the master keys will save at `~/.atsign/keys`.
-
-### <mark style="color:orange;">Step 3:</mark> Activate your device atSign (@example02\_np)
-
-Run the same command, but for your device atSign.
-
-{% hint style="warning" %}
-Replace `@<REPLACE>_np` with your **device atSign.**
+Replace `@<REPLACE>_np` with your **client Atsign.**
 {% endhint %}
 
 ```
@@ -90,12 +90,30 @@ at\_activate will pause and wait for the input of a one-time pin (OTP) sent to y
 \
 Once activated, the master keys will save at `~/.atsign/keys`.
 
-### <mark style="color:orange;">Step 4:</mark> Generate an atSign authorization passcode for your device atSign
+### <mark style="color:orange;">Step 3:</mark> Activate your device Atsign (@example02\_np)
+
+Run the same command, but for your device Atsign.
+
+{% hint style="warning" %}
+Replace `@<REPLACE>_np` with your **device Atsign.**
+{% endhint %}
+
+```
+~/.local/bin/at_activate -a @<REPLACE>_np
+```
+
+#### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
+
+at\_activate will pause and wait for the input of a one-time pin (OTP) sent to your email or phone number.\
+\
+Once activated, the master keys will save at `~/.atsign/keys`.
+
+### <mark style="color:orange;">Step 4:</mark> Generate an Atsign authorization passcode for your device Atsign
 
 Run the following command to generate a 6-character one-time passcode. You will use this passcode in **Step 6.**
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_np` with your device **atSign.**
+Replace `@<REPLACE>_np` with your device **Atsign.**
 {% endhint %}
 
 ```bash
@@ -118,14 +136,14 @@ With both machines now configured, the final steps bring us back to the machine 
 
 <summary>On the machine you are connecting from</summary>
 
-### <mark style="color:orange;">Step 8:</mark> Approve the atSign authorization request
+### <mark style="color:orange;">Step 8:</mark> Approve the Atsign authorization request
 
 Run the following command:
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_np` with your **device atSign**,
+`@<REPLACE>_np` with your **device Atsign**,
 
 `@<REPLACE_NAME>` with the **device name** **from Step 5.**
 {% endhint %}

@@ -11,7 +11,7 @@ This guide explains how to install and run the NoPorts Policy Service via the co
 Before you begin the installation, please ensure the following steps are complete:
 
 1. **Subscription**: You’ve signed up for a [NoPorts subscription or free trial](https://my.noports.com/no-ports-plans).
-2. **Installation & Activation**: NoPorts is installed and atSigns are activated on at least two machines, one to connect _from_ and one to connect _to_. [View installation guides](./).
+2. **Installation & Activation**: NoPorts is installed and Atsigns are activated on at least two machines, one to connect _from_ and one to connect _to_. [View installation guides](./).
 3. **NoPorts Desktop App** : If you didn’t use the NoPorts desktop app during installation, you can download it here:
    * [Link to Apple Store](https://apps.apple.com/ca/app/noports-desktop/id6737338881)
    * [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)
@@ -22,15 +22,15 @@ Before you begin the installation, please ensure the following steps are complet
 
 <summary>Steps to be completed on the Admin/Client Machine</summary>
 
-### Step 1: Activate your policy atSign (in NoPorts Desktop)
+### Step 1: Activate your policy Atsign (in NoPorts Desktop)
 
-1\) If you were already signed in with another atSign, click on your atSign at the top right of the screen and then click + Add atSign.
+1\) If you were already signed in with another Atsign, click on your Atsign at the top right of the screen and then click + Add Atsign.
 
-2\) Enter your policy atSign.
+2\) Enter your policy Atsign.
 
 3\) You'll receive an OTP via email and after entering it, you'll be prompted to save your keys.
 
-### Step 2: Generate a policy atSign authorization passcode
+### Step 2: Generate a policy Atsign authorization passcode
 
 1\) Click on Authenticator and make note of the One-Time Password displayed on screen.
 
@@ -73,18 +73,18 @@ After extraction, copy the `npp_atserver` and `at_activate` binary to `~/.local/
 sudo cp ./npp_atserver ./at_activate ~/.local/bin
 ```
 
-### Step 4: Initiate an atSign authorization request
+### Step 4: Initiate an Atsign authorization request
 
 Run the following command to make an authorization request:
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_np` with your **policy atSign**,
+`@<REPLACE>_np` with your **policy Atsign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 2**,&#x20;
 
-`@<REPLACE>_np_key` with your **policy atSign**,&#x20;
+`@<REPLACE>_np_key` with your **policy Atsign**,&#x20;
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
@@ -113,7 +113,7 @@ Waiting for approval; will check every 10 seconds
 
 <summary>Step to be completed on the Admin/Client Machine</summary>
 
-### Step 5: Approve the atSign authorization request
+### Step 5: Approve the Atsign authorization request
 
 1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
 2. After a few seconds, the request will also show as approved on the machine you are connecting to.

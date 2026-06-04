@@ -1,12 +1,30 @@
 ---
 icon: wrench
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: false
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Troubleshooting
 
 ### Summary Table (Quick Reference)
 
-| [Timeout to srvd](troubleshooting-1.md#issue-timeout-to-srvd)                                           | `TimeoutException: Connection timeout to srvd <atsign> service` | Check if relay or device atSign exists                                      |
+| [Timeout to srvd](troubleshooting-1.md#issue-timeout-to-srvd)                                           | `TimeoutException: Connection timeout to srvd <atsign> service` | Check if relay or device Atsign exists                                      |
 | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [Daemon feature check timeout](troubleshooting-1.md#issue-daemon-feature-check-timeout)                 | `TimeoutException: Daemon feature check timed out`              | Ensure device name is correct and permissions are in place                  |
 | [Keys not found after install](troubleshooting-1.md#issue-keys-not-found-after-install)                 | Keys missing after install                                      | Avoid enrolling as root; match user with SSHNPD install                     |
@@ -21,12 +39,12 @@ icon: wrench
 
 **Possible Causes**
 
-* The relay atSign (`-r`) is not running or doesn’t exist
-* The device atSign (`-t`) doesn’t exist
+* The relay Atsign (`-r`) is not running or doesn’t exist
+* The device Atsign (`-t`) doesn’t exist
 
 **Solution**
 
-* Double-check the relay and device atSigns for typos
+* Double-check the relay and device Atsigns for typos
 * Use `sshnp --list-devices` to verify device availability
 
 ***
@@ -43,7 +61,7 @@ icon: wrench
 **Solution**
 
 * Confirm the device is online and registered
-* Ensure your atSign has permission to access the device
+* Ensure your Atsign has permission to access the device
 
 ***
 

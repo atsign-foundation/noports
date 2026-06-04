@@ -1,6 +1,24 @@
 ---
 description: How to quickly install and try NoPorts on both MacOS and Windows devices.
 icon: forward
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Quick Start from macOS or Windows
@@ -57,7 +75,7 @@ For Windows, if the app stalls at "Preparing for activation", verify that your C
 
 ### <mark style="color:orange;">Step 4:</mark> Save your atKeys
 
-Your atKeys (cryptographic keys) will be used to pair your atSign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
+Your atKeys (cryptographic keys) will be used to pair your Atsign with this and other devices in future. You can [learn more about these keys here](https://www.youtube.com/watch?v=bRRLCOHP-BY).
 
 1. Click on **Save atKeys**
 2. Select a memorable location on your machine and **save** your keys.&#x20;
@@ -72,9 +90,9 @@ Click on **Authenticator** at the top of the screen and then click on **OTP.** T
 
 ### <mark style="color:orange;">Step 6:</mark> Switch to the machine you are connecting to OR use a demo profile to access our test page
 
-Now that your atSigns are ready, you can either set up your remote machine or try our hidden test page.
+Now that your Atsigns are ready, you can either set up your remote machine or try our hidden test page.
 
-* **Remote machine setup:** Install NoPorts on the remote machine, authorize atSign access to the remote machine and create a connection profile in the desktop app (about 10 minutes).
+* **Remote machine setup:** Install NoPorts on the remote machine, authorize Atsign access to the remote machine and create a connection profile in the desktop app (about 10 minutes).
 * **Test page:** Try our demo profile to access our hidden test page if you don't have a machine to connect to.
 
 **Remote Machine Setup**\

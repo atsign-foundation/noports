@@ -3,6 +3,24 @@ description: >-
   This guide provides information on the technical aspects of NoPorts, including
   its architecture, protocols, and security mechanisms.
 icon: engine
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Under The Hood
@@ -13,14 +31,14 @@ This document describes version 5.6.x Other versions use a different method of f
 
 ## Overview
 
-There are four atSigns involved - one for each of
+There are four Atsigns involved - one for each of
 
 * the noports daemon program (`sshnpd`) which runs on the device you want to ssh to
 * the noports client programs (`sshnp/npt`) which you run on the device you want to ssh from
 * the noports tcp rendezvous program (`sshrvd`)
 * if required a policy engine
 
-The programs communicate via the atProtocol and the atClient SDKs; as a result, the payloads of the messages the programs send to each other are all end-to-end encrypted.
+The programs communicate via the Atsign Protocol and the atClient SDKs; as a result, the payloads of the messages the programs send to each other are all end-to-end encrypted.
 
 In brief
 
@@ -46,11 +64,11 @@ In brief
 
 This high-level flow is visualized in the diagrams below.
 
-**NB** Requests from unauthorized client atSigns are ignored. Note that one may also completely prevent requests from any other atSigns ever even reaching the daemon by using the atProtocol's `config:allow` list feature.
+**NB** Requests from unauthorized client Atsigns are ignored. Note that one may also completely prevent requests from any other Atsigns ever even reaching the daemon by using the Atsign Protocol's `config:allow` list feature.
 
-> In the personal edition of noports, a daemon may have only a single authorized client atSign.
+> In the personal edition of noports, a daemon may have only a single authorized client Atsign.
 >
-> The Team and Enterprise editions will allow for multiple authorized client atSigns, controlled not by the daemon but by a separate noports authorization controller process, with its own atSign.
+> The Team and Enterprise editions will allow for multiple authorized client Atsigns, controlled not by the daemon but by a separate noports authorization controller process, with its own Atsign.
 
 ### Overview diagram
 
@@ -58,7 +76,7 @@ This high-level flow is visualized in the diagrams below.
 
 ### Policy Plane
 
-At any point the `sshnpd` or the `srvd` software rather than using a local configuration to manage access rights, can forward those questions to another atSign. That atSign can in turn pass those queries to a policy engine and reflect the answer back to the asking atSign. In the example above @relay and/or @server could ask if @client is allowed to access the service. This allows decisions to be made at the Policy plane level and provides operational segregation of duties.
+At any point the `sshnpd` or the `srvd` software rather than using a local configuration to manage access rights, can forward those questions to another Atsign. That Atsign can in turn pass those queries to a policy engine and reflect the answer back to the asking Atsign. In the example above @relay and/or @server could ask if @client is allowed to access the service. This allows decisions to be made at the Policy plane level and provides operational segregation of duties.
 
 ### Control plane
 

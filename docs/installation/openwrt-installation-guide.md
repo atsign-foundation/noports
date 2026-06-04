@@ -1,6 +1,24 @@
 ---
 description: How to install NoPorts onto an OpenWrt router.
 icon: router
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # OpenWrt Installation Guide
@@ -23,7 +41,7 @@ With the packages ready to go, sign into the web interface for your router and g
 
 For the new menu to appear you'll need to `Log out` then sign in again.
 
-You can now go to `Network`>`NoPorts` and fill out the config tab with your device atSign, manager atSign, device name and the OTP for key generation. Click the `Enabled` box then hit `Save & Apply`.
+You can now go to `Network`>`NoPorts` and fill out the config tab with your device Atsign, manager Atsign, device name and the OTP for key generation. Click the `Enabled` box then hit `Save & Apply`.
 
 Now go to the `NoPorts Enrollment` tab and follow the instructions there to generate a device key.
 
@@ -51,7 +69,7 @@ wget -O ${PACKAGE} https://github.com/atsign-foundation/Atsign_OpenWRT_packages/
 opkg install ${PACKAGE}
 ```
 
-Now edit `/etc/config/sshnpd` to use your atSigns, device name and device atSign OTP:
+Now edit `/etc/config/sshnpd` to use your Atsigns, device name and device Atsign OTP:
 
 ```
 config sshnpd
@@ -63,7 +81,7 @@ config sshnpd
         option enabled  '1'
 ```
 
-Run `at_enroll.sh` on the device. It will ask you to approvement the enrollment on your client (where you previously activated the atSigns and generated the OTP):
+Run `at_enroll.sh` on the device. It will ask you to approvement the enrollment on your client (where you previously activated the Atsigns and generated the OTP):
 
 ```
 at_activate approve -a @example_device --arx noports --drx rutx10

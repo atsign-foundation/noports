@@ -1,6 +1,24 @@
 ---
 description: How to install NoPorts when connecting from Windows to macOS
 icon: apple
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Windows to macOS
@@ -52,25 +70,25 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **Your atSigns**
 
-* Client atSign: e.g., `@example01_np`
-* Device atSign: e.g., `@example02_np`&#x20;
+* Client Atsign: e.g., `@example01_np`
+* Device Atsign: e.g., `@example02_np`&#x20;
 
 **Your device name**
 
 * This should be the name of the machine you're currently installing on.
 
-### <mark style="color:orange;">Step 6:</mark> Initiate atSign authorization request
+### <mark style="color:orange;">Step 6:</mark> Initiate Atsign authorization request
 
 Run the following command to make an authorization request.&#x20;
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_np` with your **device atSign**,
+`@<REPLACE>_np` with your **device Atsign**,
 
 &#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
 
-`@<REPLACE>_np_key` with your **device atSign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
