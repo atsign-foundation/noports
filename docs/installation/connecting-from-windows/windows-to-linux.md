@@ -23,6 +23,10 @@ layout:
 
 # Windows to Linux
 
+### Prerequisite
+
+Before starting the NoPorts installation, ensure you have **at least two atSigns** available. If you don’t yet have any atSigns, you can sign up for a NoPorts subscription or free trial at [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans).
+
 ### Step 1 to Step 4
 
 These initial steps set up the machine initiating the connection.
