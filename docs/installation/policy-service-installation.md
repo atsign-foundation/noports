@@ -165,44 +165,42 @@ If the enrollment request hangs for more than a minute, then ensure you have an 
 
 1. Set up the systemd file.
 
-Copy and paste this content to `/etc/systemd/system/npp_atserver.service`&#x20;
+Copy and paste this content to this new file:  `/etc/systemd/system/npp_atserver.service`&#x20;
 
-Modify these fields accordingly:
+Modify these mandatory fields accordingly:
 
-* `User=noports`  - change this to the Linux username
-* `POLICY_ATSIGN=@policy_atsign` - change this to your Policy Atsign
+* `User=noports`  - change this to the Linux username of the policy machine
+* `policy_atsign="@policy_atsign"` - change this to your Policy Atsign
 
 ```
 [Unit]
 Description=NoPorts Policy Service
 After=network-online.target
-Wants=network-online.target
-StartLimitIntervalSec=60
-StartLimitBurst=3
-
-[Service]
-Type=simple
-User=noports
-
-# MANDATORY: Policy manager address (atSign)
-Environment=POLICY_ATSIGN=@policy
-# Comment out to disable verbose logging
-Environment=v="-v"
-
-ExecStart=/usr/bin/npp_atserver \
-    -a ${POLICY_ATSIGN} \
-    "$v"
-
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=npp_atserver-policy
-
-Restart=on-failure
-RestartSec=3s
-TimeoutStopSec=30s
 
 [Install]
 WantedBy=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+
+# Configuration of NoPorts Policy service
+# This unit script is a template for the sshnpd background service.
+# You can configure the service by editing the variables below.
+
+# MANDATORY: User to run the daemon as
+User=noports
+
+# MANDATORY: Policy manager address (atSign)
+Environment=policy_atsign="@policy_atsign"
+
+# Comment to disable verbose logging
+Environment=v="-v"
+
+# The line below runs the noports policy service, with the options set above.
+# You can edit this line to further customize the service to your needs.
+ExecStart=/usr/bin/npp_atserver -a "$policy_atsign" "$v"
 ```
 
 2. Start your new systemd service
@@ -211,6 +209,7 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 sudo systemctl enable npp_atserver.service
 sudo systemctl start npp_atserver.service
+sudo systemctl status npp_atserver.service
 ```
 
 3. Tail the logs and ensure the output looks healthy
