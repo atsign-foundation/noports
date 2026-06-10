@@ -100,7 +100,7 @@ If you installed sshnpd through the universal installer, then you can modify the
 
 Lots of configuration can be done to sshnpd by editing this file, such as changing the user that sshnpd runs as, changing the Atsign, enabling/disabling verbose logging, and more.
 
-Sample `override.conf`file:
+Below is a sample `override.conf` file:
 
 ```sh
 # MANDATORY: User to run the daemon as
@@ -131,14 +131,14 @@ Environment=additional_args=""
 
 Adding additional arguments is as simple as modifying the `Environment=additional_args=""`string found inside of `override.conf` .
 
-The example adds the `--permit-open` to the string of additional args which enables clients to access ports 22, 3389, and 2221 on localhost.
+The example below adds the `--permit-open` to the string of additional args which enables clients to access ports 22, 3389, and 2221 on localhost.
 
 ```sh
 # Any additional command line arguments for sshnpd
 Environment=additional_args="--permit-open \"localhost:22,localhost:3389,localhost:2221\""
 ```
 
-Don't forget to update sshnpd by executing (may require sudo):
+Don't forget to update sshnpd by executing by executing the following. May require sudo.
 
 ```sh
 systemctl daemon-reload
