@@ -2,6 +2,24 @@
 description: How to quickly install and try NoPorts on both MacOS and Windows devices.
 hidden: true
 icon: forward
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Copy of Quick Start from macOS or Windows

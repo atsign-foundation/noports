@@ -1,5 +1,23 @@
 ---
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Quick Start to Windows
@@ -20,7 +38,7 @@ Download the NoPorts msi installer [from GitHub](https://github.com/atsign-found
 
 Ensure both Core Tools & Daemon Service are being installed.
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2).png" alt=""><figcaption></figcaption></figure>
 
 ### <mark style="color:orange;">Step 7:</mark> Initiate atSign authorization request
 

@@ -55,7 +55,7 @@ Create a new profile. There are four settings we should change on this screen:
   * Make sure the port is unique per profile, or you can only use one at a time.
 * Username: The username of the account you want to log in as.
 
-<div align="left" data-full-width="false"><figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption></figcaption></figure></div>
+<div align="left" data-full-width="false"><figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt=""><figcaption></figcaption></figure></div>
 
 Now go to the `Behavior` tab.
 

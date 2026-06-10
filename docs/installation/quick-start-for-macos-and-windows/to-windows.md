@@ -38,7 +38,7 @@ Download the NoPorts msi installer [from GitHub](https://github.com/atsign-found
 
 Ensure both Core Tools & Daemon Service are being installed.
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2).png" alt=""><figcaption></figcaption></figure>
 
 ### <mark style="color:orange;">Step 8:</mark> Initiate Atsign authorization request
 

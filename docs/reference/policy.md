@@ -4,6 +4,24 @@ description: >-
   store and manage policies using our administration interface, or integrate it
   with your existing policy database or service.
 icon: users-rectangle
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # NoPorts Policy Service

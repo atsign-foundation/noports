@@ -1,52 +1,68 @@
 ---
+description: >-
+  This guide explains how to install and run the NoPorts Policy Service via the
+  command line. This guide shows you how to run the Policy Server in a Linux
+  environment (virtual machine).
 icon: users-rectangle
 ---
 
 # Policy Service Installation
 
-This guide explains how to install and run the NoPorts Policy Service via the command line, and how to use it within the NoPorts desktop application. We recommend running the Policy Server in a Linux environment (virtual machine) for easier management.
+### Architecture
+
+All devices have no open ports to the public Internet. The policy server delegates access into device. Modifying the policy rules gives you finegrain control on which clients get access to which devices and on what host and port.
+
+<figure><picture><source srcset="../.gitbook/assets/3.svg" media="(prefers-color-scheme: dark)"><img src="../.gitbook/assets/2.svg" alt=""></picture><figcaption><p>Client / Device / Policy Server architecture</p></figcaption></figure>
+
+### Terminology
+
+| Machine Type   | Description                                                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Client machine | <p>The machine establishing connections.</p><p></p><p>All manager key copies are kept on this machine in ~/.atsign/keys, where subsequent copies are made for other machines.</p> |
+| Device machine | <p>The remote machine that you are connecting to.</p><p></p><p>This has an actively running NoPorts daemon that will service connection requests from clients.</p>                |
+| Policy machine | <p>A machine running the policy service that responds to policy requests made by NoPorts daemons.<br><br>This has an actively running NoPorts Policy Service.</p>                 |
 
 ### Prerequisites
 
 Before you begin the installation, please ensure the following steps are complete:
 
-1. **Subscription**: You’ve signed up for a [NoPorts subscription or free trial](https://my.noports.com/no-ports-plans).
+1. **You own at least 3 Atsigns:** one as the client, one as the device, and one for policy. You may purchase more Atsigns through our [professional tier](https://my.noports.com/no-ports-plans).
 2. **Installation & Activation**: NoPorts is installed and Atsigns are activated on at least two machines, one to connect _from_ and one to connect _to_. [View installation guides](./).
-3. **NoPorts Desktop App** : If you didn’t use the NoPorts desktop app during installation, you can download it here:
-   * [Link to Apple Store](https://apps.apple.com/ca/app/noports-desktop/id6737338881)
-   * [Link to Windows Store](https://apps.microsoft.com/detail/9n69scrrgv6r)
 
-### Step 1 and Step 2
+### Step 1: Activate Policy Atsign on Client machine
+
+If your policy Atsign is already activated, then you may skip this step. This step can only be completed once.
 
 <details>
 
-<summary>Steps to be completed on the Admin/Client Machine</summary>
+<summary>Steps to be completed on the Client machine</summary>
 
-### Step 1: Activate your policy Atsign (in NoPorts Desktop)
+In this step, we will be activating the policy Atsign on your **client machine**. The initial activation happens in this step and administering a copy securely will be done in the next step. Atsign activation can only be done once. If your Atsign is already activated, you can move onto the next step.
 
-1\) If you were already signed in with another Atsign, click on your Atsign at the top right of the screen and then click + Add Atsign.
+1. Run the onboard command.
 
-2\) Enter your policy Atsign.
+On your client machine, ensure you have the `at_activate` binary installed.
 
-3\) You'll receive an OTP via email and after entering it, you'll be prompted to save your keys.
+Replace `@my_policy_atsign` with your Atsign.
 
-### Step 2: Generate a policy Atsign authorization passcode
+```bash
+at_activate onboard -a @my_policy_atsign
+```
 
-1\) Click on Authenticator and make note of the One-Time Password displayed on screen.
+2. You will get an OTP from your email, enter that into the program. If it expires, simply rerun the first step.
+3. Your new key file should be in `~/.atsign/keys/` You can validate via `ls -la ~/.atsign/keys/`&#x20;
 
 </details>
 
-### Step 3 and Step 4
+### Step 2: Set up binaries on Policy machine
 
 <details>
 
-<summary>Steps to be completed on the Policy Machine</summary>
-
-### Step 3: Download and extract the policy server binaries
+<summary>Steps to be completed on the Policy machine</summary>
 
 Navigate to the NoPorts GitHub Releases page and copy the link address for the **file matching your operating system**.&#x20;
 
-Location:  [https://github.com/atsign-foundation/noports/releases](https://github.com/atsign-foundation/noports/releases)&#x20;
+Latest release: [https://github.com/atsign-foundation/noports/releases/latest](https://github.com/atsign-foundation/noports/releases/latest)
 
 Open a terminal, and from your home directory run the following command to download the file and save it as `sshnpd.tgz`.&#x20;
 
@@ -54,10 +70,16 @@ Open a terminal, and from your home directory run the following command to downl
 curl -L -o sshnp.tgz <YOUR URL>
 ```
 
-Example:&#x20;
+Example (for x86\_64 machine):&#x20;
 
 ```bash
-curl -L -o sshnp.tgz https://github.com/atsign-foundation/noports/releases/download/v5.13.0/sshnp-linux-x64.tgz
+curl -L -o sshnp.tgz https://github.com/atsign-foundation/noports/releases/download/v5.15.0/sshnp-linux-x64.tgz
+```
+
+Example (for ARM machine):
+
+```bash
+curl -L -o sshnp.tgz https://github.com/atsign-foundation/noports/releases/download/v5.15.0/sshnp-linux-arm64.tgz
 ```
 
 Once this is done, extract the contents of the file to your home directory.
@@ -67,74 +89,137 @@ tar -xvzf sshnp.tgz
 cd sshnp
 ```
 
-After extraction, copy the `npp_atserver` and `at_activate` binary to `~/.local/bin` (whichever you prefer and whichever is on your PATH)
+After extraction, copy the `npp_atserver` and `at_activate` binary to `/usr/bin`
 
 ```bash
-sudo cp ./npp_atserver ./at_activate ~/.local/bin
+sudo cp ./npp_atserver ./at_activate /usr/bin
 ```
 
-### Step 4: Initiate an Atsign authorization request
+</details>
 
-Run the following command to make an authorization request:
+### Step 3: Administer key copy to Policy machine
 
-{% hint style="warning" %}
-Be sure to replace the following values:
+This step requires shell access on both your **client machine** and **policy machine**.
 
-`@<REPLACE>_np` with your **policy Atsign**,
+Once your policy key file exists (e.g. `~/.atsign/keys/@policy_atsign_key.atKeys` ) on your client machine, it is time to give a copy of it to the policy machine. This is known as an "APKAM copy" with restricted namespace permissions and can be revoked later on.
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 2**,&#x20;
+<details>
 
-`@<REPLACE>_np_key` with your **policy Atsign**,&#x20;
+<summary>Steps to be completed on Client machine</summary>
 
-`<DEVICE_NAME>` with the name of the machine you are on
-{% endhint %}
+The goal here is for your client machine (which contains the manager set of policy Atsign keys) to administer a copy to the policy machine.
 
-<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
-<strong>  -s &#x3C;PASSCODE> \
-</strong><strong>  -p noports \
-</strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_np_key.atKeys \
-</strong><strong>  -d &#x3C;DEVICE_NAME> \
-</strong><strong>  -n "sshnp:rw,sshrvd:rw"
-</strong></code></pre>
+1. Generate an OTP (note this OTP down, as you will need it very soon)
 
-Once you see this text, you're ready to continue to the next step.
+```bash
+at_activate otp -a @policy_atsign
+```
+
+2. Set up an auto approval service. This will automatically apporove the enrollment request which will be done in the next step.
+
+```bash
+at_activate auto -a @policy_atsign -A noports -D policy -L 1 --approve-existing
+```
+
+Leave this process running in the background.
+
+</details>
+
+<details>
+
+<summary>Steps to be completed on Policy machine</summary>
+
+1. Enroll
+
+Using the OTP generated from the previous step, send an enrollment request. This enrollment request should be automatically approved (almost immediately) once it is sent, and that is because we set up an auto approval service beforehand.
+
+```bash
+at_activate enroll \
+  -p noports \
+  -n "sshnp:rw,sshrvd:rw"
+  -a <@ATSIGN> \
+  -s <OTP> \
+  -d <DEVICE_NAME> \
+  -k ~/.atsign/keys/<@ATSIGN>_key.atKeys \
+```
+
+You should see a response like this:
 
 ```
-Submitting enrollment request 
-Enrollment ID: ---------------------
+Enroll : submitting enrollment requestEnrollment ID: 95a7f54b-a0a2-4c23-9c9c-49654172ed85
 Waiting for approval; will check every 10 seconds
+    Enroll : submitted OK
+      PKAM : Enrollment has been approved (PKAM auth success)Creating atKeys file
+[Success] Your .atKeys file saved at /home/user/.atsign/keys/@policy_atsign_key.atKeys
 ```
 
-</details>
-
-### Step 5
-
-<details>
-
-<summary>Step to be completed on the Admin/Client Machine</summary>
-
-### Step 5: Approve the Atsign authorization request
-
-1. Click on **Requests** and approve the pending request. The request will then move to the approved enrollments list.
-2. After a few seconds, the request will also show as approved on the machine you are connecting to.
+If the enrollment request hangs for more than a minute, then ensure you have an auto approval service running on your client machine.
 
 </details>
 
-### Step 6
+### Step 4: Set up NoPorts Policy Service
 
 <details>
 
-<summary>Step to be completed on the Policy Machine</summary>
+<summary>Step to be completed on the Policy machine</summary>
 
-### Step 6: Run the NoPorts Policy Server Software
+1. Set up the systemd file.
 
-Run `npp_atserver`, with the previously activated policy atSign.&#x20;
+Copy and paste this content to `/etc/systemd/system/npp_atserver.service`&#x20;
+
+Modify these fields accordingly:
+
+* `User=noports`  - change this to the Linux username
+* `POLICY_ATSIGN=@policy_atsign` - change this to your Policy Atsign
+
+```
+[Unit]
+Description=NoPorts Policy Service
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=noports
+
+# MANDATORY: Policy manager address (atSign)
+Environment=POLICY_ATSIGN=@policy
+# Comment out to disable verbose logging
+Environment=v="-v"
+
+ExecStart=/usr/bin/npp_atserver \
+    -a ${POLICY_ATSIGN} \
+    "$v"
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=npp_atserver-policy
+
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Start your new systemd service
 
 ```bash
-~/.local/bin/npp_atserver -a @<YOUR POLICY ATSIGN>
+sudo systemctl daemon-reload
+sudo systemctl enable npp_atserver.service
+sudo systemctl start npp_atserver.service
 ```
 
-This should display output that looks similar to this
+3. Tail the logs and ensure the output looks healthy
+
+```bash
+journalctl -u npp_atserver.service -f
+```
+
+What healthy output looks like:
 
 ```
 SHOUT|2025-04-16 19:12:51.399918|PolicyServiceWithAtClient|Loading groups via AtClient 
@@ -144,41 +229,98 @@ SHOUT|2025-04-16 19:12:52.294012| npp |Daemon atSigns: {}
 
 </details>
 
-### Step 7
+### Step 5: Register your daemon with the policy service
 
 <details>
 
-<summary>Step to be completed on the machine you'll be connecting to (Device)</summary>
+<summary>Step to be completed on your Device machine</summary>
 
-### Step 7: Restart the NoPorts Daemon
-
-Edit `/etc/systemd/system/sshnpd.service.d/override.conf` and add your policy atSign to the `delegate_policy` environment variable.
+Depending on what version your NoPorts daemon you are running, you will be editing a different configuration file:
 
 ```bash
-Environment=delegate_policy="@policy_atsign_123"
+sshnpd --version
 ```
 
-Then run the following command to restart the daemon.
+| sshnpd version < v5.14.13                            | sshnpd version >= v5.14.13 |
+| ---------------------------------------------------- | -------------------------- |
+| `/etc/systemd/system/sshnpd.service.d/override.conf` | `/etc/noports/sshnpd.yaml` |
+
+1. If your sshnpd version is less than v5.14.13, edit the `/etc/systemd/system/sshnpd.service.d/override.conf`  file.
+
+Edit the "delegate\_policy" environment variable to your Policy Atsign.&#x20;
+
+```yaml
+Environment=delegate_policy="@policy_atsign"
+```
+
+2. If your sshnpd version is greater or equal than v5.14.13, edit the `/etc/noports/sshnpd.yaml`  file.
+
+Edit the "policy:" to your Atsign **without its "@" at symbol**. Example:
+
+```
+  policy: policy_atsign
+```
+
+3. Then run the following command to restart the daemon.
 
 ```bash
-sudo systemctl daemon reload && sudo systemctl restart sshnpd.service
+sudo systemctl daemon-reload && sudo systemctl restart sshnpd
 ```
 
-Ensure the daemon is running
-
-```bash
-journalctl -u sshnpd.service -f
-```
-
-Your sshnpd process should now be sending heartbeats to the policy service. You should see a log similar to below after waiting 5 minutes.
-
-```bash
-Nov 10 23:54:17 atsign sshnpd[124155]: INFO|2025-11-10 23:54:17.310764| sshnpd |Sending heartbeat to policy service @tastelessbanana
-```
+Finishing this step will register your NoPorts daemon to send policy requests to the delegated policy Atsign when a non-manager attempts to make a request to your device machine.
 
 </details>
 
-### Step 8
+### Step 6: Writing your policy rules
 
-You're now ready to use the Policy Service. You can find instructions in the NoPorts desktop application [here](../usage/policy-service.md).
+<details>
 
+<summary>Steps to be completed on the Client machine</summary>
+
+Now it's time to write policy rules.
+
+1. Download the latest sshnp binaries from our [releases](https://github.com/atsign-foundation/noports/releases/latest).
+
+```bash
+curl -L -o /tmp/sshnp.tgz https://github.com/atsign-foundation/noports/releases/download/v5.15.0/sshnp-linux-x64.tgz
+cd /tmp
+tar -xvzf sshnp.tgz
+cd sshnp
+sudo cp np_admin /usr/bin
+```
+
+2. Download web assets
+
+This next step requires **git** and **npm** installed on your machine.&#x20;
+
+```bash
+cd /tmp
+git clone https://github.com/atsign-foundation/noports
+cd noports/apps/admin/webapp
+npm i && npm run build
+sudo mkdir -p /usr/bin/web/admin
+sudo cp -r dist/* /usr/bin/web/admin/
+```
+
+If the `npm run build` step fails, ensure you have an up-to-date version of `npm`&#x20;
+
+3. Write Policy rules
+
+Run the following command:
+
+```
+np_admin
+```
+
+This will start a web server. Open the web server at `https://localhost:3000`&#x20;
+
+Now you can&#x20;
+
+* Create user groups
+* Monitor policy logs
+
+Below is an example of a test group that gives @some\_atsign access to  @bob's device "device1" on localhost:22 and localhost:3389.
+
+<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+
+</details>
