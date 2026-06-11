@@ -15,7 +15,7 @@ RUN \
   dart compile exe bin/npt.dart -o ${BINARYDIR}/npt
 
 # Second stage of build FROM debian-slim
-FROM debian:stable-20260518-slim@sha256:5012d0517aa0075a7150a45aae67586641e898913b7af3b08228108565b5f90c
+FROM debian:stable-20260610-slim@sha256:2a1c98d3637d6972e316b8f46b5f312be749b921b0a463512eb383253461dac4
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV BINARYDIR=/usr/local/at
