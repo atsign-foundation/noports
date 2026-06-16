@@ -25,7 +25,7 @@ RUN set -eux ; \
     dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
     dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:ce7896389d3ead38eb7842010514c224aeb80857a12163d314733074f5d8a0f2 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:deecb044f6d880329ec9b84be43aa94b3285dfbb6a5b18a53e19ee98461802e8 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
