@@ -462,7 +462,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
-        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        uses: atsign-company/google-chat-notification@69f3920c9c9372c296112b25eaea0bddab9ee115 # v2.0.1
         with:
           name:
             SSH no ports binaries build by GitHub Action ${{ github.run_number
