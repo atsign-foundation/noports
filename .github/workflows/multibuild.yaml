@@ -17,7 +17,7 @@ jobs:
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -115,20 +115,20 @@ jobs:
       VERSION: ${{ needs.verify_tags.outputs.version }}
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
         uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
       - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: '1.25.6'
           cache: false
       - name: Set up QEMU (Linux riscv64 and armv7 only)
         if: ${{ matrix.arch == 'riscv64' || matrix.arch == 'armv7' }}
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
         with:
           platforms: ${{ matrix.arch }}
       - name: Create directories
@@ -302,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout multibuild branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup node-version
@@ -334,7 +334,7 @@ jobs:
         working-directory: ./packages/dart/sshnoports/bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - run: |
           write_metadata() {
             start_line="# SCRIPT METADATA"
@@ -367,7 +367,7 @@ jobs:
       attestations: write
     steps:
       - name: Checkout pubspec.lock
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           sparse-checkout: packages/dart/sshnoports/pubspec.lock
           sparse-checkout-cone-mode: false
@@ -437,7 +437,7 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: multibuild-${{github.run_number}}
       - name: Delete workflow branch
@@ -462,7 +462,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Google Chat Notification
-        uses: Co-qn/google-chat-notification@3691ccf4763537d6e544bc6cdcccc1965799d056 # v1
+        uses: atsign-company/google-chat-notification@69f3920c9c9372c296112b25eaea0bddab9ee115 # v2.0.1
         with:
           name:
             SSH no ports binaries build by GitHub Action ${{ github.run_number

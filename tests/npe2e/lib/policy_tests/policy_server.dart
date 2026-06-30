@@ -114,9 +114,20 @@ class PolicyServer {
     );
   }
 
+  String _buildContainerName() {
+    final String uniqueId = '${type.uniqueIdentifier}$uniqueIdentifierSuffix';
+    return 'npe2e_${dockerImage.language.name}_${dockerImage.tag}_$testRunId$uniqueId';
+  }
+
   Future<void> start() async {
     final String containerKeyFilePath =
         '/atsign/.atsign/keys/${path.basename(apkamKeysFile.path)}';
+
+    await runCommand(
+      'docker',
+      ['rm', '-f', _buildContainerName()],
+      printCommand: false,
+    );
 
     dockerInstance = await runDockerInstance(
       dockerImage: dockerImage,

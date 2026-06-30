@@ -19,6 +19,8 @@ class RelayTestsParams {
   late String daemonVersions;
   late String selfRelayVersions;
   late int batchSize;
+  late int maxRetries;
+  late int testTimeoutSeconds;
   late String? testRunId;
 
   RelayTestsParams._();
@@ -41,6 +43,8 @@ class RelayTestsParams {
     params.daemonVersions = argResults['daemon-versions'];
     params.selfRelayVersions = argResults['self-relay-versions'];
     params.batchSize = int.parse(argResults['batch-size']);
+    params.maxRetries = int.parse(argResults['max-retries']);
+    params.testTimeoutSeconds = int.parse(argResults['test-timeout-seconds']);
     params.testRunId = argResults['test-run-id'];
     if (params.selfRelayAtsigns
         .split(',')
@@ -110,6 +114,16 @@ class RelayTestsParams {
       'batch-size',
       defaultsTo: '1',
       help: 'Number of tests to run in parallel',
+    );
+    parser.addOption(
+      'max-retries',
+      defaultsTo: '3',
+      help: 'Maximum number of times to retry a failing test',
+    );
+    parser.addOption(
+      'test-timeout-seconds',
+      defaultsTo: '300',
+      help: 'Timeout in seconds for each individual test before it is failed and retried',
     );
     parser.addOption(
       'test-run-id',
