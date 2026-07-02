@@ -1339,9 +1339,9 @@ main() {
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
-  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
   elif [ "$platform_name" = "macos" ] && check_cmd brew; then
     if [ "$quiet" = true ]; then
