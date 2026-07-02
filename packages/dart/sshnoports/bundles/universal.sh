@@ -92,6 +92,14 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
+is_container() {
+  [ -f /.dockerenv ] || \
+    [ -f /.dockerinit ] || \
+    [ -f /run/.containerenv ] || \
+    [ -n "${container:-}" ] || \
+    { [ -f /proc/1/cgroup ] && grep -q -E 'docker|kubepods|containerd|lxc' /proc/1/cgroup; }
+}
+
 check_quiet() {
   for arg in "$@"; do
     if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then
@@ -783,6 +791,11 @@ client() {
 
 # DEVICE INSTALLATION #
 device() {
+  if is_container; then
+    >&2 echo "Error: Device installation cannot succeed inside a container because"
+    >&2 echo "there is no init process to run the daemon."
+    exit 1
+  fi
   unset device_install_type
   if [ -z "$device_type" ]; then
     if is_darwin; then
