@@ -92,6 +92,14 @@ is_systemd_available() {
   [ -d /run/systemd/system ]
 }
 
+is_container() {
+  [ -f /.dockerenv ] || \
+    [ -f /.dockerinit ] || \
+    [ -f /run/.containerenv ] || \
+    [ -n "${container:-}" ] || \
+    { [ -f /proc/1/cgroup ] && grep -q -E 'docker|kubepods|containerd|lxc' /proc/1/cgroup; }
+}
+
 check_quiet() {
   for arg in "$@"; do
     if [ "$arg" = "-q" ] || [ "$arg" = "--quiet" ]; then
@@ -783,6 +791,11 @@ client() {
 
 # DEVICE INSTALLATION #
 device() {
+  if is_container; then
+    >&2 echo "Error: Device installation cannot succeed inside a container because"
+    >&2 echo "there is no init process to run the daemon."
+    exit 1
+  fi
   unset device_install_type
   if [ -z "$device_type" ]; then
     if is_darwin; then
@@ -1334,9 +1347,9 @@ main() {
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
-  elif ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
   elif [ "$platform_name" = "macos" ] && check_cmd brew; then
     if [ "$quiet" = true ]; then
