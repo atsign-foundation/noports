@@ -212,7 +212,7 @@ void main() {
       // `<relay>:discover_request.sshrvd<client>`
       AtNotification discoverRequest({
         required String id,
-        required String value,
+        required String? value,
       }) {
         return AtNotification(
             id,
@@ -283,6 +283,102 @@ void main() {
         final decoded = jsonDecode(n.value!) as Map<String, dynamic>;
         expect(decoded['ipaddr'], '127.0.0.1');
         expect(decoded['port'], 443);
+      });
+
+      // Edge cases call handleDiscover directly rather than routing through
+      // init()/run() — negative tests ("no response sent") would otherwise
+      // have nothing to await on the notification stream.
+      group('handleDiscover edge cases', () {
+        void verifyNoResponseSent() {
+          verifyNever(
+            () => mockNotificationService.notify(
+              any(),
+              checkForFinalDeliveryStatus: any(
+                named: 'checkForFinalDeliveryStatus',
+              ),
+              waitForFinalDeliveryStatus: any(
+                named: 'waitForFinalDeliveryStatus',
+              ),
+              onSentToSecondary: any(named: 'onSentToSecondary'),
+            ),
+          );
+        }
+
+        test('null value → ignored, no response sent', () async {
+          final srvd = buildSrvd();
+
+          await srvd.handleDiscover(
+            discoverRequest(
+              id: 'd9d79920-1441-4e07-b8e1-3dee400bddd3',
+              value: null,
+            ),
+          );
+
+          verifyNoResponseSent();
+        });
+
+        test('malformed JSON value → throws FormatException, no response sent', () async {
+          // Pins current behavior: jsonDecode runs before the `is! Map`
+          // guard, so syntactically invalid JSON escapes the handler rather
+          // than being ignored like other malformed shapes. If this is ever
+          // deemed wrong, fix the handler and update this test.
+          final srvd = buildSrvd();
+
+          await expectLater(
+            srvd.handleDiscover(
+              discoverRequest(
+                id: 'e9d79920-1441-4e07-b8e1-3dee400bddd4',
+                value: 'not-json{{{',
+              ),
+            ),
+            throwsA(isA<FormatException>()),
+          );
+
+          verifyNoResponseSent();
+        });
+
+        test('items not a List → ignored, no response sent', () async {
+          final srvd = buildSrvd();
+
+          await srvd.handleDiscover(
+            discoverRequest(
+              id: 'f9d79920-1441-4e07-b8e1-3dee400bddd5',
+              value: '{"items":"ipaddr"}',
+            ),
+          );
+
+          verifyNoResponseSent();
+        });
+
+        test('empty items list → responds with empty map', () async {
+          final srvd = buildSrvd();
+
+          await srvd.handleDiscover(
+            discoverRequest(
+              id: 'a1d79920-1441-4e07-b8e1-3dee400bddd6',
+              value: '{"items":[]}',
+            ),
+          );
+
+          final n = await notificationReceived.future;
+          expect(n.atKey.key, 'discover_response');
+          expect(jsonDecode(n.value!), isEmpty);
+        });
+
+        test('unknown item names are silently skipped', () async {
+          final srvd = buildSrvd();
+
+          await srvd.handleDiscover(
+            discoverRequest(
+              id: 'b1d79920-1441-4e07-b8e1-3dee400bddd7',
+              value: '{"items":["unknown","ipaddr"]}',
+            ),
+          );
+
+          final n = await notificationReceived.future;
+          final decoded = jsonDecode(n.value!) as Map<String, dynamic>;
+          expect(decoded, {'ipaddr': '127.0.0.1'});
+        });
       });
     });
   });

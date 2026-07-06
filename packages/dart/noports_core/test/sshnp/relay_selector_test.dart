@@ -333,6 +333,23 @@ void main() {
         );
       });
 
+      test('subscription is cancelled after timeout — late response is inert', () async {
+        await expectLater(
+          rs.fetchDeviceLatencies(
+            rvServers,
+            timeout: const Duration(milliseconds: 50),
+          ),
+          throwsA(isA<TimeoutException>()),
+        );
+
+        // onTimeout cancels the subscription; the broadcast controller must
+        // have no listeners left, and a late response must go nowhere.
+        expect(streamCtrl.hasListener, isFalse);
+        streamCtrl.add(
+          _latencyResponse(sshnpdAtSign, clientAtSign, device, {'@rv_am': 99}),
+        );
+      });
+
       test('second notification after completer completed does not throw', () async {
         final expected = {'@rv_am': 42};
         when(
@@ -614,6 +631,32 @@ void main() {
               throwsA(isA<StateError>()),
             );
           },
+        );
+
+        test(
+          'silent device must not surface TimeoutException (issue #2752 regression guard)',
+          () async {
+            setupNotify(
+              ipMap: {
+                rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+                rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+              },
+              rvCount: 2,
+            );
+            final rs = rsWithLatency((_) async => {rv1: 5, rv2: 50});
+
+            // A regression to the pre-fix behavior either throws
+            // TimeoutException or hangs until the suite deadline; the
+            // test-level timeout below turns a hang into a fast failure.
+            await expectLater(
+              rs.selectBestRelay(
+                rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+                deviceLatencyTimeout: const Duration(milliseconds: 100),
+              ),
+              completion(rv1),
+            );
+          },
+          timeout: const Timeout(Duration(seconds: 5)),
         );
 
         test(
