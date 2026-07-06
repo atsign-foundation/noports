@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup dart
         uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
       - name: Set stuff up 
@@ -84,10 +84,10 @@ jobs:
             logs_dir: npe2e_core_tests
             command: |
               dart run tests/npe2e/bin/core_tests.dart \
-                --client-atsign "@npe2e_client" \
-                --daemon-atsign "@npe2e_daemon" \
-                --relay-atsign "@rv_dev" \
-                --root-domain "root.atsign.wtf" \
+                --client-atsign "@npe2e_org_client01_jttest" \
+                --daemon-atsign "@npe2e_org_daemon01_jttest" \
+                --relay-atsign "@rv_am" \
+                --root-domain "root.atsign.org" \
                 --base-directory "$LOGS_DIR" \
                 --batch-size 5
           - test_suite: policy_tests
@@ -95,24 +95,25 @@ jobs:
             logs_dir: npe2e_policy_tests
             command: |
               dart run tests/npe2e/bin/policy_tests.dart \
-                --client-atsign "@npe2e_client" \
-                --daemon-atsign "@npe2e_daemon" \
-                --relay-atsign "@rv_dev" \
-                --npp-atsign "@npe2e_policy01" \
-                --npp-atserver-atsign "@npe2e_policy02" \
-                --root-domain "root.atsign.wtf:64" \
+                --client-atsign "@npe2e_org_client02_jttest" \
+                --daemon-atsign "@npe2e_org_daemon02_jttest" \
+                --relay-atsign "@rv_am" \
+                --npp-atsign "@npe2e_org_policy01_jttest" \
+                --npp-atserver-atsign "@npe2e_org_policy02_jttest" \
+                --root-domain "root.atsign.org" \
                 --base-directory "$LOGS_DIR" \
+                --test-timeout-seconds 480 \
                 --batch-size 2
           - test_suite: relay_tests
             output_artifact: npe2e_relay_tests_artifacts
             logs_dir: npe2e_relay_tests
             command: |
               dart run tests/npe2e/bin/relay_tests.dart \
-                --client-atsign "@npe2e_client" \
-                --daemon-atsign "@npe2e_daemon" \
-                --prod-relay "@rv_dev" \
-                --self-relay-atsigns "@npe2e_relay01,@npe2e_relay02,@npe2e_relay03,@npe2e_relay04,@npe2e_relay05,@npe2e_relay06" \
-                --root-domain "root.atsign.wtf" \
+                --client-atsign "@npe2e_org_client03_jttest" \
+                --daemon-atsign "@npe2e_org_daemon03_jttest" \
+                --prod-relay "@rv_am" \
+                --self-relay-atsigns "@npe2e_org_relay01_jttest,@npe2e_org_relay02_jttest,@npe2e_org_relay03_jttest,@npe2e_org_relay04_jttest,@npe2e_org_relay05_jttest,@npe2e_org_relay06_jttest" \
+                --root-domain "root.atsign.org" \
                 --base-directory "$LOGS_DIR" \
                 --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
                 --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
@@ -121,13 +122,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Install expect
         run: |
@@ -136,24 +137,20 @@ jobs:
       - name: Set up atKeys from GitHub secrets
         run: |
           mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_CLIENT }}' > ~/.atsign/keys/@npe2e_client_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_DAEMON }}' > ~/.atsign/keys/@npe2e_daemon_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY01 }}' > ~/.atsign/keys/@npe2e_policy01_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY02 }}' > ~/.atsign/keys/@npe2e_policy02_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY03 }}' > ~/.atsign/keys/@npe2e_policy03_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY04 }}' > ~/.atsign/keys/@npe2e_policy04_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY }}' > ~/.atsign/keys/@npe2e_policy_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_POLICY_LATEST }}' > ~/.atsign/keys/@npe2e_policy_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY01 }}' > ~/.atsign/keys/@npe2e_relay01_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY02 }}' > ~/.atsign/keys/@npe2e_relay02_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY03 }}' > ~/.atsign/keys/@npe2e_relay03_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY04 }}' > ~/.atsign/keys/@npe2e_relay04_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY05 }}' > ~/.atsign/keys/@npe2e_relay05_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY06 }}' > ~/.atsign/keys/@npe2e_relay06_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY }}' > ~/.atsign/keys/@npe2e_relay_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_RELAY_LATEST }}' > ~/.atsign/keys/@npe2e_relay_latest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_EVENTS }}' > ~/.atsign/keys/@npe2e_events_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_SINGLETON }}' > ~/.atsign/keys/@npe2e_singleton_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client02_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client03_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon02_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon03_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy02_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay03_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY04_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay04_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY05_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay05_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY06_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay06_jttest_key.atKeys
 
       - name: dart pub get (tests/npe2e)
         working-directory: tests/npe2e

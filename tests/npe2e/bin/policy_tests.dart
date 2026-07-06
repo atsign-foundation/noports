@@ -85,4 +85,6 @@ void _printLoadedParameters(PolicyTestsParams params) {
   print('    npp-versions: ${params.nppVersions}');
   print('    npp-atserver-versions: ${params.nppAtServerVersions}');
   print('    batch-size: ${params.batchSize}');
+  print('    max-retries: ${params.maxRetries}');
+  print('    test-timeout-seconds: ${params.testTimeoutSeconds}');
 }

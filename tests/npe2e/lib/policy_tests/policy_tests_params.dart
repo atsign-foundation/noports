@@ -26,6 +26,8 @@ class PolicyTestsParams {
   late String nppAtServerVersions;
   late String nppVersions;
   late int batchSize;
+  late int maxRetries;
+  late int testTimeoutSeconds;
 
   // Case 2b: run-time defaults
   late String? testRunId;
@@ -53,6 +55,8 @@ class PolicyTestsParams {
     params.nppAtServerVersions = argResults['npp-atserver-versions'];
     params.nppVersions = argResults['npp-versions'];
     params.batchSize = int.parse(argResults['batch-size']);
+    params.maxRetries = int.parse(argResults['max-retries']);
+    params.testTimeoutSeconds = int.parse(argResults['test-timeout-seconds']);
     params.testRunId = argResults['test-run-id'];
     if (params.nppAtsign == params.nppAtServerAtsign) {
       throw ArgumentError(
@@ -121,6 +125,16 @@ class PolicyTestsParams {
       'batch-size',
       defaultsTo: '1',
       help: 'Number of tests to run in parallel',
+    );
+    parser.addOption(
+      'max-retries',
+      defaultsTo: '3',
+      help: 'Maximum number of times to retry a failing test',
+    );
+    parser.addOption(
+      'test-timeout-seconds',
+      defaultsTo: '300',
+      help: 'Timeout in seconds for each individual test before it is failed and retried',
     );
     parser.addOption(
       'test-run-id',

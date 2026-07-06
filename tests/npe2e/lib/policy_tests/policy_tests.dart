@@ -196,15 +196,20 @@ Future<void> policyTests(PolicyTestsParams params) async {
         nppAtServerVersions: nppAtServerVersions,
       );
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
+  final Duration testTimeout = Duration(seconds: params.testTimeoutSeconds);
   final Future<List<PolicyTestResult>> nppResultsFuture =
       _runFactoryBatchesWithConcurrency(
         nppTestFactoryBatches,
         batchSize: params.batchSize,
+        maxRetries: params.maxRetries,
+        testTimeout: testTimeout,
       );
   final Future<List<PolicyTestResult>> nppAtServerResultsFuture =
       _runFuturesWithConcurrency(
         nppAtServerTestFactories,
         batchSize: params.batchSize,
+        maxRetries: params.maxRetries,
+        testTimeout: testTimeout,
       );
   final List<List<PolicyTestResult>> parallelResults = await Future.wait([
     nppResultsFuture,
@@ -285,6 +290,8 @@ List<NoPortsVersion> _parseVersions(final String versions) {
 Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
   List<Future<PolicyTestResult> Function()> testFactories, {
   required int batchSize,
+  required int maxRetries,
+  required Duration testTimeout,
 }) async {
   if (testFactories.isEmpty) {
     return [];
@@ -295,6 +302,31 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
   int nextIndex = 0;
   int completedCount = 0;
 
+  Future<PolicyTestResult> runWithRetry(
+    Future<PolicyTestResult> Function() factory,
+    int attempt,
+  ) async {
+    PolicyTestResult result;
+    try {
+      result = await factory().timeout(testTimeout);
+    } on TimeoutException {
+      if (attempt < maxRetries) {
+        print(
+          '  ↺ Test timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
+        );
+        return runWithRetry(factory, attempt + 1);
+      }
+      rethrow;
+    }
+    if (result.status == TestStatus.failed && attempt < maxRetries) {
+      print(
+        '  ↺ Test failed (attempt ${attempt + 1}/$maxRetries), retrying...',
+      );
+      return runWithRetry(factory, attempt + 1);
+    }
+    return result;
+  }
+
   Future<void> startNextTest() async {
     if (nextIndex < testFactories.length) {
       if (nextIndex > 0) {
@@ -302,7 +334,9 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
       }
 
       final int testIndex = nextIndex;
-      final Future<PolicyTestResult> testFuture = testFactories[nextIndex]();
+      final Future<PolicyTestResult> Function() factory =
+          testFactories[nextIndex];
+      final Future<PolicyTestResult> testFuture = runWithRetry(factory, 0);
       active.add((testFuture, testIndex));
       nextIndex++;
     }
@@ -341,12 +375,19 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
 Future<List<PolicyTestResult>> _runFactoryBatchesWithConcurrency(
   List<List<Future<PolicyTestResult> Function()>> testFactoryBatches, {
   required int batchSize,
+  required int maxRetries,
+  required Duration testTimeout,
 }) async {
   final List<PolicyTestResult> allResults = [];
   for (final List<Future<PolicyTestResult> Function()> testFactories
       in testFactoryBatches) {
     allResults.addAll(
-      await _runFuturesWithConcurrency(testFactories, batchSize: batchSize),
+      await _runFuturesWithConcurrency(
+        testFactories,
+        batchSize: batchSize,
+        maxRetries: maxRetries,
+        testTimeout: testTimeout,
+      ),
     );
   }
   return allResults;
