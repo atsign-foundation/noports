@@ -1282,6 +1282,14 @@ install_via_brew() {
   fi
 
   brew tap atsign-foundation/homebrew-tap
+
+  # Trust the tap if Homebrew version is 6 or later
+  brew_version=$(brew --version 2>/dev/null | head -n 1 | cut -d' ' -f2 | cut -d'.' -f1 || true)
+  if [ -n "$brew_version" ] && [ "$brew_version" -ge 6 ] 2>/dev/null; then
+    echo "Brew version 6 or later detected ($brew_version). Trusting tap atsign-foundation/homebrew-tap..."
+    brew trust atsign-foundation/homebrew-tap
+  fi
+
   brew install noports
   used_package_manager=true
 }
