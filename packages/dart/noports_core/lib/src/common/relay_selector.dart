@@ -25,8 +25,8 @@ class RelaySelector with AtClientBindings {
   /// Injectable latency measurer. Defaults to [RelayLatencyChecker.measureLatencies].
   /// Override in tests to avoid real TCP connections.
   @visibleForTesting
-  Future<Map<String, int>> Function(Map<String, dynamic>) latencyMeasurer =
-      RelayLatencyChecker.measureLatencies;
+  final Future<Map<String, int>> Function(Map<String, dynamic>)
+  latencyMeasurer;
 
   RelaySelector({
     required this.atClient,
@@ -34,6 +34,8 @@ class RelaySelector with AtClientBindings {
     required this.sshnpdAtSign,
     required this.device,
     required String rootDomain,
+    @visibleForTesting
+    this.latencyMeasurer = RelayLatencyChecker.measureLatencies,
   }) {
     final domain = rootDomain.startsWith('proxy:')
         ? rootDomain.replaceFirst('proxy:', '')
@@ -52,6 +54,7 @@ class RelaySelector with AtClientBindings {
   Future<String> selectBestRelay({
     List<Atsign>? rvAtSigns,
     Duration requestTimeout = const Duration(seconds: 10),
+    Duration deviceLatencyTimeout = const Duration(seconds: 20),
   }) async {
     List<Atsign> toCheck = [];
 
@@ -83,13 +86,42 @@ class RelaySelector with AtClientBindings {
       throw StateError('No RV servers could be resolved');
     }
 
-    //Start device latency fetch concurrently while we measure the client latency
-    final deviceLatencyFuture = fetchDeviceLatencies(rvIpMap);
+    logger.info(
+      'Waiting up to ${deviceLatencyTimeout.inSeconds}s for device latency report...',
+    );
+
+    // Start device latency fetch concurrently while we measure the client
+    // latency. The error handler is attached here, at creation time, rather
+    // than at the `await` below: if the future rejects while the client
+    // probe is still running, attaching it later would let Dart raise an
+    // unhandled async error first. Errors (including a stalled/retrying
+    // notify with no overall deadline — see fetchDeviceLatencies) collapse
+    // to a null sentinel so relay selection can fall back to client-only
+    // latency instead of hanging or dying.
+    final Future<Map<String, int>?> deviceLatencyFuture =
+        fetchDeviceLatencies(rvIpMap, timeout: deviceLatencyTimeout)
+            .timeout(deviceLatencyTimeout)
+            .then<Map<String, int>?>((v) => v)
+            .onError((e, _) {
+              logger.warning(
+                'Device latency check failed ($e); '
+                'will select relay on client latency only',
+              );
+              return null;
+            });
 
     final clientLatency = await latencyMeasurer(rvIpMap);
     logger.info('Fetched latencies for client -> RV: $clientLatency');
 
     final deviceLatency = await deviceLatencyFuture;
+
+    if (deviceLatency == null) {
+      logger.warning(
+        'Device did not report relay latencies (older daemon?); '
+        'selecting relay on client latency only',
+      );
+      return lowestLatency(clientLatency);
+    }
     logger.info('Fetched latencies for device -> RV: $deviceLatency');
 
     return lowestAverageLatency(deviceLatency, clientLatency);
@@ -263,6 +295,31 @@ class RelaySelector with AtClientBindings {
     }
 
     logger.info('Selecting fastest RV: $bestRv');
+    return bestRv.toAtsign();
+  }
+
+  /// Accepts a map of RV atsigns to latency in milliseconds, and returns the
+  /// atsign of the RV with the lowest latency. Used as a fallback when
+  /// device latencies are unavailable (older daemon, timeout, malformed
+  /// response).
+  @visibleForTesting
+  Atsign lowestLatency(Map<String, int> latencies) {
+    String? bestRv;
+    int bestLatency = -1;
+
+    for (final entry in latencies.entries) {
+      if (entry.value == -1) continue; // skip unreachable RVs
+      if (bestRv == null || entry.value < bestLatency) {
+        bestRv = entry.key;
+        bestLatency = entry.value;
+      }
+    }
+
+    if (bestRv == null) {
+      throw StateError('No reachable RV found');
+    }
+
+    logger.info('Selecting fastest RV (client-only): $bestRv');
     return bestRv.toAtsign();
   }
 }

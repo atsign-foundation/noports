@@ -369,14 +369,40 @@ void main() {
       const rv1 = '@rv_am';
       const rv2 = '@rv_eu';
 
-      /// Emit discover responses for all [rvs] on each notify call up to
-      /// [rvCount], then emit the device latency response.  Emitting all
-      /// discover responses every time is safe: the isCompleted guard in
-      /// requestRelayIpAddress silently drops duplicates.
+      /// Builds a [RelaySelector] sharing this group's mocks, with
+      /// [latencyMeasurer] injected via the constructor instead of mutated
+      /// post-construction.
+      RelaySelector rsWithLatency(
+        Future<Map<String, int>> Function(Map<String, dynamic>)
+        latencyMeasurer,
+      ) {
+        return RelaySelector(
+          atClient: mockAtClient,
+          clientAtSign: clientAtSign,
+          sshnpdAtSign: sshnpdAtSign,
+          device: device,
+          rootDomain: rootDomain,
+          latencyMeasurer: latencyMeasurer,
+        );
+      }
+
+      /// Emit discover responses for all [ipMap] entries on each notify call
+      /// up to [rvCount] (the number of RVs passed as `rvAtSigns` to
+      /// `selectBestRelay` — NOT `ipMap.length`, since a caller may query
+      /// more RVs than resolve an IP), then emit the device latency
+      /// response. Emitting all discover responses every time is safe: the
+      /// isCompleted guard in requestRelayIpAddress silently drops
+      /// duplicates.
       void setupNotify({
         required Map<String, Map<String, dynamic>> ipMap,
-        required Map<String, int> deviceLatencies,
+        Map<String, int>? deviceLatencies,
+        required int rvCount,
         Set<String> skipDiscoverFor = const {},
+        // Overrides the device-latency phase entirely, e.g. to emit a
+        // malformed response. When both this and [deviceLatencies] are
+        // null, the device phase emits nothing (simulates a pre-5.15
+        // daemon that never responds).
+        void Function()? onDevicePhase,
       }) {
         int callCount = 0;
         when(
@@ -389,7 +415,7 @@ void main() {
           ),
         ).thenAnswer((_) async {
           callCount++;
-          if (callCount <= ipMap.length) {
+          if (callCount <= rvCount) {
             for (final e in ipMap.entries) {
               if (!skipDiscoverFor.contains(e.key)) {
                 streamCtrl.add(
@@ -397,7 +423,9 @@ void main() {
                 );
               }
             }
-          } else {
+          } else if (onDevicePhase != null) {
+            onDevicePhase();
+          } else if (deviceLatencies != null) {
             streamCtrl.add(
               _latencyResponse(sshnpdAtSign, clientAtSign, device, deviceLatencies),
             );
@@ -413,8 +441,10 @@ void main() {
             rv2: {'ipaddr': '1.2.3.5', 'port': 443},
           },
           deviceLatencies: {rv1: 10, rv2: 100},
+          rvCount: 2,
         );
-        rs.latencyMeasurer = (_) async => {rv1: 20, rv2: 90}; // rv1 avg=15, rv2 avg=95
+        // rv1 avg=15, rv2 avg=95
+        final rs = rsWithLatency((_) async => {rv1: 20, rv2: 90});
 
         final result = await rs.selectBestRelay(
           rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
@@ -441,9 +471,10 @@ void main() {
             rv2: {'ipaddr': '1.2.3.5', 'port': 443},
           },
           deviceLatencies: {rv2: 30},
+          rvCount: 2,
           skipDiscoverFor: {rv1},
         );
-        rs.latencyMeasurer = (_) async => {rv2: 40};
+        final rs = rsWithLatency((_) async => {rv2: 40});
 
         final result = await rs.selectBestRelay(
           rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
@@ -459,8 +490,9 @@ void main() {
             rv2: {'ipaddr': '1.2.3.5', 'port': 443},
           },
           deviceLatencies: {rv1: 10, rv2: 20},
+          rvCount: 2,
         );
-        rs.latencyMeasurer = (_) async => {rv1: -1, rv2: -1};
+        final rs = rsWithLatency((_) async => {rv1: -1, rv2: -1});
 
         expect(
           () => rs.selectBestRelay(rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()]),
@@ -472,29 +504,159 @@ void main() {
         setupNotify(
           ipMap: {rv1: {'ipaddr': '1.2.3.4', 'port': 443}},
           deviceLatencies: {rv1: 15},
+          rvCount: 1,
         );
-        rs.latencyMeasurer = (_) async => {rv1: 10};
+        final rs = rsWithLatency((_) async => {rv1: 10});
 
         final result = await rs.selectBestRelay(rvAtSigns: [rv1.toAtsign()]);
         expect(result, rv1);
       });
 
-      test('latency tie — a winner is returned without throwing', () async {
+      test('latency tie — first-inserted RV wins deterministically', () async {
         setupNotify(
           ipMap: {
             rv1: {'ipaddr': '1.2.3.4', 'port': 443},
             rv2: {'ipaddr': '1.2.3.5', 'port': 443},
           },
           deviceLatencies: {rv1: 10, rv2: 10},
+          rvCount: 2,
         );
-        rs.latencyMeasurer = (_) async => {rv1: 10, rv2: 10};
+        final rs = rsWithLatency((_) async => {rv1: 10, rv2: 10});
 
         final result = await rs.selectBestRelay(
           rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
         );
-        expect(result, anyOf(rv1, rv2));
+        // lowestAverageLatency uses strict `<` while iterating
+        // daemonLatencies.keys in insertion order, so on a tie the
+        // first-inserted key (rv1) always wins.
+        expect(result, rv1);
       });
 
+
+      // ---------------------------------------------------------------------
+      // device-latency fallback (issue #2752)
+      // ---------------------------------------------------------------------
+      group('device-latency fallback', () {
+        test(
+          'device never responds within timeout → falls back to client-only latency',
+          () async {
+            setupNotify(
+              ipMap: {
+                rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+                rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+              },
+              rvCount: 2,
+              // no deviceLatencies, no onDevicePhase → device phase is silent,
+              // simulating a pre-5.15 daemon that never responds.
+            );
+            final rs = rsWithLatency((_) async => {rv1: 5, rv2: 50});
+
+            final result = await rs.selectBestRelay(
+              rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+              deviceLatencyTimeout: const Duration(milliseconds: 100),
+            );
+            expect(result, rv1);
+          },
+        );
+
+        test(
+          'device responds with malformed data → falls back to client-only latency',
+          () async {
+            setupNotify(
+              ipMap: {
+                rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+                rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+              },
+              rvCount: 2,
+              onDevicePhase: () {
+                streamCtrl.add(
+                  AtNotification(
+                    sshnpdAtSign,
+                    'relay_latency_response.$device.${DefaultArgs.namespace}',
+                    sshnpdAtSign,
+                    clientAtSign,
+                    DateTime.now().millisecondsSinceEpoch,
+                    'update',
+                    false,
+                    value: 'not-valid-json{{{',
+                    operation: 'update',
+                  ),
+                );
+              },
+            );
+            final rs = rsWithLatency((_) async => {rv1: 50, rv2: 5});
+
+            final result = await rs.selectBestRelay(
+              rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+              deviceLatencyTimeout: const Duration(milliseconds: 200),
+            );
+            expect(result, rv2);
+          },
+        );
+
+        test(
+          'fallback with all client latencies -1 → StateError',
+          () {
+            setupNotify(
+              ipMap: {
+                rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+                rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+              },
+              rvCount: 2,
+            );
+            final rs = rsWithLatency((_) async => {rv1: -1, rv2: -1});
+
+            expect(
+              () => rs.selectBestRelay(
+                rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+                deviceLatencyTimeout: const Duration(milliseconds: 100),
+              ),
+              throwsA(isA<StateError>()),
+            );
+          },
+        );
+
+        test(
+          'device-phase notify never completes → outer timeout still triggers fallback',
+          () async {
+            // Guards D6: the internal timeout in fetchDeviceLatencies is only
+            // armed after `await notify(...)` returns. If notify itself never
+            // completes (a stalled/retrying AtClientBindings.notify), only an
+            // outer .timeout() on the whole future can bound the wait.
+            int callCount = 0;
+            when(
+              () => mockNotificationService.notify(
+                any(),
+                checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+                waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+                onSuccess: any(named: 'onSuccess'),
+                onError: any(named: 'onError'),
+              ),
+            ).thenAnswer((_) {
+              callCount++;
+              if (callCount <= 2) {
+                streamCtrl.add(
+                  _discoverResponse(rv1, clientAtSign, {'ipaddr': '1.2.3.4', 'port': 443}),
+                );
+                streamCtrl.add(
+                  _discoverResponse(rv2, clientAtSign, {'ipaddr': '1.2.3.5', 'port': 443}),
+                );
+                return Future.value(NotificationResult());
+              }
+              // device-phase notify: never completes.
+              return Completer<NotificationResult>().future;
+            });
+
+            final rs = rsWithLatency((_) async => {rv1: 5, rv2: 50});
+
+            final result = await rs.selectBestRelay(
+              rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+              deviceLatencyTimeout: const Duration(milliseconds: 100),
+            );
+            expect(result, rv1);
+          },
+        );
+      });
     });
 
     // -----------------------------------------------------------------------
@@ -572,6 +734,40 @@ void main() {
           ),
           returnsNormally,
         );
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // lowestLatency
+    // -----------------------------------------------------------------------
+    group('lowestLatency', () {
+      test('picks correct winner', () {
+        expect(
+          rs.lowestLatency({'@rv_am': 50, '@rv_eu': 10}).toString(),
+          '@rv_eu',
+        );
+      });
+
+      test('skips -1 entries', () {
+        expect(
+          rs.lowestLatency({'@rv_am': -1, '@rv_eu': 30}).toString(),
+          '@rv_eu',
+        );
+      });
+
+      test('all -1 → StateError', () {
+        expect(
+          () => rs.lowestLatency({'@rv_am': -1, '@rv_eu': -1}),
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('empty map → StateError', () {
+        expect(() => rs.lowestLatency({}), throwsA(isA<StateError>()));
+      });
+
+      test('single entry is returned', () {
+        expect(rs.lowestLatency({'@rv_am': 42}).toString(), '@rv_am');
       });
     });
   });
