@@ -33,10 +33,9 @@ void main() {
 
     test('unreachable host → -1', () async {
       // 192.0.2.x is TEST-NET-1 (RFC 5737) — guaranteed not routable
-      final result = await RelayLatencyChecker.measureLatencies(
-        {'@rv_am': {'ipaddr': '192.0.2.1', 'port': 9}},
-        timeout: const Duration(milliseconds: 200),
-      );
+      final result = await RelayLatencyChecker.measureLatencies({
+        '@rv_am': {'ipaddr': '192.0.2.1', 'port': 9},
+      }, timeout: const Duration(milliseconds: 200));
       expect(result['@rv_am'], -1);
     });
 
@@ -58,26 +57,20 @@ void main() {
         await listener.close();
       });
 
-      final result = await RelayLatencyChecker.measureLatencies(
-        {
-          '@rv_am': {'ipaddr': '127.0.0.1', 'port': listener.port},
-          '@rv_eu': {'ipaddr': '192.0.2.1', 'port': 9}, // TEST-NET-1
-        },
-        timeout: const Duration(milliseconds: 200),
-      );
+      final result = await RelayLatencyChecker.measureLatencies({
+        '@rv_am': {'ipaddr': '127.0.0.1', 'port': listener.port},
+        '@rv_eu': {'ipaddr': '192.0.2.1', 'port': 9}, // TEST-NET-1
+      }, timeout: const Duration(milliseconds: 200));
       expect(result.keys, containsAll(['@rv_am', '@rv_eu']));
       expect(result['@rv_am'], greaterThanOrEqualTo(0));
       expect(result['@rv_eu'], -1);
     });
 
     test('all keys present in result regardless of outcome', () async {
-      final result = await RelayLatencyChecker.measureLatencies(
-        {
-          '@rv_am': {'port': 443}, // missing ipaddr → -1
-          '@rv_eu': {'ipaddr': '192.0.2.2', 'port': 9}, // unreachable → -1
-        },
-        timeout: const Duration(milliseconds: 200),
-      );
+      final result = await RelayLatencyChecker.measureLatencies({
+        '@rv_am': {'port': 443}, // missing ipaddr → -1
+        '@rv_eu': {'ipaddr': '192.0.2.2', 'port': 9}, // unreachable → -1
+      }, timeout: const Duration(milliseconds: 200));
       expect(result.keys, containsAll(['@rv_am', '@rv_eu']));
       expect(result['@rv_am'], -1);
       expect(result['@rv_eu'], -1);

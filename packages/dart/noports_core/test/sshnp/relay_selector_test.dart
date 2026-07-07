@@ -18,36 +18,34 @@ AtNotification _discoverResponse(
   String fromRv,
   String toClient,
   Map<String, dynamic> ipInfo,
-) =>
-    AtNotification(
-      fromRv,
-      'discover_response.${Srvd.namespace}$fromRv',
-      fromRv,
-      toClient,
-      DateTime.now().millisecondsSinceEpoch,
-      'update',
-      false,
-      value: jsonEncode(ipInfo),
-      operation: 'update',
-    );
+) => AtNotification(
+  fromRv,
+  'discover_response.${Srvd.namespace}$fromRv',
+  fromRv,
+  toClient,
+  DateTime.now().millisecondsSinceEpoch,
+  'update',
+  false,
+  value: jsonEncode(ipInfo),
+  operation: 'update',
+);
 
 AtNotification _latencyResponse(
   String fromDaemon,
   String toClient,
   String device,
   Map<String, int> latencies,
-) =>
-    AtNotification(
-      fromDaemon,
-      'relay_latency_response.$device.${DefaultArgs.namespace}',
-      fromDaemon,
-      toClient,
-      DateTime.now().millisecondsSinceEpoch,
-      'update',
-      false,
-      value: jsonEncode(latencies),
-      operation: 'update',
-    );
+) => AtNotification(
+  fromDaemon,
+  'relay_latency_response.$device.${DefaultArgs.namespace}',
+  fromDaemon,
+  toClient,
+  DateTime.now().millisecondsSinceEpoch,
+  'update',
+  false,
+  value: jsonEncode(latencies),
+  operation: 'update',
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -94,7 +92,9 @@ void main() {
       when(
         () => mockNotificationService.notify(
           any(),
-          checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
           waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
           onSuccess: any(named: 'onSuccess'),
           onError: any(named: 'onError'),
@@ -149,8 +149,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -177,15 +181,22 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
         ).thenAnswer((_) async {
           // from '@wrong', not rv → filtered by `notification.from == rvAtSign`
           streamCtrl.add(
-            _discoverResponse('@wrong', clientAtSign, {'ipaddr': '9.9.9.9', 'port': 443}),
+            _discoverResponse('@wrong', clientAtSign, {
+              'ipaddr': '9.9.9.9',
+              'port': 443,
+            }),
           );
           return NotificationResult();
         });
@@ -203,8 +214,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -249,8 +264,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -279,8 +298,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -305,8 +328,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -333,50 +360,64 @@ void main() {
         );
       });
 
-      test('subscription is cancelled after timeout — late response is inert', () async {
-        await expectLater(
-          rs.fetchDeviceLatencies(
-            rvServers,
-            timeout: const Duration(milliseconds: 50),
-          ),
-          throwsA(isA<TimeoutException>()),
-        );
-
-        // onTimeout cancels the subscription; the broadcast controller must
-        // have no listeners left, and a late response must go nowhere.
-        expect(streamCtrl.hasListener, isFalse);
-        streamCtrl.add(
-          _latencyResponse(sshnpdAtSign, clientAtSign, device, {'@rv_am': 99}),
-        );
-      });
-
-      test('second notification after completer completed does not throw', () async {
-        final expected = {'@rv_am': 42};
-        when(
-          () => mockNotificationService.notify(
-            any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
-            onSuccess: any(named: 'onSuccess'),
-            onError: any(named: 'onError'),
-          ),
-        ).thenAnswer((_) async {
-          streamCtrl.add(
-            _latencyResponse(sshnpdAtSign, clientAtSign, device, expected),
+      test(
+        'subscription is cancelled after timeout — late response is inert',
+        () async {
+          await expectLater(
+            rs.fetchDeviceLatencies(
+              rvServers,
+              timeout: const Duration(milliseconds: 50),
+            ),
+            throwsA(isA<TimeoutException>()),
           );
-          return NotificationResult();
-        });
 
-        final result = await rs.fetchDeviceLatencies({
-          '@rv_am': {'ipaddr': '1.2.3.4', 'port': 443},
-        });
-        expect(result, expected);
+          // onTimeout cancels the subscription; the broadcast controller must
+          // have no listeners left, and a late response must go nowhere.
+          expect(streamCtrl.hasListener, isFalse);
+          streamCtrl.add(
+            _latencyResponse(sshnpdAtSign, clientAtSign, device, {
+              '@rv_am': 99,
+            }),
+          );
+        },
+      );
 
-        // subscription was already cancelled; second emission must not crash
-        streamCtrl.add(
-          _latencyResponse(sshnpdAtSign, clientAtSign, device, {'@rv_am': 99}),
-        );
-      });
+      test(
+        'second notification after completer completed does not throw',
+        () async {
+          final expected = {'@rv_am': 42};
+          when(
+            () => mockNotificationService.notify(
+              any(),
+              checkForFinalDeliveryStatus: any(
+                named: 'checkForFinalDeliveryStatus',
+              ),
+              waitForFinalDeliveryStatus: any(
+                named: 'waitForFinalDeliveryStatus',
+              ),
+              onSuccess: any(named: 'onSuccess'),
+              onError: any(named: 'onError'),
+            ),
+          ).thenAnswer((_) async {
+            streamCtrl.add(
+              _latencyResponse(sshnpdAtSign, clientAtSign, device, expected),
+            );
+            return NotificationResult();
+          });
+
+          final result = await rs.fetchDeviceLatencies({
+            '@rv_am': {'ipaddr': '1.2.3.4', 'port': 443},
+          });
+          expect(result, expected);
+
+          // subscription was already cancelled; second emission must not crash
+          streamCtrl.add(
+            _latencyResponse(sshnpdAtSign, clientAtSign, device, {
+              '@rv_am': 99,
+            }),
+          );
+        },
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -390,8 +431,7 @@ void main() {
       /// [latencyMeasurer] injected via the constructor instead of mutated
       /// post-construction.
       RelaySelector rsWithLatency(
-        Future<Map<String, int>> Function(Map<String, dynamic>)
-        latencyMeasurer,
+        Future<Map<String, int>> Function(Map<String, dynamic>) latencyMeasurer,
       ) {
         return RelaySelector(
           atClient: mockAtClient,
@@ -425,8 +465,12 @@ void main() {
         when(
           () => mockNotificationService.notify(
             any(),
-            checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-            waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
             onSuccess: any(named: 'onSuccess'),
             onError: any(named: 'onError'),
           ),
@@ -435,16 +479,19 @@ void main() {
           if (callCount <= rvCount) {
             for (final e in ipMap.entries) {
               if (!skipDiscoverFor.contains(e.key)) {
-                streamCtrl.add(
-                  _discoverResponse(e.key, clientAtSign, e.value),
-                );
+                streamCtrl.add(_discoverResponse(e.key, clientAtSign, e.value));
               }
             }
           } else if (onDevicePhase != null) {
             onDevicePhase();
           } else if (deviceLatencies != null) {
             streamCtrl.add(
-              _latencyResponse(sshnpdAtSign, clientAtSign, device, deviceLatencies),
+              _latencyResponse(
+                sshnpdAtSign,
+                clientAtSign,
+                device,
+                deviceLatencies,
+              ),
             );
           }
           return NotificationResult();
@@ -480,25 +527,28 @@ void main() {
         );
       });
 
-      test('partial IP resolution — selects best from resolved RVs only', () async {
-        // rv1 has no discover response; rv2 responds normally
-        setupNotify(
-          ipMap: {
-            rv1: {'ipaddr': '1.2.3.4', 'port': 443},
-            rv2: {'ipaddr': '1.2.3.5', 'port': 443},
-          },
-          deviceLatencies: {rv2: 30},
-          rvCount: 2,
-          skipDiscoverFor: {rv1},
-        );
-        final rs = rsWithLatency((_) async => {rv2: 40});
+      test(
+        'partial IP resolution — selects best from resolved RVs only',
+        () async {
+          // rv1 has no discover response; rv2 responds normally
+          setupNotify(
+            ipMap: {
+              rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+              rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+            },
+            deviceLatencies: {rv2: 30},
+            rvCount: 2,
+            skipDiscoverFor: {rv1},
+          );
+          final rs = rsWithLatency((_) async => {rv2: 40});
 
-        final result = await rs.selectBestRelay(
-          rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
-          requestTimeout: const Duration(milliseconds: 50),
-        );
-        expect(result, rv2);
-      });
+          final result = await rs.selectBestRelay(
+            rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+            requestTimeout: const Duration(milliseconds: 50),
+          );
+          expect(result, rv2);
+        },
+      );
 
       test('throws StateError when all client latencies are -1', () {
         setupNotify(
@@ -519,7 +569,9 @@ void main() {
 
       test('single resolved RV is returned', () async {
         setupNotify(
-          ipMap: {rv1: {'ipaddr': '1.2.3.4', 'port': 443}},
+          ipMap: {
+            rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+          },
           deviceLatencies: {rv1: 15},
           rvCount: 1,
         );
@@ -548,7 +600,6 @@ void main() {
         // first-inserted key (rv1) always wins.
         expect(result, rv1);
       });
-
 
       // ---------------------------------------------------------------------
       // device-latency fallback (issue #2752)
@@ -611,27 +662,24 @@ void main() {
           },
         );
 
-        test(
-          'fallback with all client latencies -1 → StateError',
-          () {
-            setupNotify(
-              ipMap: {
-                rv1: {'ipaddr': '1.2.3.4', 'port': 443},
-                rv2: {'ipaddr': '1.2.3.5', 'port': 443},
-              },
-              rvCount: 2,
-            );
-            final rs = rsWithLatency((_) async => {rv1: -1, rv2: -1});
+        test('fallback with all client latencies -1 → StateError', () {
+          setupNotify(
+            ipMap: {
+              rv1: {'ipaddr': '1.2.3.4', 'port': 443},
+              rv2: {'ipaddr': '1.2.3.5', 'port': 443},
+            },
+            rvCount: 2,
+          );
+          final rs = rsWithLatency((_) async => {rv1: -1, rv2: -1});
 
-            expect(
-              () => rs.selectBestRelay(
-                rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
-                deviceLatencyTimeout: const Duration(milliseconds: 100),
-              ),
-              throwsA(isA<StateError>()),
-            );
-          },
-        );
+          expect(
+            () => rs.selectBestRelay(
+              rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
+              deviceLatencyTimeout: const Duration(milliseconds: 100),
+            ),
+            throwsA(isA<StateError>()),
+          );
+        });
 
         test(
           'silent device must not surface TimeoutException (issue #2752 regression guard)',
@@ -670,8 +718,12 @@ void main() {
             when(
               () => mockNotificationService.notify(
                 any(),
-                checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
-                waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+                checkForFinalDeliveryStatus: any(
+                  named: 'checkForFinalDeliveryStatus',
+                ),
+                waitForFinalDeliveryStatus: any(
+                  named: 'waitForFinalDeliveryStatus',
+                ),
                 onSuccess: any(named: 'onSuccess'),
                 onError: any(named: 'onError'),
               ),
@@ -679,10 +731,16 @@ void main() {
               callCount++;
               if (callCount <= 2) {
                 streamCtrl.add(
-                  _discoverResponse(rv1, clientAtSign, {'ipaddr': '1.2.3.4', 'port': 443}),
+                  _discoverResponse(rv1, clientAtSign, {
+                    'ipaddr': '1.2.3.4',
+                    'port': 443,
+                  }),
                 );
                 streamCtrl.add(
-                  _discoverResponse(rv2, clientAtSign, {'ipaddr': '1.2.3.5', 'port': 443}),
+                  _discoverResponse(rv2, clientAtSign, {
+                    'ipaddr': '1.2.3.5',
+                    'port': 443,
+                  }),
                 );
                 return Future.value(NotificationResult());
               }
@@ -723,20 +781,24 @@ void main() {
 
       test('skips RV unreachable by device (-1 daemon)', () {
         expect(
-          rs.lowestAverageLatency(
-            {'@rv_am': -1, '@rv_eu': 80},
-            {'@rv_am': 10, '@rv_eu': 90},
-          ).toString(),
+          rs
+              .lowestAverageLatency(
+                {'@rv_am': -1, '@rv_eu': 80},
+                {'@rv_am': 10, '@rv_eu': 90},
+              )
+              .toString(),
           '@rv_eu',
         );
       });
 
       test('skips RV unreachable by client (-1 client)', () {
         expect(
-          rs.lowestAverageLatency(
-            {'@rv_am': 10, '@rv_eu': 80},
-            {'@rv_am': -1, '@rv_eu': 90},
-          ).toString(),
+          rs
+              .lowestAverageLatency(
+                {'@rv_am': 10, '@rv_eu': 80},
+                {'@rv_am': -1, '@rv_eu': 90},
+              )
+              .toString(),
           '@rv_eu',
         );
       });
@@ -761,10 +823,12 @@ void main() {
       test('RV in daemon map but absent from client map is skipped', () {
         // @rv_ap has no client latency → clientLatencies['@rv_ap'] == null → -1
         expect(
-          rs.lowestAverageLatency(
-            {'@rv_ap': 5, '@rv_eu': 80},
-            {'@rv_eu': 90}, // @rv_ap absent
-          ).toString(),
+          rs
+              .lowestAverageLatency(
+                {'@rv_ap': 5, '@rv_eu': 80},
+                {'@rv_eu': 90}, // @rv_ap absent
+              )
+              .toString(),
           '@rv_eu',
         );
       });

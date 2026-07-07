@@ -187,10 +187,7 @@ void main() {
         });
       });
 
-      SrvdImpl buildSrvd({
-        bool bind443 = false,
-        int localBindPort443 = 443,
-      }) {
+      SrvdImpl buildSrvd({bool bind443 = false, int localBindPort443 = 443}) {
         return SrvdImpl(
           atClient: mockAtClient,
           atSign: relayAtSign.toAtsign(),
@@ -215,15 +212,14 @@ void main() {
         required String? value,
       }) {
         return AtNotification(
-            id,
-            '$relayAtSign:discover_request.sshrvd$clientAtsign',
-            clientAtsign, // from
-            relayAtSign, // to
-            123,
-            'key',
-            true,
-          )
-          ..value = value;
+          id,
+          '$relayAtSign:discover_request.sshrvd$clientAtsign',
+          clientAtsign, // from
+          relayAtSign, // to
+          123,
+          'key',
+          true,
+        )..value = value;
       }
 
       test('returns ip with null port when bind443 is false', () async {
@@ -317,25 +313,28 @@ void main() {
           verifyNoResponseSent();
         });
 
-        test('malformed JSON value → throws FormatException, no response sent', () async {
-          // Pins current behavior: jsonDecode runs before the `is! Map`
-          // guard, so syntactically invalid JSON escapes the handler rather
-          // than being ignored like other malformed shapes. If this is ever
-          // deemed wrong, fix the handler and update this test.
-          final srvd = buildSrvd();
+        test(
+          'malformed JSON value → throws FormatException, no response sent',
+          () async {
+            // Pins current behavior: jsonDecode runs before the `is! Map`
+            // guard, so syntactically invalid JSON escapes the handler rather
+            // than being ignored like other malformed shapes. If this is ever
+            // deemed wrong, fix the handler and update this test.
+            final srvd = buildSrvd();
 
-          await expectLater(
-            srvd.handleDiscover(
-              discoverRequest(
-                id: 'e9d79920-1441-4e07-b8e1-3dee400bddd4',
-                value: 'not-json{{{',
+            await expectLater(
+              srvd.handleDiscover(
+                discoverRequest(
+                  id: 'e9d79920-1441-4e07-b8e1-3dee400bddd4',
+                  value: 'not-json{{{',
+                ),
               ),
-            ),
-            throwsA(isA<FormatException>()),
-          );
+              throwsA(isA<FormatException>()),
+            );
 
-          verifyNoResponseSent();
-        });
+            verifyNoResponseSent();
+          },
+        );
 
         test('items not a List → ignored, no response sent', () async {
           final srvd = buildSrvd();

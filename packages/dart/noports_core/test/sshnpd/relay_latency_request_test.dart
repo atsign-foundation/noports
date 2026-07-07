@@ -89,15 +89,14 @@ void main() {
     // which arrives at sshnpd with the key string serialized below.
     AtNotification latencyRequest({required String id, String? value}) {
       return AtNotification(
-          id,
-          '$deviceAtsign:relay_latency_request.$device.${DefaultArgs.namespace}$clientAtsign',
-          clientAtsign, // from
-          deviceAtsign, // to
-          123,
-          'key',
-          true,
-        )
-        ..value = value;
+        id,
+        '$deviceAtsign:relay_latency_request.$device.${DefaultArgs.namespace}$clientAtsign',
+        clientAtsign, // from
+        deviceAtsign, // to
+        123,
+        'key',
+        true,
+      )..value = value;
     }
 
     Map<String, dynamic> decodeLatencyResponse(NotificationParams n) {
@@ -152,10 +151,7 @@ void main() {
 
     test('sends no response when value is null', () async {
       await sshnpd.clientRequestNotificationHandler(
-        latencyRequest(
-          id: 'aaaa1111-0000-0000-0000-000000000003',
-          value: null,
-        ),
+        latencyRequest(id: 'aaaa1111-0000-0000-0000-000000000003', value: null),
       );
 
       expect(sentNotifications, isEmpty);
@@ -174,10 +170,7 @@ void main() {
 
     test('responds with empty map when rvServers is empty', () async {
       await sshnpd.clientRequestNotificationHandler(
-        latencyRequest(
-          id: 'aaaa1111-0000-0000-0000-000000000005',
-          value: '{}',
-        ),
+        latencyRequest(id: 'aaaa1111-0000-0000-0000-000000000005', value: '{}'),
       );
 
       expect(sentNotifications, hasLength(1));

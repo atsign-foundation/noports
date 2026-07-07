@@ -25,8 +25,7 @@ class RelaySelector with AtClientBindings {
   /// Injectable latency measurer. Defaults to [RelayLatencyChecker.measureLatencies].
   /// Override in tests to avoid real TCP connections.
   @visibleForTesting
-  final Future<Map<String, int>> Function(Map<String, dynamic>)
-  latencyMeasurer;
+  final Future<Map<String, int>> Function(Map<String, dynamic>) latencyMeasurer;
 
   RelaySelector({
     required this.atClient,
@@ -34,7 +33,6 @@ class RelaySelector with AtClientBindings {
     required this.sshnpdAtSign,
     required this.device,
     required String rootDomain,
-    @visibleForTesting
     this.latencyMeasurer = RelayLatencyChecker.measureLatencies,
   }) {
     final domain = rootDomain.startsWith('proxy:')
@@ -74,7 +72,10 @@ class RelaySelector with AtClientBindings {
     await Future.wait(
       toCheck.map((rv) async {
         try {
-          final ipInfo = await requestRelayIpAddress(rv, timeout: requestTimeout);
+          final ipInfo = await requestRelayIpAddress(
+            rv,
+            timeout: requestTimeout,
+          );
           rvIpMap[rv.toString()] = ipInfo;
         } catch (e) {
           logger.warning('Failed to get IP/Port for $rv: $e');
@@ -91,24 +92,26 @@ class RelaySelector with AtClientBindings {
     );
 
     // Start device latency fetch concurrently while we measure the client
-    // latency. The error handler is attached here, at creation time, rather
-    // than at the `await` below: if the future rejects while the client
-    // probe is still running, attaching it later would let Dart raise an
-    // unhandled async error first. Errors (including a stalled/retrying
+    // latency. The try/catch is in place before the `await` below ever runs,
+    // so a rejection while the client probe is still in flight can't surface
+    // as an unhandled async error. Errors (including a stalled/retrying
     // notify with no overall deadline — see fetchDeviceLatencies) collapse
     // to a null sentinel so relay selection can fall back to client-only
     // latency instead of hanging or dying.
-    final Future<Map<String, int>?> deviceLatencyFuture =
-        fetchDeviceLatencies(rvIpMap, timeout: deviceLatencyTimeout)
-            .timeout(deviceLatencyTimeout)
-            .then<Map<String, int>?>((v) => v)
-            .onError((e, _) {
-              logger.warning(
-                'Device latency check failed ($e); '
-                'will select relay on client latency only',
-              );
-              return null;
-            });
+    final Future<Map<String, int>?> deviceLatencyFuture = () async {
+      try {
+        return await fetchDeviceLatencies(
+          rvIpMap,
+          timeout: deviceLatencyTimeout,
+        ).timeout(deviceLatencyTimeout);
+      } catch (e) {
+        logger.warning(
+          'Device latency check failed ($e); '
+          'will select relay on client latency only',
+        );
+        return null;
+      }
+    }();
 
     final clientLatency = await latencyMeasurer(rvIpMap);
     logger.info('Fetched latencies for client -> RV: $clientLatency');

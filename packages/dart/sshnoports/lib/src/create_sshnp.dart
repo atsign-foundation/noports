@@ -26,6 +26,12 @@ Future<Sshnp> createSshnp(
   // If srvdAtSign is not provided, or is a comma-separated list,
   // auto select the best rv
   if (params.srvdAtSign.isEmpty || params.srvdAtSign.contains(',')) {
+    if (!params.verbose) {
+      stderr.writeln(
+        'No relay supplied, will find the lowest-latency relay available; '
+        'this may take up to 25 seconds',
+      );
+    }
     final srvd = params.srvdAtSign.replaceAll(' ', '');
     final rvSelector = RelaySelector(
       atClient: atClient,

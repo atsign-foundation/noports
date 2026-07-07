@@ -123,11 +123,11 @@ class PolicyServer {
     final String containerKeyFilePath =
         '/atsign/.atsign/keys/${path.basename(apkamKeysFile.path)}';
 
-    await runCommand(
-      'docker',
-      ['rm', '-f', _buildContainerName()],
-      printCommand: false,
-    );
+    await runCommand('docker', [
+      'rm',
+      '-f',
+      _buildContainerName(),
+    ], printCommand: false);
 
     dockerInstance = await runDockerInstance(
       dockerImage: dockerImage,
