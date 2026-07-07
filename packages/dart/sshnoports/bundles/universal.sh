@@ -3,7 +3,7 @@
 # SCRIPT METADATA
 # DO NOT MODIFY/DELETE THIS BLOCK
 script_version="3.2.0"
-sshnp_version="5.15.0"
+sshnp_version="5.15.1"
 repo_url="https://github.com/atsign-foundation/sshnoports"
 # END METADATA
 

@@ -2,6 +2,11 @@
 
 <!-- pyml disable md034-->
 
+## v5.15.1
+
+* fix: Trust our brew tap when used with brew => 6
+* feat: Container detection, Use tarball for headless install
+
 ## v5.15.0
 
 * feat: auto select best RV
