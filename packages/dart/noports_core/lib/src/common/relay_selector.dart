@@ -105,10 +105,7 @@ class RelaySelector with AtClientBindings {
           timeout: deviceLatencyTimeout,
         ).timeout(deviceLatencyTimeout);
       } catch (e) {
-        logger.warning(
-          'Device latency check failed ($e); '
-          'will select relay on client latency only',
-        );
+        logger.info('Device latency check failed: $e');
         return null;
       }
     }();
