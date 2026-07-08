@@ -49,9 +49,20 @@ class RelaySelector with AtClientBindings {
   ///
   /// If [rvAtSigns] is provided, it will select the best from that list.
   /// Otherwise, it will fetch the standard relays from [rvServerListUrl].
+  ///
+  /// [relayIpDiscoveryTimeout] bounds each individual RV's discover request/response
+  /// round trip (see [requestRelayIpAddress]) — it is applied per RV, not to
+  /// the whole IP-resolution phase, since all RVs are queried concurrently.
+  /// A slow or unreachable RV only costs [relayIpDiscoveryTimeout]; it does not delay
+  /// the others.
+  ///
+  /// [deviceLatencyTimeout] bounds how long to wait for the daemon to report
+  /// its own latency measurements to the candidate RVs (see
+  /// [fetchDeviceLatencies]). If it elapses, relay selection falls back to
+  /// client-only latency.
   Future<String> selectBestRelay({
     List<Atsign>? rvAtSigns,
-    Duration requestTimeout = const Duration(seconds: 10),
+    Duration relayIpDiscoveryTimeout = const Duration(seconds: 10),
     Duration deviceLatencyTimeout = const Duration(seconds: 20),
   }) async {
     List<Atsign> toCheck = [];
@@ -74,7 +85,7 @@ class RelaySelector with AtClientBindings {
         try {
           final ipInfo = await requestRelayIpAddress(
             rv,
-            timeout: requestTimeout,
+            timeout: relayIpDiscoveryTimeout,
           );
           rvIpMap[rv.toString()] = ipInfo;
         } catch (e) {
@@ -155,6 +166,10 @@ class RelaySelector with AtClientBindings {
     }
   }
 
+  /// [timeout] bounds the wait for a single `discover_response` notification
+  /// from [rvAtSign] after the `discover_request` is sent. It is per-call, so
+  /// callers querying multiple RVs concurrently should expect the slowest
+  /// unreachable RV to take up to [timeout], not the sum across all RVs.
   @visibleForTesting
   Future<Map<String, dynamic>> requestRelayIpAddress(
     Atsign rvAtSign, {

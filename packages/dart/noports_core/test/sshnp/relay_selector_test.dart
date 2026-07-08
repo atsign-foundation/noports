@@ -521,7 +521,7 @@ void main() {
         expect(
           () => rs.selectBestRelay(
             rvAtSigns: [rv1.toAtsign()],
-            requestTimeout: const Duration(milliseconds: 50),
+            relayIpDiscoveryTimeout: const Duration(milliseconds: 50),
           ),
           throwsA(isA<StateError>()),
         );
@@ -544,7 +544,7 @@ void main() {
 
           final result = await rs.selectBestRelay(
             rvAtSigns: [rv1.toAtsign(), rv2.toAtsign()],
-            requestTimeout: const Duration(milliseconds: 50),
+            relayIpDiscoveryTimeout: const Duration(milliseconds: 50),
           );
           expect(result, rv2);
         },
