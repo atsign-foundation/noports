@@ -25,10 +25,14 @@ jobs:
     # atServer-side, not code. `needs: npe2e` serializes after the npe2e matrix so
     # the shared atSigns aren't double-booked (npe2e daemons removeWhenStopped).
     needs: npe2e
-    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    # Don't run on PRs from a fork or Dependabot as the secrets aren't available.
+    # !cancelled() lets this run once npe2e *completes* even if a leg failed
+    # (npe2e is flaky on shared infra today) — we still serialize via `needs` to
+    # avoid double-booking the shared atSigns, but a policy_tests flake must not
+    # skip our hypothesis probe.
     if:
-      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
-      'dependabot[bot]'}}
+      ${{ !cancelled() && github.event.pull_request.head.repo.fork == false &&
+      github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
 
     steps:
