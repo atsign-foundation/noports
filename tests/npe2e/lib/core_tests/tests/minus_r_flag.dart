@@ -22,13 +22,15 @@ const String testName = 'minus_r_flag';
 // 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
 // 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
 //
-// - Client: Dart (current) | Daemon: Dart (current)
-// - Client: Dart v5.9.4 | Daemon: Dart (current)
-// - Client: Dart v5.11.2 | Daemon: Dart (current)
-// - Client: Dart v5.13.0 | Daemon: Dart (current)
-// - Client: Dart (current) | Daemon: Dart v5.9.4
-// - Client: Dart (current) | Daemon: Dart v5.11.2
-// - Client: Dart (current) | Daemon: Dart v5.13.0
+// `-r`/`--host`/`-h` precedence is a client-side-only feature, so - matching
+// the legacy e2e_all `minus_r_flag` test - we exercise the FULL cross-product
+// of every Dart client (>= v5.2.0) against every Dart daemon, including
+// released-client-vs-released-daemon combinations. C daemons are skipped
+// (nothing daemon-side to test).
+//
+// With the default versions this yields:
+// - Client: Dart {current, v5.9.4, v5.11.2, v5.13.0}
+//   x Daemon: Dart {current, v5.9.4, v5.11.2, v5.13.0}
 List<Future<CoreTestResult> Function()> runMinusRFlagTests({
   required final CoreTestsContext context,
   required final List<NoPortsVersion> clientVersions,
@@ -295,9 +297,12 @@ List<String> _buildBaseSshnpArgs({
   return args;
 }
 
-// we only want to check:
-//   a. non-current client with current daemon
-//   b. current cleint with non-current daemon
+// `-r` / `--host` / `-h` precedence is a client-side-only feature, so we test
+// the full client x daemon cross-product (matching the legacy e2e_all
+// `minus_r_flag` test which did NOT skip released-vs-released combinations).
+// We only skip:
+//   a. C daemons (nothing daemon-side to exercise for a client-only feature)
+//   b. Dart clients older than v5.2.0 (`-r` was added in v5.2.0)
 Set<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
@@ -307,12 +312,6 @@ Set<(NoPortsVersion, NoPortsVersion)> _generateVersionCombinations({
     for (final daemonVersion in daemonVersions) {
       if (combinations.contains((clientVersion, daemonVersion))) {
         // if permutation already exists, skip
-        continue;
-      }
-      final bool isClientCurrent = clientVersion.version == 'current';
-      final bool isDaemonCurrent = daemonVersion.version == 'current';
-      // skip if both client and daemon are not current
-      if (!isClientCurrent && !isDaemonCurrent) {
         continue;
       }
       if (daemonVersion.language == Language.c) {

@@ -175,7 +175,9 @@ Future<CoreTestResult> _runNptToPort22Test({
   );
   final int exitCode2 = await sshOutput.exitCode;
   logFragment2.stop();
-  if (exitCode2 != 0) {
+  // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
+  // must actually have run (its output contains the 'TEST PASSED' marker).
+  if (exitCode2 != 0 || !sshOutput.stdout.contains('TEST PASSED')) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,

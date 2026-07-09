@@ -31,9 +31,16 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
 
   for (final NoPortsVersion clientVersion in clientVersions) {
     for (final NoPortsVersion daemonVersion in daemonVersions) {
-      if (clientVersion.version != 'current' ||
+      // Only run this test with the Dart current client against the Dart
+      // current daemon (matches e2e_all, which required `daemonVersion ==
+      // d:current`). Note c:current also has version=='current', so we must
+      // also check the language to avoid generating a mislabeled duplicate that
+      // still targets the Dart current daemon.
+      if (clientVersion.language != Language.dart ||
+          clientVersion.version != 'current' ||
+          daemonVersion.language != Language.dart ||
           daemonVersion.version != 'current') {
-        continue; // for now, only run this test with current versions since it's testing a current feature
+        continue;
       }
       testFactories.add(
         () => _runMinusUFlagTest(
@@ -205,7 +212,9 @@ Future<CoreTestResult> _runMinusUFlagTest({
     ),
   );
   final int exitCode3 = await capture3.process.exitCode;
-  if (exitCode3 != 0) {
+  // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
+  // must actually have run (its output contains the 'TEST PASSED' marker).
+  if (exitCode3 != 0 || !capture3.stdout.contains('TEST PASSED')) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,
