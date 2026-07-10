@@ -20,10 +20,17 @@ on:
 
 jobs:
   e2e_all:
-    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+    # Runs on the @npe2e_org_* atSigns (see the atKeys step below). These are
+    # shared with the npe2e job, so `needs: npe2e` serializes this job after the
+    # matrix has finished and torn its daemons down (removeWhenStopped) — that
+    # avoids double-booking the same atSigns within a run.
+    needs: npe2e
+    # Skip on fork / Dependabot PRs (secrets unavailable). `!cancelled()` keeps
+    # this running once npe2e *completes* even if a leg failed, so a flaky npe2e
+    # leg on shared infra can't skip e2e_all via the `needs:` dependency.
     if:
-      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
-      'dependabot[bot]'}}
+      ${{ !cancelled() && github.event.pull_request.head.repo.fork == false &&
+      github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
     env:
       # atSigns this job exercises — probed for atServer uptime before/after the
@@ -44,14 +51,15 @@ jobs:
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_CLIENT_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_client_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_DAEMON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_daemon_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_POLICY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_policy_latest_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_RELAY_LATEST_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_relay_latest_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_EVENTS_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_events_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_E2E_ALL_V2_SINGLETON_JTTEST }}' > ~/.atsign/keys/@e2e_all_v2_singleton_jttest_key.atKeys
+          # atKeys for the @npe2e_org_* atSigns this job runs against. The legacy
+          # @e2e_all_v2_* atServers went unresponsive ~2026-06-13 and produced
+          # spurious old-client timeouts; the @npe2e_org_* atServers are healthy.
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy02_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
 
       - name: Install expect
         run: |
@@ -62,7 +70,7 @@ jobs:
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest @rv_am @e2e_all_v2_relay_latest_jttest @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest @e2e_all_v2_events_jttest -p -r root.atsign.org
+          tests/e2e_all/scripts/main.sh @npe2e_org_client01_jttest @npe2e_org_daemon01_jttest @rv_am @npe2e_org_relay01_jttest @npe2e_org_policy01_jttest @npe2e_org_policy02_jttest @npe2e_org_relay02_jttest -p -r root.atsign.org
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
