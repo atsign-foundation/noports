@@ -185,7 +185,7 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
       testMetadata: _metadataSshExecution,
     ),
   );
-  final int exitCode2 = await sshOutput.process.exitCode;
+  final int exitCode2 = await sshOutput.exitCode;
   logFragment2.stop();
   // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
   // must actually have run (its output contains the 'TEST PASSED' marker).
