@@ -25,6 +25,15 @@ jobs:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
       'dependabot[bot]'}}
     runs-on: ubuntu-latest
+    env:
+      # atSigns this job exercises — probed for atServer uptime before/after the
+      # run (see the atServer info steps). If an AFTER uptime is lower than its
+      # BEFORE, that atServer restarted mid-run (OOM/crash).
+      PROBE_ATSIGNS: >-
+        @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest
+        @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest
+        @e2e_all_v2_relay_jttest @e2e_all_v2_relay_latest_jttest
+        @e2e_all_v2_events_jttest @e2e_all_v2_singleton_jttest @rv_am
 
     steps:
       - name: Checkout
@@ -47,6 +56,8 @@ jobs:
       - name: Install expect
         run: |
           sudo apt-get install -y expect
+      - name: atServer info (before)
+        run: dart run tests/npe2e/bin/atserver_info.dart --label "e2e_all BEFORE" $PROBE_ATSIGNS
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
@@ -57,6 +68,9 @@ jobs:
           echo "Test finished at: $(date)"
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
+      - name: atServer info (after)
+        if: ${{ always() }} # run even if the tests failed
+        run: dart run tests/npe2e/bin/atserver_info.dart --label "e2e_all AFTER" $PROBE_ATSIGNS
       - name: Zip /tmp/e2e_all
         if: ${{ always() }} # run even if test fails
         run: |
@@ -82,6 +96,7 @@ jobs:
           - test_suite: core_tests
             output_artifact: npe2e_core_tests_artifacts
             logs_dir: npe2e_core_tests
+            probe_atsigns: "@npe2e_org_client01_jttest @npe2e_org_daemon01_jttest @rv_am"
             command: |
               dart run tests/npe2e/bin/core_tests.dart \
                 --client-atsign "@npe2e_org_client01_jttest" \
@@ -93,6 +108,7 @@ jobs:
           - test_suite: policy_tests
             output_artifact: npe2e_policy_tests_artifacts
             logs_dir: npe2e_policy_tests
+            probe_atsigns: "@npe2e_org_client02_jttest @npe2e_org_daemon02_jttest @npe2e_org_policy01_jttest @npe2e_org_policy02_jttest @rv_am"
             command: |
               dart run tests/npe2e/bin/policy_tests.dart \
                 --client-atsign "@npe2e_org_client02_jttest" \
@@ -107,6 +123,7 @@ jobs:
           - test_suite: relay_tests
             output_artifact: npe2e_relay_tests_artifacts
             logs_dir: npe2e_relay_tests
+            probe_atsigns: "@npe2e_org_client03_jttest @npe2e_org_daemon03_jttest @npe2e_org_relay01_jttest @npe2e_org_relay02_jttest @npe2e_org_relay03_jttest @npe2e_org_relay04_jttest @npe2e_org_relay05_jttest @npe2e_org_relay06_jttest @rv_am"
             command: |
               dart run tests/npe2e/bin/relay_tests.dart \
                 --client-atsign "@npe2e_org_client03_jttest" \
@@ -167,10 +184,16 @@ jobs:
           echo "OUTPUT_ARTIFACT=${{ matrix.output_artifact }}" >> $GITHUB_ENV
           echo "LOGS_DIR=${{ matrix.logs_dir }}" >> $GITHUB_ENV
 
+      - name: atServer info (before)
+        run: dart run tests/npe2e/bin/atserver_info.dart --label "${{ matrix.test_suite }} BEFORE" ${{ matrix.probe_atsigns }}
+
       - name: Run npe2e ${{ matrix.test_suite }}
         run: |
           ${{ matrix.command }}
 
+      - name: atServer info (after)
+        if: always() # run even if the tests failed
+        run: dart run tests/npe2e/bin/atserver_info.dart --label "${{ matrix.test_suite }} AFTER" ${{ matrix.probe_atsigns }}
 
       - name: Zip npe2e artifacts
         if: always()
