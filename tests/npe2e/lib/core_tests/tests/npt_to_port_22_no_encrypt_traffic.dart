@@ -112,8 +112,8 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
       testMetadata: _metadataNptExecution,
     ),
   );
-  logFragment1.stop();
   final int exitCode1 = await nptOutput.exitCode;
+  logFragment1.stop();
   if (exitCode1 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
@@ -149,6 +149,8 @@ Future<CoreTestResult> _runNptToPort22NoEncryptTrafficTest({
     localPort.toString(),
     '-o',
     'StrictHostKeyChecking=accept-new',
+    '-o',
+    'IdentitiesOnly=yes',
     '-i',
     context.identityFilePath,
     '${remoteUsername}@localhost',
