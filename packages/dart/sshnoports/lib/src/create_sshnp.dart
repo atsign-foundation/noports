@@ -12,6 +12,7 @@ Future<Sshnp> createSshnp(
   AtClient? atClient,
   AtClientGenerator? atClientGenerator,
   SupportedSshClient sshClient = DefaultExtendedArgs.sshClient,
+  void Function(String message)? onProgress,
 }) async {
   atClient ??= await atClientGenerator?.call(params);
 
@@ -26,7 +27,7 @@ Future<Sshnp> createSshnp(
   // If srvdAtSign is not provided, or is a comma-separated list,
   // auto select the best rv
   if (params.srvdAtSign.isEmpty || params.srvdAtSign.contains(',')) {
-    stderr.writeln(
+    onProgress?.call(
       'No relay supplied, will find the lowest-latency relay available; '
       'this may take up to 25 seconds',
     );
