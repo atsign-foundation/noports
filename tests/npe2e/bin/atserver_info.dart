@@ -93,16 +93,19 @@ Future<void> main(List<String> args) async {
   var rootPort = _defaultRootPort;
   var label = '';
   final atSigns = <String>[];
+  // Plain if/else (no switch) so the script parses under any Dart language
+  // version — it is also run standalone (no pubspec) where the default
+  // language version predates switch-statement implicit break.
   for (var i = 0; i < args.length; i++) {
-    switch (args[i]) {
-      case '--root-domain':
-        rootHost = args[++i];
-      case '--root-port':
-        rootPort = int.parse(args[++i]);
-      case '--label':
-        label = args[++i];
-      default:
-        atSigns.addAll(args[i].split(',').where((s) => s.trim().isNotEmpty));
+    final a = args[i];
+    if (a == '--root-domain') {
+      rootHost = args[++i];
+    } else if (a == '--root-port') {
+      rootPort = int.parse(args[++i]);
+    } else if (a == '--label') {
+      label = args[++i];
+    } else {
+      atSigns.addAll(a.split(',').where((s) => s.trim().isNotEmpty));
     }
   }
   if (atSigns.isEmpty) {

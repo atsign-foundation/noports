@@ -37,10 +37,9 @@ jobs:
       # run (see the atServer info steps). If an AFTER uptime is lower than its
       # BEFORE, that atServer restarted mid-run (OOM/crash).
       PROBE_ATSIGNS: >-
-        @e2e_all_v2_client_jttest @e2e_all_v2_daemon_jttest
-        @e2e_all_v2_policy_jttest @e2e_all_v2_policy_latest_jttest
-        @e2e_all_v2_relay_jttest @e2e_all_v2_relay_latest_jttest
-        @e2e_all_v2_events_jttest @e2e_all_v2_singleton_jttest @rv_am
+        @npe2e_org_client01_jttest @npe2e_org_daemon01_jttest
+        @npe2e_org_relay01_jttest @npe2e_org_policy01_jttest
+        @npe2e_org_policy02_jttest @npe2e_org_relay02_jttest @rv_am
 
     steps:
       - name: Checkout
