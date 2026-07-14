@@ -28,7 +28,7 @@ Source, releases and full documentation:
 ### Requirements
 
 * SR Linux 24.3.1 or later (Debian-based releases); amd64 or arm64
-* Two atSigns: one for the router, one for the operator — see
+* Two Atsigns: one for the router, one for the operator — see
   [noports.com](https://noports.com)
 * The NoPorts client installed on your machine (see
   [Client Installation](../advanced-installation-guides/client-installation-sshnp.md))
@@ -71,7 +71,7 @@ info from state / noports state
 ```
 
 Until the router is onboarded it reports `oper-state awaiting-onboarding`.
-The full command surface — policy atSigns for fleet-scale access control,
+The full command surface — policy Atsigns for fleet-scale access control,
 device groups, permit-open lists for `npt`, sshd options — is documented in
 the repo's
 [CLI reference](https://github.com/atsign-foundation/noports-srlinux/blob/trunk/docs/cli-reference.md).
@@ -79,7 +79,7 @@ the repo's
 ### Onboard the router (APKAM)
 
 Enrollment cuts new, scope-limited APKAM keys on the router itself, using
-a one-time passcode; the device atSign's full keys never leave your
+a one-time passcode; the device Atsign's full keys never leave your
 custody.
 
 On your machine:
