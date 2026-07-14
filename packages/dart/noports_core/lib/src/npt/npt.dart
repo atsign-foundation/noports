@@ -197,9 +197,12 @@ class _NptImpl extends NptBase
     // daemon just falls back to legacy (which the relay detects). But an
     // explicit --relay-auth-mode escr forces ESCR on both sides, so we then
     // require the daemon to support it — an incapable daemon is a hard error
-    // rather than a silent fallback. See sshnp_core.initialize for detail.
+    // rather than a silent fallback. Only when the daemon actually authenticates
+    // to the relay (authenticateDeviceToRvd); otherwise its ESCR capability is
+    // irrelevant. See sshnp_core.initialize for detail.
     if (params.relayAuthModeExplicit &&
-        params.relayAuthMode == RelayAuthMode.escr) {
+        params.relayAuthMode == RelayAuthMode.escr &&
+        params.authenticateDeviceToRvd) {
       requiredFeatures.add(DaemonFeature.supportsRamEscr);
     }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {

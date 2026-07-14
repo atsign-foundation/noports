@@ -140,9 +140,14 @@ abstract class SshnpCore
     // force ESCR on both sides, so we DO require the daemon to support it: an
     // incapable daemon becomes a hard error ("...does not support the 'ESCR'
     // relay auth mode") rather than a silent fallback that would contradict the
-    // explicit request.
+    // explicit request. Only when the daemon actually authenticates to the relay
+    // (authenticateDeviceToRvd) — otherwise it does no relay auth at all and its
+    // ESCR capability is irrelevant, so requiring it would wrongly reject a
+    // supported config (client authenticates with ESCR, device not at all). This
+    // mirrors the DaemonFeature.srAuth guard above.
     if (params.relayAuthModeExplicit &&
-        params.relayAuthMode == RelayAuthMode.escr) {
+        params.relayAuthMode == RelayAuthMode.escr &&
+        params.authenticateDeviceToRvd) {
       requiredFeatures.add(DaemonFeature.supportsRamEscr);
     }
     sendProgress('Sending daemon feature check request');

@@ -242,6 +242,103 @@ void main() {
         );
       });
     }); // group Initialization
+
+    group('explicit-escr daemon feature gate', () {
+      // Captures the requiredFeatures list that initialize() passes to
+      // featureCheck for the given params, by running the real
+      // SshnpCore.initialize() through StubbedSshnp.
+      Future<List<DaemonFeature>> requiredFeaturesFor(SshnpParams params) async {
+        when(() => mockAtClient.getPreferences()).thenReturn(null);
+        when(() => mockAtClient.setPreferences(any())).thenReturn(null);
+        final sshnpCore = StubbedSshnp(
+          atClient: mockAtClient,
+          params: params,
+          sshnpdChannel: mockSshnpdChannel,
+          srvdChannel: mockSrvdChannel,
+        );
+        sshnpCore.stubAsyncInitialization(
+          stubbedCallInitialization: stubbedCallInitialization,
+          stubbedInitialize: stubbedInitialize,
+          stubbedCompleteInitialization: stubbedCompleteInitialization,
+        );
+        whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
+        await sshnpCore.callInitialization();
+        final captured = verify(
+          () => mockSshnpdChannel.featureCheck(captureAny()),
+        ).captured;
+        return captured.last as List<DaemonFeature>;
+      }
+
+      SshnpParams paramsWith({
+        required RelayAuthMode relayAuthMode,
+        required bool relayAuthModeExplicit,
+        required bool authenticateDeviceToRvd,
+      }) => SshnpParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@srvd',
+        relayAuthMode: relayAuthMode,
+        relayAuthModeExplicit: relayAuthModeExplicit,
+        authenticateDeviceToRvd: authenticateDeviceToRvd,
+      );
+
+      test('explicit escr + device authenticates to relay -> requires '
+          'supportsRamEscr', () async {
+        expect(
+          await requiredFeaturesFor(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          contains(DaemonFeature.supportsRamEscr),
+        );
+      });
+
+      test('explicit escr but device does NOT authenticate to relay -> does '
+          'NOT require supportsRamEscr (regression fix)', () async {
+        // The daemon does no relay auth, so its ESCR capability is irrelevant;
+        // requiring it would wrongly reject a documented-supported config.
+        expect(
+          await requiredFeaturesFor(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: false,
+            ),
+          ),
+          isNot(contains(DaemonFeature.supportsRamEscr)),
+        );
+      });
+
+      test('default (non-explicit) escr -> does NOT require supportsRamEscr',
+          () async {
+        expect(
+          await requiredFeaturesFor(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: false,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          isNot(contains(DaemonFeature.supportsRamEscr)),
+        );
+      });
+
+      test('explicit payload -> does NOT require supportsRamEscr', () async {
+        expect(
+          await requiredFeaturesFor(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.payload,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          isNot(contains(DaemonFeature.supportsRamEscr)),
+        );
+      });
+    }); // group explicit-escr daemon feature gate
   }); // group SshnpCore
 
   group('A group of tests related to sshnp', () {

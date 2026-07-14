@@ -302,6 +302,51 @@ void main() {
           RelayAuthMode.escr,
         );
       });
+
+      test('explicit relayAuthMode survives a config round-trip as prescriptive',
+          () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            relayAuthMode: RelayAuthMode.escr,
+            relayAuthModeExplicit: true,
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthMode, RelayAuthMode.escr);
+        expect(reloaded.relayAuthModeExplicit, true);
+      });
+
+      test('an explicit payload mode also survives a config round-trip', () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            relayAuthMode: RelayAuthMode.payload,
+            relayAuthModeExplicit: true,
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthMode, RelayAuthMode.payload);
+        expect(reloaded.relayAuthModeExplicit, true);
+      });
+
+      test('a non-explicit (default) relayAuthMode is not persisted, so a saved '
+          'config does not silently become prescriptive on reload', () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            // relayAuthMode left at default, relayAuthModeExplicit false
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthModeExplicit, false);
+      });
       test('SshnpParams.clientAtSign test', () {
         final params = SshnpParams(
           clientAtSign: '@myClientAtSign',

@@ -464,6 +464,14 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
+      // Persist the relay-auth mode ONLY when it was explicitly chosen: the
+      // key's presence is what marks it prescriptive on reload (fromPartial
+      // derives relayAuthModeExplicit from it being non-null). Writing it
+      // unconditionally would silently make every saved config prescriptive;
+      // null is dropped by toConfigLines/round-trips as absent.
+      SshnpArg.relayAuthModeArg.name: relayAuthModeExplicit
+          ? relayAuthMode.name
+          : null,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
