@@ -10,7 +10,16 @@
   The relay skips the detection window when a side's mode is known ahead of
   time: side A (the client) from its own request, and side B (the daemon) from
   an optional definitive auth-modes notification the client sends once it has
-  the ping response. Auto-detect remains the fallback.
+  the ping response. A side's mode is also memoised after its first connection
+  authenticates, so only the first connection of a session ever detects — every
+  later connection pair skips straight to the known mode. Auto-detect remains
+  the fallback.
+- fix: the two-port relay path issued one ESCR challenge per session and reused
+  it for every connection, so a captured challenge-response could be replayed
+  onto later connections of the same session. It now issues a fresh challenge
+  per connection (as the 443 single-port path already did), and
+  RelayAuthVerifierESCR is single-use so an instance cannot be reused across
+  connections.
 
 # 6.11.0
 

@@ -98,9 +98,19 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   final RelayAuthVerifyHelper helper;
 
+  /// A fresh, unguessable challenge for this one authentication. It is the sole
+  /// replay protection, so it MUST be fresh per connection — which is why this
+  /// verifier is single-use ([_consumed]): a new instance (hence a new
+  /// challenge) is required for every connection. Reusing one instance across a
+  /// session's connections would reissue the same challenge and let a captured
+  /// response be replayed onto further connections.
   final String challenge = AtChopsUtil.generateSymmetricKey(
     EncryptionKeyType.aes256,
   ).key;
+
+  /// Set once this verifier has issued its challenge and verified (or attempted
+  /// to verify) a response. Guards against instance reuse — see [challenge].
+  bool _consumed = false;
 
   /// If [randomlyFail] > 0 && random.nextInt([randomlyFail]) == 0
   /// then fail the verification
@@ -126,11 +136,17 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   }
 
   Future<bool> verifyChallengeResponse(String response) async {
-    // TODO Eliminate re-entrance race conditions
-    // TODO While not a problem right now, is laying a trap for the future
-    atSign = null;
-    isSideA = null;
-    sessionId = null;
+    // Single-use. Verifying a second response on the same instance would mean
+    // its challenge is being reused across connections, so refuse it. This also
+    // removes what used to be a re-entrance hazard here (shared atSign /
+    // sessionId / isSideA fields), since only one response is ever processed.
+    if (_consumed) {
+      throw StateError(
+        'RelayAuthVerifierESCR is single-use: construct a new instance per'
+        ' connection so that each gets its own fresh challenge',
+      );
+    }
+    _consumed = true;
 
     String abbreviated = response;
     if (response.length > 40) {
@@ -322,6 +338,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   @override
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
+    // Single-use: refuse before reissuing a stale challenge to a new socket.
+    if (_consumed) {
+      throw StateError(
+        'RelayAuthVerifierESCR is single-use: construct a new instance per'
+        ' connection so that each gets its own fresh challenge',
+      );
+    }
+
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
     StreamController<Uint8List> sc = StreamController();
@@ -723,6 +747,12 @@ const int defaultRelayAuthDetectWindowMs = 500;
 /// A known mode is applied only while the socket is still being detected, never
 /// after it has committed by sending bytes, so a stale/incorrect ESCR hint can
 /// never challenge a socket that has already spoken legacy.
+///
+/// The same verifier instance authenticates every connection on its side of the
+/// session (a session typically carries many), so once one connection's mode is
+/// verified it is remembered and every later connection skips detection too:
+/// only the very first connection on a side — and only if its mode was not
+/// already known — ever pays the window.
 class RelayAuthVerifierAuto implements RelayAuthVerifier {
   @override
   final String tag;
@@ -753,13 +783,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
 
   late final AtSignLogger logger;
 
-  /// The composed ESCR verifier, used if the socket turns out to be ESCR. It
-  /// owns the challenge and the ESCR verification logic, and is the source of
-  /// [atSign] / [sessionId] / [isSideA] once ESCR has been verified.
-  late final RelayAuthVerifierESCR _escr;
-
-  /// The mode this side will use, if known ahead of detection. Set from the
-  /// constructor (side A) or [setKnownMode] (side B). Null means "detect".
+  /// The mode this side will use, if known. Set from the constructor (side A),
+  /// [setKnownMode] (side B), or memoised after the first connection on this
+  /// side authenticates successfully. Null means "detect".
   RelayAuthMode? _knownMode;
 
   /// Set by [verifySocketAuth] while it is running so [setKnownMode] can apply a
@@ -779,7 +805,6 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   }) : expectedAtSign = atSign,
        _sessionId = sessionId {
     logger = AtSignLogger(' $runtimeType ($tag) ');
-    _escr = RelayAuthVerifierESCR(tag, helper);
     _knownMode = knownMode;
   }
 
@@ -796,18 +821,22 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     }
   }
 
+  // On the two-port path the side (and thus atSign) is known from the port the
+  // socket arrived on, so we report the expected values directly. These are not
+  // consulted by SocketConnector.serverToServer (which uses the returned
+  // stream); they exist only to satisfy the RelayAuthVerifier interface.
   @override
-  Atsign? get atSign => _escr.atSign ?? expectedAtSign.toAtsign();
+  Atsign? get atSign => expectedAtSign.toAtsign();
 
   @override
-  String? get sessionId => _escr.sessionId ?? _sessionId;
-
-  /// `true` for side A (client), `false` for side B (daemon). Only populated
-  /// when the socket was verified via ESCR.
-  bool? get isSideA => _escr.isSideA;
+  String? get sessionId => _sessionId;
 
   @override
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
+    // A fresh ESCR verifier per connection: single-use, so each connection gets
+    // its own fresh challenge (never reused across the session's connections).
+    final RelayAuthVerifierESCR escr = RelayAuthVerifierESCR(tag, helper);
+
     final completer = Completer<(bool, Stream<Uint8List>?)>();
     final sc = StreamController<Uint8List>();
     final buffer = <int>[];
@@ -840,6 +869,13 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
 
     void completeSuccess() {
       authenticated = true;
+      // Every connection on this side of the session uses the same
+      // authenticator, so remember the mode we just verified: subsequent
+      // connections skip detection and go straight to it (see [_knownMode]).
+      // Cached only on success, so a failed or hostile probe cannot poison it.
+      _knownMode ??= (mode == 'escr')
+          ? RelayAuthMode.escr
+          : RelayAuthMode.payload;
       if (!completer.isCompleted) {
         completer.complete((true, sc.stream));
       } else if (!sc.isClosed) {
@@ -885,7 +921,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           );
         }
       }
-      final verified = await _escr.verifyChallengeResponse(response);
+      final verified = await escr.verifyChallengeResponse(response);
       if (!verified) {
         throw RAVE(
           '(but verifyChallengeResponse did not throw an exception)',
@@ -910,7 +946,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       if (m == RelayAuthMode.escr) {
         mode = 'escr';
         logger.info('resolving to ESCR; sending challenge');
-        socket.writeln(_escr.challenge);
+        socket.writeln(escr.challenge);
         await socket.flush();
       } else {
         mode = 'legacy';

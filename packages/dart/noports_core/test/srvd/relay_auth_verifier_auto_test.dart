@@ -212,7 +212,6 @@ void main() {
       expect(written, [challenge, 'ok']);
       expect(verifier.sessionId, sessionId);
       expect(verifier.atSign, '@alice');
-      expect(verifier.isSideA, true);
     });
 
     test('rejects an unexpected first byte (neither "{" nor silence)', () async {
@@ -398,6 +397,68 @@ void main() {
         isEmpty,
         reason: 'must not challenge a socket that already committed to legacy',
       );
+    });
+
+    test('memoises the mode: a later connection on the same side skips the window',
+        () async {
+      final fx = escrFixture();
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: fx.sessionId,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(milliseconds: 300),
+      );
+
+      // Connection 1: mode unknown -> auto-detect via silence -> ESCR, which
+      // only challenges after the window elapses.
+      final written1 = <String>[];
+      late void Function(Uint8List) feed1;
+      final sock1 = makeMockSocket(
+        written: written1,
+        onData: (fn) => feed1 = fn,
+      );
+      final f1 = verifier.verifySocketAuth(sock1);
+      await Future.delayed(const Duration(milliseconds: 380)); // past the window
+      expect(
+        written1,
+        hasLength(1),
+        reason: 'first connection is challenged only after the window',
+      );
+      feed1(
+        Uint8List.fromList(
+          utf8.encode(
+            '${await fx.authenticator.responseToChallenge(written1.first)}\n',
+          ),
+        ),
+      );
+      expect((await f1).$1, true);
+
+      // Connection 2: SAME verifier, new socket. The mode is now memoised, so
+      // the challenge must appear well before the 300ms window would elapse.
+      final written2 = <String>[];
+      late void Function(Uint8List) feed2;
+      final sock2 = makeMockSocket(
+        written: written2,
+        onData: (fn) => feed2 = fn,
+      );
+      final f2 = verifier.verifySocketAuth(sock2);
+      await Future.delayed(const Duration(milliseconds: 30)); // << 300ms window
+      expect(
+        written2,
+        hasLength(1),
+        reason: 'later connection is challenged immediately (memoised ESCR)',
+      );
+      feed2(
+        Uint8List.fromList(
+          utf8.encode(
+            '${await fx.authenticator.responseToChallenge(written2.first)}\n',
+          ),
+        ),
+      );
+      expect((await f2).$1, true);
     });
   });
 }
