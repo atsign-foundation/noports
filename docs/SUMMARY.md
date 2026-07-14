@@ -47,6 +47,7 @@
     * [Client Installation](installation/advanced-installation-guides/client-installation-sshnp.md)
   * [Custom OS/Device Installs](installation/custom-os-device-installs/README.md)
     * [IPFire](installation/custom-os-device-installs/ipfire.md)
+    * [Nokia SR Linux](installation/custom-os-device-installs/nokia-sr-linux.md)
   * [Installs at Scale](installation/installs-at-scale.md)
   * [Upgrading NoPorts Software](installation/upgrading-noports-software/README.md)
     * [NoPorts Client Upgrade](installation/upgrading-noports-software/client-upgrade-sshnp.md)
