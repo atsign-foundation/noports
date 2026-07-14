@@ -72,30 +72,41 @@ abstract class SrvdChannel<T>
   /// different modes; older relays apply one session-wide mode to both sockets.
   bool get autoDetectsRelayAuth => relayResponse.autoDetectsRelayAuth;
 
-  /// The relay-auth mode a side will actually use. ESCR only when the client
-  /// prefers it ([preference]), the relay auto-detects ([autoDetect] — otherwise
-  /// it applies one mode to both sides, so ESCR would break a peer that can't do
-  /// it), and the peer supports it ([peerSupportsEscr]); otherwise legacy, which
-  /// every relay and daemon understands. This is the progressive-rollout gate:
-  /// ESCR is used only where the whole path is known to handle it.
+  /// The relay-auth mode a side will actually use. This is the
+  /// progressive-rollout gate: ESCR is used only where the whole path is known
+  /// to handle it, otherwise legacy — which every relay and daemon understands.
+  ///
+  /// - [only443]: the 443 single-port relay multiplexes both sides on one port
+  ///   and is ESCR-only on every relay version (it rejects a legacy payload), so
+  ///   the 443 path always uses ESCR regardless of the rest.
+  /// - [autoDetect]: a relay that does NOT auto-detect applies one session-wide
+  ///   mode to both sockets — we declared the universally-safe legacy mode in
+  ///   request_ports, so both sides use it (ESCR would break a peer that can't
+  ///   do it). A relay that DOES auto-detect lets each side use its own best.
+  /// - [preference]/[peerSupportsEscr]: with an auto-detecting relay, a side
+  ///   uses ESCR only when the client prefers it and the peer supports it.
   @visibleForTesting
   static RelayAuthMode effectiveRelayAuthMode({
     required RelayAuthMode preference,
     required bool autoDetect,
     required bool peerSupportsEscr,
-  }) =>
-      (preference == RelayAuthMode.escr && autoDetect && peerSupportsEscr)
-      ? RelayAuthMode.escr
-      : RelayAuthMode.payload;
+    required bool only443,
+  }) {
+    if (only443) return RelayAuthMode.escr;
+    if (!autoDetect) return RelayAuthMode.payload;
+    return (preference == RelayAuthMode.escr && peerSupportsEscr)
+        ? RelayAuthMode.escr
+        : RelayAuthMode.payload;
+  }
 
   /// The relay-auth mode the daemon (side B) should use for this session, told
-  /// to it in the session request. ESCR only when this client prefers it, the
-  /// relay auto-detects, and [daemonSupportsEscr]; otherwise legacy.
+  /// to it in the session request. See [effectiveRelayAuthMode].
   RelayAuthMode daemonRelayAuthMode({required bool daemonSupportsEscr}) =>
       effectiveRelayAuthMode(
         preference: params.relayAuthMode,
         autoDetect: autoDetectsRelayAuth,
         peerSupportsEscr: daemonSupportsEscr,
+        only443: params.only443,
       );
 
   // * Volatile fields set at runtime
@@ -170,6 +181,7 @@ abstract class SrvdChannel<T>
         preference: params.relayAuthMode,
         autoDetect: autoDetectsRelayAuth,
         peerSupportsEscr: true,
+        only443: params.only443,
       );
       switch (sideAMode) {
         case RelayAuthMode.payload:
@@ -244,11 +256,13 @@ abstract class SrvdChannel<T>
       preference: params.relayAuthMode,
       autoDetect: autoDetectsRelayAuth,
       peerSupportsEscr: true,
+      only443: params.only443,
     );
     final RelayAuthMode sideB = effectiveRelayAuthMode(
       preference: params.relayAuthMode,
       autoDetect: autoDetectsRelayAuth,
       peerSupportsEscr: daemonSupportsEscr,
+      only443: params.only443,
     );
 
     final AtKey authModesKey = AtKey()

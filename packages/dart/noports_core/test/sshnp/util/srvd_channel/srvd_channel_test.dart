@@ -611,10 +611,12 @@ void main() {
       required RelayAuthMode preference,
       required bool autoDetect,
       required bool peerSupportsEscr,
+      bool only443 = false,
     }) => SrvdChannel.effectiveRelayAuthMode(
       preference: preference,
       autoDetect: autoDetect,
       peerSupportsEscr: peerSupportsEscr,
+      only443: only443,
     );
 
     test('escr only when preference=escr AND relay auto-detects AND peer '
@@ -627,6 +629,26 @@ void main() {
         ),
         RelayAuthMode.escr,
       );
+    });
+
+    test('always escr on the 443-only path (ESCR-only on every relay), '
+        'regardless of auto-detect or preference', () {
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          for (final pref in [RelayAuthMode.escr, RelayAuthMode.payload]) {
+            expect(
+              call(
+                preference: pref,
+                autoDetect: ad,
+                peerSupportsEscr: ps,
+                only443: true,
+              ),
+              RelayAuthMode.escr,
+              reason: 'only443 must force escr (pref=$pref ad=$ad ps=$ps)',
+            );
+          }
+        }
+      }
     });
 
     test('legacy when the relay does NOT auto-detect (the regression fix)', () {
