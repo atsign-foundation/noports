@@ -27,10 +27,10 @@ Future<(String, String)> _captureProcessOutput(final Process process) async {
   final StringBuffer stderrBuf = StringBuffer();
   await Future.wait([
     process.stdout
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .forEach((chunk) => stdoutBuf.write(chunk)),
     process.stderr
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .forEach((chunk) => stderrBuf.write(chunk)),
   ]);
   return (stdoutBuf.toString(), stderrBuf.toString());
