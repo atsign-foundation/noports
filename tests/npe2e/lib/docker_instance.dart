@@ -193,7 +193,7 @@ class DockerInstance {
 
         // Listen to stdout and write to file
         process.stdout
-            .transform(SystemEncoding().decoder)
+            .transform(const Utf8Decoder(allowMalformed: true))
             .transform(const LineSplitter())
             .listen((line) {
               stdoutFile.writeAsStringSync('$line\n', mode: FileMode.append);
@@ -201,7 +201,7 @@ class DockerInstance {
 
         // Listen to stderr and write to file
         process.stderr
-            .transform(SystemEncoding().decoder)
+            .transform(const Utf8Decoder(allowMalformed: true))
             .transform(const LineSplitter())
             .listen((line) {
               stderrFile.writeAsStringSync('$line\n', mode: FileMode.append);
