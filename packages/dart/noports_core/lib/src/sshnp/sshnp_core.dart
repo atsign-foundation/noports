@@ -186,13 +186,10 @@ abstract class SshnpCore
     // The daemon ping has now resolved, so we know which relay-auth mode each
     // side will use. Tell the relay definitively (before the daemon session
     // request is sent, below) so it can skip the auto-detect window; if this
-    // loses the race to the daemon's socket, the relay just auto-detects.
-    final daemonFeatures = sshnpdChannel.pingResponse?['supportedFeatures'];
-    final bool daemonSupportsEscr =
-        daemonFeatures is Map &&
-        daemonFeatures[DaemonFeature.supportsRamEscr.name] == true;
+    // loses the race to the daemon's socket, the relay just auto-detects. No-op
+    // against a relay that doesn't auto-detect.
     await srvdChannel.sendDefinitiveAuthModes(
-      daemonSupportsEscr: daemonSupportsEscr,
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
     );
   }
 

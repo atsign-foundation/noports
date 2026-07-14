@@ -90,18 +90,14 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
 
   /// Builds a per-socket auto-detecting verifier for each authenticated side.
   ///
-  /// Side A is the requesting client, whose relay-auth mode it set in its own
-  /// request, so we pass that through as the verifier's `knownMode` — side A
-  /// therefore never pays the detection window and is never misread.
-  ///
-  /// Side B is the daemon, whose mode the client does not know at request time
-  /// (that needs the daemon ping), so side B is left to auto-detect. Once the
-  /// client has learnt the daemon's mode it may send a definitive auth-modes
-  /// notification, which the worker feeds to the verifier via [setKnownMode].
-  ///
-  /// `params.relayAuthMode` is thus authoritative for side A only; the daemon
-  /// (side B) picks its own mode independently and the relay detects it. The
-  /// field is also still honoured by pre-6.5.0 relays which switch on it.
+  /// Both sides are left to auto-detect: the client declares the universally-
+  /// safe legacy mode in `request_ports` (so a relay that does NOT auto-detect
+  /// applies one mode both sides can do), and it decides its *actual* per-side
+  /// mode only after learning this relay auto-detects — so `params.relayAuthMode`
+  /// no longer reflects either side's real mode and must not be used as a
+  /// `knownMode` here. Once the client has resolved the modes it sends a
+  /// definitive auth-modes notification, which the worker feeds to each verifier
+  /// via [setKnownMode] to skip the detection window.
   ///
   /// A legacy socket needs the connecting atSign's public key. It is passed
   /// through here if the request handler already fetched it (`publicKeyA/B`,
@@ -130,7 +126,6 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         rvdNonce: params.rvdNonce,
         publicKey: params.publicKeyA,
         detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
-        knownMode: params.relayAuthMode,
       );
     }
 

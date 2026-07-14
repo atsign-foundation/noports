@@ -245,12 +245,9 @@ class _NptImpl extends NptBase
     // side will use. Tell the relay definitively (before the daemon session
     // request, sent from _preRun) so it can skip the auto-detect window; if
     // this loses the race to the daemon's socket, the relay just auto-detects.
-    final daemonFeatures = sshnpdChannel.pingResponse?['supportedFeatures'];
-    final bool daemonSupportsEscr =
-        daemonFeatures is Map &&
-        daemonFeatures[DaemonFeature.supportsRamEscr.name] == true;
+    // No-op against a relay that doesn't auto-detect.
     await _srvdChannel.sendDefinitiveAuthModes(
-      daemonSupportsEscr: daemonSupportsEscr,
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
     );
 
     completeInitialization();
@@ -273,7 +270,9 @@ class _NptImpl extends NptBase
       rvdHost: _srvdChannel.rvdHost,
       rvdPort: _srvdChannel.daemonPort,
       authenticateToRvd: params.authenticateDeviceToRvd,
-      relayAuthMode: params.relayAuthMode,
+      relayAuthMode: _srvdChannel.daemonRelayAuthMode(
+        daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+      ),
       relayAuthAesKey: _srvdChannel.relayAuthAesKey,
       clientNonce: _srvdChannel.clientNonce,
       rvdNonce: _srvdChannel.rvdNonce,

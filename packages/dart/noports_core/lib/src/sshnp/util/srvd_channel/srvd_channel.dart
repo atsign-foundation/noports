@@ -67,6 +67,37 @@ abstract class SrvdChannel<T>
 
   bool get supportsEventLogging => relayResponse.supportsEventLogging;
 
+  /// Whether the relay we were assigned auto-detects each socket's relay-auth
+  /// mode per side. Only such a relay can reconcile a client and daemon using
+  /// different modes; older relays apply one session-wide mode to both sockets.
+  bool get autoDetectsRelayAuth => relayResponse.autoDetectsRelayAuth;
+
+  /// The relay-auth mode a side will actually use. ESCR only when the client
+  /// prefers it ([preference]), the relay auto-detects ([autoDetect] — otherwise
+  /// it applies one mode to both sides, so ESCR would break a peer that can't do
+  /// it), and the peer supports it ([peerSupportsEscr]); otherwise legacy, which
+  /// every relay and daemon understands. This is the progressive-rollout gate:
+  /// ESCR is used only where the whole path is known to handle it.
+  @visibleForTesting
+  static RelayAuthMode effectiveRelayAuthMode({
+    required RelayAuthMode preference,
+    required bool autoDetect,
+    required bool peerSupportsEscr,
+  }) =>
+      (preference == RelayAuthMode.escr && autoDetect && peerSupportsEscr)
+      ? RelayAuthMode.escr
+      : RelayAuthMode.payload;
+
+  /// The relay-auth mode the daemon (side B) should use for this session, told
+  /// to it in the session request. ESCR only when this client prefers it, the
+  /// relay auto-detects, and [daemonSupportsEscr]; otherwise legacy.
+  RelayAuthMode daemonRelayAuthMode({required bool daemonSupportsEscr}) =>
+      effectiveRelayAuthMode(
+        preference: params.relayAuthMode,
+        autoDetect: autoDetectsRelayAuth,
+        peerSupportsEscr: daemonSupportsEscr,
+      );
+
   // * Volatile fields set at runtime
 
   String? aesKeyC2D;
@@ -134,7 +165,13 @@ abstract class SrvdChannel<T>
 
     RelayAuthenticator? relayAuthenticator;
     if (params.authenticateClientToRvd) {
-      switch (params.relayAuthMode) {
+      // Side A is us; our own ESCR support is a given, so peerSupportsEscr: true.
+      final RelayAuthMode sideAMode = SrvdChannel.effectiveRelayAuthMode(
+        preference: params.relayAuthMode,
+        autoDetect: autoDetectsRelayAuth,
+        peerSupportsEscr: true,
+      );
+      switch (sideAMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
             signAndWrapAndJsonEncode(atClient, {
@@ -183,41 +220,35 @@ abstract class SrvdChannel<T>
     return srv.run();
   }
 
-  /// Tell the relay definitively which relay-auth mode each side of this
-  /// session will use, so it can skip the per-socket auto-detect window.
+  /// Tell the relay definitively which relay-auth mode each side of this session
+  /// will use, so it can skip the per-socket auto-detect window.
   ///
-  /// Side A is this client, whose mode is [params.relayAuthMode]. Side B is the
-  /// daemon: it uses ESCR only if this client is offering ESCR *and* the daemon
-  /// supports it ([daemonSupportsEscr], learnt from the daemon ping); otherwise
-  /// legacy. Best-effort and fire-and-forget: it is sent before the daemon
-  /// session request so it usually reaches the relay before the daemon's socket
-  /// does, but if it loses that race the relay simply auto-detects. A failure to
-  /// send is logged and swallowed — it only forfeits the optimisation.
+  /// Only meaningful — and only sent — when the relay auto-detects; an older
+  /// relay applies one session-wide mode and does not handle this notification.
+  /// Side A is this client; side B is the daemon, which uses ESCR only if it
+  /// supports it ([daemonSupportsEscr], learnt from the daemon ping).
+  /// Best-effort and fire-and-forget: sent before the daemon session request so
+  /// it usually reaches the relay before the daemon's socket does; if it loses
+  /// that race the relay simply auto-detects. A send failure is logged and
+  /// swallowed — it only forfeits the optimisation.
   ///
-  /// Several relay instances can share the relay atSign; we selected exactly one
-  /// (whose response we accepted) and only it is handling this session. We
-  /// include that relay's [rvdNonce] — unique to its response — so the other
-  /// instances, which also receive this notification, ignore it.
-  /// The mode the daemon (side B) will use to authenticate to the relay: ESCR
-  /// only if this client is offering ESCR (i.e. it is sending a session AES key,
-  /// which is what makes the daemon choose ESCR) *and* the daemon supports ESCR;
-  /// otherwise legacy. Isolated as a named, testable helper because getting it
-  /// wrong is dangerous: an "escr" hint for a side that actually speaks legacy
-  /// would have the relay challenge a socket that never reads it, corrupting the
-  /// stream.
-  @visibleForTesting
-  static RelayAuthMode sideBAuthMode(
-    RelayAuthMode clientMode,
-    bool daemonSupportsEscr,
-  ) => (clientMode == RelayAuthMode.escr && daemonSupportsEscr)
-      ? RelayAuthMode.escr
-      : RelayAuthMode.payload;
-
+  /// Several relay instances can share the relay atSign; we selected one (whose
+  /// response we accepted) and include its unique [rvdNonce] so the others,
+  /// which also receive this notification, ignore it.
   Future<void> sendDefinitiveAuthModes({required bool daemonSupportsEscr}) async {
-    final RelayAuthMode sideA = params.relayAuthMode;
-    final RelayAuthMode sideB = sideBAuthMode(
-      params.relayAuthMode,
-      daemonSupportsEscr,
+    // Nothing to declare to a relay that doesn't auto-detect (it wouldn't act on
+    // this notification, and both sides are legacy there anyway).
+    if (!autoDetectsRelayAuth) return;
+
+    final RelayAuthMode sideA = effectiveRelayAuthMode(
+      preference: params.relayAuthMode,
+      autoDetect: autoDetectsRelayAuth,
+      peerSupportsEscr: true,
+    );
+    final RelayAuthMode sideB = effectiveRelayAuthMode(
+      preference: params.relayAuthMode,
+      autoDetect: autoDetectsRelayAuth,
+      peerSupportsEscr: daemonSupportsEscr,
     );
 
     final AtKey authModesKey = AtKey()
@@ -337,7 +368,15 @@ abstract class SrvdChannel<T>
       authenticateSocketA: params.authenticateClientToRvd,
       authenticateSocketB: params.authenticateDeviceToRvd,
       clientNonce: clientNonce,
-      relayAuthMode: params.relayAuthMode,
+      // Declare the universally-safe legacy mode: a relay that does NOT
+      // auto-detect applies this one mode to both sockets, and legacy works with
+      // every daemon. A relay that DOES auto-detect ignores this and detects
+      // each side. The only exception is the 443 single-port relay, which
+      // multiplexes both sides on one port and requires ESCR (it rejects
+      // payload), so we keep declaring ESCR there.
+      relayAuthMode: params.only443
+          ? RelayAuthMode.escr
+          : RelayAuthMode.payload,
       relayAuthAesKey: relayAuthAesKey,
       only443: params.only443,
       multipleAcksOk: true,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
@@ -312,6 +313,92 @@ void main() {
         expect(srvdDartBindPortChannel.rvdNonce, 'rvd_dummy_nonce');
         expect(srvdDartBindPortChannel.fetched, true);
         expect(srvdDartBindPortChannel.srvdAck, SrvdAck.acknowledged);
+        // Legacy CSV response (older relay) does not advertise auto-detection.
+        expect(srvdDartBindPortChannel.autoDetectsRelayAuth, false);
+      },
+    );
+
+    test(
+      'getHostAndPortFromSrvd reads autoDetectsRelayAuth from a JSON relay response',
+      () async {
+        registerFallbackValue(FakeNotificationParams());
+        String sessionId = 'dummy-session-id';
+        MockAtClient mockAtClient = MockAtClient();
+        MockNotificationService mockNotificationService =
+            MockNotificationService();
+
+        when(
+          () => mockAtClient.notificationService,
+        ).thenReturn(mockNotificationService);
+
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer(
+          (_) async => Future.value(
+            NotificationResult()
+              ..notificationStatusEnum = NotificationStatusEnum.delivered,
+          ),
+        );
+
+        final streamController = StreamController<AtNotification>();
+        streamController.add(
+          AtNotification(
+            '123',
+            '$sessionId.${Srvd.namespace}',
+            '@alice',
+            '@bob',
+            123,
+            'key',
+            true,
+          )..value = jsonEncode({
+            'address': '127.0.0.1',
+            'portA': 98878,
+            'portB': 98879,
+            'rvdNonce': 'rvd_dummy_nonce',
+            'supportsEventLogging': true,
+            'autoDetectsRelayAuth': true,
+          }),
+        );
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((_) => streamController.stream);
+
+        SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30),
+        );
+        SrvdDartBindPortChannel srvdDartBindPortChannel =
+            SrvdDartBindPortChannel(
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
+        await srvdDartBindPortChannel.getHostAndPortFromSrvd();
+        expect(srvdDartBindPortChannel.rvdHost, '127.0.0.1');
+        expect(srvdDartBindPortChannel.clientPort, 98878);
+        expect(srvdDartBindPortChannel.daemonPort, 98879);
+        expect(srvdDartBindPortChannel.rvdNonce, 'rvd_dummy_nonce');
+        expect(srvdDartBindPortChannel.autoDetectsRelayAuth, true);
       },
     );
 
@@ -519,34 +606,66 @@ void main() {
     );
   });
 
-  group('SrvdChannel.sideBAuthMode', () {
-    test('escr only when the client is escr AND the daemon supports it', () {
-      // The one true case.
+  group('SrvdChannel.effectiveRelayAuthMode', () {
+    RelayAuthMode call({
+      required RelayAuthMode preference,
+      required bool autoDetect,
+      required bool peerSupportsEscr,
+    }) => SrvdChannel.effectiveRelayAuthMode(
+      preference: preference,
+      autoDetect: autoDetect,
+      peerSupportsEscr: peerSupportsEscr,
+    );
+
+    test('escr only when preference=escr AND relay auto-detects AND peer '
+        'supports it', () {
       expect(
-        SrvdChannel.sideBAuthMode(RelayAuthMode.escr, true),
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: true,
+          peerSupportsEscr: true,
+        ),
         RelayAuthMode.escr,
       );
     });
 
-    test('legacy when the client is escr but the daemon does not support it',
-        () {
-      // Prevents an "escr" hint for a daemon that would actually speak legacy —
-      // which would corrupt its stream when the relay challenged it.
+    test('legacy when the relay does NOT auto-detect (the regression fix)', () {
+      // A relay that applies one session-wide mode to both sides would break a
+      // peer that cannot do ESCR, so we must fall back to legacy there.
       expect(
-        SrvdChannel.sideBAuthMode(RelayAuthMode.escr, false),
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: false,
+          peerSupportsEscr: true,
+        ),
         RelayAuthMode.payload,
       );
     });
 
-    test('legacy when the client is not using escr, regardless of daemon', () {
+    test('legacy when the peer does not support escr', () {
       expect(
-        SrvdChannel.sideBAuthMode(RelayAuthMode.payload, true),
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: true,
+          peerSupportsEscr: false,
+        ),
         RelayAuthMode.payload,
       );
-      expect(
-        SrvdChannel.sideBAuthMode(RelayAuthMode.payload, false),
-        RelayAuthMode.payload,
-      );
+    });
+
+    test('legacy when the client did not prefer escr, regardless', () {
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          expect(
+            call(
+              preference: RelayAuthMode.payload,
+              autoDetect: ad,
+              peerSupportsEscr: ps,
+            ),
+            RelayAuthMode.payload,
+          );
+        }
+      }
     });
   });
 }

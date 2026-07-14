@@ -3,17 +3,19 @@
 - feat: npp policy next iteration
 - feat: the relay (srvd) now auto-detects each connecting side's relay-auth
   mode (ESCR vs legacy) per socket, instead of being told a single mode for
-  the whole session. Clients and daemons each use their strongest relay auth
-  independently, so a client no longer has to learn the daemon's capabilities
-  (via the daemon ping) before contacting the relay. Clients now default to
-  ESCR. Adds the `srvd --relay-auth-detect-window-ms` option (default 500).
-  The relay skips the detection window when a side's mode is known ahead of
-  time: side A (the client) from its own request, and side B (the daemon) from
-  an optional definitive auth-modes notification the client sends once it has
-  the ping response. A side's mode is also memoised after its first connection
-  authenticates, so only the first connection of a session ever detects — every
-  later connection pair skips straight to the known mode. Auto-detect remains
-  the fallback.
+  the whole session. Against such a relay the client and daemon each use their
+  strongest relay auth independently. Adds the `srvd
+  --relay-auth-detect-window-ms` option (default 500). The relay skips the
+  detection window when a side's mode is declared up front via a definitive
+  auth-modes notification the client sends once it has the daemon ping response;
+  a side's mode is also memoised after its first connection authenticates, so
+  only the first connection of a session ever detects and every later connection
+  pair skips straight to the known mode. Auto-detect remains the fallback.
+  Rollout is progressive and safe: the relay advertises auto-detection in its
+  response (`autoDetectsRelayAuth`), and a client uses ESCR only against a relay
+  that advertises it — against an older relay (which applies one session-wide
+  mode to both sockets) both sides stay on legacy, so interoperability with
+  daemons that predate ESCR is preserved.
 - fix: the two-port relay path issued one ESCR challenge per session and reused
   it for every connection, so a captured challenge-response could be replayed
   onto later connections of the same session. It now issues a fresh challenge

@@ -163,6 +163,9 @@ mixin SrvdUtilMixin {
           portB: portB,
           rvdNonce: sessionParams.rvdNonce,
           supportsEventLogging: true,
+          // This srvd auto-detects each socket's relay-auth mode per side, so
+          // clients may safely use their strongest mode independently.
+          autoDetectsRelayAuth: true,
         ),
       );
     } else {
