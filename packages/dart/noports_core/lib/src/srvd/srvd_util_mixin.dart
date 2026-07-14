@@ -43,6 +43,8 @@ mixin SrvdUtilMixin {
       switch (messageType) {
         case 'request_ports':
           return topic.split('.').length == 1;
+        case 'auth_modes':
+          return topic.split('.').length == 1;
         case 'sessions':
           final parts = topic.split('.');
           if (parts.length != 2) {

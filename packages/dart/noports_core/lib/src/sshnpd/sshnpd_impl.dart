@@ -897,26 +897,28 @@ class SshnpdImpl
     RelayAuthenticator? relayAuthenticator;
 
     if (req.authenticateToRvd) {
-      switch (req.relayAuthMode) {
-        case RelayAuthMode.payload:
-          relayAuthenticator = RelayAuthenticatorLegacy(
-            signAndWrapAndJsonEncode(atClient, {
-              'sessionId': req.sessionId,
-              'clientNonce': req.clientNonce,
-              'rvdNonce': req.rvdNonce,
-            }),
-          );
-          break;
-        case RelayAuthMode.escr:
-          relayAuthenticator = RelayAuthenticatorESCR(
-            sessionId: req.sessionId,
-            relayAuthAesKey: req.relayAuthAesKey!,
-            publicSigningKeyUri: publicSigningKeyUri,
-            publicSigningKey: publicSigningKey,
-            privateSigningKey: privateSigningKey,
-            isSideA: false,
-          );
-          break;
+      // Choose our own best relay-auth mode, independent of whatever mode the
+      // client committed to for itself. A session AES key in the request means
+      // the client set us up for ESCR (the strongest mode) — use it; otherwise
+      // fall back to legacy. The auto-detecting relay accepts whichever we use,
+      // so the two ends need not agree on a mode.
+      if (req.relayAuthAesKey != null) {
+        relayAuthenticator = RelayAuthenticatorESCR(
+          sessionId: req.sessionId,
+          relayAuthAesKey: req.relayAuthAesKey!,
+          publicSigningKeyUri: publicSigningKeyUri,
+          publicSigningKey: publicSigningKey,
+          privateSigningKey: privateSigningKey,
+          isSideA: false,
+        );
+      } else {
+        relayAuthenticator = RelayAuthenticatorLegacy(
+          signAndWrapAndJsonEncode(atClient, {
+            'sessionId': req.sessionId,
+            'clientNonce': req.clientNonce,
+            'rvdNonce': req.rvdNonce,
+          }),
+        );
       }
     }
 
@@ -1255,26 +1257,28 @@ class SshnpdImpl
 
     RelayAuthenticator? relayAuthenticator;
     if (authenticateToRvd) {
-      switch (req.relayAuthMode) {
-        case RelayAuthMode.payload:
-          relayAuthenticator = RelayAuthenticatorLegacy(
-            signAndWrapAndJsonEncode(atClient, {
-              'sessionId': req.sessionId,
-              'clientNonce': req.clientNonce,
-              'rvdNonce': req.rvdNonce,
-            }),
-          );
-          break;
-        case RelayAuthMode.escr:
-          relayAuthenticator = RelayAuthenticatorESCR(
-            sessionId: req.sessionId,
-            relayAuthAesKey: req.relayAuthAesKey!,
-            publicSigningKeyUri: publicSigningKeyUri,
-            publicSigningKey: publicSigningKey,
-            privateSigningKey: privateSigningKey,
-            isSideA: false,
-          );
-          break;
+      // Choose our own best relay-auth mode, independent of whatever mode the
+      // client committed to for itself. A session AES key in the request means
+      // the client set us up for ESCR (the strongest mode) — use it; otherwise
+      // fall back to legacy. The auto-detecting relay accepts whichever we use,
+      // so the two ends need not agree on a mode.
+      if (req.relayAuthAesKey != null) {
+        relayAuthenticator = RelayAuthenticatorESCR(
+          sessionId: req.sessionId,
+          relayAuthAesKey: req.relayAuthAesKey!,
+          publicSigningKeyUri: publicSigningKeyUri,
+          publicSigningKey: publicSigningKey,
+          privateSigningKey: privateSigningKey,
+          isSideA: false,
+        );
+      } else {
+        relayAuthenticator = RelayAuthenticatorLegacy(
+          signAndWrapAndJsonEncode(atClient, {
+            'sessionId': req.sessionId,
+            'clientNonce': req.clientNonce,
+            'rvdNonce': req.rvdNonce,
+          }),
+        );
       }
     }
 

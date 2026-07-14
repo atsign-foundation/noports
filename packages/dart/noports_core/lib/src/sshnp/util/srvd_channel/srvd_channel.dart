@@ -183,6 +183,72 @@ abstract class SrvdChannel<T>
     return srv.run();
   }
 
+  /// Tell the relay definitively which relay-auth mode each side of this
+  /// session will use, so it can skip the per-socket auto-detect window.
+  ///
+  /// Side A is this client, whose mode is [params.relayAuthMode]. Side B is the
+  /// daemon: it uses ESCR only if this client is offering ESCR *and* the daemon
+  /// supports it ([daemonSupportsEscr], learnt from the daemon ping); otherwise
+  /// legacy. Best-effort and fire-and-forget: it is sent before the daemon
+  /// session request so it usually reaches the relay before the daemon's socket
+  /// does, but if it loses that race the relay simply auto-detects. A failure to
+  /// send is logged and swallowed — it only forfeits the optimisation.
+  ///
+  /// Several relay instances can share the relay atSign; we selected exactly one
+  /// (whose response we accepted) and only it is handling this session. We
+  /// include that relay's [rvdNonce] — unique to its response — so the other
+  /// instances, which also receive this notification, ignore it.
+  /// The mode the daemon (side B) will use to authenticate to the relay: ESCR
+  /// only if this client is offering ESCR (i.e. it is sending a session AES key,
+  /// which is what makes the daemon choose ESCR) *and* the daemon supports ESCR;
+  /// otherwise legacy. Isolated as a named, testable helper because getting it
+  /// wrong is dangerous: an "escr" hint for a side that actually speaks legacy
+  /// would have the relay challenge a socket that never reads it, corrupting the
+  /// stream.
+  @visibleForTesting
+  static RelayAuthMode sideBAuthMode(
+    RelayAuthMode clientMode,
+    bool daemonSupportsEscr,
+  ) => (clientMode == RelayAuthMode.escr && daemonSupportsEscr)
+      ? RelayAuthMode.escr
+      : RelayAuthMode.payload;
+
+  Future<void> sendDefinitiveAuthModes({required bool daemonSupportsEscr}) async {
+    final RelayAuthMode sideA = params.relayAuthMode;
+    final RelayAuthMode sideB = sideBAuthMode(
+      params.relayAuthMode,
+      daemonSupportsEscr,
+    );
+
+    final AtKey authModesKey = AtKey()
+      ..key = '${params.device}.auth_modes.${Srvd.namespace}'
+      ..sharedBy = params.clientAtSign
+      ..sharedWith = params.srvdAtSign
+      ..metadata = (Metadata()
+        ..namespaceAware = false
+        ..ttl = 10000);
+
+    final String value = jsonEncode({
+      'sessionId': sessionId,
+      'rvdNonce': rvdNonce,
+      'sideA': sideA.name,
+      'sideB': sideB.name,
+    });
+
+    logger.info('Sending definitive auth modes to srvd: $value');
+    try {
+      await notify(
+        authModesKey,
+        value,
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+        ttln: Duration(minutes: 1),
+      );
+    } catch (e) {
+      logger.warning('Failed to send definitive auth modes to srvd: $e');
+    }
+  }
+
   @protected
   @visibleForTesting
   Future<void> getHostAndPortFromSrvd({

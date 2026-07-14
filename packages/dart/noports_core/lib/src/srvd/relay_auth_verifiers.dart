@@ -515,6 +515,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     logger = AtSignLogger(' $runtimeType ($tag) ');
   }
 
+  /// Verify a legacy signature envelope [message] (a JSON string).
+  ///
   /// We expect the authenticating client to send a JSON message with
   /// this structure:
   /// ```json
@@ -527,7 +529,62 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   /// ```
   /// The signature is verified against [dataToVerify] and, although not
   /// strictly necessary, the rvdNonce is also checked in what the client
-  /// send in the payload
+  /// sent in the payload. Throws a [RAVE] on any failure; returns normally
+  /// on success.
+  ///
+  /// Extracted from [verifySocketAuth] so that [RelayAuthVerifierAuto] can
+  /// reuse the exact same legacy verification once it has detected, at the
+  /// socket level, that a connecting side is using legacy auth.
+  ///
+  /// Synchronous: nothing here needs to await, and keeping it sync lets the
+  /// legacy [verifySocketAuth] `onData` callback stay synchronous (so a second
+  /// data chunk cannot re-enter it mid-verification).
+  void verifyEnvelope(String message) {
+    logger.finer('$tag received data: $message');
+    final envelope = jsonDecode(message);
+    logger.finer('$tag decoded JSON message OK');
+
+    final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
+    final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
+
+    final payload = envelope['payload'];
+    if (payload == null || payload is! Map) {
+      throw RAVE(
+        'Received an auth signature which does not include the payload',
+        RAVEReason.malformedChallengeResponse,
+      );
+    }
+    if (payload['rvdNonce'] != rvdNonce) {
+      throw RAVE(
+        'Received rvdNonce which does not match what is expected',
+        RAVEReason.dataMismatch,
+      );
+    }
+
+    final AtSigningVerificationInput input =
+        AtSigningVerificationInput(
+            dataToVerify,
+            base64Decode(envelope['signature']),
+            publicKey,
+          )
+          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
+          ..signingMode = AtSigningMode.data
+          ..signingAlgoType = signingAlgo
+          ..hashingAlgoType = hashingAlgo;
+
+    final AtSigningResult atSigningResult = AtChopsImpl(
+      AtChopsKeys(),
+    ).verify(input);
+    if (atSigningResult.result != true) {
+      logger.shout('$tag : verification FAILURE : ${atSigningResult.result}');
+      throw RAVE(
+        'Signature verification failed. Signatures did not match.',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    logger.info('$tag : verification SUCCESS : ${atSigningResult.result}');
+  }
+
   @override
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
@@ -557,13 +614,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             }
             buffer.addAll(data);
             if (buffer.contains(10)) {
-              logger.finer('original buffer length ${buffer.length}');
-
               List<int> authBuffer = buffer.sublist(0, buffer.indexOf(10));
-              logger.finer('authBuffer length ${authBuffer.length}');
-
               buffer.removeRange(0, buffer.indexOf(10) + 1);
-              logger.finer('remaining buffer length ${buffer.length}');
 
               final String message;
               try {
@@ -575,71 +627,9 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                   RAVEReason.malformedChallengeResponse,
                 );
               }
-              logger.finer('$tag received data: $message');
-              var envelope = jsonDecode(message);
-              logger.finer('$tag decoded JSON message OK');
 
-              final hashingAlgo = HashingAlgoType.values.byName(
-                envelope['hashingAlgo'],
-              );
-              final signingAlgo = SigningAlgoType.values.byName(
-                envelope['signingAlgo'],
-              );
+              verifyEnvelope(message);
 
-              var payload = envelope['payload'];
-              if (payload == null || payload is! Map) {
-                if (!completer.isCompleted) {
-                  completer.completeError(
-                    'Received an auth signature'
-                    ' which does not include the payload',
-                  );
-                }
-                return;
-              }
-              if (payload['rvdNonce'] != rvdNonce) {
-                if (!completer.isCompleted) {
-                  completer.completeError(
-                    'Received rvdNonce which does not match what is expected',
-                  );
-                }
-                return;
-              }
-
-              AtSigningVerificationInput input =
-                  AtSigningVerificationInput(
-                      dataToVerify,
-                      base64Decode(envelope['signature']),
-                      publicKey,
-                    )
-                    ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-                    ..signingMode = AtSigningMode.data
-                    ..signingAlgoType = signingAlgo
-                    ..hashingAlgoType = hashingAlgo;
-
-              AtChopsKeys atChopsKeys = AtChopsKeys();
-              AtChops atChops = AtChopsImpl(atChopsKeys);
-              AtSigningResult atSigningResult = atChops.verify(input);
-              bool result = atSigningResult.result;
-
-              if (result == false) {
-                logger.shout(
-                  '$tag :'
-                  ' verification FAILURE :'
-                  ' ${atSigningResult.result}',
-                );
-                if (!completer.isCompleted) {
-                  completer.completeError(
-                    'Signature verification failed. Signatures did not match.',
-                  );
-                }
-                return;
-              }
-
-              logger.info(
-                '$tag :'
-                ' verification SUCCESS :'
-                ' ${atSigningResult.result}',
-              );
               authenticated = true;
               if (!completer.isCompleted) {
                 completer.complete((true, sc.stream));
@@ -687,6 +677,356 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
         }
       },
     );
+    return completer.future;
+  }
+}
+
+/// Default detection window for [RelayAuthVerifierAuto] (see that class).
+const int defaultRelayAuthDetectWindowMs = 500;
+
+/// A [RelayAuthVerifier] which auto-detects, per socket, whether the connecting
+/// side is using ESCR ([RelayAuthVerifierESCR]) or legacy ([RelayAuthVerifierLegacy])
+/// auth, without being told in advance. This lets the client and daemon each
+/// use the strongest auth they support, independently, and frees the client from
+/// having to learn the daemon's capabilities (via the daemon ping) before it can
+/// commit to a session-wide auth mode.
+///
+/// Detection relies on the opposite "who speaks first" semantics of the two
+/// schemes, both of which are left byte-for-byte unchanged on the wire:
+/// - A **legacy** connecting side writes its JSON signature envelope (starting
+///   with `{`) immediately on connect and never reads first.
+/// - An **ESCR** connecting side stays silent until the relay sends it a
+///   challenge, then replies `${sessionId}:${payload}`.
+///
+/// So this verifier:
+/// 1. Begins listening and starts a one-shot [detectWindow] timer.
+/// 2. If inbound data arrives first, it must be legacy — the first byte is `{` —
+///    so we run legacy verification (looking up the connecting atSign's public
+///    key lazily, only on this branch, unless one was pre-supplied).
+/// 3. If the window elapses with no data, we assume ESCR: send the challenge and
+///    run ESCR verification.
+///
+/// Trade-off: because the ESCR wire is unchanged (the peer waits to be
+/// challenged), every ESCR socket waits out [detectWindow] before the challenge
+/// is sent. [detectWindow] must exceed a legacy peer's first-packet arrival
+/// (≈ one RTT after connect); if it is too short, a slow legacy peer is misread
+/// as ESCR and, having been sent a challenge it does not read, its onward stream
+/// is corrupted. Raise it for high-latency legacy peers; lower it to speed ESCR.
+///
+/// The window is only the *fallback*. When the mode for a side is known ahead
+/// of the socket connecting — via the [knownMode] constructor argument (side A,
+/// whose mode the requesting client set in its own request) or via
+/// [setKnownMode] (side B, once the client has learnt the daemon's mode and
+/// sent the relay a definitive auth-modes notification) — detection is skipped:
+/// a known ESCR side is challenged immediately, and a known legacy side simply
+/// waits for its envelope with the timer cancelled (so it is never misread).
+/// A known mode is applied only while the socket is still being detected, never
+/// after it has committed by sending bytes, so a stale/incorrect ESCR hint can
+/// never challenge a socket that has already spoken legacy.
+class RelayAuthVerifierAuto implements RelayAuthVerifier {
+  @override
+  final String tag;
+
+  final RelayAuthVerifyHelper helper;
+
+  /// The atSign expected on this side of the tunnel. On the two-port relay path
+  /// the side (A/B) is known from which port the socket arrived on, so we know
+  /// the atSign up front; it is used for the legacy public-key lookup.
+  final String expectedAtSign;
+
+  final String _sessionId;
+
+  /// Legacy branch: the data whose signature is verified — the JSON encoding of
+  /// `{sessionId, clientNonce, rvdNonce}`.
+  final String dataToVerify;
+
+  /// Legacy branch: the rvdNonce which must appear in the signed payload.
+  final String rvdNonce;
+
+  /// Legacy branch: a pre-supplied public key for [expectedAtSign]. If null it
+  /// is looked up lazily (and only if the socket turns out to be legacy).
+  final String? publicKey;
+
+  /// How long to wait for the connecting side to speak (legacy) before assuming
+  /// ESCR and sending a challenge.
+  final Duration detectWindow;
+
+  late final AtSignLogger logger;
+
+  /// The composed ESCR verifier, used if the socket turns out to be ESCR. It
+  /// owns the challenge and the ESCR verification logic, and is the source of
+  /// [atSign] / [sessionId] / [isSideA] once ESCR has been verified.
+  late final RelayAuthVerifierESCR _escr;
+
+  /// The mode this side will use, if known ahead of detection. Set from the
+  /// constructor (side A) or [setKnownMode] (side B). Null means "detect".
+  RelayAuthMode? _knownMode;
+
+  /// Set by [verifySocketAuth] while it is running so [setKnownMode] can apply a
+  /// mode to the in-flight detection. Null before the socket has connected.
+  Future<void> Function(RelayAuthMode)? _resolveKnownMode;
+
+  RelayAuthVerifierAuto(
+    this.tag,
+    this.helper, {
+    required String atSign,
+    required String sessionId,
+    required this.dataToVerify,
+    required this.rvdNonce,
+    required this.detectWindow,
+    this.publicKey,
+    RelayAuthMode? knownMode,
+  }) : expectedAtSign = atSign,
+       _sessionId = sessionId {
+    logger = AtSignLogger(' $runtimeType ($tag) ');
+    _escr = RelayAuthVerifierESCR(tag, helper);
+    _knownMode = knownMode;
+  }
+
+  /// Tell this verifier which mode the connecting side will use, so it can skip
+  /// the [detectWindow] heuristic. Safe to call at any time and more than once:
+  /// the mode is applied only while the socket is still being detected (never
+  /// after it has committed by sending bytes), so an ESCR hint can never
+  /// challenge a socket that has already spoken legacy.
+  void setKnownMode(RelayAuthMode mode) {
+    _knownMode = mode;
+    final resolve = _resolveKnownMode;
+    if (resolve != null) {
+      unawaited(resolve(mode));
+    }
+  }
+
+  @override
+  Atsign? get atSign => _escr.atSign ?? expectedAtSign.toAtsign();
+
+  @override
+  String? get sessionId => _escr.sessionId ?? _sessionId;
+
+  /// `true` for side A (client), `false` for side B (daemon). Only populated
+  /// when the socket was verified via ESCR.
+  bool? get isSideA => _escr.isSideA;
+
+  @override
+  Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
+    final completer = Completer<(bool, Stream<Uint8List>?)>();
+    final sc = StreamController<Uint8List>();
+    final buffer = <int>[];
+    bool authenticated = false;
+
+    // 'detecting' -> 'legacy' | 'escr'. Guarded by [mutex] so the detection
+    // timer and inbound-data events cannot race to pick different modes.
+    String mode = 'detecting';
+    final mutex = Mutex();
+    Timer? detectTimer;
+
+    logger.info(
+      'starting auto-detect listen'
+      ' (window ${detectWindow.inMilliseconds}ms)',
+    );
+
+    Future<void> failAuth(Object e) async {
+      logger.shout('auto verification FAILED with exception : $e');
+      if (!completer.isCompleted) {
+        try {
+          socket.writeln('Socket auth failed');
+          await socket.flush();
+          socket.destroy();
+        } catch (_) {
+        } finally {
+          completer.completeError('Error during socket authentication: $e');
+        }
+      }
+    }
+
+    void completeSuccess() {
+      authenticated = true;
+      if (!completer.isCompleted) {
+        completer.complete((true, sc.stream));
+      } else if (!sc.isClosed) {
+        sc.addError('Verify succeeded but completer already completed!!!');
+      }
+      if (buffer.isNotEmpty) {
+        if (!sc.isClosed) {
+          try {
+            sc.add(Uint8List.fromList(buffer));
+          } catch (err) {
+            logger.shout('finishing verify: sc.add failed with $err');
+          }
+        }
+        buffer.clear();
+      }
+    }
+
+    Future<void> handleLegacyLine(String message) async {
+      final String pk =
+          publicKey ??
+          await helper.lookup(_sessionId, 'public:publickey$expectedAtSign');
+      final legacy = RelayAuthVerifierLegacy(
+        pk,
+        dataToVerify,
+        rvdNonce,
+        tag,
+        expectedAtSign.toAtsign(),
+        _sessionId,
+      );
+      // Throws on failure. Note: legacy sends nothing back to the connecting
+      // side, so (unlike ESCR) we must not write to the socket here.
+      legacy.verifyEnvelope(message);
+      logger.info('Auto-detected LEGACY; verification success');
+      completeSuccess();
+    }
+
+    Future<void> handleEscrLine(String response) async {
+      for (final cu in response.codeUnits) {
+        if (isUnprintable(cu)) {
+          throw RAVE(
+            'received unprintable code units',
+            RAVEReason.malformedChallengeResponse,
+          );
+        }
+      }
+      final verified = await _escr.verifyChallengeResponse(response);
+      if (!verified) {
+        throw RAVE(
+          '(but verifyChallengeResponse did not throw an exception)',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+      logger.info('Auto-detected ESCR; verification success');
+      socket.writeln('ok');
+      await socket.flush();
+      completeSuccess();
+    }
+
+    // Resolve this side to a concrete mode, skipping detection. The caller of
+    // [resolveLocked] must already hold [mutex]; [resolve] acquires it. A known
+    // ESCR side is challenged immediately; a known legacy side just waits for
+    // its signed envelope (timer cancelled). Both are no-ops once the socket
+    // has already committed to a mode, so a stale ESCR hint can never challenge
+    // a socket that has already sent bytes.
+    Future<void> resolveLocked(RelayAuthMode m) async {
+      if (mode != 'detecting' || authenticated) return;
+      detectTimer?.cancel();
+      if (m == RelayAuthMode.escr) {
+        mode = 'escr';
+        logger.info('resolving to ESCR; sending challenge');
+        socket.writeln(_escr.challenge);
+        await socket.flush();
+      } else {
+        mode = 'legacy';
+        logger.info('resolving to LEGACY; awaiting signed envelope');
+      }
+    }
+
+    Future<void> resolve(RelayAuthMode m) async {
+      await mutex.acquire();
+      try {
+        await resolveLocked(m);
+      } catch (e) {
+        await failAuth(e);
+      } finally {
+        mutex.release();
+      }
+    }
+
+    // Let setKnownMode() (called when the client's definitive auth-modes
+    // notification arrives) steer this in-flight detection.
+    _resolveKnownMode = resolve;
+
+    socket.listen(
+      (Uint8List data) async {
+        await mutex.acquire();
+        try {
+          if (authenticated) {
+            if (!sc.isClosed) {
+              try {
+                sc.add(data);
+              } catch (err) {
+                logger.shout('post-verify sc.add failed with $err');
+              }
+            }
+            return;
+          }
+
+          // The first unsolicited bytes can only be legacy (a JSON object);
+          // an ESCR peer sends nothing until we challenge it.
+          if (mode == 'detecting') {
+            detectTimer?.cancel();
+            final int? firstByte = data.isNotEmpty ? data.first : null;
+            if (firstByte == 0x7B /* '{' */ ) {
+              mode = 'legacy';
+            } else {
+              throw RAVE(
+                'Unexpected first byte $firstByte from connecting side'
+                ' (legacy sends a JSON object; ESCR sends nothing until'
+                ' challenged)',
+                RAVEReason.malformedChallengeResponse,
+              );
+            }
+          }
+
+          if (buffer.length + data.length >
+              RelayAuthVerifier.maxAuthBufferLength) {
+            throw RAVE(
+              'Too much data from client'
+              ' (more than ${RelayAuthVerifier.maxAuthBufferLength} bytes)',
+              RAVEReason.malformedChallengeResponse,
+            );
+          }
+          buffer.addAll(data);
+          if (buffer.contains(10)) {
+            final int idx = buffer.indexOf(10);
+            final List<int> lineBytes = buffer.sublist(0, idx);
+            buffer.removeRange(0, idx + 1);
+            final String line = String.fromCharCodes(lineBytes);
+            if (mode == 'legacy') {
+              await handleLegacyLine(line);
+            } else {
+              await handleEscrLine(line.trim());
+            }
+          }
+        } catch (e) {
+          await failAuth(e);
+        } finally {
+          mutex.release();
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!sc.isClosed) {
+          sc.addError(error);
+          sc.close();
+        }
+      },
+      onDone: () {
+        if (!sc.isClosed) {
+          sc.close();
+        }
+      },
+    );
+
+    // If the mode is already known (side A from the request, or a side B hint
+    // that arrived before the socket connected) apply it now and skip the
+    // window; otherwise fall back to the timing heuristic.
+    await mutex.acquire();
+    try {
+      if (mode == 'detecting' && !authenticated) {
+        if (_knownMode != null) {
+          await resolveLocked(_knownMode!);
+        } else {
+          detectTimer = Timer(detectWindow, () {
+            logger.info(
+              'no data within ${detectWindow.inMilliseconds}ms; assuming ESCR',
+            );
+            resolve(RelayAuthMode.escr);
+          });
+        }
+      }
+    } catch (e) {
+      await failAuth(e);
+    } finally {
+      mutex.release();
+    }
+
     return completer.future;
   }
 }

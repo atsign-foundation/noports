@@ -49,7 +49,10 @@ class MockSshnpParams extends Mock implements SshnpParams {
 
 class MockSshnpdChannel extends Mock implements SshnpdChannel {}
 
-class MockSrvdChannel extends Mock implements SrvdChannel {}
+class MockSrvdChannel extends Mock implements SrvdChannel {
+  @override
+  Future<void> sendDefinitiveAuthModes({required bool daemonSupportsEscr}) async {}
+}
 
 /// [dart:io] Mocks
 class MockProcess extends Mock implements Process {}

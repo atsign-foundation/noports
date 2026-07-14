@@ -237,7 +237,7 @@ void main() {
           true,
         );
       });
-      test('ClientParamsBase escr requires both sides auth', () {
+      test('ClientParamsBase 443 requires both sides auth', () {
         expect(
           () => SshnpParams(
             clientAtSign: '@myClientAtSign',
@@ -283,6 +283,21 @@ void main() {
             relayAuthMode: RelayAuthMode.escr,
             authenticateClientToRvd: true,
             authenticateDeviceToRvd: true,
+          ).relayAuthMode,
+          RelayAuthMode.escr,
+        );
+      });
+      test('ClientParamsBase non-443 escr allows one-sided auth', () {
+        // With per-socket auto-detect at the relay, ESCR (outside the 443
+        // single-port path) no longer requires both sides to authenticate.
+        expect(
+          SshnpParams(
+            clientAtSign: '@myClientAtSign',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            relayAuthMode: RelayAuthMode.escr,
+            authenticateClientToRvd: true,
+            authenticateDeviceToRvd: false,
           ).relayAuthMode,
           RelayAuthMode.escr,
         );

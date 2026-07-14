@@ -135,12 +135,15 @@ abstract class ClientParamsBase implements ClientParams {
         ' when using the "${SshnpArg.only443Arg.name}" flag',
       );
     }
-    if (relayAuthMode == RelayAuthMode.escr &&
-        (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+    // The 443 single-port relay multiplexes both sides onto one port and
+    // identifies each from its authenticated payload, so both sides must
+    // authenticate. General ESCR sessions do NOT require this: the relay
+    // auto-detects and verifies each socket independently, so one side may
+    // authenticate with ESCR while the other does not authenticate at all.
+    if (only443 && (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
       throw ArgumentError(
-        'Both client and device need to authenticate to the'
-        ' relay when using'
-        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"',
+        'Both client and device must authenticate to the relay'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
       );
     }
   }
@@ -190,7 +193,7 @@ class NptParams extends ClientParamsBase
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = RelayAuthMode.payload,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
@@ -276,7 +279,7 @@ class SshnpParams extends ClientParamsBase
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = RelayAuthMode.payload,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
     super.only443 = false,
@@ -385,7 +388,7 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
-      relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
+      relayAuthMode: partial.relayAuthMode ?? DefaultArgs.relayAuthMode,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:

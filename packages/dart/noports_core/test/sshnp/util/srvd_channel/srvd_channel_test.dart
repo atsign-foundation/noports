@@ -518,6 +518,37 @@ void main() {
       },
     );
   });
+
+  group('SrvdChannel.sideBAuthMode', () {
+    test('escr only when the client is escr AND the daemon supports it', () {
+      // The one true case.
+      expect(
+        SrvdChannel.sideBAuthMode(RelayAuthMode.escr, true),
+        RelayAuthMode.escr,
+      );
+    });
+
+    test('legacy when the client is escr but the daemon does not support it',
+        () {
+      // Prevents an "escr" hint for a daemon that would actually speak legacy —
+      // which would corrupt its stream when the relay challenged it.
+      expect(
+        SrvdChannel.sideBAuthMode(RelayAuthMode.escr, false),
+        RelayAuthMode.payload,
+      );
+    });
+
+    test('legacy when the client is not using escr, regardless of daemon', () {
+      expect(
+        SrvdChannel.sideBAuthMode(RelayAuthMode.payload, true),
+        RelayAuthMode.payload,
+      );
+      expect(
+        SrvdChannel.sideBAuthMode(RelayAuthMode.payload, false),
+        RelayAuthMode.payload,
+      );
+    });
+  });
 }
 
 class FakeNotificationParamsMatcher extends Matcher {

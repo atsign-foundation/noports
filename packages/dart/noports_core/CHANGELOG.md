@@ -1,6 +1,16 @@
 # 6.12.0
 
 - feat: npp policy next iteration
+- feat: the relay (srvd) now auto-detects each connecting side's relay-auth
+  mode (ESCR vs legacy) per socket, instead of being told a single mode for
+  the whole session. Clients and daemons each use their strongest relay auth
+  independently, so a client no longer has to learn the daemon's capabilities
+  (via the daemon ping) before contacting the relay. Clients now default to
+  ESCR. Adds the `srvd --relay-auth-detect-window-ms` option (default 500).
+  The relay skips the detection window when a side's mode is known ahead of
+  time: side A (the client) from its own request, and side B (the daemon) from
+  an optional definitive auth-modes notification the client sends once it has
+  the ping response. Auto-detect remains the fallback.
 
 # 6.11.0
 

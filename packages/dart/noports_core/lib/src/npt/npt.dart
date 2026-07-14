@@ -192,9 +192,10 @@ class _NptImpl extends NptBase
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
-    if (params.relayAuthMode == RelayAuthMode.escr) {
-      requiredFeatures.add(DaemonFeature.supportsRamEscr);
-    }
+    // Note: ESCR does not require DaemonFeature.supportsRamEscr. Relay auth is
+    // negotiated per-socket by the auto-detecting relay, so each side uses its
+    // own best mode independently and a legacy-only daemon just falls back to
+    // legacy (which the relay detects). See sshnp_core.initialize for detail.
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -239,6 +240,18 @@ class _NptImpl extends NptBase
     }
 
     sendProgress('Required daemon features are supported');
+
+    // The daemon ping has now resolved, so we know which relay-auth mode each
+    // side will use. Tell the relay definitively (before the daemon session
+    // request, sent from _preRun) so it can skip the auto-detect window; if
+    // this loses the race to the daemon's socket, the relay just auto-detects.
+    final daemonFeatures = sshnpdChannel.pingResponse?['supportedFeatures'];
+    final bool daemonSupportsEscr =
+        daemonFeatures is Map &&
+        daemonFeatures[DaemonFeature.supportsRamEscr.name] == true;
+    await _srvdChannel.sendDefinitiveAuthModes(
+      daemonSupportsEscr: daemonSupportsEscr,
+    );
 
     completeInitialization();
   }

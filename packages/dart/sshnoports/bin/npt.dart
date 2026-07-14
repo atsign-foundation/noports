@@ -278,10 +278,12 @@ void main(List<String> args) async {
       parser.addOption(
         'relay-auth-mode',
         aliases: ['ram'],
-        help: 'The authentication mode to use. "ecr" is strongest.'
-            ' Alias: --ram',
+        help: 'The authentication mode to use when authenticating to the'
+            ' relay. "escr" (encrypted signed challenge response) is strongest'
+            ' and is the default; the relay auto-detects each side\'s mode.'
+            ' "payload" is the legacy mode. Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
-        defaultsTo: RelayAuthMode.payload.name,
+        defaultsTo: RelayAuthMode.escr.name,
       );
 
       parser.addFlag(
