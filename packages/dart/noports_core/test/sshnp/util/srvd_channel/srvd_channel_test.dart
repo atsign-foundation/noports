@@ -612,11 +612,13 @@ void main() {
       required bool autoDetect,
       required bool peerSupportsEscr,
       bool only443 = false,
+      bool prescribed = false,
     }) => SrvdChannel.effectiveRelayAuthMode(
       preference: preference,
       autoDetect: autoDetect,
       peerSupportsEscr: peerSupportsEscr,
       only443: only443,
+      prescribed: prescribed,
     );
 
     test('escr only when preference=escr AND relay auto-detects AND peer '
@@ -688,6 +690,49 @@ void main() {
           );
         }
       }
+    });
+
+    test('prescribed mode is honoured verbatim, overriding the auto gate', () {
+      // The user explicitly chose the mode; use it on both sides regardless of
+      // whether the relay auto-detects or the peer advertises escr (an incapable
+      // daemon is caught up front by the feature-check, not silently downgraded).
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          expect(
+            call(
+              preference: RelayAuthMode.escr,
+              autoDetect: ad,
+              peerSupportsEscr: ps,
+              prescribed: true,
+            ),
+            RelayAuthMode.escr,
+            reason: 'prescribed escr must force escr (ad=$ad ps=$ps)',
+          );
+          expect(
+            call(
+              preference: RelayAuthMode.payload,
+              autoDetect: ad,
+              peerSupportsEscr: ps,
+              prescribed: true,
+            ),
+            RelayAuthMode.payload,
+            reason: 'prescribed payload must force payload (ad=$ad ps=$ps)',
+          );
+        }
+      }
+    });
+
+    test('only443 wins even over a prescribed payload mode', () {
+      expect(
+        call(
+          preference: RelayAuthMode.payload,
+          autoDetect: false,
+          peerSupportsEscr: true,
+          only443: true,
+          prescribed: true,
+        ),
+        RelayAuthMode.escr,
+      );
     });
   });
 }

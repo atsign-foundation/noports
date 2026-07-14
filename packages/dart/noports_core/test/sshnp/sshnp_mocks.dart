@@ -44,6 +44,9 @@ class MockSshnpParams extends Mock implements SshnpParams {
   RelayAuthMode get relayAuthMode => RelayAuthMode.payload;
 
   @override
+  bool get relayAuthModeExplicit => false;
+
+  @override
   bool get only443 => false;
 }
 

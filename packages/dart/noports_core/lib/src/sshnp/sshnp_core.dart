@@ -133,12 +133,18 @@ abstract class SshnpCore
     if (params.sendSshPublicKey) {
       requiredFeatures.add(DaemonFeature.acceptsPublicKeys);
     }
-    // Note: we deliberately do NOT require DaemonFeature.supportsRamEscr when
-    // using ESCR. Relay auth is negotiated per-socket by the auto-detecting
-    // relay, so each side uses its own best mode independently — the client
-    // need not know (or wait to learn, via the daemon ping) what the daemon
-    // will do. A daemon that cannot do ESCR simply falls back to legacy and
-    // the relay detects it.
+    // By default we do NOT require DaemonFeature.supportsRamEscr: relay auth is
+    // negotiated per-socket by an auto-detecting relay, so a daemon that cannot
+    // do ESCR simply falls back to legacy and the relay detects it — no ping
+    // wait. BUT when the user explicitly prescribes --relay-auth-mode escr we
+    // force ESCR on both sides, so we DO require the daemon to support it: an
+    // incapable daemon becomes a hard error ("...does not support the 'ESCR'
+    // relay auth mode") rather than a silent fallback that would contradict the
+    // explicit request.
+    if (params.relayAuthModeExplicit &&
+        params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>

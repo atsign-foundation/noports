@@ -192,10 +192,16 @@ class _NptImpl extends NptBase
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
-    // Note: ESCR does not require DaemonFeature.supportsRamEscr. Relay auth is
-    // negotiated per-socket by the auto-detecting relay, so each side uses its
-    // own best mode independently and a legacy-only daemon just falls back to
-    // legacy (which the relay detects). See sshnp_core.initialize for detail.
+    // By default ESCR does not require DaemonFeature.supportsRamEscr: relay auth
+    // is negotiated per-socket by an auto-detecting relay, so a legacy-only
+    // daemon just falls back to legacy (which the relay detects). But an
+    // explicit --relay-auth-mode escr forces ESCR on both sides, so we then
+    // require the daemon to support it — an incapable daemon is a hard error
+    // rather than a silent fallback. See sshnp_core.initialize for detail.
+    if (params.relayAuthModeExplicit &&
+        params.relayAuthMode == RelayAuthMode.escr) {
+      requiredFeatures.add(DaemonFeature.supportsRamEscr);
+    }
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }

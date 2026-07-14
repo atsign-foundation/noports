@@ -79,6 +79,10 @@ abstract class SrvdChannel<T>
   /// - [only443]: the 443 single-port relay multiplexes both sides on one port
   ///   and is ESCR-only on every relay version (it rejects a legacy payload), so
   ///   the 443 path always uses ESCR regardless of the rest.
+  /// - [prescribed]: the caller explicitly chose [preference] (CLI/config/API),
+  ///   so honor it verbatim on both sides — overriding the progressive gate.
+  ///   ESCR here is validated up front by requiring the daemon feature, so an
+  ///   incapable daemon is a hard error rather than a silent fallback.
   /// - [autoDetect]: a relay that does NOT auto-detect applies one session-wide
   ///   mode to both sockets — we declared the universally-safe legacy mode in
   ///   request_ports, so both sides use it (ESCR would break a peer that can't
@@ -91,8 +95,10 @@ abstract class SrvdChannel<T>
     required bool autoDetect,
     required bool peerSupportsEscr,
     required bool only443,
+    required bool prescribed,
   }) {
     if (only443) return RelayAuthMode.escr;
+    if (prescribed) return preference;
     if (!autoDetect) return RelayAuthMode.payload;
     return (preference == RelayAuthMode.escr && peerSupportsEscr)
         ? RelayAuthMode.escr
@@ -107,6 +113,7 @@ abstract class SrvdChannel<T>
         autoDetect: autoDetectsRelayAuth,
         peerSupportsEscr: daemonSupportsEscr,
         only443: params.only443,
+        prescribed: params.relayAuthModeExplicit,
       );
 
   // * Volatile fields set at runtime
@@ -182,6 +189,7 @@ abstract class SrvdChannel<T>
         autoDetect: autoDetectsRelayAuth,
         peerSupportsEscr: true,
         only443: params.only443,
+        prescribed: params.relayAuthModeExplicit,
       );
       switch (sideAMode) {
         case RelayAuthMode.payload:
@@ -257,12 +265,14 @@ abstract class SrvdChannel<T>
       autoDetect: autoDetectsRelayAuth,
       peerSupportsEscr: true,
       only443: params.only443,
+      prescribed: params.relayAuthModeExplicit,
     );
     final RelayAuthMode sideB = effectiveRelayAuthMode(
       preference: params.relayAuthMode,
       autoDetect: autoDetectsRelayAuth,
       peerSupportsEscr: daemonSupportsEscr,
       only443: params.only443,
+      prescribed: params.relayAuthModeExplicit,
     );
 
     final AtKey authModesKey = AtKey()
@@ -382,15 +392,19 @@ abstract class SrvdChannel<T>
       authenticateSocketA: params.authenticateClientToRvd,
       authenticateSocketB: params.authenticateDeviceToRvd,
       clientNonce: clientNonce,
-      // Declare the universally-safe legacy mode: a relay that does NOT
-      // auto-detect applies this one mode to both sockets, and legacy works with
-      // every daemon. A relay that DOES auto-detect ignores this and detects
-      // each side. The only exception is the 443 single-port relay, which
-      // multiplexes both sides on one port and requires ESCR (it rejects
-      // payload), so we keep declaring ESCR there.
-      relayAuthMode: params.only443
-          ? RelayAuthMode.escr
-          : RelayAuthMode.payload,
+      // Declare the mode a relay that does NOT auto-detect must apply to BOTH
+      // sockets (it is sent before we learn whether this relay auto-detects).
+      // That is exactly effectiveRelayAuthMode with autoDetect:false — the
+      // universally-safe legacy mode by default, but ESCR when the path forces
+      // it: the 443 single-port relay (ESCR-only), or an explicit --relay-auth-mode.
+      // An auto-detecting relay ignores this field and detects each side.
+      relayAuthMode: effectiveRelayAuthMode(
+        preference: params.relayAuthMode,
+        autoDetect: false,
+        peerSupportsEscr: true,
+        only443: params.only443,
+        prescribed: params.relayAuthModeExplicit,
+      ),
       relayAuthAesKey: relayAuthAesKey,
       only443: params.only443,
       multipleAcksOk: true,

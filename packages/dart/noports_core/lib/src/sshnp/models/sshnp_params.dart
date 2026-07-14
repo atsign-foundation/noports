@@ -27,6 +27,13 @@ abstract interface class ClientParams {
 
   RelayAuthMode get relayAuthMode;
 
+  /// Whether [relayAuthMode] was explicitly chosen by the caller (CLI flag,
+  /// config file, or API) rather than left at the default. When true the caller
+  /// is being prescriptive: the mode is forced on BOTH sides of the session and
+  /// the daemon is required to support it (an ESCR-incapable daemon is a
+  /// hard error) instead of the mode being softly negotiated per socket.
+  bool get relayAuthModeExplicit;
+
   bool get encryptRvdTraffic;
 
   String? get atKeysFilePath;
@@ -80,6 +87,9 @@ abstract class ClientParamsBase implements ClientParams {
   final RelayAuthMode relayAuthMode;
 
   @override
+  final bool relayAuthModeExplicit;
+
+  @override
   final bool encryptRvdTraffic;
 
   @override
@@ -121,6 +131,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     required this.relayAuthMode,
+    this.relayAuthModeExplicit = false,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
     required this.only443,
@@ -194,6 +205,7 @@ class NptParams extends ClientParamsBase
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
@@ -280,6 +292,7 @@ class SshnpParams extends ClientParamsBase
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
     super.only443 = false,
@@ -330,6 +343,10 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
+      // An explicitly-set mode in the incoming partial makes it prescriptive;
+      // otherwise inherit whatever the base params already resolved.
+      relayAuthModeExplicit:
+          params2.relayAuthMode != null || params1.relayAuthModeExplicit,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
@@ -389,6 +406,9 @@ class SshnpParams extends ClientParamsBase
           partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
       relayAuthMode: partial.relayAuthMode ?? DefaultArgs.relayAuthMode,
+      // A mode present in the partial came from a CLI flag or config file, so
+      // the caller chose it deliberately — treat it as prescriptive.
+      relayAuthModeExplicit: partial.relayAuthMode != null,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
