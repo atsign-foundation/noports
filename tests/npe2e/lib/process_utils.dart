@@ -25,7 +25,7 @@ class ProcessOutputCapture {
     this.stderrLogFile,
   }) {
     process.stdout
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .transform(const LineSplitter())
         .listen(
           (line) {
@@ -47,7 +47,7 @@ class ProcessOutputCapture {
         );
 
     process.stderr
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .transform(const LineSplitter())
         .listen(
           (line) {
@@ -162,20 +162,20 @@ Future<Process> startCommand(
     environment: environment,
   );
   if (printOutput) {
-    process.stdout.transform(SystemEncoding().decoder).listen((data) {
+    process.stdout.transform(const Utf8Decoder(allowMalformed: true)).listen((data) {
       print('${executable} stdout: $data');
     });
-    process.stderr.transform(SystemEncoding().decoder).listen((data) {
+    process.stderr.transform(const Utf8Decoder(allowMalformed: true)).listen((data) {
       print('${executable} stderr: $data');
     });
   }
   if (stdoutLogFile != null) {
-    process.stdout.transform(SystemEncoding().decoder).listen((data) {
+    process.stdout.transform(const Utf8Decoder(allowMalformed: true)).listen((data) {
       stdoutLogFile.writeAsStringSync(data, mode: FileMode.append);
     });
   }
   if (stderrLogFile != null) {
-    process.stderr.transform(SystemEncoding().decoder).listen((data) {
+    process.stderr.transform(const Utf8Decoder(allowMalformed: true)).listen((data) {
       stderrLogFile.writeAsStringSync(data, mode: FileMode.append);
     });
   }
