@@ -31,11 +31,10 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
 
   for (final NoPortsVersion clientVersion in clientVersions) {
     for (final NoPortsVersion daemonVersion in daemonVersions) {
-      // Only run this test with the Dart current client against the Dart
-      // current daemon (matches e2e_all, which required `daemonVersion ==
-      // d:current`). Note c:current also has version=='current', so we must
-      // also check the language to avoid generating a mislabeled duplicate that
-      // still targets the Dart current daemon.
+      // for now, only run this test with current versions since it's testing
+      // a current feature. Note c:current also has version=='current', so we
+      // must also check the language to avoid generating a mislabeled
+      // duplicate that still targets the Dart current daemon.
       if (clientVersion.language != Language.dart ||
           clientVersion.version != 'current' ||
           daemonVersion.language != Language.dart ||
