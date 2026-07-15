@@ -624,6 +624,8 @@ Future<DockerInstance> startPolicyFlowDaemon({
           '-v -s -u',
     ],
     printCommand: false,
+    // Local-run aid: let the container resolve *.atsign.zone back to the host.
+    additionalDockerArgs: hostGatewayAddHostArgs(),
     volumeMappings: [
       VolumeMapping(
         local: daemonApkamKeysFile.absolute.path,

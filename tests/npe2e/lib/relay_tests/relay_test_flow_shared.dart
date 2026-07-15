@@ -616,6 +616,8 @@ Future<DockerInstance> _startDaemon({
     uniqueIdentifier:
         '_relay_daemon_${daemonVersion.language.name}_${daemonVersion.version}',
     networkName: networkName,
+    // Local-run aid: let the container resolve *.atsign.zone back to the host.
+    additionalDockerArgs: hostGatewayAddHostArgs(),
     entrypoint: [
       '/bin/bash',
       '-c',
@@ -675,7 +677,12 @@ Future<DockerInstance> _startSelfRelay({
         '_relay_${relayVersion.language.name}_${relayVersion.version}_$metadata',
     networkName: networkName,
     networkAlias: relayAlias,
-    additionalDockerArgs: relayOnly443 ? ['--user', 'root'] : const [],
+    // Local-run aid: let the container resolve *.atsign.zone back to the host,
+    // alongside the --user root needed by the 443 relay.
+    additionalDockerArgs: [
+      ...hostGatewayAddHostArgs(),
+      if (relayOnly443) ...['--user', 'root'],
+    ],
     entrypoint: srvdArgs,
     volumeMappings: [
       VolumeMapping(
@@ -763,6 +770,8 @@ Future<DockerInstance> _runClientCommand({
   return dockerInstance
       .run(
         networkName: networkName,
+        // Local-run aid: let the container resolve *.atsign.zone to the host.
+        additionalDockerArgs: hostGatewayAddHostArgs(),
         entrypoint: ['/bin/bash', '-c', script],
         volumeMappings: [
           VolumeMapping(
@@ -821,6 +830,8 @@ Future<DockerInstance> _runSshnpPrimeCommand({
   return dockerInstance
       .run(
         networkName: networkName,
+        // Local-run aid: let the container resolve *.atsign.zone to the host.
+        additionalDockerArgs: hostGatewayAddHostArgs(),
         entrypoint: ['/bin/bash', '-c', script],
         volumeMappings: [
           VolumeMapping(
