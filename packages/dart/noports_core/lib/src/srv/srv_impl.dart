@@ -394,6 +394,14 @@ class WrappedSSHSocket implements SSHSocket {
     onDestroy();
   }
 
+  // Added in dartssh2 2.22.2's SSHSocket interface. Because we `implements`
+  // SSHSocket (interface only, not the default body), we must supply it.
+  // Mirror the package's native socket: flush the underlying sink.
+  @override
+  Future<void> flush() async {
+    await underlyingSink.flush();
+  }
+
   @override
   Future<void> get done => sink.done;
 
