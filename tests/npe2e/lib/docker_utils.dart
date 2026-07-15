@@ -7,6 +7,49 @@ import 'package:npe2e/docker_instance.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
 
+// Local-run aid: when the npe2e tests run against atServers on the developer's
+// own machine (reached via `/etc/hosts` overrides such as
+// `127.0.0.1 vip.ve.atsign.zone`), mirror those overrides into the containers
+// (daemon / relay / policy server / containerised client). A container can't
+// reach the host on 127.0.0.1, so each mapped name is re-pointed at
+// `host-gateway`, Docker's route back to the host.
+//
+// Scoped to `*.atsign.zone` names mapped to 127.0.0.1: that covers the atsign
+// test domains without touching unrelated /etc/hosts entries, and it leaves
+// deliberate black-holes (e.g. `127.1.1.1 unreachable.atsign.zone`) alone. On a
+// clean CI checkout there are no such entries, so this returns nothing (the
+// harness normally runs against the public root.atsign.org).
+List<String> hostGatewayAddHostArgs() {
+  final File hostsFile = File('/etc/hosts');
+  if (!hostsFile.existsSync()) {
+    return const <String>[];
+  }
+
+  final Set<String> names = <String>{};
+  for (String line in hostsFile.readAsLinesSync()) {
+    final int hash = line.indexOf('#');
+    if (hash >= 0) {
+      line = line.substring(0, hash);
+    }
+    final List<String> parts = line.trim().split(RegExp(r'\s+'));
+    if (parts.length < 2 || parts.first != '127.0.0.1') {
+      continue;
+    }
+    for (final String name in parts.skip(1)) {
+      if (name.endsWith('.atsign.zone')) {
+        names.add(name);
+      }
+    }
+  }
+
+  final List<String> args = <String>[];
+  for (final String name in names) {
+    args.add('--add-host');
+    args.add('$name:host-gateway');
+  }
+  return args;
+}
+
 DockerImage dockerImageForVersion(final NoPortsVersion version) {
   final Language language = version.language;
   final String versionTag = version.version;

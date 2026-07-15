@@ -145,6 +145,8 @@ class PolicyServer {
         rootDomain,
         ...additionalArgs,
       ],
+      // Local-run aid: let the container resolve *.atsign.zone back to the host.
+      additionalDockerArgs: hostGatewayAddHostArgs(),
       volumeMappings: [
         VolumeMapping(
           local: apkamKeysFile.absolute.path,
