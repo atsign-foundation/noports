@@ -98,11 +98,54 @@ abstract class SrvdChannel<T>
     required bool prescribed,
   }) {
     if (only443) return RelayAuthMode.escr;
-    if (prescribed) return preference;
+    if (prescribed) {
+      // Honour the explicit choice, but never ask a peer to speak ESCR it
+      // cannot do: degrade THIS side to legacy and let the relay reconcile per
+      // socket (the client always supports ESCR, so side A is unaffected; a
+      // non-ESCR daemon simply falls back to legacy and the relay/hint sort it
+      // out). The one genuinely unreconcilable case -- explicit ESCR through a
+      // non-auto-detecting relay to a non-ESCR daemon -- is rejected up front
+      // (see [escrRequestedButUnreconcilable] / initialize()), not silently
+      // mis-sent here.
+      if (preference == RelayAuthMode.escr && !peerSupportsEscr) {
+        return RelayAuthMode.payload;
+      }
+      return preference;
+    }
     if (!autoDetect) return RelayAuthMode.payload;
     return (preference == RelayAuthMode.escr && peerSupportsEscr)
         ? RelayAuthMode.escr
         : RelayAuthMode.payload;
+  }
+
+  /// Whether ESCR is unavoidably required of the daemon this session but the
+  /// daemon cannot do it — in which case the session must be rejected up front
+  /// rather than fail mid-connect.
+  ///
+  /// Never true unless the daemon both authenticates to the relay
+  /// ([authenticateDeviceToRvd]) and cannot do ESCR ([daemonSupportsEscr]
+  /// false) — otherwise there is nothing to reconcile. Given that, ESCR is
+  /// unavoidable on the daemon's socket when EITHER:
+  /// - [only443] — the 443 single-port path is ESCR-only end-to-end on every
+  ///   relay (a legacy socket has no side field), so a non-ESCR daemon can never
+  ///   use it; or
+  /// - the user explicitly chose ESCR ([explicitEscr]) AND the relay does NOT
+  ///   auto-detect ([autoDetect] false) — an older relay applies one mode to
+  ///   both sockets and ignores the definitive-auth-modes hint, so the daemon
+  ///   cannot legacy-degrade independently.
+  ///
+  /// In every other explicit-ESCR case the client uses ESCR on its own side and
+  /// the daemon side degrades to legacy where needed, which an auto-detecting
+  /// relay reconciles per socket.
+  static bool escrRequestedButUnreconcilable({
+    required bool explicitEscr,
+    required bool only443,
+    required bool authenticateDeviceToRvd,
+    required bool autoDetect,
+    required bool daemonSupportsEscr,
+  }) {
+    if (!authenticateDeviceToRvd || daemonSupportsEscr) return false;
+    return only443 || (explicitEscr && !autoDetect);
   }
 
   /// The relay-auth mode the daemon (side B) should use for this session, told

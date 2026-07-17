@@ -133,23 +133,14 @@ abstract class SshnpCore
     if (params.sendSshPublicKey) {
       requiredFeatures.add(DaemonFeature.acceptsPublicKeys);
     }
-    // By default we do NOT require DaemonFeature.supportsRamEscr: relay auth is
-    // negotiated per-socket by an auto-detecting relay, so a daemon that cannot
-    // do ESCR simply falls back to legacy and the relay detects it — no ping
-    // wait. BUT when the user explicitly prescribes --relay-auth-mode escr we
-    // force ESCR on both sides, so we DO require the daemon to support it: an
-    // incapable daemon becomes a hard error ("...does not support the 'ESCR'
-    // relay auth mode") rather than a silent fallback that would contradict the
-    // explicit request. Only when the daemon actually authenticates to the relay
-    // (authenticateDeviceToRvd) — otherwise it does no relay auth at all and its
-    // ESCR capability is irrelevant, so requiring it would wrongly reject a
-    // supported config (client authenticates with ESCR, device not at all). This
-    // mirrors the DaemonFeature.srAuth guard above.
-    if (params.relayAuthModeExplicit &&
-        params.relayAuthMode == RelayAuthMode.escr &&
-        params.authenticateDeviceToRvd) {
-      requiredFeatures.add(DaemonFeature.supportsRamEscr);
-    }
+    // We deliberately do NOT require DaemonFeature.supportsRamEscr here: relay
+    // auth is negotiated per-socket by an auto-detecting relay, so a daemon that
+    // cannot do ESCR simply uses legacy on its own side and the relay reconciles
+    // it — no ping-gated wait, no abort. Even an explicit --relay-auth-mode escr
+    // degrades the daemon side to legacy rather than failing. The single case
+    // that genuinely cannot be reconciled (explicit ESCR + a non-auto-detecting
+    // relay + a non-ESCR daemon) is rejected below, once both the relay response
+    // and the ping have resolved.
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
@@ -193,6 +184,29 @@ abstract class SshnpCore
       if (!supported) throw SshnpError(reason);
     }
     sendProgress('Required daemon features are supported');
+
+    // Reject an explicit --relay-auth-mode escr that this session genuinely
+    // cannot honour: a non-auto-detecting relay applies one mode to both sockets
+    // (and ignores the definitive-auth-modes hint), so if the daemon also cannot
+    // do ESCR the two ends can never agree. Fail fast with a clear message
+    // rather than a mid-connect handshake failure. Every other explicit-ESCR
+    // case degrades gracefully (side A ESCR, daemon side legacy, relay
+    // reconciles per socket).
+    if (SrvdChannel.escrRequestedButUnreconcilable(
+      explicitEscr: params.relayAuthModeExplicit &&
+          params.relayAuthMode == RelayAuthMode.escr,
+      only443: params.only443,
+      authenticateDeviceToRvd: params.authenticateDeviceToRvd,
+      autoDetect: srvdChannel.autoDetectsRelayAuth,
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+    )) {
+      throw SshnpError(
+        'This session requires ESCR relay auth on the device daemon (either'
+        ' --only-port 443, or --relay-auth-mode escr through a relay that does'
+        ' not auto-detect), but the daemon does not support ESCR. Upgrade the'
+        ' daemon, or retry without --only-port 443 / --relay-auth-mode escr.',
+      );
+    }
 
     // The daemon ping has now resolved, so we know which relay-auth mode each
     // side will use. Tell the relay definitively (before the daemon session

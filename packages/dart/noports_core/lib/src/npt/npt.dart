@@ -192,19 +192,11 @@ class _NptImpl extends NptBase
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
-    // By default ESCR does not require DaemonFeature.supportsRamEscr: relay auth
-    // is negotiated per-socket by an auto-detecting relay, so a legacy-only
-    // daemon just falls back to legacy (which the relay detects). But an
-    // explicit --relay-auth-mode escr forces ESCR on both sides, so we then
-    // require the daemon to support it — an incapable daemon is a hard error
-    // rather than a silent fallback. Only when the daemon actually authenticates
-    // to the relay (authenticateDeviceToRvd); otherwise its ESCR capability is
-    // irrelevant. See sshnp_core.initialize for detail.
-    if (params.relayAuthModeExplicit &&
-        params.relayAuthMode == RelayAuthMode.escr &&
-        params.authenticateDeviceToRvd) {
-      requiredFeatures.add(DaemonFeature.supportsRamEscr);
-    }
+    // We deliberately do NOT require DaemonFeature.supportsRamEscr: a daemon that
+    // cannot do ESCR uses legacy on its own side and the relay reconciles it,
+    // even under an explicit --relay-auth-mode escr. The one unreconcilable case
+    // (explicit ESCR + non-auto-detecting relay + non-ESCR daemon) is rejected
+    // below. See sshnp_core.initialize for detail.
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -249,6 +241,25 @@ class _NptImpl extends NptBase
     }
 
     sendProgress('Required daemon features are supported');
+
+    // Reject an explicit --relay-auth-mode escr this session cannot honour (a
+    // non-auto-detecting relay + a non-ESCR daemon can never agree). Every other
+    // explicit-ESCR case degrades gracefully. See sshnp_core.initialize.
+    if (SrvdChannel.escrRequestedButUnreconcilable(
+      explicitEscr: params.relayAuthModeExplicit &&
+          params.relayAuthMode == RelayAuthMode.escr,
+      only443: params.only443,
+      authenticateDeviceToRvd: params.authenticateDeviceToRvd,
+      autoDetect: _srvdChannel.autoDetectsRelayAuth,
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+    )) {
+      throw SshnpError(
+        'This session requires ESCR relay auth on the device daemon (either'
+        ' --only-port 443, or --relay-auth-mode escr through a relay that does'
+        ' not auto-detect), but the daemon does not support ESCR. Upgrade the'
+        ' daemon, or retry without --only-port 443 / --relay-auth-mode escr.',
+      );
+    }
 
     // The daemon ping has now resolved, so we know which relay-auth mode each
     // side will use. Tell the relay definitively (before the daemon session

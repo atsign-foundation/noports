@@ -16,10 +16,14 @@
   that advertises it — against an older relay (which applies one session-wide
   mode to both sockets) both sides stay on legacy, so interoperability with
   daemons that predate ESCR is preserved. Explicitly passing
-  `--relay-auth-mode escr` (CLI/config/API) is prescriptive and overrides this:
-  ESCR is forced on both sides even against an older relay, and a daemon that
-  cannot do ESCR becomes a hard error at the feature check ("...does not support
-  the 'ESCR' relay auth mode") rather than a silent fallback.
+  `--relay-auth-mode escr` (CLI/config/API) forces ESCR wherever the path
+  supports it, including against an older relay when the daemon is ESCR-capable;
+  a daemon that cannot do ESCR degrades to legacy on its own side (which an
+  auto-detecting relay reconciles per socket). The one genuinely unreconcilable
+  case — explicit ESCR through a non-auto-detecting relay to a non-ESCR daemon —
+  is rejected up front with a clear error rather than failing mid-connect.
+- reference: `docs/reference/relay-auth-modes.md` documents the full matrix of
+  client request × relay × daemon and the resulting per-side modes.
 - fix: the two-port relay path issued one ESCR challenge per session and reused
   it for every connection, so a captured challenge-response could be replayed
   onto later connections of the same session. It now issues a fresh challenge

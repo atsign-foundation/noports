@@ -398,9 +398,11 @@ class SshnpArg {
         ' "escr" (encrypted signed challenge response) is strongest and is the'
         ' default: it is used wherever the whole path supports it, while older'
         ' relays/daemons fall back to legacy and the relay auto-detects each'
-        ' side. Passing "escr" EXPLICITLY is prescriptive - it is forced on both'
-        ' sides and a daemon that cannot do ESCR becomes a hard error rather'
-        ' than a silent fallback. "payload" is the legacy mode. Alias: --ram',
+        ' side. Passing "escr" EXPLICITLY forces ESCR wherever the path supports'
+        ' it - the daemon side degrades to legacy if it cannot do ESCR, which an'
+        ' auto-detecting relay reconciles - and errors only when the relay does'
+        ' not auto-detect AND the daemon cannot do ESCR. "payload" is the legacy'
+        ' mode. Alias: --ram',
     defaultsTo: 'escr',
     allowed: ['payload', 'escr'],
     // allowed: RelayAuthMode.values.map((c) => c.name).toList(),

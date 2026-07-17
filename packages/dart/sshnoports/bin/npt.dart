@@ -282,8 +282,10 @@ void main(List<String> args) async {
             ' relay. "escr" (encrypted signed challenge response) is strongest'
             ' and is the default; used wherever the whole path supports it, with'
             ' older relays/daemons falling back to legacy (relay auto-detects).'
-            ' Passing "escr" explicitly forces it on both sides and errors if'
-            ' the daemon cannot do ESCR. "payload" is legacy. Alias: --ram',
+            ' Passing "escr" explicitly forces it where the path supports it (the'
+            ' daemon side degrades to legacy if it cannot), erroring only when the'
+            ' relay does not auto-detect AND the daemon cannot do ESCR. "payload"'
+            ' is legacy. Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
         defaultsTo: RelayAuthMode.escr.name,
       );

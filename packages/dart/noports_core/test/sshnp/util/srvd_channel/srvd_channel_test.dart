@@ -692,22 +692,38 @@ void main() {
       }
     });
 
-    test('prescribed mode is honoured verbatim, overriding the auto gate', () {
-      // The user explicitly chose the mode; use it on both sides regardless of
-      // whether the relay auto-detects or the peer advertises escr (an incapable
-      // daemon is caught up front by the feature-check, not silently downgraded).
+    test('prescribed escr is forced where the peer can do it, degraded where '
+        'it cannot', () {
+      for (final ad in [true, false]) {
+        // Peer supports escr -> escr forced regardless of auto-detect.
+        expect(
+          call(
+            preference: RelayAuthMode.escr,
+            autoDetect: ad,
+            peerSupportsEscr: true,
+            prescribed: true,
+          ),
+          RelayAuthMode.escr,
+          reason: 'prescribed escr + capable peer must be escr (ad=$ad)',
+        );
+        // Peer cannot do escr -> degrade THIS side to legacy (the client always
+        // can, so this only bites side B; side A passes peerSupportsEscr:true).
+        expect(
+          call(
+            preference: RelayAuthMode.escr,
+            autoDetect: ad,
+            peerSupportsEscr: false,
+            prescribed: true,
+          ),
+          RelayAuthMode.payload,
+          reason: 'prescribed escr + incapable peer must degrade (ad=$ad)',
+        );
+      }
+    });
+
+    test('prescribed payload is forced to legacy regardless', () {
       for (final ad in [true, false]) {
         for (final ps in [true, false]) {
-          expect(
-            call(
-              preference: RelayAuthMode.escr,
-              autoDetect: ad,
-              peerSupportsEscr: ps,
-              prescribed: true,
-            ),
-            RelayAuthMode.escr,
-            reason: 'prescribed escr must force escr (ad=$ad ps=$ps)',
-          );
           expect(
             call(
               preference: RelayAuthMode.payload,
@@ -716,7 +732,6 @@ void main() {
               prescribed: true,
             ),
             RelayAuthMode.payload,
-            reason: 'prescribed payload must force payload (ad=$ad ps=$ps)',
           );
         }
       }
@@ -733,6 +748,65 @@ void main() {
         ),
         RelayAuthMode.escr,
       );
+    });
+  });
+
+  group('SrvdChannel.escrRequestedButUnreconcilable', () {
+    bool call({
+      bool explicitEscr = true,
+      bool only443 = false,
+      bool authenticateDeviceToRvd = true,
+      bool autoDetect = false,
+      bool daemonSupportsEscr = false,
+    }) => SrvdChannel.escrRequestedButUnreconcilable(
+      explicitEscr: explicitEscr,
+      only443: only443,
+      authenticateDeviceToRvd: authenticateDeviceToRvd,
+      autoDetect: autoDetect,
+      daemonSupportsEscr: daemonSupportsEscr,
+    );
+
+    test('true: explicit escr + old relay + non-escr daemon + device '
+        'authenticates', () {
+      expect(call(), true);
+    });
+
+    test('true: 443 + non-escr daemon, even on an auto-detecting relay', () {
+      // 443 is ESCR-only end-to-end on every relay, so a non-escr daemon can
+      // never use it — reject regardless of auto-detect or explicit.
+      for (final ad in [true, false]) {
+        for (final ex in [true, false]) {
+          expect(
+            call(only443: true, autoDetect: ad, explicitEscr: ex),
+            true,
+            reason: 'only443 + non-escr daemon must reject (ad=$ad ex=$ex)',
+          );
+        }
+      }
+    });
+
+    test('false: 443 with an escr-capable daemon', () {
+      expect(call(only443: true, daemonSupportsEscr: true), false);
+    });
+
+    test('false when the relay auto-detects (non-443 escr reconciles per '
+        'socket)', () {
+      expect(call(autoDetect: true), false);
+    });
+
+    test('false when the daemon can do escr', () {
+      expect(call(daemonSupportsEscr: true), false);
+    });
+
+    test('false when escr was not explicitly requested (and not 443)', () {
+      expect(call(explicitEscr: false), false);
+    });
+
+    test('false when the device does not authenticate to the relay', () {
+      // No relay auth on side B at all, so its escr capability is moot — even
+      // for 443 (though 443 forces device auth elsewhere).
+      expect(call(authenticateDeviceToRvd: false), false);
+      expect(call(only443: true, authenticateDeviceToRvd: false), false);
     });
   });
 }
