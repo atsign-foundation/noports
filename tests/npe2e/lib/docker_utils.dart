@@ -102,8 +102,9 @@ Future<DockerImage> ensureDockerImageVersion({
     }
   } else {
     final Process pullProcess = await dockerImage.pull(quiet: true);
-    final (String pullStdout, String pullStderr) =
-        await _captureProcessOutput(pullProcess);
+    final (String pullStdout, String pullStderr) = await _captureProcessOutput(
+      pullProcess,
+    );
     final int pullExitCode = await pullProcess.exitCode;
     if (pullExitCode != 0) {
       print(

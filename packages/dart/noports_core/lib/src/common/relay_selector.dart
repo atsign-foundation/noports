@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
@@ -21,12 +22,18 @@ class RelaySelector with AtClientBindings {
 
   late final String rvServerListUrl;
 
+  /// Injectable latency measurer. Defaults to [RelayLatencyChecker.measureLatencies].
+  /// Override in tests to avoid real TCP connections.
+  @visibleForTesting
+  final Future<Map<String, int>> Function(Map<String, dynamic>) latencyMeasurer;
+
   RelaySelector({
     required this.atClient,
     required this.clientAtSign,
     required this.sshnpdAtSign,
     required this.device,
     required String rootDomain,
+    this.latencyMeasurer = RelayLatencyChecker.measureLatencies,
   }) {
     final domain = rootDomain.startsWith('proxy:')
         ? rootDomain.replaceFirst('proxy:', '')
@@ -42,7 +49,22 @@ class RelaySelector with AtClientBindings {
   ///
   /// If [rvAtSigns] is provided, it will select the best from that list.
   /// Otherwise, it will fetch the standard relays from [rvServerListUrl].
-  Future<String> selectBestRelay({List<Atsign>? rvAtSigns}) async {
+  ///
+  /// [relayIpDiscoveryTimeout] bounds each individual RV's discover request/response
+  /// round trip (see [requestRelayIpAddress]) — it is applied per RV, not to
+  /// the whole IP-resolution phase, since all RVs are queried concurrently.
+  /// A slow or unreachable RV only costs [relayIpDiscoveryTimeout]; it does not delay
+  /// the others.
+  ///
+  /// [deviceLatencyTimeout] bounds how long to wait for the daemon to report
+  /// its own latency measurements to the candidate RVs (see
+  /// [fetchDeviceLatencies]). If it elapses, relay selection falls back to
+  /// client-only latency.
+  Future<String> selectBestRelay({
+    List<Atsign>? rvAtSigns,
+    Duration relayIpDiscoveryTimeout = const Duration(seconds: 10),
+    Duration deviceLatencyTimeout = const Duration(seconds: 20),
+  }) async {
     List<Atsign> toCheck = [];
 
     if (rvAtSigns != null && rvAtSigns.isNotEmpty) {
@@ -61,7 +83,10 @@ class RelaySelector with AtClientBindings {
     await Future.wait(
       toCheck.map((rv) async {
         try {
-          final ipInfo = await _requestRelayIpAddress(rv);
+          final ipInfo = await requestRelayIpAddress(
+            rv,
+            timeout: relayIpDiscoveryTimeout,
+          );
           rvIpMap[rv.toString()] = ipInfo;
         } catch (e) {
           logger.warning('Failed to get IP/Port for $rv: $e');
@@ -73,16 +98,44 @@ class RelaySelector with AtClientBindings {
       throw StateError('No RV servers could be resolved');
     }
 
-    //Start device latency fetch concurrently while we measure the client latency
-    final deviceLatencyFuture = _fetchDeviceLatencies(rvIpMap);
+    logger.info(
+      'Waiting up to ${deviceLatencyTimeout.inSeconds}s for device latency report...',
+    );
 
-    final clientLatency = await RelayLatencyChecker.measureLatencies(rvIpMap);
+    // Start device latency fetch concurrently while we measure the client
+    // latency. The try/catch is in place before the `await` below ever runs,
+    // so a rejection while the client probe is still in flight can't surface
+    // as an unhandled async error. Errors (including a stalled/retrying
+    // notify with no overall deadline — see fetchDeviceLatencies) collapse
+    // to a null sentinel so relay selection can fall back to client-only
+    // latency instead of hanging or dying.
+    final Future<Map<String, int>?> deviceLatencyFuture = () async {
+      try {
+        return await fetchDeviceLatencies(
+          rvIpMap,
+          timeout: deviceLatencyTimeout,
+        ).timeout(deviceLatencyTimeout);
+      } catch (e) {
+        logger.info('Device latency check failed: $e');
+        return null;
+      }
+    }();
+
+    final clientLatency = await latencyMeasurer(rvIpMap);
     logger.info('Fetched latencies for client -> RV: $clientLatency');
 
     final deviceLatency = await deviceLatencyFuture;
+
+    if (deviceLatency == null) {
+      logger.warning(
+        'Device did not report relay latencies (older daemon?); '
+        'selecting relay on client latency only',
+      );
+      return lowestLatency(clientLatency);
+    }
     logger.info('Fetched latencies for device -> RV: $deviceLatency');
 
-    return _lowestAverageLatency(deviceLatency, clientLatency);
+    return lowestAverageLatency(deviceLatency, clientLatency);
   }
 
   /// Fetches the RV servers map from [rvServerListUrl].
@@ -113,7 +166,15 @@ class RelaySelector with AtClientBindings {
     }
   }
 
-  Future<Map<String, dynamic>> _requestRelayIpAddress(Atsign rvAtSign) async {
+  /// [timeout] bounds the wait for a single `discover_response` notification
+  /// from [rvAtSign] after the `discover_request` is sent. It is per-call, so
+  /// callers querying multiple RVs concurrently should expect the slowest
+  /// unreachable RV to take up to [timeout], not the sum across all RVs.
+  @visibleForTesting
+  Future<Map<String, dynamic>> requestRelayIpAddress(
+    Atsign rvAtSign, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     Completer<Map<String, dynamic>> completer = Completer();
 
     // The srvd will respond with a key 'discover.sshrvd' sharedBy the srvd
@@ -156,7 +217,7 @@ class RelaySelector with AtClientBindings {
     );
 
     return completer.future.timeout(
-      Duration(seconds: 10),
+      timeout,
       onTimeout: () {
         subscription.cancel();
         throw TimeoutException(
@@ -169,9 +230,11 @@ class RelaySelector with AtClientBindings {
   /// Sends [rvServers] to the device daemon and waits for it to respond with
   /// its measured latency to each RV. Uses this selector's own AtClientBindings
   /// directly, avoiding the need to create and initialize a full SshnpdChannel.
-  Future<Map<String, int>> _fetchDeviceLatencies(
-    Map<String, dynamic> rvServers,
-  ) async {
+  @visibleForTesting
+  Future<Map<String, int>> fetchDeviceLatencies(
+    Map<String, dynamic> rvServers, {
+    Duration timeout = const Duration(minutes: 1),
+  }) async {
     final completer = Completer<Map<String, int>>();
     final regex = 'relay_latency_response.$device.${DefaultArgs.namespace}';
 
@@ -210,7 +273,7 @@ class RelaySelector with AtClientBindings {
     );
 
     return completer.future.timeout(
-      Duration(minutes: 1),
+      timeout,
       onTimeout: () {
         subscription.cancel();
         throw TimeoutException(
@@ -222,7 +285,8 @@ class RelaySelector with AtClientBindings {
 
   /// Accepts two maps of RV atsigns to latency in milliseconds, and returns
   /// the atsign of the RV with the lowest combined average latency.
-  Atsign _lowestAverageLatency(
+  @visibleForTesting
+  Atsign lowestAverageLatency(
     Map<String, int> daemonLatencies,
     Map<String, int> clientLatencies,
   ) {
@@ -246,6 +310,31 @@ class RelaySelector with AtClientBindings {
     }
 
     logger.info('Selecting fastest RV: $bestRv');
+    return bestRv.toAtsign();
+  }
+
+  /// Accepts a map of RV atsigns to latency in milliseconds, and returns the
+  /// atsign of the RV with the lowest latency. Used as a fallback when
+  /// device latencies are unavailable (older daemon, timeout, malformed
+  /// response).
+  @visibleForTesting
+  Atsign lowestLatency(Map<String, int> latencies) {
+    String? bestRv;
+    int bestLatency = -1;
+
+    for (final entry in latencies.entries) {
+      if (entry.value == -1) continue; // skip unreachable RVs
+      if (bestRv == null || entry.value < bestLatency) {
+        bestRv = entry.key;
+        bestLatency = entry.value;
+      }
+    }
+
+    if (bestRv == null) {
+      throw StateError('No reachable RV found');
+    }
+
+    logger.info('Selecting fastest RV (client-only): $bestRv');
     return bestRv.toAtsign();
   }
 }
