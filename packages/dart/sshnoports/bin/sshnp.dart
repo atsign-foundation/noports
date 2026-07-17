@@ -149,9 +149,20 @@ void main(List<String> args) async {
         });
       }
 
+      // A listen progress listener for the CLI
+      // Will only log if verbose is false, since if verbose is true
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
+      void logProgress(String s) {
+        if (params?.verbose == false && argResults[quietFlag] == false) {
+          stderr.writeln('${DateTime.now()} : $s');
+        }
+      }
+
       // Create Sshnp Instance
       final sshnp = await createSshnp(
         params,
+        onProgress: logProgress,
         atClientGenerator: (SshnpParams params) => createAtClientCli(
           atsign: params.clientAtSign,
           atKeysFilePath: params.atKeysFilePath ??
@@ -170,16 +181,6 @@ void main(List<String> args) async {
         }
         throw e;
       });
-
-      // A listen progress listener for the CLI
-      // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages.
-      // However, will NOT log if the quiet flag has been set.
-      void logProgress(String s) {
-        if (params?.verbose == false && argResults[quietFlag] == false) {
-          stderr.writeln('${DateTime.now()} : $s');
-        }
-      }
 
       sshnp.progressStream?.listen((s) => logProgress(s));
 

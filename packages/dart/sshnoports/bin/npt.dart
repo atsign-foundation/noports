@@ -492,6 +492,10 @@ void main(List<String> args) async {
 
       // auto select the best relay if none is specified
       if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        logProgress(
+          'No relay supplied, will find the lowest-latency relay available; '
+          'this may take up to 25 seconds',
+        );
         List<Atsign>? rvAtSigns;
         if (srvdAtSign.isNotEmpty) {
           rvAtSigns =
