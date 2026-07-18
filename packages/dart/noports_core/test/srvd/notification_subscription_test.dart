@@ -205,6 +205,7 @@ void main() {
           verbose: false,
           bind443: bind443,
           localBindPort443: localBindPort443,
+          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         );
       }
 
