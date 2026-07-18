@@ -4,9 +4,7 @@ import 'dart:isolate';
 
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
-import 'package:at_commons/atsign.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 
@@ -17,6 +15,11 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   final bool logTraffic;
   final bool verbose;
   final String loggingTag;
+
+  /// Window used by [RelayAuthVerifierAuto] to distinguish a legacy connecting
+  /// side (which speaks first) from an ESCR one (which waits to be challenged).
+  final int relayAuthDetectWindowMs;
+
   late final ReceivePort fromMain;
   late final AtSignLogger logger;
   final Map<String, RelayWorkerRequestHandler> reqHandlers = {};
@@ -27,6 +30,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     required this.logTraffic,
     required this.verbose,
     required this.loggingTag,
+    this.relayAuthDetectWindowMs = defaultRelayAuthDetectWindowMs,
   }) {
     AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
     AtSignLogger.root_level = verbose ? 'INFO' : 'WARNING';
@@ -84,100 +88,58 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     await stop();
   }
 
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)> createAuthVerifiers(
+  /// Builds a per-socket auto-detecting verifier for each authenticated side.
+  ///
+  /// Both sides are left to auto-detect: the client declares the universally-
+  /// safe legacy mode in `request_ports` (so a relay that does NOT auto-detect
+  /// applies one mode both sides can do), and it decides its *actual* per-side
+  /// mode only after learning this relay auto-detects — so `params.relayAuthMode`
+  /// no longer reflects either side's real mode and must not be used as a
+  /// `knownMode` here. Once the client has resolved the modes it sends a
+  /// definitive auth-modes notification, which the worker feeds to each verifier
+  /// via [setKnownMode] to skip the detection window.
+  ///
+  /// A legacy socket needs the connecting atSign's public key. It is passed
+  /// through here if the request handler already fetched it (`publicKeyA/B`,
+  /// which only happens for an explicit legacy request); otherwise the auto
+  /// verifier looks it up lazily, and only if the socket does turn out to be
+  /// legacy — so ESCR sessions pay no public-key lookup.
+  Future<(RelayAuthVerifierAuto?, RelayAuthVerifierAuto?)> createAuthVerifiers(
     SrvdSessionParams params,
   ) async {
-    switch (params.relayAuthMode) {
-      case RelayAuthMode.payload:
-        return await createPayloadAuthVerifiers(params);
-      case RelayAuthMode.escr:
-        return await createEscrAuthVerifiers(params);
-    }
-  }
-
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)> createPayloadAuthVerifiers(
-    SrvdSessionParams params,
-  ) async {
-    RelayAuthVerifier? authVerifierA;
-    RelayAuthVerifier? authVerifierB;
-
-    Map expectedPayloadForSignature = {
+    final String dataToVerify = jsonEncode({
       'sessionId': params.sessionId,
       'clientNonce': params.clientNonce,
       'rvdNonce': params.rvdNonce,
-    };
+    });
+
+    RelayAuthVerifierAuto? authVerifierA;
+    RelayAuthVerifierAuto? authVerifierB;
 
     if (params.authenticateSocketA) {
-      String? pkAtSignA =
-          params.publicKeyA ??
-          (await rpcToMain(
-            IIRequest.create('lookup', 'public:publickey${params.atSignA}'),
-          )).payload;
-      if (pkAtSignA == null) {
-        logger.shout(
-          'Cannot spawn socket connector.'
-          ' Authenticator for ${params.atSignA}'
-          ' could not be created as PublicKey could not be'
-          ' fetched from the atServer.',
-        );
-        throw Exception(
-          'Failed to create SocketAuthenticator'
-          ' for ${params.atSignA} due to failure to get public key for ${params.atSignA}',
-        );
-      }
-      authVerifierA = RelayAuthVerifierLegacy(
-        pkAtSignA,
-        jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce,
-        params.atSignA,
-        params.atSignA.toAtsign(),
-        params.sessionId,
+      authVerifierA = RelayAuthVerifierAuto(
+        '${params.sessionId} sideA',
+        this,
+        atSign: params.atSignA,
+        sessionId: params.sessionId,
+        dataToVerify: dataToVerify,
+        rvdNonce: params.rvdNonce,
+        publicKey: params.publicKeyA,
+        detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
       );
     }
 
     if (params.authenticateSocketB) {
-      String? pkAtSignB =
-          params.publicKeyB ??
-          (await rpcToMain(
-            IIRequest.create('lookup', 'public:publickey${params.atSignB}'),
-          )).payload;
-      if (pkAtSignB == null) {
-        logger.shout(
-          'Cannot spawn socket connector.'
-          ' Authenticator for ${params.atSignB}'
-          ' could not be created as PublicKey could not be'
-          ' fetched from the atServer',
-        );
-        throw Exception(
-          'Failed to create SocketAuthenticator'
-          ' for ${params.atSignB} due to failure to get public key for ${params.atSignB}',
-        );
-      }
-      authVerifierB = RelayAuthVerifierLegacy(
-        pkAtSignB,
-        jsonEncode(expectedPayloadForSignature),
-        params.rvdNonce,
-        params.atSignB,
-        params.atSignB.toAtsign(),
-        params.sessionId,
+      authVerifierB = RelayAuthVerifierAuto(
+        '${params.sessionId} sideB',
+        this,
+        atSign: params.atSignB,
+        sessionId: params.sessionId,
+        dataToVerify: dataToVerify,
+        rvdNonce: params.rvdNonce,
+        publicKey: params.publicKeyB,
+        detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
       );
-    }
-
-    return (authVerifierA, authVerifierB);
-  }
-
-  Future<(RelayAuthVerifier?, RelayAuthVerifier?)> createEscrAuthVerifiers(
-    SrvdSessionParams params,
-  ) async {
-    RelayAuthVerifierESCR? authVerifierA;
-    RelayAuthVerifierESCR? authVerifierB;
-
-    if (params.authenticateSocketA) {
-      authVerifierA = RelayAuthVerifierESCR('${params.sessionId} sideA', this);
-    }
-
-    if (params.authenticateSocketB) {
-      authVerifierB = RelayAuthVerifierESCR('${params.sessionId} sideB', this);
     }
 
     return (authVerifierA, authVerifierB);

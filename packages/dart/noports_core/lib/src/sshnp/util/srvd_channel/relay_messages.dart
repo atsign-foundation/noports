@@ -9,12 +9,20 @@ class RelayResponse {
   final String rvdNonce;
   final bool supportsEventLogging;
 
+  /// Whether this relay auto-detects each socket's relay-auth mode per side.
+  /// Only such a relay can reconcile a client and daemon that use different
+  /// modes; against a relay that does not (older releases, and the CSV
+  /// response format), the client must fall back to legacy for both sides.
+  /// Absent in older/CSV responses -> false.
+  final bool autoDetectsRelayAuth;
+
   RelayResponse({
     required this.address,
     required this.portA,
     required this.portB,
     required this.rvdNonce,
     required this.supportsEventLogging,
+    this.autoDetectsRelayAuth = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -23,6 +31,7 @@ class RelayResponse {
     'portB': portB,
     'rvdNonce': rvdNonce,
     'supportsEventLogging': supportsEventLogging,
+    'autoDetectsRelayAuth': autoDetectsRelayAuth,
   };
 
   factory RelayResponse.fromJson(Map<String, dynamic> json) {
@@ -32,6 +41,7 @@ class RelayResponse {
       portB: json['portB'],
       rvdNonce: json['rvdNonce'],
       supportsEventLogging: json['supportsEventLogging'],
+      autoDetectsRelayAuth: json['autoDetectsRelayAuth'] ?? false,
     );
   }
 }

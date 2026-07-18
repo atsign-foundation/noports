@@ -394,13 +394,18 @@ class SshnpArg {
     name: 'relay-auth-mode',
     aliases: ['ram'],
     help:
-        'The authentication mode to use. "escr" (encrypted signed challenge'
-        ' response) is strongest.'
-        ' Alias: --ram',
-    defaultsTo: 'payload',
+        'The authentication mode to use when authenticating to the relay.'
+        ' "escr" (encrypted signed challenge response) is strongest and is the'
+        ' default: it is used wherever the whole path supports it, while older'
+        ' relays/daemons fall back to legacy and the relay auto-detects each'
+        ' side. Passing "escr" EXPLICITLY forces ESCR wherever the path supports'
+        ' it - the daemon side degrades to legacy if it cannot do ESCR, which an'
+        ' auto-detecting relay reconciles - and errors only when the relay does'
+        ' not auto-detect AND the daemon cannot do ESCR. "payload" is the legacy'
+        ' mode. Alias: --ram',
+    defaultsTo: 'escr',
     allowed: ['payload', 'escr'],
     // allowed: RelayAuthMode.values.map((c) => c.name).toList(),
-    // defaultsTo: RelayAuthMode.payload.name,
   );
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
