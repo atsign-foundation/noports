@@ -90,6 +90,13 @@ atKeysDir="$testRuntimeDir/keys"
 logInfo "Copying all contents in "$(getApkamKeysDir)" to $atKeysDir"
 cp $(getApkamKeysDir)/* "$atKeysDir" || exit 1
 
+# at_onboarding_cli >=1.16.0 chmod 600s .atKeys files on write (owner-only).
+# These files are bind-mounted into daemon containers that run as a fixed,
+# different UID (see USER_ID in tests/e2e_all/dockerfiles), so the daemon
+# can no longer read its own keys. Relax back to owner+group/other read for
+# this ephemeral, single-run test directory.
+chmod 644 "$atKeysDir"/* || exit 1
+
 logInfo
 logInfo "apkam_setup.sh complete"
 
