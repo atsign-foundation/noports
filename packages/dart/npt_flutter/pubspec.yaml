@@ -40,7 +40,7 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.4.0
   at_backupkey_flutter: ^4.0.16
-  at_client: ^3.11.0
+  at_client: ^3.12.0
   # at_client_flutter: ^0.1.2
   at_client_mobile: ^3.2.24
   at_contact: ^3.0.8
@@ -100,7 +100,7 @@ dev_dependencies:
 dependency_overrides:
   at_auth: ^3.0.1
   at_chops: ^3.0.0
-  at_onboarding_cli: 1.14.2
+  at_onboarding_cli: 1.16.0
   archive: ^4.0.7
   file_picker: ^10.3.3
   intl: 0.20.2
