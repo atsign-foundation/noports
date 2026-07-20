@@ -406,11 +406,6 @@ class WrappedSSHSocket implements SSHSocket {
   Future<void> get done => sink.done;
 
   @override
-  Future<void> flush() async {
-    await underlyingSink.flush();
-  }
-
-  @override
   StreamSink<List<int>> get sink => _sink;
 
   @override
