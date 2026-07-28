@@ -152,6 +152,7 @@ class SrvImplExec implements Srv<Process> {
       includeParentEnvironment: true,
       environment: environment,
     );
+    unawaited(p.stdin.close());
     Completer rvPortBound = Completer();
     p.stdout.listen((List<int> l) {
       var allLines = utf8.decode(l).trim();
