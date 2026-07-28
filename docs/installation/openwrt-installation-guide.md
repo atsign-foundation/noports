@@ -41,13 +41,13 @@ Those command line snippets set some variables for the `RELEASE` number, `ARCH` 
 
 Packages are installed using `opkg install` for OpenWrt 24.10 and earlier releases that use `.ipk` type packages, or `apk add` for newer OpenWrt which uses `.apk` packages.
 
-For example, to install the c1.0.18 release:
+For example, to install the c1.0.19 release:
 
 ```
-RELEASE="1.0.18"
+RELEASE="1.0.19"
 ARCH=$(opkg print-architecture | grep ' 10$' | awk '{print $2}')
 PACKAGE="csshnpd_${RELEASE}-1_${ARCH}.ipk"
-wget -O ${PACKAGE} https://github.com/atsign-foundation/Atsign_OpenWRT_packages/releases/download/c${RELEASE}/${PACKAGE}
+wget -O ${PACKAGE} https://github.com/atsign-foundation/Atsign_OpenWrt_packages/releases/download/c${RELEASE}/${PACKAGE}
 opkg install ${PACKAGE}
 ```
 
