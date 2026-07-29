@@ -1,3 +1,11 @@
+# 6.12.1
+
+- fix: `RelaySelector.selectBestRelay` no longer hangs or throws when the
+  daemon never responds to a `relay_latency_request` (e.g. pre-5.15.0
+  daemons, which don't implement it). It now falls back to client-only
+  latency selection after `deviceLatencyTimeout` (default 20s, down from an
+  unbounded 60s+ wait). See #2752.
+
 # 6.12.0
 
 - feat: npp policy next iteration

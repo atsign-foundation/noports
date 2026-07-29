@@ -373,10 +373,10 @@ packages:
     dependency: "direct main"
     description:
       name: dartssh2
-      sha256: c139babed0d6851449100010639115e1ed88decf0db7eb714ce13935c7eb590c
+      sha256: "68b066d130d0dd322018f5fa69ea919927f082d7062ef613b200c5f01e0c7636"
       url: "https://pub.dev"
     source: hosted
-    version: "2.17.1"
+    version: "2.22.2"
   duration:
     dependency: "direct main"
     description:
@@ -607,7 +607,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.12.0"
+    version: "6.12.1"
   openssh_ed25519:
     dependency: transitive
     description:

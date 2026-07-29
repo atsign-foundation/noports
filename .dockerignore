@@ -1,0 +1,36 @@
+# Keeps the Docker build context lean for builds that use the repo root as
+# their context (COPY . .):
+#   - the npe2e image builds (tests/npe2e/tools/dockerfiles/Dockerfile.*.current)
+#   - the published sshnpd image (packages/dart/sshnoports/tools/Dockerfile.*,
+#     built with `context: .` in .github/workflows/dockerhub_sshnpd.yml)
+#
+# Only non-source artefacts are excluded. The Dart image builds still get
+# everything they compile: packages/dart/{sshnoports,noports_core}, the repo's
+# pubspec.lock files (required by `dart pub get --enforce-lockfile`), and
+# tools/static-openssh.
+
+# melos writes host-absolute dependency paths into pubspec_overrides.yaml; those
+# paths don't exist inside the container and break `dart pub get`. The file is
+# gitignored, so it is absent on a clean CI checkout (this line is a no-op there)
+# and only matters on a developer's machine that has run `melos bootstrap`.
+**/pubspec_overrides.yaml
+
+# VCS metadata and generated/local build state
+.git
+.github
+**/.dart_tool/
+**/build/
+
+# Repo areas that no image build compiles
+tests/
+apps/
+docs/
+images/
+
+# npe2e test output written at the repo root
+npe2e_core_tests/
+npe2e_*/
+
+# logs and editor scratch
+**/*.log
+**/*.swp

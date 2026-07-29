@@ -123,11 +123,11 @@ class PolicyServer {
     final String containerKeyFilePath =
         '/atsign/.atsign/keys/${path.basename(apkamKeysFile.path)}';
 
-    await runCommand(
-      'docker',
-      ['rm', '-f', _buildContainerName()],
-      printCommand: false,
-    );
+    await runCommand('docker', [
+      'rm',
+      '-f',
+      _buildContainerName(),
+    ], printCommand: false);
 
     dockerInstance = await runDockerInstance(
       dockerImage: dockerImage,
@@ -145,6 +145,8 @@ class PolicyServer {
         rootDomain,
         ...additionalArgs,
       ],
+      // Local-run aid: let the container resolve *.atsign.zone back to the host.
+      additionalDockerArgs: hostGatewayAddHostArgs(),
       volumeMappings: [
         VolumeMapping(
           local: apkamKeysFile.absolute.path,

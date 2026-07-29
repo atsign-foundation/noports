@@ -70,6 +70,11 @@ Future<List<(String, DockerInstance)>> startDockerDaemonsParallel({
   daemonApkamKeysFile, // atKeys file of daemon to put into the container
 }) async {
   final List<(String, DockerInstance)> dockerInstances = [];
+  final List<String> addHostArgs = hostGatewayAddHostArgs();
+  if (addHostArgs.isNotEmpty) {
+    print('Injecting host /etc/hosts overrides into daemon containers: '
+        '${addHostArgs.join(' ')}');
+  }
   for (final NoPortsVersion daemonVersion in daemonVersions) {
     final DockerImage dockerImage = allDockerImages.firstWhere(
       (image) =>
@@ -107,6 +112,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemonsParallel({
       quiet: false,
       removeWhenStopped: true,
       volumeMappings: [volumeMapping],
+      additionalDockerArgs: addHostArgs,
     );
     final String deviceNameNoFlags = getDeviceNameNoFlags(
       testRunId: testRunId,
@@ -136,6 +142,7 @@ Future<List<(String, DockerInstance)>> startDockerDaemonsParallel({
       quiet: false,
       removeWhenStopped: true,
       volumeMappings: [volumeMapping],
+      additionalDockerArgs: addHostArgs,
     );
     dockerInstances.add((deviceNameWithFlags, dockerInstance2));
   }

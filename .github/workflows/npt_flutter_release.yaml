@@ -20,7 +20,7 @@ jobs:
       sbom_name: ${{ steps.metadata.outputs.sbom_name }}
     steps:
       - name: Checkout target branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -62,11 +62,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout action branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: npt-release-${{github.run_number}}
       - name: Generate SBOM
-        uses: sbomify/github-action@ac8b0d423c90447f3011ef8ab5f9ff2e854c6931 # v26.2.0
+        uses: sbomify/github-action@ddf6a0d3d75b645153ad1ad60034b3fe2cb1eb63 # v26.7.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'xUUCaZd4OWr1'
@@ -94,7 +94,7 @@ jobs:
       hashes: ${{ steps.release.outputs.hashes }}
     steps:
       - name: Checkout action branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: npt-release-${{github.run_number}}
 
@@ -184,7 +184,7 @@ jobs:
             --clobber
 
       - name: GitHub attestation
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
         with:
           subject-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.asset_name }}"
           sbom-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}"
@@ -209,6 +209,6 @@ jobs:
     permissions:
       contents: write # Needed to delete workflow branch
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Delete workflow branch
         run: git push origin --delete npt-release-${{github.run_number}}
