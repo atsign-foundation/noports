@@ -126,7 +126,8 @@ class CoreTestsParams {
       'test-timeout-seconds',
       mandatory: false,
       defaultsTo: '300',
-      help: 'Timeout in seconds for each individual test before it is failed and retried',
+      help:
+          'Timeout in seconds for each individual test before it is failed and retried',
     );
     argParser.addOption(
       'test-run-id',

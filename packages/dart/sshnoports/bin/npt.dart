@@ -278,7 +278,7 @@ void main(List<String> args) async {
       parser.addOption(
         'relay-auth-mode',
         aliases: ['ram'],
-        help: 'The authentication mode to use. "ecr" is strongest.'
+        help: 'The authentication mode to use. "escr" is strongest.'
             ' Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
         defaultsTo: RelayAuthMode.payload.name,
@@ -486,6 +486,10 @@ void main(List<String> args) async {
 
       // auto select the best relay if none is specified
       if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        logProgress(
+          'No relay supplied, will find the lowest-latency relay available; '
+          'this may take up to 25 seconds',
+        );
         List<Atsign>? rvAtSigns;
         if (srvdAtSign.isNotEmpty) {
           rvAtSigns =

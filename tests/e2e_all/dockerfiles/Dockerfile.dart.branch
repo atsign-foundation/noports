@@ -1,4 +1,4 @@
-FROM dart:3.12.2@sha256:a74253f8c88f341629a471b8706f8f7b9938207248d5f2ac6a8c2d2230b466c0 AS buildimage
+FROM dart:3.12.2@sha256:13140e26d84f4fda57cea31942222112aeb2eec10e5e6874c1c0f70beed189ab AS buildimage
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
@@ -25,7 +25,7 @@ RUN set -eux ; \
     dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
     dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:dedba9fdcca1c96c8dd9d0d3495b3c56fa0c49f68b2852ae745a1346c4e64ee2 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:c9b3f1c8d6271850e3fba63005d9109ca45315db3b40d80d2666ec8dd350e733 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}

@@ -123,7 +123,8 @@ class RelayTestsParams {
     parser.addOption(
       'test-timeout-seconds',
       defaultsTo: '300',
-      help: 'Timeout in seconds for each individual test before it is failed and retried',
+      help:
+          'Timeout in seconds for each individual test before it is failed and retried',
     );
     parser.addOption(
       'test-run-id',
