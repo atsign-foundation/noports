@@ -1,3 +1,7 @@
+## 1.0.19
+
+- build(deps): Bump at_c to use MbedTLS 3.6.7
+
 ## 1.0.18
 
 - build(deps): Bump at_c to use MbedTLS 3.6.6

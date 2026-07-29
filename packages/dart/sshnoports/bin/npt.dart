@@ -278,7 +278,7 @@ void main(List<String> args) async {
       parser.addOption(
         'relay-auth-mode',
         aliases: ['ram'],
-        help: 'The authentication mode to use. "ecr" is strongest.'
+        help: 'The authentication mode to use. "escr" is strongest.'
             ' Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
         defaultsTo: RelayAuthMode.payload.name,

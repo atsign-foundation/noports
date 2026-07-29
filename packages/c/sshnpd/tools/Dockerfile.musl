@@ -6,7 +6,7 @@ WORKDIR /sshnpd
 COPY . .
 ARG TARGETARCH
 RUN set -eux; \
-  apk add clang cmake coreutils git make ninja python3; \
+  apk add build-base clang cmake coreutils git make ninja python3; \
   case "${TARGETARCH}" in \
     amd64) ARCH="x64";;\
     *) ARCH=${TARGETARCH};; \

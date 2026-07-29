@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(sshnpd VERSION 1.0.18 LANGUAGES C)
+project(sshnpd VERSION 1.0.19 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
