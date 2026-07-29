@@ -163,9 +163,6 @@ Future<CoreTestResult> _runNptToPort22Test({
     'StrictHostKeyChecking=accept-new',
     '-o',
     'IdentitiesOnly=yes',
-    // ssh options must come BEFORE the destination: everything after the
-    // destination is treated as the remote command (BSD getopt on macOS does
-    // not permute args the way glibc does on Linux).
     '-i',
     context.identityFilePath,
     '${context.remoteUsername}@localhost',
