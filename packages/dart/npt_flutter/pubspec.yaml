@@ -100,7 +100,7 @@ dev_dependencies:
 dependency_overrides:
   at_auth: ^3.0.1
   at_chops: ^3.0.0
-  at_onboarding_cli: 1.14.2
+  at_onboarding_cli: ^1.15.0
   archive: ^4.0.7
   file_picker: ^10.3.3
   intl: 0.20.2

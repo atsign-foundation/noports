@@ -166,10 +166,10 @@ packages:
     dependency: "direct overridden"
     description:
       name: at_onboarding_cli
-      sha256: "9e8317662dffb447e5dd41e82d5825eea0d44460e01c106570902224a97abd44"
+      sha256: "40b9b40ff88bbfba50412bbc6fe4d5991958e6ccab9a1f434bba0eaa9af115b9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.14.2"
+    version: "1.15.0"
   at_onboarding_flutter:
     dependency: "direct main"
     description:
