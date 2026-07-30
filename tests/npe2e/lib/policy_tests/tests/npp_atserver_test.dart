@@ -4,27 +4,30 @@ import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
 import 'package:npe2e/policy_tests/policy_server.dart';
+import 'package:npe2e/policy_tests/policy_test_case.dart';
 import 'package:npe2e/policy_tests/policy_tests_context.dart';
 import 'package:npe2e/policy_tests/policy_tests_logging.dart';
 import 'package:npe2e/policy_tests/policy_tests_test_result.dart';
 import 'package:npe2e/policy_tests/policy_flow_shared.dart';
 import 'package:npe2e/print_test_utils.dart';
 import 'package:npe2e/test_result.dart';
+import 'package:npe2e/transcript.dart';
 import 'package:noports_core/admin.dart' as admin;
 
 const String nppAtServerTestName = 'npp_atserver_test';
+const String nppAtServerPolicyLabel = 'npp_atserver';
 final NoPortsVersion _minimumNppAtServerVersion = NoPortsVersion(
   language: Language.dart,
   version: 'v5.13.0',
 );
 
-List<Future<PolicyTestResult> Function()> getNppAtServerTestFactories({
+List<PolicyTestCase> getNppAtServerTestFactories({
   required final PolicyTestsContext context,
   required final List<NoPortsVersion> clientVersions,
   required final List<NoPortsVersion> daemonVersions,
   required final List<NoPortsVersion> nppAtServerVersions,
 }) {
-  final List<Future<PolicyTestResult> Function()> testFactories = [];
+  final List<PolicyTestCase> testFactories = [];
   final PolicyTestLogger testLogger = PolicyTestLogger(
     logsDirectory: context.logsDirectory,
     testName: nppAtServerTestName,
@@ -39,13 +42,27 @@ List<Future<PolicyTestResult> Function()> getNppAtServerTestFactories({
   for (final (NoPortsVersion, NoPortsVersion, NoPortsVersion) permutation
       in permutations) {
     final (clientVersion, daemonVersion, policyVersion) = permutation;
+    final String tag = getPolicyFlowDeviceName(
+      context: context,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyLabel: nppAtServerPolicyLabel,
+    );
     testFactories.add(
-      () => _runNppAtServerTest(
-        context: context,
-        testLogger: testLogger,
+      PolicyTestCase(
+        testName: nppAtServerTestName,
+        tag: tag,
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
         policyVersion: policyVersion,
+        run: () => _runNppAtServerTest(
+          context: context,
+          testLogger: testLogger,
+          transcript: Transcript(tag: tag, file: context.transcriptLogFile),
+          clientVersion: clientVersion,
+          daemonVersion: daemonVersion,
+          policyVersion: policyVersion,
+        ),
       ),
     );
   }
@@ -94,6 +111,7 @@ bool _hasCurrentVersion(
 Future<PolicyTestResult> _runNppAtServerTest({
   required final PolicyTestsContext context,
   required final PolicyTestLogger testLogger,
+  required final Transcript transcript,
   required final NoPortsVersion clientVersion,
   required final NoPortsVersion daemonVersion,
   required final NoPortsVersion policyVersion,
@@ -108,6 +126,10 @@ Future<PolicyTestResult> _runNppAtServerTest({
   final File policyApkamKeysFile =
       context.apkamKeys[context.nppAtServerAtsign]!;
   if (!(await policyApkamKeysFile.exists())) {
+    final String reason =
+        'APKAM keys for ${context.nppAtServerAtsign} do not exist at '
+        '${policyApkamKeysFile.path}';
+    transcript.error(reason);
     final PolicyTestResult testResult = PolicyTestResult(
       testName: nppAtServerTestName,
       clientVersion: clientVersion,
@@ -115,6 +137,8 @@ Future<PolicyTestResult> _runNppAtServerTest({
       policyVersion: policyVersion,
       status: TestStatus.failed,
       exitCode: 1,
+      tag: transcript.tag,
+      failure: PolicyTestFailure(stage: 'apkam keys', reason: reason),
     );
     printTestResult(testResult: testResult, extra: extra);
     return testResult;
@@ -145,8 +169,19 @@ Future<PolicyTestResult> _runNppAtServerTest({
   );
 
   try {
+    transcript.info(
+      'starting npp_atserver policy server '
+      '${policyDockerImage.fullImageName} for ${context.nppAtServerAtsign}',
+    );
     await policyServer.start();
     await policyServer.ensureProcessMessage();
+    transcript.ok(
+      'npp_atserver policy server ready: ${policyServer.containerName}',
+    );
+
+    transcript.info(
+      'authenticating admin AtClient as ${context.nppAtServerAtsign}',
+    );
     final atClient = await createPolicyAtClient(
       atsign: context.nppAtServerAtsign,
       apkamKeysFile: policyApkamKeysFile,
@@ -155,18 +190,24 @@ Future<PolicyTestResult> _runNppAtServerTest({
         '${context.baseDirectory.path}/atClientStorage/npp_atserver$uniqueIdentifier',
       ),
     );
+    transcript.ok('admin AtClient authenticated');
     final policyService = admin.PolicyServiceWithAtClient(atClient: atClient);
     await policyService.init();
+    transcript.ok('policy service initialised');
     final PolicyTestResult testResult = await runPolicyFlow(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       testName: nppAtServerTestName,
-      policyLabel: 'npp_atserver',
+      policyLabel: nppAtServerPolicyLabel,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
       policyVersion: policyVersion,
       policyManagerAtsign: context.nppAtServerAtsign,
-      policyRules: NppAtServerPolicyRules(policyService),
+      policyRules: NppAtServerPolicyRules(
+        policyService,
+        transcript: transcript,
+      ),
       policyServer: policyServer.dockerInstance,
     );
     printTestResult(testResult: testResult, extra: extra);
@@ -174,7 +215,9 @@ Future<PolicyTestResult> _runNppAtServerTest({
   } finally {
     try {
       await policyServer.stop();
-    } catch (_) {}
+    } catch (e) {
+      transcript.warn('teardown: policyServer.stop() failed: $e');
+    }
   }
 }
 

@@ -20,6 +20,13 @@ class PolicyTestsContext {
   final String nppAtServerAtsign;
   final String rootDomain;
 
+  /// Run-level plain-text copy of the harness's narration. Lives under
+  /// [logsDirectory] because CI archives only that tree, so this is the only
+  /// place the narration survives a failed run.
+  final File transcriptLogFile;
+
+  final bool verbose;
+
   PolicyTestsContext({
     required this.testRunId,
     required this.baseDirectory,
@@ -36,5 +43,7 @@ class PolicyTestsContext {
     required this.nppAtsign,
     required this.nppAtServerAtsign,
     required this.rootDomain,
+    required this.transcriptLogFile,
+    required this.verbose,
   });
 }

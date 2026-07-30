@@ -7,6 +7,7 @@ import 'package:npe2e/client_binary_utils.dart';
 import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
+import 'package:npe2e/policy_tests/policy_test_case.dart';
 import 'package:npe2e/policy_tests/policy_tests_print_utils.dart';
 import 'package:npe2e/policy_tests/policy_tests_context.dart';
 import 'package:npe2e/policy_tests/policy_tests_docker_utils.dart';
@@ -16,9 +17,11 @@ import 'package:npe2e/policy_tests/tests/npp_atserver_test.dart';
 import 'package:npe2e/policy_tests/tests/npp_test.dart';
 import 'package:npe2e/print_test_utils.dart';
 import 'package:npe2e/test_result.dart';
+import 'package:npe2e/transcript.dart';
 import 'package:npe2e/utils.dart';
 
 const String policyTestsApkamApp = 'npe2e_policy';
+const String policyTranscriptFileName = 'npe2e_policy_transcript.log';
 
 Future<void> policyTests(PolicyTestsParams params) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
@@ -68,6 +71,16 @@ Future<void> policyTests(PolicyTestsParams params) async {
   await ensureDirectoryExists(nppLogsDirectory);
   await ensureDirectoryExists(nppAtServerLogsDirectory);
 
+  final File transcriptLogFile = File(
+    '${logsDirectory.path}/$policyTranscriptFileName',
+  );
+  await transcriptLogFile.writeAsString(
+    'npe2e policy_tests transcript, testRunId=$testRunId, '
+    'started ${DateTime.now().toIso8601String()}\n',
+  );
+  final Transcript transcript = Transcript(tag: 'run', file: transcriptLogFile);
+  transcript.info('transcript: ${transcriptLogFile.path}');
+
   // 4. Set up Flow 1
   // Set up `clientBinariesToDownload` List of tuples e.g. (d:current, sshnp),...
   final List<(NoPortsVersion, ClientBinaryType)> clientBinariesToDownload = [];
@@ -83,10 +96,11 @@ Future<void> policyTests(PolicyTestsParams params) async {
   ));
 
   final Stopwatch setUpStopwatch = Stopwatch()..start();
-  print('Running policy setup flows asynchronously...');
-  print('\tFlow 1: Fetch client binaries --> APKAM setup');
-  print('\tFlow 2: Pull/build daemon, NPP, and NPP atServer Docker images');
-  print('');
+  transcript.section('Setup');
+  transcript.info('Flow 1: Fetch client binaries --> APKAM setup');
+  transcript.info(
+    'Flow 2: Pull/build daemon, NPP, and NPP atServer Docker images',
+  );
 
   // Flow 1:
   final Future<List<ClientBinary>> clientBinariesFuture =
@@ -101,6 +115,11 @@ Future<void> policyTests(PolicyTestsParams params) async {
       (cb) =>
           cb.binaryType == ClientBinaryType.at_activate &&
           cb.noPortsVersion.version == 'current',
+      orElse: () => throw Exception(
+        'No at_activate binary for version "current" was fetched; cannot set '
+        'up APKAM keys. Fetched: '
+        '${clientBinaries.map((cb) => '${cb.binaryType.name}@${cb.noPortsVersion.version}').join(', ')}',
+      ),
     );
     // Set up 4 Atsigns:
     // 1. clientAtsign: for the client binary to use in tests
@@ -140,25 +159,22 @@ Future<void> policyTests(PolicyTestsParams params) async {
   final List<DockerImage> allDockerImages =
       setupResults[2] as List<DockerImage>;
 
-  print('Fetched client binaries (${clientBinaries.length}):');
+  transcript.info('Fetched client binaries (${clientBinaries.length}):');
   for (final ClientBinary clientBinary in clientBinaries) {
-    print(
+    transcript.info(
       '    ${clientBinary.binaryType.name} | ${clientBinary.noPortsVersion.language.name} | ${clientBinary.noPortsVersion.version} | ${clientBinary.file.path}',
     );
   }
-  print('');
 
-  print('APKAM keys ready:');
+  transcript.info('APKAM keys ready:');
   for (final String atsign in apkamKeys.keys) {
-    print('    $atsign: ${apkamKeys[atsign]!.path}');
+    transcript.info('    $atsign: ${apkamKeys[atsign]!.path}');
   }
-  print('');
 
-  print('Docker images ready (${allDockerImages.length}):');
+  transcript.info('Docker images ready (${allDockerImages.length}):');
   for (final DockerImage dockerImage in allDockerImages) {
-    print('    ${dockerImage.fullImageName}');
+    transcript.info('    ${dockerImage.fullImageName}');
   }
-  print('');
 
   // 7. Prepare context object to pass to tests
   final PolicyTestsContext context = PolicyTestsContext(
@@ -177,24 +193,38 @@ Future<void> policyTests(PolicyTestsParams params) async {
     nppAtsign: params.nppAtsign,
     nppAtServerAtsign: params.nppAtServerAtsign,
     rootDomain: params.rootDomain,
+    transcriptLogFile: transcriptLogFile,
+    verbose: params.verbose,
   );
   setUpStopwatch.stop();
+  transcript.ok('setup complete in ${formatDuration(setUpStopwatch.elapsed)}');
 
   // 8. Run the tests
-  final List<List<Future<PolicyTestResult> Function()>> nppTestFactoryBatches =
+  final List<List<PolicyTestCase>> nppTestCaseBatches =
       getNppTestFactoryBatchesByPolicyVersion(
         context: context,
         clientVersions: clientVersions,
         daemonVersions: daemonVersions,
         nppVersions: nppVersions,
       );
-  final List<Future<PolicyTestResult> Function()> nppAtServerTestFactories =
-      getNppAtServerTestFactories(
-        context: context,
-        clientVersions: clientVersions,
-        daemonVersions: daemonVersions,
-        nppAtServerVersions: nppAtServerVersions,
-      );
+  final List<PolicyTestCase> nppAtServerTestCases = getNppAtServerTestFactories(
+    context: context,
+    clientVersions: clientVersions,
+    daemonVersions: daemonVersions,
+    nppAtServerVersions: nppAtServerVersions,
+  );
+
+  final int plannedTestCount =
+      nppTestCaseBatches.fold<int>(0, (sum, batch) => sum + batch.length) +
+      nppAtServerTestCases.length;
+  transcript.info(
+    'planned tests: $plannedTestCount '
+    '(npp: ${plannedTestCount - nppAtServerTestCases.length}, '
+    'npp_atserver: ${nppAtServerTestCases.length}); '
+    'batchSize=${params.batchSize} maxRetries=${params.maxRetries} '
+    'testTimeout=${params.testTimeoutSeconds}s',
+  );
+
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final Duration testTimeout = Duration(seconds: params.testTimeoutSeconds);
   // Run the npp and npp_atserver flows sequentially, not concurrently.
@@ -205,14 +235,16 @@ Future<void> policyTests(PolicyTestsParams params) async {
   // response notifications (intermittent 30+ minute hangs / red builds).
   final List<PolicyTestResult> nppResults =
       await _runFactoryBatchesWithConcurrency(
-        nppTestFactoryBatches,
+        nppTestCaseBatches,
+        transcript: transcript,
         batchSize: params.batchSize,
         maxRetries: params.maxRetries,
         testTimeout: testTimeout,
       );
   final List<PolicyTestResult> nppAtServerResults =
       await _runFuturesWithConcurrency(
-        nppAtServerTestFactories,
+        nppAtServerTestCases,
+        transcript: transcript,
         batchSize: params.batchSize,
         maxRetries: params.maxRetries,
         testTimeout: testTimeout,
@@ -252,20 +284,26 @@ Future<void> policyTests(PolicyTestsParams params) async {
   print('    Failed: $failedCount');
   print('');
 
+  if (totalTests == 0) {
+    transcript.warn(
+      'NO POLICY TESTS RAN. Every (client, daemon, policy) permutation was '
+      'filtered out. A permutation is kept only if the policy version is at '
+      'least the minimum for its suite AND at least one of the three versions '
+      'is "current". Check --client-versions, --daemon-versions, '
+      '--npp-versions and --npp-atserver-versions.',
+    );
+  }
+
   if (failedCount > 0) {
     print('Failed Tests:');
     for (final PolicyTestResult testResult in testResults.where(
       (tr) => tr.status == TestStatus.failed,
     )) {
-      final String extra = generatePolicyExtraString(
-        testResult.clientVersion,
-        testResult.daemonVersion,
-        testResult.policyVersion,
-        useShortLanguageName: true,
+      printPolicyFailureReport(
+        testResult,
+        transcriptLogFile: transcriptLogFile,
       );
-      print(
-        '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
-      );
+      print('');
     }
   }
 
@@ -276,6 +314,9 @@ Future<void> policyTests(PolicyTestsParams params) async {
     '    Test execution time: ${formatDuration(testExecutionStopwatch.elapsed)}',
   );
   print('    Overall time: ${formatDuration(overallStopwatch.elapsed)}');
+  print('');
+  print('Transcript: ${transcriptLogFile.path}');
+  print('Logs: ${logsDirectory.path}');
 
   if (failedCount > 0) {
     throw Exception('$failedCount policy test(s) failed');
@@ -290,61 +331,82 @@ List<NoPortsVersion> _parseVersions(final String versions) {
 }
 
 Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
-  List<Future<PolicyTestResult> Function()> testFactories, {
+  List<PolicyTestCase> testCases, {
+  required Transcript transcript,
   required int batchSize,
   required int maxRetries,
   required Duration testTimeout,
 }) async {
-  if (testFactories.isEmpty) {
+  if (testCases.isEmpty) {
     return [];
   }
 
   final List<PolicyTestResult> allResults = [];
-  final List<(Future<PolicyTestResult>, int)> active = [];
+  final List<(Future<PolicyTestResult>, PolicyTestCase)> active = [];
   int nextIndex = 0;
   int completedCount = 0;
 
   Future<PolicyTestResult> runWithRetry(
-    Future<PolicyTestResult> Function() factory,
+    PolicyTestCase testCase,
     int attempt,
   ) async {
+    final Transcript caseTranscript = transcript.withTag(testCase.tag);
     PolicyTestResult result;
     try {
-      result = await factory().timeout(testTimeout);
+      result = await testCase.run().timeout(testTimeout);
     } on TimeoutException {
       if (attempt < maxRetries) {
-        print(
-          '  ↺ Test timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
+        caseTranscript.warn(
+          '↺ ${testCase.testName} timed out after ${testTimeout.inSeconds}s '
+          '(attempt ${attempt + 1}/$maxRetries), retrying...',
         );
-        return runWithRetry(factory, attempt + 1);
+        return runWithRetry(testCase, attempt + 1);
       }
-      rethrow;
+      // Rethrowing here used to propagate all the way out of policyTests(),
+      // discarding every result collected so far — so the run that most needed
+      // a summary was the one that never printed one. Report it as a failure
+      // instead; the run still fails on failedCount > 0.
+      final PolicyTestResult timedOut = testCase.failedResult(
+        stage: 'test timeout',
+        reason:
+            'timed out after ${testTimeout.inSeconds}s on all '
+            '${attempt + 1} attempt(s)',
+        detail:
+            'The harness gave up from outside the test, so there is no '
+            'stage-level detail. The transcript shows the last step reached; '
+            'note that a timed-out attempt is not cancelled, so its containers '
+            'may have still been running when the retry started.',
+      );
+      caseTranscript.error(
+        '${testCase.testName} gave up: ${timedOut.failure!.reason}',
+      );
+      return timedOut;
     }
     if (result.status == TestStatus.failed && attempt < maxRetries) {
-      print(
-        '  ↺ Test failed (attempt ${attempt + 1}/$maxRetries), retrying...',
+      caseTranscript.warn(
+        '↺ ${testCase.testName} failed (attempt ${attempt + 1}/$maxRetries)'
+        '${result.failure != null ? ': ${result.failure!.reason}' : ''}, '
+        'retrying...',
       );
-      return runWithRetry(factory, attempt + 1);
+      return runWithRetry(testCase, attempt + 1);
     }
     return result;
   }
 
   Future<void> startNextTest() async {
-    if (nextIndex < testFactories.length) {
+    if (nextIndex < testCases.length) {
       if (nextIndex > 0) {
         await Future.delayed(Duration(seconds: 1));
       }
 
-      final int testIndex = nextIndex;
-      final Future<PolicyTestResult> Function() factory =
-          testFactories[nextIndex];
-      final Future<PolicyTestResult> testFuture = runWithRetry(factory, 0);
-      active.add((testFuture, testIndex));
+      final PolicyTestCase testCase = testCases[nextIndex];
+      final Future<PolicyTestResult> testFuture = runWithRetry(testCase, 0);
+      active.add((testFuture, testCase));
       nextIndex++;
     }
   }
 
-  for (int i = 0; i < batchSize && i < testFactories.length; i++) {
+  for (int i = 0; i < batchSize && i < testCases.length; i++) {
     await startNextTest();
   }
 
@@ -356,17 +418,25 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
       }),
     );
 
-    final ((Future<PolicyTestResult>, int) entry, PolicyTestResult testResult) =
-        completedEntry;
+    final (
+      (Future<PolicyTestResult>, PolicyTestCase) entry,
+      PolicyTestResult testResult,
+    ) = completedEntry;
 
     active.remove(entry);
     allResults.add(testResult);
     completedCount++;
 
-    final String status = testResult.status == TestStatus.passed ? '✓' : '✗';
-    print(
-      '$status ($completedCount/${testFactories.length}) ${testResult.testName}',
-    );
+    final PolicyTestCase testCase = entry.$2;
+    final Transcript caseTranscript = transcript.withTag(testCase.tag);
+    final String progress =
+        '($completedCount/${testCases.length}) ${testResult.testName} '
+        '${testCase.extra}';
+    if (testResult.status == TestStatus.passed) {
+      caseTranscript.ok('✓ $progress');
+    } else {
+      caseTranscript.error('✗ $progress');
+    }
 
     await startNextTest();
   }
@@ -375,17 +445,18 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
 }
 
 Future<List<PolicyTestResult>> _runFactoryBatchesWithConcurrency(
-  List<List<Future<PolicyTestResult> Function()>> testFactoryBatches, {
+  List<List<PolicyTestCase>> testCaseBatches, {
+  required Transcript transcript,
   required int batchSize,
   required int maxRetries,
   required Duration testTimeout,
 }) async {
   final List<PolicyTestResult> allResults = [];
-  for (final List<Future<PolicyTestResult> Function()> testFactories
-      in testFactoryBatches) {
+  for (final List<PolicyTestCase> testCases in testCaseBatches) {
     allResults.addAll(
       await _runFuturesWithConcurrency(
-        testFactories,
+        testCases,
+        transcript: transcript,
         batchSize: batchSize,
         maxRetries: maxRetries,
         testTimeout: testTimeout,
