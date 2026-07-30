@@ -28,6 +28,32 @@ const String policyDaemonDeniedPermitOpen = 'localhost:2233';
 const Duration policyStageWait = Duration(seconds: 15);
 const Duration policyNptRetryWait = Duration(seconds: 2);
 const int policyNptMaxAttempts = 3;
+const Duration policyAdminRpcTimeout = Duration(seconds: 20);
+const int policyAdminRpcMaxAttempts = 3;
+
+/// npp admin RPCs ride on notifications, and the admin client shares its
+/// atSign with the npp policy server. A response notification that arrives
+/// while the admin client's monitor is reconnecting is lost forever
+/// (fetchOfflineNotifications is false), and AtRpcClient.call awaits a
+/// completer with no timeout — so without this bound a single lost
+/// notification hangs the whole test until the outer test timeout.
+/// Only use this for operations that are safe to resend.
+Future<T> _nppAdminRpc<T>(String operation, Future<T> Function() send) async {
+  for (var attempt = 1; ; attempt++) {
+    try {
+      return await send().timeout(policyAdminRpcTimeout);
+    } on TimeoutException {
+      stderr.writeln(
+        'npp admin RPC "$operation" timed out after '
+        '${policyAdminRpcTimeout.inSeconds}s '
+        '(attempt $attempt/$policyAdminRpcMaxAttempts)',
+      );
+      if (attempt >= policyAdminRpcMaxAttempts) {
+        rethrow;
+      }
+    }
+  }
+}
 
 abstract class PolicyRules {
   Future<void> clear();
@@ -60,29 +86,23 @@ class NppPolicyRules implements PolicyRules {
 
   @override
   Future<void> clear() async {
-    final serviceACLs = await client.getAllServiceACLs();
-    for (final acl in serviceACLs) {
-      await client.deleteServiceACL(acl.id!);
-    }
-    final services = await client.getAllServices();
-    for (final service in services) {
-      await client.deleteService(service.id!);
-    }
-    final daemons = await client.getAllDaemons();
-    for (final daemon in daemons) {
-      await client.deleteDaemon(daemon.id!);
-    }
-    final members = await client.getAllClientGroupMembers();
-    for (final member in members) {
-      await client.deleteClientGroupMember(member.id!);
-    }
-    final groups = await client.getAllClientGroups();
-    for (final group in groups) {
-      await client.deleteClientGroup(group.id!);
-    }
-    final clients = await client.getAllClients();
-    for (final policyClient in clients) {
-      await client.deleteClient(policyClient.id!);
+    // Deleting an id the server no longer has throws server-side, so a
+    // delete whose response was lost must not be blindly resent. Instead,
+    // retry the whole pass: it re-fetches the surviving ids each time, so
+    // repeating it is idempotent.
+    for (var attempt = 1; ; attempt++) {
+      try {
+        await _clearOnce();
+        break;
+      } on TimeoutException {
+        stderr.writeln(
+          'npp admin clear() pass timed out '
+          '(attempt $attempt/$policyAdminRpcMaxAttempts)',
+        );
+        if (attempt >= policyAdminRpcMaxAttempts) {
+          rethrow;
+        }
+      }
     }
     _clientId = null;
     _clientGroupId = null;
@@ -91,13 +111,55 @@ class NppPolicyRules implements PolicyRules {
     _permitOpens.clear();
   }
 
+  Future<void> _clearOnce() async {
+    final serviceACLs = await client.getAllServiceACLs().timeout(
+      policyAdminRpcTimeout,
+    );
+    for (final acl in serviceACLs) {
+      await client.deleteServiceACL(acl.id!).timeout(policyAdminRpcTimeout);
+    }
+    final services = await client.getAllServices().timeout(
+      policyAdminRpcTimeout,
+    );
+    for (final service in services) {
+      await client.deleteService(service.id!).timeout(policyAdminRpcTimeout);
+    }
+    final daemons = await client.getAllDaemons().timeout(policyAdminRpcTimeout);
+    for (final daemon in daemons) {
+      await client.deleteDaemon(daemon.id!).timeout(policyAdminRpcTimeout);
+    }
+    final members = await client.getAllClientGroupMembers().timeout(
+      policyAdminRpcTimeout,
+    );
+    for (final member in members) {
+      await client
+          .deleteClientGroupMember(member.id!)
+          .timeout(policyAdminRpcTimeout);
+    }
+    final groups = await client.getAllClientGroups().timeout(
+      policyAdminRpcTimeout,
+    );
+    for (final group in groups) {
+      await client.deleteClientGroup(group.id!).timeout(policyAdminRpcTimeout);
+    }
+    final clients = await client.getAllClients().timeout(policyAdminRpcTimeout);
+    for (final policyClient in clients) {
+      await client
+          .deleteClient(policyClient.id!)
+          .timeout(policyAdminRpcTimeout);
+    }
+  }
+
   @override
   Future<List<String>> permitOpensFor({
     required String clientAtsign,
     required String daemonAtsign,
     required String deviceName,
   }) async {
-    final clients = await client.getAllClients();
+    final clients = await _nppAdminRpc(
+      'getAllClients',
+      () => client.getAllClients(),
+    );
     final clientIds = clients
         .where((policyClient) => policyClient.atSign == clientAtsign)
         .map((policyClient) => policyClient.id)
@@ -107,7 +169,10 @@ class NppPolicyRules implements PolicyRules {
       return const [];
     }
 
-    final members = await client.getAllClientGroupMembers();
+    final members = await _nppAdminRpc(
+      'getAllClientGroupMembers',
+      () => client.getAllClientGroupMembers(),
+    );
     final clientGroupIds = members
         .where((member) => clientIds.contains(member.clientId))
         .map((member) => member.clientGroupId)
@@ -116,7 +181,10 @@ class NppPolicyRules implements PolicyRules {
       return const [];
     }
 
-    final daemons = await client.getAllDaemons();
+    final daemons = await _nppAdminRpc(
+      'getAllDaemons',
+      () => client.getAllDaemons(),
+    );
     final daemonIds = daemons
         .where((daemon) => daemon.atSign == daemonAtsign)
         .map((daemon) => daemon.id)
@@ -126,7 +194,10 @@ class NppPolicyRules implements PolicyRules {
       return const [];
     }
 
-    final services = await client.getAllServices();
+    final services = await _nppAdminRpc(
+      'getAllServices',
+      () => client.getAllServices(),
+    );
     final serviceIds = services
         .where(
           (service) =>
@@ -141,7 +212,10 @@ class NppPolicyRules implements PolicyRules {
       return const [];
     }
 
-    final serviceACLs = await client.getAllServiceACLs();
+    final serviceACLs = await _nppAdminRpc(
+      'getAllServiceACLs',
+      () => client.getAllServiceACLs(),
+    );
     return serviceACLs
         .where(
           (acl) =>
@@ -159,39 +233,60 @@ class NppPolicyRules implements PolicyRules {
     required String deviceName,
     required String permitOpen,
   }) async {
+    // A resent put whose original succeeded (response lost) creates a
+    // duplicate entity. That is benign here: permitOpensFor collects every
+    // matching id, the rule checks compare sets, and clear() deletes
+    // everything it can find.
     if (_clientId == null ||
         _clientGroupId == null ||
         _daemonId == null ||
         _serviceId == null) {
-      _clientId = await client.putClient(
-        npp.Client(name: clientAtsign, atSign: clientAtsign),
-      );
-      _clientGroupId = await client.putClientGroup(
-        npp.ClientGroup(name: 'policy_e2e_clients'),
-      );
-      await client.putClientGroupMember(
-        npp.ClientGroupMember(
-          clientId: _clientId!,
-          clientGroupId: _clientGroupId!,
+      _clientId = await _nppAdminRpc(
+        'putClient',
+        () => client.putClient(
+          npp.Client(name: clientAtsign, atSign: clientAtsign),
         ),
       );
-      _daemonId = await client.putDaemon(npp.Daemon(atSign: daemonAtsign));
-      _serviceId = await client.putService(
-        npp.Service(
-          daemonId: _daemonId!,
-          deviceName: deviceName,
-          deviceGroupName: policyDeviceGroupName,
+      _clientGroupId = await _nppAdminRpc(
+        'putClientGroup',
+        () =>
+            client.putClientGroup(npp.ClientGroup(name: 'policy_e2e_clients')),
+      );
+      await _nppAdminRpc(
+        'putClientGroupMember',
+        () => client.putClientGroupMember(
+          npp.ClientGroupMember(
+            clientId: _clientId!,
+            clientGroupId: _clientGroupId!,
+          ),
+        ),
+      );
+      _daemonId = await _nppAdminRpc(
+        'putDaemon',
+        () => client.putDaemon(npp.Daemon(atSign: daemonAtsign)),
+      );
+      _serviceId = await _nppAdminRpc(
+        'putService',
+        () => client.putService(
+          npp.Service(
+            daemonId: _daemonId!,
+            deviceName: deviceName,
+            deviceGroupName: policyDeviceGroupName,
+          ),
         ),
       );
     }
     if (!_permitOpens.add(permitOpen)) {
       return;
     }
-    await client.putServiceACL(
-      npp.ServiceACL(
-        serviceId: _serviceId!,
-        clientGroupId: _clientGroupId!,
-        permitOpen: permitOpen,
+    await _nppAdminRpc(
+      'putServiceACL',
+      () => client.putServiceACL(
+        npp.ServiceACL(
+          serviceId: _serviceId!,
+          clientGroupId: _clientGroupId!,
+          permitOpen: permitOpen,
+        ),
       ),
     );
   }

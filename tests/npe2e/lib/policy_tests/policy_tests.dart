@@ -198,27 +198,29 @@ Future<void> policyTests(PolicyTestsParams params) async {
       );
   final Stopwatch testExecutionStopwatch = Stopwatch()..start();
   final Duration testTimeout = Duration(seconds: params.testTimeoutSeconds);
-  final Future<List<PolicyTestResult>> nppResultsFuture =
-      _runFactoryBatchesWithConcurrency(
+  // Run the npp and npp_atserver flows sequentially, not concurrently.
+  // Both flows create their admin AtClient through the per-isolate
+  // AtClientManager singleton and share the client/daemon atSigns, and the
+  // npp flow's notification-based admin RPCs are sensitive to monitor
+  // disruption: concurrent flows were the standing trigger for lost RPC
+  // response notifications (intermittent 30+ minute hangs / red builds).
+  final List<PolicyTestResult> nppResults =
+      await _runFactoryBatchesWithConcurrency(
         nppTestFactoryBatches,
         batchSize: params.batchSize,
         maxRetries: params.maxRetries,
         testTimeout: testTimeout,
       );
-  final Future<List<PolicyTestResult>> nppAtServerResultsFuture =
-      _runFuturesWithConcurrency(
+  final List<PolicyTestResult> nppAtServerResults =
+      await _runFuturesWithConcurrency(
         nppAtServerTestFactories,
         batchSize: params.batchSize,
         maxRetries: params.maxRetries,
         testTimeout: testTimeout,
       );
-  final List<List<PolicyTestResult>> parallelResults = await Future.wait([
-    nppResultsFuture,
-    nppAtServerResultsFuture,
-  ]);
   final List<PolicyTestResult> testResults = [
-    ...parallelResults[0],
-    ...parallelResults[1],
+    ...nppResults,
+    ...nppAtServerResults,
   ];
   testExecutionStopwatch.stop();
 
