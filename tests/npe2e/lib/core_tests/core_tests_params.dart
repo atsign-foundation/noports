@@ -93,7 +93,7 @@ class CoreTestsParams {
     argParser.addOption(
       'base-directory',
       mandatory: false,
-      defaultsTo: 'npe2e_core',
+      defaultsTo: 'npe2e_core_tests',
       help: 'Directory where all test related artifacts are stored',
     );
     argParser.addOption(
