@@ -6,8 +6,6 @@ import 'package:npe2e/policy_tests/policy_tests_params.dart';
 import 'package:npe2e/print_test_utils.dart';
 
 Future<void> main(List<String> args) async {
-  AtSignLogger.root_level = 'SEVERE';
-
   if (args.contains('--help') || args.contains('-h')) {
     PolicyTestsParams.printUsage();
     exit(0);
@@ -52,6 +50,12 @@ Future<void> main(List<String> args) async {
     PolicyTestsParams.printUsage();
     exit(1);
   }
+
+  // AtSignLogger captures its level at construction time, not dynamically, so
+  // this must run before any AtClient/AtOnboardingService/NppClient/
+  // PolicyServiceWithAtClient objects are built (all of which happen later,
+  // inside policyTests()).
+  AtSignLogger.root_level = params.verbose ? 'INFO' : 'SEVERE';
 
   _printLoadedParameters(params);
   print('');

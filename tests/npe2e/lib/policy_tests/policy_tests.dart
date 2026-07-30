@@ -177,6 +177,7 @@ Future<void> policyTests(PolicyTestsParams params) async {
     nppAtsign: params.nppAtsign,
     nppAtServerAtsign: params.nppAtServerAtsign,
     rootDomain: params.rootDomain,
+    verbose: params.verbose,
   );
   setUpStopwatch.stop();
 
@@ -264,6 +265,12 @@ Future<void> policyTests(PolicyTestsParams params) async {
       print(
         '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
       );
+      if (testResult.failureReason != null) {
+        print('      Reason: ${testResult.failureReason}');
+      }
+      for (final String logFilePath in testResult.logFilePaths) {
+        print('      See: $logFilePath');
+      }
     }
   }
 
@@ -304,6 +311,7 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
 
   Future<PolicyTestResult> runWithRetry(
     Future<PolicyTestResult> Function() factory,
+    int testIndex,
     int attempt,
   ) async {
     PolicyTestResult result;
@@ -312,17 +320,17 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
     } on TimeoutException {
       if (attempt < maxRetries) {
         print(
-          '  ↺ Test timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
+          '  ↺ [test #${testIndex + 1}/${testFactories.length}] timed out after ${testTimeout.inSeconds}s (attempt ${attempt + 1}/$maxRetries), retrying...',
         );
-        return runWithRetry(factory, attempt + 1);
+        return runWithRetry(factory, testIndex, attempt + 1);
       }
       rethrow;
     }
     if (result.status == TestStatus.failed && attempt < maxRetries) {
       print(
-        '  ↺ Test failed (attempt ${attempt + 1}/$maxRetries), retrying...',
+        '  ↺ [test #${testIndex + 1}/${testFactories.length}] failed (attempt ${attempt + 1}/$maxRetries), retrying...',
       );
-      return runWithRetry(factory, attempt + 1);
+      return runWithRetry(factory, testIndex, attempt + 1);
     }
     return result;
   }
@@ -336,7 +344,11 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
       final int testIndex = nextIndex;
       final Future<PolicyTestResult> Function() factory =
           testFactories[nextIndex];
-      final Future<PolicyTestResult> testFuture = runWithRetry(factory, 0);
+      final Future<PolicyTestResult> testFuture = runWithRetry(
+        factory,
+        testIndex,
+        0,
+      );
       active.add((testFuture, testIndex));
       nextIndex++;
     }

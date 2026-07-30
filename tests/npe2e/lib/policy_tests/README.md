@@ -14,6 +14,20 @@ dart run tests/npe2e/bin/policy_tests.dart \
     --batch-size 2
 ```
 
+## Diagnosing failures
+
+On failure, the "Failed Tests:" summary at the end of the run prints a
+`Reason:` line and `See:` pointers to the on-disk log files (docker
+container logs, `npt` client stdout/stderr) relevant to that failure — no
+need to guess file names under `<base-directory>/<test-run-id>/logs/`.
+
+Pass `--verbose`/`-v` to also:
+
+- raise `AtSignLogger`'s level from `SEVERE` to `INFO`, surfacing internal
+  `NppClient`/`PolicyServiceWithAtClient`/onboarding SDK log output, and
+- print full client/daemon/policy logs for every failed `npt` connection
+  attempt, not just the last one before a test is marked failed.
+
 ## General Test Flow
 
 0. Set up actors

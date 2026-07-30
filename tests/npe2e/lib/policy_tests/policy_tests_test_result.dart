@@ -13,5 +13,7 @@ class PolicyTestResult extends TestResult {
     required this.policyVersion,
     required super.status,
     required super.exitCode,
+    super.failureReason,
+    super.logFilePaths,
   });
 }

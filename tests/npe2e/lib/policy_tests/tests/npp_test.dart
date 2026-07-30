@@ -222,7 +222,11 @@ Future<PolicyTestResult> _runNppTest({
   } finally {
     try {
       await policyServer.stop();
-    } catch (_) {}
+    } catch (e) {
+      print(
+        '  ⚠ Warning: policyServer.stop() failed during teardown for $nppTestName: $e',
+      );
+    }
   }
 }
 

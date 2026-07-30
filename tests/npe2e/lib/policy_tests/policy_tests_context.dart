@@ -19,6 +19,7 @@ class PolicyTestsContext {
   final String nppAtsign;
   final String nppAtServerAtsign;
   final String rootDomain;
+  final bool verbose;
 
   PolicyTestsContext({
     required this.testRunId,
@@ -36,5 +37,6 @@ class PolicyTestsContext {
     required this.nppAtsign,
     required this.nppAtServerAtsign,
     required this.rootDomain,
+    required this.verbose,
   });
 }

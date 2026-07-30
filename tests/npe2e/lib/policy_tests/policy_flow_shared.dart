@@ -535,6 +535,13 @@ Future<PolicyTestResult> runPolicyFlow({
   } catch (e, st) {
     stderr.writeln(e);
     stderr.writeln(st);
+    final List<String> logFilePaths = [];
+    if (daemon?.stdoutLogFile != null) {
+      logFilePaths.add(daemon!.stdoutLogFile!.path);
+    }
+    if (daemon?.stderrLogFile != null) {
+      logFilePaths.add(daemon!.stderrLogFile!.path);
+    }
     return PolicyTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -542,11 +549,17 @@ Future<PolicyTestResult> runPolicyFlow({
       policyVersion: policyVersion,
       status: TestStatus.failed,
       exitCode: 1,
+      failureReason: e.toString(),
+      logFilePaths: logFilePaths,
     );
   } finally {
     try {
       await policyRules.clear();
-    } catch (_) {}
+    } catch (e) {
+      print(
+        '  ⚠ Warning: policyRules.clear() failed during teardown for $testName: $e',
+      );
+    }
     await policyRules.close();
     if (daemon != null) {
       await daemon.stopAllLogFragments();
@@ -633,7 +646,12 @@ Future<DockerInstance> startPolicyFlowDaemon({
       ),
     ],
   );
-  await waitForLogMessage(daemon, 'Daemon is running');
+  try {
+    await waitForLogMessage(daemon, 'Daemon is running');
+  } catch (e) {
+    await daemon.stop();
+    rethrow;
+  }
   return daemon;
 }
 
@@ -692,11 +710,38 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
       return null;
     }
 
-    if (attempt < policyNptMaxAttempts) {
+    final bool willRetry = attempt < policyNptMaxAttempts;
+    print(
+      '  ✗ [$testName $attemptMetadata] npt exited ${attemptResult.exitCode} '
+      '(attempt $attempt/$policyNptMaxAttempts)${willRetry ? ", retrying..." : ""}',
+    );
+    if (willRetry && context.verbose) {
+      printClientLogs(attemptResult.nptOutput, label: '${attemptMetadata}_npt');
+      printDaemonLogFragments(
+        attemptResult.daemonLogFragment,
+        label: attemptMetadata,
+      );
+      printPolicyLogFragments(
+        attemptResult.policyLogFragment,
+        label: attemptMetadata,
+      );
+    }
+
+    if (willRetry) {
       await Future<void>.delayed(policyNptRetryWait);
     }
   }
 
+  final List<String> logFilePaths = [
+    if (lastNptOutput?.stdoutLogFile != null)
+      lastNptOutput!.stdoutLogFile!.path,
+    if (lastNptOutput?.stderrLogFile != null)
+      lastNptOutput!.stderrLogFile!.path,
+    lastDaemonLogFragment!.stdoutFile.path,
+    lastDaemonLogFragment.stderrFile.path,
+    lastPolicyLogFragment!.stdoutFile.path,
+    lastPolicyLogFragment.stderrFile.path,
+  ];
   final policyTestResult = PolicyTestResult(
     testName: testName,
     clientVersion: clientVersion,
@@ -704,10 +749,15 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     policyVersion: policyVersion,
     status: TestStatus.failed,
     exitCode: lastExitCode,
+    failureReason:
+        'npt exited with code $lastExitCode (expected '
+        '${expectSuccess ? "0" : "non-zero"}) at stage "$metadata" '
+        'after $policyNptMaxAttempts attempt(s)',
+    logFilePaths: logFilePaths,
   );
   printClientLogs(lastNptOutput!, label: '${lastMetadata}_npt');
-  printDaemonLogFragments(lastDaemonLogFragment!, label: lastMetadata);
-  printPolicyLogFragments(lastPolicyLogFragment!, label: lastMetadata);
+  printDaemonLogFragments(lastDaemonLogFragment, label: lastMetadata);
+  printPolicyLogFragments(lastPolicyLogFragment, label: lastMetadata);
   return policyTestResult;
 }
 
@@ -849,21 +899,25 @@ Future<void> waitForLogMessage(
   Duration timeout = const Duration(seconds: 30),
 }) async {
   final stopwatch = Stopwatch()..start();
+  String lastStdoutText = '';
+  String lastStderrText = '';
   while (stopwatch.elapsed < timeout) {
     final stdout = dockerInstance.stdoutLogFile;
     final stderr = dockerInstance.stderrLogFile;
-    final stdoutText = stdout != null && await stdout.exists()
+    lastStdoutText = stdout != null && await stdout.exists()
         ? await stdout.readAsString()
         : '';
-    final stderrText = stderr != null && await stderr.exists()
+    lastStderrText = stderr != null && await stderr.exists()
         ? await stderr.readAsString()
         : '';
-    if (stdoutText.contains(message) || stderrText.contains(message)) {
+    if (lastStdoutText.contains(message) || lastStderrText.contains(message)) {
       return;
     }
     await Future<void>.delayed(const Duration(seconds: 1));
   }
   throw TimeoutException(
-    'Did not find "$message" in ${dockerInstance.containerName} logs',
+    'Did not find "$message" in ${dockerInstance.containerName} logs within $timeout.'
+    '\nstdout:\n$lastStdoutText'
+    '\nstderr:\n$lastStderrText',
   );
 }
