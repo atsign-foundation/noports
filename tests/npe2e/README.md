@@ -26,6 +26,10 @@ The examples below use the core pack; the others take the same arguments.
 - The Dart SDK.
 - `expect`, `ssh-keygen`, `git`, `chmod`, `sh` on `PATH` (the harness checks
   these on startup).
+- Run `melos bootstrap` from the repo root at least once. The harness compiles
+  `current` binaries directly via `dart compile exe`; it does not run
+  `dart pub get` for you, so without bootstrapping first, package resolution
+  fails.
 
 ## Running against a local atStack
 
@@ -131,7 +135,7 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--daemon-atsign` | (required) | Daemon atSign used in tests |
 | `--relay-atsign` | (required) | Relay atSign used in tests |
 | `--root-domain` | `root.atsign.org:64` | atDirectory host:port; set to your local domain |
-| `--base-directory` | `npe2e_core` | Where run artefacts (binaries, keys, logs) are written |
+| `--base-directory` | `npe2e_core_tests` | Where run artefacts (binaries, keys, logs) are written |
 | `--client-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current` | Comma-separated `language:version` |
 | `--daemon-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current` | Comma-separated `language:version` |
 | `--batch-size` | `4` | Tests run concurrently per batch |
@@ -154,3 +158,7 @@ Either clear both, or pass a fresh `--test-run-id`.
 - **`Connection timeout to srvd @relay service`.** `srvd` isn't running or isn't
   reachable from the containers. Confirm it's up and started with
   `-i vip.ve.atsign.zone` (not `-i 127.0.0.1`).
+- **`Failed to compile current binary for at_activate: ... Couldn't resolve the
+  package 'at_onboarding_cli'`.** `dart pub get` hasn't been run for
+  `packages/dart/sshnoports` (no `.dart_tool/package_config.json`). Run
+  `melos bootstrap` from the repo root.

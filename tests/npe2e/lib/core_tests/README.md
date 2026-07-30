@@ -4,12 +4,12 @@
 
 ```bash
 docker stop $(docker ps -q) 2>/dev/null
-rm -rf npe2e_core/
+rm -rf npe2e_core_tests/
 dart run tests/npe2e/bin/core_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
-    --base-directory "npe2e_core" \
+    --base-directory "npe2e_core_tests" \
     --root-domain "root.atsign.org" \
     --batch-size 3
 ```

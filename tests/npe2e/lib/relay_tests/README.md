@@ -27,7 +27,7 @@ Daemon remains the same sshnpd -a @daemon -m @client -s -v
 
 ```bash
 docker stop $(docker ps -q) 2>/dev/null
-rm -rf npe2e_relay/
+rm -rf npe2e_relay_tests/
 dart run tests/npe2e/bin/relay_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
@@ -35,7 +35,7 @@ dart run tests/npe2e/bin/relay_tests.dart \
     --self-relay-atsigns "@soccer0,@soccer99,@qt_app,@qt_app_2,\
 @qt_plant,@qt_beer" \
     --root-domain "root.atsign.org" \
-    --base-directory "npe2e_relay" \
+    --base-directory "npe2e_relay_tests" \
     --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
     --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
     --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
