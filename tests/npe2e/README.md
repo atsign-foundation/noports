@@ -142,7 +142,64 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--max-retries` | `3` | Retries for a failing test |
 | `--test-timeout-seconds` | `300` | Per-test timeout before fail/retry |
 | `--test-run-id` | short git hash | Overrides the run directory name |
-| `--verbose` | `false` | More logging |
+| `--verbose` | `false` | Unmutes the at_client SDK logger (`AtSignLogger` at `INFO` instead of `SEVERE`). Stage narration and failure detail are always on. Currently wired for `policy_tests` only. |
+
+## Reading a failed policy_tests run
+
+Start at the bottom of stdout. Each failed test prints a block naming the stage
+it died at, what it expected, the command to reproduce it, and the logs to read:
+
+```
+Failed Tests:
+  ✗ npp_test (client: d:current, daemon: d:current, policy: d:current)
+      tag:        9a67193a_npp_dc_dc
+      stage:      03_allowed
+      reason:     npt did not behave as expected on any of 3 attempts: expected
+                  exit 0 for --remote-port 22, last exit was 1
+      detail:     attempt 1/3: exit 1 in 3210ms → unexpected
+                  attempt 2/3: exit 124 (TIMED OUT) in 45002ms → unexpected
+                  attempt 3/3: exit 1 in 2980ms → unexpected
+      reproduce:  .../npt -f @client -t @daemon -d 9a67193a_npp_dc_dc ...
+      logs:       .../logs/npp_test/clients/..._03_allowed_npt_stdout.log
+                  .../logs/npp_test/daemons/..._03_allowed_stdout.log
+      transcript: .../logs/npe2e_policy_transcript.log
+```
+
+**The transcript** — `<base-directory>/<testRunId>/logs/npe2e_policy_transcript.log`
+— is the harness's own narration: every stage it entered, every policy rule it
+wrote, the observed `permitOpen` set after each write, every npt command and
+attempt outcome. It is written to disk as well as stdout because CI archives only
+the logs directory; stdout is not in the uploaded artifact. It is truncated at the
+start of each run.
+
+**The tag** (`9a67193a_npp_dc_dc`) is the device name, and it is also embedded in
+the daemon container name and in the per-stage log filenames. Every transcript
+line carries one, which is how you attribute interleaved output when
+`--batch-size` is greater than 1:
+
+```
+grep 9a67193a_npp_dc_dc npe2e_policy_tests/<testRunId>/logs/npe2e_policy_transcript.log
+```
+
+Log layout under `<base-directory>/<testRunId>/logs/`:
+
+| Path | Contents |
+| --- | --- |
+| `npe2e_policy_transcript.log` | Harness narration for the whole run, tagged per test |
+| `daemons/`, `npp/`, `npp_atserver/` | Full-lifetime container logs, one pair per container |
+| `<testName>/clients/` | npt stdout/stderr, one pair per stage attempt |
+| `<testName>/daemons/`, `<testName>/policies/` | Container log slices covering a single stage attempt |
+
+Notes when interpreting a failure:
+
+- `exit 124` means npt was killed after 45s without exiting. That is always a
+  failure, never a policy denial, even at a stage that expects npt to fail.
+- `stage: test timeout` means the harness gave up from the outside after
+  `--test-timeout-seconds` × `--max-retries`, so there is no stage-level detail —
+  read the transcript for the last step reached. A timed-out attempt is not
+  cancelled, so its containers may still have been running when the retry began.
+- A `WARN` line from `teardown:` means rules or a container were left behind, which
+  is the usual cause of the *next* test failing its `after initial teardown` check.
 
 ## Troubleshooting
 

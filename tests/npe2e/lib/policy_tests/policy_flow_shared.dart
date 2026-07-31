@@ -17,6 +17,7 @@ import 'package:npe2e/policy_tests/policy_tests_print_utils.dart';
 import 'package:npe2e/policy_tests/policy_tests_test_result.dart';
 import 'package:npe2e/process_utils.dart';
 import 'package:npe2e/test_result.dart';
+import 'package:npe2e/transcript.dart';
 import 'package:noports_core/admin.dart' as admin;
 import 'package:noports_core/npp.dart' as npp;
 import 'package:path/path.dart' as path;
@@ -31,29 +32,9 @@ const int policyNptMaxAttempts = 3;
 const Duration policyAdminRpcTimeout = Duration(seconds: 20);
 const int policyAdminRpcMaxAttempts = 3;
 
-/// npp admin RPCs ride on notifications, and the admin client shares its
-/// atSign with the npp policy server. A response notification that arrives
-/// while the admin client's monitor is reconnecting is lost forever
-/// (fetchOfflineNotifications is false), and AtRpcClient.call awaits a
-/// completer with no timeout — so without this bound a single lost
-/// notification hangs the whole test until the outer test timeout.
-/// Only use this for operations that are safe to resend.
-Future<T> _nppAdminRpc<T>(String operation, Future<T> Function() send) async {
-  for (var attempt = 1; ; attempt++) {
-    try {
-      return await send().timeout(policyAdminRpcTimeout);
-    } on TimeoutException {
-      stderr.writeln(
-        'npp admin RPC "$operation" timed out after '
-        '${policyAdminRpcTimeout.inSeconds}s '
-        '(attempt $attempt/$policyAdminRpcMaxAttempts)',
-      );
-      if (attempt >= policyAdminRpcMaxAttempts) {
-        rethrow;
-      }
-    }
-  }
-}
+/// How long a single npt attempt may take before it is killed. Hitting this is
+/// always a failure, never a policy denial.
+const Duration nptAttemptTimeout = Duration(seconds: 45);
 
 abstract class PolicyRules {
   Future<void> clear();
@@ -76,13 +57,31 @@ abstract class PolicyRules {
 
 class NppPolicyRules implements PolicyRules {
   final npp.NppClient client;
+  final Transcript transcript;
   String? _clientId;
   String? _clientGroupId;
   String? _daemonId;
   String? _serviceId;
   final Set<String> _permitOpens = {};
 
-  NppPolicyRules(this.client);
+  NppPolicyRules(this.client, {required this.transcript});
+
+  Future<T> _nppAdminRpc<T>(String operation, Future<T> Function() send) async {
+    for (var attempt = 1; ; attempt++) {
+      try {
+        return await send().timeout(policyAdminRpcTimeout);
+      } on TimeoutException {
+        transcript.warn(
+          'npp admin RPC "$operation" timed out after '
+          '${policyAdminRpcTimeout.inSeconds}s '
+          '(attempt $attempt/$policyAdminRpcMaxAttempts)',
+        );
+        if (attempt >= policyAdminRpcMaxAttempts) {
+          rethrow;
+        }
+      }
+    }
+  }
 
   @override
   Future<void> clear() async {
@@ -95,7 +94,7 @@ class NppPolicyRules implements PolicyRules {
         await _clearOnce();
         break;
       } on TimeoutException {
-        stderr.writeln(
+        transcript.warn(
           'npp admin clear() pass timed out '
           '(attempt $attempt/$policyAdminRpcMaxAttempts)',
         );
@@ -297,10 +296,11 @@ class NppPolicyRules implements PolicyRules {
 
 class NppAtServerPolicyRules implements PolicyRules {
   final admin.PolicyServiceWithAtClient service;
+  final Transcript transcript;
   int _generation = 0;
   final Set<String> _permitOpens = {};
 
-  NppAtServerPolicyRules(this.service);
+  NppAtServerPolicyRules(this.service, {required this.transcript});
 
   @override
   Future<void> clear() async {
@@ -388,6 +388,7 @@ class NppAtServerPolicyRules implements PolicyRules {
 
 Future<void> _checkPolicyRules({
   required PolicyRules policyRules,
+  required Transcript transcript,
   required String clientAtsign,
   required String daemonAtsign,
   required String deviceName,
@@ -403,6 +404,9 @@ Future<void> _checkPolicyRules({
   );
   final actual = permitOpens.toSet();
   if (allowAny) {
+    transcript.info(
+      'rule check ($stage): observed permitOpens=$actual (any allowed)',
+    );
     return;
   }
   final expected =
@@ -411,6 +415,7 @@ Future<void> _checkPolicyRules({
           ? const <String>{}
           : <String>{expectedPermitOpen});
   if (actual.length == expected.length && actual.containsAll(expected)) {
+    transcript.info('rule check ($stage): permitOpens=$actual as expected');
     return;
   }
   throw StateError(
@@ -453,6 +458,7 @@ Future<AtClient> createPolicyAtClient({
 Future<PolicyTestResult> runPolicyFlow({
   required PolicyTestsContext context,
   required PolicyTestLogger testLogger,
+  required Transcript transcript,
   required String testName,
   required String policyLabel,
   required NoPortsVersion clientVersion,
@@ -462,16 +468,31 @@ Future<PolicyTestResult> runPolicyFlow({
   required PolicyRules policyRules,
   required DockerInstance policyServer,
 }) async {
+  final String deviceName = getPolicyFlowDeviceName(
+    context: context,
+    clientVersion: clientVersion,
+    daemonVersion: daemonVersion,
+    policyLabel: policyLabel,
+  );
+  String stage = 'daemon startup';
   DockerInstance? daemon;
   try {
-    final String deviceName = getPolicyFlowDeviceName(
-      context: context,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-      policyLabel: policyLabel,
+    transcript.section(
+      '$testName $policyLabel: client=${clientVersion.language.name}:'
+      '${clientVersion.version} daemon=${daemonVersion.language.name}:'
+      '${daemonVersion.version} policy=${policyVersion.language.name}:'
+      '${policyVersion.version}',
     );
+    transcript.info(
+      'client=${context.clientAtsign} daemon=${context.daemonAtsign} '
+      'relay=${context.relayAtsign} policyManager=$policyManagerAtsign '
+      'device=$deviceName',
+    );
+    transcript.info('policy server container: ${policyServer.containerName}');
+
     daemon = await startPolicyFlowDaemon(
       context: context,
+      transcript: transcript,
       daemonVersion: daemonVersion,
       policyVersion: policyVersion,
       clientVersion: clientVersion,
@@ -480,28 +501,37 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
     );
 
+    stage = 'initial check';
     await _checkPolicyRules(
       policyRules: policyRules,
+      transcript: transcript,
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: null,
-      stage: 'initial check',
+      stage: stage,
       allowAny: true,
     );
+
+    stage = 'after initial teardown';
+    transcript.info('clearing any pre-existing policy rules');
     await policyRules.clear();
     await _checkPolicyRules(
       policyRules: policyRules,
+      transcript: transcript,
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: null,
-      stage: 'after initial teardown',
+      stage: stage,
     );
-    await _waitBeforePolicyStage();
+    await _waitBeforePolicyStage(transcript);
+
+    stage = '01_no_rules';
     final result1 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -510,12 +540,14 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
       remotePort: 22,
       expectSuccess: false,
-      metadata: '01_no_rules',
+      metadata: stage,
       policyLabel: policyLabel,
       policyServer: policyServer,
     );
     if (result1 != null) return result1;
 
+    stage = 'after wrong-port put';
+    transcript.info('allowing permitOpen=$policyWrongPortPermitOpen');
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
@@ -524,16 +556,20 @@ Future<PolicyTestResult> runPolicyFlow({
     );
     await _checkPolicyRules(
       policyRules: policyRules,
+      transcript: transcript,
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: policyWrongPortPermitOpen,
-      stage: 'after wrong-port put',
+      stage: stage,
     );
-    await _waitBeforePolicyStage();
+    await _waitBeforePolicyStage(transcript);
+
+    stage = '02_wrong_policy_port';
     final result2 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -542,12 +578,14 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
       remotePort: 22,
       expectSuccess: false,
-      metadata: '02_wrong_policy_port',
+      metadata: stage,
       policyLabel: policyLabel,
       policyServer: policyServer,
     );
     if (result2 != null) return result2;
 
+    stage = 'after allowed put';
+    transcript.info('allowing permitOpen=$policySshPermitOpen');
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
@@ -556,17 +594,21 @@ Future<PolicyTestResult> runPolicyFlow({
     );
     await _checkPolicyRules(
       policyRules: policyRules,
+      transcript: transcript,
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
       expectedPermitOpen: policySshPermitOpen,
       expectedPermitOpens: {policyWrongPortPermitOpen, policySshPermitOpen},
-      stage: 'after allowed put',
+      stage: stage,
     );
-    await _waitBeforePolicyStage();
+    await _waitBeforePolicyStage(transcript);
+
+    stage = '03_allowed';
     final result3 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -575,12 +617,14 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
       remotePort: 22,
       expectSuccess: true,
-      metadata: '03_allowed',
+      metadata: stage,
       policyLabel: policyLabel,
       policyServer: policyServer,
     );
     if (result3 != null) return result3;
 
+    stage = 'after daemon-denied put';
+    transcript.info('allowing permitOpen=$policyDaemonDeniedPermitOpen');
     await policyRules.allowPermitOpen(
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
@@ -589,6 +633,7 @@ Future<PolicyTestResult> runPolicyFlow({
     );
     await _checkPolicyRules(
       policyRules: policyRules,
+      transcript: transcript,
       clientAtsign: context.clientAtsign,
       daemonAtsign: context.daemonAtsign,
       deviceName: deviceName,
@@ -598,12 +643,15 @@ Future<PolicyTestResult> runPolicyFlow({
         policySshPermitOpen,
         policyDaemonDeniedPermitOpen,
       },
-      stage: 'after daemon-denied put',
+      stage: stage,
     );
-    await _waitBeforePolicyStage();
+    await _waitBeforePolicyStage(transcript);
+
+    stage = '04_daemon_permit_open_denied';
     final result4 = await runNptPolicyExpectation(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       testName: testName,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -612,12 +660,13 @@ Future<PolicyTestResult> runPolicyFlow({
       deviceName: deviceName,
       remotePort: 2233,
       expectSuccess: false,
-      metadata: '04_daemon_permit_open_denied',
+      metadata: stage,
       policyLabel: policyLabel,
       policyServer: policyServer,
     );
     if (result4 != null) return result4;
 
+    transcript.ok('all 4 policy stages behaved as expected');
     final policyTestResult = PolicyTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -625,11 +674,11 @@ Future<PolicyTestResult> runPolicyFlow({
       policyVersion: policyVersion,
       status: TestStatus.passed,
       exitCode: 0,
+      tag: deviceName,
     );
     return policyTestResult;
   } catch (e, st) {
-    stderr.writeln(e);
-    stderr.writeln(st);
+    transcript.error('threw ${e.runtimeType} during "$stage"', e, st);
     return PolicyTestResult(
       testName: testName,
       clientVersion: clientVersion,
@@ -637,11 +686,27 @@ Future<PolicyTestResult> runPolicyFlow({
       policyVersion: policyVersion,
       status: TestStatus.failed,
       exitCode: 1,
+      tag: deviceName,
+      failure: PolicyTestFailure(
+        stage: stage,
+        reason: 'threw ${e.runtimeType} during "$stage"',
+        reproduceCommand: null,
+        logFiles: [
+          if (daemon?.stdoutLogFile != null) daemon!.stdoutLogFile!,
+          if (policyServer.stdoutLogFile != null) policyServer.stdoutLogFile!,
+        ],
+        error: e,
+        stackTrace: st,
+      ),
     );
   } finally {
     try {
       await policyRules.clear();
-    } catch (_) {}
+    } catch (e) {
+      // Leftover rules are exactly what makes the NEXT test's 'after initial
+      // teardown' check fail, so swallowing this silently erases the real cause.
+      transcript.warn('teardown: policyRules.clear() failed: $e');
+    }
     await policyRules.close();
     if (daemon != null) {
       await daemon.stopAllLogFragments();
@@ -677,6 +742,7 @@ String _deviceNamePart(String value, {int maxLength = 6}) {
 
 Future<DockerInstance> startPolicyFlowDaemon({
   required PolicyTestsContext context,
+  required Transcript transcript,
   required NoPortsVersion daemonVersion,
   required NoPortsVersion policyVersion,
   required NoPortsVersion clientVersion,
@@ -696,6 +762,19 @@ Future<DockerInstance> startPolicyFlowDaemon({
   final String daemonAtsignContainerKeyFilePath =
       '/atsign/.atsign/keys/${path.basename(daemonApkamKeysFile.path)}';
 
+  final String sshnpdCommand =
+      '/usr/local/bin/sshnpd '
+      '-a ${context.daemonAtsign} '
+      '-p $policyManagerAtsign '
+      '-k $daemonAtsignContainerKeyFilePath '
+      '--root-domain ${context.rootDomain} '
+      '-d $deviceName '
+      '--permit-open "$policySshPermitOpen" '
+      '-v -s -u';
+
+  transcript.info('starting daemon from image ${dockerImage.fullImageName}');
+  transcript.command('sshnpd', [sshnpdCommand]);
+
   final DockerInstance daemon = await runDockerInstance(
     dockerImage: dockerImage,
     testRunId: context.testRunId,
@@ -705,19 +784,7 @@ Future<DockerInstance> startPolicyFlowDaemon({
         '_${clientVersion.language.name}_${clientVersion.version}'
         '_${daemonVersion.language.name}_${daemonVersion.version}'
         '_${policyVersion.language.name}_${policyVersion.version}',
-    entrypoint: [
-      '/bin/bash',
-      '-c',
-      'sudo service ssh start && '
-          '/usr/local/bin/sshnpd '
-          '-a ${context.daemonAtsign} '
-          '-p $policyManagerAtsign '
-          '-k $daemonAtsignContainerKeyFilePath '
-          '--root-domain ${context.rootDomain} '
-          '-d $deviceName '
-          '--permit-open "$policySshPermitOpen" '
-          '-v -s -u',
-    ],
+    entrypoint: ['/bin/bash', '-c', 'sudo service ssh start && $sshnpdCommand'],
     printCommand: false,
     // Local-run aid: let the container resolve *.atsign.zone back to the host.
     additionalDockerArgs: hostGatewayAddHostArgs(),
@@ -728,13 +795,16 @@ Future<DockerInstance> startPolicyFlowDaemon({
       ),
     ],
   );
-  await waitForLogMessage(daemon, 'Daemon is running');
+  transcript.info('daemon container: ${daemon.containerName}');
+  await waitForLogMessage(daemon, 'Daemon is running', transcript: transcript);
+  transcript.ok('daemon is running (device=$deviceName)');
   return daemon;
 }
 
 Future<PolicyTestResult?> runNptPolicyExpectation({
   required PolicyTestsContext context,
   required PolicyTestLogger testLogger,
+  required Transcript transcript,
   required String testName,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
@@ -751,12 +821,25 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     (cb) =>
         cb.binaryType == ClientBinaryType.npt &&
         cb.noPortsVersion == clientVersion,
+    orElse: () => throw Exception(
+      'No npt client binary for ${clientVersion.language.name}:'
+      '${clientVersion.version}. Available: '
+      '${context.clientBinaries.map((cb) => '${cb.binaryType.name}@'
+          '${cb.noPortsVersion.language.name}:${cb.noPortsVersion.version}').join(', ')}',
+    ),
   );
   ProcessOutputCapture? lastNptOutput;
   LogFragment? lastDaemonLogFragment;
   LogFragment? lastPolicyLogFragment;
   String lastMetadata = metadata;
   int lastExitCode = 1;
+  String? lastNptCommand;
+  final List<String> attemptOutcomes = [];
+
+  transcript.section(
+    'stage $metadata: npt --remote-port $remotePort, '
+    'expecting ${expectSuccess ? 'SUCCESS' : 'FAILURE'}',
+  );
 
   for (var attempt = 1; attempt <= policyNptMaxAttempts; attempt++) {
     final attemptMetadata = _attemptMetadata(metadata, attempt);
@@ -764,6 +847,7 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     final attemptResult = await _runPolicyConnectionAttempt(
       context: context,
       testLogger: testLogger,
+      transcript: transcript,
       nptClientBinary: nptClientBinary,
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
@@ -779,18 +863,63 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     lastDaemonLogFragment = attemptResult.daemonLogFragment;
     lastPolicyLogFragment = attemptResult.policyLogFragment;
     lastExitCode = attemptResult.exitCode;
+    lastNptCommand = attemptResult.nptCommand;
 
-    final bool passed = expectSuccess
-        ? attemptResult.exitCode == 0
-        : attemptResult.exitCode != 0;
+    // A hang is not a policy denial. Before this, exit 124 satisfied
+    // `exitCode != 0`, so a permanently hanging npt silently PASSED all three
+    // expectSuccess: false stages.
+    final bool passed = attemptResult.timedOut
+        ? false
+        : (expectSuccess
+              ? attemptResult.exitCode == 0
+              : attemptResult.exitCode != 0);
+    attemptOutcomes.add(
+      'attempt $attempt/$policyNptMaxAttempts: exit ${attemptResult.exitCode}'
+      '${attemptResult.timedOut ? ' (TIMED OUT)' : ''} in '
+      '${attemptResult.elapsed.inMilliseconds}ms → ${passed ? 'as expected' : 'unexpected'}',
+    );
     if (passed) {
+      transcript.ok('stage $metadata: ${attemptOutcomes.last}');
       return null;
     }
+    transcript.warn('stage $metadata: ${attemptOutcomes.last}');
 
     if (attempt < policyNptMaxAttempts) {
+      transcript.info('retrying in ${policyNptRetryWait.inSeconds}s');
       await Future<void>.delayed(policyNptRetryWait);
     }
   }
+
+  final String reason =
+      'npt did not behave as expected on any of $policyNptMaxAttempts attempts: '
+      'expected ${expectSuccess ? 'exit 0' : 'a non-zero exit'} for '
+      '--remote-port $remotePort, last exit was $lastExitCode';
+  transcript.error('stage $metadata failed. $reason');
+
+  final List<File> logFiles = [
+    testLogger.getClientStdoutLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      testMetadata: '${lastMetadata}_npt',
+    ),
+    testLogger.getClientStderrLogFile(
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      policyVersion: policyVersion,
+      testMetadata: '${lastMetadata}_npt',
+    ),
+    testLogger.getDaemonStdoutLogFile(
+      daemonVersion: daemonVersion,
+      deviceName: deviceName,
+      testMetadata: lastMetadata,
+    ),
+    testLogger.getPolicyStdoutLogFile(
+      policyVersion: policyVersion,
+      policyName: policyLabel,
+      testMetadata: lastMetadata,
+    ),
+  ];
 
   final policyTestResult = PolicyTestResult(
     testName: testName,
@@ -799,6 +928,14 @@ Future<PolicyTestResult?> runNptPolicyExpectation({
     policyVersion: policyVersion,
     status: TestStatus.failed,
     exitCode: lastExitCode,
+    tag: deviceName,
+    failure: PolicyTestFailure(
+      stage: metadata,
+      reason: reason,
+      detail: attemptOutcomes.join('\n'),
+      reproduceCommand: lastNptCommand,
+      logFiles: logFiles,
+    ),
   );
   printClientLogs(lastNptOutput!, label: '${lastMetadata}_npt');
   printDaemonLogFragments(lastDaemonLogFragment!, label: lastMetadata);
@@ -812,11 +949,15 @@ Future<
     LogFragment daemonLogFragment,
     LogFragment policyLogFragment,
     int exitCode,
+    bool timedOut,
+    Duration elapsed,
+    String nptCommand,
   })
 >
 _runPolicyConnectionAttempt({
   required PolicyTestsContext context,
   required PolicyTestLogger testLogger,
+  required Transcript transcript,
   required ClientBinary nptClientBinary,
   required NoPortsVersion clientVersion,
   required NoPortsVersion daemonVersion,
@@ -854,16 +995,24 @@ _runPolicyConnectionAttempt({
     ),
     printCommand: false,
   );
-  daemonLogFragment.start();
-  policyLogFragment.start();
+  // Must be awaited: start() is what creates the fragment files. Fire-and-forget
+  // left them missing often enough that the failure dump printed nothing at all
+  // (every printer here guards on existsSync).
+  await daemonLogFragment.start();
+  await policyLogFragment.start();
+
+  final List<String> nptArgs = _buildNptArgs(
+    context: context,
+    clientVersion: clientVersion,
+    deviceName: deviceName,
+    remotePort: remotePort,
+  );
+  transcript.command(nptClientBinary.file.path, nptArgs);
+
+  final Stopwatch attemptStopwatch = Stopwatch()..start();
   final ProcessOutputCapture nptOutput = await startCommandWithCapture(
     nptClientBinary.file.path,
-    _buildNptArgs(
-      context: context,
-      clientVersion: clientVersion,
-      deviceName: deviceName,
-      remotePort: remotePort,
-    ),
+    nptArgs,
     printCommand: false,
     stdoutLogFile: testLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
@@ -878,13 +1027,20 @@ _runPolicyConnectionAttempt({
       testMetadata: '${attemptMetadata}_npt',
     ),
   );
+  bool timedOut = false;
   final int nptExitCode = await nptOutput.exitCode.timeout(
-    const Duration(seconds: 45),
+    nptAttemptTimeout,
     onTimeout: () {
+      timedOut = true;
+      transcript.error(
+        'npt did not exit within ${nptAttemptTimeout.inSeconds}s; '
+        'sending SIGTERM and treating the attempt as failed',
+      );
       nptOutput.process.kill(ProcessSignal.sigterm);
       return 124;
     },
   );
+  attemptStopwatch.stop();
   await daemonLogFragment.stop();
   await policyLogFragment.stop();
   return (
@@ -892,6 +1048,9 @@ _runPolicyConnectionAttempt({
     daemonLogFragment: daemonLogFragment,
     policyLogFragment: policyLogFragment,
     exitCode: nptExitCode,
+    timedOut: timedOut,
+    elapsed: attemptStopwatch.elapsed,
+    nptCommand: '${nptClientBinary.file.path} ${nptArgs.join(' ')}',
   );
 }
 
@@ -902,7 +1061,10 @@ String _attemptMetadata(String metadata, int attempt) {
   return '${metadata}_attempt_$attempt';
 }
 
-Future<void> _waitBeforePolicyStage() async {
+Future<void> _waitBeforePolicyStage(Transcript transcript) async {
+  transcript.info(
+    'waiting ${policyStageWait.inSeconds}s for the policy change to propagate',
+  );
   await Future<void>.delayed(policyStageWait);
 }
 
@@ -942,23 +1104,73 @@ Future<void> waitForLogMessage(
   DockerInstance dockerInstance,
   String message, {
   Duration timeout = const Duration(seconds: 30),
+  Transcript? transcript,
 }) async {
+  transcript?.info(
+    'waiting up to ${timeout.inSeconds}s for "$message" in '
+    '${dockerInstance.containerName} logs',
+  );
   final stopwatch = Stopwatch()..start();
+  String logs = '';
   while (stopwatch.elapsed < timeout) {
-    final stdout = dockerInstance.stdoutLogFile;
-    final stderr = dockerInstance.stderrLogFile;
-    final stdoutText = stdout != null && await stdout.exists()
-        ? await stdout.readAsString()
-        : '';
-    final stderrText = stderr != null && await stderr.exists()
-        ? await stderr.readAsString()
-        : '';
-    if (stdoutText.contains(message) || stderrText.contains(message)) {
+    logs = await _readContainerLogs(dockerInstance);
+    if (logs.contains(message)) {
       return;
+    }
+    // A container that has already died will never print the message. Reporting
+    // that (with its logs) beats waiting out the full timeout and then saying
+    // nothing — this is what a `docker run --name` collision looks like.
+    final int? exitCode = await _containerExitCodeIfComplete(dockerInstance);
+    if (exitCode != null) {
+      throw TimeoutException(
+        '${dockerInstance.containerName} exited with code $exitCode before '
+        'printing "$message". Logs:\n${_logTail(logs)}',
+      );
     }
     await Future<void>.delayed(const Duration(seconds: 1));
   }
   throw TimeoutException(
-    'Did not find "$message" in ${dockerInstance.containerName} logs',
+    'Did not find "$message" in ${dockerInstance.containerName} logs within '
+    '${timeout.inSeconds}s. Logs:\n${_logTail(logs)}',
   );
+}
+
+Future<String> _readContainerLogs(DockerInstance dockerInstance) async {
+  final File? stdoutFile = dockerInstance.stdoutLogFile;
+  final File? stderrFile = dockerInstance.stderrLogFile;
+  final String stdoutText = stdoutFile != null && await stdoutFile.exists()
+      ? await stdoutFile.readAsString()
+      : '';
+  final String stderrText = stderrFile != null && await stderrFile.exists()
+      ? await stderrFile.readAsString()
+      : '';
+  return '$stdoutText$stderrText';
+}
+
+/// Non-blocking poll of the attached `docker run` process, same trick as
+/// `PolicyServer._processExitCodeIfComplete`.
+Future<int?> _containerExitCodeIfComplete(DockerInstance dockerInstance) async {
+  final Process? process = dockerInstance.process;
+  if (process == null) {
+    return null;
+  }
+  try {
+    return await process.exitCode.timeout(Duration.zero);
+  } on TimeoutException {
+    return null;
+  }
+}
+
+String _logTail(String logs, {int maxLines = 60}) {
+  if (logs.trim().isEmpty) {
+    return '(no container output was captured)';
+  }
+  final List<String> lines = logs.trimRight().split('\n');
+  if (lines.length <= maxLines) {
+    return lines.join('\n');
+  }
+  return [
+    '... ${lines.length - maxLines} earlier line(s) omitted ...',
+    ...lines.skip(lines.length - maxLines),
+  ].join('\n');
 }
