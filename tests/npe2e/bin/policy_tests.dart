@@ -6,8 +6,6 @@ import 'package:npe2e/policy_tests/policy_tests_params.dart';
 import 'package:npe2e/print_test_utils.dart';
 
 Future<void> main(List<String> args) async {
-  AtSignLogger.root_level = 'SEVERE';
-
   if (args.contains('--help') || args.contains('-h')) {
     PolicyTestsParams.printUsage();
     exit(0);
@@ -53,6 +51,8 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  AtSignLogger.root_level = params.verbose ? 'INFO' : 'SEVERE';
+
   _printLoadedParameters(params);
   print('');
 
@@ -63,8 +63,9 @@ Future<void> main(List<String> args) async {
     final Duration duration = endTime.difference(startTime);
     print('Policy tests completed in ${formatDuration(duration)}');
     exit(0);
-  } catch (e) {
+  } catch (e, st) {
     print('Error: $e');
+    print(st);
     exit(1);
   }
 }

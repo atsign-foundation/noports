@@ -10,7 +10,7 @@ dart run tests/npe2e/bin/policy_tests.dart \
     --npp-atsign "@policy01_jttest" \
     --npp-atserver-atsign "@policy02_jttest" \
     --root-domain "root.atsign.org" \
-    --base-directory "npe2e_policy" \
+    --base-directory "npe2e_policy_tests" \
     --batch-size 2
 ```
 

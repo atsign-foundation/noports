@@ -54,7 +54,7 @@ Future<void> coreTests(CoreTestsParams params) async {
   print('testRunId: $testRunId\n');
 
   // 3. create directory structure:
-  //  ./npe2e_core/$testRunId/
+  //  ./npe2e_core_tests/$testRunId/
   //    ├── apkamKeys/
   //    ├── logs/
   //    │   └── daemons/
