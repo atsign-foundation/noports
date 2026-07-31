@@ -61,10 +61,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_auth
-      sha256: "92cdf7958b44a665380a1fb44ae1ec6253a83550494df480d7f9b47fb5732689"
+      sha256: "722cfadbf0795c705d9aada225fc142e9cba7827356c0485fe62b7d454ade142"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.1"
+    version: "3.2.0"
   at_backupkey_flutter:
     dependency: "direct main"
     description:
@@ -85,10 +85,10 @@ packages:
     dependency: "direct overridden"
     description:
       name: at_chops
-      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
+      sha256: e38abf9b245af869bb7545e7b03488bf0bdad8a413a7b110b45795971026e7fc
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.4.1"
   at_cli_commons:
     dependency: transitive
     description:
@@ -126,10 +126,10 @@ packages:
     dependency: transitive
     description:
       name: at_commons
-      sha256: a8a07fff913a36524b95757ff72fcde448ae461b1647c8e8aee3276395452ae7
+      sha256: fd878c65d9628f0fbba9e724ead7995412394ae614ff0eac33384235c5494286
       url: "https://pub.dev"
     source: hosted
-    version: "5.8.0"
+    version: "5.13.0"
   at_contact:
     dependency: "direct main"
     description:
@@ -158,18 +158,18 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: f3e88bfd5144cd5dce845adf3fa89aeb79c97a0e79f8c61aafd4a266ec3b1095
+      sha256: "9785cc5adacdfdc287dbc73f656fc3ed3672db13ade0434f9c6b0b2f03dd1f58"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.0"
+    version: "3.6.0"
   at_onboarding_cli:
     dependency: "direct overridden"
     description:
       name: at_onboarding_cli
-      sha256: "9e8317662dffb447e5dd41e82d5825eea0d44460e01c106570902224a97abd44"
+      sha256: "181f65961fcd850aae7523ef488147bc1b80eea1fe4893016ea1f4b621672490"
       url: "https://pub.dev"
     source: hosted
-    version: "1.14.2"
+    version: "1.16.0"
   at_onboarding_flutter:
     dependency: "direct main"
     description:
@@ -1004,7 +1004,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.12.0"
+    version: "6.12.1"
   objective_c:
     dependency: transitive
     description:
@@ -1229,6 +1229,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
+  pqcrypto:
+    dependency: transitive
+    description:
+      name: pqcrypto
+      sha256: fa8bd7eac5ccb4389f4003715a79b1b601ca9439cb81d1174a1e06da75306b39
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   process:
     dependency: transitive
     description:
@@ -1550,26 +1558,26 @@ packages:
     dependency: transitive
     description:
       name: test
-      sha256: "280d6d890011ca966ad08df7e8a4ddfab0fb3aa49f96ed6de56e3521347a9ae7"
+      sha256: "8d9ceddbab833f180fbefed08afa76d7c03513dfdba87ffcec2718b02bbcbf20"
       url: "https://pub.dev"
     source: hosted
-    version: "1.30.0"
+    version: "1.31.0"
   test_api:
     dependency: transitive
     description:
       name: test_api
-      sha256: "8161c84903fd860b26bfdefb7963b3f0b68fee7adea0f59ef805ecca346f0c7a"
+      sha256: "949a932224383300f01be9221c39180316445ecb8e7547f70a41a35bf421fb9e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.10"
+    version: "0.7.11"
   test_core:
     dependency: transitive
     description:
       name: test_core
-      sha256: "0381bd1585d1a924763c308100f2138205252fb90c9d4eeaf28489ee65ccde51"
+      sha256: "1991d4cfe85d5043241acac92962c3977c8d2f2add1ee73130c7b286417d1d34"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.16"
+    version: "0.6.17"
   toml:
     dependency: "direct main"
     description:
