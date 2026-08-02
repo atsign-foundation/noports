@@ -4,12 +4,12 @@
 
 ```bash
 docker stop $(docker ps -q) 2>/dev/null
-rm -rf npe2e_core/
+rm -rf npe2e_core_tests/
 dart run tests/npe2e/bin/core_tests.dart \
     --client-atsign "@client_jttest" \
     --daemon-atsign "@device_jttest" \
     --relay-atsign "@rv_am" \
-    --base-directory "npe2e_core" \
+    --base-directory "npe2e_core_tests" \
     --root-domain "root.atsign.org" \
     --batch-size 3
 ```
@@ -38,13 +38,13 @@ dart run tests/npe2e/bin/core_tests.dart \
 2. Run sshnp with `-h` invalid and `-r` valid (expect to pass)
 3. Run sshnp with `-h` valid and `-r` invalid (expect to fail)
 
-- Client: Dart (current) | Daemon: Dart (current)
-- Client: Dart v5.9.4 | Daemon: Dart (current)
-- Client: Dart v5.11.2 | Daemon: Dart (current)
-- Client: Dart v5.13.0 | Daemon: Dart (current)
-- Client: Dart (current) | Daemon: Dart v5.9.4
-- Client: Dart (current) | Daemon: Dart v5.11.2
-- Client: Dart (current) | Daemon: Dart v5.13.0
+`-r`/`--host`/`-h` precedence is a client-side-only feature, so (matching the
+legacy e2e_all `minus_r_flag` test) this runs the FULL cross-product of every
+Dart client (>= v5.2.0) against every Dart daemon. C daemons are skipped. With
+the default versions:
+
+- Client: Dart {current, v5.9.4, v5.11.2, v5.13.0}
+  x Daemon: Dart {current, v5.9.4, v5.11.2, v5.13.0}
 
 ### minus_u_flag
 
