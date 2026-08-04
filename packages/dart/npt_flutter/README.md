@@ -9,7 +9,7 @@ information.
 
 ## Overview
 
-NoPorts Desktop is a Flutter application that provides secure SSH connections without requiring traditional port forwarding. It uses the atProtocol for secure, end-to-end encrypted connections.
+NoPorts Desktop is a Flutter application that provides secure SSH connections without requiring traditional port forwarding. It uses the Atsign platform for secure, end-to-end encrypted connections.
 
 ## Features
 
