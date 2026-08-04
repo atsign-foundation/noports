@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/at_client_activation.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
@@ -244,6 +245,11 @@ class NoPortsOnboardingUtil {
         message: strings.errorAuthenticatinFailed,
       );
     }
+    await activateAtClientFromAuthResponse(
+      atsign: atsign,
+      atClientPreference: atClientPreference,
+      response: response!,
+    );
     return NoPortsOnboardingResult.success(atsign: atsign);
   }
 
@@ -305,6 +311,11 @@ class NoPortsOnboardingUtil {
       if (response == null) {
         onboardingResult = NoPortsOnboardingResult.cancelled();
       } else if (response.isSuccessful) {
+        await activateAtClientFromAuthResponse(
+          atsign: atsign,
+          atClientPreference: atClientPreference,
+          response: response,
+        );
         onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
       } else {
         onboardingResult = NoPortsOnboardingResult.error(

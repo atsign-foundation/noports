@@ -10,6 +10,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
+import 'package:npt_flutter/features/onboarding/util/at_client_activation.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
@@ -358,6 +359,11 @@ Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
   );
 
   if (response?.isSuccessful ?? false) {
+    await activateAtClientFromAuthResponse(
+      atsign: atsign,
+      atClientPreference: atClientPreference,
+      response: response!,
+    );
     await BackupKeyUtils().backupKeyStatusCheck();
     log("postOnbarding called");
     await postOnboard(atsign, rootDomain);

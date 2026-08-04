@@ -7,6 +7,7 @@ import 'package:at_server_status/at_server_status.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/at_client_activation.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 const apiBase = '/api/app/v3';
@@ -119,6 +120,11 @@ class ActivateUtil {
             message: strings.errorAtServerUnreachable,
           );
         } else if (atsignStatus.status() == AtSignStatus.activated) {
+          await activateAtClientFromAuthResponse(
+            atsign: atsign,
+            atClientPreference: atClientPreference,
+            response: res,
+          );
           return NoPortsOnboardingResult.success(atsign: atsign);
         }
       }
