@@ -65,14 +65,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
-  at_backupkey_flutter:
-    dependency: "direct main"
-    description:
-      name: at_backupkey_flutter
-      sha256: b1c439b049784aab082ce0d87a9fecccf8e0e18d45dafc06a488a15953d09d25
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.18"
   at_base2e15:
     dependency: transitive
     description:
@@ -112,21 +104,6 @@ packages:
       relative: false
     source: path
     version: "1.1.5"
-  at_client_mobile:
-    dependency: "direct overridden"
-    description:
-      path: "/Users/jeremytubongbanua/.noports-vendor/at_client_mobile"
-      relative: false
-    source: path
-    version: "3.2.24"
-  at_common_flutter:
-    dependency: transitive
-    description:
-      name: at_common_flutter
-      sha256: "5842b93cdbfe6a90aa9fe35ac95bfe4ec640f0700ccd3377bb7bfbd91d90a3ef"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   at_commons:
     dependency: transitive
     description:
@@ -143,22 +120,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0"
-  at_contacts_flutter:
-    dependency: "direct main"
-    description:
-      name: at_contacts_flutter
-      sha256: "381666a56bae79c6b6521dab44fee0568639276dfc2df0355929cc33ad098fb7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.0"
-  at_file_saver:
-    dependency: transitive
-    description:
-      name: at_file_saver
-      sha256: d1d5322be265ff395b6160f8880b4ebd713b673ea739662eca463def9c588f00
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.2"
   at_lookup:
     dependency: "direct main"
     description:
@@ -641,14 +602,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_keychain:
-    dependency: transitive
-    description:
-      name: flutter_keychain
-      sha256: "0d000c0e9b3c16fdec016df406b4e89e7195bf719ed0882157400f1e16323cf8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -678,14 +631,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.34"
-  flutter_slidable:
-    dependency: transitive
-    description:
-      name: flutter_slidable
-      sha256: ea369262929d3cc6ebf9d8a00c196127966f117fe433a5e5cb47fb08008ca203
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.3"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -1097,54 +1042,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  permission_handler:
-    dependency: transitive
-    description:
-      name: permission_handler
-      sha256: "59adad729136f01ea9e35a48f5d1395e25cba6cea552249ddbe9cf950f5d7849"
-      url: "https://pub.dev"
-    source: hosted
-    version: "11.4.0"
-  permission_handler_android:
-    dependency: transitive
-    description:
-      name: permission_handler_android
-      sha256: d3971dcdd76182a0c198c096b5db2f0884b0d4196723d21a866fc4cdea057ebc
-      url: "https://pub.dev"
-    source: hosted
-    version: "12.1.0"
-  permission_handler_apple:
-    dependency: transitive
-    description:
-      name: permission_handler_apple
-      sha256: f000131e755c54cf4d84a5d8bd6e4149e262cc31c5a8b1d698de1ac85fa41023
-      url: "https://pub.dev"
-    source: hosted
-    version: "9.4.7"
-  permission_handler_html:
-    dependency: transitive
-    description:
-      name: permission_handler_html
-      sha256: "38f000e83355abb3392140f6bc3030660cfaef189e1f87824facb76300b4ff24"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.3+5"
-  permission_handler_platform_interface:
-    dependency: transitive
-    description:
-      name: permission_handler_platform_interface
-      sha256: eb99b295153abce5d683cac8c02e22faab63e50679b937fa1bf67d58bb282878
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.0"
-  permission_handler_windows:
-    dependency: transitive
-    description:
-      name: permission_handler_windows
-      sha256: "1a790728016f79a41216d88672dbc5df30e686e811ad4e698bfc51f76ad91f1e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.1"
   petitparser:
     dependency: transitive
     description:
@@ -1313,22 +1210,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
-  share_plus:
-    dependency: transitive
-    description:
-      name: share_plus
-      sha256: fce43200aa03ea87b91ce4c3ac79f0cecd52e2a7a56c7a4185023c271fbfa6da
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.1.4"
-  share_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: share_plus_platform_interface
-      sha256: cc012a23fc2d479854e6c80150696c4a5f5bb62cb89af4de1c505cf78d0a5d0b
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.2"
   shared_preferences:
     dependency: transitive
     description:
@@ -1425,14 +1306,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.2"
-  showcaseview:
-    dependency: transitive
-    description:
-      name: showcaseview
-      sha256: "82e013ac2de1ae92cc6e652badf676606057c8e17aa3afd91e78866c4b4e85b1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.1"
   sky_engine:
     dependency: transitive
     description: flutter

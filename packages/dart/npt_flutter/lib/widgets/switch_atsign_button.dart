@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
@@ -265,7 +264,6 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         case NoPortsOnboardingResultStatus.success:
           await preSignout();
 
-          await initializeContactsService(rootDomain: rootDomain);
           AtClientManager.getInstance().atClient.syncService
               .addProgressListener(ProfileProgressListener());
           AtClientManager.getInstance().atClient.syncService.sync();

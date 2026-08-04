@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_auth/at_auth.dart';
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
+import 'package:npt_flutter/features/back_up_key/util/at_keys_export.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
@@ -286,10 +286,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   ) async {
     //
     // TODO: Refactor so that it user BackupKeyCubit. Can't be used now because it is tightly coupled with the OnboardingCubit/Single Atsign Activation flow. This will be refactored when we migrate to at_client_flutter.
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
-
-    final codeUnits = jsonEncode(aesEncryptedKeys).codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
+    final Uint8List data = await exportAtKeysBytes(atsign);
 
     final file = File(path.join(fileLocation, '${atsign}_key.atKeys'));
     await file.create(recursive: true);

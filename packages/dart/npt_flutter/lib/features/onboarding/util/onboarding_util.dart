@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -322,7 +321,6 @@ class NoPortsOnboardingUtil {
     if (!context.mounted) return;
     switch (onboardingResult?.status ?? NoPortsOnboardingResultStatus.cancel) {
       case NoPortsOnboardingResultStatus.success:
-        await initializeContactsService(rootDomain: rootDomain);
         AtClientManager.getInstance().atClient.syncService.addProgressListener(
           ProfileProgressListener(),
         );

@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
+import 'package:npt_flutter/features/back_up_key/util/at_keys_export.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/widgets/custom_snack_bar.dart';
@@ -50,10 +50,7 @@ class BackupKeyCubit extends Cubit<bool> {
     final strings = AppLocalizations.of(context)!;
     var atsign = context.read<OnboardingCubit>().getAtsign();
     // Build file data
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
-    var keyString = jsonEncode(aesEncryptedKeys);
-    final List<int> codeUnits = keyString.codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
+    final Uint8List data = await exportAtKeysBytes(atsign);
 
     try {
       final result = await BackUpKeyRepository().saveAtKeysToPath(
