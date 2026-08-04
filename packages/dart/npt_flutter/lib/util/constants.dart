@@ -3,14 +3,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart' show dotenv;
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 class Constants {
-  static bool dotenvLoaded = false;
+  static bool get dotenvLoaded => dotenv.isInitialized;
+
   static Future<void> loadDotenv() async {
-    if (dotenvLoaded) return;
+    if (dotenv.isInitialized) return;
     try {
       await dotenv.load();
-      dotenvLoaded = true;
     } catch (_) {
-      dotenvLoaded = false;
+      dotenv.testLoad();
     }
   }
 
@@ -19,7 +19,8 @@ class Constants {
 
   static Future<String?> get appAPIKey async {
     await loadDotenv();
-    return dotenv.env["APP_API_KEY"];
+    final String? key = dotenv.env["APP_API_KEY"];
+    return (key == null || key.isEmpty) ? null : key;
   }
 
   static const pngIconDark = 'assets/noports-icon64-dark.png';
