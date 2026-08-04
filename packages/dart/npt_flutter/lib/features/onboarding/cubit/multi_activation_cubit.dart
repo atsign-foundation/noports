@@ -214,7 +214,9 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         onboardingService.setAtClientPreference = atClientPreference;
 
         // 5. Execute Onboard
-        var onboardingRequest = AtOnboardingRequest(atsign);
+        var onboardingRequest = AtOnboardingRequest(atsign)
+          ..rootDomain = AtRootDomain.parse('root.atsign.org')
+          ;
 
         bool success = await onboardingService.onboard(
           cramSecret: cramSecret,
