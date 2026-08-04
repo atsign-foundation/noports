@@ -51,7 +51,7 @@ class ProfileRepository {
     }
 
     AtClient atClient = _client;
-    Atsign? atsign = atClient.getCurrentAtSign()!.toAtsign();
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
     try {
       var value = await atClient.get(key);
