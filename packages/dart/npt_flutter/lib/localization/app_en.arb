@@ -43,7 +43,7 @@
    "atsignUncreated": "Don't have an Atsign?",
    "authenticate": "Authenticate",
    "authenticator": "Authenticator",
-   "authorisation": "Authorisation",
+   "authorization": "Authorization",
    "autoStartApplication": "Auto-Start Client Application",
    "back": "Back",
    "backUp": "Back Up",
@@ -115,6 +115,7 @@
    "errorAtKeysUploadedMismatch": "The atKeys file you uploaded did not match the Atsign requested",
    "errorAtServerUnavailable": "Failed to retrieve the atserver status, make sure you have a stable internet connection.",
    "errorAtServerUnreachable": "Unable to connect to the atServer, make sure you have a stable internet connection.",
+   "errorAtsignAlreadyActivated": "The Atsign has already been activated.",
    "errorAtsignAlreadyPaired": "The Atsign {atsign} is already paired, please contact support.",
    "errorAtsignNotExist": "The Atsign you have requested doesn't exist in this root domain.",
    "errorAtsignUnavailable": "The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.",
@@ -240,6 +241,14 @@
    "remotePort": "Remote Port",
    "remotePortDescription": "The port that will be used on the remote machine",
    "removeAtsign": "Remove Atsign",
+   "removeAtsignConfirmation": "Are you sure you want to remove {atsign} from this device? You will need your atKeys file to sign in again.",
+   "@removeAtsignConfirmation": {
+      "placeholders": {
+         "atsign": {
+            "type": "String"
+         }
+      }
+   },
    "requestExpired": "The original request has expired. Please submit again",
    "required": "Required",
    "resendPin": "Resend Pin",

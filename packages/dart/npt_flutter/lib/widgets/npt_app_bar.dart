@@ -148,11 +148,11 @@ class _NptAppBarState extends State<NptAppBar> {
                         ),
                         _NavTab(
                           label: strings.authenticator,
-                          isActive: state == HomeRoutes.authorisation,
+                          isActive: state == HomeRoutes.authorization,
                           onTap: () {
-                            if (state != HomeRoutes.authorisation) {
+                            if (state != HomeRoutes.authorization) {
                               wrapperNav.currentState!.pushNamed(
-                                HomeRoutes.authorisation,
+                                HomeRoutes.authorization,
                               );
                             }
                           },

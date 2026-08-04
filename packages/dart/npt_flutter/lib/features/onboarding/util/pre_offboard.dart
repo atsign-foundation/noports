@@ -1,4 +1,4 @@
-import 'package:at_client_mobile/at_client_mobile.dart' hide OnboardingStatus;
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/features.dart';
@@ -19,7 +19,7 @@ Future<bool> preSignout() async {
   context?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon
   context?.read<TrayCubit>().initialize();
-  await context?.read<AuthorisationService>().dispose();
+  await context?.read<FlutterEnrollmentService>().dispose();
 
   return true;
 }

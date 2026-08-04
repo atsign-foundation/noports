@@ -152,7 +152,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get authenticator => 'Authenticator';
 
   @override
-  String get authorisation => 'Autorização';
+  String get authorization => 'Autorização';
 
   @override
   String get autoStartApplication =>
@@ -394,6 +394,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorAtServerUnreachable =>
       'Não é possível conectar ao atServer, verifique se você tem uma conexão de internet estável.';
+
+  @override
+  String get errorAtsignAlreadyActivated =>
+      'The Atsign has already been activated.';
 
   @override
   String errorAtsignAlreadyPaired(Object atsign) {
@@ -811,6 +815,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String removeAtsignConfirmation(String atsign) {
+    return 'Are you sure you want to remove $atsign from this device? You will need your atKeys file to sign in again.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -1220,7 +1229,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get authenticator => 'Authenticator';
 
   @override
-  String get authorisation => 'Autorização';
+  String get authorization => 'Autorização';
 
   @override
   String get autoStartApplication =>

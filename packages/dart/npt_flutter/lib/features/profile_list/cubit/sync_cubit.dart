@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SyncCubit extends Cubit<bool> {

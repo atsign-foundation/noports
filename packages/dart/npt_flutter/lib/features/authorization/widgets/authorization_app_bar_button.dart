@@ -2,22 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_cubit.dart';
+import 'package:npt_flutter/features/authorization/cubit/pending_requests_count_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-class AuthorisationAppBarButton extends StatefulWidget {
-  const AuthorisationAppBarButton({super.key});
+class AuthorizationAppBarButton extends StatefulWidget {
+  const AuthorizationAppBarButton({super.key});
 
   @override
-  AuthorisationAppBarButtonState createState() =>
-      AuthorisationAppBarButtonState();
+  AuthorizationAppBarButtonState createState() =>
+      AuthorizationAppBarButtonState();
 }
 
-class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
+class AuthorizationAppBarButtonState extends State<AuthorizationAppBarButton> {
   @override
   void initState() {
     super.initState();
@@ -27,7 +27,7 @@ class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     return VisibilityDetector(
-      key: const Key('authorisation_app_bar_button'),
+      key: const Key('authorization_app_bar_button'),
       onVisibilityChanged: (visibilityInfo) {
         // Need a way of getting the latest count
         // When a page is pushed on top of this it doesn't get rebuilt
@@ -40,17 +40,17 @@ class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
       },
       child: StreamBuilder(
         // TODO(zambrella): Implement the stream and make sure to cache it in init state
-        // stream: context.read<AuthorisationService>().enrollmentRequests(statusFilters: [EnrollmentStatus.pending]),
+        // stream: context.read<FlutterEnrollmentService>().enrollmentRequests(statusFilters: [EnrollmentStatus.pending]),
         stream: Stream.value(null),
         builder: (context, snapshot) {
           // TODO(zambrella): On new request, display a notification
           return BlocBuilder<PendingRequestsCountCubit, Count>(
-            builder: (context, authorisationNotificationCount) {
+            builder: (context, authorizationNotificationCount) {
               return IconButton(
-                tooltip: strings.authorisation,
+                tooltip: strings.authorization,
                 icon: Badge.count(
-                  count: authorisationNotificationCount.count,
-                  isLabelVisible: authorisationNotificationCount.count > 0,
+                  count: authorizationNotificationCount.count,
+                  isLabelVisible: authorizationNotificationCount.count > 0,
                   backgroundColor: Theme.of(
                     context,
                   ).colorScheme.primary.withValues(alpha: 0.1),
@@ -58,7 +58,7 @@ class AuthorisationAppBarButtonState extends State<AuthorisationAppBarButton> {
                   child: PhosphorIcon(PhosphorIcons.key()),
                 ),
                 onPressed: () {
-                  wrapperNav.currentState!.pushNamed(HomeRoutes.authorisation);
+                  wrapperNav.currentState!.pushNamed(HomeRoutes.authorization);
                 },
               );
             },

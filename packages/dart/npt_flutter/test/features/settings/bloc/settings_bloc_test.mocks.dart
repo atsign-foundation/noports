@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:at_client_mobile/at_client_mobile.dart' as _i2;
+import 'package:at_client_flutter/at_client_flutter.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:npt_flutter/features/settings/settings.dart' as _i3;
 

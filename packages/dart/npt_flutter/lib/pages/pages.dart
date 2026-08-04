@@ -1,4 +1,4 @@
-export 'authorisation_page.dart';
+export 'authorization_page.dart';
 export 'connections_page.dart';
 export 'loading_page.dart';
 export 'onboarding_page.dart';

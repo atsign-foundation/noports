@@ -1,1 +1,31 @@
-{}
+{
+  "es": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ],
+
+  "pt": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ],
+
+  "pt_BR": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ],
+
+  "zh": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ],
+
+  "zh_Hans_CH": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ],
+
+  "zh_Hant_HK": [
+    "errorAtsignAlreadyActivated",
+    "removeAtsignConfirmation"
+  ]
+}

@@ -18,7 +18,7 @@ class Routes {
 class HomeRoutes {
   static const dashboard = '/dashboard';
   static const settings = '/settings';
-  static const authorisation = '/authorization';
+  static const authorization = '/authorization';
   static const profileForm = '/profile';
   static const loadingPage = '/loading';
   static const policyManager = '/policy-manager';
@@ -29,7 +29,7 @@ class HomeRoutes {
     '/': (_) => const SizedBox.shrink(),
     dashboard: (_) => const ConnectionsPage(),
     settings: (_) => const SettingsPage(),
-    authorisation: (_) => const AuthorisationPage(),
+    authorization: (_) => const AuthorizationPage(),
     profileForm: (_) => const ProfileFormPage(),
     loadingPage: (_) => const LoadingPage(),
     policyManager: (_) => const PolicyPage(),
@@ -46,7 +46,7 @@ String routeName(String route) {
       return strings.dashboard;
     case 'Settings':
       return strings.settings;
-    case 'Authorisation':
+    case 'Authorization':
       return 'Authorization';
     case 'Profile':
       return strings.profile;

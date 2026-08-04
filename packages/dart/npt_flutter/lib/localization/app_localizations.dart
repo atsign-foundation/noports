@@ -377,11 +377,11 @@ abstract class AppLocalizations {
   /// **'Authenticator'**
   String get authenticator;
 
-  /// No description provided for @authorisation.
+  /// No description provided for @authorization.
   ///
   /// In en, this message translates to:
-  /// **'Authorisation'**
-  String get authorisation;
+  /// **'Authorization'**
+  String get authorization;
 
   /// No description provided for @autoStartApplication.
   ///
@@ -808,6 +808,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to connect to the atServer, make sure you have a stable internet connection.'**
   String get errorAtServerUnreachable;
+
+  /// No description provided for @errorAtsignAlreadyActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'The Atsign has already been activated.'**
+  String get errorAtsignAlreadyActivated;
 
   /// No description provided for @errorAtsignAlreadyPaired.
   ///
@@ -1558,6 +1564,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove Atsign'**
   String get removeAtsign;
+
+  /// No description provided for @removeAtsignConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {atsign} from this device? You will need your atKeys file to sign in again.'**
+  String removeAtsignConfirmation(String atsign);
 
   /// No description provided for @requestExpired.
   ///

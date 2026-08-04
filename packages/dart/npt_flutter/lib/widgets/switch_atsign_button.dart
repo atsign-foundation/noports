@@ -1,7 +1,9 @@
 import 'dart:developer';
 
 import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_auth/at_auth.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -92,7 +94,7 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
 /// Shows the atsign menu and returns the selected option
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
-  final atsignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainStorage().getAllAtsigns();
 
   final result = await showMenu<String?>(
     context: context,
@@ -232,7 +234,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final rootDomain = atsignInfo.rootDomain;
 
   // Check if atsign already exists in keychain
-  final atsignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainStorage().getAllAtsigns();
 
   // Show loading dialog
 
@@ -246,21 +248,11 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   );
 
   try {
-    if (atsignList?.contains(newAtsign) ?? false) {
+    if (atsignList.contains(newAtsign)) {
       // Atsign exists in keychain - use existing flow
       await _performOnboarding(App.navState.currentContext!, newAtsign);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
-      final apiKey = await Constants.appAPIKey;
-      final config = AtOnboardingConfig(
-        atClientPreference: await AtClientMethods.loadAtClientPreference(
-          rootDomain,
-        ),
-        rootEnvironment: RootEnvironment.Production,
-        domain: rootDomain,
-        appAPIKey: apiKey,
-      );
-
       final util = await NoPortsOnboardingUtil.create(
         App.navState.currentContext!,
       );
@@ -269,8 +261,8 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         atsign: newAtsign,
       );
 
-      switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
-        case AtOnboardingResultStatus.success:
+      switch (onboardingResult?.status ?? NoPortsOnboardingResultStatus.cancel) {
+        case NoPortsOnboardingResultStatus.success:
           await preSignout();
 
           await initializeContactsService(rootDomain: rootDomain);
@@ -295,7 +287,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
           App.log('atsign result is:$result'.loggable);
           return;
-        case AtOnboardingResultStatus.error:
+        case NoPortsOnboardingResultStatus.error:
           if (App.navState.currentContext!.mounted) {
             App.navState.currentContext!.read<OnboardingCubit>().setState(
               atsign: originalAtsign,
@@ -315,7 +307,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
           );
 
           break;
-        case AtOnboardingResultStatus.cancel:
+        case NoPortsOnboardingResultStatus.cancel:
           App.navState.currentContext!.read<OnboardingCubit>().setState(
             atsign: originalAtsign,
             rootDomain: originalRootDomain,
@@ -338,14 +330,10 @@ Future<void> _handleSwitchToAtsign(
 ) async {
   await preSignout();
 
-  log('change primary atsign called: $targetAtsign');
+  log('switching to atsign: $targetAtsign');
 
-  final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtsign,
-  );
-
-  if (!changeSuccess) return;
-
+  // at_client_flutter has no primary-atsign concept; authenticating with the
+  // target atsign's keychain entry is what makes it current.
   final currentContext = App.navState.currentContext!;
   await _performOnboarding(currentContext, targetAtsign);
 }
@@ -357,18 +345,21 @@ Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
     rootDomain,
   );
 
-  final onboardingResult = await AtOnboarding.onboard(
-    atsign: atsign,
-    context: context,
-    config: AtOnboardingConfig(
-      atClientPreference: atClientPreference,
-      domain: rootDomain,
-      rootEnvironment: RootEnvironment.Production,
-      appAPIKey: await Constants.appAPIKey,
+  if (!context.mounted) return;
+
+  final AtAuthResponse? response = await PkamDialog.show(
+    context,
+    request: AtAuthRequest(
+      atsign,
+      rootDomain: AtRootDomain(
+        atClientPreference.rootDomain,
+        atClientPreference.rootPort,
+      ),
+      atKeysIo: KeychainAtKeysIo(),
     ),
   );
 
-  if (onboardingResult.status == AtOnboardingResultStatus.success) {
+  if (response?.isSuccessful ?? false) {
     await BackupKeyUtils().backupKeyStatusCheck();
     log("postOnbarding called");
     await postOnboard(atsign, rootDomain);

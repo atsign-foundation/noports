@@ -145,7 +145,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get authenticator => 'Authenticator';
 
   @override
-  String get authorisation => '授权';
+  String get authorization => '授权';
 
   @override
   String get autoStartApplication => '自动启动客户端应用程序';
@@ -372,6 +372,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorAtServerUnreachable => '无法连接到 atServer，请确保您有稳定的互联网连接。';
+
+  @override
+  String get errorAtsignAlreadyActivated =>
+      'The Atsign has already been activated.';
 
   @override
   String errorAtsignAlreadyPaired(Object atsign) {
@@ -763,6 +767,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String removeAtsignConfirmation(String atsign) {
+    return 'Are you sure you want to remove $atsign from this device? You will need your atKeys file to sign in again.';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -1148,7 +1157,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get authenticator => 'Authenticator';
 
   @override
-  String get authorisation => '授权';
+  String get authorization => '授权';
 
   @override
   String get autoStartApplication => '自动启动客户端应用程序';
@@ -2151,7 +2160,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get authenticator => 'Authenticator';
 
   @override
-  String get authorisation => '授權';
+  String get authorization => '授權';
 
   @override
   String get autoStartApplication => '自動啟動用戶端應用程式';

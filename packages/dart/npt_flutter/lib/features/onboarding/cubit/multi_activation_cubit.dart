@@ -4,8 +4,7 @@ import 'dart:typed_data';
 
 import 'package:at_auth/at_auth.dart';
 import 'package:at_backupkey_flutter/services/backupkey_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
@@ -76,7 +75,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> getFilePickerPath() async {
     emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['yaml'],
     );
@@ -129,7 +128,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> activateAll() async {
     //0. Prompt to atKeys file location to save files.
     final context = App.navState.currentContext!;
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
       dialogTitle: AppLocalizations.of(
         context,
       )!.activationAtsignFileStorageLocation,
@@ -145,16 +144,13 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       return;
     }
 
-    // 1. get application support directory to save the keys file for each atsign
-    final appSupportDir = await getApplicationSupportDirectory();
-
     // 2. create a mutable copy of the entries to update the status of each entry as we go through the activation process
     // TODO: re-evalaute if a copy is necessary here or if we can just update the entries directly since we are emitting a new state with the updated entries each time we update the status of an atsign
     var currentEntries = List<ActivationKeyPair>.from(
       state.fileContent.entries,
     );
 
-    final onboardingService = OnboardingService.getInstance();
+    final authService = AuthService();
     final onboardingUtil = await NoPortsOnboardingUtil.create(
       App.navState.currentContext!,
     );
@@ -200,28 +196,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         Atsign atsign = entry.atsign;
         String cramSecret = entry.activationKey;
 
-        // 2. Reset the current atsign on the singleton
-        onboardingService.setAtsign = atsign;
-        // TODO: Consider replacing this when using at_client_flutter
-        AtClientPreference atClientPreference = AtClientPreference()
-          // ..rootDomain = 'vip.ve.atsign.zone'
-          ..rootDomain = 'root.atsign.org'
-          ..isLocalStoreRequired = true
-          ..hiveStoragePath = path.join(appSupportDir.path, 'hive')
-          ..commitLogPath = path.join(appSupportDir.path, 'commitLog')
-          ..cramSecret = cramSecret;
-
-        onboardingService.setAtClientPreference = atClientPreference;
-
-        // 5. Execute Onboard
-        var onboardingRequest = AtOnboardingRequest(atsign)
-          ..rootDomain = AtRootDomain.parse('root.atsign.org')
-          ;
-
-        bool success = await onboardingService.onboard(
-          cramSecret: cramSecret,
-          atOnboardingRequest: onboardingRequest,
+        // 5. Execute Onboard. A fresh AtOnboardingRequest per atsign avoids the
+        // global singleton state issues that came with OnboardingService.
+        var onboardingRequest = AtOnboardingRequest(
+          atsign,
+          rootDomain: AtRootDomain.parse('root.atsign.org'),
+          atKeysIo: KeychainAtKeysIo(),
         );
+
+        final AtOnboardingResponse response = await authService.onboard(
+          onboardingRequest,
+          cramSecret,
+        );
+        bool success = response.isSuccessful;
 
         // 6. Update Result
         if (success) {
