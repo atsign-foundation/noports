@@ -114,6 +114,16 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
   );
 
   @override
+  void onDone(
+    _i2.ProfileEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i4.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
@@ -216,6 +226,16 @@ class MockSettingsBloc extends _i1.Mock implements _i6.SettingsBloc {
     _i5.Transition<_i6.SettingsEvent, _i6.SettingsState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i6.SettingsEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 
@@ -421,6 +441,16 @@ class MockFavoriteBloc extends _i1.Mock implements _i8.FavoriteBloc {
     _i5.Transition<_i8.FavoriteEvent, _i8.FavoritesState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i8.FavoriteEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 

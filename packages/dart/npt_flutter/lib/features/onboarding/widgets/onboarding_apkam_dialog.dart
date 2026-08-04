@@ -5,15 +5,21 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/features/onboarding/models/onboard_result.dart';
 import 'package:npt_flutter/features/onboarding/widgets/enrollment_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/constants.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:pin_code_fields/pin_code_fields.dart'
+    show
+        MaterialPinField,
+        MaterialPinTheme,
+        MaterialPinShape,
+        PinInputController;
 
 import '../../../app.dart';
 
-enum OnboardingStatus {
+enum _ApkamDialogStatus {
   preparing,
   otpRequired,
   validatingOtp,
@@ -42,195 +48,181 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   static const _kPinLength = 6;
 
-  late OnboardingStatus onboardingStatus;
-  late final AtAuthServiceImpl authService;
-  late final TextEditingController pinController;
-
+  _ApkamDialogStatus _status = _ApkamDialogStatus.preparing;
+  late final PinInputController _pinController;
+  final _enrollmentService = FlutterEnrollmentService();
+  final _keychainStorage = KeychainStorage();
   bool hasExpired = false;
 
   @override
   void initState() {
     super.initState();
-    onboardingStatus = OnboardingStatus.preparing;
-    authService = AtAuthServiceImpl(atsign, atClientPreference);
-    pinController = TextEditingController();
-    init();
+    _pinController = PinInputController();
+    _init();
   }
 
   @override
   void dispose() {
-    pinController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
-  Future<String> getDeviceName() async {
+  Future<String> _getDeviceName() async {
     final deviceInfo = DeviceInfoPlugin();
-
     if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return '${androidInfo.manufacturer} ${androidInfo.model}';
+      final info = await deviceInfo.androidInfo;
+      return '${info.manufacturer} ${info.model}';
     } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return '${iosInfo.name} (${iosInfo.model})';
+      final info = await deviceInfo.iosInfo;
+      return '${info.name} (${info.model})';
     } else if (Platform.isMacOS) {
-      final macInfo = await deviceInfo.macOsInfo;
-      return macInfo.computerName;
+      return (await deviceInfo.macOsInfo).computerName;
     } else if (Platform.isWindows) {
-      final windowsInfo = await deviceInfo.windowsInfo;
-      return windowsInfo.computerName;
+      return (await deviceInfo.windowsInfo).computerName;
     } else if (Platform.isLinux) {
-      final linuxInfo = await deviceInfo.linuxInfo;
-      return linuxInfo.name;
-    } else {
-      return 'Unknown Device';
+      return (await deviceInfo.linuxInfo).name;
     }
+    return 'Unknown Device';
   }
 
-  Future<void> _setStateOnStatus(EnrollmentStatus enrollmentStatus) async {
-    switch (enrollmentStatus) {
-      case EnrollmentStatus.pending:
-        setState(() {
-          hasExpired = false;
-          onboardingStatus = OnboardingStatus.otpRequired;
-        });
-      case EnrollmentStatus.approved:
-        await onApproved();
-      case EnrollmentStatus.denied:
-        await onDenied();
-      case EnrollmentStatus.revoked:
-        throw UnimplementedError();
-      case EnrollmentStatus.expired:
-        App.log('Original request has expired. Submit again'.loggable);
-        setState(() {
-          hasExpired = true;
-          onboardingStatus = OnboardingStatus.otpRequired;
-        });
-    }
-  }
+  Future<void> _init() async {
+    final enrollmentData = await _keychainStorage.readEnrollmentData(atsign);
 
-  Future<void> init() async {
-    final sentEnrollRequest = await authService.getSentEnrollmentRequest();
-    App.log('Sent enroll request: ${sentEnrollRequest?.toJson()}'.loggable);
-    if (sentEnrollRequest != null) {
-      if (DateTime.now()
-              .toUtc()
-              .difference(
-                DateTime.fromMillisecondsSinceEpoch(
-                  sentEnrollRequest.enrollmentSubmissionTimeEpoch,
-                ),
-              )
-              .inHours >=
-          48) {
-        await _setStateOnStatus(EnrollmentStatus.expired);
-      } else {
-        // If the request has already been sent, we need to say wait for approval
-        setState(() {
-          onboardingStatus = OnboardingStatus.pendingApproval;
-        });
-      }
-    }
-
-    // Returns EnrollmentStatus.expired even if no request has been sent
-    final status = await authService.getFinalEnrollmentStatus();
-    log('Enrollment status: $status');
-    if (status == EnrollmentStatus.expired && sentEnrollRequest == null) {
+    if (enrollmentData == null) {
       setState(() {
-        onboardingStatus = OnboardingStatus.otpRequired;
+        _status = _ApkamDialogStatus.otpRequired;
       });
-    } else {
-      await _setStateOnStatus(status);
+      return;
     }
+
+    final ageHours = Duration(
+      microseconds:
+          DateTime.now().toUtc().microsecondsSinceEpoch -
+          enrollmentData.enrollmentSubmissionTimeEpoch,
+    ).inHours;
+
+    if (ageHours >= 48) {
+      await _keychainStorage.deleteEnrollmentData(atsign);
+      setState(() {
+        hasExpired = true;
+        _status = _ApkamDialogStatus.otpRequired;
+      });
+      return;
+    }
+
+    // Pending enrollment from a previous session — resume waiting
+    setState(() {
+      _status = _ApkamDialogStatus.pendingApproval;
+    });
+    final rootDomain = AtRootDomain(
+      atClientPreference.rootDomain,
+      atClientPreference.rootPort,
+    );
+    final pendingResponse = AtEnrollmentResponse(
+      enrollmentData.enrollmentId,
+      EnrollmentStatus.pending,
+      atSign: atsign,
+      rootDomain: rootDomain,
+      atAuthKeys: enrollmentData.atAuthKeys,
+    );
+    _awaitApproval(pendingResponse);
   }
 
-  Future<void> onApproved() async {
+  void _awaitApproval(AtEnrollmentResponse response) {
+    _enrollmentService
+        .awaitApproval(response)
+        .then((_) => _onApproved(response))
+        .catchError((Object e) {
+          final msg = e.toString();
+          if (msg.contains('denied') || msg.contains('AT0025')) {
+            _onDenied();
+          } else {
+            log('APKAM awaitApproval error: $e');
+            if (mounted) {
+              final strings = AppLocalizations.of(context)!;
+              Navigator.of(context).pop(OnboardError(strings.unknownError));
+            }
+          }
+        });
+  }
+
+  Future<void> _onApproved(AtEnrollmentResponse response) async {
     setState(() {
-      onboardingStatus = OnboardingStatus.success;
+      _status = _ApkamDialogStatus.success;
     });
-    // Wait for a bit to show the success message
+    // Persist the full decrypted keys and clean up pending enrollment marker
+    await KeychainAtKeysIo().write(atsign, response.atAuthKeys!);
+    await _keychainStorage.deleteEnrollmentData(atsign);
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
-      Navigator.of(context).pop(AtOnboardingResult.success(atsign: atsign));
+      Navigator.of(context).pop(
+        OnboardSuccess(atsign.toAtsign(), enrollmentId: response.enrollmentId),
+      );
     }
   }
 
-  Future<void> onDenied() async {
+  Future<void> _onDenied() async {
     setState(() {
-      onboardingStatus = OnboardingStatus.denied;
+      _status = _ApkamDialogStatus.denied;
     });
-    // Wait for a bit to show the error message
+    await _keychainStorage.deleteEnrollmentData(atsign);
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       final strings = AppLocalizations.of(context)!;
-      Navigator.of(
-        context,
-      ).pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
+      Navigator.of(context).pop(OnboardError(strings.enrollRequestDenied));
     }
   }
 
-  Future<void> otpSubmit(String otp) async {
+  Future<void> _otpSubmit(String otp) async {
     setState(() {
-      onboardingStatus = OnboardingStatus.validatingOtp;
+      _status = _ApkamDialogStatus.validatingOtp;
       hasExpired = false;
     });
 
-    final onboardingService = OnboardingService.getInstance();
-
-    // Device name cannot contain spaces or special characters
     final regExp = RegExp(r'[^a-zA-Z0-9]');
-    final deviceName = (await getDeviceName()).replaceAll(regExp, '');
+    final deviceName = (await _getDeviceName()).replaceAll(regExp, '');
     App.log('Device Name: $deviceName'.loggable);
 
-    final enrollmentRequest = EnrollmentRequest(
+    final rootDomain = AtRootDomain(
+      atClientPreference.rootDomain,
+      atClientPreference.rootPort,
+    );
+    final enrollmentRequest = AtEnrollmentRequest(
       appName: Constants.namespace,
       deviceName: deviceName,
+      atSign: atsign,
       otp: otp,
-      namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+      namespaces: {Constants.namespace: 'rw', 'sshnp': 'rw', 'sshrvd': 'rw'},
+      rootDomain: rootDomain,
     );
 
     App.log('About to enroll with $enrollmentRequest'.loggable);
 
     try {
-      final enrollResponse = await onboardingService.enroll(
-        atsign,
-        enrollmentRequest,
-      );
-      App.log('Enroll response: $enrollResponse'.loggable);
+      final response = await _enrollmentService.enroll(enrollmentRequest);
+      App.log('Enroll response: $response'.loggable);
+      setState(() {
+        _status = _ApkamDialogStatus.pendingApproval;
+      });
+      _awaitApproval(response);
     } on AtException catch (e, st) {
       App.log('AtException - Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
       if (mounted) {
-        Navigator.of(context).pop(AtOnboardingResult.error(message: e.message));
+        Navigator.of(context).pop(OnboardError(e.message));
       }
     } catch (e, st) {
       App.log('Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
-
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
-        // Doesn't seem like enroll throws an `AtException`.
         if (e.toString().contains('AT0022')) {
-          App.log('Invalid OTP'.loggable);
-          Navigator.of(
-            context,
-          ).pop(AtOnboardingResult.error(message: strings.invalidOtp));
+          Navigator.of(context).pop(OnboardError(strings.invalidOtp));
         } else {
-          App.log('Unknown error during enrollment: $e'.loggable);
-          Navigator.of(
-            context,
-          ).pop(AtOnboardingResult.error(message: strings.unknownError));
+          Navigator.of(context).pop(OnboardError(strings.unknownError));
         }
       }
     }
-
-    setState(() {
-      onboardingStatus = OnboardingStatus.pendingApproval;
-    });
-
-    // Should only be one of approved or denied at this point.
-    final finalStatus = await authService.getFinalEnrollmentStatus();
-    App.log('Final enrollment status: $finalStatus'.loggable);
-
-    await _setStateOnStatus(finalStatus);
   }
 
   @override
@@ -241,12 +233,12 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         duration: const Duration(milliseconds: 300),
         switchInCurve: Curves.easeInOut,
         switchOutCurve: Curves.easeInOut,
-        child: switch (onboardingStatus) {
-          OnboardingStatus.preparing => const CircularProgressIndicator(
+        child: switch (_status) {
+          _ApkamDialogStatus.preparing => const CircularProgressIndicator(
             key: Key('preparing'),
           ),
-          OnboardingStatus.otpRequired ||
-          OnboardingStatus.validatingOtp => Column(
+          _ApkamDialogStatus.otpRequired ||
+          _ApkamDialogStatus.validatingOtp => Column(
             key: const Key('otp'),
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -281,39 +273,21 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          PinCodeTextField(
-                            autoDisposeControllers: false,
-                            appContext: context,
+                          MaterialPinField(
                             length: _kPinLength,
-                            controller: pinController,
+                            pinController: _pinController,
                             autoFocus: true,
                             textCapitalization: TextCapitalization.characters,
-                            // Styling
-                            animationType: AnimationType.fade,
-                            pinTheme: PinTheme(
-                              shape: PinCodeFieldShape.box,
-                              borderRadius: BorderRadius.circular(5),
-                              activeFillColor: Colors.white,
-                              inactiveFillColor: const Color(0xFFF3F3F3),
-                              disabledColor: Colors.blue,
-                              inactiveColor: const Color(0xFF747474),
-                              selectedFillColor: Colors.white,
-                              selectedColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              fieldOuterPadding: const EdgeInsets.all(Sizes.p2),
+                            keyboardType: TextInputType.visiblePassword,
+                            theme: const MaterialPinTheme(
+                              shape: MaterialPinShape.outlined,
+                              cellSize: Size(48, 52),
                             ),
-                            cursorColor: Colors.black,
-                            animationDuration: const Duration(
-                              milliseconds: 300,
-                            ),
-                            enableActiveFill: true,
-                            keyboardType: TextInputType.text,
-                            beforeTextPaste: (text) => true,
+                            onCompleted: (_) => _otpSubmit(_pinController.text),
                           ),
                           gapH8,
-                          AnimatedBuilder(
-                            animation: pinController,
+                          ListenableBuilder(
+                            listenable: _pinController,
                             builder: (context, _) {
                               return FilledButton(
                                 style: FilledButton.styleFrom(
@@ -331,25 +305,24 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                                   ),
                                 ),
                                 onPressed:
-                                    pinController.text.length == _kPinLength &&
-                                        onboardingStatus !=
-                                            OnboardingStatus.validatingOtp
+                                    _pinController.text.length == _kPinLength &&
+                                        _status !=
+                                            _ApkamDialogStatus.validatingOtp
                                     ? () async {
-                                        await otpSubmit(pinController.text);
+                                        await _otpSubmit(_pinController.text);
                                       }
                                     : null,
                                 child:
-                                    onboardingStatus ==
-                                        OnboardingStatus.validatingOtp
+                                    _status == _ApkamDialogStatus.validatingOtp
                                     ? const CircularProgressIndicator()
                                     : Text(strings.submitOtp),
                               );
                             },
                           ),
                           gapH8,
-                          PopButton(
-                            onboardingStatus: onboardingStatus,
-                            context: context,
+                          _PopButton(
+                            canPop:
+                                _status != _ApkamDialogStatus.pendingApproval,
                             title: strings.back,
                           ),
                         ],
@@ -369,15 +342,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
             ],
           ),
-          OnboardingStatus.pendingApproval => Column(
+          _ApkamDialogStatus.pendingApproval => Column(
             key: const Key('activating'),
             mainAxisSize: MainAxisSize.min,
             children: [
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // This is a little hacky to get the white background.
-                  // If this is a problem, we can rethink the EnrollmentDialog widget.
                   Positioned.fill(
                     child: Transform.scale(
                       scaleX: 1.15,
@@ -409,7 +380,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Just to slightly offset from the top
                         gapH12,
                         Text(
                           strings.whereToAccept,
@@ -434,7 +404,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
             ],
           ),
-          OnboardingStatus.success => Column(
+          _ApkamDialogStatus.success => Column(
             children: [
               Row(
                 key: const Key('success'),
@@ -449,14 +419,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 ],
               ),
               gapW8,
-              PopButton(
-                onboardingStatus: onboardingStatus,
-                context: context,
-                title: strings.done,
-              ),
+              _PopButton(canPop: true, title: strings.done),
             ],
           ),
-          OnboardingStatus.denied => Column(
+          _ApkamDialogStatus.denied => Column(
             children: [
               Row(
                 key: const Key('denied'),
@@ -471,11 +437,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 ],
               ),
               gapW8,
-              PopButton(
-                onboardingStatus: onboardingStatus,
-                context: context,
-                title: strings.done,
-              ),
+              _PopButton(canPop: true, title: strings.done),
             ],
           ),
         },
@@ -484,17 +446,12 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   }
 }
 
-class PopButton extends StatelessWidget {
-  const PopButton({
-    super.key,
-    required this.onboardingStatus,
-    required this.context,
-    required this.title,
-  });
+class _PopButton extends StatelessWidget {
+  const _PopButton({required this.canPop, required this.title});
 
-  final OnboardingStatus onboardingStatus;
-  final BuildContext context;
+  final bool canPop;
   final String title;
+
   @override
   Widget build(BuildContext context) {
     return FilledButton(
@@ -508,11 +465,7 @@ class PopButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(Sizes.p8),
         ),
       ),
-      onPressed: onboardingStatus != OnboardingStatus.pendingApproval
-          ? () {
-              Navigator.of(context).pop();
-            }
-          : null,
+      onPressed: canPop ? () => Navigator.of(context).pop() : null,
       child: Text(title),
     );
   }

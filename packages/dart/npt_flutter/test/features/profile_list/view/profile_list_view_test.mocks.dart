@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
-import 'package:at_client_mobile/at_client_mobile.dart' as _i10;
+import 'package:at_client_flutter/at_client_flutter.dart' as _i10;
 import 'package:flutter_bloc/flutter_bloc.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
@@ -126,6 +126,16 @@ class MockProfileListBloc extends _i1.Mock implements _i4.ProfileListBloc {
     _i7.Transition<_i4.ProfileListEvent, _i4.ProfileListState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i4.ProfileListEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 
@@ -406,6 +416,16 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
     _i7.Transition<_i2.ProfileEvent, _i2.ProfileState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i2.ProfileEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 
@@ -756,6 +776,16 @@ class MockSettingsBloc extends _i1.Mock implements _i11.SettingsBloc {
   );
 
   @override
+  void onDone(
+    _i11.SettingsEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i6.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
@@ -957,6 +987,16 @@ class MockFavoriteBloc extends _i1.Mock implements _i12.FavoriteBloc {
     _i7.Transition<_i12.FavoriteEvent, _i12.FavoritesState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i12.FavoriteEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 

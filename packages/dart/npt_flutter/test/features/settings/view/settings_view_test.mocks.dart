@@ -105,6 +105,16 @@ class MockSettingsBloc extends _i1.Mock implements _i2.SettingsBloc {
   );
 
   @override
+  void onDone(
+    _i2.SettingsEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i4.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),

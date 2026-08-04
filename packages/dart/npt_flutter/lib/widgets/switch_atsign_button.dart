@@ -1,19 +1,15 @@
 import 'dart:developer';
 
+import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/app.dart';
-import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
-import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
-import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
-import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/get_started_dialog.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
@@ -24,7 +20,6 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
-import 'package:npt_flutter/util/constants.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {
@@ -78,21 +73,22 @@ class SwitchAtsignButton extends StatelessWidget {
 Future<void> _handleSwitchAtsign(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
 
-  // Step 1: Show the menu and get selection
-  final selection = await _showAtsignMenu(context);
-  if (selection == null) return; // User cancelled;
+  final selection = await _showAtsignMenu(context, strings);
+  if (selection == null) return;
+  if (!context.mounted) return;
 
-  // Step 2: Check for connected profiles
   if (!await _checkAndHandleConnectedProfiles(context)) return;
+  if (!context.mounted) return;
 
-  // Step 3: Handle the selection
   await _handleSelection(context, selection, strings);
 }
 
-/// Shows the atsign menu and returns the selected option
-Future<String?> _showAtsignMenu(BuildContext context) async {
-  final strings = AppLocalizations.of(context)!;
-  final atsignList = await KeychainUtil.getAtsignList();
+Future<String?> _showAtsignMenu(
+  BuildContext context,
+  AppLocalizations strings,
+) async {
+  final atsignList = await KeychainStorage().getAllAtsigns();
+  if (!context.mounted) return null;
 
   final result = await showMenu<String?>(
     context: context,
@@ -107,7 +103,7 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
       borderRadius: BorderRadius.circular(Sizes.p8),
     ),
     items: [
-      ...(atsignList ?? []).map(
+      ...atsignList.map(
         (atsign) => PopupMenuItem<String>(
           padding: const EdgeInsets.all(Sizes.p0),
           value: atsign,
@@ -130,8 +126,6 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
   return result is String ? result : null;
 }
 
-/// Checks for connected profiles and shows dialog if needed
-/// Returns true if we should continue, false if we should abort
 Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
   final hasConnectedProfiles = context
       .read<ProfilesRunningCubit>()
@@ -152,10 +146,9 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
   );
 
   return shouldContinue !=
-      true; // Invert because dialog returns true when profiles are connected
+      true; // Invert: dialog returns true when profiles are connected
 }
 
-/// Handles the menu selection (signout, add atsign, or switch)
 Future<void> _handleSelection(
   BuildContext context,
   String selection,
@@ -170,7 +163,6 @@ Future<void> _handleSelection(
   }
 }
 
-/// Handles the signout flow
 Future<void> _handleSignout(BuildContext context) async {
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
@@ -187,12 +179,7 @@ Future<void> _handleSignout(BuildContext context) async {
   }
 }
 
-/// Handles adding a new atsign
 Future<void> _handleAddAtsign(BuildContext context) async {
-  final options = await getAtsignEntries();
-
-  // Store the current atsign before showing the dialog
-
   final originalAtsign = App.navState.currentContext!
       .read<OnboardingCubit>()
       .state
@@ -202,7 +189,6 @@ Future<void> _handleAddAtsign(BuildContext context) async {
       .state
       .rootDomain;
 
-  // Clear the atsign field before showing the dialog
   App.navState.currentContext!.read<OnboardingCubit>().setState(
     atsign: null,
     rootDomain: originalRootDomain,
@@ -217,24 +203,19 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
   if (shouldOnboard != true) {
     log('should Onboard is false or null');
-    // User cancelled - revert to original atsign
-
     App.navState.currentContext!.read<OnboardingCubit>().setState(
       atsign: originalAtsign,
       rootDomain: originalRootDomain,
     );
-
     return;
   }
 
-  final atsignInfo = App.navState.currentContext!.read<OnboardingCubit>().state;
+  final atsignInfo =
+      App.navState.currentContext!.read<OnboardingCubit>().state;
   final newAtsign = atsignInfo.atsign!;
   final rootDomain = atsignInfo.rootDomain;
 
-  // Check if atsign already exists in keychain
-  final atsignList = await KeychainUtil.getAtsignList();
-
-  // Show loading dialog
+  final atsignList = await KeychainStorage().getAllAtsigns();
 
   showDialog(
     context: App.navState.currentContext!,
@@ -246,140 +227,101 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   );
 
   try {
-    if (atsignList?.contains(newAtsign) ?? false) {
-      // Atsign exists in keychain - use existing flow
+    if (atsignList.contains(newAtsign)) {
       await _performOnboarding(App.navState.currentContext!, newAtsign);
     } else {
-      // New atsign - use shared util method for activation/APKAM flow
-      final apiKey = await Constants.appAPIKey;
-      final config = AtOnboardingConfig(
-        atClientPreference: await AtClientMethods.loadAtClientPreference(
-          rootDomain,
-        ),
-        rootEnvironment: RootEnvironment.Production,
-        domain: rootDomain,
-        appAPIKey: apiKey,
-      );
-
       final util = await NoPortsOnboardingUtil.create(
         App.navState.currentContext!,
       );
-      final onboardingResult = await util.handleAtsignByStatus(
+      final onboardResult = await util.handleAtsignByStatus(
         context: App.navState.currentContext!,
         atsign: newAtsign,
       );
 
-      switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
-        case AtOnboardingResultStatus.success:
-          await preSignout();
+      final atClientPreference = await AtClientMethods.loadAtClientPreference(
+        rootDomain,
+      );
 
-          await initializeContactsService(rootDomain: rootDomain);
-          AtClientManager.getInstance().atClient.syncService
-              .addProgressListener(ProfileProgressListener());
-          AtClientManager.getInstance().atClient.syncService.sync();
-          postOnboard(onboardingResult!.atsign!.toAtsign(), rootDomain);
-          final result = await saveAtsignInformation(
-            AtsignInformation(
-              atsign: onboardingResult.atsign!.toAtsign(),
-              rootDomain: rootDomain,
-            ),
-          );
-          final backupKeyCubit = App.navState.currentContext!
-              .read<BackupKeyCubit>();
-
-          await backupKeyCubit.putBackupKeyStatus(backupKeyCubit.state);
-
-          await BackupKeyUtils().backupKeyStatusCheck(
-            context: App.navState.currentContext!,
-          );
-
-          App.log('atsign result is:$result'.loggable);
-          return;
-        case AtOnboardingResultStatus.error:
-          if (App.navState.currentContext!.mounted) {
-            App.navState.currentContext!.read<OnboardingCubit>().setState(
-              atsign: originalAtsign,
-              rootDomain: originalRootDomain,
-            );
-          }
-          ScaffoldMessenger.of(App.navState.currentContext!).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red,
-              content: Text(
-                onboardingResult?.message ??
-                    AppLocalizations.of(
-                      App.navState.currentContext!,
-                    )!.onboardingError,
-              ),
-            ),
-          );
-
-          break;
-        case AtOnboardingResultStatus.cancel:
+      switch (onboardResult) {
+        case null:
+        case OnboardCancelled():
           App.navState.currentContext!.read<OnboardingCubit>().setState(
             atsign: originalAtsign,
             rootDomain: originalRootDomain,
           );
 
-          break;
+        case OnboardError(:final message):
+          App.navState.currentContext!.read<OnboardingCubit>().setState(
+            atsign: originalAtsign,
+            rootDomain: originalRootDomain,
+          );
+          ScaffoldMessenger.of(App.navState.currentContext!).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text(message),
+            ),
+          );
+
+        case OnboardSuccess(:final atsign, :final enrollmentId):
+          await preSignout();
+          await initializeAfterAuth(
+            atsign: atsign,
+            rootDomain: rootDomain,
+            atClientPreference: atClientPreference,
+            enrollmentId: enrollmentId,
+          );
+          await BackupKeyUtils().backupKeyStatusCheck(
+            context: App.navState.currentContext!,
+          );
+          App.log('Add atsign onboard successful: $atsign'.loggable);
       }
     }
   } finally {
-    // Dismiss loading dialog
-
     Navigator.of(App.navState.currentContext!).pop();
   }
 }
 
-/// Handles switching to an existing atsign
 Future<void> _handleSwitchToAtsign(
   BuildContext context,
   Atsign targetAtsign,
 ) async {
   await preSignout();
-
-  log('change primary atsign called: $targetAtsign');
-
-  final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtsign,
-  );
-
-  if (!changeSuccess) return;
-
-  final currentContext = App.navState.currentContext!;
-  await _performOnboarding(currentContext, targetAtsign);
+  log('switching to atsign: $targetAtsign');
+  await _performOnboarding(App.navState.currentContext!, targetAtsign);
 }
 
-/// Performs the onboarding process for the given atsign
+/// Authenticates an atsign that is already in the keychain via PKAM and
+/// then runs the shared post-auth initialisation.
 Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
   final rootDomain = context.read<OnboardingCubit>().getRootDomain();
   final atClientPreference = await AtClientMethods.loadAtClientPreference(
     rootDomain,
   );
 
-  final onboardingResult = await AtOnboarding.onboard(
-    atsign: atsign,
-    context: context,
-    config: AtOnboardingConfig(
-      atClientPreference: atClientPreference,
-      domain: rootDomain,
-      rootEnvironment: RootEnvironment.Production,
-      appAPIKey: await Constants.appAPIKey,
-    ),
+  final authRequest = AtAuthRequest(
+    atsign,
+    atKeysIo: KeychainAtKeysIo(),
+    rootDomain: AtRootDomain(rootDomain, 64),
   );
 
-  if (onboardingResult.status == AtOnboardingResultStatus.success) {
-    await BackupKeyUtils().backupKeyStatusCheck();
-    log("postOnbarding called");
-    await postOnboard(atsign, rootDomain);
-  }
+  if (!context.mounted) return;
+  final authResponse = await PkamDialog.show(context, request: authRequest);
+
+  if (authResponse == null || !authResponse.isSuccessful) return;
+
+  await initializeAfterAuth(
+    atsign: atsign,
+    rootDomain: rootDomain,
+    atClientPreference: atClientPreference,
+  );
+  await BackupKeyUtils().backupKeyStatusCheck();
+  log('postOnboarding called for $atsign');
 }
 
 class _HoverableMenuItem extends StatefulWidget {
-  /// The label to display for this menu item. This can be an atsign or a special action like "Add Atsign" or "Sign Out".
   final String label;
-
   const _HoverableMenuItem({required this.label});
+
   @override
   State<_HoverableMenuItem> createState() => _HoverableMenuItemState();
 }
@@ -387,7 +329,6 @@ class _HoverableMenuItem extends StatefulWidget {
 class _HoverableMenuItemState extends State<_HoverableMenuItem> {
   bool _hovering = false;
 
-  // Function to determine the prefix based on label value
   String displayAtsignPrefix(AppLocalizations strings) {
     if (widget.label == strings.addAtsign) {
       return '+ ';

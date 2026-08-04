@@ -133,6 +133,16 @@ class MockFavoriteBloc extends _i1.Mock implements _i4.FavoriteBloc {
   );
 
   @override
+  void onDone(
+    _i4.FavoriteEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i6.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),

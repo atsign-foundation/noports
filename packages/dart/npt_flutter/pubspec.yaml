@@ -38,11 +38,11 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   adaptive_theme: ^3.6.0
-  at_auth: ^3.0.1
+  at_auth: ^3.1.0
   at_client: ^3.11.0
-  at_client_flutter: ^1.1.0
+  at_client_flutter: ^1.1.1
   at_contact: ^3.0.8
-  at_contacts_flutter: ^4.0.15
+  at_contacts_flutter: ^4.1.1
   at_server_status: ^1.1.1
   at_utils: ^3.4.0
   cupertino_icons: ^1.0.8
@@ -94,9 +94,11 @@ dev_dependencies:
 dependency_overrides:
   package_info_plus: ^9.0.1
   file_picker: ^11.0.2
-  at_auth: ^3.0.1
+  at_auth: ^3.1.0
   at_chops: ^3.0.0
-  # at_onboarding_cli: 1.14.2
+  at_commons: ^5.10.0
+  at_cli_commons: ^3.1.0
+  at_onboarding_cli: ^1.15.0
   # archive: ^4.0.7
   # file_picker: ^10.3.3
   intl: 0.20.2

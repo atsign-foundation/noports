@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -52,7 +53,7 @@ class AtsignInformation extends Loggable {
 // correctly
 
 Future<Map<String, AtsignInformation>> getAtsignEntries() async {
-  var keychainAtsigns = await KeychainUtil.getAtsignList() ?? [];
+  var keychainAtsigns = await KeychainStorage().getAllAtsigns();
   var atsignInfo = <AtsignInformation>[];
   try {
     atsignInfo = await _getAtsignInformationFromFile();

@@ -1,3 +1,4 @@
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/util/constants.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -11,7 +12,6 @@ class AtClientMethods {
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
       ..hiveStoragePath = dir.path
-      ..commitLogPath = dir.path
-      ..isLocalStoreRequired = true;
+      ..commitLogPath = dir.path;
   }
 }
