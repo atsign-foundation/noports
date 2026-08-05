@@ -28,6 +28,11 @@ jobs:
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: "stable"
+          # Pinned because phosphor_flutter 2.1.0 extends IconData, which became
+          # a final class in Flutter 3.44. 2.1.0 is the latest release (2 years
+          # old, unmaintained), so there is no version to upgrade to. Remove this
+          # pin once phosphor_flutter is replaced or forked.
+          flutter-version: "3.41.9"
       - name: flutter pub get
         working-directory: packages/dart/npt_flutter
         run: flutter pub get
