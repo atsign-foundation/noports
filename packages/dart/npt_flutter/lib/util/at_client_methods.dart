@@ -9,7 +9,6 @@ class AtClientMethods {
     String rootDomain,
   ) async {
     var dir = await getApplicationSupportDirectory();
-
     return AtClientPreference()
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
