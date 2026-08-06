@@ -92,10 +92,11 @@ packages:
   at_client_flutter:
     dependency: "direct main"
     description:
-      path: "../../../../../../at_client_sdk/jt/at_client_flutter/packages/at_client_flutter"
-      relative: true
-    source: path
-    version: "1.1.5"
+      name: at_client_flutter
+      sha256: "63aa8047bc98e025ec8c18d1e06df0343a7903b9723034336a2bacad9755b7f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.4"
   at_commons:
     dependency: "direct main"
     description:
