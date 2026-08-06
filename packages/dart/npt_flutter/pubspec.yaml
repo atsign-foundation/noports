@@ -37,13 +37,12 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  adaptive_theme: ^3.6.0
-  at_auth: ^2.4.0
-  at_client: ^3.11.0
-  at_client_flutter: ^1.1.4
+  at_auth: ^3.3.0
+  at_client: ^3.14.0
+  at_client_flutter:
+    path: ../../../../../../at_client_sdk/jt/at_client_flutter/packages/at_client_flutter
   at_server_status: ^1.1.1
-  at_utils: ^3.0.16
-  cupertino_icons: ^1.0.8
+  at_utils: ^3.4.0
   desktop_drop: ^0.7.0
   device_info_plus: ^12.4.0
   dotted_border: ^3.1.0
@@ -60,7 +59,6 @@ dependencies:
   intl: any
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
-  meta: ^1.15.0
   noports_core:
     path: ../noports_core
   package_info_plus: ^9.0.1
@@ -70,7 +68,6 @@ dependencies:
   pin_code_fields: ^8.0.1
   socket_connector: ^2.4.1
   super_tooltip: ^2.1.0
-  toml: ^0.16.0
   tray_manager: ^0.5.1
   url_launcher: ^6.3.0
   uuid: ^4.0.0
@@ -92,35 +89,13 @@ dev_dependencies:
   win32: ^5.9.0
 
 dependency_overrides:
-  at_auth: ^3.0.1
-  at_chops: ^3.0.0
-  at_onboarding_cli: 1.14.2
   archive: ^4.0.7
   file_picker: ^11.0.3
   intl: 0.20.2
   file: 7.0.1
   meta: ^1.17.0
   chalkdart: ^2.2.1
-  at_utils: ^3.0.15
   pointycastle: ^4.0.0
-  # at_onboarding_flutter:
-  #   git:
-  #     url: https://github.com/atsign-foundation/at_widgets
-  #     ref: at_onboarding_flutter_layers
-  #     path: packages/at_onboarding_flutter
-  # at_client_mobile:
-  #   # the ref below is the latest fully tested commit on the apkam-flutter
-  #   # branch in the at_client_sdk repo
-  #   git:
-  #     url: https://github.com/atsign-foundation/at_client_sdk
-  #     ref: 4e7701af851be6a7c45ef2cecbf4048c80814261
-  #     path: packages/at_client_mobile
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
