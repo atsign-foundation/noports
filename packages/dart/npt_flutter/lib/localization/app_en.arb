@@ -240,6 +240,8 @@
    "remotePort": "Remote Port",
    "remotePortDescription": "The port that will be used on the remote machine",
    "removeAtsign": "Remove Atsign",
+   "selectAll": "Select All",
+   "noAtsignsToRemove": "No atsigns found to remove.",
    "requestExpired": "The original request has expired. Please submit again",
    "required": "Required",
    "resendPin": "Resend Pin",

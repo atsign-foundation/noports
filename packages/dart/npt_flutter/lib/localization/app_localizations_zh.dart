@@ -763,6 +763,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override

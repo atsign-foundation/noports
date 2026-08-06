@@ -1,11 +1,9 @@
-import 'dart:convert';
+// ignore_for_file: deprecated_member_use
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:at_auth/at_auth.dart';
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:at_lookup/at_lookup.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
@@ -17,7 +15,6 @@ import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:yaml/yaml.dart';
 
 /// state of the file based activation flow.
@@ -145,16 +142,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       return;
     }
 
-    // 1. get application support directory to save the keys file for each atsign
-    final appSupportDir = await getApplicationSupportDirectory();
-
-    // 2. create a mutable copy of the entries to update the status of each entry as we go through the activation process
+    // 1. create a mutable copy of the entries to update the status of each entry as we go through the activation process
     // TODO: re-evalaute if a copy is necessary here or if we can just update the entries directly since we are emitting a new state with the updated entries each time we update the status of an atsign
     var currentEntries = List<ActivationKeyPair>.from(
       state.fileContent.entries,
     );
 
-    final onboardingService = OnboardingService.getInstance();
     final onboardingUtil = await NoPortsOnboardingUtil.create(
       App.navState.currentContext!,
     );
@@ -193,37 +186,27 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       App.log('Activating atsign ${entry.atsign}...'.loggable);
 
       try {
-        // 4. Configure Onboarding
-        // Using AtOnboardingServiceImpl directly avoids global singleton state issues
-        // occurring when switching between multiple atsigns rapidly.
-
+        // A fresh AuthService() per atsign: AtAuthImpl caches atLookUp/atChops
+        // internally, so reusing one instance across atsigns would
+        // authenticate the second atsign against the first one's lookup.
         Atsign atsign = entry.atsign;
         String cramSecret = entry.activationKey;
 
-        // 2. Reset the current atsign on the singleton
-        onboardingService.setAtsign = atsign;
-        // TODO: Consider replacing this when using at_client_flutter
-        AtClientPreference atClientPreference = AtClientPreference()
-          // ..rootDomain = 'vip.ve.atsign.zone'
-          ..rootDomain = 'root.atsign.org'
-          ..isLocalStoreRequired = true
-          ..hiveStoragePath = path.join(appSupportDir.path, 'hive')
-          ..commitLogPath = path.join(appSupportDir.path, 'commitLog')
-          ..cramSecret = cramSecret;
-
-        onboardingService.setAtClientPreference = atClientPreference;
-
-        // 5. Execute Onboard
         var onboardingRequest = AtOnboardingRequest(atsign)
-          ..rootDomain = 'root.atsign.org';
+          ..rootDomain = AtRootDomain.parse('root.atsign.org');
 
-        bool success = await onboardingService.onboard(
-          cramSecret: cramSecret,
-          atOnboardingRequest: onboardingRequest,
+        var response = await AuthService().onboard(
+          onboardingRequest,
+          cramSecret,
         );
 
+        // Bulk activation never brings up an AtClient for these atsigns, so
+        // each iteration must close its own authenticated lookup - nothing
+        // else owns it.
+        await (response.atLookUp as AtLookupImpl?)?.close();
+
         // 6. Update Result
-        if (success) {
+        if (response.isSuccessful) {
           await backUpActivatedAtsigns(selectedDirectory, atsign);
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.activated,
@@ -296,16 +279,15 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     String fileLocation,
     Atsign atsign,
   ) async {
-    //
-    // TODO: Refactor so that it user BackupKeyCubit. Can't be used now because it is tightly coupled with the OnboardingCubit/Single Atsign Activation flow. This will be refactored when we migrate to at_client_flutter.
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
+    // AuthService().onboard defaults to writing through KeychainAtKeysIo, so
+    // the freshly-activated keys are already in the keychain at this point.
+    final atKeys = await KeychainStorage().getAtsign(atsign);
+    if (atKeys == null) return;
 
-    final codeUnits = jsonEncode(aesEncryptedKeys).codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
-
-    final file = File(path.join(fileLocation, '${atsign}_key.atKeys'));
-    await file.create(recursive: true);
-    await file.writeAsBytes(data);
+    final filePath = path.join(fileLocation, '${atsign}_key.atKeys');
+    final file = File(filePath);
+    if (await file.exists()) await file.delete();
+    await FileAtKeysIo(filePath: (_) => filePath).write(atsign, atKeys);
   }
 
   /// Check if any Atsign is still waiting for activation.

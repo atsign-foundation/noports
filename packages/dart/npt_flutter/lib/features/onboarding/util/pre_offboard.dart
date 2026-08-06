@@ -1,6 +1,6 @@
-import 'package:at_client/at_client.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_cubit.dart';
 import 'package:npt_flutter/features/features.dart';
 
 // Hand this method the atsign you wish to offboard
@@ -19,7 +19,7 @@ Future<bool> preSignout() async {
   context?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon
   context?.read<TrayCubit>().initialize();
-  await context?.read<AuthorisationService>().dispose();
+  context?.read<PendingRequestsCountCubit>().stop();
 
   return true;
 }

@@ -2,16 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart' hide Response;
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
-// ignore: implementation_imports
-import 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.dart';
-import 'package:at_server_status/at_server_status.dart';
+import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
-
-// Type returned from a method below
-export 'package:at_onboarding_flutter/src/utils/at_onboarding_response_status.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 
 const apiBase = '/api/app/v3';
 
@@ -32,7 +28,7 @@ class ActivateUtil {
     var innerClient = HttpClient();
     innerClient.badCertificateCallback =
         (X509Certificate cert, String host, int port) => true;
-    _http = IOClient();
+    _http = IOClient(innerClient);
   }
 
   Future<Response> registrarApiRequest(
@@ -60,11 +56,7 @@ class ActivateUtil {
       'otp': otp,
     });
     if (res.statusCode != 200) {
-      return (
-        errorMessage:
-            AtOnboardingLocalizations.current.error_server_unavailable,
-        cramkey: null,
-      );
+      return (errorMessage: res.body, cramkey: null);
     }
     var payload = jsonDecode(res.body);
     if (payload["message"] != "Verified") {
@@ -75,75 +67,33 @@ class ActivateUtil {
     return (cramkey: cramkey, errorMessage: null);
   }
 
-  Future<AtOnboardingResult> onboardFromCramKey({
+  /// Activates an atsign from teapot using a CRAM key obtained via
+  /// [verifyActivation], then sets up the AtClient for the newly-activated
+  /// atsign.
+  Future<NoPortsOnboardingResult> onboardFromCramKey({
     required Atsign atsign,
     required String cramkey,
-    required AtOnboardingConfig config,
+    required String rootDomain,
+    required AppLocalizations strings,
   }) async {
     try {
-      OnboardingService onboardingService = OnboardingService.getInstance();
-      bool isExist = await onboardingService.isExistingAtsign(atsign);
-      if (isExist) {
-        return AtOnboardingResult.error(
-          message: AtOnboardingLocalizations.current.error_atSign_activated,
+      var request = AtOnboardingRequest(atsign)
+        ..rootDomain = AtRootDomain.parse(rootDomain);
+
+      var response = await AuthService().onboard(request, cramkey);
+
+      if (!response.isSuccessful) {
+        return NoPortsOnboardingResult.error(
+          message: strings.errorAuthenticationFailed,
         );
       }
 
-      //Delay for waiting for ServerStatus change to teapot when activating an atsign
-      await Future.delayed(const Duration(seconds: 10));
-
-      config.atClientPreference.cramSecret = cramkey;
-      onboardingService.setAtClientPreference = config.atClientPreference;
-
-      onboardingService.setAtsign = atsign;
-      AtOnboardingRequest req = AtOnboardingRequest(atsign);
-      var res = await onboardingService.onboard(
-        cramSecret: cramkey,
-        atOnboardingRequest: req,
-      );
-
-      if (res) {
-        int round = 1;
-        ServerStatus? atsignStatus = await onboardingService
-            .checkAtSignServerStatus(atsign);
-        while (atsignStatus != ServerStatus.activated) {
-          if (round > 10) {
-            break;
-          }
-          await Future.delayed(const Duration(seconds: 3));
-          round++;
-          atsignStatus = await onboardingService.checkAtSignServerStatus(
-            atsign,
-          );
-        }
-
-        if (atsignStatus == ServerStatus.teapot) {
-          return AtOnboardingResult.error(
-            message: AtOnboardingLocalizations.current.msg_atSign_unreachable,
-          );
-        } else if (atsignStatus == ServerStatus.activated) {
-          return AtOnboardingResult.success(atsign: atsign);
-        }
-      }
-
-      return AtOnboardingResult.error(
-        message: AtOnboardingLocalizations.current.error_authenticated_failed,
-      );
+      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
+      return NoPortsOnboardingResult.success(atsign: atsign);
+    } on AtTimeoutException {
+      return NoPortsOnboardingResult.error(message: strings.msgResponseTimeOut);
     } catch (e) {
-      if (e == AtOnboardingResponseStatus.authFailed) {
-        return AtOnboardingResult.error(
-          message: AtOnboardingLocalizations.current.error_authenticated_failed,
-        );
-      } else if (e == AtOnboardingResponseStatus.serverNotReached) {
-        return AtOnboardingResult.error(
-          message: AtOnboardingLocalizations.current.msg_atSign_unreachable,
-        );
-      } else if (e == AtOnboardingResponseStatus.timeOut) {
-        return AtOnboardingResult.error(
-          message: AtOnboardingLocalizations.current.msg_response_time_out,
-        );
-      }
-      return AtOnboardingResult.error(message: e.toString());
+      return NoPortsOnboardingResult.error(message: e.toString());
     }
   }
 }

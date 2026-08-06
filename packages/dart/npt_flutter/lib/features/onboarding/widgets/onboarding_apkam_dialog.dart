@@ -1,14 +1,15 @@
-import 'dart:developer';
+// ignore_for_file: deprecated_member_use
 import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/widgets/enrollment_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/util/constants.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
@@ -42,9 +43,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   AtClientPreference get atClientPreference => widget.atClientPreference;
 
   static const _kPinLength = 6;
+  static const _kMaxApprovalRetries = 48;
+  static const _kApprovalRetryInterval = Duration(minutes: 1);
 
   late OnboardingStatus onboardingStatus;
-  late final AtAuthServiceImpl authService;
+  final KeychainStorage keychainStorage = KeychainStorage();
   late final TextEditingController pinController;
 
   bool hasExpired = false;
@@ -53,7 +56,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   void initState() {
     super.initState();
     onboardingStatus = OnboardingStatus.preparing;
-    authService = AtAuthServiceImpl(atsign, atClientPreference);
     pinController = TextEditingController();
     init();
   }
@@ -87,60 +89,45 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     }
   }
 
-  Future<void> _setStateOnStatus(EnrollmentStatus enrollmentStatus) async {
-    switch (enrollmentStatus) {
-      case EnrollmentStatus.pending:
-        setState(() {
-          hasExpired = false;
-          onboardingStatus = OnboardingStatus.otpRequired;
-        });
-      case EnrollmentStatus.approved:
-        await onApproved();
-      case EnrollmentStatus.denied:
-        await onDenied();
-      case EnrollmentStatus.revoked:
-        throw UnimplementedError();
-      case EnrollmentStatus.expired:
-        App.log('Original request has expired. Submit again'.loggable);
-        setState(() {
-          hasExpired = true;
-          onboardingStatus = OnboardingStatus.otpRequired;
-        });
-    }
-  }
-
   Future<void> init() async {
-    final sentEnrollRequest = await authService.getSentEnrollmentRequest();
-    App.log('Sent enroll request: ${sentEnrollRequest?.toJson()}'.loggable);
-    if (sentEnrollRequest != null) {
-      if (DateTime.now()
-              .toUtc()
-              .difference(
-                DateTime.fromMillisecondsSinceEpoch(
-                  sentEnrollRequest.enrollmentSubmissionTimeEpoch,
-                ),
-              )
-              .inHours >=
-          48) {
-        await _setStateOnStatus(EnrollmentStatus.expired);
-      } else {
-        // If the request has already been sent, we need to say wait for approval
-        setState(() {
-          onboardingStatus = OnboardingStatus.pendingApproval;
-        });
-      }
-    }
+    final sentEnrollRequest = await keychainStorage.readEnrollmentData(atsign);
+    App.log('Sent enroll request: ${sentEnrollRequest?.enrollmentId}'.loggable);
 
-    // Returns EnrollmentStatus.expired even if no request has been sent
-    final status = await authService.getFinalEnrollmentStatus();
-    log('Enrollment status: $status');
-    if (status == EnrollmentStatus.expired && sentEnrollRequest == null) {
+    if (sentEnrollRequest == null) {
       setState(() {
         onboardingStatus = OnboardingStatus.otpRequired;
       });
-    } else {
-      await _setStateOnStatus(status);
+      return;
     }
+
+    final expired =
+        DateTime.now()
+            .toUtc()
+            .difference(
+              DateTime.fromMillisecondsSinceEpoch(
+                sentEnrollRequest.enrollmentSubmissionTimeEpoch,
+              ),
+            )
+            .inHours >=
+        48;
+
+    if (expired) {
+      await keychainStorage.deleteEnrollmentData(atsign);
+      setState(() {
+        hasExpired = true;
+        onboardingStatus = OnboardingStatus.otpRequired;
+      });
+      return;
+    }
+
+    final response = AtEnrollmentResponse(
+      sentEnrollRequest.enrollmentId,
+      EnrollmentStatus.pending,
+      atSign: atsign,
+      rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
+      atAuthKeys: sentEnrollRequest.atAuthKeys,
+    );
+    await _waitForApprovalAndFinish(response);
   }
 
   Future<void> onApproved() async {
@@ -150,7 +137,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     // Wait for a bit to show the success message
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
-      Navigator.of(context).pop(AtOnboardingResult.success(atsign: atsign));
+      Navigator.of(
+        context,
+      ).pop(NoPortsOnboardingResult.success(atsign: atsign.toAtsign()));
     }
   }
 
@@ -164,7 +153,53 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       final strings = AppLocalizations.of(context)!;
       Navigator.of(
         context,
-      ).pop(AtOnboardingResult.error(message: strings.enrollRequestDenied));
+      ).pop(NoPortsOnboardingResult.error(message: strings.enrollRequestDenied));
+    }
+  }
+
+  /// Waits for the enrollment behind [response] to be approved, then
+  /// completes the PKAM handshake with the resulting auth keys and sets up
+  /// the AtClient. On any failure (denial, timeout, error) the enrollment
+  /// data is dropped so the app doesn't keep resuming a dead enrollment.
+  Future<void> _waitForApprovalAndFinish(AtEnrollmentResponse response) async {
+    setState(() {
+      onboardingStatus = OnboardingStatus.pendingApproval;
+    });
+
+    try {
+      await AtEnrollment.create().waitForApproval(
+        response,
+        maxRetries: _kMaxApprovalRetries,
+        retryInterval: _kApprovalRetryInterval,
+      );
+
+      final authRequest = AtAuthRequest(
+        atsign,
+        atAuthKeys: response.atAuthKeys!,
+        rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
+      );
+      final authResponse = await AuthService().authenticate(
+        authRequest,
+        backupKeys: [KeychainAtKeysIo()],
+      );
+
+      await keychainStorage.deleteEnrollmentData(atsign);
+
+      if (!authResponse.isSuccessful) {
+        await onDenied();
+        return;
+      }
+
+      await AtClientMethods.activateFromAuthResponse(
+        authResponse,
+        atClientPreference.rootDomain,
+      );
+      await onApproved();
+    } catch (e, st) {
+      App.log('Error waiting for enrollment approval: $e'.loggable);
+      App.log(st.toString().loggable);
+      await keychainStorage.deleteEnrollmentData(atsign);
+      await onDenied();
     }
   }
 
@@ -174,14 +209,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       hasExpired = false;
     });
 
-    final onboardingService = OnboardingService.getInstance();
-
     // Device name cannot contain spaces or special characters
     final regExp = RegExp(r'[^a-zA-Z0-9]');
     final deviceName = (await getDeviceName()).replaceAll(regExp, '');
     App.log('Device Name: $deviceName'.loggable);
 
-    final enrollmentRequest = EnrollmentRequest(
+    final enrollmentRequest = AtEnrollmentRequest(
+      atSign: atsign,
+      rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
       appName: Constants.namespace,
       deviceName: deviceName,
       otp: otp,
@@ -191,16 +226,18 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('About to enroll with $enrollmentRequest'.loggable);
 
     try {
-      final enrollResponse = await onboardingService.enroll(
-        atsign,
+      final enrollResponse = await FlutterEnrollmentService().enroll(
         enrollmentRequest,
       );
       App.log('Enroll response: $enrollResponse'.loggable);
+      await _waitForApprovalAndFinish(enrollResponse);
     } on AtException catch (e, st) {
       App.log('AtException - Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
       if (mounted) {
-        Navigator.of(context).pop(AtOnboardingResult.error(message: e.message));
+        Navigator.of(
+          context,
+        ).pop(NoPortsOnboardingResult.error(message: e.message));
       }
     } catch (e, st) {
       App.log('Error enrolling: $e'.loggable);
@@ -213,25 +250,15 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           App.log('Invalid OTP'.loggable);
           Navigator.of(
             context,
-          ).pop(AtOnboardingResult.error(message: strings.invalidOtp));
+          ).pop(NoPortsOnboardingResult.error(message: strings.invalidOtp));
         } else {
           App.log('Unknown error during enrollment: $e'.loggable);
           Navigator.of(
             context,
-          ).pop(AtOnboardingResult.error(message: strings.unknownError));
+          ).pop(NoPortsOnboardingResult.error(message: strings.unknownError));
         }
       }
     }
-
-    setState(() {
-      onboardingStatus = OnboardingStatus.pendingApproval;
-    });
-
-    // Should only be one of approved or denied at this point.
-    final finalStatus = await authService.getFinalEnrollmentStatus();
-    App.log('Final enrollment status: $finalStatus'.loggable);
-
-    await _setStateOnStatus(finalStatus);
   }
 
   @override

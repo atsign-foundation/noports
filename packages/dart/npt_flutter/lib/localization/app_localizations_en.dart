@@ -801,6 +801,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAtsign => 'Remove Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired =>
       'The original request has expired. Please submit again';
 

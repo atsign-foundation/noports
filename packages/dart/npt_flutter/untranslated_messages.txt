@@ -1,5 +1,7 @@
 {
   "es": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",
@@ -8,6 +10,8 @@
   ],
 
   "pt": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",
@@ -16,6 +20,8 @@
   ],
 
   "pt_BR": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",
@@ -24,6 +30,8 @@
   ],
 
   "zh": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",
@@ -32,6 +40,8 @@
   ],
 
   "zh_Hans_CH": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",
@@ -40,6 +50,8 @@
   ],
 
   "zh_Hant_HK": [
+    "selectAll",
+    "noAtsignsToRemove",
     "errorServerUnavailable",
     "errorAtsignActivated",
     "msgAtsignUnreachable",

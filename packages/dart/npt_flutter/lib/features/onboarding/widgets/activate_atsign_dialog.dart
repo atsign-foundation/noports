@@ -1,9 +1,10 @@
 import 'dart:convert';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_client/at_client.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
@@ -17,14 +18,14 @@ class ActivateAtsignDialog extends StatefulWidget {
   final String registrarUrl;
   final String apiKey;
   final Atsign atsign;
-  final AtOnboardingConfig config;
+  final String rootDomain;
   final bool waitForTeapot;
   final NoPortsOnboardingUtil onboardingUtil;
   const ActivateAtsignDialog({
     super.key,
     required this.atsign,
     required this.apiKey,
-    required this.config,
+    required this.rootDomain,
     required this.registrarUrl,
     required this.waitForTeapot,
     required this.onboardingUtil,
@@ -151,7 +152,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
         Navigator.of(context).pop(
-          AtOnboardingResult.error(
+          NoPortsOnboardingResult.error(
             message: "@${jsonDecode(res.body)["message"]}",
           ),
         );
@@ -174,7 +175,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       if (pinFocusNode.hasFocus) {
         pinFocusNode.unfocus();
       }
-      Navigator.of(context).pop(AtOnboardingResult.cancelled());
+      Navigator.of(context).pop(NoPortsOnboardingResult.cancelled());
     },
   );
 
@@ -246,7 +247,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               if (atsignStatus != AtSignStatus.teapot) {
                 if (mounted) {
                   Navigator.of(context).pop(
-                    AtOnboardingResult.error(
+                    NoPortsOnboardingResult.error(
                       message: strings.errorAuthenticationTimedOut,
                     ),
                   );
@@ -261,7 +262,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             var result = await util.onboardFromCramKey(
               atsign: widget.atsign,
               cramkey: cramkey,
-              config: widget.config,
+              rootDomain: widget.rootDomain,
+              strings: strings,
             );
 
             if (!mounted) return;

@@ -811,6 +811,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 

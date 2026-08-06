@@ -1,4 +1,4 @@
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -15,15 +15,9 @@ class AuthorisationView extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: AuthorisationHub(
-          // Ensure a unique key so that the AuthorisationHub is rebuilt when switching atsigns
+        child: EnrollmentRequestList(
+          // Ensure a unique key so the list is rebuilt when switching atsigns
           key: ValueKey('authorization_hub_$atsign'),
-          service: context.watch<AuthorisationService>(),
-          themeData: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
-            ),
-          ),
         ),
       ),
     );

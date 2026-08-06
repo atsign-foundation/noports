@@ -1559,6 +1559,18 @@ abstract class AppLocalizations {
   /// **'Remove Atsign'**
   String get removeAtsign;
 
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @noAtsignsToRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'No atsigns found to remove.'**
+  String get noAtsignsToRemove;
+
   /// No description provided for @requestExpired.
   ///
   /// In en, this message translates to:
