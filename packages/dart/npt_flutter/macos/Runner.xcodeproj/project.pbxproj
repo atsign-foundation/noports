@@ -575,7 +575,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "1.9.3+30";
-				DEVELOPMENT_TEAM = 5XUSS6C2DF;
+				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
@@ -716,7 +716,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "1.9.3+30";
-				DEVELOPMENT_TEAM = 5XUSS6C2DF;
+				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
@@ -745,7 +745,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "1.9.3+30";
-				DEVELOPMENT_TEAM = 5XUSS6C2DF;
+				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
