@@ -3,6 +3,9 @@
 -REFACTOR: replaced the use of `String` atsign with the `Atsign` class.
 -REFACTOR: where a String atsign is hardcoded or retrieved for packages `.toAtsign()` method is applied to convert it to the `Atsign` class.
 -REFACTOR: rename all use of the old 'atSign, AtSign' spelling with new 'atsign, Atsign' spelling.
+-CHORE: migrate dependencies to at_client_flutter
+-CHORE: slim down pubspec.yaml dependencies and dev dependencies
+-CHORE: remove at_client_mobile, at_onboarding_flutter, at_contacts, at_contacts_flutter
 
 ## 1.9.3+30
 
