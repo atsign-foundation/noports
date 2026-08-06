@@ -86,7 +86,6 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.5.0
   msix: ^3.16.8
-  win32: ^5.9.0
 
 dependency_overrides:
   file: 7.0.1
