@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 
 import '../../logging/models/loggable.dart';
 import '../../logging/models/logging_bloc.dart';
