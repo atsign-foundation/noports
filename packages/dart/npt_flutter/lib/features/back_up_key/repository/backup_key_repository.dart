@@ -58,7 +58,7 @@ class BackUpKeyRepository {
     required String fileName,
   }) async {
     // Get file path to write to
-    String? outputFile = await FilePicker.platform.saveFile(
+    String? outputFile = await FilePicker.saveFile(
       dialogTitle: dialogTitle,
       fileName: fileName,
     );

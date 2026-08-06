@@ -76,7 +76,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> getFilePickerPath() async {
     emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['yaml'],
     );
@@ -129,7 +129,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> activateAll() async {
     //0. Prompt to atKeys file location to save files.
     final context = App.navState.currentContext!;
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
       dialogTitle: AppLocalizations.of(
         context,
       )!.activationAtsignFileStorageLocation,
