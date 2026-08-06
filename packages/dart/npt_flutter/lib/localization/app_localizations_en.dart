@@ -1032,6 +1032,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waitingForApproval => 'Waiting for approval...';
 
   @override
+  String get errorServerUnavailable =>
+      'The server is currently unavailable. Please try again later.';
+
+  @override
+  String get errorAtsignActivated => 'This atsign has already been activated.';
+
+  @override
+  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
+
+  @override
+  String get errorAuthenticationFailed =>
+      'Authentication failed. Please check your details and try again.';
+
+  @override
+  String get msgResponseTimeOut => 'The request timed out. Please try again.';
+
+  @override
   String get whatAreAtKeys => 'What are atKeys?';
 
   @override

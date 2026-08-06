@@ -1,1 +1,49 @@
-{}
+{
+  "es": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ],
+
+  "pt": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ],
+
+  "pt_BR": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ],
+
+  "zh": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ],
+
+  "zh_Hans_CH": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ],
+
+  "zh_Hant_HK": [
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut"
+  ]
+}

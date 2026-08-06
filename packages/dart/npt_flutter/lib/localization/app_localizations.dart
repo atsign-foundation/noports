@@ -1973,6 +1973,36 @@ abstract class AppLocalizations {
   /// **'Waiting for approval...'**
   String get waitingForApproval;
 
+  /// No description provided for @errorServerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is currently unavailable. Please try again later.'**
+  String get errorServerUnavailable;
+
+  /// No description provided for @errorAtsignActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'This atsign has already been activated.'**
+  String get errorAtsignActivated;
+
+  /// No description provided for @msgAtsignUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The atsign server could not be reached.'**
+  String get msgAtsignUnreachable;
+
+  /// No description provided for @errorAuthenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please check your details and try again.'**
+  String get errorAuthenticationFailed;
+
+  /// No description provided for @msgResponseTimeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Please try again.'**
+  String get msgResponseTimeOut;
+
   /// No description provided for @whatAreAtKeys.
   ///
   /// In en, this message translates to:
