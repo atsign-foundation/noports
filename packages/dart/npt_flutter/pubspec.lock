@@ -97,7 +97,7 @@ packages:
     source: path
     version: "1.1.5"
   at_commons:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_commons
       sha256: fd878c65d9628f0fbba9e724ead7995412394ae614ff0eac33384235c5494286
