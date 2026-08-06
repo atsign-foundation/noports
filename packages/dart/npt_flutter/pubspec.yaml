@@ -40,8 +40,9 @@ dependencies:
   adaptive_theme: ^3.6.0
   at_auth: ^2.4.0
   at_client: ^3.11.0
-  at_client_flutter:
-    path: ../../../../../../at_client_sdk/jt/at_client_flutter/packages/at_client_flutter
+  # at_client_flutter:
+  #   path: ../../../../../../at_client_sdk/jt/at_client_flutter/packages/at_client_flutter
+  at_client_flutter: ^1.1.4
   at_server_status: ^1.1.1
   at_utils: ^3.0.16
   cupertino_icons: ^1.0.8
