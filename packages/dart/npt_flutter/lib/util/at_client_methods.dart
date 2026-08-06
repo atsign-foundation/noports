@@ -18,11 +18,6 @@ class AtClientMethods {
       ..isLocalStoreRequired = true;
   }
 
-  /// Sets up the AtClient singleton from a completed auth flow (CRAM onboard,
-  /// keychain/atKeys PKAM, or post-APKAM PKAM). `AuthResponse.atChops`/
-  /// `.atLookUp` are deprecated in favour of `AtAuthSession`, but the resolved
-  /// at_client here predates `AtClientManager.fromAuthSession`, so this is the
-  /// one place those deprecated fields are read.
   static Future<void> activateFromAuthResponse(
     AuthResponse response,
     String rootDomain,
