@@ -1022,11 +1022,12 @@ packages:
   phosphor_flutter:
     dependency: "direct main"
     description:
-      name: phosphor_flutter
-      sha256: "8a14f238f28a0b54842c5a4dc20676598dd4811fcba284ed828bd5a262c11fde"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
+      path: "."
+      ref: "71f65b6b46ac6493629437d24cf892c0fb9dfe2a"
+      resolved-ref: "71f65b6b46ac6493629437d24cf892c0fb9dfe2a"
+      url: "https://github.com/hiake21c/flutter.git"
+    source: git
+    version: "2.2.0"
   pin_code_fields:
     dependency: "direct main"
     description:

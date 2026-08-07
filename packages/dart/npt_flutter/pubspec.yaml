@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.9.3+30
+version: 1.9.4+31
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
@@ -90,6 +90,10 @@ dev_dependencies:
 dependency_overrides:
   file: 7.0.1
   pointycastle: ^4.0.0
+  phosphor_flutter:
+    git:
+      url: https://github.com/hiake21c/flutter.git
+      ref: 71f65b6b46ac6493629437d24cf892c0fb9dfe2a
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
