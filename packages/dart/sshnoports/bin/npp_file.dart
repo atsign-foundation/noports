@@ -3,16 +3,35 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:noports_core/npa.dart';
 import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
+import 'package:sshnoports/src/print_version.dart';
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
-  ArgParser parser = NPAParams.parser;
+  ArgParser parser = NPAOption.argParser;
   parser.addOption(
     'yaml',
-    mandatory: true,
+    mandatory: false,
     help: 'Path to policy yaml',
   );
   ArgResults r = parser.parse(args);
+
+  if (r['help'] == true) {
+    printVersion();
+    stdout.writeln(parser.usage);
+    exit(0);
+  }
+
+  if (r['version'] == true) {
+    printVersion();
+    exit(0);
+  }
+
+  if (r['yaml'] == null) {
+    printVersion();
+    stderr.writeln(parser.usage);
+    stderr.writeln('\nMissing required option --yaml');
+    exit(1);
+  }
 
   YamlMap? yaml = loadYaml(File(r['yaml']).readAsStringSync());
 

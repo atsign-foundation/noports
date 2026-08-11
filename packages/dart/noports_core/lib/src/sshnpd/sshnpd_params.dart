@@ -4,54 +4,51 @@ import 'package:config/config.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
+import 'package:noports_core/src/config/shared_options.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_config.dart';
 
-class SshnpdParams {
+class SshnpdParams extends AtsignParams {
   final String device;
   final String username;
   final String homeDirectory;
-  final List<String> managerAtsigns;
-  final String? policyManagerAtsign;
-  final String atKeysFilePath;
-  final String passPhrase;
-  final String deviceAtsign;
-  final bool verbose;
-  final bool debug;
+  final List<Atsign> managerAtsigns;
+  final Atsign? policyManagerAtsign;
   final bool makeDeviceInfoVisible;
   final bool addSshPublicKeys;
   final SupportedSshClient sshClient;
-  final String rootDomain;
   final int localSshdPort;
   final String sshPublicKeyPermissions;
   final String ephemeralPermissions;
   final SupportedSshAlgorithm sshAlgorithm;
   final String deviceGroup;
-  final String storagePath;
   final String permitOpen;
   final bool clearCachedPKs;
   final bool strict;
 
+  //backwards compat.
+  Atsign get deviceAtsign => atSign;
+
   SshnpdParams({
+    required super.atSign,
+    required super.atKeysFilePath,
+    required super.passPhrase,
+    required super.storagePath,
+    required super.rootDomain,
+    required super.verbose,
+    required super.debug,
     required this.device,
     required this.username,
     required this.homeDirectory,
     required this.managerAtsigns,
     required this.policyManagerAtsign,
-    required this.atKeysFilePath,
-    required this.passPhrase,
-    required this.deviceAtsign,
-    required this.verbose,
-    required this.debug,
     required this.makeDeviceInfoVisible,
     required this.addSshPublicKeys,
     required this.sshClient,
-    required this.rootDomain,
     required this.localSshdPort,
     required this.sshPublicKeyPermissions,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
-    required this.storagePath,
     required this.permitOpen,
     required this.clearCachedPKs,
     required this.strict,
@@ -149,7 +146,7 @@ class SshnpdParams {
           c.optionalValue(SshnpdOption.keyfile) ??
           getDefaultAtKeysFilePath(homeDirectory, deviceAtsign),
       passPhrase: c.optionalValue(SshnpdOption.passPhrase) ?? "",
-      deviceAtsign: deviceAtsign,
+      atSign: deviceAtsign,
       verbose: c.value(SshnpdOption.verbose),
       debug: c.value(SshnpdOption.debug),
       makeDeviceInfoVisible: makeDeviceInfoVisible,

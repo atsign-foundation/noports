@@ -105,7 +105,8 @@ class NppService {
       handler: handler,
       atClient: atClient,
       homeDirectory: homeDir,
-      eventLoggingAtsign: eventLoggingAtSign as Atsign?);
+      eventLoggingAtsign: eventLoggingAtSign?.toAtsign(),
+    );
 
     managerRpcListener = AtRpc(
       atClient: atClient,

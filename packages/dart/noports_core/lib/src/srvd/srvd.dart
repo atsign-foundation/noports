@@ -14,10 +14,10 @@ abstract interface class Srvd {
 
   abstract final AtSignLogger logger;
   abstract AtClient atClient;
-  abstract final String atSign;
+  abstract final Atsign atSign;
   abstract final String homeDirectory;
   abstract final String atKeysFilePath;
-  abstract final String managerAtsign;
+  abstract final Atsign? managerAtsign;
   abstract final String ipAddress;
   abstract final bool logTraffic;
   abstract final bool bind443;

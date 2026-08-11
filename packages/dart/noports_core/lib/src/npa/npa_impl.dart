@@ -50,9 +50,15 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
     AtClient? atClient,
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    void Function()? helpCallback,
+    void Function()? versionCallback,
   }) async {
     try {
-      var p = await NPAParams.fromArgs(args);
+      var p = await NPAParams.fromArgs(
+        args,
+        helpCallback: helpCallback,
+        versionCallback: versionCallback,
+      );
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
@@ -60,6 +66,9 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
       }
 
       AtSignLogger.root_level = 'SHOUT';
+      if (p.debug) {
+        AtSignLogger.root_level = 'FINEST';
+      }
       if (p.verbose) {
         AtSignLogger.root_level = 'INFO';
       }
@@ -74,10 +83,12 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
         atClient: atClient,
         homeDirectory: p.homeDirectory,
         handler: handler,
-        eventLoggingAtsign: p.eventLoggingAtsign?.toAtsign(),
+        eventLoggingAtsign: p.eventLoggingAtsign,
       );
 
-      if (p.verbose) {
+      if (p.debug) {
+        sshnpa.logger.logger.level = Level.FINEST;
+      } else if (p.verbose) {
         sshnpa.logger.logger.level = Level.INFO;
       }
 

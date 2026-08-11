@@ -37,7 +37,7 @@ class SrvdImpl
   @override
   final String atKeysFilePath;
   @override
-  final String managerAtsign;
+  final Atsign? managerAtsign;
   @override
   final String ipAddress;
   @override
@@ -109,7 +109,7 @@ class SrvdImpl
 
       var srvd = SrvdImpl(
         atClient: atClient,
-        atSign: p.atSign.toAtsign(),
+        atSign: p.atSign,
         homeDirectory: p.homeDirectory,
         atKeysFilePath: p.atKeysFilePath,
         managerAtsign: p.managerAtsign,
@@ -296,7 +296,9 @@ class SrvdImpl
     try {
       sessionParams = await srvdSessionParamsFromNotification(n.value!);
 
-      if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
+      if (managerAtsign != '@open' &&
+          managerAtsign != null &&
+          managerAtsign != sessionParams.atSignA) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
           ' for ${sessionParams.atSignA}'

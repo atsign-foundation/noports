@@ -42,6 +42,8 @@ abstract class NPA {
     AtClient? atClient,
     FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    void Function()? helpCallback,
+    void Function()? versionCallback,
   }) async {
     return NPAImpl.fromCommandLineArgs(
       args,
@@ -49,6 +51,8 @@ abstract class NPA {
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      helpCallback: helpCallback,
+      versionCallback: versionCallback,
     );
   }
 

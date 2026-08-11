@@ -15,24 +15,24 @@ late AtSignLogger logger;
 Future<void> main(List<String> args) async {
   // 1. Parse if --help or --version was called
   try {
-    if(NPPParams.argParser.parse(args)['help']) {
-      print(NPPParams.argParser.usage);
+    if(NPPOption.argParser.parse(args)['help']) {
+      print(NPPOption.usage);
       exit(0);
     }
-    if(NPPParams.argParser.parse(args)['version']) {
+    if(NPPOption.argParser.parse(args)['version']) {
       printVersion();
       exit(0);
     }
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.writeln('Usage: \n${NPPOption.usage}\n');
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.writeln('Usage: \n${NPPOption.usage}\n');
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.writeln('Usage: \n${NPPOption.usage}\n');
     stderr.writeln(err);
     exit(1);
   }
@@ -42,7 +42,7 @@ Future<void> main(List<String> args) async {
   try {
     nppParams = NPPParams.fromArgs(args);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.writeln('Usage: \n${NPPOption.usage}\n');
     stderr.writeln(err);
     exit(1);
   }
@@ -64,7 +64,9 @@ Future<void> main(List<String> args) async {
   }
 
   // 3c. --verbose
-  if(nppParams.verbose) {
+  if(nppParams.debug) {
+    AtSignLogger.root_level = 'FINEST';
+  } else if(nppParams.verbose) {
     AtSignLogger.root_level = 'INFO';
   } else {
     AtSignLogger.root_level = 'SHOUT';
@@ -73,16 +75,10 @@ Future<void> main(List<String> args) async {
   logger = AtSignLogger('npp');
 
   // 3d. Sanitize managerAllowList
-  final Set<String> managerAllowList;
-  if(nppParams.managerAllowList.trim().isEmpty) {
-    managerAllowList = <String>{};
-  } else {
-    managerAllowList = nppParams.managerAllowList
-      .split(',')
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .toSet();
-  }
+  final Set<String> managerAllowList = nppParams.managerAllowList
+    .map((e) => e.toString().trim())
+    .where((e) => e.isNotEmpty)
+    .toSet();
 
 
   // 4. Set up AtClient instance
@@ -91,6 +87,7 @@ Future<void> main(List<String> args) async {
     atClient = await createAtClientCli(
       atsign: nppParams.atSign,
       atKeysFilePath: nppParams.atKeysFilePath,
+      passPhrase: nppParams.passPhrase,
       rootDomain: nppParams.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: nppParams.baseNamespace,
@@ -164,6 +161,9 @@ Future<void> main(List<String> args) async {
     nppCache: nppCache,
     nppOperationHooks: nppOperationHooks,
     binariesVersion: binaries_version.packageVersion,
+    eventLoggingAtSign: nppParams.eventLoggingAtSign,
+    baseNamespace: nppParams.baseNamespace,
+    domainNamespace: nppParams.domainNamespace,
   );
   nppService.init();
 
@@ -573,4 +573,3 @@ Directory getDefaultPolicyDirectoryPath({
     '/npp'
     '/$atSign').replaceAll('/', Platform.pathSeparator));
 }
-

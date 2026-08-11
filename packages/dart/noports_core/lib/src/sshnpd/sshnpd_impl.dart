@@ -50,7 +50,7 @@ class SshnpdImpl
   Atsign get deviceAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   @override
-  final List<String> managerAtsigns;
+  final List<Atsign> managerAtsigns;
 
   @override
   final Atsign? policyManagerAtsign;
@@ -223,7 +223,7 @@ class SshnpdImpl
         homeDirectory: p.homeDirectory,
         device: p.device,
         managerAtsigns: p.managerAtsigns,
-        policyManagerAtsign: p.policyManagerAtsign?.toAtsign(),
+        policyManagerAtsign: p.policyManagerAtsign,
         sshClient: p.sshClient,
         makeDeviceInfoVisible: p.makeDeviceInfoVisible,
         addSshPublicKeys: p.addSshPublicKeys,

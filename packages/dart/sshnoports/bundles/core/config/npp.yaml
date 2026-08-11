@@ -1,0 +1,84 @@
+# Main service's atSign authentication information
+atsign:
+  # The atsign to run the service as
+  # Examples:
+  # `atsign: '@policy_np'`
+  # `atsign: policy_np`
+  # Don't do the following, as the '@' symbol is a special character in yaml:
+  # `atsign: @policy_np`
+  # TODO: MANDATORY SETTING
+  atsign:
+
+  # The path to the .atKeys file for the atsign, only needed if not
+  # located at the default path.
+  # Default for the 'atsign' example above:
+  # `keys: ~/.atsign/keys/@policy_np_key.atKeys`
+  keys:
+
+  # The passphrase for the atKeys file if the file has been protected.
+  # Example:
+  # `passphrase: 'my-pass-phrase'`
+  passphrase:
+
+  # The root configuration for the atPlatform
+  # Examples:
+  # `root: root.atsign.org` (The default)
+  # `root: proxy:proxy0001.atsign.org:443`
+  # `root: my.enterprise.root:64`
+  root:
+
+# Namespace settings for policy data
+namespace:
+  # Base namespace used by the service.
+  # Default:
+  # `base: sshnp`
+  base: sshnp
+
+  # Domain namespace used by the service.
+  # Default:
+  # `domain: npp`
+  domain: npp
+
+# Access control for policy administration
+access:
+  # atSigns allowed to manage policy data and call the Policy Manager API.
+  # Defaults to the service atSign if left empty.
+  # Set to an empty string to disable remote policy editing entirely.
+  # Example:
+  # manager-allow-list:
+  #   - '@alice'
+  #   - '@bob'
+  manager-allow-list:
+    # - '@alice'
+
+# Policy persistence settings
+policy:
+  # How policy data should be persisted.
+  # Options: `atserver`, `file`, `none`
+  # Default:
+  # `persistence-method: atserver`
+  persistence-method: atserver
+
+  # Only used when `persistence-method: file`
+  # Example:
+  # `directory: /var/lib/noports/npp`
+  directory:
+
+# Event logging integration
+events:
+  # Send NoPorts session events to the given logging service atSign.
+  # Example:
+  # `logging-atsign: logger_np`
+  logging-atsign:
+
+# Additional runtime settings for the service
+runtime:
+  # Unnecessary unless you are running multiple npp instances under the same
+  # user with the same atSign on the same host.
+  storage-path:
+
+  # Enable verbose logging.
+  # Default:
+  # `verbose: false`
+  verbose: false
+
