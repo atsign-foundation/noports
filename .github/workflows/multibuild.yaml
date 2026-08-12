@@ -101,6 +101,7 @@ jobs:
             bundle: "shell"
             platform: "macos"
           - os: windows-latest
+            environment: azure-signing
             output-name: sshnp-windows-x64
             arch: "amd64"
             cross: ""
@@ -212,7 +213,6 @@ jobs:
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi
       - name: Azure Login (Windows only)
         if: ${{ matrix.platform == 'windows' }}
-        environment: azure-signing
         uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -220,7 +220,6 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Sign Executable with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
-        environment: azure-signing
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
         with:
           endpoint: 'https://eus.codesigning.azure.net/'
