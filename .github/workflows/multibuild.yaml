@@ -49,6 +49,8 @@ jobs:
 
   main_build:
     needs: verify_tags
+    permissions:
+      id-token: write # For OIDC token used by Azure signing
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -100,7 +102,8 @@ jobs:
             ext: ""
             bundle: "shell"
             platform: "macos"
-          - os: windows-signer
+          - os: windows-latest
+            environment: azure-signing
             output-name: sshnp-windows-x64
             arch: "amd64"
             cross: ""
@@ -114,6 +117,13 @@ jobs:
       EXT: ${{ matrix.ext }}
       VERSION: ${{ needs.verify_tags.outputs.version }}
     steps:
+      - name: Azure Login (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Checkout multibuild branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -196,24 +206,22 @@ jobs:
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
-      - name: Codesign Windows Binaries (Windows only)
+      - name: Sign Executables with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
-        working-directory: ./packages/dart/sshnoports/sshnp
-        env:
-          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
-          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
-        run: |
-          source ../../../../tools/codesign_windows.sh
-          for BINARY in $BINS; do \
-            sign_file "$BINARY.exe";
-          done
-          sign_file "sshnpdService.exe"
-      - name: Build and Sign Windows Installer (Windows only)
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: 'https://eus.codesigning.azure.net/'
+          signing-account-name: 'atsign-github-signing'
+          certificate-profile-name: 'Atsign-Software-Signing'
+          files-folder: '${{ github.workspace }}'
+          files-folder-filter: 'exe'
+          files-folder-recurse: true
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
+      - name: Build Windows Installer (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
-        env:
-          WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
-          WINDOWS_SIGNTOOL_PATH: ${{ secrets.WINDOWS_SIGNTOOL_PATH }}
         run: |
           dotnet tool install --global wix --version 6.0.2
           wix extension add -g WixToolset.Util.wixext/6.0.2
@@ -223,11 +231,21 @@ jobs:
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
               -arch x64 -o build/NoPorts.msi noports.wxs
-          # Sign the generated MSI
-          source ../codesign_windows.sh
-          sign_file "build/NoPorts.msi"
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi
+      - name: Sign Installer with Azure Artifact Signing (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: 'https://eus.codesigning.azure.net/'
+          signing-account-name: 'atsign-github-signing'
+          certificate-profile-name: 'Atsign-Software-Signing'
+          files-folder: '${{ github.workspace }}'
+          files-folder-filter: 'msi'
+          files-folder-recurse: true
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
