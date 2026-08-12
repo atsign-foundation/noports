@@ -117,6 +117,13 @@ jobs:
       EXT: ${{ matrix.ext }}
       VERSION: ${{ needs.verify_tags.outputs.version }}
     steps:
+      - name: Azure Login (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Checkout multibuild branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -199,13 +206,6 @@ jobs:
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
-      - name: Azure Login (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Sign Executables with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
