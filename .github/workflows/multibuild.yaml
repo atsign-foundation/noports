@@ -240,7 +240,7 @@ jobs:
           endpoint: 'https://eus.codesigning.azure.net/'
           signing-account-name: 'atsign-github-signing'
           certificate-profile-name: 'Atsign-Software-Signing'
-          files-folder: '${{ github.workspace }}/tarball/'
+          files-folder: '${{ github.workspace }}'
           files-folder-filter: 'msi'
           files-folder-recurse: true
           file-digest: 'SHA256'
