@@ -84,7 +84,8 @@ jobs:
 
   build-windows-desktop:
     needs: [verify_tags, generate-sbom]
-    runs-on: windows-signer # codesign_windows.sh only works in windows-signer runner
+    runs-on: windows-latest
+    environment: azure-signing
     permissions:
       contents: write # Needed for release uploads
       id-token: write # For attestation OIDC token
@@ -104,7 +105,7 @@ jobs:
           name: sbom
           path: packages/dart/npt_flutter
 
-      # upon installing flutter in this windows-signer,
+      # upon installing flutter in this windows,
       # subsequent steps will need to use `shell: bash`
       - name: Install Flutter stable
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -112,8 +113,8 @@ jobs:
           channel: stable
           cache: false
 
-      - name: Build and Sign Windows desktop binaries
-        shell: bash # this line is needed because we are in a windows-signer
+      - name: Build and Windows desktop binaries
+        shell: bash # this line is needed because we are in windows
         working-directory: packages/dart/npt_flutter
         env:
           WINDOWS_SIGNTOOL_ARGS: ${{ secrets.WINDOWS_SIGNTOOL_ARGS }}
@@ -122,12 +123,26 @@ jobs:
           flutter pub get
           printf "API_KEY=''\n" > .env # Create a blank .env to avoid build error
           flutter build windows --release
-          source "${GITHUB_WORKSPACE}/tools/codesign_windows.sh"
-          shopt -s nullglob
-          for FILE in build/windows/x64/runner/Release/*.exe \
-                      build/windows/x64/runner/Release/*.dll; do
-            sign_file "$FILE"
-          done
+
+      - name: Azure Login
+        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign binaries with Azure Artifact Signing
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: 'https://eus.codesigning.azure.net/'
+          signing-account-name: 'atsign-github-signing'
+          certificate-profile-name: 'Atsign-Software-Signing'
+          files-folder: '${{ github.workspace }}'
+          files-folder-filter: 'exe,dll'
+          files-folder-recurse: true
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
 
       - name: Package using powershell
         working-directory: packages/dart/npt_flutter
@@ -184,7 +199,7 @@ jobs:
             --clobber
 
       - name: GitHub attestation
-        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.asset_name }}"
           sbom-path: "packages/dart/npt_flutter/${{ needs.verify_tags.outputs.sbom_name }}"
