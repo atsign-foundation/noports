@@ -204,10 +204,17 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             );
 
             if (cramkey == null) {
+              // The registrar tells us why it rejected the OTP - show that
+              // instead of a generic failure the user can't act on.
+              App.log('OTP verification failed: $errorMessage'.loggable);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Colors.red,
-                  content: Text(strings.errorOtpVerificationFailed),
+                  content: Text(
+                    errorMessage?.isNotEmpty ?? false
+                        ? errorMessage!
+                        : strings.errorOtpVerificationFailed,
+                  ),
                 ),
               );
               setState(() {

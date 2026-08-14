@@ -6,6 +6,7 @@ import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/widgets/enrollment_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -253,9 +254,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           ).pop(NoPortsOnboardingResult.error(message: strings.invalidOtp));
         } else {
           App.log('Unknown error during enrollment: $e'.loggable);
-          Navigator.of(
-            context,
-          ).pop(NoPortsOnboardingResult.error(message: strings.unknownError));
+          Navigator.of(context).pop(
+            NoPortsOnboardingResult.error(
+              message: describeOnboardingError(e, strings),
+            ),
+          );
         }
       }
     }

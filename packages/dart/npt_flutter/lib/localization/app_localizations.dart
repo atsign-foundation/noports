@@ -845,6 +845,18 @@ abstract class AppLocalizations {
   /// **'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.'**
   String get errorAtsignUnavailable;
 
+  /// No description provided for @errorCramAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The activation key was rejected by the atServer. This activation file may have already been used.'**
+  String get errorCramAuthFailed;
+
+  /// No description provided for @errorOnboardingWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboarding failed: {details}'**
+  String errorOnboardingWithDetails(Object details);
+
   /// No description provided for @errorAuthenticatinFailed.
   ///
   /// In en, this message translates to:

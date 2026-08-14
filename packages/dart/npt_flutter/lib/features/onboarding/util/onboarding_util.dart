@@ -10,6 +10,7 @@ import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activate_atsign_dialog.dart';
@@ -263,9 +264,12 @@ class NoPortsOnboardingUtil {
       return NoPortsOnboardingResult.error(
         message: strings.errorAuthenticationTimedOut,
       );
-    } catch (_) {
+    } catch (e) {
+      // A bad atKeys file is only one of the ways this fails - report what
+      // actually went wrong rather than blaming the file every time.
+      App.log('atKeys sign in failed for $atsign: $e'.loggable);
       return NoPortsOnboardingResult.error(
-        message: strings.errorAtKeysInvalid,
+        message: describeOnboardingError(e, strings),
       );
     }
   }
@@ -332,6 +336,7 @@ class NoPortsOnboardingUtil {
           authFailure = AppLocalizations.of(context)!.errorAuthenticatinFailed;
         }
       } catch (e) {
+        App.log('Authentication failed for $atsign: $e'.loggable);
         authFailure = e;
       }
 
@@ -356,7 +361,12 @@ class NoPortsOnboardingUtil {
           );
         } else {
           onboardingResult = NoPortsOnboardingResult.error(
-            message: authFailure.toString(),
+            message: authFailure is String
+                ? authFailure
+                : describeOnboardingError(
+                    authFailure,
+                    AppLocalizations.of(context)!,
+                  ),
           );
         }
       }

@@ -414,6 +414,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.';
 
   @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
+
+  @override
   String get errorAuthenticatinFailed => 'Authentication failed.';
 
   @override

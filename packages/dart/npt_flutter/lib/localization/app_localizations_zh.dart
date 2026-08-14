@@ -397,6 +397,15 @@ class AppLocalizationsZh extends AppLocalizations {
       'Atsign 不可用。请确保您已从仪表板按下“激活”并且具有稳定的互联网连接。';
 
   @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
+
+  @override
   String get errorAuthenticatinFailed => '身份验证失败。';
 
   @override

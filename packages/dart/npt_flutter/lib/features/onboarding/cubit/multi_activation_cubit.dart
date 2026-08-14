@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/multi_activation_file_content.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -149,20 +150,11 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   Future<void> retryFailed() async {
     if (state.isActivating) return;
 
-    final entries = state.fileContent.entries
-        .map(
-          (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed
-              ? entry.copyWith(
-                  activationKeyStatus: ActivationKeyStatus.waiting,
-                  clearFailureReason: true,
-                )
-              : entry,
-        )
-        .toList();
-
     emit(
       state.copyWith(
-        fileContent: state.fileContent.copyWith(entries: entries),
+        fileContent: state.fileContent.copyWith(
+          entries: resetFailedEntries(state.fileContent.entries),
+        ),
       ),
     );
 
@@ -316,7 +308,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
           App.log('Exception activating ${entry.atsign}: $e'.loggable);
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
-            failureReason: _failureReason(e, strings),
+            failureReason: describeOnboardingError(e, strings),
           );
         }
 
@@ -376,17 +368,6 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
-  /// Turns an onboarding exception into something a tester can act on.
-  String _failureReason(Object e, AppLocalizations strings) {
-    final message = e.toString();
-    if (message.contains('already onboarded')) {
-      // discardStaleKeys should have cleared this, so reaching here means the
-      // keys live somewhere we didn't clean (e.g. a stale FileAtKeysIo path).
-      return strings.errorActivationKeysConflict;
-    }
-    if (e is AtTimeoutException) return strings.errorAuthenticationTimedOut;
-    return message;
-  }
 
   /// Check if any Atsign has a failed activation status.
   bool isAnyFailedStatus() {
@@ -412,7 +393,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   /// prompting to replace the ones bulk activation just wrote.
   bool isActivationComplete() {
     if (state.isActivating) return false;
-    return !state.fileContent.entries.any(
+    return areEntriesSettled(state.fileContent.entries);
+  }
+
+  /// Whether no entry is still waiting or mid-flight.
+  static bool areEntriesSettled(List<ActivationKeyPair> entries) {
+    return !entries.any(
       (entry) =>
           entry.activationKeyStatus == ActivationKeyStatus.waiting ||
           entry.activationKeyStatus == ActivationKeyStatus.activating,
@@ -422,14 +408,34 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   /// The atsign to sign in with once activation finishes: the last one that
   /// actually made it through, so a trailing failure doesn't hand the
   /// onboarding flow an atsign that was never activated.
-  Atsign? getSignInAtsign() {
-    for (final entry in state.fileContent.entries.reversed) {
+  Atsign? getSignInAtsign() => signInAtsignFor(state.fileContent.entries);
+
+  /// The last entry in [entries] that reached an activated status, if any.
+  static Atsign? signInAtsignFor(List<ActivationKeyPair> entries) {
+    for (final entry in entries.reversed) {
       if (entry.activationKeyStatus == ActivationKeyStatus.activated ||
           entry.activationKeyStatus == ActivationKeyStatus.alreadyActivated) {
         return entry.atsign;
       }
     }
     return null;
+  }
+
+  /// Puts every failed entry back to waiting, leaving the rest untouched, so a
+  /// retry only re-runs what actually needs re-running.
+  static List<ActivationKeyPair> resetFailedEntries(
+    List<ActivationKeyPair> entries,
+  ) {
+    return entries
+        .map(
+          (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed
+              ? entry.copyWith(
+                  activationKeyStatus: ActivationKeyStatus.waiting,
+                  clearFailureReason: true,
+                )
+              : entry,
+        )
+        .toList();
   }
 
   // Back Up the atKeys for the activated Atsign.

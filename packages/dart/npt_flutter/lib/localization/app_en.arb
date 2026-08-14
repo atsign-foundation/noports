@@ -121,6 +121,8 @@
    "errorAtsignAlreadyPaired": "The Atsign {atsign} is already paired, please contact support.",
    "errorAtsignNotExist": "The Atsign you have requested doesn't exist in this root domain.",
    "errorAtsignUnavailable": "The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.",
+   "errorCramAuthFailed": "The activation key was rejected by the atServer. This activation file may have already been used.",
+   "errorOnboardingWithDetails": "Onboarding failed: {details}",
    "errorAuthenticatinFailed": "Authentication failed.",
    "errorAuthenticationTimedOut": "Authentication timed out.",
    "errorDuringStartupWithDetails": "Error during startup: {errorMessage}",

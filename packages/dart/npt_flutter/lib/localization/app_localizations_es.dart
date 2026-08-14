@@ -423,6 +423,15 @@ class AppLocalizationsEs extends AppLocalizations {
       'El Atsign no está disponible. Asegúrate de haber presionado \"Activar\" desde tu panel y tener una conexión a internet estable.';
 
   @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
+
+  @override
   String get errorAuthenticatinFailed => 'Autenticación fallida.';
 
   @override

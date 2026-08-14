@@ -5,7 +5,9 @@ import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
 
@@ -93,7 +95,10 @@ class ActivateUtil {
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(message: strings.msgResponseTimeOut);
     } catch (e) {
-      return NoPortsOnboardingResult.error(message: e.toString());
+      App.log('Failed to onboard $atsign from cram key: $e'.loggable);
+      return NoPortsOnboardingResult.error(
+        message: describeOnboardingError(e, strings),
+      );
     }
   }
 }
