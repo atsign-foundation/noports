@@ -72,11 +72,16 @@ class ActivationKeyPair {
   final String activationKey;
   final ActivationKeyStatus activationKeyStatus;
 
+  /// Why this atsign failed to activate, when [activationKeyStatus] is
+  /// [ActivationKeyStatus.failed]. Null in every other status.
+  final String? failureReason;
+
   /// Represents a pair of an atsign and its corresponding activation key, along with the activation status of that key.
   ActivationKeyPair({
     required this.atsign,
     required this.activationKey,
     required this.activationKeyStatus,
+    this.failureReason,
   });
 
   /// Parse activation atsign list entry string like "@alice01_np:activation_key:9e3246378972e67..."
@@ -106,11 +111,16 @@ class ActivationKeyPair {
     Atsign? atsign,
     String? activationKey,
     ActivationKeyStatus? activationKeyStatus,
+    String? failureReason,
+    bool clearFailureReason = false,
   }) {
     return ActivationKeyPair(
       atsign: atsign ?? this.atsign,
       activationKey: activationKey ?? this.activationKey,
       activationKeyStatus: activationKeyStatus ?? this.activationKeyStatus,
+      failureReason: clearFailureReason
+          ? null
+          : (failureReason ?? this.failureReason),
     );
   }
 }

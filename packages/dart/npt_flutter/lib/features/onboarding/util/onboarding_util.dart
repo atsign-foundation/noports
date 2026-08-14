@@ -45,6 +45,30 @@ class NoPortsOnboardingUtil {
     return _atServerStatus!.get(atsign);
   }
 
+  /// Drops the keychain entry for [atsign] when the atServer says it is not
+  /// activated.
+  ///
+  /// Resetting an atsign on the registrar wipes the atServer but leaves this
+  /// device's copy of the keys behind. Those keys can never authenticate again,
+  /// and `AtAuth.onboard` refuses to run at all while they exist
+  /// ("... is already onboarded. Cannot perform onboarding again."), so every
+  /// re-activation attempt fails until they are removed.
+  ///
+  /// Returns true if stale keys were found and removed.
+  static Future<bool> discardStaleKeys(Atsign atsign) async {
+    final atsigns = await KeychainStorage().getAllAtsigns();
+    if (!atsigns.contains(atsign)) return false;
+
+    await KeychainStorage().removeAtsignFromKeychain(atsign);
+    App.log(
+      'Removed stale keychain keys for $atsign - the atServer reports it is '
+              'not activated, so the stored keys are from a previous life of '
+              'this atsign.'
+          .loggable,
+    );
+    return true;
+  }
+
   /// Handles onboarding an atsign by checking its status and showing appropriate dialogs
   /// This is shared between the main onboarding button and the switch atsign functionality
   Future<NoPortsOnboardingResult?> handleAtsignByStatus({
