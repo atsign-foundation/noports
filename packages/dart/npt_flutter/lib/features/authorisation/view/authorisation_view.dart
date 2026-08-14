@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:at_client_flutter/at_client_flutter.dart'
-    show Atsign, AuthorisationSectionHeader, EnrollmentRequestList;
+import 'package:at_client_flutter/at_client_flutter.dart' show Atsign;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/authorisation/controller/authorisation_hub_controller.dart';
 import 'package:npt_flutter/features/authorisation/models/authorisation_page_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/approved_enrollments_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/authorisation_section_list.dart';
+import 'package:npt_flutter/features/authorisation/widgets/enrollment_requests_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/otp_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/set_pin_section.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
@@ -78,7 +78,7 @@ class _AuthorisationHubState extends State<AuthorisationHub> {
   Widget _buildSection() {
     switch (_controller.section) {
       case AuthorisationPageSection.requests:
-        return const _RequestsSection();
+        return EnrollmentRequestsSection(controller: _controller);
       case AuthorisationPageSection.otp:
         return OtpSection(controller: _controller);
       case AuthorisationPageSection.setPin:
@@ -86,23 +86,5 @@ class _AuthorisationHubState extends State<AuthorisationHub> {
       case AuthorisationPageSection.approvedEnrollments:
         return ApprovedEnrollmentsSection(controller: _controller);
     }
-  }
-}
-
-class _RequestsSection extends StatelessWidget {
-  const _RequestsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        const AuthorisationSectionHeader(
-          title: 'Requests',
-          icon: Icons.question_mark_outlined,
-        ),
-        const Expanded(child: EnrollmentRequestList()),
-      ],
-    );
   }
 }

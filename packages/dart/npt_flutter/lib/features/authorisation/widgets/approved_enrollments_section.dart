@@ -127,10 +127,17 @@ class _ApprovedEnrollmentsSectionState
                 child: EnrollmentRequestCard(
                   request: request,
                   onRevoke: () async {
-                    final bool revoked = await controller.revoke(request);
-                    if (revoked && mounted) {
-                      _showRevokedOverlay(request);
+                    final String? error = await controller.revokeRequest(
+                      request,
+                    );
+                    if (!mounted) return;
+                    if (error != null) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error)));
+                      return;
                     }
+                    _showRevokedOverlay(request);
                   },
                 ),
               );
