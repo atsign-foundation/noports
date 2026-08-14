@@ -47,6 +47,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '上传或拖放您的一次性激活文件 (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Activating, please wait until every Atsign has finished.';
+
+  @override
   String get activationKeyStatusActivated => '已激活';
 
   @override
@@ -63,6 +67,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activationManual => '手动激活';
+
+  @override
+  String get activationRetryFailed => 'Retry Failed';
 
   @override
   String get activationStatus => '激活状态';
@@ -352,6 +359,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get error => '错误';
+
+  @override
+  String get errorActivationKeysConflict =>
+      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
 
   @override
   String errorAtKeySaveFailed(Object error) {

@@ -52,6 +52,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sube o arrastra y suelta tu archivo de activación de un solo uso (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Activating, please wait until every Atsign has finished.';
+
+  @override
   String get activationKeyStatusActivated => 'Activado';
 
   @override
@@ -68,6 +72,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activationManual => 'Activación Manual';
+
+  @override
+  String get activationRetryFailed => 'Retry Failed';
 
   @override
   String get activationStatus => 'Estado de Activación';
@@ -373,6 +380,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get error => 'Error';
+
+  @override
+  String get errorActivationKeysConflict =>
+      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
 
   @override
   String errorAtKeySaveFailed(Object error) {

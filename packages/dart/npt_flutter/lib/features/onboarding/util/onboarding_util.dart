@@ -291,6 +291,7 @@ class NoPortsOnboardingUtil {
     if (!context.mounted) return;
 
     if (atsigns.contains(atsign)) {
+      Object? authFailure;
       try {
         final response = await AuthService().authenticate(
           AtAuthRequest(
@@ -304,12 +305,36 @@ class NoPortsOnboardingUtil {
           await AtClientMethods.activateFromAuthResponse(response, rootDomain);
           onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
         } else {
-          onboardingResult = NoPortsOnboardingResult.error(
-            message: AppLocalizations.of(context)!.errorAuthenticatinFailed,
-          );
+          authFailure = AppLocalizations.of(context)!.errorAuthenticatinFailed;
         }
       } catch (e) {
-        onboardingResult = NoPortsOnboardingResult.error(message: e.toString());
+        authFailure = e;
+      }
+
+      if (authFailure != null) {
+        // Authentication with the stored keys failed. If the atServer is up but
+        // reports the atsign as un-activated, it was reset on the registrar and
+        // our keys are dead - drop them and run the activation flow instead of
+        // dead-ending on "Authentication failed".
+        AtSignStatus? status;
+        try {
+          status = (await atServerStatus(atsign)).status();
+        } catch (_) {
+          status = null;
+        }
+
+        if (status == AtSignStatus.teapot) {
+          await discardStaleKeys(atsign);
+          if (!context.mounted) return;
+          onboardingResult = await handleAtsignByStatus(
+            context: context,
+            atsign: atsign,
+          );
+        } else {
+          onboardingResult = NoPortsOnboardingResult.error(
+            message: authFailure.toString(),
+          );
+        }
       }
     } else {
       // Use the shared util method

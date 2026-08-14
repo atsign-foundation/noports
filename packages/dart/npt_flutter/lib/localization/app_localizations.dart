@@ -185,6 +185,12 @@ abstract class AppLocalizations {
   /// **'Upload or drag & drop your one-time activation file (.yaml)'**
   String get activationFileUploadDragDropDescription;
 
+  /// No description provided for @activationInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating, please wait until every Atsign has finished.'**
+  String get activationInProgress;
+
   /// No description provided for @activationKeyStatusActivated.
   ///
   /// In en, this message translates to:
@@ -220,6 +226,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual Activation'**
   String get activationManual;
+
+  /// No description provided for @activationRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Failed'**
+  String get activationRetryFailed;
 
   /// No description provided for @activationStatus.
   ///
@@ -772,6 +784,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get error;
+
+  /// No description provided for @errorActivationKeysConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.'**
+  String get errorActivationKeysConflict;
 
   /// No description provided for @errorAtKeySaveFailed.
   ///
