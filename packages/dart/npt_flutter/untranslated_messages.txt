@@ -1,5 +1,8 @@
 {
   "es": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
@@ -10,6 +13,9 @@
   ],
 
   "pt": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
@@ -20,6 +26,9 @@
   ],
 
   "pt_BR": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
@@ -30,6 +39,9 @@
   ],
 
   "zh": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
@@ -40,6 +52,9 @@
   ],
 
   "zh_Hans_CH": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
@@ -50,6 +65,9 @@
   ],
 
   "zh_Hant_HK": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
     "selectAll",
     "noAtsignsToRemove",
     "errorServerUnavailable",
