@@ -31,8 +31,10 @@ class ProfileRunButton extends StatelessWidget {
                   context.read<ProfileBloc>().add(const ProfileStartEvent());
                 },
               ),
-              ProfileStarting() => const Spinner(),
-              ProfileStarted() => IconButton(
+              // Starting is stoppable so that an attempt which is failing to
+              // establish can always be abandoned - progress is shown by the
+              // status indicator alongside this button
+              ProfileStarting() || ProfileStarted() => IconButton(
                 icon: PhosphorIcon(PhosphorIcons.stop()),
                 onPressed: () {
                   context.read<ProfileBloc>().add(const ProfileStopEvent());

@@ -133,6 +133,7 @@ class FavoriteProfile extends Favorite<ProfileState> {
       case ProfileFailedSave _:
       case ProfileFailedStart _:
         bloc.add(const ProfileStartEvent());
+      case ProfileStarting _:
       case ProfileStarted _:
         bloc.add(const ProfileStopEvent());
       default:
