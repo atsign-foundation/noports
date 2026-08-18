@@ -18,6 +18,10 @@ import 'package:socket_connector/socket_connector.dart';
 
 import 'profile_bloc_test.mocks.dart';
 
+/// How long a faked [SocketConnector] waits before its grace period timer
+/// fires. Short so it drains inside a test rather than outliving it.
+const connectorGracePeriod = Duration(milliseconds: 20);
+
 @GenerateMocks([ProfileRepository])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -518,6 +522,39 @@ void main() {
         );
       });
 
+      testWidgets('successful start caches the connector and stops cleanly', (
+        tester,
+      ) async {
+        final bloc = await pumpLoadedBloc(
+          tester,
+          profile: testProfile,
+          createNpt: FakeNpt.new,
+        );
+
+        bloc.add(const ProfileStartEvent());
+        await pumpUntil(tester, () => bloc.state is ProfileStarted);
+
+        expect(attempts, hasLength(1));
+        expect(
+          runningCubit.state.socketConnectors,
+          contains(testUuid),
+          reason: 'a started session must be reachable for a later stop',
+        );
+
+        bloc.add(const ProfileStopEvent());
+        await pumpUntil(tester, () => bloc.state is ProfileLoaded);
+
+        expect(
+          runningCubit.state.socketConnectors,
+          isNot(contains(testUuid)),
+          reason: 'stopping must release the cached connector',
+        );
+        expect(attempts.single.closeCalled, isTrue);
+
+        // Drain the connector's grace period timer before teardown
+        await tester.pump(connectorGracePeriod * 2);
+      });
+
       testWidgets('startup failure with keep-alive retries', (tester) async {
         final bloc = await pumpLoadedBloc(
           tester,
@@ -599,10 +636,25 @@ class FakeSettingsBloc extends SettingsBloc {
 /// Stands in for a real [Npt] so the start/retry loop can be driven without a
 /// daemon. Records whether [close] was called - that is what releases [done].
 class FakeNpt implements Npt {
-  FakeNpt({this.startupError, this.startupDelay = Duration.zero});
+  FakeNpt({
+    this.startupError,
+    this.startupDelay = Duration.zero,
+    this.connectorTimeout = connectorGracePeriod,
+  });
 
   final Object? startupError;
   final Duration startupDelay;
+
+  /// [SocketConnector]'s constructor arms a grace period timer (30s by
+  /// default) which nothing cancels, and a widget test fails if a timer is
+  /// still pending at teardown. Keep it short enough to drain inside a test.
+  final Duration connectorTimeout;
+
+  SocketConnector? _connector;
+
+  /// Null until a startup actually succeeds - the failure tests must never arm
+  /// that timer.
+  SocketConnector? get connector => _connector;
 
   final Completer<void> _completer = Completer<void>();
   final StreamController<String> _progress =
@@ -630,7 +682,7 @@ class FakeNpt implements Npt {
   Future<SocketConnector> runInline({int? localRvPort}) async {
     if (startupDelay > Duration.zero) await Future.delayed(startupDelay);
     if (startupError != null) throw startupError!;
-    return SocketConnector();
+    return _connector ??= SocketConnector(timeout: connectorTimeout);
   }
 
   @override
