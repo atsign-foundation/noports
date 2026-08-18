@@ -308,11 +308,19 @@ class SshnpdImpl
 
     await subscribeToPolicyUpdates();
 
-    // If using a policy service, tell it we're here
+    if (policyManagerAtsign != null) {
+      await _fetchEventLoggingConfig();
+    }
+
     await _sendHeartbeatToPolicy();
     Timer.periodic(
       DefaultSshnpdArgs.policyHeartbeatFrequency,
-      (_) async => await _sendHeartbeatToPolicy(),
+      (_) async {
+        if (elc == null && policyManagerAtsign != null) {
+          await _fetchEventLoggingConfig();
+        }
+        await _sendHeartbeatToPolicy();
+      },
     );
 
     logger.info('Daemon is running');
@@ -1881,20 +1889,33 @@ class SshnpdImpl
   }
 
   Future<void> handlePolicyConfigNotification(AtNotification n) async {
-    logger.shout('Config from policy: ${n.key} : ${n.value}');
+    logger.info('Config from policy: ${n.key} : ${n.value}');
     if (n.value == null) {
       return;
     }
     final json = jsonDecode(n.value!);
     final elcJson = json['eventLoggingConfig'];
     if (elcJson == null) {
-      logger.shout('No eventLoggingConfig');
+      logger.info('No eventLoggingConfig in policy config notification');
       return;
     }
     elc = AtEventConfig.fromJson(elcJson);
   }
 
-  /// If using a policy service, tell it we're here
+  Future<void> _fetchEventLoggingConfig() async {
+    try {
+      elc = await getEventLoggingConfig(
+        atSign: policyManagerAtsign!,
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      logger.info('Fetched event logging config: $elc');
+    } on AtKeyNotFoundException {
+      logger.info('No event logging config from $policyManagerAtsign yet');
+    } catch (e) {
+      logger.warning('Failed to fetch event logging config: $e');
+    }
+  }
+
   Future<void> _sendHeartbeatToPolicy() async {
     if (policyManagerAtsign == null) {
       return;
@@ -1911,10 +1932,14 @@ class SshnpdImpl
 
     logger.info('Sending heartbeat to policy service $policyManagerAtsign');
 
-    /// send it
+    final Map<String, dynamic> heartbeatPayload = Map.of(pingResponse);
+    if (elc == null) {
+      heartbeatPayload['needEventLoggingConfig'] = true;
+    }
+
     await _notify(
       atKey: atKey,
-      value: jsonEncode(pingResponse),
+      value: jsonEncode(heartbeatPayload),
       ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
     );
   }
