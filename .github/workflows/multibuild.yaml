@@ -187,7 +187,7 @@ jobs:
           esac
           DBINS="${BINS} np_admin srvd"
           for BINARY in ${DBINS}; do \
-            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
+            help2man -N --no-discard-stderr --include man/${BINARY}.h2m sshnp/${BINARY} -o sshnp/${BINARY}.1;
             gzip -n9 sshnp/${BINARY}.1;
           done
           cp CHANGELOG.md sshnp/

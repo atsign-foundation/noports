@@ -1,0 +1,12 @@
+[NAME]
+srvd \- NoPorts relay daemon
+[EXAMPLES]
+.nf
+srvd -a @alice_relay -i 203.0.113.10
+.fi
+[SEE ALSO]
+srv(1), sshnp(1), sshnpd(1), npt(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>
