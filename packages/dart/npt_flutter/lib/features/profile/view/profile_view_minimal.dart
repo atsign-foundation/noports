@@ -23,8 +23,6 @@ class ProfileViewMinimal extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            const ProfileRunButton(),
-            gapW10,
             const ProfileFavoriteButton(),
             gapW10,
             const ProfilePopupMenuButton(),

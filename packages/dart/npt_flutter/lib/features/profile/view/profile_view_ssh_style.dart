@@ -25,8 +25,6 @@ class ProfileViewSshStyle extends StatelessWidget {
               width: SizeConfig.setProfileFieldWidth(statusField: true),
             ),
             gapW10,
-            const Flexible(child: ProfileRunButton()),
-            gapW10,
             const Flexible(child: ProfileFavoriteButton()),
             gapW10,
             const Flexible(child: ProfilePopupMenuButton()),
