@@ -2086,6 +2086,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML (Recommended)'**
   String get yamlRecommended;
+
+  /// No description provided for @errorEnrollmentRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your enrollment has been revoked. Please sign in again to request a new enrollment.'**
+  String get errorEnrollmentRevoked;
 }
 
 class _AppLocalizationsDelegate

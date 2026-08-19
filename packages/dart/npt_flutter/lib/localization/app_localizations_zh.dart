@@ -1048,6 +1048,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).

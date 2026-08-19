@@ -1096,4 +1096,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recommended)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }

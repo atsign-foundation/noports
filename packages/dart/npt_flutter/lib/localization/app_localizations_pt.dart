@@ -1113,6 +1113,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
