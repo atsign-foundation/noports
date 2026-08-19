@@ -44,14 +44,15 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   AtClientPreference get atClientPreference => widget.atClientPreference;
 
   static const _kPinLength = 6;
-  static const _kMaxApprovalRetries = 48;
-  static const _kApprovalRetryInterval = Duration(minutes: 1);
+  static const _kMaxApprovalRetries = 288;
+  static const _kApprovalRetryInterval = Duration(seconds: 10);
 
   late OnboardingStatus onboardingStatus;
   final KeychainStorage keychainStorage = KeychainStorage();
   late final TextEditingController pinController;
 
   bool hasExpired = false;
+  String? _enrollmentError;
 
   @override
   void initState() {
@@ -208,6 +209,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     setState(() {
       onboardingStatus = OnboardingStatus.validatingOtp;
       hasExpired = false;
+      _enrollmentError = null;
     });
 
     // Device name cannot contain spaces or special characters
@@ -236,9 +238,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('AtException - Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pop(NoPortsOnboardingResult.error(message: e.message));
+        setState(() {
+          _enrollmentError = e.message;
+          pinController.clear();
+          onboardingStatus = OnboardingStatus.otpRequired;
+        });
       }
     } catch (e, st) {
       App.log('Error enrolling: $e'.loggable);
@@ -246,20 +250,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
-        // Doesn't seem like enroll throws an `AtException`.
-        if (e.toString().contains('AT0022')) {
-          App.log('Invalid OTP'.loggable);
-          Navigator.of(
-            context,
-          ).pop(NoPortsOnboardingResult.error(message: strings.invalidOtp));
-        } else {
-          App.log('Unknown error during enrollment: $e'.loggable);
-          Navigator.of(context).pop(
-            NoPortsOnboardingResult.error(
-              message: describeOnboardingError(e, strings),
-            ),
-          );
-        }
+        final String message = e.toString().contains('AT0022')
+            ? strings.invalidOtp
+            : describeOnboardingError(e, strings);
+        setState(() {
+          _enrollmentError = message;
+          pinController.clear();
+          onboardingStatus = OnboardingStatus.otpRequired;
+        });
       }
     }
   }
@@ -297,6 +295,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 gapH4,
                 Text(
                   strings.requestExpired,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+              if (_enrollmentError != null) ...[
+                gapH4,
+                Text(
+                  _enrollmentError!,
                   style: const TextStyle(color: Colors.red),
                 ),
               ],

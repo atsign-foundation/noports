@@ -32,6 +32,10 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
     return strings.errorAtsignActivated;
   }
 
+  if (detail.contains('AT0027') || detail.contains('is revoked')) {
+    return strings.errorEnrollmentRevoked;
+  }
+
   if (error is AtTimeoutException || detail.contains('Timed out')) {
     return strings.errorAuthenticationTimedOut;
   }

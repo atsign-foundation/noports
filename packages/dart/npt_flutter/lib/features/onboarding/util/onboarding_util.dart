@@ -96,6 +96,28 @@ class NoPortsOnboardingUtil {
 
     switch (initialStatus) {
       case AtSignStatus.unavailable:
+        await Future.delayed(const Duration(seconds: 2));
+        if (!context.mounted) return null;
+        try {
+          final AtSignStatus? retryStatus =
+              (await atServerStatus(atsign)).status();
+          if (retryStatus == AtSignStatus.activated) {
+            result = await _handleActivatedAtsign(
+              context: context,
+              atsign: atsign,
+              strings: strings,
+            );
+            break;
+          }
+        } catch (_) {}
+        if (!context.mounted) return null;
+        result = await _handleActivation(
+          context: context,
+          atsign: atsign,
+          initialStatus: initialStatus,
+          strings: strings,
+        );
+
       case AtSignStatus.teapot:
         result = await _handleActivation(
           context: context,
@@ -341,18 +363,14 @@ class NoPortsOnboardingUtil {
       }
 
       if (authFailure != null) {
-        // Authentication with the stored keys failed. If the atServer is up but
-        // reports the atsign as un-activated, it was reset on the registrar and
-        // our keys are dead - drop them and run the activation flow instead of
-        // dead-ending on "Authentication failed".
-        AtSignStatus? status;
-        try {
-          status = (await atServerStatus(atsign)).status();
-        } catch (_) {
-          status = null;
-        }
+        final String errorDetail = authFailure is String
+            ? authFailure
+            : onboardingErrorDetail(authFailure);
 
-        if (status == AtSignStatus.teapot) {
+        final bool isRevoked =
+            errorDetail.contains('AT0027') || errorDetail.contains('is revoked');
+
+        if (isRevoked) {
           await discardStaleKeys(atsign);
           if (!context.mounted) return;
           onboardingResult = await handleAtsignByStatus(
@@ -360,14 +378,30 @@ class NoPortsOnboardingUtil {
             atsign: atsign,
           );
         } else {
-          onboardingResult = NoPortsOnboardingResult.error(
-            message: authFailure is String
-                ? authFailure
-                : describeOnboardingError(
-                    authFailure,
-                    AppLocalizations.of(context)!,
-                  ),
-          );
+          AtSignStatus? status;
+          try {
+            status = (await atServerStatus(atsign)).status();
+          } catch (_) {
+            status = null;
+          }
+
+          if (status == AtSignStatus.teapot) {
+            await discardStaleKeys(atsign);
+            if (!context.mounted) return;
+            onboardingResult = await handleAtsignByStatus(
+              context: context,
+              atsign: atsign,
+            );
+          } else {
+            onboardingResult = NoPortsOnboardingResult.error(
+              message: authFailure is String
+                  ? authFailure
+                  : describeOnboardingError(
+                      authFailure,
+                      AppLocalizations.of(context)!,
+                    ),
+            );
+          }
         }
       }
     } else {
