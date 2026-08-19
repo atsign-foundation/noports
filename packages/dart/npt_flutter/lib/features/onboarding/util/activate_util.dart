@@ -58,7 +58,14 @@ class ActivateUtil {
       'otp': otp,
     });
     if (res.statusCode != 200) {
-      return (errorMessage: res.body, cramkey: null);
+      String errorMessage;
+      try {
+        final Map<String, dynamic> payload = jsonDecode(res.body);
+        errorMessage = payload["message"]?.toString() ?? res.body;
+      } catch (_) {
+        errorMessage = res.body;
+      }
+      return (errorMessage: errorMessage, cramkey: null);
     }
     var payload = jsonDecode(res.body);
     if (payload["message"] != "Verified") {
