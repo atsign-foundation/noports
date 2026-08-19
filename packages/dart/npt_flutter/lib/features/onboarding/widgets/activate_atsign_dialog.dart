@@ -48,6 +48,13 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
   FocusNode pinFocusNode = FocusNode();
 
   @override
+  void dispose() {
+    pinController.dispose();
+    pinFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     util = ActivateUtil(
@@ -86,12 +93,11 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                   appContext: context,
                   length: widget.pinLength,
                   controller: pinController,
-                  onChanged: (value) {
-                    setState(() {
-                      pinController.text = value.toUpperCase();
-                    });
+                  autoDisposeControllers: false,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (_) {
+                    setState(() {});
                   },
-                  // Styling
                   animationType: AnimationType.fade,
                   pinTheme: PinTheme(
                     shape: PinCodeFieldShape.box,
@@ -151,10 +157,18 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     } else {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
+        String apiMessage;
+        try {
+          apiMessage = jsonDecode(res.body)["message"]?.toString() ?? res.body;
+        } catch (_) {
+          apiMessage = res.body;
+        }
+        final String userMessage =
+            apiMessage.toLowerCase().contains('unauthorized')
+                ? strings.errorOtpRequestFailed
+                : apiMessage;
         Navigator.of(context).pop(
-          NoPortsOnboardingResult.error(
-            message: "@${jsonDecode(res.body)["message"]}",
-          ),
+          NoPortsOnboardingResult.error(message: userMessage),
         );
         return;
       }
@@ -203,25 +217,27 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               otp: pinController.text.toUpperCase(),
             );
 
+            if (!mounted) return;
+
             if (cramkey == null) {
-              // The registrar tells us why it rejected the OTP - show that
-              // instead of a generic failure the user can't act on.
               App.log('OTP verification failed: $errorMessage'.loggable);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.red,
-                  content: Text(
-                    errorMessage?.isNotEmpty ?? false
-                        ? errorMessage!
-                        : strings.errorOtpVerificationFailed,
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      errorMessage?.isNotEmpty ?? false
+                          ? errorMessage!
+                          : strings.errorOtpVerificationFailed,
+                    ),
                   ),
-                ),
-              );
+                );
               setState(() {
-                pinController =
-                    TextEditingController(); // controller was disposed, make a new one
-                pinFocusNode =
-                    FocusNode(); // focus node was disposed, make a new one
+                pinController.dispose();
+                pinController = TextEditingController();
+                pinFocusNode.dispose();
+                pinFocusNode = FocusNode();
                 status = ActivationStatus.otpWait;
               });
               return;
@@ -241,7 +257,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               while (atsignStatus != AtSignStatus.teapot) {
                 // 6 * 5 = 30 seconds
                 // 12 * 5 = 60 seconds
-                if (round > 12) {
+                if (!mounted || round > 12) {
                   break;
                 }
                 await Future.delayed(const Duration(seconds: 5));
