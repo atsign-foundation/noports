@@ -1,7 +1,7 @@
 name: admin_api
 description: NoPorts admin API server
 # Keep in step with packages/dart/sshnoports/pubspec.yaml at release time
-version: 5.15.1
+version: 5.15.2
 publish_to: none
 # repository: https://github.com/my_org/my_repo
 
