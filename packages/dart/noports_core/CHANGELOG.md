@@ -1,3 +1,11 @@
+# 6.12.2
+
+- fix: `Npt.done` now completes when startup fails, instead of never
+  completing. `run` and `runInline` close the session on their way out when
+  they throw, so callers may always await `done` without having to call
+  `close` themselves first. A caller that awaited `done` after a failed
+  startup previously waited forever. See #2789.
+
 # 6.12.1
 
 - fix: `RelaySelector.selectBestRelay` no longer hangs or throws when the
