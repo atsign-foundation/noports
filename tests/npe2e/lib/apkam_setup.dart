@@ -156,6 +156,13 @@ Future<File> setUpApkamKeyForAtsign({
     );
   }
 
+  // at_onboarding_cli >=1.16.0 chmod 600s .atKeys files on write (owner-only).
+  // This file gets bind-mounted into daemon containers that run as a fixed,
+  // different UID (see USER_ID in tests/npe2e/tools/dockerfiles), so the
+  // daemon can no longer read its own keys. Relax back to owner+group/other
+  // read for this ephemeral, single-run test file.
+  await Process.run('chmod', ['644', apkamKeysPath]);
+
   return apkamKeysFile;
 }
 

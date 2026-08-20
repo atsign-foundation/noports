@@ -1,3 +1,7 @@
+# 6.12.2
+
+- build(deps): take up at_onboarding_cli 1.16.0, at_client 3.12.0
+
 # 6.12.1
 
 - fix: `RelaySelector.selectBestRelay` no longer hangs or throws when the

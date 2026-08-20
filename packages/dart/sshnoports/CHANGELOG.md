@@ -2,6 +2,22 @@
 
 <!-- pyml disable md034-->
 
+## v5.16.0
+
+* fix: `RelaySelector.selectBestRelay` no longer hangs or throws when a daemon
+  doesn't support relay latency checks; falls back to client-only relay
+  selection instead
+* fix: sshnpd now treats a malformed `discover_request` JSON payload as a
+  warning instead of crashing
+* build(deps): take up `at_onboarding_cli` 1.16.0, `at_client` 3.12.0 —
+  **heads up:** `at_onboarding_cli` now restricts newly-written `.atKeys`
+  files to owner-only permissions (`chmod 600`). If you provision keys as one
+  user and run `sshnpd`/`sshnp`/`srvd` as a different user — for example,
+  bind-mounting a keys file into the official Docker images, which run as a
+  fixed non-root user — you may see `Permission denied` reading your
+  `.atKeys` file after upgrading. Fix by matching ownership (`chown`) or
+  relaxing the file's permissions (`chmod 644`) before mounting.
+
 ## v5.15.1
 
 * fix: Trust our brew tap when used with brew => 6
