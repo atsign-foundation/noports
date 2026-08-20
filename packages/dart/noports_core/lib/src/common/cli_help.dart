@@ -31,6 +31,11 @@ String get binaryName {
 /// `ArgParser.usage` places abbreviated options (e.g. `-a, --atsign`) at
 /// column zero, where `help2man` does not recognise them as options and runs
 /// them together as plain text.
+///
+/// Option group headings (column-zero lines which do not start with `-`,
+/// e.g. sshnpd's "Runtime Options") are given a paragraph of their own,
+/// since `help2man` absorbs the options following a heading into a single
+/// run-together block of text when they share its paragraph.
 /// See https://github.com/atsign-foundation/noports/issues/2650
 String formatCliHelp({
   required String description,
@@ -43,8 +48,26 @@ String formatCliHelp({
     ..writeln(description)
     ..writeln()
     ..writeln('Options:');
+  bool lastWasBlank = false;
   for (final String line in const LineSplitter().convert(optionsUsage)) {
-    buffer.writeln(line.isEmpty ? '' : '  $line');
+    if (line.isEmpty) {
+      buffer.writeln();
+      lastWasBlank = true;
+      continue;
+    }
+    if (!line.startsWith(' ') && !line.startsWith('-')) {
+      // An option group heading
+      if (!lastWasBlank) {
+        buffer.writeln();
+      }
+      buffer
+        ..writeln(line.endsWith(':') ? line : '$line:')
+        ..writeln();
+      lastWasBlank = true;
+    } else {
+      buffer.writeln('  $line');
+      lastWasBlank = false;
+    }
   }
   return buffer.toString();
 }

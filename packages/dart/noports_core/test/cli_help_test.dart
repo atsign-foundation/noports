@@ -38,6 +38,31 @@ void main() {
       );
     });
 
+    test('gives option group headings a paragraph of their own', () {
+      // sshnpd's usage contains group headings at column zero, e.g.
+      // "Runtime Options". help2man absorbs the options following a heading
+      // into a run-together block of text unless the heading is separated
+      // from them by a blank line.
+      final String help = formatCliHelp(
+        description: 'Does a thing.',
+        optionsUsage:
+            'Runtime Options\n'
+            '$optionLine\n'
+            '\n'
+            'atSign Options\n'
+            '$optionLine',
+      );
+      final List<String> lines = help.split('\n');
+      expect(lines[5], isEmpty);
+      expect(lines[6], 'Runtime Options:');
+      expect(lines[7], isEmpty);
+      expect(lines[8], '  $optionLine');
+      expect(lines[9], isEmpty);
+      expect(lines[10], 'atSign Options:');
+      expect(lines[11], isEmpty);
+      expect(lines[12], '  $optionLine');
+    });
+
     test('does not indent blank lines in the options usage', () {
       final String help = formatCliHelp(
         description: 'Does a thing.',
