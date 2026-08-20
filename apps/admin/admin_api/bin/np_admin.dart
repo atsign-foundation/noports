@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:admin_api/src/expose_apis.dart' as expose;
+import 'package:admin_api/src/version.dart' as admin;
 import 'package:alfred/alfred.dart';
 import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
 import 'package:args/args.dart';
@@ -47,9 +48,8 @@ void main(List<String> args) async {
     }
 
     if (parsedArgs['version'] == true) {
-      // np_admin is versioned by noports_core, as it has no
-      // release version of its own
-      stdout.writeln('$binaryName ${core.packageVersion}');
+      stdout.writeln(
+          '$binaryName ${admin.packageVersion} (core ${core.packageVersion})');
       exit(0);
     }
 

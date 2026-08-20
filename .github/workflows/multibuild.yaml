@@ -159,6 +159,7 @@ jobs:
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
+          dart run build_runner build --delete-conflicting-outputs
           dart compile exe ${CROSS} bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${EXT}
       - name: Compile debug binaries (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}

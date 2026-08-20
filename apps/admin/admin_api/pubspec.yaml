@@ -1,6 +1,7 @@
 name: admin_api
-description: A sample command-line application.
-version: 1.0.1
+description: NoPorts admin API server
+# Keep in step with packages/dart/sshnoports/pubspec.yaml at release time
+version: 5.15.1
 publish_to: none
 # repository: https://github.com/my_org/my_repo
 
@@ -30,4 +31,5 @@ dev_dependencies:
   test: ^1.25.14
   mocktail: ^1.0.4
   build_runner: ^2.4.14
+  build_version: ^2.1.3
   json_serializable: ^6.11.0
