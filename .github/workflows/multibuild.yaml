@@ -52,6 +52,7 @@ jobs:
     permissions:
       id-token: write # For OIDC token used by Azure signing
     runs-on: ${{ matrix.os }}
+    environment: ${{ matrix.environment }}
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
