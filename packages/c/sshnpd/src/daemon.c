@@ -205,14 +205,18 @@ void main_loop() {
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
         case NK_SSH_REQUEST:
-        case NK_NPT_REQUEST: {
+        case NK_NPT_REQUEST:
+        case NK_PING: {
           if (!is_manager_atsign(&params, message.notification->from)) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                          "Rejecting request from unauthorized atSign: %s\n", message.notification->from);
             break;
           }
 
-          if (notification_key == NK_SSHPUBLICKEY) {
+          if (notification_key == NK_PING) {
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
+            handle_ping(&params, &message, ping_response, &worker);
+          } else if (notification_key == NK_SSHPUBLICKEY) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
             handle_sshpublickey(&params, &message, authkeys_file, authkeys_filename);
           } else if (notification_key == NK_SSH_REQUEST) {
