@@ -1,6 +1,7 @@
 #ifndef SSH_KEY_UTIL_H
 #define SSH_KEY_UTIL_H
 
+#include <stdbool.h>
 #include <stdio.h>
 
 enum supported_key_prefix {
@@ -20,5 +21,6 @@ typedef struct {
   char *key;
 } authkeys_params;
 
+bool is_valid_ssh_public_key(const char *ssh_key);
 int authorize_ssh_public_key(authkeys_params *params);
 #endif
