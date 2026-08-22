@@ -85,6 +85,9 @@ int test_valid_rsa_e2e();
 int test_valid_ecdsa_e2e();
 int test_invalid_garbage_e2e();
 int test_invalid_empty_e2e();
+int test_newline_injection_e2e();
+int test_carriage_return_injection_e2e();
+int test_empty_prefix_does_not_match_e2e();
 
 int main() {
   int ret = 0;
@@ -114,6 +117,21 @@ int main() {
     ret++;
   }
 
+  if (test_newline_injection_e2e()) {
+    printf("e2e: newline-injected key WAS written to authorized_keys\n");
+    ret++;
+  }
+
+  if (test_carriage_return_injection_e2e()) {
+    printf("e2e: carriage-return-injected key WAS written to authorized_keys\n");
+    ret++;
+  }
+
+  if (test_empty_prefix_does_not_match_e2e()) {
+    printf("e2e: key with no recognized prefix WAS written to authorized_keys\n");
+    ret++;
+  }
+
   printf("Tests failed: %d\n", ret);
   return ret;
 }
@@ -136,4 +154,16 @@ int test_invalid_garbage_e2e() {
 
 int test_invalid_empty_e2e() {
   return run_e2e_test("", false);
+}
+
+int test_newline_injection_e2e() {
+  return run_e2e_test("ssh-rsa AAAA_legit\nssh-rsa AAAA_attacker attacker@evil", false);
+}
+
+int test_carriage_return_injection_e2e() {
+  return run_e2e_test("ssh-ed25519 AAAA_legit\rssh-ed25519 AAAA_attacker attacker@evil", false);
+}
+
+int test_empty_prefix_does_not_match_e2e() {
+  return run_e2e_test("unknown-keytype AAAA_something test@host", false);
 }

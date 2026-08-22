@@ -16,6 +16,13 @@ bool is_valid_ssh_public_key_prefix(const char *ssh_key) {
     return false;
   }
   size_t ssh_key_len = strlen(ssh_key);
+
+  // reject embedded newlines to prevent authorized_keys injection
+  if (memchr(ssh_key, '\n', ssh_key_len) != NULL || memchr(ssh_key, '\r', ssh_key_len) != NULL) {
+    return false;
+  }
+
+  // i = 1: skip SKP_NONE whose empty-string prefix would match any key
   for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
     char *prefix = supported_key_prefix_map[i];
     size_t prefix_len = strlen(prefix);
