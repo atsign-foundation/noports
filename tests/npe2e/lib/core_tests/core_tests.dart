@@ -20,6 +20,7 @@ import 'package:npe2e/core_tests/tests/v4_dart_inline.dart';
 import 'package:npe2e/core_tests/tests/v4_openssh_print.dart';
 import 'package:npe2e/core_tests/tests/v5_dart_inline.dart';
 import 'package:npe2e/core_tests/tests/v5_openssh_inline.dart';
+import 'package:npe2e/core_tests/tests/unauthorized_atsign_rejection.dart';
 import 'package:npe2e/core_tests/tests/v5_openssh_print.dart';
 import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/docker_instance.dart';
@@ -329,6 +330,13 @@ Future<void> coreTests(CoreTestsParams params) async {
     runV5OpensshPrintTests(
       context: context,
       clientVersions: clientVersions,
+      daemonVersions: daemonVersions,
+    ),
+  );
+
+  remainingTestFactories.addAll(
+    runUnauthorizedAtsignRejectionTests(
+      context: context,
       daemonVersions: daemonVersions,
     ),
   );

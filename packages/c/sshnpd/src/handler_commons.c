@@ -16,6 +16,15 @@
 
 #define LOGGER_TAG "HANDLER_COMMONS"
 
+bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
+  for (size_t i = 0; i < params->manager_list_len; i++) {
+    if (strcmp(atsign, params->manager_list[i]) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atclient *atclient) {
   cJSON *signature = cJSON_GetObjectItem(envelope, "signature");
   cJSON *hashing_algo = cJSON_GetObjectItem(envelope, "hashingAlgo");
