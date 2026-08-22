@@ -219,9 +219,16 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
           as _i6.Future<_i3.AtResponse>);
 
   @override
-  _i6.Future<bool> putMeta(_i2.AtKey? key) =>
+  _i6.Future<bool> putMeta(
+    _i2.AtKey? key, {
+    _i2.PutRequestOptions? putRequestOptions,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#putMeta, [key]),
+            Invocation.method(
+              #putMeta,
+              [key],
+              {#putRequestOptions: putRequestOptions},
+            ),
             returnValue: _i6.Future<bool>.value(false),
           )
           as _i6.Future<bool>);
