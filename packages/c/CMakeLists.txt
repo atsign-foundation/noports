@@ -14,7 +14,7 @@ set(ATSDK_USE_SHARED_LIBS ${NOPORTS_USE_SHARED_LIBS})
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
-project(noports VERSION 1.0.19 LANGUAGES C)
+project(noports VERSION 1.0.20 LANGUAGES C)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/CPackSetup.cmake")
 
