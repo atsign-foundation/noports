@@ -12,12 +12,18 @@ import 'package:npe2e/print_test_utils.dart';
 import 'package:npe2e/process_utils.dart';
 import 'package:npe2e/test_result.dart';
 
-const String _metadataNptExecution = 'nptExecution';
+const String _metadataSshnpExecution = 'sshnpExecution';
 const String testName = 'unauthorized_atsign_rejection';
 
-/// Verifies that the C sshnpd daemon rejects requests from atSigns not in its
-/// manager list. Uses the relay atSign as an unauthorized client — the daemon
-/// is started with `-m $clientAtsign`, so the relay atSign should be rejected.
+/// Verifies that the C sshnpd daemon silently rejects ssh_request notifications
+/// from atSigns not in its manager list.
+///
+/// The daemon is started with `-m $clientAtsign`. This test runs sshnp as the
+/// relay atSign (unauthorized) and verifies:
+///   1. sshnp fails (daemon never responds)
+///   2. Daemon log contains "Rejecting request from unauthorized atSign"
+///   3. Daemon log does NOT contain "Executing handle_ssh_request" (no handler
+///      was invoked, no response was sent)
 ///
 /// Only runs against c:current daemons with d:current client.
 List<Future<CoreTestResult> Function()> runUnauthorizedAtsignRejectionTests({
@@ -68,9 +74,9 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
   final String deviceName =
       '${getDeviceNameNoFlags(testRunId: context.testRunId, noPortsVersion: daemonVersion)}_f';
 
-  final ClientBinary nptClientBinary = context.clientBinaries.firstWhere(
+  final ClientBinary sshnpClientBinary = context.clientBinaries.firstWhere(
     (ClientBinary cb) =>
-        cb.binaryType == ClientBinaryType.npt &&
+        cb.binaryType == ClientBinaryType.sshnp &&
         cb.noPortsVersion == clientVersion,
   );
 
@@ -82,71 +88,57 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution,
+      testMetadata: _metadataSshnpExecution,
     ),
     stderrFile: testLogger.getDaemonStderrLogFile(
       daemonVersion: daemonVersion,
       deviceName: deviceName,
-      testMetadata: _metadataNptExecution,
+      testMetadata: _metadataSshnpExecution,
     ),
   );
 
-  // Run npt as the relay atSign (unauthorized) targeting the daemon.
+  // Run sshnp as the relay atSign (unauthorized) targeting the daemon.
   // The daemon's manager list only includes clientAtsign, so relayAtsign
-  // should be rejected.
-  final List<String> nptArgs = [
+  // should be silently rejected — no response sent back.
+  final List<String> sshnpArgs = [
     '-f', context.relayAtsign,
     '-t', context.daemonAtsign,
     '-d', deviceName,
-    '-r', context.relayAtsign,
+    '-h', context.relayAtsign,
+    '-u', context.remoteUsername,
+    '-i', context.identityFilePath,
     '--root-domain', context.rootDomain,
-    '--remote-port', '22',
-    '--exit-when-connected',
-    '--verbose',
+    '--ssh-client', 'openssh',
+    '-s',
+    '-x',
   ];
 
   if (context.apkamKeys.containsKey(context.relayAtsign)) {
-    nptArgs.addAll(['-k', context.apkamKeys[context.relayAtsign]!.path]);
+    sshnpArgs.addAll(['-k', context.apkamKeys[context.relayAtsign]!.path]);
   }
 
   logFragment.start();
-  final ProcessOutputCapture nptOutput = await startCommandWithCapture(
-    nptClientBinary.file.path,
-    nptArgs,
+  final ProcessOutputCapture sshnpOutput = await startCommandWithCapture(
+    sshnpClientBinary.file.path,
+    sshnpArgs,
     stdoutLogFile: testLogger.getClientStdoutLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-      testMetadata: _metadataNptExecution,
+      testMetadata: _metadataSshnpExecution,
     ),
     stderrLogFile: testLogger.getClientStderrLogFile(
       clientVersion: clientVersion,
       daemonVersion: daemonVersion,
-      testMetadata: _metadataNptExecution,
+      testMetadata: _metadataSshnpExecution,
     ),
   );
 
-  final int exitCode = await nptOutput.exitCode;
+  final int exitCode = await sshnpOutput.exitCode;
 
-  // Give the daemon a moment to log the rejection
+  // Give the daemon a moment to flush its log
   await Future<void>.delayed(const Duration(seconds: 2));
   logFragment.stop();
 
-  // The npt command should have failed (daemon rejects unauthorized atSign)
-  if (exitCode == 0) {
-    final CoreTestResult result = CoreTestResult(
-      testName: testName,
-      clientVersion: clientVersion,
-      daemonVersion: daemonVersion,
-      status: TestStatus.failed,
-      exitCode: exitCode,
-    );
-    print('FAIL: npt succeeded as unauthorized atSign ${context.relayAtsign} '
-        '— daemon should have rejected it');
-    printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment);
-    return result;
-  }
-
-  // Verify the daemon log contains the rejection message
   final String daemonStdout = logFragment.stdoutFile.existsSync()
       ? logFragment.stdoutFile.readAsStringSync()
       : '';
@@ -155,6 +147,22 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
       : '';
   final String combinedDaemonLog = '$daemonStdout\n$daemonStderr';
 
+  // 1. sshnp must have failed (daemon never responds to unauthorized requests)
+  if (exitCode == 0) {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode,
+    );
+    print('FAIL: sshnp succeeded as unauthorized atSign ${context.relayAtsign} '
+        '— daemon should have rejected it');
+    printAllLogs(clientCapture: sshnpOutput, daemonLogFragment: logFragment);
+    return result;
+  }
+
+  // 2. Daemon log must contain the rejection message
   if (!combinedDaemonLog.contains('Rejecting request from unauthorized atSign')) {
     final CoreTestResult result = CoreTestResult(
       testName: testName,
@@ -163,9 +171,23 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
       status: TestStatus.failed,
       exitCode: exitCode,
     );
-    print('FAIL: daemon log does not contain rejection message '
-        '— the authorization check may not be working');
-    printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment);
+    print('FAIL: daemon log does not contain rejection message');
+    printAllLogs(clientCapture: sshnpOutput, daemonLogFragment: logFragment);
+    return result;
+  }
+
+  // 3. Daemon log must NOT contain handler execution (proves no response was sent)
+  if (combinedDaemonLog.contains('Executing handle_ssh_request')) {
+    final CoreTestResult result = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode,
+    );
+    print('FAIL: daemon invoked handle_ssh_request for unauthorized atSign '
+        '— request was not silently rejected');
+    printAllLogs(clientCapture: sshnpOutput, daemonLogFragment: logFragment);
     return result;
   }
 
