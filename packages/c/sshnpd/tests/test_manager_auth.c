@@ -1,3 +1,4 @@
+#include "sshnpd/authorization.h"
 #include "sshnpd/params.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -10,6 +11,9 @@ int single_manager_unauthorized_test();
 int multiple_managers_authorized_test();
 int multiple_managers_unauthorized_test();
 int empty_manager_list_test();
+int null_sender_test();
+int null_manager_list_test();
+int case_and_prefix_normalization_test();
 
 int main() {
   int ret = 0;
@@ -32,6 +36,18 @@ int main() {
   }
   if (empty_manager_list_test()) {
     printf("empty_manager_list_test failed\n");
+    ret++;
+  }
+  if (null_sender_test()) {
+    printf("null_sender_test failed\n");
+    ret++;
+  }
+  if (null_manager_list_test()) {
+    printf("null_manager_list_test failed\n");
+    ret++;
+  }
+  if (case_and_prefix_normalization_test()) {
+    printf("case_and_prefix_normalization_test failed\n");
     ret++;
   }
 
@@ -102,6 +118,63 @@ int empty_manager_list_test() {
   params.manager_list_len = 0;
 
   if (is_manager_atsign(&params, "@anyone")) {
+    return 1;
+  }
+  return 0;
+}
+
+int null_sender_test() {
+  sshnpd_params params;
+  char *managers[] = {"@alice"};
+  params.manager_list = managers;
+  params.manager_list_len = 1;
+
+  if (is_manager_atsign(&params, NULL)) {
+    return 1;
+  }
+  if (is_manager_atsign(&params, "")) {
+    return 1;
+  }
+  return 0;
+}
+
+int null_manager_list_test() {
+  sshnpd_params params;
+  params.manager_list = NULL;
+  params.manager_list_len = 3;
+
+  if (is_manager_atsign(&params, "@alice")) {
+    return 1;
+  }
+  return 0;
+}
+
+int case_and_prefix_normalization_test() {
+  char out[SSHNPD_ATSIGN_BUFFER_LEN];
+
+  if (sshnpd_normalize_atsign("@Alice", out, sizeof(out)) != 0 || strcmp(out, "@alice") != 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("bob", out, sizeof(out)) != 0 || strcmp(out, "@bob") != 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("@colin.constable", out, sizeof(out)) != 0 ||
+      strcmp(out, "@colinconstable") != 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("@alice", out, sizeof(out)) != 0 || strcmp(out, "@alice") != 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("", out, sizeof(out)) == 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("@ali:ce", out, sizeof(out)) == 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("@ali@ce", out, sizeof(out)) == 0) {
+    return 1;
+  }
+  if (sshnpd_normalize_atsign("@", out, sizeof(out)) == 0) {
     return 1;
   }
   return 0;

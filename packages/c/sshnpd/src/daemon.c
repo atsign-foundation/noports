@@ -147,6 +147,13 @@ void main_loop() {
           break;
         }
 
+        if (!is_manager_atsign(&params, message.notification->from)) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                       "Rejecting request from unauthorized atSign: %s\n",
+                       message.notification->from == NULL ? "(none)" : message.notification->from);
+          break;
+        }
+
         char *key = message.notification->key;
 
         // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
@@ -203,37 +210,21 @@ void main_loop() {
         }
 
         switch (notification_key) {
-        case NK_PING: {
-          if (!is_manager_atsign(&params, message.notification->from)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                         "Rejecting request from unauthorized atSign: %s\n", message.notification->from);
-            break;
-          }
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
-          handle_ping(&params, &message, ping_response, &worker);
-          break;
-        }
-        case NK_SSHPUBLICKEY: {
-          if (!is_manager_atsign(&params, message.notification->from)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                         "Rejecting request from unauthorized atSign: %s\n", message.notification->from);
-            break;
-          }
+        case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
           handle_sshpublickey(&params, &message, authkeys_file, authkeys_filename);
           break;
-        }
-        case NK_SSH_REQUEST: {
-          if (!is_manager_atsign(&params, message.notification->from)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                         "Rejecting request from unauthorized atSign: %s\n", message.notification->from);
-            break;
-          }
+        case NK_PING:
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
+          handle_ping(&params, &message, ping_response, &worker);
+          break;
+        case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
+          // permitopen happens first for ssh so we can avoid a bunch of unnecessary tasks
           permitopen.requested_host = "localhost";
           permitopen.requested_port = params.local_sshd_port;
           if (!should_permitopen(&permitopen)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring request to localhost:%d\n",
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
                          params.local_sshd_port);
             break;
           }
@@ -244,14 +235,10 @@ void main_loop() {
             return;
           }
           break;
-        }
-        case NK_NPT_REQUEST: {
-          if (!is_manager_atsign(&params, message.notification->from)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                         "Rejecting request from unauthorized atSign: %s\n", message.notification->from);
-            break;
-          }
+        case NK_NPT_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
+          // No permitopen here... since we need to parse the json first in order to check, it happens inside
+          // handle_npt_request
           handle_npt_request(&worker, &params, &is_child_process, &message, signingkey);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
@@ -259,7 +246,6 @@ void main_loop() {
             return;
           }
           break;
-        }
         case NK_GRACEFUL_SHUTDOWN:
 #ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
 #warning BINARY COMPILED WITH SHUTDOWN NOTIFICATION ENABLED NOT FOR PRODUCTION USE

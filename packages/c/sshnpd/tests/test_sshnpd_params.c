@@ -11,6 +11,7 @@ int atsign_mandatory_test();
 int manager_policy_mandatory_test();
 int permit_open_parse_test();
 int device_lower_test();
+int manager_list_test();
 
 int main() {
   int ret = 0;
@@ -37,6 +38,10 @@ int main() {
   }
   if (device_lower_test()) {
     printf("device_name upper to lower case test failed\n");
+    ret++;
+  }
+  if (manager_list_test()) {
+    printf("manager_list_test failed\n");
     ret++;
   }
 
@@ -193,25 +198,43 @@ int manager_policy_mandatory_test() {
 }
 
 int manager_list_test() {
-  int ret = 0;
-
-  return 0;
   sshnpd_params *params = malloc(sizeof(sshnpd_params));
 
+  char *manager_str = strdup("@foo,@bar,@baz");
+  if (manager_str == NULL) {
+    free(params);
+    return 1;
+  }
   const char *argv[] = {
-      "sshnpd", "-a", "@atsign", "-m", "@foo,@bar,@baz", "-d", "my_device",
+      "sshnpd", "-a", "@atsign", "-m", manager_str, "-d", "my_device",
   };
 
   apply_default_values_to_sshnpd_params(params);
-  ret = parse_sshnpd_params(params, 7, argv);
-  if (ret == 0) {
-    ret = 1;
-  } else {
-    ret = 0;
+  int ret = parse_sshnpd_params(params, 7, argv);
+  if (ret != 0) {
+    free(params);
+    return 1;
+  }
+
+  if (params->manager_list_len != 3) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[0], "@foo") != 0) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[1], "@bar") != 0) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[2], "@baz") != 0) {
+    free(params);
+    return 1;
   }
 
   free(params);
-  return ret;
+  return 0;
 }
 
 int permit_open_parse_test() {
