@@ -23,6 +23,4 @@ typedef struct {
 
 int authorize_ssh_public_key(authkeys_params *params);
 
-bool is_valid_ssh_public_key_prefix(const char *ssh_key);
-
 #endif
