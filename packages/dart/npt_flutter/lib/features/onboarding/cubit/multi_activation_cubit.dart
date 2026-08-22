@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_auth/at_auth.dart';
+import 'package:at_commons/at_commons.dart' show AtRootDomain;
 import 'package:at_backupkey_flutter/services/backupkey_service.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:at_onboarding_flutter/at_onboarding_services.dart';
@@ -215,7 +216,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
 
         // 5. Execute Onboard
         var onboardingRequest = AtOnboardingRequest(atsign)
-          ..rootDomain = 'root.atsign.org';
+          ..rootDomain = AtRootDomain.atsignDomain;
 
         bool success = await onboardingService.onboard(
           cramSecret: cramSecret,

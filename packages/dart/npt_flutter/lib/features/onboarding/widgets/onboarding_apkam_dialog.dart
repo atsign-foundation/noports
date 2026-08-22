@@ -181,7 +181,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     final deviceName = (await getDeviceName()).replaceAll(regExp, '');
     App.log('Device Name: $deviceName'.loggable);
 
-    final enrollmentRequest = EnrollmentRequest(
+    final enrollmentRequest = AtEnrollmentRequest(
+      atSign: atsign,
       appName: Constants.namespace,
       deviceName: deviceName,
       otp: otp,
