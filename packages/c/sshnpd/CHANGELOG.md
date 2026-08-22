@@ -1,3 +1,8 @@
+## 1.0.20
+
+- fix: only manager Atsigns can establish sshnp connections with csshnpd
+- fix: ssh public key validation in csshnpd
+
 ## 1.0.19
 
 - build(deps): Bump at_c to use MbedTLS 3.6.7
