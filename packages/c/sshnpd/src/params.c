@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <sshnpd/authorization.h>
 #include <sshnpd/params.h>
 #include <sshnpd/permitopen.h>
 #include <sshnpd/version.h>
@@ -10,7 +11,9 @@
 void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
-  // manager is handled at parse time
+  params->manager_list = NULL;
+  params->manager_list_len = 0;
+  params->normalized_manager_buf = NULL;
   params->policy = NULL;
   params->device = "default";
   params->sshpublickey = 0;
@@ -171,6 +174,26 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       }
     }
     params->manager_list_len = sep_count + 1;
+
+    char *norm_buf = malloc(params->manager_list_len * SSHNPD_ATSIGN_BUFFER_LEN);
+    if (norm_buf == NULL) {
+      printf("Failed to allocate memory for normalized manager list\n");
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    for (size_t i = 0; i < params->manager_list_len; i++) {
+      char *slot = norm_buf + i * SSHNPD_ATSIGN_BUFFER_LEN;
+      if (sshnpd_normalize_atsign(params->manager_list[i], slot, SSHNPD_ATSIGN_BUFFER_LEN) != 0) {
+        printf("Invalid manager atSign: \"%s\"\n", params->manager_list[i]);
+        free(norm_buf);
+        free(params->manager_list);
+        free(params->permitopen_str);
+        return 1;
+      }
+      params->manager_list[i] = slot;
+    }
+    params->normalized_manager_buf = norm_buf;
   } else {
     params->manager_list_len = 0;
   }
