@@ -259,7 +259,9 @@ Future<void> coreTests(CoreTestsParams params) async {
         '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
       );
     }
-    return;
+    throw Exception(
+      '${failedMinusSFlagResults.length} 001_minus_s_flag test(s) failed',
+    );
   }
 
   // Part 2: do all other tests
@@ -397,6 +399,10 @@ Future<void> coreTests(CoreTestsParams params) async {
     '    Test execution time: ${formatDuration(testExecutionStopwatch.elapsed)}',
   );
   print('    Overall time: ${formatDuration(overallStopwatch.elapsed)}');
+
+  if (failedTests > 0) {
+    throw Exception('$failedTests test(s) failed');
+  }
 }
 
 /// Runs a list of test factory functions with controlled concurrency, per-test
