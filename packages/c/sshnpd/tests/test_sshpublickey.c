@@ -1,4 +1,5 @@
 #include "sshnpd/file_utils.h"
+#include "sshnpd/handle_sshpublickey.h"
 #include "sshnpd/params.h"
 #include <atclient/atnotification.h>
 #include <atclient/monitor.h>
@@ -7,9 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, FILE *authkeys_file,
-                         char *authkeys_filename);
 
 static char authkeys_path[256];
 
