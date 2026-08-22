@@ -17,7 +17,17 @@
 #define LOGGER_TAG "HANDLER_COMMONS"
 
 bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
+  if (params == NULL || atsign == NULL || atsign[0] == '\0') {
+    return false;
+  }
+  if (params->manager_list == NULL || params->manager_list_len == 0) {
+    return false;
+  }
+
   for (size_t i = 0; i < params->manager_list_len; i++) {
+    if (params->manager_list[i] == NULL) {
+      continue;
+    }
     if (strcmp(atsign, params->manager_list[i]) == 0) {
       return true;
     }
