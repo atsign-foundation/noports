@@ -149,8 +149,7 @@ void main_loop() {
 
         if (!is_manager_atsign(&params, message.notification->from)) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                       "Rejecting notification id %s: sender %s is not in the --manager list\n",
-                       message.notification->id,
+                       "Rejecting request from unauthorized atSign: %s\n",
                        message.notification->from == NULL ? "(none)" : message.notification->from);
           break;
         }
