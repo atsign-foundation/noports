@@ -158,9 +158,6 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
         // Set this comma to a null terminator
         manager[i] = '\0';
         if (manager[i + 1] == '\0') {
-          // Trailing comma, so we over counted by one
-          sep_count--;
-          // The allocated memory has a double trailing null seperator, but that's fine
           break;
         }
         if (manager[i + 1] != '@') {
