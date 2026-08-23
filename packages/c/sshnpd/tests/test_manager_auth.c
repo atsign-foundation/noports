@@ -14,6 +14,7 @@ int empty_manager_list_test();
 int null_sender_test();
 int null_manager_list_test();
 int case_and_prefix_normalization_test();
+int policy_manager_denies_everyone_test();
 
 int main() {
   int ret = 0;
@@ -50,6 +51,10 @@ int main() {
     printf("case_and_prefix_normalization_test failed\n");
     ret++;
   }
+  if (policy_manager_denies_everyone_test()) {
+    printf("policy_manager_denies_everyone_test failed\n");
+    ret++;
+  }
 
   printf("Tests failed: %d\n", ret);
   return ret;
@@ -57,6 +62,7 @@ int main() {
 
 int single_manager_authorized_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   char *managers[] = {"@alice"};
   params.manager_list = managers;
   params.manager_list_len = 1;
@@ -69,6 +75,7 @@ int single_manager_authorized_test() {
 
 int single_manager_unauthorized_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   char *managers[] = {"@alice"};
   params.manager_list = managers;
   params.manager_list_len = 1;
@@ -81,6 +88,7 @@ int single_manager_unauthorized_test() {
 
 int multiple_managers_authorized_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   char *managers[] = {"@alice", "@bob", "@charlie"};
   params.manager_list = managers;
   params.manager_list_len = 3;
@@ -99,6 +107,7 @@ int multiple_managers_authorized_test() {
 
 int multiple_managers_unauthorized_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   char *managers[] = {"@alice", "@bob", "@charlie"};
   params.manager_list = managers;
   params.manager_list_len = 3;
@@ -114,6 +123,7 @@ int multiple_managers_unauthorized_test() {
 
 int empty_manager_list_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   params.manager_list = NULL;
   params.manager_list_len = 0;
 
@@ -125,6 +135,7 @@ int empty_manager_list_test() {
 
 int null_sender_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   char *managers[] = {"@alice"};
   params.manager_list = managers;
   params.manager_list_len = 1;
@@ -140,6 +151,7 @@ int null_sender_test() {
 
 int null_manager_list_test() {
   sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
   params.manager_list = NULL;
   params.manager_list_len = 3;
 
@@ -175,6 +187,25 @@ int case_and_prefix_normalization_test() {
     return 1;
   }
   if (sshnpd_normalize_atsign("@", out, sizeof(out)) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int policy_manager_denies_everyone_test() {
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char *managers[] = {"@alice"};
+  params.manager_list = managers;
+  params.manager_list_len = 1;
+  params.policy = "@policy";
+
+  // Policy authorization is unimplemented, so a policy daemon must authorize
+  // nobody -- including an atSign that a --manager list would have accepted.
+  if (is_manager_atsign(&params, "@alice")) {
+    return 1;
+  }
+  if (is_manager_atsign(&params, "@eve")) {
     return 1;
   }
   return 0;
