@@ -6,42 +6,36 @@
 #include <string.h>
 
 #define LOGGER_TAG "SSHPUBLICKEY RESPONSE"
-static const char *supported_key_prefix_map[] = {
+static char *supported_key_prefix_map[] = {
     [SKP_NONE] = "",       [SKP_ESN] = "ecdsa-sha2-nistp", [SKP_RS2] = "rsa-sha2-",
     [SKP_RSA] = "ssh-rsa", [SKP_ED9] = "ssh-ed25519",
 };
 
-bool is_valid_ssh_public_key(const char *ssh_key) {
-  if (ssh_key == NULL || ssh_key[0] == '\0') {
+bool is_valid_ssh_public_key_prefix(const char *ssh_key) {
+  if (ssh_key == NULL) {
+    return false;
+  }
+  size_t ssh_key_len = strlen(ssh_key);
+
+  // reject embedded newlines to prevent authorized_keys injection
+  if (memchr(ssh_key, '\n', ssh_key_len) != NULL || memchr(ssh_key, '\r', ssh_key_len) != NULL) {
     return false;
   }
 
-  const size_t ssh_key_len = strlen(ssh_key);
-
-  bool has_valid_prefix = false;
+  // i = 1: skip SKP_NONE whose empty-string prefix would match any key
   for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
-    const char *prefix = supported_key_prefix_map[i];
-    const size_t prefix_len = strlen(prefix);
+    char *prefix = supported_key_prefix_map[i];
+    size_t prefix_len = strlen(prefix);
 
-    if (ssh_key_len < prefix_len) {
+    if (prefix_len > ssh_key_len) {
       continue;
     }
 
     if (strncmp(ssh_key, prefix, prefix_len) == 0) {
-      has_valid_prefix = true;
-      break;
+      return true;
     }
   }
-
-  if (!has_valid_prefix) {
-    return false;
-  }
-
-  if (strchr(ssh_key, '\n') != NULL || strchr(ssh_key, '\r') != NULL) {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, FILE *authkeys_file,
@@ -54,8 +48,8 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
 
   char *ssh_key = (char *)message->notification->decrypted_value;
 
-  if (!is_valid_ssh_public_key(ssh_key)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ssh public key does not look like a public key\n");
+  if (!is_valid_ssh_public_key_prefix(ssh_key)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Ssh public key does not look like a public key\n");
     return;
   }
 
