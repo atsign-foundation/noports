@@ -20,6 +20,12 @@ bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
   if (params == NULL || atsign == NULL || atsign[0] == '\0') {
     return false;
   }
+
+  // TODO: policy authorization is unimplemented
+  if (params->policy != NULL) {
+    return false;
+  }
+
   if (params->manager_list == NULL || params->manager_list_len == 0) {
     return false;
   }
