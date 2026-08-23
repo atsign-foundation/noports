@@ -1,1 +1,97 @@
-{}
+{
+  "es": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ],
+
+  "pt": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ],
+
+  "pt_BR": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ],
+
+  "zh": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ],
+
+  "zh_Hans_CH": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ],
+
+  "zh_Hant_HK": [
+    "activationInProgress",
+    "activationRetryFailed",
+    "errorActivationKeysConflict",
+    "errorCramAuthFailed",
+    "errorOnboardingWithDetails",
+    "selectAll",
+    "noAtsignsToRemove",
+    "errorServerUnavailable",
+    "errorAtsignActivated",
+    "msgAtsignUnreachable",
+    "errorAuthenticationFailed",
+    "msgResponseTimeOut",
+    "errorEnrollmentRevoked"
+  ]
+}

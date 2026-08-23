@@ -52,6 +52,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Faça o upload ou arraste e solte seu arquivo de ativação de uso único (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Activating, please wait until every Atsign has finished.';
+
+  @override
   String get activationKeyStatusActivated => 'Ativado';
 
   @override
@@ -68,6 +72,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get activationManual => 'Ativação Manual';
+
+  @override
+  String get activationRetryFailed => 'Retry Failed';
 
   @override
   String get activationStatus => 'Status de Ativação';
@@ -372,6 +379,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get error => 'Erro';
 
   @override
+  String get errorActivationKeysConflict =>
+      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return 'Falha ao salvar o arquivo atKeys: $error';
   }
@@ -407,6 +418,15 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorAtsignUnavailable =>
       'O Atsign está indisponível. Certifique-se de ter pressionado \"Ativar\" no seu painel e ter uma conexão de internet estável.';
+
+  @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
 
   @override
   String get errorAuthenticatinFailed => 'Falha na autenticação.';
@@ -811,6 +831,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -1049,6 +1075,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String get waitingForApproval => 'Aguardando aprovação...';
 
   @override
+  String get errorServerUnavailable =>
+      'The server is currently unavailable. Please try again later.';
+
+  @override
+  String get errorAtsignActivated => 'This atsign has already been activated.';
+
+  @override
+  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
+
+  @override
+  String get errorAuthenticationFailed =>
+      'Authentication failed. Please check your details and try again.';
+
+  @override
+  String get msgResponseTimeOut => 'The request timed out. Please try again.';
+
+  @override
   String get whatAreAtKeys => 'O que são atKeys?';
 
   @override
@@ -1070,6 +1113,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

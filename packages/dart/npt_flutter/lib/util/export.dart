@@ -37,7 +37,7 @@ class Export {
   static Future<File?> pickAndCreateFile(
     ExportableProfileFiletype filetype,
   ) async {
-    String? outputFile = await FilePicker.platform.saveFile(
+    String? outputFile = await FilePicker.saveFile(
       dialogTitle: 'Please select a file to export to:',
       fileName: 'export.${filetype.filetype}',
     );
@@ -133,7 +133,7 @@ class Export {
   static void importProfiles() async {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json', 'yaml'],
       );

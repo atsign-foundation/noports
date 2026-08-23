@@ -52,6 +52,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sube o arrastra y suelta tu archivo de activación de un solo uso (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Activating, please wait until every Atsign has finished.';
+
+  @override
   String get activationKeyStatusActivated => 'Activado';
 
   @override
@@ -68,6 +72,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activationManual => 'Activación Manual';
+
+  @override
+  String get activationRetryFailed => 'Retry Failed';
 
   @override
   String get activationStatus => 'Estado de Activación';
@@ -375,6 +382,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get error => 'Error';
 
   @override
+  String get errorActivationKeysConflict =>
+      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return 'Error al guardar el archivo atKeys: $error';
   }
@@ -410,6 +421,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get errorAtsignUnavailable =>
       'El Atsign no está disponible. Asegúrate de haber presionado \"Activar\" desde tu panel y tener una conexión a internet estable.';
+
+  @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
 
   @override
   String get errorAuthenticatinFailed => 'Autenticación fallida.';
@@ -811,6 +831,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get removeAtsign => 'Eliminar Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired =>
       'La solicitud original ha expirado. Por favor, vuelve a enviar';
 
@@ -1049,6 +1075,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get waitingForApproval => 'Esperando aprobación...';
 
   @override
+  String get errorServerUnavailable =>
+      'The server is currently unavailable. Please try again later.';
+
+  @override
+  String get errorAtsignActivated => 'This atsign has already been activated.';
+
+  @override
+  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
+
+  @override
+  String get errorAuthenticationFailed =>
+      'Authentication failed. Please check your details and try again.';
+
+  @override
+  String get msgResponseTimeOut => 'The request timed out. Please try again.';
+
+  @override
   String get whatAreAtKeys => '¿Qué son las atKeys?';
 
   @override
@@ -1070,4 +1113,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }

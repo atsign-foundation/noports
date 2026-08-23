@@ -185,6 +185,12 @@ abstract class AppLocalizations {
   /// **'Upload or drag & drop your one-time activation file (.yaml)'**
   String get activationFileUploadDragDropDescription;
 
+  /// No description provided for @activationInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating, please wait until every Atsign has finished.'**
+  String get activationInProgress;
+
   /// No description provided for @activationKeyStatusActivated.
   ///
   /// In en, this message translates to:
@@ -220,6 +226,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual Activation'**
   String get activationManual;
+
+  /// No description provided for @activationRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Failed'**
+  String get activationRetryFailed;
 
   /// No description provided for @activationStatus.
   ///
@@ -773,6 +785,12 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get error;
 
+  /// No description provided for @errorActivationKeysConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.'**
+  String get errorActivationKeysConflict;
+
   /// No description provided for @errorAtKeySaveFailed.
   ///
   /// In en, this message translates to:
@@ -826,6 +844,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.'**
   String get errorAtsignUnavailable;
+
+  /// No description provided for @errorCramAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The activation key was rejected by the atServer. This activation file may have already been used.'**
+  String get errorCramAuthFailed;
+
+  /// No description provided for @errorOnboardingWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboarding failed: {details}'**
+  String errorOnboardingWithDetails(Object details);
 
   /// No description provided for @errorAuthenticatinFailed.
   ///
@@ -1559,6 +1589,18 @@ abstract class AppLocalizations {
   /// **'Remove Atsign'**
   String get removeAtsign;
 
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @noAtsignsToRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'No atsigns found to remove.'**
+  String get noAtsignsToRemove;
+
   /// No description provided for @requestExpired.
   ///
   /// In en, this message translates to:
@@ -1973,6 +2015,36 @@ abstract class AppLocalizations {
   /// **'Waiting for approval...'**
   String get waitingForApproval;
 
+  /// No description provided for @errorServerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is currently unavailable. Please try again later.'**
+  String get errorServerUnavailable;
+
+  /// No description provided for @errorAtsignActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'This atsign has already been activated.'**
+  String get errorAtsignActivated;
+
+  /// No description provided for @msgAtsignUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The atsign server could not be reached.'**
+  String get msgAtsignUnreachable;
+
+  /// No description provided for @errorAuthenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please check your details and try again.'**
+  String get errorAuthenticationFailed;
+
+  /// No description provided for @msgResponseTimeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Please try again.'**
+  String get msgResponseTimeOut;
+
   /// No description provided for @whatAreAtKeys.
   ///
   /// In en, this message translates to:
@@ -2014,6 +2086,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YAML (Recommended)'**
   String get yamlRecommended;
+
+  /// No description provided for @errorEnrollmentRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your enrollment has been revoked. Please sign in again to request a new enrollment.'**
+  String get errorEnrollmentRevoked;
 }
 
 class _AppLocalizationsDelegate

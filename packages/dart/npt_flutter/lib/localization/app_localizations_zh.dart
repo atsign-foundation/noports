@@ -47,6 +47,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '上传或拖放您的一次性激活文件 (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Activating, please wait until every Atsign has finished.';
+
+  @override
   String get activationKeyStatusActivated => '已激活';
 
   @override
@@ -63,6 +67,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activationManual => '手动激活';
+
+  @override
+  String get activationRetryFailed => 'Retry Failed';
 
   @override
   String get activationStatus => '激活状态';
@@ -354,6 +361,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get error => '错误';
 
   @override
+  String get errorActivationKeysConflict =>
+      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return '保存 atKeys 文件失败：$error';
   }
@@ -384,6 +395,15 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get errorAtsignUnavailable =>
       'Atsign 不可用。请确保您已从仪表板按下“激活”并且具有稳定的互联网连接。';
+
+  @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
+  }
 
   @override
   String get errorAuthenticatinFailed => '身份验证失败。';
@@ -763,6 +783,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -986,6 +1012,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get waitingForApproval => '等待批准...';
 
   @override
+  String get errorServerUnavailable =>
+      'The server is currently unavailable. Please try again later.';
+
+  @override
+  String get errorAtsignActivated => 'This atsign has already been activated.';
+
+  @override
+  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
+
+  @override
+  String get errorAuthenticationFailed =>
+      'Authentication failed. Please check your details and try again.';
+
+  @override
+  String get msgResponseTimeOut => 'The request timed out. Please try again.';
+
+  @override
   String get whatAreAtKeys => '什么是 atKeys？';
 
   @override
@@ -1005,6 +1048,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).

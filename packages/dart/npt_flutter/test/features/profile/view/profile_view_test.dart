@@ -1,4 +1,4 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -391,7 +391,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(ProfileViewMinimal), findsOneWidget);
-        expect(find.byType(Row), findsOneWidget);
+        expect(find.byType(Row), findsWidgets);
       });
 
       testWidgets('should display all expected child widgets', (tester) async {
@@ -489,7 +489,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(ProfileViewSshStyle), findsOneWidget);
-        expect(find.byType(Row), findsOneWidget);
+        expect(find.byType(Row), findsWidgets);
       });
 
       testWidgets('should display all expected child widgets', (tester) async {

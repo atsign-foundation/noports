@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/util/constants.dart';
@@ -51,7 +51,7 @@ class ProfileRepository {
     }
 
     AtClient atClient = _client;
-    Atsign? atsign = atClient.getCurrentAtSign()!.toAtsign();
+    Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
     try {
       var value = await atClient.get(key);

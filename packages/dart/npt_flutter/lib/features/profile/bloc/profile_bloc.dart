@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_core/npt.dart';
 import 'package:npt_flutter/app.dart';
