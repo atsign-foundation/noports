@@ -6,43 +6,10 @@
 #include <string.h>
 
 #define LOGGER_TAG "SSHPUBLICKEY RESPONSE"
-static const char *supported_key_prefix_map[] = {
+static char *supported_key_prefix_map[] = {
     [SKP_NONE] = "",       [SKP_ESN] = "ecdsa-sha2-nistp", [SKP_RS2] = "rsa-sha2-",
     [SKP_RSA] = "ssh-rsa", [SKP_ED9] = "ssh-ed25519",
 };
-
-bool is_valid_ssh_public_key(const char *ssh_key) {
-  if (ssh_key == NULL || ssh_key[0] == '\0') {
-    return false;
-  }
-
-  const size_t ssh_key_len = strlen(ssh_key);
-
-  bool has_valid_prefix = false;
-  for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
-    const char *prefix = supported_key_prefix_map[i];
-    const size_t prefix_len = strlen(prefix);
-
-    if (ssh_key_len < prefix_len) {
-      continue;
-    }
-
-    if (strncmp(ssh_key, prefix, prefix_len) == 0) {
-      has_valid_prefix = true;
-      break;
-    }
-  }
-
-  if (!has_valid_prefix) {
-    return false;
-  }
-
-  if (strchr(ssh_key, '\n') != NULL || strchr(ssh_key, '\r') != NULL) {
-    return false;
-  }
-
-  return true;
-}
 
 void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, FILE *authkeys_file,
                          char *authkeys_filename) {
@@ -53,9 +20,25 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
   }
 
   char *ssh_key = (char *)message->notification->decrypted_value;
+  // size_t ssh_key_len = strlen(ssh_key);
 
-  if (!is_valid_ssh_public_key(ssh_key)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ssh public key does not look like a public key\n");
+  bool is_valid_prefix = false;
+  for (int i = 1; i < SUPPORTED_KEY_PREFIX_LEN; i++) {
+    char *prefix = supported_key_prefix_map[i];
+    size_t prefix_len = strlen(message->notification->decrypted_value);
+
+    if (prefix_len < strlen(ssh_key)) {
+      continue;
+    }
+
+    if (strncmp(ssh_key, prefix, prefix_len)) {
+      is_valid_prefix = true;
+      break;
+    }
+  }
+
+  if (!is_valid_prefix) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Ssh public key does not look like a public key\n");
     return;
   }
 
