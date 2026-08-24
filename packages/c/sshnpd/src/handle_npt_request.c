@@ -67,7 +67,7 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   permitopen.requested_port = cJSON_GetNumberValue(requested_port);
 
   if (!should_permitopen(&permitopen)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring request to localhost:%d\n",
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
                  permitopen.requested_port);
     cJSON_Delete(envelope);
     return;
