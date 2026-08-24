@@ -3,6 +3,7 @@
 #include "sshnpd/handle_ping.h"
 #include "sshnpd/handle_ssh_request.h"
 #include "sshnpd/handle_sshpublickey.h"
+#include "sshnpd/handler_commons.h"
 #include "sshnpd/permitopen.h"
 #include "sshnpd/sshnpd.h"
 #include <atchops/aes.h>
@@ -146,6 +147,13 @@ void main_loop() {
           break;
         }
 
+        if (!is_manager_atsign(&params, message.notification->from)) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                       "Rejecting request from unauthorized atSign: %s\n",
+                       message.notification->from == NULL ? "(none)" : message.notification->from);
+          break;
+        }
+
         char *key = message.notification->key;
 
         // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
@@ -216,9 +224,8 @@ void main_loop() {
           permitopen.requested_host = "localhost";
           permitopen.requested_port = params.local_sshd_port;
           if (!should_permitopen(&permitopen)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring request to localhost:%d\n",
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
                          params.local_sshd_port);
-            // TODO notify daemon doesn't permit connections to $requested_host:$requested_port
             break;
           }
           handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey);
