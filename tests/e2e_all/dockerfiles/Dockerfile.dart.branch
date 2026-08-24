@@ -27,10 +27,6 @@ RUN set -eux ; \
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f9b61c7c63e045ee22b424302ff2ce6413aafdfb259a747b8f5d07e535c0bbe7 AS runtime
 
-# TODO: remove after base image is rebuilt with ca-certificates
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
 ENV USER_ID=1024
