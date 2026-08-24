@@ -8,7 +8,7 @@ ENV GROUP_ID=1024
 
 RUN set -eux ; \
     apt-get update ; \
-    apt-get install -y openssh-server sudo ca-certificates; \
+    apt-get install -y openssh-server sudo; \
     groupadd --gid ${GROUP_ID} ${USER} ; \
     useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
     usermod -aG sudo ${USER} ; \
