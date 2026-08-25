@@ -15,8 +15,9 @@ static void *run_socket_to_socket(void *args);
 
 static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests);
 
-static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
-                                 char **new_session_aes_iv_string);
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_c2d_string,
+                                 char **new_session_aes_iv_c2d_string, char **new_session_aes_key_d2c_string,
+                                 char **new_session_aes_iv_d2c_string);
 
 int run_srv(srv_params_t *params) {
   int res = 0;
@@ -55,8 +56,9 @@ int run_srv_daemon_side_single(srv_params_t *params) {
   int res;
 
   if (params->rv_e2ee == 1) {
-    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
-                                         &decrypter);
+    res = create_encrypter_and_decrypter(params->session_aes_key_c2d_string, params->session_aes_iv_c2d_string,
+                                         params->session_aes_key_d2c_string, params->session_aes_iv_d2c_string,
+                                         &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_single: Error creating new encrypter and decrypter: %d\n", res);
     }
@@ -82,8 +84,9 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   int res = 0;
 
   if (params->rv_e2ee == 1) {
-    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
-                                         &decrypter);
+    res = create_encrypter_and_decrypter(params->session_aes_key_c2d_string, params->session_aes_iv_c2d_string,
+                                         params->session_aes_key_d2c_string, params->session_aes_iv_d2c_string,
+                                         &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_multi: Error creating new encrypter and decrypter: %d\n", res);
     }
@@ -154,7 +157,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       buffer = output;
     }
 
-    char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
+    char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
+         *new_session_aes_key_d2c_string = NULL, *new_session_aes_iv_d2c_string = NULL;
 
     atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
 
@@ -168,14 +172,16 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     for (size_t i = 0; i < nrequests; i++) {
       // Now process each of those requests
-      res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
+      res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_c2d_string, &new_session_aes_iv_c2d_string,
+                                  &new_session_aes_key_d2c_string, &new_session_aes_iv_d2c_string);
       if (res != 0) {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
                      requests[i]);
         goto exit;
       }
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s\n", messagetype, new_session_aes_key_string,
-                   new_session_aes_iv_string);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s (%s)\n", messagetype,
+                   new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+                   new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
         chunked_transformer_t *new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
@@ -192,7 +198,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                      messagetype);
 
         bool no_encrypt =
-            strcmp(new_session_aes_key_string, "no") == 0 && strcmp("new_session_aes_iv_string", "encrypt") == 0;
+            strcmp(new_session_aes_key_c2d_string, "no") == 0 && strcmp(new_session_aes_iv_c2d_string, "encrypt") == 0;
         if (no_encrypt) {
           atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_WARN,
                        "Socket connector requested no encryption!\n\tOnly disable encryption if you know what you "
@@ -201,7 +207,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
         if (!no_encrypt) {
           // start socket_to_socket connection
-          res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
+          res = create_encrypter_and_decrypter(new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+                                               new_session_aes_key_d2c_string, new_session_aes_iv_d2c_string,
                                                new_socket_encrypter, new_socket_decrypter);
         }
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
@@ -379,68 +386,72 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
   return 1;
 }
 
-int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
-                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
+int create_transformer(const char *aes_key_base64, const char *aes_iv_base64, chunked_transformer_t *transformer) {
   int res = 0;
-  atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
 
   // Temporary buffer for decoding the key
   unsigned char aes_key[AES_256_KEY_BYTES];
   size_t aes_key_len;
 
   // Decode the key
-  res = atchops_base64_decode(session_aes_key_string, strlen(session_aes_key_string), aes_key, AES_256_KEY_BYTES,
-                              &aes_key_len);
-
+  res = atchops_base64_decode(aes_key_base64, strlen(aes_key_base64), aes_key, AES_256_KEY_BYTES, &aes_key_len);
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
-    atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
-    return res;
+    atlogger_log(TAG, ERROR, "Error decoding session aes key\n");
+    return res != 0 ? res : 1;
   }
 
-  mbedtls_aes_init(&encrypter->aes_ctr.ctx); // FREE
-  res = mbedtls_aes_setkey_enc(&encrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  mbedtls_aes_init(&transformer->aes_ctr.ctx); // FREE
+  // NB: AES-CTR uses the encryption key schedule for both directions
+  res = mbedtls_aes_setkey_enc(&transformer->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
   if (res != 0) {
-    atlogger_log(TAG, ERROR, "Error setting encryption key\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
-    return res;
-  }
-
-  mbedtls_aes_init(&decrypter->aes_ctr.ctx); // FREE
-  res = mbedtls_aes_setkey_enc(&decrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
-  if (res != 0) {
-    atlogger_log(TAG, ERROR, "Error setting decryption key\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
-    mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    atlogger_log(TAG, ERROR, "Error setting session aes key\n");
+    mbedtls_aes_free(&transformer->aes_ctr.ctx);
     return res;
   }
 
   // Decode the iv
   size_t iv_len;
-  res = atchops_base64_decode(session_aes_iv_string, strlen(session_aes_iv_string), encrypter->aes_ctr.nonce_counter,
-                              AES_BLOCK_LEN, &iv_len);
+  res = atchops_base64_decode(aes_iv_base64, strlen(aes_iv_base64), transformer->aes_ctr.nonce_counter, AES_BLOCK_LEN,
+                              &iv_len);
   if (res != 0 || iv_len != AES_BLOCK_LEN) {
-    atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    atlogger_log(TAG, ERROR, "Error decoding session aes iv\n");
+    mbedtls_aes_free(&transformer->aes_ctr.ctx);
+    return res != 0 ? res : 1;
+  }
+
+  memset(transformer->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
+  transformer->aes_ctr.nc_off = 0;
+  transformer->transform = aes_ctr_crypt_stream;
+
+  return 0;
+}
+
+int create_encrypter_and_decrypter(const char *aes_key_c2d_base64, const char *aes_iv_c2d_base64,
+                                   const char *aes_key_d2c_base64, const char *aes_iv_d2c_base64,
+                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
+  int res = 0;
+  bool twin_keys = aes_key_d2c_base64 != NULL && aes_iv_d2c_base64 != NULL;
+  atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv (%s)\n",
+               twin_keys ? "twinned keys" : "single key");
+
+  // The decrypter always uses the C2D key - it decrypts what the client encrypted
+  res = create_transformer(aes_key_c2d_base64, aes_iv_c2d_base64, decrypter);
+  if (res != 0) {
+    return res;
+  }
+
+  // The encrypter uses the D2C key when twinned, otherwise the same C2D key
+  if (twin_keys) {
+    res = create_transformer(aes_key_d2c_base64, aes_iv_d2c_base64, encrypter);
+  } else {
+    res = create_transformer(aes_key_c2d_base64, aes_iv_c2d_base64, encrypter);
+  }
+  if (res != 0) {
     mbedtls_aes_free(&decrypter->aes_ctr.ctx);
     return res;
   }
 
-  // Copy the iv to the decrypter
-  memcpy(decrypter->aes_ctr.nonce_counter, encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN);
-
-  // Set the stream blocks to 0
-  memset(encrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-  memset(decrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-
-  // Set the iv offset to 0
-  encrypter->aes_ctr.nc_off = 0;
-  decrypter->aes_ctr.nc_off = 0;
-
-  // Set the transform functions
-  encrypter->transform = aes_ctr_crypt_stream;
-  decrypter->transform = aes_ctr_crypt_stream;
-
-  return res;
+  return 0;
 }
 
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
@@ -488,13 +499,19 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
 exit: { return ret; }
 }
 
-// connect:session_aes_key_string:session_aes_iv_string
-static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
-                                 char **new_session_aes_iv_string) {
+// Legacy single key: connect:session_aes_key_c2d_string:session_aes_iv_c2d_string
+// Twinned keys:      connect:aes_key_c2d:aes_iv_c2d:aes_key_d2c:aes_iv_d2c
+// The d2c output strings are set to NULL when the message carries a single key.
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_c2d_string,
+                                 char **new_session_aes_iv_c2d_string, char **new_session_aes_key_d2c_string,
+                                 char **new_session_aes_iv_d2c_string) {
   int ret = -1;
 
   char *temp = NULL;
   char *saveptr = original;
+
+  *new_session_aes_key_d2c_string = NULL;
+  *new_session_aes_iv_d2c_string = NULL;
 
   // if message has any leading or trailing white space or new line characters, remove it
   while ((saveptr)[0] == ' ' || (saveptr)[0] == '\n') {
@@ -517,9 +534,21 @@ static int parse_control_message(char *original, char **message_type, char **new
     if (i == 0)
       *message_type = temp;
     if (i == 1)
-      *new_session_aes_key_string = temp;
+      *new_session_aes_key_c2d_string = temp;
     if (i == 2)
-      *new_session_aes_iv_string = temp;
+      *new_session_aes_iv_c2d_string = temp;
+  }
+
+  // Optional twinned d2c key and iv - must be present together
+  temp = strtok_r(saveptr, ":", &saveptr);
+  if (temp != NULL) {
+    *new_session_aes_key_d2c_string = temp;
+    temp = strtok_r(saveptr, ":", &saveptr);
+    if (temp == NULL) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a d2c aes key without a d2c iv\n");
+      goto exit;
+    }
+    *new_session_aes_iv_d2c_string = temp;
   }
 
   ret = 0;

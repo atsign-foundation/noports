@@ -484,16 +484,25 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
   return res;
 }
 
-int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_base64,
-                         char *session_iv_base64, atchops_rsa_key_private_key *signing_key, char *requesting_atsign) {
+int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_c2d_base64,
+                         char *session_iv_c2d_base64, char *session_aes_key_d2c_base64, char *session_iv_d2c_base64,
+                         atchops_rsa_key_private_key *signing_key, char *requesting_atsign) {
   int res = 0;
+  bool twin_keys = session_aes_key_d2c_base64 != NULL && session_iv_d2c_base64 != NULL;
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
   char *identifier = cJSON_GetStringValue(session_id);
   cJSON *final_res_payload = cJSON_CreateObject();
   cJSON_AddStringToObject(final_res_payload, "status", "connected");
   cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
-  cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_base64);
-  cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_base64);
+  if (twin_keys) {
+    cJSON_AddStringToObject(final_res_payload, "aesKeyC2D", (char *)session_aes_key_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "ivC2D", (char *)session_iv_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "aesKeyD2C", (char *)session_aes_key_d2c_base64);
+    cJSON_AddStringToObject(final_res_payload, "ivD2C", (char *)session_iv_d2c_base64);
+  } else {
+    cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_c2d_base64);
+  }
 
   cJSON *final_res_envelope = cJSON_CreateObject();
   cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);

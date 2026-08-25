@@ -10,6 +10,11 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
   params->multi = 0;
   params->rv_auth = 0;
   params->rv_e2ee = 0;
+  params->rvd_auth_string = NULL;
+  params->session_aes_key_c2d_string = NULL;
+  params->session_aes_iv_c2d_string = NULL;
+  params->session_aes_key_d2c_string = NULL;
+  params->session_aes_iv_d2c_string = NULL;
 }
 
 int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {
@@ -73,24 +78,50 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
   }
 
   if (params->rv_e2ee == 1) {
-    if (environment != NULL && environment->session_aes_key_string != NULL) {
-      params->session_aes_key_string = environment->session_aes_key_string;
+    if (environment != NULL && environment->session_aes_key_c2d_string != NULL) {
+      params->session_aes_key_c2d_string = environment->session_aes_key_c2d_string;
     } else {
-      params->session_aes_key_string = getenv("RV_AES");
+      // RV_AES_C2D is preferred, RV_AES is the legacy name for the same key
+      params->session_aes_key_c2d_string = getenv("RV_AES_C2D");
+      if (params->session_aes_key_c2d_string == NULL) {
+        params->session_aes_key_c2d_string = getenv("RV_AES");
+      }
     }
-    if (params->session_aes_key_string == NULL) {
+    if (params->session_aes_key_c2d_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_AES is not in environment\n");
+      printf("--rv-e2ee enabled, but neither RV_AES_C2D nor RV_AES is in environment\n");
       return 1;
     }
-    if (environment != NULL && environment->session_aes_iv_string != NULL) {
-      params->session_aes_iv_string = environment->session_aes_iv_string;
+    if (environment != NULL && environment->session_aes_iv_c2d_string != NULL) {
+      params->session_aes_iv_c2d_string = environment->session_aes_iv_c2d_string;
     } else {
-      params->session_aes_iv_string = getenv("RV_IV");
+      // RV_IV_C2D is preferred, RV_IV is the legacy name for the same iv
+      params->session_aes_iv_c2d_string = getenv("RV_IV_C2D");
+      if (params->session_aes_iv_c2d_string == NULL) {
+        params->session_aes_iv_c2d_string = getenv("RV_IV");
+      }
     }
-    if (params->session_aes_iv_string == NULL) {
+    if (params->session_aes_iv_c2d_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_IV is not in environment\n");
+      printf("--rv-e2ee enabled, but neither RV_IV_C2D nor RV_IV is in environment\n");
+      return 1;
+    }
+
+    // Optional twinned key for the daemon to client direction. Both the key
+    // and the iv must be supplied together, otherwise fall back to single-key.
+    if (environment != NULL && environment->session_aes_key_d2c_string != NULL) {
+      params->session_aes_key_d2c_string = environment->session_aes_key_d2c_string;
+    } else {
+      params->session_aes_key_d2c_string = getenv("RV_AES_D2C");
+    }
+    if (environment != NULL && environment->session_aes_iv_d2c_string != NULL) {
+      params->session_aes_iv_d2c_string = environment->session_aes_iv_d2c_string;
+    } else {
+      params->session_aes_iv_d2c_string = getenv("RV_IV_D2C");
+    }
+    if ((params->session_aes_key_d2c_string == NULL) != (params->session_aes_iv_d2c_string == NULL)) {
+      argparse_usage(&argparse);
+      printf("RV_AES_D2C and RV_IV_D2C must be provided together\n");
       return 1;
     }
   }

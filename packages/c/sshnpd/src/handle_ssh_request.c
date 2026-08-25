@@ -67,26 +67,47 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   }
 
   bool encrypt_rvd_traffic = cJSON_IsTrue(cJSON_GetObjectItem(payload, "encryptRvdTraffic"));
-  unsigned char *session_aes_key = NULL;
-  unsigned char *session_iv = NULL;
-  char *session_aes_key_base64 = NULL;
-  char *session_iv_base64 = NULL;
+  bool twin_keys = encrypt_rvd_traffic && cJSON_IsTrue(cJSON_GetObjectItem(payload, "twinKeys"));
+  unsigned char *session_aes_key_c2d = NULL;
+  unsigned char *session_iv_c2d = NULL;
+  char *session_aes_key_c2d_base64 = NULL;
+  char *session_iv_c2d_base64 = NULL;
+  unsigned char *session_aes_key_d2c = NULL;
+  unsigned char *session_iv_d2c = NULL;
+  char *session_aes_key_d2c_base64 = NULL;
+  char *session_iv_d2c_base64 = NULL;
 
   if (encrypt_rvd_traffic) {
-    res = setup_rvd_session_encryption(payload, &session_aes_key, &session_aes_key_base64, &session_iv,
-                                       &session_iv_base64);
+    res = setup_rvd_session_encryption(payload, &session_aes_key_c2d, &session_aes_key_c2d_base64, &session_iv_c2d,
+                                       &session_iv_c2d_base64);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session encryption");
+      return;
+    }
+  }
+
+  if (twin_keys) {
+    // Generate a second key and iv for the daemon to client direction
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Session will use twinned keys\n");
+    res = setup_rvd_session_encryption(payload, &session_aes_key_d2c, &session_aes_key_d2c_base64, &session_iv_d2c,
+                                       &session_iv_d2c_base64);
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session d2c encryption");
+      free(session_aes_key_c2d);
+      free(session_iv_c2d);
+      free(session_aes_key_c2d_base64);
+      free(session_iv_c2d_base64);
       return;
     }
   }
   // At this point, allocated memory:
   // - envelope (always)
   // - rvd_auth_string (if authenticate_to_rvd == true)
-  // - session_aes_key (if encrypt_rvd_traffic == true)
-  // - session_iv (if encrypt_rvd_traffic == true)
-  // - session_aes_key_base64 (if encrypt_rvd_traffic == true)
-  // - session_iv_base64 (if encrypt_rvd_traffic == true)
+  // - session_aes_key_c2d (if encrypt_rvd_traffic == true)
+  // - session_iv_c2d (if encrypt_rvd_traffic == true)
+  // - session_aes_key_c2d_base64 (if encrypt_rvd_traffic == true)
+  // - session_iv_c2d_base64 (if encrypt_rvd_traffic == true)
+  // - the four session_*_d2c* equivalents (if twin_keys == true)
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Running fork()...\n");
 
@@ -98,8 +119,12 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
     // free this immediately, we don't need it on the child fork
     if (encrypt_rvd_traffic) {
-      free(session_aes_key_base64);
-      free(session_iv_base64);
+      free(session_aes_key_c2d_base64);
+      free(session_iv_c2d_base64);
+    }
+    if (twin_keys) {
+      free(session_aes_key_d2c_base64);
+      free(session_iv_d2c_base64);
     }
 
     char *rvd_host_str = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "host"));
@@ -110,15 +135,20 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     const bool multi = false;
 
     int res = run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
-                              rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key, session_iv);
+                              rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key_c2d, session_iv_c2d,
+                              session_aes_key_d2c, session_iv_d2c);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with code: %d\n", res);
     }
     *is_child_process = true;
 
     if (encrypt_rvd_traffic) {
-      free(session_aes_key);
-      free(session_iv);
+      free(session_aes_key_c2d);
+      free(session_iv_c2d);
+    }
+    if (twin_keys) {
+      free(session_aes_key_d2c);
+      free(session_iv_d2c);
     }
     if (authenticate_to_rvd) {
       cJSON_free(rvd_auth_string);
@@ -148,8 +178,8 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       goto cancel;
     }
 
-    res = send_success_payload(payload, atclient, params, session_aes_key_base64, session_iv_base64, &signing_key,
-                               requesting_atsign);
+    res = send_success_payload(payload, atclient, params, session_aes_key_c2d_base64, session_iv_c2d_base64,
+                               session_aes_key_d2c_base64, session_iv_d2c_base64, &signing_key, requesting_atsign);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Failed to send success message to the requesting atsign: %s\n", requesting_atsign);
@@ -166,10 +196,16 @@ cancel:
       cJSON_free(rvd_auth_string);
     }
     if (encrypt_rvd_traffic) {
-      free(session_iv);
-      free(session_aes_key);
-      free(session_iv_base64);
-      free(session_aes_key_base64);
+      free(session_iv_c2d);
+      free(session_aes_key_c2d);
+      free(session_iv_c2d_base64);
+      free(session_aes_key_c2d_base64);
+    }
+    if (twin_keys) {
+      free(session_iv_d2c);
+      free(session_aes_key_d2c);
+      free(session_iv_d2c_base64);
+      free(session_aes_key_d2c_base64);
     }
     cJSON_Delete(envelope);
   }
