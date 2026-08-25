@@ -25,4 +25,6 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
 
 int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_base64,
                          char *session_iv_base64, atchops_rsa_key_private_key *signing_key, char *requesting_atsign);
+
+bool is_manager_atsign(const sshnpd_params *params, const char *atsign);
 #endif
