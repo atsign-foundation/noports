@@ -1,3 +1,14 @@
+## 1.0.20
+
+- fix: only manager Atsigns can establish sshnp connections with csshnpd
+- fix: ssh public key validation in csshnpd
+- fix: trailing comma parsing
+- fix: is_manager_atsign NULL checks
+- feat: normalize manager atSign format
+- chore: warn when a permit open is denied
+- chore: move is_manager_atsign authorization check earlier in daemon
+- test: unit test gaps for csshnpd
+
 ## 1.0.19
 
 - build(deps): Bump at_c to use MbedTLS 3.6.7
