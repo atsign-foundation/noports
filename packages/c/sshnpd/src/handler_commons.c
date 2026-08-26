@@ -375,18 +375,32 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
       }
 
       // The "rsa2048" type above is client-supplied and only names the type;
-      // it does not constrain the actual modulus. atchops_rsa_encrypt writes
-      // exactly the modulus length into the fixed BYTES(256) buffers below, so
-      // a key whose real modulus is larger than 2048 bits (e.g. RSA-4096 ->
-      // 512 bytes) would overflow those heap allocations. Enforce a true
-      // 2048-bit modulus before any encryption is attempted.
-      if (ac.n.len != 256) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                     "client ephemeral pk modulus is not RSA-2048 (n.len=%zu)\n", ac.n.len);
-        atchops_rsa_key_public_key_free(&ac);
-        free(*session_aes_key);
-        free(*session_iv);
-        return 1;
+      // it does not constrain the actual modulus. atchops_rsa_encrypt imports
+      // the raw modulus via mbedtls, whose ciphertext length is the count of
+      // SIGNIFICANT modulus bytes (leading zeros stripped) - that many bytes
+      // are written into the fixed BYTES(256) buffers below, so a key whose
+      // real modulus is larger than 2048 bits (e.g. RSA-4096 -> 512 bytes)
+      // would overflow those heap allocations. Enforce a true 2048-bit
+      // modulus before any encryption is attempted. Note: the DER INTEGER
+      // encoding pads the modulus with a leading 0x00 whenever its MSB is set
+      // (always, for a real modulus), so a valid RSA-2048 key normally arrives
+      // here with n.len == 257 - compare significant bytes, not raw length.
+      {
+        const unsigned char *n_bytes = ac.n.value;
+        size_t n_sig = ac.n.len;
+        while (n_sig > 0 && n_bytes[0] == 0x00) {
+          n_bytes++;
+          n_sig--;
+        }
+        if (n_sig != 256) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "client ephemeral pk modulus is not RSA-2048 (significant bytes=%zu, raw n.len=%zu)\n", n_sig,
+                       ac.n.len);
+          atchops_rsa_key_public_key_free(&ac);
+          free(*session_aes_key);
+          free(*session_iv);
+          return 1;
+        }
       }
 
       session_aes_key_encrypted = malloc(BYTES(256));
