@@ -13,11 +13,16 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/create_sshnp.dart';
+
+const String _description =
+    'NoPorts SSH client: opens an SSH session to a remote device which has'
+    ' no open ports.';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -29,8 +34,8 @@ void main(List<String> args) async {
 
   // Create the printUsage closure
   void printUsage({Object? error}) {
-    printVersion();
-    stderr.writeln(parser.usage);
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -95,7 +100,8 @@ void main(List<String> args) async {
   // Manually check if the help flag is set and print usage
   Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
   if (args.toSet().intersection(helpSet).isNotEmpty) {
-    printUsage();
+    stdout.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     exitProgram();
   }
 
