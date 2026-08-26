@@ -1,3 +1,9 @@
+# 6.13.0
+
+- feat: added `binaryName` and `formatCliHelp` to utils, for generating
+  help2man-friendly `--help` output (#2650)
+- feat: added a `--version` flag to `NPAParams.parser`
+
 # 6.12.2
 
 - fix: close stdin in srv process, fixes fd leak

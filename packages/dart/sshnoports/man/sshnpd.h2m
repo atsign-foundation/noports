@@ -1,0 +1,12 @@
+[NAME]
+sshnpd \- NoPorts SSH daemon
+[EXAMPLES]
+.nf
+sshnpd -a @alice_device -m @alice_client -d my_server
+.fi
+[SEE ALSO]
+sshnp(1), npt(1), srv(1), srvd(1), at_activate(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

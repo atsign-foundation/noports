@@ -1,0 +1,8 @@
+[NAME]
+npp_atserver \- NoPorts policy service (atServer persistence)
+[SEE ALSO]
+npp(1), npp_file(1), np_admin(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>
