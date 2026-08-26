@@ -81,7 +81,11 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     res = setup_rvd_session_encryption(payload, &session_aes_key_c2d, &session_aes_key_c2d_base64, &session_iv_c2d,
                                        &session_iv_c2d_base64);
     if (res != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session encryption");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session encryption\n");
+      cJSON_Delete(envelope);
+      if (authenticate_to_rvd) {
+        free(rvd_auth_string);
+      }
       return;
     }
   }
@@ -92,11 +96,15 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     res = setup_rvd_session_encryption(payload, &session_aes_key_d2c, &session_aes_key_d2c_base64, &session_iv_d2c,
                                        &session_iv_d2c_base64);
     if (res != 0) {
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session d2c encryption");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session d2c encryption\n");
       free(session_aes_key_c2d);
       free(session_iv_c2d);
       free(session_aes_key_c2d_base64);
       free(session_iv_c2d_base64);
+      cJSON_Delete(envelope);
+      if (authenticate_to_rvd) {
+        free(rvd_auth_string);
+      }
       return;
     }
   }
