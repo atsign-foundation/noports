@@ -27,6 +27,7 @@
 #include <mbedtls/psa_util.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
+#include <sshnpd/ephemeral_key.h>
 #include <sshnpd/policy.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
@@ -92,6 +93,7 @@ void main_loop() {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending next device info\n");
     send_next_device_info(&worker, &params);
     policy_send_heartbeat(&worker, &params, ping_response);
+    ephemeral_key_sweep_deauthorizations(authkeys_file, authkeys_filename);
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);

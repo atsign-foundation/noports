@@ -261,7 +261,7 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       goto cancel;
     }
 
-    res = send_success_payload(payload, atclient, params, session_aes_key_c2d_base64, session_iv_c2d_base64,
+    res = send_success_payload(payload, atclient, params, NULL, session_aes_key_c2d_base64, session_iv_c2d_base64,
                                session_aes_key_d2c_base64, session_iv_d2c_base64, &signing_key, requesting_atsign);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,

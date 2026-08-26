@@ -10,6 +10,7 @@
 #include <atlogger/atlogger.h>
 #include <errno.h>
 #include <sshnpd/daemon.h>
+#include <sshnpd/ephemeral_key.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -221,8 +222,43 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       goto cancel;
     }
 
-    res = send_success_payload(payload, atclient, params, session_aes_key_c2d_base64, session_iv_c2d_base64,
-                               session_aes_key_d2c_base64, session_iv_d2c_base64, &signing_key, requesting_atsign);
+    // Generate and authorize the ephemeral tunnel key for this session, and
+    // return the private half to the client in the session response. The
+    // client needs it to bring up the initial tunnel ssh session when rvd
+    // traffic is not e2e encrypted (and for client-side port forwards such
+    // as sshnp --remote-sshd-port). Failure is not fatal: clients using
+    // encrypted rvd traffic connect with their own identity keys.
+    char *ephemeral_private_key = NULL;
+    char *ephemeral_public_key = NULL;
+    char *session_id_str = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId"));
+    if (session_id_str != NULL) {
+      char keygen_dir[512];
+      snprintf(keygen_dir, sizeof(keygen_dir), "%s/.sshnp", home_dir);
+      res = generate_ephemeral_ssh_keypair(keygen_dir, params->ssh_algorithm == RSA, session_id_str,
+                                           &ephemeral_private_key, &ephemeral_public_key);
+      if (res == 0) {
+        res = authorize_ephemeral_public_key(authkeys_file, authkeys_filename, ephemeral_public_key,
+                                             params->local_sshd_port, session_id_str, params->ephemeral_permission);
+        if (res == 0) {
+          ephemeral_key_schedule_deauthorize(authkeys_file, authkeys_filename, session_id_str);
+        } else {
+          free(ephemeral_private_key);
+          ephemeral_private_key = NULL;
+        }
+      }
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                     "Could not set up an ephemeral tunnel key for this session - clients which need the initial "
+                     "tunnel ssh session will not be able to connect\n");
+        res = 0;
+      }
+    }
+
+    res = send_success_payload(payload, atclient, params, ephemeral_private_key, session_aes_key_c2d_base64,
+                               session_iv_c2d_base64, session_aes_key_d2c_base64, session_iv_d2c_base64, &signing_key,
+                               requesting_atsign);
+    free(ephemeral_private_key);
+    free(ephemeral_public_key);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Failed to send success message to the requesting atsign: %s\n", requesting_atsign);

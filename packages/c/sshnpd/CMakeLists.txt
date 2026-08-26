@@ -13,6 +13,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/src/daemon.c
   ${CMAKE_CURRENT_LIST_DIR}/src/daemon_utils.c
   ${CMAKE_CURRENT_LIST_DIR}/src/device_info.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/ephemeral_key.c
   ${CMAKE_CURRENT_LIST_DIR}/src/file_utils.c
   ${CMAKE_CURRENT_LIST_DIR}/src/handle_npt_request.c
   ${CMAKE_CURRENT_LIST_DIR}/src/handle_ping.c

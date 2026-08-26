@@ -37,7 +37,10 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
 // The d2c key and iv may be NULL. When they are provided the response payload
 // uses the twinned key field names (aesKeyC2D/ivC2D/aesKeyD2C/ivD2C), matching
 // the Dart sshnpd; otherwise the legacy names (sessionAESKey/sessionIV).
-int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_c2d_base64,
+// ephemeral_private_key: the tunnel ssh private key generated for this
+// session (ssh_request flow), or NULL when the session has none (npt flow)
+int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *ephemeral_private_key,
+                         char *session_aes_key_c2d_base64,
                          char *session_iv_c2d_base64, char *session_aes_key_d2c_base64, char *session_iv_d2c_base64,
                          atchops_rsa_key_private_key *signing_key, char *requesting_atsign);
 
