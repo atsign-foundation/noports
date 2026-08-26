@@ -7,6 +7,8 @@ import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/util/constants.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class BackUpKeyRepository {
   bool _fromJson(Map<String, dynamic> json) => json['status'];
@@ -51,26 +53,46 @@ class BackUpKeyRepository {
     }
   }
 
-  /// This method is used to save the atKeys to a file.
   Future<bool> saveAtKeysToPath({
     required Atsign atsign,
     required AtKeys atKeys,
     required String dialogTitle,
     required String fileName,
   }) async {
-    // Get file path to write to
+    final String? defaultDir = await _defaultAtKeysDir();
+
     String? outputFile = await FilePicker.saveFile(
       dialogTitle: dialogTitle,
       fileName: fileName,
+      initialDirectory: defaultDir,
     );
     if (outputFile == null) return false;
+
+    // FileAtKeysIo writes via a .tmp sibling then renames. macOS sandbox
+    // only grants access to the exact user-selected path, so the .tmp
+    // write is blocked. Write to the app's own sandbox first, then copy.
+    final tempDir = await getApplicationSupportDirectory();
+    final tempPath = p.join(tempDir.path, fileName);
+    final tempFile = File(tempPath);
     try {
-      final file = File(outputFile);
-      if (await file.exists()) await file.delete();
-      await FileAtKeysIo(filePath: (_) => outputFile).write(atsign, atKeys);
+      if (await tempFile.exists()) await tempFile.delete();
+      await FileAtKeysIo(filePath: (_) => tempPath).write(atsign, atKeys);
+
+      final destFile = File(outputFile);
+      if (await destFile.exists()) await destFile.delete();
+      await tempFile.copy(outputFile);
       return true;
-    } catch (e) {
-      rethrow;
+    } finally {
+      if (await tempFile.exists()) await tempFile.delete();
     }
+  }
+
+  static Future<String?> _defaultAtKeysDir() async {
+    final String? home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (home == null) return null;
+    final Directory dir = Directory(p.join(home, '.atsign', 'keys'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir.path;
   }
 }
