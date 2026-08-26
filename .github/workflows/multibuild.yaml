@@ -228,9 +228,10 @@ jobs:
           wix extension add -g WixToolset.Util.wixext/6.0.2
           wix extension add -g WixToolset.UI.wixext/6.0.2
           mkdir bin
-          cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,sshnp,npp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
+          cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,noports,sshnp,npp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
+              -d ProductVersion="${VERSION}" \
               -arch x64 -o build/NoPorts.msi noports.wxs
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi

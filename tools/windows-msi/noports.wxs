@@ -2,17 +2,26 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" >
-  <Package Name="NoPorts" Language="1033" Version="5.13.1.0" 
-           Manufacturer="NoPorts" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
+  <!-- CI passes the real version via `wix build -d ProductVersion=x.y.z`.
+       The fallback marks a build as local; it must stay below any real release. -->
+  <?ifndef ProductVersion?>
+    <?define ProductVersion = "0.0.1"?>
+  <?endif?>
+  <Package Name="NoPorts" Language="1033" Version="$(var.ProductVersion)"
+           Manufacturer="Atsign" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
+    <!-- Apps & Features metadata -->
+    <Property Id="ARPHELPLINK" Value="https://docs.noports.com" />
+    <Property Id="ARPURLINFOABOUT" Value="https://noports.com" />
     <!-- Main Feature - Core Tools (always installed) -->
     <Feature Id="CoreTools" Title="NoPorts Core Tools" Level="1" 
             Description="Core NoPorts command-line tools">
       <ComponentGroupRef Id="ProductComponents" />
     </Feature>
-    <!-- Optional Feature - Service (default off) -->
+    <!-- Optional Feature - Service (selected by default, installed stopped) -->
     <Feature Id="ServiceFeature" Title="NoPorts Daemon Service" Level="1" 
             Description="Install NoPorts Daemon as a Windows service (sshnpd)">
       <ComponentGroupRef Id="sshnpdComponents" />
@@ -45,6 +54,14 @@
         <File Id="at_activatefile" Source="bin\at_activate.exe" 
               Name="at_activate.exe" KeyPath="yes" />
       </Component>
+      <Component Id="noports" Guid="*">
+        <File Id="noportsfile" Source="bin\noports.exe" 
+              Name="noports.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="npp" Guid="*">
+        <File Id="nppfile" Source="bin\npp.exe" 
+              Name="npp.exe" KeyPath="yes" />
+      </Component>
       <Component Id="npp_atserver" Guid="*">
         <File Id="npp_atserverfile" Source="bin\npp_atserver.exe" 
               Name="npp_atserver.exe" KeyPath="yes" />
@@ -68,7 +85,7 @@
       <!-- Environment PATH -->
       <Component Id="UpdatePath" Guid="d7a87a7f-1bcc-4eba-b089-6c2ab0e0f0bd">
         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" 
-                     Permanent="no" Part="last" Action="set" System="no" />
+                     Permanent="no" Part="last" Action="set" System="yes" />
       </Component>
       <Component Id="CertUpdaterScript" Guid="*">
         <File Id="certupdaterfile" Source="certupdater.ps1" Name="certupdater.ps1" />
@@ -93,15 +110,31 @@
                         ErrorControl="normal"
                         Vital="yes"
                         Account="LocalSystem"/>
+        <!-- Deliberately not started on a fresh install: the daemon has no atsign or
+             keys configured yet, so it would start and immediately exit. See the
+             sshnpdServiceUpgradeStart component for the upgrade case. -->
         <ServiceControl Id="sshnpdServiceStart"
                         Name="[SERVICE_NAME]"
-                        Start="no"
                         Stop="both"
                         Remove="uninstall"
                         Wait="yes" />
         <util:EventSource Name="[SERVICE_DISPLAYNAME]"
                           Log="Application"
                           EventMessageFile="[#sshnpdServiceExeFile]"/>
+      </Component>
+      <!-- A major upgrade uninstalls the old product, which stops and removes the
+           service. Without this the new service is registered for auto-start but stays
+           stopped until the next reboot. Only fires when upgrading an existing install. -->
+      <Component Id="sshnpdServiceUpgradeStart"
+                 Guid="1ecb19e0-5ceb-4cf9-aa6b-5532154c2b9c"
+                 Condition="WIX_UPGRADE_DETECTED">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Atsign\NoPorts"
+                       Name="ServiceStartedByUpgrade" Type="integer" Value="1" KeyPath="yes" />
+        <!-- Wait="no" so a daemon that fails to come up cannot fail the upgrade. -->
+        <ServiceControl Id="sshnpdServiceUpgradeStartControl"
+                        Name="[SERVICE_NAME]"
+                        Start="install"
+                        Wait="no" />
       </Component>
     </ComponentGroup>
   </Fragment>
