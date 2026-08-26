@@ -6,6 +6,7 @@
 #define SRV_DEFAULT_TIMEOUT_SECONDS 30
 
 #include <argparse/argparse.h>
+#include <atchops/rsa_key.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -36,6 +37,17 @@ typedef struct {
   int timeout;
 
   char *rvd_auth_string;
+
+  // ESCR relay authentication (RelayAuthMode.escr). When escr_auth is true
+  // every socket to the relay runs an encrypted signed challenge response
+  // exchange (see srv/escr.h) instead of writing rvd_auth_string. The signing
+  // key is borrowed, not owned, by this struct.
+  bool escr_auth;
+  bool escr_is_side_a;
+  char *escr_session_id;
+  char *escr_aes_key_base64;
+  char *escr_signing_key_uri;
+  atchops_rsa_key_private_key *escr_signing_key;
 
   // Session encryption keys (base64). When twinned keys are in use, the C2D
   // (client to daemon) key decrypts inbound traffic and the D2C (daemon to

@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
+#include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -331,8 +332,29 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(supported_features, "acceptsPublicKeys", cJSON_CreateBool(acceptsPublicKeys));
   cJSON_AddItemToObject(supported_features, "supportsPortChoice", cJSON_CreateBool(true));
   cJSON_AddItemToObject(supported_features, "adjustableTimeout", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "supportsRamEscr", cJSON_CreateBool(true));
   cJSON_AddItemToObject(supported_features, "twinKeys", cJSON_CreateBool(true));
   cJSON_AddItemToObject(ping_response_json, "supportedFeatures", supported_features);
+
+  cJSON *auth_modes = cJSON_CreateArray();
+  cJSON_AddItemToArray(auth_modes, cJSON_CreateString("payload"));
+  cJSON_AddItemToArray(auth_modes, cJSON_CreateString("escr"));
+  cJSON_AddItemToObject(ping_response_json, "authModes", auth_modes);
+
+  // Clients pre-fetch this uri via the relay so the relay can verify our escr
+  // auth signatures
+  char *signing_key_uri = public_signing_key_uri(&atkeys, params.atsign);
+  if (signing_key_uri == NULL) {
+    atcommons_memlist_failure_free(&memlist);
+    return 1;
+  }
+  res = atcommons_memlist_add(&memlist, signing_key_uri, true, free_if_not_null);
+  if (res != 0) {
+    free(signing_key_uri);
+    atcommons_memlist_failure_free(&memlist);
+    return res;
+  }
+  cJSON_AddItemToObject(ping_response_json, "publicSigningKeyUri", cJSON_CreateString(signing_key_uri));
 
   cJSON *allowed_services = cJSON_CreateArray();
   char *buf = malloc(sizeof(char) * 1024);
@@ -362,6 +384,42 @@ int main(int argc, char **argv) {
   if (!should_run) {
     atcommons_memlist_failure_free(&memlist);
     return res;
+  }
+
+  // 8.b Publish the public signing key (the PKAM public key) at the uri
+  // advertised in the ping response, so relays can verify escr auth
+  // signatures. Failure is not fatal: legacy relay auth still works.
+  {
+    const char *enrollment_id = "primary";
+    if (atkeys.enrollment_id != NULL && atkeys.enrollment_id[0] != '\0') {
+      enrollment_id = atkeys.enrollment_id;
+    }
+    char sk_keyname[128];
+    snprintf(sk_keyname, sizeof(sk_keyname), "_apsk.%s", enrollment_id);
+
+    atclient_atkey sk_key;
+    atclient_atkey_init(&sk_key);
+    res = atclient_atkey_create_public_key(&sk_key, sk_keyname, params.atsign, "a.__e");
+    if (res == 0) {
+      char *existing = NULL;
+      if (atclient_get_public_key(&worker, &sk_key, &existing, NULL) == 0 && existing != NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Public signing key already published at %s\n",
+                     signing_key_uri);
+        free(existing);
+      } else {
+        res = atclient_put_public_key(&worker, &sk_key, atkeys.pkam_public_key_base64, NULL, NULL);
+        if (res == 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Published public signing key at %s\n",
+                       signing_key_uri);
+        }
+      }
+    }
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                   "Failed to publish the public signing key (%d) - escr relay auth will not work this session\n", res);
+      res = 0;
+    }
+    atclient_atkey_free(&sk_key);
   }
 
   // 9. Start the device refresh loop - if hide is off
