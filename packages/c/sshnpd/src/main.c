@@ -330,6 +330,7 @@ int main(int argc, char **argv) {
   cJSON_bool acceptsPublicKeys = params.sshpublickey;
   cJSON_AddItemToObject(supported_features, "acceptsPublicKeys", cJSON_CreateBool(acceptsPublicKeys));
   cJSON_AddItemToObject(supported_features, "supportsPortChoice", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "adjustableTimeout", cJSON_CreateBool(true));
   cJSON_AddItemToObject(supported_features, "twinKeys", cJSON_CreateBool(true));
   cJSON_AddItemToObject(ping_response_json, "supportedFeatures", supported_features);
 
