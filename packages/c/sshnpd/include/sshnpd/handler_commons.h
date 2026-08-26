@@ -20,11 +20,20 @@ int verify_payload_contents(cJSON *payload, enum payload_type type);
 
 int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_key, char **rvd_auth_string);
 
+// Generates a fresh session AES key and iv, returning the base64 encoded
+// plaintext values (session_aes_key / session_iv) alongside copies encrypted
+// with the client's ephemeral public key (the *_base64 out params). Call once
+// for the C2D key and, when the client requested twinned keys, a second time
+// for the D2C key.
 int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key, char **session_aes_key_base64,
                                  unsigned char **session_iv, char **session_iv_base64);
 
-int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_base64,
-                         char *session_iv_base64, atchops_rsa_key_private_key *signing_key, char *requesting_atsign);
+// The d2c key and iv may be NULL. When they are provided the response payload
+// uses the twinned key field names (aesKeyC2D/ivC2D/aesKeyD2C/ivD2C), matching
+// the Dart sshnpd; otherwise the legacy names (sessionAESKey/sessionIV).
+int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_c2d_base64,
+                         char *session_iv_c2d_base64, char *session_aes_key_d2c_base64, char *session_iv_d2c_base64,
+                         atchops_rsa_key_private_key *signing_key, char *requesting_atsign);
 
 bool is_manager_atsign(const sshnpd_params *params, const char *atsign);
 #endif

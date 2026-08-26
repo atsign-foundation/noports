@@ -12,7 +12,8 @@
 
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
                     bool authenticate_to_rvd, char *rvd_auth_string, bool encrypt_rvd_traffic, bool multi,
-                    unsigned char *session_aes_key_encrypted, unsigned char *session_iv_encrypted) {
+                    unsigned char *session_aes_key_c2d, unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c,
+                    unsigned char *session_iv_d2c) {
 
   int res = 0;
   srv_params_t srv_params;
@@ -32,8 +33,10 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   srv_params.rvd_auth_string = rvd_auth_string;
 
   srv_params.rv_e2ee = encrypt_rvd_traffic;
-  srv_params.session_aes_key_string = (char *)session_aes_key_encrypted;
-  srv_params.session_aes_iv_string = (char *)session_iv_encrypted;
+  srv_params.session_aes_key_c2d_string = (char *)session_aes_key_c2d;
+  srv_params.session_aes_iv_c2d_string = (char *)session_iv_c2d;
+  srv_params.session_aes_key_d2c_string = (char *)session_aes_key_d2c;
+  srv_params.session_aes_iv_d2c_string = (char *)session_iv_d2c;
   srv_params.multi = multi;
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Starting srv\n");
