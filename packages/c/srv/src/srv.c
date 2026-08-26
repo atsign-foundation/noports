@@ -376,9 +376,19 @@ cancel:
     atlogger_log(TAG, DEBUG, "Canceled thread: %d\n", tidx);
   }
 
+  // Reap the canceled thread so it is safe to close its socket below
+  pthread_join(threads[tidx], NULL);
+
 exit:
   close(fds[0]);
   close(fds[1]);
+
+  // The thread which exited normally closed its own socket, but a canceled
+  // thread never gets the chance - without this, every torn-down connection
+  // leaks a file descriptor for the lifetime of a multi-mode srv process.
+  // Safe to call on both sides: mbedtls_net_free is a no-op once fd == -1.
+  srv_side_free(&sides[0]);
+  srv_side_free(&sides[1]);
 
   if (transform) {
     mbedtls_aes_free(&encrypter->aes_ctr.ctx);
