@@ -4,6 +4,7 @@
 #include "atchops/rsa.h"
 #include "atclient/notify.h"
 #include "atclient/notify_params.h"
+#include "sshnpd/authorization.h"
 #include "sshnpd/params.h"
 #include "sshnpd/sshnpd.h"
 #include <atchops/constants.h>
@@ -41,11 +42,19 @@ bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
     return false;
   }
 
+  // The manager list was canonicalized at startup; canonicalize the requesting
+  // atSign the same way so the comparison is always exact (case, dots, '@'
+  // prefix). Anything that isn't a valid atSign fails closed.
+  char normalized[SSHNPD_ATSIGN_BUFFER_LEN];
+  if (sshnpd_normalize_atsign(atsign, normalized, sizeof(normalized)) != 0) {
+    return false;
+  }
+
   for (size_t i = 0; i < params->manager_list_len; i++) {
     if (params->manager_list[i] == NULL) {
       continue;
     }
-    if (strcmp(atsign, params->manager_list[i]) == 0) {
+    if (strcmp(normalized, params->manager_list[i]) == 0) {
       return true;
     }
   }

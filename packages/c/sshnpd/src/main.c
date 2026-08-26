@@ -422,13 +422,12 @@ int main(int argc, char **argv) {
     atclient_atkey_free(&sk_key);
   }
 
-  // 9. Start the device refresh loop - if hide is off
-  res = handle_username_keys(&worker, (const char **)params.manager_list, params.manager_list_len, username,
-                             params.device, params.atsign, !params.hide);
-  if (res != 0) {
-    atcommons_memlist_failure_free(&memlist);
-    return res;
-  }
+  // 9. Share the username with each manager atSign - if hide is off.
+  // Best effort (matches the Dart daemon): failures for individual manager
+  // atSigns are logged inside handle_username_keys and must not prevent
+  // daemon startup.
+  handle_username_keys(&worker, (const char **)params.manager_list, params.manager_list_len, username, params.device,
+                       params.atsign, !params.hide);
 
   // 10. Start monitor
   size_t regexlen = strlen(params.device) + strlen(SSHNP_NS) + 3;
