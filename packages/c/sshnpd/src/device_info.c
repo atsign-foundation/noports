@@ -6,6 +6,9 @@
 #include <string.h>
 #include <time.h>
 
+// Sharing the username with each manager is best effort, matching the Dart
+// daemon: a failure for one manager atSign (e.g. not yet activated) must not
+// block the remaining managers or prevent the daemon from starting.
 int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_atsigns, const char *username,
                          const char *device_name, const char *device_atsign, bool make_visible) {
   int ret;
@@ -75,7 +78,7 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
     }
   }
 
-  return ret;
+  return 0;
 }
 
 void send_next_device_info(atclient *atclient, sshnpd_params *params) {
