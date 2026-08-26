@@ -18,6 +18,8 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
     return 0;
   }
 
+  size_t failures = 0;
+
   for (size_t i = 0; i < num_atsigns; i++) {
     const char *atsign = atsigns[i];
     // example: @client:username.devicename.sshnp@device
@@ -30,6 +32,7 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
     ret = atclient_atkey_from_string(&atkey, atkey_str);
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to build username key for %s\n", atsign);
+      failures++;
       continue;
     }
 
@@ -39,6 +42,7 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set is_public on metadata for %s username key\n",
                    atsign);
       atclient_atkey_free(&atkey);
+      failures++;
       continue;
     }
 
@@ -47,18 +51,21 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set is_encrypted on metadata for %s username key\n",
                    atsign);
       atclient_atkey_free(&atkey);
+      failures++;
       continue;
     }
     ret = atclient_atkey_metadata_set_ttr(metadata, -1);
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set ttr on metadata for %s username key\n", atsign);
       atclient_atkey_free(&atkey);
+      failures++;
       continue;
     }
     ret = atclient_atkey_metadata_set_ccd(metadata, true);
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set ccd on metadata for %s username key\n", atsign);
       atclient_atkey_free(&atkey);
+      failures++;
       continue;
     }
     if (make_visible) {
@@ -66,6 +73,7 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
       atclient_atkey_free(&atkey);
       if (ret != 0) {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to put username key for %s\n", atsign);
+        failures++;
         continue;
       }
     } else {
@@ -73,9 +81,20 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
       atclient_atkey_free(&atkey);
       if (ret != 0) {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to delete username key for %s\n", atsign);
+        failures++;
         continue;
       }
     }
+  }
+
+  if (failures > 0) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                 "Could not %s username key for %zu of %zu manager atSigns (see errors above, likely not activated "
+                 "atSigns); continuing\n",
+                 make_visible ? "share" : "delete", failures, num_atsigns);
+  } else {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "%s username key for all %zu manager atSigns\n",
+                 make_visible ? "Shared" : "Deleted", num_atsigns);
   }
 
   return 0;
