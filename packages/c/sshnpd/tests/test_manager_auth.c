@@ -200,9 +200,10 @@ int policy_manager_denies_everyone_test() {
   params.manager_list_len = 1;
   params.policy = "@policy";
 
-  // Policy authorization is unimplemented, so a policy daemon must authorize
-  // nobody -- including an atSign that a --manager list would have accepted.
-  if (is_manager_atsign(&params, "@alice")) {
+  // Managers are approved without a policy check even when a policy service
+  // is configured; anyone else is not a manager (the daemon then refers them
+  // to the policy service instead).
+  if (!is_manager_atsign(&params, "@alice")) {
     return 1;
   }
   if (is_manager_atsign(&params, "@eve")) {

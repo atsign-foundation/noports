@@ -11,6 +11,7 @@
 #include <atlogger/atlogger.h>
 #include <errno.h>
 #include <sshnpd/daemon.h>
+#include <sshnpd/handle_npt_request.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -23,7 +24,8 @@
 #define LOGGER_TAG "NPT_REQUEST"
 
 void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_child_process,
-                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key) {
+                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key,
+                        const sshnpd_policy_decision *policy) {
   int res = 0;
 
   cJSON *envelope = extract_envelope_from_notification(message);
@@ -71,6 +73,17 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   if (!should_permitopen(&permitopen)) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
                  permitopen.requested_port);
+    cJSON_Delete(envelope);
+    return;
+  }
+
+  // Both the daemon's own permit-open list and the policy service's must
+  // allow the connection
+  if (policy != NULL &&
+      !policy_permits_open(policy, permitopen.requested_host, (uint16_t)permitopen.requested_port)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                 "Ignoring request to %s:%d - not in the policy service's permitOpen list\n",
+                 permitopen.requested_host, permitopen.requested_port);
     cJSON_Delete(envelope);
     return;
   }

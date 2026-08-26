@@ -445,7 +445,14 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
+  if (params.policy != NULL) {
+    // Policy rpc response keys ('<type>.<reqId>.auth_checks.__rpcs...') do
+    // not contain '<device>.sshnp@', so in policy mode the monitor must
+    // receive everything and filtering happens in the main loop
+    regex[0] = '\0';
+  } else {
+    snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
+  }
   res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");

@@ -41,9 +41,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       OPT_STRING('m', "manager", &manager,
                  "atSign or list of atSigns (comma separated) that this device will accept requests from. At least one "
                  "of --manager and --policy-manager must be supplied."),
-      // OPT_STRING('p', "policy-manager", &params->policy,
-      //            "The atSign which this device will use to decide whether or not to accept request from some client "
-      //            "atSignAt least one of --manager and --policy-manager must be supplied."),
+      OPT_STRING('p', "policy-manager", &params->policy,
+                 "The atSign which this device will use to decide whether or not to accept requests from some client "
+                 "atSign. At least one of --manager and --policy-manager must be supplied."),
       OPT_STRING('d', "device", &params->device, "Device to use"),
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
       OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
@@ -78,19 +78,21 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     return 1;
   } else if (manager == NULL && params->policy == NULL) {
     argparse_usage(&argparse);
-    // TODO: enable this message when enabling policy
-    // printf("Invalid Argument(s) One of --manager or --policy-manager must be provided");
-    printf("Invalid Argument(s) --manager must be provided");
+    printf("Invalid Argument(s) One of --manager or --policy-manager must be provided");
     return 1;
   }
 
   if (permitopen == NULL) {
-    params->permitopen_str = malloc(sizeof(char) * (strlen(default_permitopen) + 1));
+    // With a policy manager and no explicit --permit-open, the policy
+    // service's permitOpen list is the effective ACL, so the daemon's own
+    // list defaults to allow-all rather than localhost only
+    const char *effective_default = params->policy != NULL ? "*:*" : default_permitopen;
+    params->permitopen_str = malloc(sizeof(char) * (strlen(effective_default) + 1));
     if (params->permitopen_str == NULL) {
       printf("Failed to allocate memory for default permitopen string\n");
       return 1;
     }
-    strcpy(params->permitopen_str, default_permitopen);
+    strcpy(params->permitopen_str, effective_default);
     permitopen = params->permitopen_str;
   }
   if ((parse_permitopen(permitopen, &params->permitopen_hosts, &params->permitopen_ports, &params->permitopen_len,
