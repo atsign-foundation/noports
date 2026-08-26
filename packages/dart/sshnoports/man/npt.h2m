@@ -1,0 +1,12 @@
+[NAME]
+npt \- NoPorts TCP tunnel client
+[EXAMPLES]
+.nf
+npt -f @alice_client -t @alice_device -d my_server -r @rv_am -p 3389 -l 33389
+.fi
+[SEE ALSO]
+sshnp(1), sshnpd(1), srv(1), srvd(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

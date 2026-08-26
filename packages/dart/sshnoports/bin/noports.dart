@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
+import 'package:chalkdart/chalk.dart';
 import 'package:noports_core/commands.dart';
 import 'package:sshnoports/src/print_version.dart';
 
@@ -26,8 +27,21 @@ enum NoPortsCommand {
 }
 
 Future<void> main(List<String> args) async {
+  // Don't emit ANSI escape sequences when output is not going to a terminal,
+  // e.g. when help2man is generating man pages from the --help output.
+  if (!stdout.hasTerminal) {
+    chalk.level = 0;
+  }
+
   if (args.isNotEmpty && args.contains('--version')) {
     printVersion();
+    exit(0);
+  }
+
+  // Display help if requested. Done before displaying the banner, since man
+  // pages are generated from the --help output and must not include it.
+  if (args.isNotEmpty && isHelpFlag(args[0])) {
+    printUsage(sink: stdout);
     exit(0);
   }
 
@@ -39,12 +53,6 @@ Future<void> main(List<String> args) async {
     stderr.writeln('\n');
     printUsage();
     exit(1);
-  }
-
-  // Display help if requested
-  if (isHelpFlag(args[0])) {
-    printUsage();
-    exit(0);
   }
 
   // Parse command
@@ -72,7 +80,7 @@ Future<void> main(List<String> args) async {
     }
     exit(exitCode);
   } on HelpRequestedException {
-    printUsage(command: command);
+    printUsage(command: command, sink: stdout);
     exit(0);
   } on ArgumentError catch (e) {
     logger.shout(e.message);
@@ -85,21 +93,22 @@ Future<void> main(List<String> args) async {
   }
 }
 
-void printUsage({NoPortsCommand? command}) {
+void printUsage({NoPortsCommand? command, IOSink? sink}) {
+  sink ??= stderr;
   if (command == null) {
-    stderr.writeln(UsageMessages.mainMenu);
+    sink.writeln(UsageMessages.mainMenu);
   } else {
     switch (command) {
       case NoPortsCommand.activate:
-        stderr.writeln(UsageMessages.activateHelp);
+        sink.writeln(UsageMessages.activateHelp);
         break;
       case NoPortsCommand.issueKeys:
-        stderr.writeln(UsageMessages.issueKeysHelp);
+        sink.writeln(UsageMessages.issueKeysHelp);
         break;
     }
   }
-  printVersion();
-  stderr.write('\n');
+  printVersion(sink: sink);
+  sink.write('\n');
   return;
 }
 
