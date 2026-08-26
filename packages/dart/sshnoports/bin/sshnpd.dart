@@ -2,11 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/sshnpd.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/version.dart';
+
+const String _description =
+    'NoPorts SSH daemon: accepts SSH sessions from authorized NoPorts'
+    ' clients without this device having any open ports.';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SEVERE';
@@ -26,13 +30,13 @@ void main(List<String> args) async {
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       ),
       usageCallback: (e, s) {
-        printVersion();
-        stderr.writeln(SshnpdOption.usage);
+        stderr.write(formatCliHelp(
+            description: _description, optionsUsage: SshnpdOption.usage));
         stderr.writeln('\n$e');
       },
       helpCallback: () {
-        printVersion();
-        stderr.writeln(SshnpdOption.usage);
+        stdout.write(formatCliHelp(
+            description: _description, optionsUsage: SshnpdOption.usage));
         exit(0);
       },
       versionCallback: () {

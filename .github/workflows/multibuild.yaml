@@ -160,6 +160,7 @@ jobs:
         working-directory: ./apps/admin/admin_api
         run: |
           dart pub get --enforce-lockfile
+          dart run build_runner build --delete-conflicting-outputs
           dart compile exe ${CROSS} bin/np_admin.dart -v -o ../../../packages/dart/sshnoports/sshnp/np_admin${EXT}
       - name: Compile debug binaries (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}
@@ -188,7 +189,7 @@ jobs:
           esac
           DBINS="${BINS} np_admin srvd"
           for BINARY in ${DBINS}; do \
-            help2man -N --no-discard-stderr sshnp/${BINARY} -o sshnp/${BINARY}.1;
+            help2man -N --no-discard-stderr --include man/${BINARY}.h2m sshnp/${BINARY} -o sshnp/${BINARY}.1;
             gzip -n9 sshnp/${BINARY}.1;
           done
           cp CHANGELOG.md sshnp/
