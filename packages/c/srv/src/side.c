@@ -69,6 +69,12 @@ void *srv_side_handle(void *side) {
   const char *const tag = s->is_side_a ? TAG_A : TAG_B;
 
   unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
+  if (buffer == NULL) {
+    atlogger_log(tag, ERROR, "Failed to allocate side buffer\n");
+    pthread_t t = pthread_self();
+    write(s->main_pipe[1], &t, sizeof(pthread_t));
+    pthread_exit(NULL);
+  }
   memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
 
   unsigned char *output = NULL;

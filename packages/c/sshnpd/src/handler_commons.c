@@ -53,6 +53,7 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
 
   if ((res = atclient_atkey_create_public_key(&atkey, "publickey", requesting_atsign, NULL)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
+    atclient_atkey_free(&atkey);
     return 1;
   }
 
@@ -70,7 +71,9 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
 
   res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, buffer, strlen(buffer));
   if (res != 0) {
-    printf("atchops_rsakey_populate_publickey (failed): %d\n", res);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_rsa_key_populate_public_key (failed): %d\n", res);
+    free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
     return 1;
   }
 
@@ -85,6 +88,7 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
     free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
     return 1;
   }
 
@@ -508,6 +512,10 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
   if (!is_valid) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "%s is not an accepted key type for encrypting the aes key\n", pk_type);
+    free(*session_aes_key);
+    free(*session_iv);
+    *session_aes_key = NULL;
+    *session_iv = NULL;
     return 1;
   }
   return res;
@@ -576,6 +584,8 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   int ret = atclient_atkey_create_shared_key(&final_res_atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create success shared key\n");
+    res = ret;
+    free(keyname);
     goto clean_final_res_value;
   }
 
@@ -585,6 +595,7 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   if (ret == 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
   } else {
+    res = ret;
     goto clean_res;
   }
 
@@ -611,6 +622,7 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   ret = atclient_notify(atclient, &notify_params, NULL);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n", requesting_atsign);
+    res = ret;
   }
 
 clean_notify:

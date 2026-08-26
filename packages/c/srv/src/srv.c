@@ -61,6 +61,7 @@ int run_srv_daemon_side_single(srv_params_t *params) {
                                          &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_single: Error creating new encrypter and decrypter: %d\n", res);
+      return res;
     }
   }
 
@@ -89,6 +90,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                                          &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_multi: Error creating new encrypter and decrypter: %d\n", res);
+      return res;
     }
   }
 
@@ -184,14 +186,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                    new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
-        chunked_transformer_t *new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
-        chunked_transformer_t *new_socket_decrypter = malloc(sizeof(chunked_transformer_t));
-        if (new_socket_encrypter == NULL || new_socket_decrypter == NULL) {
-          atlogger_log(TAG, ERROR, "Failed to allocate memory for new enc/dec\n");
-          free(new_socket_encrypter);
-          free(new_socket_decrypter);
-          goto exit;
-        }
+        chunked_transformer_t *new_socket_encrypter = NULL;
+        chunked_transformer_t *new_socket_decrypter = NULL;
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
                      "run_srv_daemon_side_multi\n control channel received %s request - \n creating new socketToSocket "
                      "connection\n",
@@ -206,10 +202,26 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         }
 
         if (!no_encrypt) {
-          // start socket_to_socket connection
+          new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
+          new_socket_decrypter = malloc(sizeof(chunked_transformer_t));
+          if (new_socket_encrypter == NULL || new_socket_decrypter == NULL) {
+            atlogger_log(TAG, ERROR, "Failed to allocate memory for new enc/dec\n");
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+            goto exit;
+          }
+
           res = create_encrypter_and_decrypter(new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
                                                new_session_aes_key_d2c_string, new_session_aes_iv_d2c_string,
                                                new_socket_encrypter, new_socket_decrypter);
+          if (res != 0) {
+            // A bad connect message must not take down the whole srv - skip
+            // this request and keep serving the control channel
+            atlogger_log(TAG, ERROR, "Failed to create enc/dec for connect request: %d - skipping request\n", res);
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+            continue;
+          }
         }
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
 
@@ -271,7 +283,10 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   side_hints_t hints_a = {1, 0, params->local_host, params->local_port, NULL};
   side_hints_t hints_b = {0, 0, params->host, params->port, NULL};
 
-  if (params->rv_e2ee) {
+  // encrypter/decrypter may be NULL even when rv_e2ee is set: a multi-mode
+  // client can request an unencrypted socket with 'connect:no:encrypt'
+  bool transform = params->rv_e2ee && encrypter != NULL && decrypter != NULL;
+  if (transform) {
     hints_a.transformer = encrypter;
     hints_b.transformer = decrypter;
   }
@@ -365,7 +380,7 @@ exit:
   close(fds[0]);
   close(fds[1]);
 
-  if (params->rv_e2ee == 1) {
+  if (transform) {
     mbedtls_aes_free(&encrypter->aes_ctr.ctx);
     mbedtls_aes_free(&decrypter->aes_ctr.ctx);
   }
@@ -481,11 +496,13 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
 
   while ((temp = strtok_r(saveptr, "\n", &saveptr))) {
     // realloc memory to save a new pointer
-    temp_requests = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
-    if (!temp_requests) {
+    char **grown = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
+    if (!grown) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "process_multiple_requests: Failed to allocate memory\n");
+      free(temp_requests);
       goto exit;
     }
+    temp_requests = grown;
 
     temp_requests[temp_count] = temp;
     temp_count++;
