@@ -21,6 +21,7 @@ import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dia
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -172,6 +173,9 @@ Future<void> _handleSelection(
 
 /// Handles the signout flow
 Future<void> _handleSignout(BuildContext context) async {
+  // A full signout starts over on the Connections tab, unlike an atsign
+  // switch which keeps the currently selected tab.
+  context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
     (route) => false,

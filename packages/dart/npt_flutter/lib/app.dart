@@ -9,6 +9,7 @@ import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_theme.dart';
 import 'package:npt_flutter/util/language.dart';
@@ -54,6 +55,11 @@ class App extends StatelessWidget {
 
           // A bloc which manages the atDirectory state
           BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
+
+          /// Tracks which top level tab of the home navigator is selected.
+          /// Lives above [HomeWrapperWidget] so the selected tab survives the
+          /// wrapper being rebuilt (e.g. when adding / switching atsign).
+          BlocProvider<SubNavCubit>(create: (_) => SubNavCubit()),
 
           /// Settings provider, not much else to say
           /// - If settings are not found, we automatically load some defaults

@@ -438,7 +438,14 @@ class NoPortsOnboardingUtil {
         App.log('atsign result is:$result'.loggable);
 
         if (!context.mounted) return;
-        Navigator.of(context, rootNavigator: true).pushNamed(Routes.home);
+        // Replace the whole root stack: pushing a second [HomeWrapperWidget]
+        // on top of an existing one duplicates the `wrapperNav` GlobalKey,
+        // which reparents the old navigator (keeping the old page) under a
+        // fresh wrapper.
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil(Routes.home, (route) => false);
 
         break;
       case NoPortsOnboardingResultStatus.error:

@@ -5,6 +5,7 @@ import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
 import 'package:npt_flutter/features/onboarding/widgets/reset_atsign_dialog.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -108,6 +109,7 @@ class CustomTextButton extends StatelessWidget {
         case CustomListTileType.removeAtsign:
           final result = await ResetAtsignDialog.show(context);
           if (context.mounted && result == true) {
+            context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
             Navigator.of(
               context,
               rootNavigator: true,
@@ -130,6 +132,9 @@ class CustomTextButton extends StatelessWidget {
           break;
 
         case CustomListTileType.signOut:
+          // A full signout starts over on the Connections tab, unlike an
+          // atsign switch which keeps the currently selected tab.
+          context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
           wrapperNav.currentState!.pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoadingPage()),
             (route) => false,
