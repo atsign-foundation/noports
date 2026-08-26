@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
@@ -255,9 +257,11 @@ class NoPortsOnboardingUtil {
     required Atsign atsign,
     required AppLocalizations strings,
   }) async {
+    final String? defaultDir = await _defaultAtKeysDir();
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['atKeys'],
+      initialDirectory: defaultDir,
     );
     if (result == null || result.files.isEmpty) {
       return NoPortsOnboardingResult.cancelled();
@@ -452,5 +456,14 @@ class NoPortsOnboardingUtil {
       case NoPortsOnboardingResultStatus.cancel:
         break;
     }
+  }
+
+  static Future<String?> _defaultAtKeysDir() async {
+    final String? home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (home == null) return null;
+    final Directory dir = Directory(p.join(home, '.atsign', 'keys'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir.path;
   }
 }
