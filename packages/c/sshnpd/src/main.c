@@ -454,7 +454,11 @@ int main(int argc, char **argv) {
     // device's requests plus the policy namespaces - notifications for other
     // devices on this atsign are filtered out by the atServer, exactly as in
     // the Dart daemon. The in-loop classifier remains as defense in depth.
-    snprintf(regex, regexlen, "\\.%s\\.%s@|auth_checks\\.__rpcs|%s\\.devices\\.policy", params.device, SSHNP_NS,
+    // Every alternative anchors the device name with '\.' on both sides so a
+    // device named 'iot' can never match keys for 'iot_device01' or 'my_iot'
+    // (validated against Dart RegExp semantics, which is what the atServer
+    // evaluates)
+    snprintf(regex, regexlen, "\\.%s\\.%s@|auth_checks\\.__rpcs|\\.%s\\.devices\\.policy", params.device, SSHNP_NS,
              params.device);
   } else {
     snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
