@@ -431,7 +431,7 @@ int main(int argc, char **argv) {
   }
 
   // 10. Start monitor
-  size_t regexlen = strlen(params.device) + strlen(SSHNP_NS) + 3;
+  size_t regexlen = 2 * strlen(params.device) + strlen(SSHNP_NS) + 64;
   regex = malloc(sizeof(char) * regexlen); // needs to be declared before any gotos
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
@@ -446,13 +446,20 @@ int main(int argc, char **argv) {
   }
 
   if (params.policy != NULL) {
-    // Policy rpc response keys ('<type>.<reqId>.auth_checks.__rpcs...') do
-    // not contain '<device>.sshnp@', so in policy mode the monitor must
-    // receive everything and filtering happens in the main loop
-    regex[0] = '\0';
+    // In policy mode the monitor must also receive the policy service's rpc
+    // responses ('<type>.<reqId>.auth_checks.__rpcs...') and config pushes
+    // ('config.<device>.devices.policy...'), whose keys don't contain
+    // '<device>.sshnp@'. The atServer monitor filter is a regex (the Dart
+    // daemon relies on alternation in its filters too), so subscribe to this
+    // device's requests plus the policy namespaces - notifications for other
+    // devices on this atsign are filtered out by the atServer, exactly as in
+    // the Dart daemon. The in-loop classifier remains as defense in depth.
+    snprintf(regex, regexlen, "\\.%s\\.%s@|auth_checks\\.__rpcs|%s\\.devices\\.policy", params.device, SSHNP_NS,
+             params.device);
   } else {
     snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
   }
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Monitor filter: %s\n", regex);
   res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");
