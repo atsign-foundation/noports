@@ -27,6 +27,7 @@
 #include <sshnpd/file_utils.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -234,13 +235,15 @@ int main(int argc, char **argv) {
       }
       snprintf(root_host, root_host_size, "%.*s", (int)host_len, root_domain_str);
       const char *port_str = colon_pos + 1;
-      root_port = (uint16_t)atoi(port_str);
-      if (root_port == 0) {
+      char *port_end = NULL;
+      long port_val = strtol(port_str, &port_end, 10);
+      if (port_end == port_str || *port_end != '\0' || port_val < 1 || port_val > UINT16_MAX) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain port is not a valid number: %s\n", port_str);
         atcommons_memlist_failure_free(&memlist);
         res = 1;
         return res;
       }
+      root_port = (uint16_t)port_val;
     } else {
       // no port specified, use the default port
       snprintf(root_host, root_host_size, "%s", root_domain_str);
