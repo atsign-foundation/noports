@@ -12,7 +12,11 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      GIT_TAG 7b2d79e5e162286d4f45854f4d52fcb034c93534
+      # TEST ONLY - do not merge: pinned to at_c branch
+      # cconstab/atauth-proxy-root-domain (at_c PR #702) which carries the
+      # connection fix needed for 'proxy:' root domains. Restore a trunk pin
+      # once that PR merges.
+      GIT_TAG cconstab/atauth-proxy-root-domain
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
