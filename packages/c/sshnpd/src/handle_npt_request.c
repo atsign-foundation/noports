@@ -10,12 +10,12 @@
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>
+#include <srv/params.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_npt_request.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
-#include <srv/params.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
