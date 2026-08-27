@@ -36,8 +36,8 @@
  * @return int 0 on success, non-zero on error
  */
 int srv_escr_build_response(const char *session_id, const char *challenge, const char *aes_key_base64,
-                            const char *signing_key_uri, const atchops_rsa_key_private_key *signing_key,
-                            bool is_side_a, const unsigned char iv[16], char **out_line);
+                            const char *signing_key_uri, const atchops_rsa_key_private_key *signing_key, bool is_side_a,
+                            const unsigned char iv[16], char **out_line);
 
 /**
  * @brief Run the ESCR authentication exchange on a freshly connected relay

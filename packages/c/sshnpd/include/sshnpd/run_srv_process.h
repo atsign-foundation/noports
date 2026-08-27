@@ -10,8 +10,8 @@
 // relay authentication for one session. All pointers are borrowed.
 typedef struct {
   const char *session_id;
-  const char *aes_key_base64;   // the session's relayAuthAesKey
-  const char *signing_key_uri;  // public:_apsk.<enrollmentId>.a.__e<atsign>
+  const char *aes_key_base64;               // the session's relayAuthAesKey
+  const char *signing_key_uri;              // public:_apsk.<enrollmentId>.a.__e<atsign>
   atchops_rsa_key_private_key *signing_key; // the daemon's PKAM private key
 } sshnpd_escr_context;
 
