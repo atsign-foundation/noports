@@ -67,8 +67,8 @@ bool policy_permits_open(const sshnpd_policy_decision *decision, const char *hos
     size_t host_len = (size_t)(colon - entry);
     const char *port_str = colon + 1;
 
-    bool host_matches = (host_len == 1 && entry[0] == '*') ||
-                        (strlen(host) == host_len && strncmp(entry, host, host_len) == 0);
+    bool host_matches =
+        (host_len == 1 && entry[0] == '*') || (strlen(host) == host_len && strncmp(entry, host, host_len) == 0);
     uint16_t entry_port = (uint16_t)strtoul(port_str, NULL, 10);
     bool port_matches = strcmp(port_str, "*") == 0 || entry_port == 0 || entry_port == port;
 
@@ -151,8 +151,7 @@ bool policy_is_policy_service_message(const atclient_atnotification *notificatio
   if (params->policy == NULL || notification->key == NULL || !atsign_equals(notification->from, params->policy)) {
     return false;
   }
-  return strstr(notification->key, POLICY_RPC_INFIX) != NULL ||
-         strstr(notification->key, ".devices.policy.") != NULL;
+  return strstr(notification->key, POLICY_RPC_INFIX) != NULL || strstr(notification->key, ".devices.policy.") != NULL;
 }
 
 // Whether this notification is a response to our rpc request. The Dart AtRpc

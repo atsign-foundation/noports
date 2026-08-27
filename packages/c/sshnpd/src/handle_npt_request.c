@@ -10,12 +10,12 @@
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>
+#include <srv/params.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_npt_request.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
-#include <srv/params.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -88,11 +88,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
   // Both the daemon's own permit-open list and the policy service's must
   // allow the connection
-  if (policy != NULL &&
-      !policy_permits_open(policy, permitopen.requested_host, (uint16_t)permitopen.requested_port)) {
+  if (policy != NULL && !policy_permits_open(policy, permitopen.requested_host, (uint16_t)permitopen.requested_port)) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                 "Denying request to %s:%d - not in the policy service's permitOpen list\n",
-                 permitopen.requested_host, permitopen.requested_port);
+                 "Denying request to %s:%d - not in the policy service's permitOpen list\n", permitopen.requested_host,
+                 permitopen.requested_port);
     char po_list[256];
     format_string_list(policy->permit_open, policy->permit_open_len, po_list, sizeof(po_list));
     char error_message[512];

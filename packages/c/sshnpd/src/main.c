@@ -470,8 +470,8 @@ int main(int argc, char **argv) {
                        params.atsign, !params.hide);
 
   // 10. Start monitor
-  size_t regexlen = 3 * strlen(params.device) + 2 * strlen(SSHNP_NS) +
-                    (params.policy != NULL ? strlen(params.policy) : 0) + 128;
+  size_t regexlen =
+      3 * strlen(params.device) + 2 * strlen(SSHNP_NS) + (params.policy != NULL ? strlen(params.policy) : 0) + 128;
   regex = malloc(sizeof(char) * regexlen); // needs to be declared before any gotos
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");

@@ -175,8 +175,7 @@ void main_loop() {
             }
             policy_checked = true;
           } else {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                         "Rejecting request from unauthorized atSign: %s\n",
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Rejecting request from unauthorized atSign: %s\n",
                          message.notification->from == NULL ? "(none)" : message.notification->from);
             break;
           }

@@ -9,12 +9,12 @@
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>
+#include <srv/params.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/permitopen.h>
 #include <sshnpd/run_srv_process.h>
-#include <srv/params.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -70,8 +70,7 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   permitopen.requested_port = params->local_sshd_port;
 
   if (!should_permitopen(&permitopen)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Denying request to localhost:%d\n",
-                 params->local_sshd_port);
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Denying request to localhost:%d\n", params->local_sshd_port);
     char error_message[256];
     snprintf(error_message, sizeof(error_message), "Daemon does not permit connections to localhost:%d",
              params->local_sshd_port);
