@@ -462,7 +462,8 @@ int main(int argc, char **argv) {
                        params.atsign, !params.hide);
 
   // 10. Start monitor
-  size_t regexlen = strlen(params.device) + strlen(SSHNP_NS) + 3;
+  size_t regexlen = 3 * strlen(params.device) + 2 * strlen(SSHNP_NS) +
+                    (params.policy != NULL ? strlen(params.policy) : 0) + 128;
   regex = malloc(sizeof(char) * regexlen); // needs to be declared before any gotos
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
@@ -477,13 +478,28 @@ int main(int argc, char **argv) {
   }
 
   if (params.policy != NULL) {
-    // Policy rpc response keys ('<type>.<reqId>.auth_checks.__rpcs...') do
-    // not contain '<device>.sshnp@', so in policy mode the monitor must
-    // receive everything and filtering happens in the main loop
-    regex[0] = '\0';
+    // In policy mode the monitor must also receive the policy service's rpc
+    // responses ('<type>.<reqId>.auth_checks.__rpcs...') and config pushes
+    // ('config.<device>.devices.policy...'), whose keys don't contain
+    // '<device>.sshnp@'. The atServer monitor filter is a regex, so this is
+    // the union of the three filters the Dart daemon subscribes with
+    // (requests, AtRpc responses, policy config pushes with the sender
+    // pinned). The device name is anchored in every alternative so 'iot' can
+    // never match keys for 'iot_device01' or 'my_iot'; the rpc alternative
+    // deliberately tolerates a missing '.sshnp' suffix on response keys. All
+    // alternatives are validated against Dart RegExp semantics (which is
+    // what the atServer evaluates). The in-loop classifier and the exact
+    // device match in the dispatcher remain as defense in depth.
+    snprintf(regex, regexlen,
+             "(^%s|\\.%s)\\.%s@|(success|error|ack|nack)\\.\\d+\\.auth_checks\\.__rpcs|\\.%s\\.devices\\.policy\\.%s%s",
+             params.device, params.device, SSHNP_NS, params.device, SSHNP_NS, params.policy);
   } else {
-    snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
+    // Same request filter the Dart daemon uses; the previous
+    // '<device>.sshnp@' form was unanchored, so a daemon for 'device01' also
+    // received (and then discarded) traffic for 'iot_device01'
+    snprintf(regex, regexlen, "(^%s|\\.%s)\\.%s@", params.device, params.device, SSHNP_NS);
   }
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Monitor filter: %s\n", regex);
   res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");
