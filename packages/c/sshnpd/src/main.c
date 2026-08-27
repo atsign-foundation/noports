@@ -434,7 +434,15 @@ int main(int argc, char **argv) {
     res = atclient_atkey_create_public_key(&sk_key, sk_keyname, params.atsign, "a.__e");
     if (res == 0) {
       char *existing = NULL;
-      if (atclient_get_public_key(&worker, &sk_key, &existing, NULL) == 0 && existing != NULL) {
+      // The key legitimately doesn't exist on the very first run (e.g. a
+      // freshly enrolled atsign), so mute the SDK's error logging around the
+      // existence probe - same pattern atauth's wait_for_enrollment uses for
+      // expected failures
+      enum atlogger_logging_level log_level = atlogger_get_logging_level();
+      atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
+      int get_res = atclient_get_public_key(&worker, &sk_key, &existing, NULL);
+      atlogger_set_logging_level(log_level);
+      if (get_res == 0 && existing != NULL) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Public signing key already published at %s\n",
                      signing_key_uri);
         free(existing);
