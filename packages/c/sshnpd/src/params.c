@@ -53,7 +53,11 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "client. (defaults to \"localhost:22,localhost:3389\")"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
       OPT_STRING(0, "ephemeral-permission", &ephemeral_permissions, "(Kept for compatibility)"),
-      OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use. If a host but no port is specified (e.g. 'root.atsign.org'), the default port 64 will be appended (defaults to \"root.atsign.org:64\")"),
+      OPT_STRING(0, "root-domain", &params->root_domain,
+                 "Root domain to use. If a host but no port is specified (e.g. 'root.atsign.org'), the default port 64 "
+                 "will be appended (defaults to \"root.atsign.org:64\"). A 'proxy:' prefix (e.g. "
+                 "\"proxy:proxy0001.atsign.org:443\") skips the atDirectory and connects to every atServer via that "
+                 "reverse proxy instead"),
       OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
 
