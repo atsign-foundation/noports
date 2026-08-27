@@ -201,20 +201,38 @@ int main(int argc, char **argv) {
   }
   memset(root_host, 0, sizeof(char) * root_host_size);
   uint16_t root_port = 0;
-  if (params.root_domain != NULL) {
+
+  // A 'proxy:' prefix on --root-domain (e.g. "proxy:proxy0001.atsign.org:443")
+  // means there is no atDirectory: every atServer connection goes to the given
+  // reverse proxy host and port instead. This matches the convention of the
+  // Dart at_lookup package, and lets a daemon run where only port 443 egress
+  // is allowed.
+  bool via_atserver_proxy = false;
+  const char *root_domain_str = params.root_domain;
+  if (root_domain_str != NULL && strncmp(root_domain_str, "proxy:", strlen("proxy:")) == 0) {
+    via_atserver_proxy = true;
+    root_domain_str += strlen("proxy:");
+    if (root_domain_str[0] == '\0') {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "No host given after 'proxy:' in --root-domain\n");
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+  }
+
+  if (root_domain_str != NULL) {
     // root_domain is something like 'root.atsign.wtf:64'
     // get the host and port and set them
-    char *colon_pos = strchr(params.root_domain, ':');
+    const char *colon_pos = strchr(root_domain_str, ':');
     if (colon_pos != NULL) {
-      size_t host_len = colon_pos - params.root_domain;
+      size_t host_len = colon_pos - root_domain_str;
       if (host_len >= host_name_max_length) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain host name is too long (it is >= %lu\n", host_name_max_length);
         atcommons_memlist_failure_free(&memlist);
         res = 1;
         return res;
       }
-      snprintf(root_host, root_host_size, "%.*s", (int)host_len, params.root_domain);
-      char *port_str = colon_pos + 1;
+      snprintf(root_host, root_host_size, "%.*s", (int)host_len, root_domain_str);
+      const char *port_str = colon_pos + 1;
       root_port = (uint16_t)atoi(port_str);
       if (root_port == 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain port is not a valid number: %s\n", port_str);
@@ -224,7 +242,7 @@ int main(int argc, char **argv) {
       }
     } else {
       // no port specified, use the default port
-      snprintf(root_host, root_host_size, "%s", params.root_domain);
+      snprintf(root_host, root_host_size, "%s", root_domain_str);
       root_port = DEFAULT_ROOT_PORT;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
     }
@@ -232,6 +250,11 @@ int main(int argc, char **argv) {
     // use the default root domain
     snprintf(root_host, root_host_size, "%s", DEFAULT_ROOT_HOST);
     root_port = DEFAULT_ROOT_PORT;
+  }
+  if (via_atserver_proxy) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                 "atServer connections will go via the reverse proxy %s:%d (no atDirectory lookups)\n", root_host,
+                 root_port);
   }
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
 
@@ -254,6 +277,11 @@ int main(int argc, char **argv) {
   }
   atclient_authenticate_options_set_atdirectory_host(&monitor_options, root_host);
   atclient_authenticate_options_set_atdirectory_port(&monitor_options, root_port);
+  if (via_atserver_proxy) {
+    // Setting the atServer address directly bypasses the atDirectory lookup
+    atclient_authenticate_options_set_atserver_host(&monitor_options, root_host);
+    atclient_authenticate_options_set_atserver_port(&monitor_options, root_port);
+  }
 
   // 7.a.3 pkam auth the monitor client
   atclient_monitor_set_read_timeout(&monitor_ctx, MONITOR_READ_TIMEOUT_MS); // 5 seconds for timeout
@@ -281,7 +309,11 @@ int main(int argc, char **argv) {
   }
   atclient_authenticate_options_set_atdirectory_host(&worker_options, root_host);
   atclient_authenticate_options_set_atdirectory_port(&worker_options, root_port);
-
+  if (via_atserver_proxy) {
+    // Setting the atServer address directly bypasses the atDirectory lookup
+    atclient_authenticate_options_set_atserver_host(&worker_options, root_host);
+    atclient_authenticate_options_set_atserver_port(&worker_options, root_port);
+  }
 
   res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, &worker_options, NULL);
   if (res != 0 || !should_run) {
