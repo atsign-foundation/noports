@@ -151,6 +151,16 @@ void main_loop() {
           break;
         }
 
+        // Policy service traffic (config pushes replying to our heartbeats,
+        // rpc responses that missed their wait window) is not a session
+        // request - drop it before the auth gate, or the daemon would run an
+        // auth check asking the policy service about the policy service
+        if (params.policy != NULL && policy_is_policy_service_message(message.notification, &params)) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring policy service message: %s\n",
+                       message.notification->key);
+          break;
+        }
+
         // Managers are approved without a policy check; everyone else is
         // referred to the policy service when one is configured
         policy_checked = false;
