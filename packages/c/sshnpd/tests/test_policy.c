@@ -103,11 +103,44 @@ static void test_permits_open(void) {
   policy_decision_free(&decision);
 }
 
+static void test_is_policy_service_message(void) {
+  sshnpd_params params;
+  memset(&params, 0, sizeof(params));
+  params.policy = "@wisefrog";
+
+  atclient_atnotification n;
+  memset(&n, 0, sizeof(n));
+
+  // Config push from the policy service in reply to a heartbeat
+  n.from = "@wisefrog";
+  n.key = "@ssh_1:config.mailbox.devices.policy.sshnp@wisefrog";
+  check(policy_is_policy_service_message(&n, &params), "config push from policy atsign is policy traffic");
+
+  // A late rpc response that missed its wait window
+  n.key = "@ssh_1:success.1787795933474969.auth_checks.__rpcs.sshnp@wisefrog";
+  check(policy_is_policy_service_message(&n, &params), "rpc response from policy atsign is policy traffic");
+
+  // The same key shapes from anyone else are NOT policy traffic
+  n.from = "@mallory";
+  check(!policy_is_policy_service_message(&n, &params), "rpc-shaped key from another atsign is not policy traffic");
+
+  // A genuine request from the policy atsign's key shape is not matched
+  n.from = "@wisefrog";
+  n.key = "@ssh_1:npt_request.mailbox.sshnp@wisefrog";
+  check(!policy_is_policy_service_message(&n, &params), "session request key is not policy traffic");
+
+  // No policy configured - nothing matches
+  params.policy = NULL;
+  n.key = "@ssh_1:config.mailbox.devices.policy.sshnp@wisefrog";
+  check(!policy_is_policy_service_message(&n, &params), "no policy configured means no policy traffic");
+}
+
 int main() {
   test_parse_success();
   test_parse_req_id_mismatch();
   test_parse_nack_and_garbage();
   test_permits_open();
+  test_is_policy_service_message();
 
   if (failures > 0) {
     printf("%d failures\n", failures);

@@ -147,6 +147,14 @@ exit:
   return ret;
 }
 
+bool policy_is_policy_service_message(const atclient_atnotification *notification, const sshnpd_params *params) {
+  if (params->policy == NULL || notification->key == NULL || !atsign_equals(notification->from, params->policy)) {
+    return false;
+  }
+  return strstr(notification->key, POLICY_RPC_INFIX) != NULL ||
+         strstr(notification->key, ".devices.policy.") != NULL;
+}
+
 // Whether this notification is a response to our rpc request. The Dart AtRpc
 // server sends response keys of the form
 // '@daemon:<type>.<reqId>.auth_checks.__rpcs.sshnp@policy' - match on the
@@ -276,6 +284,12 @@ int policy_auth_check(atclient *worker, atclient *monitor, const sshnpd_params *
           atclient_monitor_message_free(&message);
           return 0; // definite decision (success / nack / error)
         }
+      } else if (atsign_equals(message.notification->from, params->policy)) {
+        // Config pushes and stale rpc responses from the policy service are
+        // routine while a check is in flight - not worth a warning
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
+                     "Ignoring policy service message %s while waiting for the auth check response\n",
+                     message.notification->key);
       } else {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
                      "Dropping notification %s received while waiting for the policy service\n",

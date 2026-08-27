@@ -53,6 +53,16 @@ int policy_parse_response_value(const char *json, int64_t expected_req_id, sshnp
                                 char *resp_type_out, size_t resp_type_size);
 
 /**
+ * @brief Whether this notification is policy service traffic rather than a
+ * session request: an auth-check rpc response (one that arrived outside a
+ * policy_auth_check wait window, e.g. after a timeout) or a
+ * '<device>.devices.policy' config push the policy service sends in reply to
+ * heartbeats. Such messages must be ignored by the main loop - in particular
+ * they must never be treated as a request needing an auth check of their own.
+ */
+bool policy_is_policy_service_message(const atclient_atnotification *notification, const sshnpd_params *params);
+
+/**
  * @brief Whether the policy decision's permitOpen list permits host:port.
  *
  * Entries are 'host:port' with '*' as a wildcard for either part (a port of
