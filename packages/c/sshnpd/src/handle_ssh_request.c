@@ -12,6 +12,7 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
+#include <sshnpd/permitopen.h>
 #include <sshnpd/run_srv_process.h>
 #include <srv/params.h>
 #include <stdlib.h>
@@ -23,7 +24,8 @@
 
 // TODO: refactor this to call the new common handlers
 void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_child_process,
-                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key) {
+                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key,
+                        const sshnpd_policy_decision *policy) {
   int res = 0;
 
   cJSON *envelope = extract_envelope_from_notification(message);
@@ -55,6 +57,40 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     return;
   }
   cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
+
+  // ssh sessions always bridge to localhost:<local-sshd-port>; both the
+  // daemon's own permit-open list and (in policy mode) the policy service's
+  // permitOpen list must allow it, and the client is told why when they don't
+  char *session_id_for_errors = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId"));
+  permitopen_params permitopen;
+  permitopen.permitopen_len = params->permitopen_len;
+  permitopen.permitopen_hosts = params->permitopen_hosts;
+  permitopen.permitopen_ports = params->permitopen_ports;
+  permitopen.requested_host = "localhost";
+  permitopen.requested_port = params->local_sshd_port;
+
+  if (!should_permitopen(&permitopen)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Denying request to localhost:%d\n",
+                 params->local_sshd_port);
+    char error_message[256];
+    snprintf(error_message, sizeof(error_message), "Daemon does not permit connections to localhost:%d",
+             params->local_sshd_port);
+    send_session_error(atclient, params, requesting_atsign, session_id_for_errors, error_message);
+    cJSON_Delete(envelope);
+    return;
+  }
+
+  if (policy != NULL && !policy_permits_open(policy, "localhost", params->local_sshd_port)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                 "Denying request to localhost:%d - not in the policy service's permitOpen list\n",
+                 params->local_sshd_port);
+    char error_message[256];
+    snprintf(error_message, sizeof(error_message), "Client is not permitted connections to localhost:%d",
+             params->local_sshd_port);
+    send_session_error(atclient, params, requesting_atsign, session_id_for_errors, error_message);
+    cJSON_Delete(envelope);
+    return;
+  }
 
   bool authenticate_to_rvd = cJSON_IsTrue(cJSON_GetObjectItem(payload, "authenticateToRvd"));
   char *rvd_auth_string = NULL;

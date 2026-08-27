@@ -74,11 +74,6 @@ void main_loop() {
 
   atclient_monitor_message message;
 
-  permitopen_params permitopen;
-  permitopen.permitopen_len = params.permitopen_len;
-  permitopen.permitopen_hosts = params.permitopen_hosts;
-  permitopen.permitopen_ports = params.permitopen_ports;
-
   // The policy service's decision for the request currently being handled;
   // policy_checked is true only when the decision came from the policy
   // service (manager atsigns bypass it)
@@ -238,23 +233,10 @@ void main_loop() {
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          // permitopen happens first for ssh so we can avoid a bunch of unnecessary tasks
-          permitopen.requested_host = "localhost";
-          permitopen.requested_port = params.local_sshd_port;
-          if (!should_permitopen(&permitopen)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
-                         params.local_sshd_port);
-            break;
-          }
-          // Both the daemon's own permit-open list and the policy service's
-          // must allow the connection
-          if (policy_checked && !policy_permits_open(&policy_decision, "localhost", params.local_sshd_port)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                         "Ignoring request to localhost:%d - not in the policy service's permitOpen list\n",
-                         params.local_sshd_port);
-            break;
-          }
-          handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey);
+          // permit-open checks (daemon list and policy list) happen inside
+          // the handler, which can tell the client why a request was denied
+          handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey,
+                             policy_checked ? &policy_decision : NULL);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);

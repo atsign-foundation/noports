@@ -17,6 +17,79 @@
 
 #define LOGGER_TAG "HANDLER_COMMONS"
 
+int send_session_error(atclient *atclient, sshnpd_params *params, char *requesting_atsign, const char *session_id,
+                       const char *message) {
+  if (session_id == NULL || requesting_atsign == NULL) {
+    return 1;
+  }
+
+  atclient_atkey atkey;
+  atclient_atkey_init(&atkey);
+
+  size_t keyname_size = strlen(session_id) + strlen(params->device) + 2;
+  char *keyname = malloc(keyname_size);
+  if (keyname == NULL) {
+    atclient_atkey_free(&atkey);
+    return 1;
+  }
+  snprintf(keyname, keyname_size, "%s.%s", session_id, params->device);
+  int res = atclient_atkey_create_shared_key(&atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
+  free(keyname);
+  if (res != 0) {
+    atclient_atkey_free(&atkey);
+    return res;
+  }
+  atclient_atkey_metadata_set_is_public(&atkey.metadata, false);
+  atclient_atkey_metadata_set_is_encrypted(&atkey.metadata, true);
+  atclient_atkey_metadata_set_ttl(&atkey.metadata, 10000);
+
+  atclient_notify_params notify_params;
+  atclient_notify_params_init(&notify_params);
+  if ((res = atclient_notify_params_set_atkey(&notify_params, &atkey)) == 0 &&
+      (res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) == 0 &&
+      (res = atclient_notify_params_set_value(&notify_params, message)) == 0) {
+    res = atclient_notify(atclient, &notify_params, NULL);
+  }
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send error message to %s\n", requesting_atsign);
+  }
+  atclient_notify_params_free(&notify_params);
+  atclient_atkey_free(&atkey);
+  return res;
+}
+
+void format_permitopen_list(char **hosts, const uint16_t *ports, size_t len, char *buf, size_t bufsize) {
+  size_t pos = 0;
+  pos += snprintf(buf + pos, bufsize - pos, "[");
+  for (size_t i = 0; i < len && pos < bufsize - 1; i++) {
+    if (ports[i] == 0) {
+      pos += snprintf(buf + pos, bufsize - pos, "%s%s:*", i > 0 ? ", " : "", hosts[i]);
+    } else {
+      pos += snprintf(buf + pos, bufsize - pos, "%s%s:%u", i > 0 ? ", " : "", hosts[i], (unsigned int)ports[i]);
+    }
+  }
+  if (pos < bufsize - 1) {
+    snprintf(buf + pos, bufsize - pos, "]");
+  } else {
+    buf[bufsize - 2] = ']';
+    buf[bufsize - 1] = '\0';
+  }
+}
+
+void format_string_list(char **items, size_t len, char *buf, size_t bufsize) {
+  size_t pos = 0;
+  pos += snprintf(buf + pos, bufsize - pos, "[");
+  for (size_t i = 0; i < len && pos < bufsize - 1; i++) {
+    pos += snprintf(buf + pos, bufsize - pos, "%s%s", i > 0 ? ", " : "", items[i]);
+  }
+  if (pos < bufsize - 1) {
+    snprintf(buf + pos, bufsize - pos, "]");
+  } else {
+    buf[bufsize - 2] = ']';
+    buf[bufsize - 1] = '\0';
+  }
+}
+
 char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign) {
   // 'primary' is the Dart at_client fallback when the atkeys file carries no
   // APKAM enrollment id
