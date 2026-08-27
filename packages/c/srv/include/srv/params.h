@@ -9,8 +9,10 @@
 
 typedef struct {
   char *rvd_auth_string;
-  char *session_aes_key_string;
-  char *session_aes_iv_string;
+  char *session_aes_key_c2d_string;
+  char *session_aes_iv_c2d_string;
+  char *session_aes_key_d2c_string;
+  char *session_aes_iv_d2c_string;
 } srv_env_t;
 
 /**
@@ -31,8 +33,15 @@ typedef struct {
   int timeout;
 
   char *rvd_auth_string;
-  char *session_aes_key_string;
-  char *session_aes_iv_string;
+
+  // Session encryption keys (base64). When twinned keys are in use, the C2D
+  // (client to daemon) key decrypts inbound traffic and the D2C (daemon to
+  // client) key encrypts outbound traffic. When the D2C strings are NULL the
+  // C2D key is used in both directions (legacy single-key sessions).
+  char *session_aes_key_c2d_string;
+  char *session_aes_iv_c2d_string;
+  char *session_aes_key_d2c_string;
+  char *session_aes_iv_d2c_string;
 } srv_params_t;
 
 /**
