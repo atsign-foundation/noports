@@ -10,6 +10,7 @@
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>
+#include <srv/params.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -161,9 +162,27 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
     const bool multi = true;
 
+    // The npt session request carries the timeout in milliseconds; the srv
+    // works in whole seconds, so round up (DaemonFeature.adjustableTimeout)
+    int timeout_seconds = SRV_DEFAULT_TIMEOUT_SECONDS;
+    cJSON *timeout_json = cJSON_GetObjectItem(payload, "timeout");
+    if (cJSON_IsNumber(timeout_json) && cJSON_GetNumberValue(timeout_json) > 0) {
+      double timeout_ms = cJSON_GetNumberValue(timeout_json);
+      // Clamp before the cast: an out-of-range double -> int conversion is UB.
+      // The cap matches the npt client's "never" timeout (-T 0 -> 365 days),
+      // the largest value a well-behaved client sends.
+      if (timeout_ms > (double)SRV_MAX_TIMEOUT_SECONDS * 1000.0) {
+        timeout_ms = (double)SRV_MAX_TIMEOUT_SECONDS * 1000.0;
+      }
+      timeout_seconds = (int)((timeout_ms + 999) / 1000);
+      if (timeout_seconds < 1) {
+        timeout_seconds = 1;
+      }
+    }
+
     run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
-                    rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c,
-                    session_iv_d2c);
+                    rvd_auth_string, encrypt_rvd_traffic, multi, timeout_seconds, session_aes_key_c2d, session_iv_c2d,
+                    session_aes_key_d2c, session_iv_d2c);
 
     *is_child_process = true;
 

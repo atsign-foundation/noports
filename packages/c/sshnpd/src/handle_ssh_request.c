@@ -9,6 +9,7 @@
 #include <atclient/string_utils.h>
 #include <atlogger/atlogger.h>
 #include <errno.h>
+#include <srv/params.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -142,9 +143,10 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
     const bool multi = false;
 
+    // ssh_request payloads don't carry a timeout - only npt session requests do
     int res = run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
-                              rvd_auth_string, encrypt_rvd_traffic, multi, session_aes_key_c2d, session_iv_c2d,
-                              session_aes_key_d2c, session_iv_d2c);
+                              rvd_auth_string, encrypt_rvd_traffic, multi, SRV_DEFAULT_TIMEOUT_SECONDS,
+                              session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c);
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv process exited with code: %d\n", res);
     }
