@@ -1,17 +1,29 @@
 #ifndef RUN_SRV_H
 #define RUN_SRV_H
 
+#include <atchops/rsa_key.h>
 #include <atclient/json.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+// Everything the srv needs to run ESCR (encrypted signed challenge response)
+// relay authentication for one session. All pointers are borrowed.
+typedef struct {
+  const char *session_id;
+  const char *aes_key_base64;               // the session's relayAuthAesKey
+  const char *signing_key_uri;              // public:_apsk.<enrollmentId>.a.__e<atsign>
+  atchops_rsa_key_private_key *signing_key; // the daemon's PKAM private key
+} sshnpd_escr_context;
 
 // The d2c key and iv may be NULL, in which case the session uses a single key
 // (the c2d key) for both directions of traffic.
 // timeout_seconds: how long the srv stays alive with no active connections
 // before exiting (multi mode only); pass SRV_DEFAULT_TIMEOUT_SECONDS when the
 // request doesn't specify one.
+// escr: non-NULL to authenticate to the relay with ESCR instead of the legacy
+// rvd_auth_string.
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
-                    bool authenticate_to_rvd, char *rvd_auth_string, bool encrypt_rvd_traffic, bool multi,
-                    int timeout_seconds, unsigned char *session_aes_key_c2d, unsigned char *session_iv_c2d,
-                    unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c);
+                    bool authenticate_to_rvd, char *rvd_auth_string, const sshnpd_escr_context *escr,
+                    bool encrypt_rvd_traffic, bool multi, int timeout_seconds, unsigned char *session_aes_key_c2d,
+                    unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c);
 #endif

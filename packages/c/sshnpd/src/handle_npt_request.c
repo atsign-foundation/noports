@@ -11,6 +11,7 @@
 #include <atlogger/atlogger.h>
 #include <errno.h>
 #include <srv/params.h>
+#include <sshnpd/daemon.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -75,15 +76,43 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   }
 
   bool authenticate_to_rvd = cJSON_IsTrue(cJSON_GetObjectItem(payload, "authenticateToRvd"));
-  char *rvd_auth_string;
+  char *rvd_auth_string = NULL;
+  char *escr_signing_key_uri = NULL;
+  sshnpd_escr_context escr_context;
+  bool use_escr = false;
 
   if (authenticate_to_rvd) {
-    res = create_rvd_auth_string(payload, &signing_key, &rvd_auth_string);
-    if (res != 0) {
-      cJSON_Delete(envelope);
-      return;
+    // RelayAuthMode: absent or "payload" means the legacy signed auth string,
+    // "escr" means encrypted signed challenge response (required for relays
+    // running on a single shared port, e.g. 443)
+    char *relay_auth_mode = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "relayAuthMode"));
+    if (relay_auth_mode != NULL && strcmp(relay_auth_mode, "escr") == 0) {
+      char *relay_auth_aes_key = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "relayAuthAesKey"));
+      char *session_id_str = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId"));
+      if (relay_auth_aes_key != NULL && session_id_str != NULL) {
+        escr_signing_key_uri = public_signing_key_uri(&atkeys, params->atsign);
+      }
+      if (escr_signing_key_uri != NULL) {
+        escr_context.session_id = session_id_str;
+        escr_context.aes_key_base64 = relay_auth_aes_key;
+        escr_context.signing_key_uri = escr_signing_key_uri;
+        escr_context.signing_key = &atkeys.pkam_private_key;
+        use_escr = true;
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Session will use escr relay auth\n");
+      } else {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                     "escr relay auth requested but request is missing relayAuthAesKey or sessionId - falling back to "
+                     "legacy relay auth\n");
+      }
     }
-    // allocated: rvd_auth_string
+    if (!use_escr) {
+      res = create_rvd_auth_string(payload, &signing_key, &rvd_auth_string);
+      if (res != 0) {
+        cJSON_Delete(envelope);
+        return;
+      }
+      // allocated: rvd_auth_string
+    }
   }
 
   bool encrypt_rvd_traffic = cJSON_IsTrue(cJSON_GetObjectItem(payload, "encryptRvdTraffic"));
@@ -103,9 +132,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to setup rvd session encryption\n");
       cJSON_Delete(envelope);
-      if (authenticate_to_rvd) {
+      if (rvd_auth_string != NULL) {
         free(rvd_auth_string);
       }
+      free(escr_signing_key_uri);
       return;
     }
   }
@@ -122,9 +152,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       free(session_aes_key_c2d_base64);
       free(session_iv_c2d_base64);
       cJSON_Delete(envelope);
-      if (authenticate_to_rvd) {
+      if (rvd_auth_string != NULL) {
         free(rvd_auth_string);
       }
+      free(escr_signing_key_uri);
       return;
     }
   }
@@ -181,8 +212,8 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     }
 
     run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
-                    rvd_auth_string, encrypt_rvd_traffic, multi, timeout_seconds, session_aes_key_c2d, session_iv_c2d,
-                    session_aes_key_d2c, session_iv_d2c);
+                    rvd_auth_string, use_escr ? &escr_context : NULL, encrypt_rvd_traffic, multi, timeout_seconds,
+                    session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c);
 
     *is_child_process = true;
 
@@ -194,9 +225,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       free(session_aes_key_d2c);
       free(session_iv_d2c);
     }
-    if (authenticate_to_rvd) {
+    if (rvd_auth_string != NULL) {
       cJSON_free(rvd_auth_string);
     }
+    free(escr_signing_key_uri);
     cJSON_Delete(envelope);
     return;
 
@@ -236,9 +268,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fork the srv process: %s\n", strerror(errno));
   }
 cancel:
-  if (authenticate_to_rvd) {
+  if (rvd_auth_string != NULL) {
     cJSON_free(rvd_auth_string);
   }
+  free(escr_signing_key_uri);
   if (encrypt_rvd_traffic) {
     free(session_iv_c2d);
     free(session_aes_key_c2d);
