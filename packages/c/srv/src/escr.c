@@ -37,20 +37,15 @@ static bool json_safe(const char *s) {
   return true;
 }
 
-static char *base64_encode_alloc(const unsigned char *src, size_t len) {
-  // Base64 encodes every 3 input bytes as exactly 4 output characters
-  size_t b64_len = ((len + 2) / 3) * 4;
-  char *dst = malloc(b64_len + 1);
-  if (dst == NULL) {
-    return NULL;
-  }
+// Base64 encode src into the caller's buffer and null-terminate. dstsize
+// must include room for the terminator. Returns 0 on success.
+static int base64_encode_str(const unsigned char *src, size_t len, char *dst, size_t dstsize) {
   size_t dstlen = 0;
-  if (atchops_base64_encode(src, len, dst, b64_len + 1, &dstlen) != 0 || dstlen > b64_len) {
-    free(dst);
-    return NULL;
+  if (dstsize == 0 || atchops_base64_encode(src, len, dst, dstsize - 1, &dstlen) != 0) {
+    return 1;
   }
   dst[dstlen] = '\0';
-  return dst;
+  return 0;
 }
 
 int srv_escr_build_response(const char *session_id, const char *challenge, const char *aes_key_base64,
@@ -58,15 +53,21 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
                             const unsigned char iv[16], char **out_line) {
   int ret = 1;
 
-  char *p_json = NULL;
-  char *sig_b64 = NULL;
-  char *env_json = NULL;
-  char *env64 = NULL;
-  unsigned char *padded = NULL;
-  unsigned char *encrypted = NULL;
-  char *enc_b64 = NULL;
-  char *outer_json = NULL;
-  char *auth_payload64 = NULL;
+  // The relay rejects lines longer than ESCR_MAX_LINE, so every intermediate
+  // stage is bounded by it too (each later stage only grows the data). All
+  // buffers are fixed-size and stack-owned; snprintf truncation at any stage
+  // is caught and reported as the same over-limit error the final check gives.
+  char p_json[ESCR_MAX_LINE];
+  char sig_b64[512]; // RSA-2048 signature is 256 bytes -> 344 base64 chars
+  char env_json[ESCR_MAX_LINE];
+  char env64[ESCR_MAX_LINE];
+  unsigned char padded[ESCR_MAX_LINE + 16];
+  unsigned char encrypted[ESCR_MAX_LINE + 16];
+  char enc_b64[ESCR_MAX_LINE];
+  char iv_b64[32];
+  char outer_json[ESCR_MAX_LINE];
+  char auth_payload64[ESCR_MAX_LINE];
+  int n;
 
   *out_line = NULL;
 
@@ -78,13 +79,11 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
   // Inner signed payload. The relay re-serializes this map with Dart's
   // jsonEncode and verifies the signature against that, so the bytes must be
   // compact JSON in exactly this key order.
-  size_t p_size = strlen(session_id) + strlen(challenge) + 32;
-  p_json = malloc(p_size);
-  if (p_json == NULL) {
-    goto exit;
+  n = snprintf(p_json, sizeof(p_json), "{\"sid\":\"%s\",\"c\":\"%s\",\"side\":\"%s\"}", session_id, challenge,
+               is_side_a ? "a" : "b");
+  if (n < 0 || (size_t)n >= sizeof(p_json)) {
+    goto too_long;
   }
-  snprintf(p_json, p_size, "{\"sid\":\"%s\",\"c\":\"%s\",\"side\":\"%s\"}", session_id, challenge,
-           is_side_a ? "a" : "b");
 
   // Sign the payload bytes: RSASSA-PKCS1-v1_5 over SHA-256
   unsigned char sig[ESCR_RSA_SIG_BYTES];
@@ -92,23 +91,19 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
     atlogger_log(TAG, ERROR, "Failed to sign escr challenge payload\n");
     goto exit;
   }
-  sig_b64 = base64_encode_alloc(sig, ESCR_RSA_SIG_BYTES);
-  if (sig_b64 == NULL) {
+  if (base64_encode_str(sig, ESCR_RSA_SIG_BYTES, sig_b64, sizeof(sig_b64)) != 0) {
     goto exit;
   }
 
   // Envelope: payload, signature, algorithm names and the signing key uri
-  size_t env_size = strlen(p_json) + strlen(sig_b64) + strlen(signing_key_uri) + 64;
-  env_json = malloc(env_size);
-  if (env_json == NULL) {
-    goto exit;
+  n = snprintf(env_json, sizeof(env_json), "{\"p\":%s,\"s\":\"%s\",\"ha\":\"sha256\",\"sa\":\"rsa2048\",\"sk\":\"%s\"}",
+               p_json, sig_b64, signing_key_uri);
+  if (n < 0 || (size_t)n >= sizeof(env_json)) {
+    goto too_long;
   }
-  snprintf(env_json, env_size, "{\"p\":%s,\"s\":\"%s\",\"ha\":\"sha256\",\"sa\":\"rsa2048\",\"sk\":\"%s\"}", p_json,
-           sig_b64, signing_key_uri);
 
-  env64 = base64_encode_alloc((unsigned char *)env_json, strlen(env_json));
-  if (env64 == NULL) {
-    goto exit;
+  if (base64_encode_str((unsigned char *)env_json, strlen(env_json), env64, sizeof(env64)) != 0) {
+    goto too_long;
   }
 
   // Decode the relay auth AES key
@@ -126,11 +121,6 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
   size_t env64_len = strlen(env64);
   size_t pad = 16 - (env64_len % 16); // always 1..16
   size_t padded_len = env64_len + pad;
-  padded = malloc(padded_len);
-  encrypted = malloc(padded_len);
-  if (padded == NULL || encrypted == NULL) {
-    goto exit;
-  }
   memcpy(padded, env64, env64_len);
   memset(padded + env64_len, (unsigned char)pad, pad);
 
@@ -152,30 +142,25 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
     }
   }
 
-  char iv_b64[32];
-  size_t iv_b64_len = 0;
-  if (atchops_base64_encode(iv, 16, iv_b64, sizeof(iv_b64), &iv_b64_len) != 0) {
-    goto exit;
-  }
-  iv_b64[iv_b64_len] = '\0';
-
-  enc_b64 = base64_encode_alloc(encrypted, padded_len);
-  if (enc_b64 == NULL) {
+  if (base64_encode_str(iv, 16, iv_b64, sizeof(iv_b64)) != 0) {
     goto exit;
   }
 
-  size_t outer_size = strlen(iv_b64) + strlen(enc_b64) + 24;
-  outer_json = malloc(outer_size);
-  if (outer_json == NULL) {
-    goto exit;
-  }
-  snprintf(outer_json, outer_size, "{\"iv\":\"%s\",\"e\":\"%s\"}", iv_b64, enc_b64);
-
-  auth_payload64 = base64_encode_alloc((unsigned char *)outer_json, strlen(outer_json));
-  if (auth_payload64 == NULL) {
-    goto exit;
+  if (base64_encode_str(encrypted, padded_len, enc_b64, sizeof(enc_b64)) != 0) {
+    goto too_long;
   }
 
+  n = snprintf(outer_json, sizeof(outer_json), "{\"iv\":\"%s\",\"e\":\"%s\"}", iv_b64, enc_b64);
+  if (n < 0 || (size_t)n >= sizeof(outer_json)) {
+    goto too_long;
+  }
+
+  if (base64_encode_str((unsigned char *)outer_json, strlen(outer_json), auth_payload64, sizeof(auth_payload64)) != 0) {
+    goto too_long;
+  }
+
+  // The out line is the only heap allocation: it outlives this function and
+  // is freed by the caller.
   size_t line_size = strlen(session_id) + strlen(auth_payload64) + 2;
   *out_line = malloc(line_size);
   if (*out_line == NULL) {
@@ -184,24 +169,18 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
   snprintf(*out_line, line_size, "%s:%s", session_id, auth_payload64);
 
   if (strlen(*out_line) > ESCR_MAX_LINE - 1) {
-    atlogger_log(TAG, ERROR, "escr response line exceeds the relay's %d byte limit\n", ESCR_MAX_LINE);
     free(*out_line);
     *out_line = NULL;
-    goto exit;
+    goto too_long;
   }
 
   ret = 0;
+  goto exit;
+
+too_long:
+  atlogger_log(TAG, ERROR, "escr response line exceeds the relay's %d byte limit\n", ESCR_MAX_LINE);
 
 exit:
-  free(p_json);
-  free(sig_b64);
-  free(env_json);
-  free(env64);
-  free(padded);
-  free(encrypted);
-  free(enc_b64);
-  free(outer_json);
-  free(auth_payload64);
   return ret;
 }
 
