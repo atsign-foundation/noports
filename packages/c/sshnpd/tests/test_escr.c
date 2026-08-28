@@ -12,6 +12,7 @@
 #include <atclient/json.h>
 #include <mbedtls/aes.h>
 #include <srv/escr.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
