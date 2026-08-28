@@ -12,9 +12,9 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      # at_c trunk including PR #702: 'proxy:' root server support in
-      # at_activate and the connection CRLF fix required for reverse proxies
-      GIT_TAG f7303da5f3edf522a722a6ecabcae7b9a0db062a
+      # at_c v0.3.11: adds the enroll-via-proxy fix (at_c#705) on top of the
+      # 'proxy:' root server support and connection CRLF fix from v0.3.10
+      GIT_TAG 06dbc19ce2d1b682b7b51b3a2b5fb4dfdf1b3763
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
