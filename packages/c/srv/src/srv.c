@@ -1,17 +1,53 @@
 #include "srv/srv.h"
+#include "srv/escr.h"
 #include "srv/params.h"
 #include "srv/side.h"
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
+#include <mbedtls/net_sockets.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define TAG "srv - run"
 
+// How often the multi-mode control channel wakes up from recv to check the
+// connection timeout
+#define SRV_CONTROL_POLL_MS 1000
+
 static void *run_socket_to_socket(void *args);
+
+// Connection timeout state for multi mode: the srv exits once there have been
+// no active socket-to-socket sessions for params->timeout seconds (matching
+// the SocketConnector timeout semantics of the Dart srv). One process runs at
+// most one run_srv_daemon_side_multi, so process-wide state is safe here.
+static pthread_mutex_t session_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int active_sessions = 0;
+static time_t idle_since = 0;
+
+static void session_started(void) {
+  pthread_mutex_lock(&session_mutex);
+  active_sessions++;
+  pthread_mutex_unlock(&session_mutex);
+}
+
+static void session_ended(void) {
+  pthread_mutex_lock(&session_mutex);
+  if (--active_sessions == 0) {
+    idle_since = time(NULL);
+  }
+  pthread_mutex_unlock(&session_mutex);
+}
+
+static bool connection_timeout_expired(int timeout_seconds) {
+  pthread_mutex_lock(&session_mutex);
+  bool expired = active_sessions == 0 && difftime(time(NULL), idle_since) >= timeout_seconds;
+  pthread_mutex_unlock(&session_mutex);
+  return expired;
+}
 
 static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests);
 
@@ -110,8 +146,16 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     return res;
   }
 
-  // send the auth string to the other side
-  if (params->rv_auth == 1) {
+  // Authenticate the control channel to the relay
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating control channel to relay (escr)\n");
+    res = srv_escr_authenticate(&control_side.socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate control channel to relay\n");
+      mbedtls_net_close(&control_side.socket);
+      return res;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
     int len = strlen(params->rvd_auth_string);
 
@@ -135,14 +179,30 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   }
   memset(buffer, 0, 4096 * sizeof(unsigned char));
 
+  int timeout_seconds = params->timeout > 0 ? params->timeout : SRV_DEFAULT_TIMEOUT_SECONDS;
+  pthread_mutex_lock(&session_mutex);
+  idle_since = time(NULL);
+  pthread_mutex_unlock(&session_mutex);
+
   size_t len;
-  while ((res = mbedtls_net_recv(&control_side.socket, buffer, 4096)) > 0) {
-    if (res < 0) {
-      atlogger_log("srv - control (side b)", ERROR, "Error reading data: %zu", len);
+  for (;;) {
+    if (connection_timeout_expired(timeout_seconds)) {
+      atlogger_log(TAG, INFO, "No connections for %d seconds - closing srv\n", timeout_seconds);
+      res = 0;
       goto exit;
-    } else {
-      len = res;
     }
+
+    res = mbedtls_net_recv_timeout(&control_side.socket, buffer, 4096, SRV_CONTROL_POLL_MS);
+    if (res == MBEDTLS_ERR_SSL_TIMEOUT) {
+      continue;
+    }
+    if (res <= 0) {
+      if (res < 0) {
+        atlogger_log("srv - control (side b)", ERROR, "Error reading data from control socket: %d\n", res);
+      }
+      goto exit;
+    }
+    len = res;
 
     if (control_side.transformer != NULL) {
       unsigned char *output = malloc(4096 * sizeof(unsigned char));
@@ -242,9 +302,15 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         sts_thread_params->decrypter = new_socket_decrypter;
         sts_thread_params->is_srv_ready = true;
 
+        // Count the session before the thread exists so the timeout check
+        // can't fire in the gap between accepting the request and the
+        // session becoming active
+        session_started();
+
         res = pthread_create(&sts_thread, NULL, run_socket_to_socket, (void *)sts_thread_params);
         if (res != 0) {
           atlogger_log(TAG, ERROR, "Failed to create thread: %d\n", res);
+          session_ended();
           if (!no_encrypt) {
             free(new_socket_encrypter);
             free(new_socket_decrypter);
@@ -313,8 +379,17 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   srv_link_sides(&sides[0], &sides[1], fds);
 
   atlogger_log(TAG, INFO, "Starting threads\n");
-  // send the auth string to side b
-  if (params->rv_auth == 1) {
+  // Authenticate side b (the relay side) - every socket to the relay
+  // authenticates individually
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating session socket to relay (escr)\n");
+    res = srv_escr_authenticate(&sides[1].socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate session socket to relay\n");
+      exit_res = res;
+      goto exit;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, INFO, "Sending auth string\n");
     int len = strlen(auth_string);
 
@@ -591,6 +666,8 @@ static void *run_socket_to_socket(void *args) {
   free(sts_thread_params->encrypter);
   free(sts_thread_params->decrypter);
   free(sts_thread_params);
+
+  session_ended();
 
   return NULL;
 }
