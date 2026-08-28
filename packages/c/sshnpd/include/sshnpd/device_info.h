@@ -19,6 +19,8 @@ struct sshnpd_device_info_state {
   uint8_t attempts;
 };
 
+// Shares (or un-shares) the username with each manager atSign. Best effort:
+// per-atSign failures are logged and skipped; always returns 0.
 int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_atsigns, const char *username,
                          const char *device_name, const char *device_atsign, bool make_visible);
 void send_next_device_info(atclient *atclient, sshnpd_params *params);
