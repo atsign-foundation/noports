@@ -2,6 +2,14 @@
 #define SRV_PARAMS_H
 #define SRV_VERSION "0.1.0"
 
+// Matches DefaultArgs.srvTimeoutInSeconds in the Dart noports_core package
+#define SRV_DEFAULT_TIMEOUT_SECONDS 30
+
+// Matches the npt client's "never" timeout (-T 0 -> neverTimeoutDays = 365
+// days in npt.dart); also keeps the double -> int conversion of the requested
+// timeout in range
+#define SRV_MAX_TIMEOUT_SECONDS (365 * 24 * 60 * 60)
+
 #include <argparse/argparse.h>
 #include <getopt.h>
 #include <stdbool.h>

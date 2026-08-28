@@ -12,8 +12,8 @@
 
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
                     bool authenticate_to_rvd, char *rvd_auth_string, bool encrypt_rvd_traffic, bool multi,
-                    unsigned char *session_aes_key_c2d, unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c,
-                    unsigned char *session_iv_d2c) {
+                    int timeout_seconds, unsigned char *session_aes_key_c2d, unsigned char *session_iv_c2d,
+                    unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c) {
 
   int res = 0;
   srv_params_t srv_params;
@@ -38,6 +38,7 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   srv_params.session_aes_key_d2c_string = (char *)session_aes_key_d2c;
   srv_params.session_aes_iv_d2c_string = (char *)session_iv_d2c;
   srv_params.multi = multi;
+  srv_params.timeout = timeout_seconds > 0 ? timeout_seconds : SRV_DEFAULT_TIMEOUT_SECONDS;
 
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Starting srv\n");
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "relay: %s:%d\n", srvd_host, srvd_port);
@@ -45,6 +46,7 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "rv_auth: %d\n", authenticate_to_rvd);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "rv_e2ee: %d\n", encrypt_rvd_traffic);
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "multi: %d\n", multi);
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "timeout: %d\n", srv_params.timeout);
   fflush(stdout);
 
   atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);

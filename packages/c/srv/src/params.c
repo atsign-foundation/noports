@@ -8,6 +8,7 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
   params->local_port = 22;
   params->bind_local_port = 0;
   params->multi = 0;
+  params->timeout = SRV_DEFAULT_TIMEOUT_SECONDS;
   params->rv_auth = 0;
   params->rv_e2ee = 0;
   params->rvd_auth_string = NULL;
