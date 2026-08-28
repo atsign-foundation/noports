@@ -234,7 +234,9 @@ static int escr_send_all(mbedtls_net_context *socket, const unsigned char *buf, 
   size_t sent = 0;
   while (sent < len) {
     int res = mbedtls_net_send(socket, buf + sent, len - sent);
-    if (res < 0) {
+    // 0 means the peer is gone (closed/failed connection); treating it as
+    // progress would spin this loop forever
+    if (res <= 0) {
       atlogger_log(TAG, ERROR, "Failed to send escr response: %d\n", res);
       return 1;
     }
