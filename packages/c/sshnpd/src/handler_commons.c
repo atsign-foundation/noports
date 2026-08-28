@@ -12,10 +12,26 @@
 #include <atclient/json.h>
 #include <atlogger/atlogger.h>
 #include <sshnpd/handler_commons.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define LOGGER_TAG "HANDLER_COMMONS"
+
+char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign) {
+  // 'primary' is the Dart at_client fallback when the atkeys file carries no
+  // APKAM enrollment id
+  const char *enrollment_id = "primary";
+  if (atkeys->enrollment_id != NULL && atkeys->enrollment_id[0] != '\0') {
+    enrollment_id = atkeys->enrollment_id;
+  }
+  size_t size = strlen("public:_apsk.") + strlen(enrollment_id) + strlen(".a.__e") + strlen(atsign) + 1;
+  char *uri = malloc(size);
+  if (uri != NULL) {
+    snprintf(uri, size, "public:_apsk.%s.a.__e%s", enrollment_id, atsign);
+  }
+  return uri;
+}
 
 bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
   if (params == NULL || atsign == NULL || atsign[0] == '\0') {

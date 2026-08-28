@@ -1,4 +1,5 @@
 #include "srv/srv.h"
+#include "srv/escr.h"
 #include "srv/params.h"
 #include "srv/side.h"
 #include <atchops/base64.h>
@@ -145,8 +146,16 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     return res;
   }
 
-  // send the auth string to the other side
-  if (params->rv_auth == 1) {
+  // Authenticate the control channel to the relay
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating control channel to relay (escr)\n");
+    res = srv_escr_authenticate(&control_side.socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate control channel to relay\n");
+      mbedtls_net_close(&control_side.socket);
+      return res;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
     int len = strlen(params->rvd_auth_string);
 
@@ -370,8 +379,17 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   srv_link_sides(&sides[0], &sides[1], fds);
 
   atlogger_log(TAG, INFO, "Starting threads\n");
-  // send the auth string to side b
-  if (params->rv_auth == 1) {
+  // Authenticate side b (the relay side) - every socket to the relay
+  // authenticates individually
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating session socket to relay (escr)\n");
+    res = srv_escr_authenticate(&sides[1].socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate session socket to relay\n");
+      exit_res = res;
+      goto exit;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, INFO, "Sending auth string\n");
     int len = strlen(auth_string);
 

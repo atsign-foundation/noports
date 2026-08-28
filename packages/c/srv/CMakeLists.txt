@@ -10,6 +10,7 @@ project(srv VERSION 1.0.20 LANGUAGES C)
 # globs are known as bad practice, so we do not use them here
 set(
   SRV_SRCS
+  ${CMAKE_CURRENT_LIST_DIR}/src/escr.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/side.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
