@@ -225,7 +225,14 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     int timeout_seconds = SRV_DEFAULT_TIMEOUT_SECONDS;
     cJSON *timeout_json = cJSON_GetObjectItem(payload, "timeout");
     if (cJSON_IsNumber(timeout_json) && cJSON_GetNumberValue(timeout_json) > 0) {
-      timeout_seconds = (int)((cJSON_GetNumberValue(timeout_json) + 999) / 1000);
+      double timeout_ms = cJSON_GetNumberValue(timeout_json);
+      // Clamp before the cast: an out-of-range double -> int conversion is UB.
+      // The cap matches the npt client's "never" timeout (-T 0 -> 365 days),
+      // the largest value a well-behaved client sends.
+      if (timeout_ms > (double)SRV_MAX_TIMEOUT_SECONDS * 1000.0) {
+        timeout_ms = (double)SRV_MAX_TIMEOUT_SECONDS * 1000.0;
+      }
+      timeout_seconds = (int)((timeout_ms + 999) / 1000);
       if (timeout_seconds < 1) {
         timeout_seconds = 1;
       }
