@@ -45,8 +45,10 @@ typedef struct {
 
   // ESCR relay authentication (RelayAuthMode.escr). When escr_auth is true
   // every socket to the relay runs an encrypted signed challenge response
-  // exchange (see srv/escr.h) instead of writing rvd_auth_string. The signing
-  // key is borrowed, not owned, by this struct.
+  // exchange (see srv/escr.h) instead of writing rvd_auth_string. Ownership
+  // of the signing key depends on the caller: when sshnpd runs srv in-process
+  // it is borrowed from the daemon's atkeys, but the standalone srv binary's
+  // parse_srv_params allocates it (owned for the lifetime of the process).
   bool escr_auth;
   bool escr_is_side_a;
   char *escr_session_id;
