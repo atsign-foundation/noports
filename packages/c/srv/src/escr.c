@@ -38,13 +38,14 @@ static bool json_safe(const char *s) {
 }
 
 static char *base64_encode_alloc(const unsigned char *src, size_t len) {
-  size_t dstsize = (len / 3 + 2) * 4 + 4;
-  char *dst = malloc(dstsize);
+  // Base64 encodes every 3 input bytes as exactly 4 output characters
+  size_t b64_len = ((len + 2) / 3) * 4;
+  char *dst = malloc(b64_len + 1);
   if (dst == NULL) {
     return NULL;
   }
   size_t dstlen = 0;
-  if (atchops_base64_encode(src, len, dst, dstsize, &dstlen) != 0) {
+  if (atchops_base64_encode(src, len, dst, b64_len + 1, &dstlen) != 0 || dstlen > b64_len) {
     free(dst);
     return NULL;
   }
