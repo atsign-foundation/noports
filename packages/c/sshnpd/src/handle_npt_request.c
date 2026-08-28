@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <srv/params.h>
 #include <sshnpd/daemon.h>
+#include <sshnpd/handle_npt_request.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
@@ -23,7 +24,8 @@
 #define LOGGER_TAG "NPT_REQUEST"
 
 void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_child_process,
-                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key) {
+                        atclient_monitor_message *message, atchops_rsa_key_private_key signing_key,
+                        const sshnpd_policy_decision *policy) {
   int res = 0;
 
   cJSON *envelope = extract_envelope_from_notification(message);
@@ -68,9 +70,34 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   permitopen.requested_host = cJSON_GetStringValue(requested_host);
   permitopen.requested_port = cJSON_GetNumberValue(requested_port);
 
+  char *session_id_for_errors = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId"));
+
   if (!should_permitopen(&permitopen)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Denying request to %s:%d\n", permitopen.requested_host,
                  permitopen.requested_port);
+    char po_list[256];
+    format_permitopen_list(params->permitopen_hosts, params->permitopen_ports, params->permitopen_len, po_list,
+                           sizeof(po_list));
+    char error_message[512];
+    snprintf(error_message, sizeof(error_message), "Connection to %s:%d denied based on daemon --permit-open %s",
+             permitopen.requested_host, permitopen.requested_port, po_list);
+    send_session_error(atclient, params, requesting_atsign, session_id_for_errors, error_message);
+    cJSON_Delete(envelope);
+    return;
+  }
+
+  // Both the daemon's own permit-open list and the policy service's must
+  // allow the connection
+  if (policy != NULL && !policy_permits_open(policy, permitopen.requested_host, (uint16_t)permitopen.requested_port)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                 "Denying request to %s:%d - not in the policy service's permitOpen list\n", permitopen.requested_host,
+                 permitopen.requested_port);
+    char po_list[256];
+    format_string_list(policy->permit_open, policy->permit_open_len, po_list, sizeof(po_list));
+    char error_message[512];
+    snprintf(error_message, sizeof(error_message), "Connection to %s:%d denied based on POLICY --permit-open %s",
+             permitopen.requested_host, permitopen.requested_port, po_list);
+    send_session_error(atclient, params, requesting_atsign, session_id_for_errors, error_message);
     cJSON_Delete(envelope);
     return;
   }

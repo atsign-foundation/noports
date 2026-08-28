@@ -27,6 +27,7 @@
 #include <mbedtls/psa_util.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
+#include <sshnpd/policy.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,16 +74,19 @@ void main_loop() {
 
   atclient_monitor_message message;
 
-  permitopen_params permitopen;
-  permitopen.permitopen_len = params.permitopen_len;
-  permitopen.permitopen_hosts = params.permitopen_hosts;
-  permitopen.permitopen_ports = params.permitopen_ports;
+  // The policy service's decision for the request currently being handled;
+  // policy_checked is true only when the decision came from the policy
+  // service (manager atsigns bypass it)
+  sshnpd_policy_decision policy_decision;
+  memset(&policy_decision, 0, sizeof(policy_decision));
+  bool policy_checked = false;
 
   size_t timeout_counter = 0;
 
   while (should_run == 1) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending next device info\n");
     send_next_device_info(&worker, &params);
+    policy_send_heartbeat(&worker, &params, ping_response);
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Waiting for next monitor thread message\n");
     atclient_monitor_message_init(&message);
@@ -147,11 +151,34 @@ void main_loop() {
           break;
         }
 
-        if (!is_manager_atsign(&params, message.notification->from)) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                       "Rejecting request from unauthorized atSign: %s\n",
-                       message.notification->from == NULL ? "(none)" : message.notification->from);
+        // Policy service traffic (config pushes replying to our heartbeats,
+        // rpc responses that missed their wait window) is not a session
+        // request - drop it before the auth gate, or the daemon would run an
+        // auth check asking the policy service about the policy service
+        if (params.policy != NULL && policy_is_policy_service_message(message.notification, &params)) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring policy service message: %s\n",
+                       message.notification->key);
           break;
+        }
+
+        // Managers are approved without a policy check; everyone else is
+        // referred to the policy service when one is configured
+        policy_checked = false;
+        if (!is_manager_atsign(&params, message.notification->from)) {
+          if (params.policy != NULL && message.notification->from != NULL) {
+            policy_auth_check(&worker, &monitor_ctx, &params, message.notification->from, &policy_decision);
+            if (!policy_decision.authorized) {
+              atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                           "Rejecting request from atSign not authorized by the policy service: %s\n",
+                           message.notification->from);
+              break;
+            }
+            policy_checked = true;
+          } else {
+            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Rejecting request from unauthorized atSign: %s\n",
+                         message.notification->from == NULL ? "(none)" : message.notification->from);
+            break;
+          }
         }
 
         char *key = message.notification->key;
@@ -204,11 +231,6 @@ void main_loop() {
           break;
         }
 
-        if (params.policy != NULL) {
-          // TODO: implement a separate permitopen check for npa checks
-          // DO NOT USE permitopen, use npa_permitopen
-        }
-
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
@@ -220,18 +242,14 @@ void main_loop() {
           break;
         case NK_SSH_REQUEST:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          // permitopen happens first for ssh so we can avoid a bunch of unnecessary tasks
-          permitopen.requested_host = "localhost";
-          permitopen.requested_port = params.local_sshd_port;
-          if (!should_permitopen(&permitopen)) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring request to localhost:%d\n",
-                         params.local_sshd_port);
-            break;
-          }
-          handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey);
+          // permit-open checks (daemon list and policy list) happen inside
+          // the handler, which can tell the client why a request was denied
+          handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey,
+                             policy_checked ? &policy_decision : NULL);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
+            policy_decision_free(&policy_decision);
             return;
           }
           break;
@@ -239,10 +257,12 @@ void main_loop() {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
           // No permitopen here... since we need to parse the json first in order to check, it happens inside
           // handle_npt_request
-          handle_npt_request(&worker, &params, &is_child_process, &message, signingkey);
+          handle_npt_request(&worker, &params, &is_child_process, &message, signingkey,
+                             policy_checked ? &policy_decision : NULL);
           if (is_child_process) {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
+            policy_decision_free(&policy_decision);
             return;
           }
           break;
@@ -264,5 +284,6 @@ void main_loop() {
     } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
     } // end of switch
     atclient_monitor_message_free(&message);
+    policy_decision_free(&policy_decision); // safe when nothing was allocated
   } // end of while loop
 }
