@@ -27,6 +27,8 @@
 #include <sshnpd/file_utils.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
+#include <srv/params.h>
+#include <srv/srv.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +66,22 @@ static void free_if_not_null(void *ptr) {
 }
 
 int main(int argc, char **argv) {
+  // srv worker mode: run_srv_process re-execs the daemon like this when the
+  // standalone srv binary is not found next to it. Secrets arrive in the
+  // environment; the rest is parsed from argv. This path runs the relay in a
+  // fresh process image (no daemon keys/atServer sockets) and never returns to
+  // daemon startup.
+  if (argc >= 2 && strcmp(argv[1], "--__srv-worker") == 0) {
+    atlogger_set_logging_stream(stderr);
+    srv_params_t srv_params;
+    apply_default_values_to_srv_params(&srv_params);
+    if (parse_srv_params(&srv_params, argc - 1, (const char **)(argv + 1), NULL) != 0) {
+      return 1;
+    }
+    atlogger_set_logging_level(INFO);
+    return run_srv(&srv_params);
+  }
+
   int res = 0;
   atlogger_set_logging_stream(stderr);
 
