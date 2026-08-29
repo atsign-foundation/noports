@@ -246,14 +246,17 @@ int verify_envelope_signature(atchops_rsa_key_public_key *publickey, const unsig
 }
 
 cJSON *extract_envelope_from_notification(atclient_monitor_message *message) {
-  // Sanity check the notification
-  if (!atclient_atnotification_is_from_initialized(message->notification) && message->notification->from != NULL) {
+  // Sanity check the notification. The field must be initialized AND non-NULL;
+  // the guards previously used && (rejecting only the impossible
+  // uninitialized-but-non-NULL case), so a NULL from/decrypted_value fell
+  // through to strlen(NULL) below.
+  if (!atclient_atnotification_is_from_initialized(message->notification) || message->notification->from == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
     return NULL;
   }
 
-  if (!atclient_atnotification_is_decrypted_value_initialized(message->notification) &&
-      message->notification->decrypted_value != NULL) {
+  if (!atclient_atnotification_is_decrypted_value_initialized(message->notification) ||
+      message->notification->decrypted_value == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Failed to initialize the decrypted value of the notification\n");
     return NULL;
