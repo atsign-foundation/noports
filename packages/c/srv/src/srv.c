@@ -192,7 +192,9 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       goto exit;
     }
 
-    res = mbedtls_net_recv_timeout(&control_side.socket, buffer, 4096, SRV_CONTROL_POLL_MS);
+    // Leave room for a NUL terminator: the relay bytes are attacker-controlled
+    // and buffer is consumed with strtok_r/"%s", which read until a NUL.
+    res = mbedtls_net_recv_timeout(&control_side.socket, buffer, 4095, SRV_CONTROL_POLL_MS);
     if (res == MBEDTLS_ERR_SSL_TIMEOUT) {
       continue;
     }
@@ -203,6 +205,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       goto exit;
     }
     len = res;
+    buffer[len] = '\0';
 
     if (control_side.transformer != NULL) {
       unsigned char *output = malloc(4096 * sizeof(unsigned char));
@@ -217,6 +220,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       }
       free(buffer);
       buffer = output;
+      buffer[len] = '\0';
     }
 
     char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
