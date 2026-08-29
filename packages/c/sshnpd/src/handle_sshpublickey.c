@@ -56,7 +56,11 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
   authkeys_params authkeys_params = {};
   authkeys_params.authkeys_file = authkeys_file;
   authkeys_params.authkeys_filename = authkeys_filename;
-  authkeys_params.permissions = "";
+  // Scope the pushed key to the local tunnel: an ssh session always reaches
+  // sshd via srv connecting to localhost, so it arrives from 127.0.0.1/::1.
+  // Without this the entry grants unrestricted login from anywhere and lingers
+  // in authorized_keys after the client's authorization is revoked.
+  authkeys_params.permissions = "from=\"127.0.0.1,::1\"";
   authkeys_params.key = ssh_key;
 
   // authorize public key
