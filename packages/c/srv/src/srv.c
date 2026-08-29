@@ -28,6 +28,14 @@ static pthread_mutex_t session_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int active_sessions = 0;
 static time_t idle_since = 0;
 
+// Upper bound on concurrent socket-to-socket sessions per srv process. The
+// relay control channel is attacker-reachable and each connect: line spawns a
+// thread + two sockets, so without a cap a malicious relay can exhaust
+// threads/fds. 128 is well above any legitimate fan-out for one daemon.
+#ifndef SRV_MAX_SESSIONS
+#define SRV_MAX_SESSIONS 128
+#endif
+
 static void session_started(void) {
   pthread_mutex_lock(&session_mutex);
   active_sessions++;
@@ -250,6 +258,19 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
                    new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
+        // Reject before allocating anything if we are at the session cap. Only
+        // this control loop increments active_sessions, so reading it here and
+        // calling session_started() below is not a TOCTOU (the count can only
+        // fall in between, as worker threads finish).
+        pthread_mutex_lock(&session_mutex);
+        bool at_capacity = active_sessions >= SRV_MAX_SESSIONS;
+        pthread_mutex_unlock(&session_mutex);
+        if (at_capacity) {
+          atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Session cap (%d) reached - rejecting connect request\n",
+                       SRV_MAX_SESSIONS);
+          continue;
+        }
+
         chunked_transformer_t *new_socket_encrypter = NULL;
         chunked_transformer_t *new_socket_decrypter = NULL;
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
