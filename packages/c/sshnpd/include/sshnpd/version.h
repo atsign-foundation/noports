@@ -1,4 +1,4 @@
 #ifndef SSHNPD_VERSION_H
 #define SSHNPD_VERSION_H
-#define SSHNPD_VERSION "1.0.20"
+#define SSHNPD_VERSION "1.1.0"
 #endif
