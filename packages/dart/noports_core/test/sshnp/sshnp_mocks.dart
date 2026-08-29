@@ -44,12 +44,28 @@ class MockSshnpParams extends Mock implements SshnpParams {
   RelayAuthMode get relayAuthMode => RelayAuthMode.payload;
 
   @override
+  bool get relayAuthModeExplicit => false;
+
+  @override
   bool get only443 => false;
 }
 
-class MockSshnpdChannel extends Mock implements SshnpdChannel {}
+class MockSshnpdChannel extends Mock implements SshnpdChannel {
+  @override
+  bool get daemonSupportsRelayAuthEscr => false;
+}
 
-class MockSrvdChannel extends Mock implements SrvdChannel {}
+class MockSrvdChannel extends Mock implements SrvdChannel {
+  @override
+  Future<void> sendDefinitiveAuthModes({required bool daemonSupportsEscr}) async {}
+
+  @override
+  bool get autoDetectsRelayAuth => false;
+
+  @override
+  RelayAuthMode daemonRelayAuthMode({required bool daemonSupportsEscr}) =>
+      RelayAuthMode.payload;
+}
 
 /// [dart:io] Mocks
 class MockProcess extends Mock implements Process {}

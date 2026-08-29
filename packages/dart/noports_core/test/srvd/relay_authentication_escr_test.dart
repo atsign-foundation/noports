@@ -237,5 +237,35 @@ void main() {
       expect(verifier.sessionId, null);
       expect(verifier.isSideA, null);
     });
+
+    test('is single-use: verifying a second response throws', () async {
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
+        sessionId: relaySessionId,
+        relayAuthAesKey: relayAuthAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        isSideA: false,
+      );
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'single-use',
+        helper,
+      );
+
+      // First use is fine.
+      final verified = await verifier.verifyChallengeResponse(
+        await authenticator.responseToChallenge(verifier.challenge),
+      );
+      expect(verified, true);
+
+      // A second use would reuse this verifier's (already issued) challenge
+      // across connections, so it must be refused.
+      await expectLater(
+        verifier.verifyChallengeResponse(
+          await authenticator.responseToChallenge(verifier.challenge),
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 }

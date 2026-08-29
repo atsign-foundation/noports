@@ -283,10 +283,16 @@ void main(List<String> args) async {
       parser.addOption(
         'relay-auth-mode',
         aliases: ['ram'],
-        help: 'The authentication mode to use. "escr" is strongest.'
-            ' Alias: --ram',
+        help: 'The authentication mode to use when authenticating to the'
+            ' relay. "escr" (encrypted signed challenge response) is strongest'
+            ' and is the default; used wherever the whole path supports it, with'
+            ' older relays/daemons falling back to legacy (relay auto-detects).'
+            ' Passing "escr" explicitly forces it where the path supports it (the'
+            ' daemon side degrades to legacy if it cannot), erroring only when the'
+            ' relay does not auto-detect AND the daemon cannot do ESCR. "payload"'
+            ' is legacy. Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
-        defaultsTo: RelayAuthMode.payload.name,
+        defaultsTo: RelayAuthMode.escr.name,
       );
 
       parser.addFlag(
@@ -527,6 +533,9 @@ void main(List<String> args) async {
         encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
         relayAuthMode:
             RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
+        // Prescriptive only when the user actually passed the flag (this parser
+        // has a defaultsTo, so the value alone can't tell explicit from default).
+        relayAuthModeExplicit: parsedArgs.wasParsed('relay-auth-mode'),
         timeout: parseDuration(timeoutArg),
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
         localHost: resolvedLocalHost,

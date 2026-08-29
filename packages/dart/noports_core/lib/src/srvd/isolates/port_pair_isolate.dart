@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -25,14 +26,37 @@ class PortPairWorker extends RelayWorker {
   /// Set when we start the session
   int? portB;
 
+  /// The per-side auto-detecting verifiers, kept so that a definitive
+  /// auth-modes notification (see [handleAuthModes]) can steer their detection.
+  RelayAuthVerifierAuto? _authVerifierA;
+  RelayAuthVerifierAuto? _authVerifierB;
+
   PortPairWorker({
     required super.toMain,
     required super.logTraffic,
     required super.verbose,
     required super.loggingTag,
+    required super.relayAuthDetectWindowMs,
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
+    reqHandlers['auth_modes'] = handleAuthModes;
+  }
+
+  /// Handle a definitive auth-modes message forwarded from the main isolate:
+  /// the requesting client has learnt which mode each side will use and told
+  /// the relay, so we can skip the detection window (see [RelayAuthVerifierAuto]).
+  Future<void> handleAuthModes(IIRequest req) async {
+    final payload = req.payload;
+    final String? sideA = payload['sideA'];
+    final String? sideB = payload['sideB'];
+    logger.info('Definitive auth modes received: sideA=$sideA sideB=$sideB');
+    if (sideA != null) {
+      _authVerifierA?.setKnownMode(RelayAuthMode.values.byName(sideA));
+    }
+    if (sideB != null) {
+      _authVerifierB?.setKnownMode(RelayAuthMode.values.byName(sideB));
+    }
   }
 
   @override
@@ -74,12 +98,11 @@ class PortPairWorker extends RelayWorker {
     srvdSessionParams = req.payload;
     logger.info('Starting socket connector session for $srvdSessionParams');
 
-    RelayAuthVerifier? authVerifierA;
-    RelayAuthVerifier? authVerifierB;
-
-    (authVerifierA, authVerifierB) = await createAuthVerifiers(
+    final (authVerifierA, authVerifierB) = await createAuthVerifiers(
       srvdSessionParams,
     );
+    _authVerifierA = authVerifierA;
+    _authVerifierB = authVerifierB;
 
     /// Create the socket connector
     connector = await SocketConnector.serverToServer(
@@ -89,8 +112,8 @@ class PortPairWorker extends RelayWorker {
       portB: 0,
       verbose: verbose,
       logTraffic: logTraffic,
-      socketAuthVerifierA: authVerifierA?.verifySocketAuth,
-      socketAuthVerifierB: authVerifierB?.verifySocketAuth,
+      socketAuthVerifierA: _authVerifierA?.verifySocketAuth,
+      socketAuthVerifierB: _authVerifierB?.verifySocketAuth,
     );
 
     connector!.connectionStream.listen(

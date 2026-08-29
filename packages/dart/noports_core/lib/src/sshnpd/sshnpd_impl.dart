@@ -897,6 +897,10 @@ class SshnpdImpl
     RelayAuthenticator? relayAuthenticator;
 
     if (req.authenticateToRvd) {
+      // Use the mode the client told us to use. The client computes the mode
+      // this session's relay can reconcile: legacy against a relay that does not
+      // auto-detect (so both sides stay legacy and interoperate with any peer),
+      // ESCR only where the whole path is known to support it.
       switch (req.relayAuthMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
@@ -1255,6 +1259,10 @@ class SshnpdImpl
 
     RelayAuthenticator? relayAuthenticator;
     if (authenticateToRvd) {
+      // Use the mode the client told us to use. The client computes the mode
+      // this session's relay can reconcile: legacy against a relay that does not
+      // auto-detect (so both sides stay legacy and interoperate with any peer),
+      // ESCR only where the whole path is known to support it.
       switch (req.relayAuthMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
