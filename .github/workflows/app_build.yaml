@@ -1,0 +1,49 @@
+name: NoPorts Desktop Builds
+
+on:
+  push:
+    branches:
+      - trunk
+permissions: # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  windows_build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version-file: "3.24.5"
+      - run: flutter pub get
+
+      - name: Build msix file with Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart run msix:create
+
+      - name: Create Github Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload msix Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./packages/dart/npt_flutter/build/x64/runner/release/npt_flutter.msix
+          asset_name: noPorts-Desktop.msix
+          asset_content_type: application/vnd.ms-appx
