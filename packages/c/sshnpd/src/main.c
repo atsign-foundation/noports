@@ -44,12 +44,16 @@ static void exit_handler(int sig) {
   exit(1);
 }
 static void child_exit_handler(int sig) {
-  atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n", sig);
-  int status;
-  pid_t pid = waitpid(-1, &status, WNOHANG);
-  if (pid > 0 && WIFEXITED(status)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "pid %d exited\n", pid);
+  (void)sig;
+  // SIGCHLD is not queued: several children exiting close together coalesce
+  // into a single delivery, so reap in a loop or zombies accumulate until PID
+  // exhaustion. Only async-signal-safe calls here - waitpid is safe, atlogger
+  // (stdio + locks) is not, so no logging. errno is saved/restored so a signal
+  // landing mid-syscall on the main thread doesn't clobber its errno.
+  int saved_errno = errno;
+  while (waitpid(-1, NULL, WNOHANG) > 0) {
   }
+  errno = saved_errno;
 }
 
 static void free_if_not_null(void *ptr) {
