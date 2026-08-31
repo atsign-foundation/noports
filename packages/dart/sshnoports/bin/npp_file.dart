@@ -2,8 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
+import 'package:sshnoports/src/print_version.dart';
 import 'package:yaml/yaml.dart';
+
+const String _description =
+    'NoPorts policy service which reads its policy data from a YAML file.';
 
 void main(List<String> args) async {
   ArgParser parser = NPAParams.parser;
@@ -12,9 +17,36 @@ void main(List<String> args) async {
     mandatory: true,
     help: 'Path to policy yaml',
   );
-  ArgResults r = parser.parse(args);
 
-  YamlMap? yaml = loadYaml(File(r['yaml']).readAsStringSync());
+  String yamlPath;
+  try {
+    ArgResults r = parser.parse(args);
+
+    if (r['help'] == true) {
+      stdout.write(
+          formatCliHelp(description: _description, optionsUsage: parser.usage));
+      exit(0);
+    }
+
+    if (r['version'] == true) {
+      printVersion();
+      exit(0);
+    }
+
+    yamlPath = r['yaml'];
+  } on ArgumentError catch (e) {
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
+    stderr.writeln('\n${e.message}');
+    exit(1);
+  } on FormatException catch (e) {
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
+    stderr.writeln('\n${e.message}');
+    exit(1);
+  }
+
+  YamlMap? yaml = loadYaml(File(yamlPath).readAsStringSync());
 
   FileBasedPolicy policy = FileBasedPolicy(yaml!);
   await bootstrapper.run(

@@ -8,11 +8,25 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
   params->local_port = 22;
   params->bind_local_port = 0;
   params->multi = 0;
+  params->timeout = SRV_DEFAULT_TIMEOUT_SECONDS;
   params->rv_auth = 0;
   params->rv_e2ee = 0;
+  params->rvd_auth_string = NULL;
+  params->session_aes_key_c2d_string = NULL;
+  params->session_aes_iv_c2d_string = NULL;
+  params->session_aes_key_d2c_string = NULL;
+  params->session_aes_iv_d2c_string = NULL;
+  params->escr_auth = false;
+  params->escr_is_side_a = false;
+  params->escr_session_id = NULL;
+  params->escr_aes_key_base64 = NULL;
+  params->escr_signing_key_uri = NULL;
+  params->escr_signing_key = NULL;
 }
 
 int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {
+
+  char *relay_auth_mode = NULL;
 
 // pragma GCC works for both gcc and clang
 #pragma GCC diagnostic push
@@ -29,6 +43,10 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
                   "Set this flag when we are bridging from a local sender"),
 #endif
       OPT_BOOLEAN(0, "rv-auth", &params->rv_auth, "Whether this rv process will authenticate to rvd"),
+      OPT_STRING('a', "relay-auth-mode", &relay_auth_mode,
+                 "Relay authentication mode: 'payload' (use --rv-auth instead) or 'escr'. escr reads "
+                 "REMOTE_AUTH_ESCR_SESSION_ID, REMOTE_AUTH_ESCR_AES_KEY, REMOTE_AUTH_ESCR_PUB_KEY_URI, "
+                 "REMOTE_AUTH_ESCR_SIGNING_PRIVKEY and REMOTE_AUTH_ESCR_IS_SIDE_A from the environment"),
       OPT_BOOLEAN(0, "rv-e2ee", &params->rv_e2ee,
                   "Whether this rv process will encrypt/decrypt all rvd socket "
                   "traffic"),
@@ -58,6 +76,57 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
     return 1;
   }
 
+  // ESCR relay auth (standalone binary path). The sshnpd in-process path
+  // fills the escr_* fields directly and never comes through here.
+  if (relay_auth_mode != NULL && strcmp(relay_auth_mode, "escr") == 0) {
+    if (params->rv_auth == 1) {
+      argparse_usage(&argparse);
+      printf("--rv-auth and --relay-auth-mode escr are mutually exclusive\n");
+      return 1;
+    }
+    params->escr_session_id = getenv("REMOTE_AUTH_ESCR_SESSION_ID");
+    params->escr_aes_key_base64 = getenv("REMOTE_AUTH_ESCR_AES_KEY");
+    params->escr_signing_key_uri = getenv("REMOTE_AUTH_ESCR_PUB_KEY_URI");
+    char *escr_signing_privkey_base64 = getenv("REMOTE_AUTH_ESCR_SIGNING_PRIVKEY");
+    char *escr_is_side_a = getenv("REMOTE_AUTH_ESCR_IS_SIDE_A");
+    if (params->escr_session_id == NULL || params->escr_aes_key_base64 == NULL ||
+        params->escr_signing_key_uri == NULL || escr_signing_privkey_base64 == NULL || escr_is_side_a == NULL) {
+      argparse_usage(&argparse);
+      printf("--relay-auth-mode escr requires REMOTE_AUTH_ESCR_SESSION_ID, REMOTE_AUTH_ESCR_AES_KEY, "
+             "REMOTE_AUTH_ESCR_PUB_KEY_URI, REMOTE_AUTH_ESCR_SIGNING_PRIVKEY and REMOTE_AUTH_ESCR_IS_SIDE_A in the "
+             "environment\n");
+      return 1;
+    }
+    if (strcmp(escr_is_side_a, "true") == 0) {
+      params->escr_is_side_a = true;
+    } else if (strcmp(escr_is_side_a, "false") == 0) {
+      params->escr_is_side_a = false;
+    } else {
+      printf("REMOTE_AUTH_ESCR_IS_SIDE_A must be 'true' or 'false'\n");
+      return 1;
+    }
+
+    // Owned by this params struct for the lifetime of the process
+    params->escr_signing_key = malloc(sizeof(atchops_rsa_key_private_key));
+    if (params->escr_signing_key == NULL) {
+      return 1;
+    }
+    atchops_rsa_key_private_key_init(params->escr_signing_key);
+    if (atchops_rsa_key_populate_private_key(params->escr_signing_key, escr_signing_privkey_base64,
+                                             strlen(escr_signing_privkey_base64)) != 0) {
+      printf("Failed to parse REMOTE_AUTH_ESCR_SIGNING_PRIVKEY\n");
+      atchops_rsa_key_private_key_free(params->escr_signing_key);
+      free(params->escr_signing_key);
+      params->escr_signing_key = NULL;
+      return 1;
+    }
+    params->escr_auth = true;
+  } else if (relay_auth_mode != NULL && strcmp(relay_auth_mode, "payload") != 0) {
+    argparse_usage(&argparse);
+    printf("Unknown --relay-auth-mode: %s\n", relay_auth_mode);
+    return 1;
+  }
+
   // Load the environment
   if (params->rv_auth == 1) {
     if (environment != NULL && environment->rvd_auth_string != NULL) {
@@ -73,24 +142,50 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
   }
 
   if (params->rv_e2ee == 1) {
-    if (environment != NULL && environment->session_aes_key_string != NULL) {
-      params->session_aes_key_string = environment->session_aes_key_string;
+    if (environment != NULL && environment->session_aes_key_c2d_string != NULL) {
+      params->session_aes_key_c2d_string = environment->session_aes_key_c2d_string;
     } else {
-      params->session_aes_key_string = getenv("RV_AES");
+      // RV_AES_C2D is preferred, RV_AES is the legacy name for the same key
+      params->session_aes_key_c2d_string = getenv("RV_AES_C2D");
+      if (params->session_aes_key_c2d_string == NULL) {
+        params->session_aes_key_c2d_string = getenv("RV_AES");
+      }
     }
-    if (params->session_aes_key_string == NULL) {
+    if (params->session_aes_key_c2d_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_AES is not in environment\n");
+      printf("--rv-e2ee enabled, but neither RV_AES_C2D nor RV_AES is in environment\n");
       return 1;
     }
-    if (environment != NULL && environment->session_aes_iv_string != NULL) {
-      params->session_aes_iv_string = environment->session_aes_iv_string;
+    if (environment != NULL && environment->session_aes_iv_c2d_string != NULL) {
+      params->session_aes_iv_c2d_string = environment->session_aes_iv_c2d_string;
     } else {
-      params->session_aes_iv_string = getenv("RV_IV");
+      // RV_IV_C2D is preferred, RV_IV is the legacy name for the same iv
+      params->session_aes_iv_c2d_string = getenv("RV_IV_C2D");
+      if (params->session_aes_iv_c2d_string == NULL) {
+        params->session_aes_iv_c2d_string = getenv("RV_IV");
+      }
     }
-    if (params->session_aes_iv_string == NULL) {
+    if (params->session_aes_iv_c2d_string == NULL) {
       argparse_usage(&argparse);
-      printf("--rv-e2ee enabled, but RV_IV is not in environment\n");
+      printf("--rv-e2ee enabled, but neither RV_IV_C2D nor RV_IV is in environment\n");
+      return 1;
+    }
+
+    // Optional twinned key for the daemon to client direction. Both the key
+    // and the iv must be supplied together, otherwise fall back to single-key.
+    if (environment != NULL && environment->session_aes_key_d2c_string != NULL) {
+      params->session_aes_key_d2c_string = environment->session_aes_key_d2c_string;
+    } else {
+      params->session_aes_key_d2c_string = getenv("RV_AES_D2C");
+    }
+    if (environment != NULL && environment->session_aes_iv_d2c_string != NULL) {
+      params->session_aes_iv_d2c_string = environment->session_aes_iv_d2c_string;
+    } else {
+      params->session_aes_iv_d2c_string = getenv("RV_IV_D2C");
+    }
+    if ((params->session_aes_key_d2c_string == NULL) != (params->session_aes_iv_d2c_string == NULL)) {
+      argparse_usage(&argparse);
+      printf("RV_AES_D2C and RV_IV_D2C must be provided together\n");
       return 1;
     }
   }

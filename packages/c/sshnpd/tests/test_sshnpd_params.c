@@ -11,6 +11,8 @@ int atsign_mandatory_test();
 int manager_policy_mandatory_test();
 int permit_open_parse_test();
 int device_lower_test();
+int manager_list_test();
+int manager_list_trailing_comma_test();
 
 int main() {
   int ret = 0;
@@ -37,6 +39,14 @@ int main() {
   }
   if (device_lower_test()) {
     printf("device_name upper to lower case test failed\n");
+    ret++;
+  }
+  if (manager_list_test()) {
+    printf("manager_list_test failed\n");
+    ret++;
+  }
+  if (manager_list_trailing_comma_test()) {
+    printf("manager_list_trailing_comma_test failed\n");
     ret++;
   }
 
@@ -193,25 +203,43 @@ int manager_policy_mandatory_test() {
 }
 
 int manager_list_test() {
-  int ret = 0;
-
-  return 0;
   sshnpd_params *params = malloc(sizeof(sshnpd_params));
 
+  char *manager_str = strdup("@foo,@bar,@baz");
+  if (manager_str == NULL) {
+    free(params);
+    return 1;
+  }
   const char *argv[] = {
-      "sshnpd", "-a", "@atsign", "-m", "@foo,@bar,@baz", "-d", "my_device",
+      "sshnpd", "-a", "@atsign", "-m", manager_str, "-d", "my_device",
   };
 
   apply_default_values_to_sshnpd_params(params);
-  ret = parse_sshnpd_params(params, 7, argv);
-  if (ret == 0) {
-    ret = 1;
-  } else {
-    ret = 0;
+  int ret = parse_sshnpd_params(params, 7, argv);
+  if (ret != 0) {
+    free(params);
+    return 1;
+  }
+
+  if (params->manager_list_len != 3) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[0], "@foo") != 0) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[1], "@bar") != 0) {
+    free(params);
+    return 1;
+  }
+  if (strcmp(params->manager_list[2], "@baz") != 0) {
+    free(params);
+    return 1;
   }
 
   free(params);
-  return ret;
+  return 0;
 }
 
 int permit_open_parse_test() {
@@ -373,5 +401,61 @@ int device_lower_test() {
 
   free(device_name);
   free(params);
+  return 0;
+}
+
+// Pins the trailing-comma parse. The counting loop stops at manager_end - 1, so
+// a trailing comma is never counted; the body must not decrement sep_count to
+// "correct" an over-count that never happened, or the last manager is dropped
+// and the daemon authorizes nobody.
+int manager_list_trailing_comma_test() {
+  struct {
+    const char *input;
+    size_t expected_len;
+    const char *expected[2];
+  } cases[] = {
+      {"@foo,", 1, {"@foo", NULL}},
+      {"@foo,@bar,", 2, {"@foo", "@bar"}},
+  };
+
+  for (size_t c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
+    sshnpd_params *params = malloc(sizeof(sshnpd_params));
+    if (params == NULL) {
+      return 1;
+    }
+
+    char *manager_str = strdup(cases[c].input);
+    if (manager_str == NULL) {
+      free(params);
+      return 1;
+    }
+    const char *argv[] = {
+        "sshnpd", "-a", "@atsign", "-m", manager_str, "-d", "my_device",
+    };
+
+    apply_default_values_to_sshnpd_params(params);
+    if (parse_sshnpd_params(params, 7, argv) != 0) {
+      free(params);
+      return 1;
+    }
+
+    if (params->manager_list_len != cases[c].expected_len) {
+      printf("  input \"%s\": expected len %zu, got %zu\n", cases[c].input, cases[c].expected_len,
+             params->manager_list_len);
+      free(params);
+      return 1;
+    }
+    for (size_t i = 0; i < cases[c].expected_len; i++) {
+      if (strcmp(params->manager_list[i], cases[c].expected[i]) != 0) {
+        printf("  input \"%s\": expected [%zu] \"%s\", got \"%s\"\n", cases[c].input, i, cases[c].expected[i],
+               params->manager_list[i]);
+        free(params);
+        return 1;
+      }
+    }
+
+    free(params);
+  }
+
   return 0;
 }

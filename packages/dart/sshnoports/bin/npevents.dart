@@ -11,9 +11,14 @@ import 'package:at_client/at_client.dart';
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 
 // local packages
 import 'package:sshnoports/src/print_version.dart';
+
+const String _description =
+    'NoPorts session events listener: listens for NoPorts session events'
+    ' and writes them to stdout as JSON.';
 
 /// Minimal implementation of a NoPorts session events listener.
 ///
@@ -23,6 +28,7 @@ void main(List<String> args) async {
 
   ArgParser parser = CLIBase.createArgsParser(
       namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);
+  parser.addFlag('version', negatable: false, help: 'Print version');
   parser.addFlag('debug', help: 'maximum debug verbosity ');
   parser.addOption('logging-atsigns',
       abbr: 'A',
@@ -30,8 +36,8 @@ void main(List<String> args) async {
       mandatory: true);
 
   void printUsage({Object? error}) {
-    printVersion();
-    stderr.writeln(parser.usage);
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -52,7 +58,13 @@ void main(List<String> args) async {
       ArgResults parsedArgs = parser.parse(args);
 
       if (parsedArgs['help'] == true) {
-        print(parser.usage);
+        stdout.write(formatCliHelp(
+            description: _description, optionsUsage: parser.usage));
+        exit(0);
+      }
+
+      if (parsedArgs['version'] == true) {
+        printVersion();
         exit(0);
       }
 

@@ -210,6 +210,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
+  build_version:
+    dependency: "direct dev"
+    description:
+      name: build_version
+      sha256: "1063066ec338c18f0629d01077c9315f92fae3e7e0e06d0dc10e8aa3145d44f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.3"
   built_collection:
     dependency: transitive
     description:
@@ -608,7 +616,7 @@ packages:
       path: "../../../packages/dart/noports_core"
       relative: true
     source: path
-    version: "6.12.1"
+    version: "6.13.0"
   openssh_ed25519:
     dependency: transitive
     description:

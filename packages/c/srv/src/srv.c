@@ -1,22 +1,59 @@
 #include "srv/srv.h"
+#include "srv/escr.h"
 #include "srv/params.h"
 #include "srv/side.h"
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
+#include <mbedtls/net_sockets.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define TAG "srv - run"
 
+// How often the multi-mode control channel wakes up from recv to check the
+// connection timeout
+#define SRV_CONTROL_POLL_MS 1000
+
 static void *run_socket_to_socket(void *args);
+
+// Connection timeout state for multi mode: the srv exits once there have been
+// no active socket-to-socket sessions for params->timeout seconds (matching
+// the SocketConnector timeout semantics of the Dart srv). One process runs at
+// most one run_srv_daemon_side_multi, so process-wide state is safe here.
+static pthread_mutex_t session_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int active_sessions = 0;
+static time_t idle_since = 0;
+
+static void session_started(void) {
+  pthread_mutex_lock(&session_mutex);
+  active_sessions++;
+  pthread_mutex_unlock(&session_mutex);
+}
+
+static void session_ended(void) {
+  pthread_mutex_lock(&session_mutex);
+  if (--active_sessions == 0) {
+    idle_since = time(NULL);
+  }
+  pthread_mutex_unlock(&session_mutex);
+}
+
+static bool connection_timeout_expired(int timeout_seconds) {
+  pthread_mutex_lock(&session_mutex);
+  bool expired = active_sessions == 0 && difftime(time(NULL), idle_since) >= timeout_seconds;
+  pthread_mutex_unlock(&session_mutex);
+  return expired;
+}
 
 static int process_multiple_requests(char *original, char **requests[], size_t *num_out_requests);
 
-static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
-                                 char **new_session_aes_iv_string);
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_c2d_string,
+                                 char **new_session_aes_iv_c2d_string, char **new_session_aes_key_d2c_string,
+                                 char **new_session_aes_iv_d2c_string);
 
 int run_srv(srv_params_t *params) {
   int res = 0;
@@ -55,10 +92,12 @@ int run_srv_daemon_side_single(srv_params_t *params) {
   int res;
 
   if (params->rv_e2ee == 1) {
-    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
-                                         &decrypter);
+    res = create_encrypter_and_decrypter(params->session_aes_key_c2d_string, params->session_aes_iv_c2d_string,
+                                         params->session_aes_key_d2c_string, params->session_aes_iv_d2c_string,
+                                         &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_single: Error creating new encrypter and decrypter: %d\n", res);
+      return res;
     }
   }
 
@@ -82,10 +121,12 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   int res = 0;
 
   if (params->rv_e2ee == 1) {
-    res = create_encrypter_and_decrypter(params->session_aes_key_string, params->session_aes_iv_string, &encrypter,
-                                         &decrypter);
+    res = create_encrypter_and_decrypter(params->session_aes_key_c2d_string, params->session_aes_iv_c2d_string,
+                                         params->session_aes_key_d2c_string, params->session_aes_iv_d2c_string,
+                                         &encrypter, &decrypter);
     if (res != 0) {
       atlogger_log(TAG, ERROR, "run_srv_daemon_side_multi: Error creating new encrypter and decrypter: %d\n", res);
+      return res;
     }
   }
 
@@ -105,8 +146,16 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     return res;
   }
 
-  // send the auth string to the other side
-  if (params->rv_auth == 1) {
+  // Authenticate the control channel to the relay
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating control channel to relay (escr)\n");
+    res = srv_escr_authenticate(&control_side.socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate control channel to relay\n");
+      mbedtls_net_close(&control_side.socket);
+      return res;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
     int len = strlen(params->rvd_auth_string);
 
@@ -130,14 +179,30 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   }
   memset(buffer, 0, 4096 * sizeof(unsigned char));
 
+  int timeout_seconds = params->timeout > 0 ? params->timeout : SRV_DEFAULT_TIMEOUT_SECONDS;
+  pthread_mutex_lock(&session_mutex);
+  idle_since = time(NULL);
+  pthread_mutex_unlock(&session_mutex);
+
   size_t len;
-  while ((res = mbedtls_net_recv(&control_side.socket, buffer, 4096)) > 0) {
-    if (res < 0) {
-      atlogger_log("srv - control (side b)", ERROR, "Error reading data: %zu", len);
+  for (;;) {
+    if (connection_timeout_expired(timeout_seconds)) {
+      atlogger_log(TAG, INFO, "No connections for %d seconds - closing srv\n", timeout_seconds);
+      res = 0;
       goto exit;
-    } else {
-      len = res;
     }
+
+    res = mbedtls_net_recv_timeout(&control_side.socket, buffer, 4096, SRV_CONTROL_POLL_MS);
+    if (res == MBEDTLS_ERR_SSL_TIMEOUT) {
+      continue;
+    }
+    if (res <= 0) {
+      if (res < 0) {
+        atlogger_log("srv - control (side b)", ERROR, "Error reading data from control socket: %d\n", res);
+      }
+      goto exit;
+    }
+    len = res;
 
     if (control_side.transformer != NULL) {
       unsigned char *output = malloc(4096 * sizeof(unsigned char));
@@ -154,7 +219,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       buffer = output;
     }
 
-    char *messagetype = NULL, *new_session_aes_key_string = NULL, *new_session_aes_iv_string = NULL;
+    char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
+         *new_session_aes_key_d2c_string = NULL, *new_session_aes_iv_d2c_string = NULL;
 
     atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
 
@@ -168,31 +234,27 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
     for (size_t i = 0; i < nrequests; i++) {
       // Now process each of those requests
-      res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_string, &new_session_aes_iv_string);
+      res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_c2d_string, &new_session_aes_iv_c2d_string,
+                                  &new_session_aes_key_d2c_string, &new_session_aes_iv_d2c_string);
       if (res != 0) {
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
                      requests[i]);
         goto exit;
       }
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s\n", messagetype, new_session_aes_key_string,
-                   new_session_aes_iv_string);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s (%s)\n", messagetype,
+                   new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+                   new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
-        chunked_transformer_t *new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
-        chunked_transformer_t *new_socket_decrypter = malloc(sizeof(chunked_transformer_t));
-        if (new_socket_encrypter == NULL || new_socket_decrypter == NULL) {
-          atlogger_log(TAG, ERROR, "Failed to allocate memory for new enc/dec\n");
-          free(new_socket_encrypter);
-          free(new_socket_decrypter);
-          goto exit;
-        }
+        chunked_transformer_t *new_socket_encrypter = NULL;
+        chunked_transformer_t *new_socket_decrypter = NULL;
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG,
                      "run_srv_daemon_side_multi\n control channel received %s request - \n creating new socketToSocket "
                      "connection\n",
                      messagetype);
 
         bool no_encrypt =
-            strcmp(new_session_aes_key_string, "no") == 0 && strcmp("new_session_aes_iv_string", "encrypt") == 0;
+            strcmp(new_session_aes_key_c2d_string, "no") == 0 && strcmp(new_session_aes_iv_c2d_string, "encrypt") == 0;
         if (no_encrypt) {
           atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_WARN,
                        "Socket connector requested no encryption!\n\tOnly disable encryption if you know what you "
@@ -200,9 +262,26 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         }
 
         if (!no_encrypt) {
-          // start socket_to_socket connection
-          res = create_encrypter_and_decrypter(new_session_aes_key_string, new_session_aes_iv_string,
+          new_socket_encrypter = malloc(sizeof(chunked_transformer_t));
+          new_socket_decrypter = malloc(sizeof(chunked_transformer_t));
+          if (new_socket_encrypter == NULL || new_socket_decrypter == NULL) {
+            atlogger_log(TAG, ERROR, "Failed to allocate memory for new enc/dec\n");
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+            goto exit;
+          }
+
+          res = create_encrypter_and_decrypter(new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+                                               new_session_aes_key_d2c_string, new_session_aes_iv_d2c_string,
                                                new_socket_encrypter, new_socket_decrypter);
+          if (res != 0) {
+            // A bad connect message must not take down the whole srv - skip
+            // this request and keep serving the control channel
+            atlogger_log(TAG, ERROR, "Failed to create enc/dec for connect request: %d - skipping request\n", res);
+            free(new_socket_encrypter);
+            free(new_socket_decrypter);
+            continue;
+          }
         }
         atlogger_log(TAG, INFO, "Starting socket to socket srv\n");
 
@@ -223,9 +302,15 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         sts_thread_params->decrypter = new_socket_decrypter;
         sts_thread_params->is_srv_ready = true;
 
+        // Count the session before the thread exists so the timeout check
+        // can't fire in the gap between accepting the request and the
+        // session becoming active
+        session_started();
+
         res = pthread_create(&sts_thread, NULL, run_socket_to_socket, (void *)sts_thread_params);
         if (res != 0) {
           atlogger_log(TAG, ERROR, "Failed to create thread: %d\n", res);
+          session_ended();
           if (!no_encrypt) {
             free(new_socket_encrypter);
             free(new_socket_decrypter);
@@ -264,7 +349,10 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   side_hints_t hints_a = {1, 0, params->local_host, params->local_port, NULL};
   side_hints_t hints_b = {0, 0, params->host, params->port, NULL};
 
-  if (params->rv_e2ee) {
+  // encrypter/decrypter may be NULL even when rv_e2ee is set: a multi-mode
+  // client can request an unencrypted socket with 'connect:no:encrypt'
+  bool transform = params->rv_e2ee && encrypter != NULL && decrypter != NULL;
+  if (transform) {
     hints_a.transformer = encrypter;
     hints_b.transformer = decrypter;
   }
@@ -291,8 +379,17 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   srv_link_sides(&sides[0], &sides[1], fds);
 
   atlogger_log(TAG, INFO, "Starting threads\n");
-  // send the auth string to side b
-  if (params->rv_auth == 1) {
+  // Authenticate side b (the relay side) - every socket to the relay
+  // authenticates individually
+  if (params->escr_auth) {
+    atlogger_log(TAG, INFO, "Authenticating session socket to relay (escr)\n");
+    res = srv_escr_authenticate(&sides[1].socket, params);
+    if (res != 0) {
+      atlogger_log(TAG, ERROR, "Failed to authenticate session socket to relay\n");
+      exit_res = res;
+      goto exit;
+    }
+  } else if (params->rv_auth == 1) {
     atlogger_log(TAG, INFO, "Sending auth string\n");
     int len = strlen(auth_string);
 
@@ -354,11 +451,21 @@ cancel:
     atlogger_log(TAG, DEBUG, "Canceled thread: %d\n", tidx);
   }
 
+  // Reap the canceled thread so it is safe to close its socket below
+  pthread_join(threads[tidx], NULL);
+
 exit:
   close(fds[0]);
   close(fds[1]);
 
-  if (params->rv_e2ee == 1) {
+  // The thread which exited normally closed its own socket, but a canceled
+  // thread never gets the chance - without this, every torn-down connection
+  // leaks a file descriptor for the lifetime of a multi-mode srv process.
+  // Safe to call on both sides: mbedtls_net_free is a no-op once fd == -1.
+  srv_side_free(&sides[0]);
+  srv_side_free(&sides[1]);
+
+  if (transform) {
     mbedtls_aes_free(&encrypter->aes_ctr.ctx);
     mbedtls_aes_free(&decrypter->aes_ctr.ctx);
   }
@@ -379,68 +486,72 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
   return 1;
 }
 
-int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
-                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
+int create_transformer(const char *aes_key_base64, const char *aes_iv_base64, chunked_transformer_t *transformer) {
   int res = 0;
-  atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv\n");
 
   // Temporary buffer for decoding the key
   unsigned char aes_key[AES_256_KEY_BYTES];
   size_t aes_key_len;
 
   // Decode the key
-  res = atchops_base64_decode(session_aes_key_string, strlen(session_aes_key_string), aes_key, AES_256_KEY_BYTES,
-                              &aes_key_len);
-
+  res = atchops_base64_decode(aes_key_base64, strlen(aes_key_base64), aes_key, AES_256_KEY_BYTES, &aes_key_len);
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
-    atlogger_log(TAG, ERROR, "Error decoding session_aes_key_string\n");
-    return res;
+    atlogger_log(TAG, ERROR, "Error decoding session aes key\n");
+    return res != 0 ? res : 1;
   }
 
-  mbedtls_aes_init(&encrypter->aes_ctr.ctx); // FREE
-  res = mbedtls_aes_setkey_enc(&encrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  mbedtls_aes_init(&transformer->aes_ctr.ctx); // FREE
+  // NB: AES-CTR uses the encryption key schedule for both directions
+  res = mbedtls_aes_setkey_enc(&transformer->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
   if (res != 0) {
-    atlogger_log(TAG, ERROR, "Error setting encryption key\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
-    return res;
-  }
-
-  mbedtls_aes_init(&decrypter->aes_ctr.ctx); // FREE
-  res = mbedtls_aes_setkey_enc(&decrypter->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
-  if (res != 0) {
-    atlogger_log(TAG, ERROR, "Error setting decryption key\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
-    mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    atlogger_log(TAG, ERROR, "Error setting session aes key\n");
+    mbedtls_aes_free(&transformer->aes_ctr.ctx);
     return res;
   }
 
   // Decode the iv
   size_t iv_len;
-  res = atchops_base64_decode(session_aes_iv_string, strlen(session_aes_iv_string), encrypter->aes_ctr.nonce_counter,
-                              AES_BLOCK_LEN, &iv_len);
+  res = atchops_base64_decode(aes_iv_base64, strlen(aes_iv_base64), transformer->aes_ctr.nonce_counter, AES_BLOCK_LEN,
+                              &iv_len);
   if (res != 0 || iv_len != AES_BLOCK_LEN) {
-    atlogger_log(TAG, ERROR, "Error decoding session_aes_iv_string\n");
-    mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+    atlogger_log(TAG, ERROR, "Error decoding session aes iv\n");
+    mbedtls_aes_free(&transformer->aes_ctr.ctx);
+    return res != 0 ? res : 1;
+  }
+
+  memset(transformer->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
+  transformer->aes_ctr.nc_off = 0;
+  transformer->transform = aes_ctr_crypt_stream;
+
+  return 0;
+}
+
+int create_encrypter_and_decrypter(const char *aes_key_c2d_base64, const char *aes_iv_c2d_base64,
+                                   const char *aes_key_d2c_base64, const char *aes_iv_d2c_base64,
+                                   chunked_transformer_t *encrypter, chunked_transformer_t *decrypter) {
+  int res = 0;
+  bool twin_keys = aes_key_d2c_base64 != NULL && aes_iv_d2c_base64 != NULL;
+  atlogger_log(TAG, INFO, "Configuring encrypter/decrypter for srv (%s)\n",
+               twin_keys ? "twinned keys" : "single key");
+
+  // The decrypter always uses the C2D key - it decrypts what the client encrypted
+  res = create_transformer(aes_key_c2d_base64, aes_iv_c2d_base64, decrypter);
+  if (res != 0) {
+    return res;
+  }
+
+  // The encrypter uses the D2C key when twinned, otherwise the same C2D key
+  if (twin_keys) {
+    res = create_transformer(aes_key_d2c_base64, aes_iv_d2c_base64, encrypter);
+  } else {
+    res = create_transformer(aes_key_c2d_base64, aes_iv_c2d_base64, encrypter);
+  }
+  if (res != 0) {
     mbedtls_aes_free(&decrypter->aes_ctr.ctx);
     return res;
   }
 
-  // Copy the iv to the decrypter
-  memcpy(decrypter->aes_ctr.nonce_counter, encrypter->aes_ctr.nonce_counter, AES_BLOCK_LEN);
-
-  // Set the stream blocks to 0
-  memset(encrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-  memset(decrypter->aes_ctr.stream_block, 0, AES_BLOCK_LEN);
-
-  // Set the iv offset to 0
-  encrypter->aes_ctr.nc_off = 0;
-  decrypter->aes_ctr.nc_off = 0;
-
-  // Set the transform functions
-  encrypter->transform = aes_ctr_crypt_stream;
-  decrypter->transform = aes_ctr_crypt_stream;
-
-  return res;
+  return 0;
 }
 
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
@@ -470,11 +581,13 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
 
   while ((temp = strtok_r(saveptr, "\n", &saveptr))) {
     // realloc memory to save a new pointer
-    temp_requests = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
-    if (!temp_requests) {
+    char **grown = realloc(temp_requests, (temp_count + 1) * sizeof(char *));
+    if (!grown) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "process_multiple_requests: Failed to allocate memory\n");
+      free(temp_requests);
       goto exit;
     }
+    temp_requests = grown;
 
     temp_requests[temp_count] = temp;
     temp_count++;
@@ -488,13 +601,19 @@ static int process_multiple_requests(char *original, char **requests[], size_t *
 exit: { return ret; }
 }
 
-// connect:session_aes_key_string:session_aes_iv_string
-static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_string,
-                                 char **new_session_aes_iv_string) {
+// Legacy single key: connect:session_aes_key_c2d_string:session_aes_iv_c2d_string
+// Twinned keys:      connect:aes_key_c2d:aes_iv_c2d:aes_key_d2c:aes_iv_d2c
+// The d2c output strings are set to NULL when the message carries a single key.
+static int parse_control_message(char *original, char **message_type, char **new_session_aes_key_c2d_string,
+                                 char **new_session_aes_iv_c2d_string, char **new_session_aes_key_d2c_string,
+                                 char **new_session_aes_iv_d2c_string) {
   int ret = -1;
 
   char *temp = NULL;
   char *saveptr = original;
+
+  *new_session_aes_key_d2c_string = NULL;
+  *new_session_aes_iv_d2c_string = NULL;
 
   // if message has any leading or trailing white space or new line characters, remove it
   while ((saveptr)[0] == ' ' || (saveptr)[0] == '\n') {
@@ -517,9 +636,21 @@ static int parse_control_message(char *original, char **message_type, char **new
     if (i == 0)
       *message_type = temp;
     if (i == 1)
-      *new_session_aes_key_string = temp;
+      *new_session_aes_key_c2d_string = temp;
     if (i == 2)
-      *new_session_aes_iv_string = temp;
+      *new_session_aes_iv_c2d_string = temp;
+  }
+
+  // Optional twinned d2c key and iv - must be present together
+  temp = strtok_r(saveptr, ":", &saveptr);
+  if (temp != NULL) {
+    *new_session_aes_key_d2c_string = temp;
+    temp = strtok_r(saveptr, ":", &saveptr);
+    if (temp == NULL) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a d2c aes key without a d2c iv\n");
+      goto exit;
+    }
+    *new_session_aes_iv_d2c_string = temp;
   }
 
   ret = 0;
@@ -535,6 +666,8 @@ static void *run_socket_to_socket(void *args) {
   free(sts_thread_params->encrypter);
   free(sts_thread_params->decrypter);
   free(sts_thread_params);
+
+  session_ended();
 
   return NULL;
 }
