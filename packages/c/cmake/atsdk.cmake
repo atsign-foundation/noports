@@ -12,9 +12,9 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      # at_c v0.3.11: adds the enroll-via-proxy fix (at_c#705) on top of the
-      # 'proxy:' root server support and connection CRLF fix from v0.3.10
-      GIT_TAG 06dbc19ce2d1b682b7b51b3a2b5fb4dfdf1b3763
+      # at_c v0.4.0: atchops_rsa_encrypt output-buffer bound (at_c#709,
+      # breaking signature change) on top of the v0.3.11 proxy/enroll support
+      GIT_TAG 295c5d2b43264ac57432d4ceceee7955986d32de
     )
   endif()
   FetchContent_MakeAvailable(atsdk)

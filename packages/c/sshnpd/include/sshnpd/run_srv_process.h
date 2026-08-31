@@ -8,11 +8,16 @@
 
 // Everything the srv needs to run ESCR (encrypted signed challenge response)
 // relay authentication for one session. All pointers are borrowed.
+//
+// signing_key_base64 is the daemon's PKAM private key in base64 (atkeys
+// pkam_private_key_base64). The srv is exec'd as a separate process and reads
+// it from REMOTE_AUTH_ESCR_SIGNING_PRIVKEY, matching the Dart daemon's
+// contract, so the parsed RSA struct is no longer passed across the boundary.
 typedef struct {
   const char *session_id;
-  const char *aes_key_base64;               // the session's relayAuthAesKey
-  const char *signing_key_uri;              // public:_apsk.<enrollmentId>.a.__e<atsign>
-  atchops_rsa_key_private_key *signing_key; // the daemon's PKAM private key
+  const char *aes_key_base64;      // the session's relayAuthAesKey
+  const char *signing_key_uri;     // public:_apsk.<enrollmentId>.a.__e<atsign>
+  const char *signing_key_base64;  // the daemon's PKAM private key, base64
 } sshnpd_escr_context;
 
 // The d2c key and iv may be NULL, in which case the session uses a single key

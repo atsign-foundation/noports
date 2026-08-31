@@ -140,6 +140,17 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
   cJSON *signing_algo = cJSON_GetObjectItem(envelope, "signingAlgo");
   cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
 
+  // The envelope is attacker-controlled and has not been shape-validated yet
+  // (verify_envelope_contents runs after this). Reject anything missing the
+  // signed fields before we do the atServer public-key round-trip, otherwise
+  // the cJSON_GetStringValue/cJSON_PrintUnformatted results below are NULL and
+  // strlen/strcmp segfault the daemon.
+  if (!cJSON_IsString(signature) || !cJSON_IsString(hashing_algo) || !cJSON_IsString(signing_algo) || payload == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Envelope missing signature/hashingAlgo/signingAlgo/payload - rejecting\n");
+    return 1;
+  }
+
   int res = 0;
   atclient_atkey atkey;
   atclient_atkey_init(&atkey);
@@ -186,6 +197,12 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
   }
 
   char *payloadstr = cJSON_PrintUnformatted(payload);
+  if (payloadstr == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to serialize envelope payload\n");
+    free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
+    return 1;
+  }
   res = verify_envelope_signature(&requesting_atsign_publickey, (const unsigned char *)payloadstr,
                                   (unsigned char *)buffer, hashing_algo_str, signing_algo_str);
 
@@ -229,14 +246,17 @@ int verify_envelope_signature(atchops_rsa_key_public_key *publickey, const unsig
 }
 
 cJSON *extract_envelope_from_notification(atclient_monitor_message *message) {
-  // Sanity check the notification
-  if (!atclient_atnotification_is_from_initialized(message->notification) && message->notification->from != NULL) {
+  // Sanity check the notification. The field must be initialized AND non-NULL;
+  // the guards previously used && (rejecting only the impossible
+  // uninitialized-but-non-NULL case), so a NULL from/decrypted_value fell
+  // through to strlen(NULL) below.
+  if (!atclient_atnotification_is_from_initialized(message->notification) || message->notification->from == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
     return NULL;
   }
 
-  if (!atclient_atnotification_is_decrypted_value_initialized(message->notification) &&
-      message->notification->decrypted_value != NULL) {
+  if (!atclient_atnotification_is_decrypted_value_initialized(message->notification) ||
+      message->notification->decrypted_value == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Failed to initialize the decrypted value of the notification\n");
     return NULL;
@@ -510,7 +530,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
         return 1;
       }
 
-      res = atchops_rsa_encrypt(&ac, *session_aes_key, session_aes_key_len, session_aes_key_encrypted);
+      res = atchops_rsa_encrypt(&ac, *session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256, NULL);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
@@ -560,7 +580,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
       }
       memset(session_iv_encrypted, 0, BYTES(256));
 
-      res = atchops_rsa_encrypt(&ac, *session_iv, session_iv_len, session_iv_encrypted);
+      res = atchops_rsa_encrypt(&ac, *session_iv, session_iv_len, session_iv_encrypted, 256, NULL);
       atchops_rsa_key_public_key_free(&ac);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
