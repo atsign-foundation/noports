@@ -12,11 +12,9 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      # PLACEHOLDER - update before merge: pinned to the at_c#709 PR branch
-      # head (atchops_rsa_encrypt output-buffer bound, breaking signature
-      # change). Replace with the at_c release SHA that contains #709 once it
-      # merges and is released.
-      GIT_TAG 05295c51791a17a8118361cd02d6b5e7ed6b845e
+      # at_c v0.4.0: atchops_rsa_encrypt output-buffer bound (at_c#709,
+      # breaking signature change) on top of the v0.3.11 proxy/enroll support
+      GIT_TAG 295c5d2b43264ac57432d4ceceee7955986d32de
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
