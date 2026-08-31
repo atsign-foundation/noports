@@ -202,9 +202,11 @@ jobs:
           cd tarballs
           echo "Before:"
           ls -latrR *
-          mv */*.tgz .
-          mv */*.tar.gz .
-          mv */*.zip .
+          shopt -s nullglob
+          packages=( */*.tgz */*.tar.gz */*.zip )
+          if ((${#packages[@]})); then
+            mv "${packages[@]}" .
+          fi
           rm -Rf -- */
           echo "After:"
           ls -latrR *
