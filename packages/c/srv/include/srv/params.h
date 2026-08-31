@@ -1,6 +1,6 @@
 #ifndef SRV_PARAMS_H
 #define SRV_PARAMS_H
-#define SRV_VERSION "0.1.0"
+#define SRV_VERSION "1.1.0"
 
 // Matches DefaultArgs.srvTimeoutInSeconds in the Dart noports_core package
 #define SRV_DEFAULT_TIMEOUT_SECONDS 30

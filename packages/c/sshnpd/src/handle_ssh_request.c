@@ -112,7 +112,7 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
         escr_context.session_id = session_id_str;
         escr_context.aes_key_base64 = relay_auth_aes_key;
         escr_context.signing_key_uri = escr_signing_key_uri;
-        escr_context.signing_key = &atkeys.pkam_private_key;
+        escr_context.signing_key_base64 = atkeys.pkam_private_key_base64;
         use_escr = true;
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Session will use escr relay auth\n");
       } else {
