@@ -1,9 +1,10 @@
 import 'package:npt_flutter/features/logging/models/loggable.dart';
 
 enum LightState {
-  green, // connected
-  red, // disconnected
-  clear, // unsure
+  green,
+  yellow,
+  red,
+  clear,
 }
 
 sealed class PolicyStatusLightState extends Loggable {
