@@ -510,7 +510,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
         return 1;
       }
 
-      res = atchops_rsa_encrypt(&ac, *session_aes_key, session_aes_key_len, session_aes_key_encrypted);
+      res = atchops_rsa_encrypt(&ac, *session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256, NULL);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
         atchops_rsa_key_public_key_free(&ac);
@@ -560,7 +560,7 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
       }
       memset(session_iv_encrypted, 0, BYTES(256));
 
-      res = atchops_rsa_encrypt(&ac, *session_iv, session_iv_len, session_iv_encrypted);
+      res = atchops_rsa_encrypt(&ac, *session_iv, session_iv_len, session_iv_encrypted, 256, NULL);
       atchops_rsa_key_public_key_free(&ac);
       if (res != 0) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
