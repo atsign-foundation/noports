@@ -36,10 +36,14 @@ class PolicyStatusLight extends StatelessWidget {
 
   _StatusIndicatorData _resolveStateData(PolicyStatusLightState state) {
     if (state is PolicyStatusLightLoaded) {
+      final Color color = switch (state.lightState) {
+        LightState.green => AppColor.successColor,
+        LightState.yellow => AppColor.warningColor,
+        LightState.red => AppColor.errorColor,
+        LightState.clear => AppColor.greyColor,
+      };
       return _StatusIndicatorData(
-        color: state.lightState == LightState.green
-            ? AppColor.successColor
-            : AppColor.errorColor,
+        color: color,
         tooltip: state.message ?? _defaultMessage(state.lightState),
       );
     }
@@ -53,8 +57,9 @@ class PolicyStatusLight extends StatelessWidget {
   String _defaultMessage(LightState lightState) {
     return switch (lightState) {
       LightState.green => 'Heartbeat healthy',
+      LightState.yellow => 'Server version outdated',
       LightState.red => 'Heartbeat unavailable',
-      LightState.clear => 'Heartbeat unknown'
+      LightState.clear => 'Heartbeat unknown',
     };
   }
 }
