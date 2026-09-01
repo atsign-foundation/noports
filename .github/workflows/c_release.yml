@@ -202,14 +202,16 @@ jobs:
           cd tarballs
           echo "Before:"
           ls -latrR *
-          mv */*.tgz .
-          mv */*.tar.gz .
-          mv */*.zip .
+          shopt -s nullglob
+          packages=( */*.tgz */*.tar.gz */*.zip )
+          if ((${#packages[@]})); then
+            mv "${packages[@]}" .
+          fi
           rm -Rf -- */
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@ddf6a0d3d75b645153ad1ad60034b3fe2cb1eb63 # v26.7.0
+        uses: sbomify/github-action@ed3f547023f5a3cc82025a85f568f6baff4bda3f # v26.8.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
