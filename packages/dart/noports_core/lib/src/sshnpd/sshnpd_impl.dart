@@ -113,6 +113,8 @@ class SshnpdImpl
   @override
   AtEventConfig? elc;
 
+  bool _loggedElcMiss = false;
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -1908,9 +1910,13 @@ class SshnpdImpl
         atSign: policyManagerAtsign!,
         namespace: DefaultArgs.eventLoggingNamespace,
       );
+      _loggedElcMiss = false;
       logger.info('Fetched event logging config: $elc');
     } on AtKeyNotFoundException {
-      logger.info('No event logging config from $policyManagerAtsign yet');
+      if (!_loggedElcMiss) {
+        _loggedElcMiss = true;
+        logger.info('No event logging config from $policyManagerAtsign yet');
+      }
     } catch (e) {
       logger.warning('Failed to fetch event logging config: $e');
     }
