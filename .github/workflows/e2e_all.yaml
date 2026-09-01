@@ -20,60 +20,81 @@ on:
 
 jobs:
   e2e_all:
-    # These jobs need @npe2e_org_* Atsigns
-    # Avoids AtRecord interference
-    needs: [npe2e_core_tests, npe2e_policy_tests, npe2e_relay_tests]
     if:
-      ${{ !cancelled() && github.event.pull_request.head.repo.fork == false &&
+      ${{ github.event.pull_request.head.repo.fork == false &&
       github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup dart
+
+      - name: Setup Dart
         uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-      - name: Set stuff up
-        run: |
-          mkdir -p /tmp/e2e_all
-          mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy02_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Install expect
         run: |
           sudo apt-get install -y expect
+
+      - name: Add VE host entry
+        run: |
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup VE
+        run: |
+          chmod +x tests/npe2e/tools/ve/setup_ve.sh
+          tests/npe2e/tools/ve/setup_ve.sh
+
+      - name: Start srvd relay
+        run: |
+          chmod +x tests/npe2e/tools/ve/start_srvd.sh
+          tests/npe2e/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
+
+      - name: Set stuff up
+        run: |
+          mkdir -p /tmp/e2e_all
 
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
           tests/e2e_all/scripts/main.sh \
-            @npe2e_org_client01_jttest \
-            @npe2e_org_daemon01_jttest \
-            @rv_am \
-            @npe2e_org_relay01_jttest \
-            @npe2e_org_policy01_jttest \
-            @npe2e_org_policy02_jttest \
-            @npe2e_org_relay02_jttest \
-            -p -r root.atsign.org
+            @colin \
+            @barbara \
+            @relay1 \
+            @chris \
+            @curtly \
+            @gareth \
+            @gary \
+            -p -r vip.ve.atsign.zone
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
 
+      - name: Stop srvd relay
+        if: always()
+        run: |
+          chmod +x tests/npe2e/tools/ve/stop_srvd.sh
+          tests/npe2e/tools/ve/stop_srvd.sh
+
+      - name: Teardown VE
+        if: always()
+        run: |
+          chmod +x tests/npe2e/tools/ve/teardown_ve.sh
+          tests/npe2e/tools/ve/teardown_ve.sh
+
       - name: Zip /tmp/e2e_all
-        if: ${{ always() }} # run even if test fails
+        if: ${{ always() }}
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
 
       - name: Upload /tmp/e2e_all as artifact
-        if: ${{ always() }} # run even if test fails
+        if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tmp_e2e_all_artifacts
