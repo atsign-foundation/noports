@@ -22,9 +22,10 @@ jobs:
         with:
           cmake-version: "3.31.11"
 
-      - name: sshnpd Unit CTest
+      - name: sshnpd and srv Unit CTest
         working-directory: packages/c
         run: |
-          cmake -S . -B build -DSSHNPD_BUILD_TESTS=ON
+          cmake -S . -B build -DSSHNPD_BUILD_TESTS=ON -DSRV_BUILD_TESTS=ON
           cmake --build build
           ctest --test-dir build/sshnpd/tests --output-on-failure --timeout 2
+          ctest --test-dir build/_deps/srv-lib-build/tests --output-on-failure --timeout 10

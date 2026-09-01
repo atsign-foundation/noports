@@ -155,6 +155,33 @@ int server_to_socket(const srv_params_t *params, const char *auth_string, chunke
 int aes_ctr_crypt_stream(const chunked_transformer_t *self, size_t len, const unsigned char *input,
                          unsigned char *output);
 
-int create_encrypter_and_decrypter(const char *session_aes_key_string, const char *session_aes_iv_string,
+/**
+ * @brief create a single AES-CTR stream transformer from a base64 key and iv
+ *
+ * @param aes_key_base64 the base64 encoded AES-256 key
+ * @param aes_iv_base64 the base64 encoded 16 byte iv
+ * @param transformer the transformer to initialize (free with mbedtls_aes_free(&transformer->aes_ctr.ctx))
+ * @return int 0 on success, non-zero on error
+ */
+int create_transformer(const char *aes_key_base64, const char *aes_iv_base64, chunked_transformer_t *transformer);
+
+/**
+ * @brief create the encrypter and decrypter for one bridged connection
+ *
+ * The decrypter always uses the C2D (client to daemon) key, since it decrypts
+ * traffic which the client encrypted. The encrypter uses the D2C (daemon to
+ * client) key when one is provided ("twinned keys"); when the D2C key and iv
+ * are NULL the C2D key is used in both directions (legacy single-key mode).
+ *
+ * @param aes_key_c2d_base64 the base64 encoded C2D AES-256 key
+ * @param aes_iv_c2d_base64 the base64 encoded C2D iv
+ * @param aes_key_d2c_base64 the base64 encoded D2C AES-256 key (NULL for single-key mode)
+ * @param aes_iv_d2c_base64 the base64 encoded D2C iv (NULL for single-key mode)
+ * @param encrypter the encrypter to initialize
+ * @param decrypter the decrypter to initialize
+ * @return int 0 on success, non-zero on error
+ */
+int create_encrypter_and_decrypter(const char *aes_key_c2d_base64, const char *aes_iv_c2d_base64,
+                                   const char *aes_key_d2c_base64, const char *aes_iv_d2c_base64,
                                    chunked_transformer_t *encrypter, chunked_transformer_t *decrypter);
 #endif
