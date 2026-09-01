@@ -22,7 +22,7 @@ msix_config:
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.9.3.0
+  msix_version: 1.9.4.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
