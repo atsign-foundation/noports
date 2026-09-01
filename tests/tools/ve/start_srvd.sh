@@ -10,7 +10,7 @@ RELAY_ATSIGN="$1"
 ROOT_DOMAIN="$2"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$SCRIPT_DIR/../../../.."
+REPO_ROOT="$SCRIPT_DIR/../../.."
 SRVD_DIR="/tmp/ve_srvd"
 mkdir -p "$SRVD_DIR"
 
