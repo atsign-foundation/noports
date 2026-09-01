@@ -19,13 +19,11 @@ class ActivationDialogFinal extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
-    context.read<MultiActivationCubit>().activateAll;
     // final width = MediaQuery.of(context).size.width * 0.70;
     return BlocBuilder<MultiActivationCubit, MultiActivationState>(
       builder: (context, state) {
-        final bool anyWatingStatus = context
-            .read<MultiActivationCubit>()
-            .isAnyWaitingStatus();
+        final cubit = context.read<MultiActivationCubit>();
+        final bool isComplete = cubit.isActivationComplete();
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -46,10 +44,7 @@ class ActivationDialogFinal extends StatelessWidget {
                   ),
                   gapW4,
                   Text(
-                    context
-                            .read<MultiActivationCubit>()
-                            .getActivatingAtsign() ??
-                        '',
+                    cubit.getActivatingAtsign() ?? '',
                     style: textTheme.headlineSmall!.copyWith(
                       color: AppColor.primaryColor,
                     ),
@@ -110,19 +105,25 @@ class ActivationDialogFinal extends StatelessWidget {
                               ),
                             ),
 
-                            Text(
-                              entry.activationKeyStatus.name,
-                              style: TextStyle(
-                                color:
-                                    entry.activationKeyStatus ==
-                                            ActivationKeyStatus.activated ||
-                                        entry.activationKeyStatus ==
-                                            ActivationKeyStatus.alreadyActivated
-                                    ? AppColor.primaryColor
-                                    : entry.activationKeyStatus ==
-                                          ActivationKeyStatus.failed
-                                    ? AppColor.errorColor
-                                    : AppColor.onSurfaceColorAlt,
+                            Tooltip(
+                              // The status word alone doesn't tell a tester
+                              // why an atsign failed, so hang the reason off it.
+                              message: entry.failureReason ?? '',
+                              child: Text(
+                                entry.activationKeyStatus.name,
+                                style: TextStyle(
+                                  color:
+                                      entry.activationKeyStatus ==
+                                              ActivationKeyStatus.activated ||
+                                          entry.activationKeyStatus ==
+                                              ActivationKeyStatus
+                                                  .alreadyActivated
+                                      ? AppColor.primaryColor
+                                      : entry.activationKeyStatus ==
+                                            ActivationKeyStatus.failed
+                                      ? AppColor.errorColor
+                                      : AppColor.onSurfaceColorAlt,
+                                ),
                               ),
                             ),
                           ],
@@ -137,59 +138,73 @@ class ActivationDialogFinal extends StatelessWidget {
             ],
           ),
 
-          actions: [
-            context.read<MultiActivationCubit>().isAnyFailedStatus()
-                ? ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<MultiActivationCubit>().reset();
-                      Navigator.pop(context);
-                    },
-                    label: const Text('Cancel'),
-                    icon: PhosphorIcon(PhosphorIcons.xCircle()),
-                  )
-                : gap0,
-            context.read<MultiActivationCubit>().isAnyFailedStatus()
-                ? ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<MultiActivationCubit>().activateAll();
-                    },
-                    label: const Text('Retry'),
-                    icon: PhosphorIcon(PhosphorIcons.repeat()),
-                  )
-                : gap0,
-            context.read<MultiActivationCubit>().isAnyActivatedStatus()
-                ? ElevatedButton.icon(
-                    onPressed: () async {
-                      // TODO: Refactor this method when migrating to at_client_flutter. Logic should be in a cubit or util class that can be shared between single atsign activation and multi atsign activation flows.
+          // Every action stays hidden until activation has finished. Offering
+          // sign in (or a second retry) while atsigns are still onboarding is
+          // what left testers holding two sets of keys for the same atsign.
+          actions: !isComplete
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: Sizes.p10),
+                    child: Text(
+                      strings.activationInProgress,
+                      style: textTheme.bodySmall,
+                    ),
+                  ),
+                ]
+              : [
+                  if (cubit.isAnyFailedStatus())
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        cubit.reset();
+                        Navigator.pop(context);
+                      },
+                      label: Text(strings.cancel),
+                      icon: PhosphorIcon(PhosphorIcons.xCircle()),
+                    ),
+                  if (cubit.isAnyFailedStatus())
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        cubit.retryFailed();
+                      },
+                      label: Text(strings.activationRetryFailed),
+                      icon: PhosphorIcon(PhosphorIcons.repeat()),
+                    ),
+                  if (cubit.getSignInAtsign() != null)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        // TODO: Refactor this method when migrating to at_client_flutter. Logic should be in a cubit or util class that can be shared between single atsign activation and multi atsign activation flows.
 
-                      context.read<OnboardingCubit>().setState(
-                        // Onboard with the first atsign in the list since they should all be the same atsigns from the activation file. This is needed to set the root domain and atsign in the onboarding cubit state which is used in the onboarding process after this dialog.
-                        // TODO: Use the last Atsign for now. This need to be refactored to the first Atsign in the UI redesign.
-                        atsign: state.fileContent.entries.last.atsign,
+                        context.read<OnboardingCubit>().setState(
+                          // Sign in with the last atsign that actually
+                          // activated - they all come from the same activation
+                          // file, so any of them will do, but a failed one
+                          // won't authenticate.
+                          atsign: cubit.getSignInAtsign(),
 
-                        // TODO: User the root dimain in atsign information.
-                        rootDomain: "root.atsign.org",
-                      );
-                      final util = await NoPortsOnboardingUtil.create(context);
+                          // TODO: User the root dimain in atsign information.
+                          rootDomain: "root.atsign.org",
+                        );
+                        final util = await NoPortsOnboardingUtil.create(
+                          context,
+                        );
 
-                      final atsignInformation = App.navState.currentContext!
-                          .read<OnboardingCubit>()
-                          .state;
-                      Navigator.of(App.navState.currentContext!).pop();
-                      App.navState.currentContext!
-                          .read<MultiActivationCubit>()
-                          .reset();
-                      await util.onboard(
-                        atsign: atsignInformation.atsign!,
-                        rootDomain: atsignInformation.rootDomain,
-                        context: App.navState.currentContext!,
-                      );
-                    },
-                    label: const Text('Sign In'),
-                    icon: PhosphorIcon(PhosphorIcons.signIn()),
-                  )
-                : gap0,
-          ],
+                        final atsignInformation = App.navState.currentContext!
+                            .read<OnboardingCubit>()
+                            .state;
+                        Navigator.of(App.navState.currentContext!).pop();
+                        App.navState.currentContext!
+                            .read<MultiActivationCubit>()
+                            .reset();
+                        await util.onboard(
+                          atsign: atsignInformation.atsign!,
+                          rootDomain: atsignInformation.rootDomain,
+                          context: App.navState.currentContext!,
+                        );
+                      },
+                      label: Text(strings.signIn),
+                      icon: PhosphorIcon(PhosphorIcons.signIn()),
+                    ),
+                ],
         );
       },
     );
