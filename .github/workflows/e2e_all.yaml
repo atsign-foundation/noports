@@ -104,6 +104,7 @@ jobs:
         run: |
           mkdir -p ~/.atsign/keys/
           echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client02_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
 
       - name: dart pub get (tests/npe2e)
