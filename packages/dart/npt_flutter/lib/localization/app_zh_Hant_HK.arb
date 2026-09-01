@@ -128,6 +128,7 @@
   "errorCramAuthFailed": "啟動金鑰被 atServer 拒絕。此啟動檔案可能已被使用。",
   "errorDuringStartupWithDetails": "啟動期間發生錯誤：{errorMessage}",
   "errorEnrollmentRevoked": "您的註冊已被撤銷。請重新登入以申請新的註冊。",
+  "errorOnboardingWithDetails": "引導失敗：{details}",
   "errorOtpRequestFailed": "要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。",
   "errorOtpVerificationFailed": "使用啟動伺服器驗證 OTP 失敗，請重試。如果問題仍然存在，請聯絡支援人員。",
   "errorProfileLoadFailed": "載入此設定檔失敗",

@@ -448,7 +448,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
+    return 'Falha na integração: $details';
   }
 
   @override
@@ -1562,6 +1562,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get errorEnrollmentRevoked =>
       'Sua inscrição foi revogada. Por favor, entre novamente para solicitar uma nova inscrição.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Falha na integração: $details';
+  }
 
   @override
   String get errorOtpRequestFailed =>

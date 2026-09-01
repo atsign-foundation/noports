@@ -128,6 +128,7 @@
   "errorCramAuthFailed": "La clave de activación fue rechazada por el atServer. Es posible que este archivo de activación ya se haya utilizado.",
   "errorDuringStartupWithDetails": "Error durante el inicio: {errorMessage}",
   "errorEnrollmentRevoked": "Tu inscripción ha sido revocada. Por favor, inicia sesión nuevamente para solicitar una nueva inscripción.",
+  "errorOnboardingWithDetails": "La integración falló: {details}",
   "errorOtpRequestFailed": "Error al solicitar un OTP, intenta reenviar o contacta a soporte si el problema persiste.",
   "errorOtpVerificationFailed": "Error al verificar el OTP con el servidor de activación, por favor intenta nuevamente. Contacta a soporte si el problema persiste.",
   "errorProfileLoadFailed": "Error al cargar este perfil",

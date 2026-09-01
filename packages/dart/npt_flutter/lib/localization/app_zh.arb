@@ -128,6 +128,7 @@
   "errorCramAuthFailed": "激活密钥被 atServer 拒绝。此激活文件可能已被使用。",
   "errorDuringStartupWithDetails": "启动期间出错：{errorMessage}",
   "errorEnrollmentRevoked": "您的注册已被撤销。请重新登录以申请新的注册。",
+  "errorOnboardingWithDetails": "引导失败：{details}",
   "errorOtpRequestFailed": "请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。",
   "errorOtpVerificationFailed": "使用激活服务器验证 OTP 失败，请重试。如果问题仍然存在，请联系支持人员。",
   "errorProfileLoadFailed": "加载此配置文件失败",

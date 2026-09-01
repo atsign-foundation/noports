@@ -450,7 +450,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
+    return 'La integración falló: $details';
   }
 
   @override

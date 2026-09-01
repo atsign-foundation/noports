@@ -420,7 +420,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
+    return '引导失败：$details';
   }
 
   @override
@@ -1464,6 +1464,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorEnrollmentRevoked => '您的注册已被撤销。请重新登录以申请新的注册。';
 
   @override
+  String errorOnboardingWithDetails(Object details) {
+    return '引导失败：$details';
+  }
+
+  @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
 
   @override
@@ -2502,6 +2507,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get errorEnrollmentRevoked => '您的註冊已被撤銷。請重新登入以申請新的註冊。';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return '引導失敗：$details';
+  }
 
   @override
   String get errorOtpRequestFailed => '要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。';
