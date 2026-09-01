@@ -47,8 +47,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '上传或拖放您的一次性激活文件 (.yaml)';
 
   @override
-  String get activationInProgress =>
-      'Activating, please wait until every Atsign has finished.';
+  String get activationInProgress => '正在激活，请等待每个 Atsign 完成。';
 
   @override
   String get activationKeyStatusActivated => '已激活';
@@ -69,7 +68,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get activationManual => '手动激活';
 
   @override
-  String get activationRetryFailed => 'Retry Failed';
+  String get activationRetryFailed => '重试失败';
 
   @override
   String get activationStatus => '激活状态';
@@ -134,16 +133,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get atsignFrom => '来自 Atsign';
 
   @override
-  String get atsignsUser => '用户 Atsign';
-
-  @override
-  String get atsignsUserTooltip => '一个 Atsign，如“@alice”，它将连接到其他设备';
-
-  @override
   String get atsignTo => '到 Atsign';
 
   @override
   String get atsignUncreated => '没有 Atsign？';
+
+  @override
+  String get atsignsUser => '用户 Atsign';
+
+  @override
+  String get atsignsUserTooltip => '一个 Atsign，如“@alice”，它将连接到其他设备';
 
   @override
   String get authenticate => '身份验证';
@@ -195,21 +194,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get confirm => '确认';
 
   @override
-  String get connected => '已连接';
-
-  @override
-  String get connectionClosed => '连接已关闭，将重试...';
-
-  @override
-  String get connectionRetrying => '正在重试连接 (keep-alive)...';
-
-  @override
-  String get connections => '连接';
-
-  @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connectUriProtocolDescription =>
       '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
 
@@ -222,6 +206,21 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get connectUriUsernameDescription =>
       '协议（如 SSH）的可选用户名（例如，ssh://user@host 中的 user）';
+
+  @override
+  String get connected => '已连接';
+
+  @override
+  String get connectionClosed => '连接已关闭，将重试...';
+
+  @override
+  String get connectionRetrying => '正在重试连接 (keep-alive)...';
+
+  @override
+  String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connections => '连接';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -288,13 +287,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceGroupNo => '无设备组';
 
   @override
+  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
+
+  @override
   String get deviceGroups => '设备组';
 
   @override
   String get deviceGroupsNotAdded => '尚未添加设备组';
-
-  @override
-  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
 
   @override
   String get deviceName => '设备名称';
@@ -362,7 +361,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorActivationKeysConflict =>
-      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
+      '此 Atsign 之前已使用一组不同的密钥进行引导。请将其从应用中删除，然后重试。';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -385,6 +384,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAtServerUnreachable => '无法连接到 atServer，请确保您有稳定的互联网连接。';
 
   @override
+  String get errorAtsignActivated => '此 Atsign 已被激活。';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配对，请联系支持人员。';
   }
@@ -397,23 +399,28 @@ class AppLocalizationsZh extends AppLocalizations {
       'Atsign 不可用。请确保您已从仪表板按下“激活”并且具有稳定的互联网连接。';
 
   @override
-  String get errorCramAuthFailed =>
-      'The activation key was rejected by the atServer. This activation file may have already been used.';
-
-  @override
-  String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
-  }
-
-  @override
   String get errorAuthenticatinFailed => '身份验证失败。';
+
+  @override
+  String get errorAuthenticationFailed => '身份验证失败。请检查您的详细信息，然后重试。';
 
   @override
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
+
+  @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return '启动期间出错：$errorMessage';
+  }
+
+  @override
+  String get errorEnrollmentRevoked => '您的注册已被撤销。请重新登录以申请新的注册。';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
   }
 
   @override
@@ -428,6 +435,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
+
+  @override
+  String get errorServerUnavailable => '服务器当前不可用。请稍后再试。';
 
   @override
   String get errorSwitchAtsignFailed => '激活后切换 Atsign 失败。';
@@ -523,6 +533,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
+  String get logType => '日志类型';
+
+  @override
   String get logs => '日志';
 
   @override
@@ -536,9 +549,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logsView => '查看日志';
-
-  @override
-  String get logType => '日志类型';
 
   @override
   String get manageAtsigns => '管理 Atsign';
@@ -559,6 +569,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get monitoringStop => '停止监控';
 
   @override
+  String get msgAtsignUnreachable => '无法连接到 Atsign 服务器。';
+
+  @override
+  String get msgResponseTimeOut => '请求超时。请重试。';
+
+  @override
   String get myNoPortsMsg => '在 My NoPorts 中检索您的 Atsign →';
 
   @override
@@ -572,6 +588,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noAtsignsAdded => '尚未添加 Atsign';
+
+  @override
+  String get noAtsignsToRemove => '未找到要删除的 Atsign。';
 
   @override
   String get noDescription => '无描述';
@@ -717,9 +736,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
-  String get profilesFailedLoaded => '配置文件加载失败';
-
-  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -748,6 +764,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileStatusStopping => '正在关闭';
+
+  @override
+  String get profilesFailedLoaded => '配置文件加载失败';
 
   @override
   String get quit => '退出';
@@ -781,12 +800,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get removeAtsign => '删除 Atsign';
-
-  @override
-  String get selectAll => 'Select All';
-
-  @override
-  String get noAtsignsToRemove => 'No atsigns found to remove.';
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -844,9 +857,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roleNotLoaded => '未加载角色';
 
   @override
-  String get roles => '角色';
-
-  @override
   String get roleSaveFailed => '保存角色失败';
 
   @override
@@ -858,20 +868,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roleSelectToViewDetails => '选择角色以查看详细信息';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return '加载角色失败：$errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => '刷新角色';
-
-  @override
   String get roleUpdatingFailed => '更新角色失败';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return '更新角色失败：$errorMessage';
   }
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '刷新角色';
 
   @override
   String get rootDomainDefault => '默认 (Prod)';
@@ -887,6 +900,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get saveLater => '稍后保存';
+
+  @override
+  String get selectAll => '全选';
 
   @override
   String get selectEnrollMethod => '选择您的注册方法';
@@ -1012,23 +1028,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get waitingForApproval => '等待批准...';
 
   @override
-  String get errorServerUnavailable =>
-      'The server is currently unavailable. Please try again later.';
-
-  @override
-  String get errorAtsignActivated => 'This atsign has already been activated.';
-
-  @override
-  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
-
-  @override
-  String get errorAuthenticationFailed =>
-      'Authentication failed. Please check your details and try again.';
-
-  @override
-  String get msgResponseTimeOut => 'The request timed out. Please try again.';
-
-  @override
   String get whatAreAtKeys => '什么是 atKeys？';
 
   @override
@@ -1048,10 +1047,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (推荐)';
-
-  @override
-  String get errorEnrollmentRevoked =>
-      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
 
 /// The translations for Chinese, as used in Switzerland, using the Han script (`zh_Hans_CH`).
@@ -1097,6 +1092,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
       '上传或拖放您的一次性激活文件 (.yaml)';
 
   @override
+  String get activationInProgress => '正在激活，请等待每个 Atsign 完成。';
+
+  @override
   String get activationKeyStatusActivated => '已激活';
 
   @override
@@ -1113,6 +1111,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get activationManual => '手动激活';
+
+  @override
+  String get activationRetryFailed => '重试失败';
 
   @override
   String get activationStatus => '激活状态';
@@ -1177,16 +1178,16 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get atsignFrom => '来自 Atsign';
 
   @override
-  String get atsignsUser => '用户 Atsign';
-
-  @override
-  String get atsignsUserTooltip => '一个 Atsign，如“@alice”，它将连接到其他设备';
-
-  @override
   String get atsignTo => '到 Atsign';
 
   @override
   String get atsignUncreated => '没有 Atsign？';
+
+  @override
+  String get atsignsUser => '用户 Atsign';
+
+  @override
+  String get atsignsUserTooltip => '一个 Atsign，如“@alice”，它将连接到其他设备';
 
   @override
   String get authenticate => '身份验证';
@@ -1238,21 +1239,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get confirm => '确认';
 
   @override
-  String get connected => '已连接';
-
-  @override
-  String get connectionClosed => '连接已关闭，将重试...';
-
-  @override
-  String get connectionRetrying => '正在重试连接 (keep-alive)...';
-
-  @override
-  String get connections => '连接';
-
-  @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connectUriProtocolDescription =>
       '此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。';
 
@@ -1265,6 +1251,21 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   @override
   String get connectUriUsernameDescription =>
       '协议（如 SSH）的可选用户名（例如，ssh://user@host 中的 user）';
+
+  @override
+  String get connected => '已连接';
+
+  @override
+  String get connectionClosed => '连接已关闭，将重试...';
+
+  @override
+  String get connectionRetrying => '正在重试连接 (keep-alive)...';
+
+  @override
+  String get connectionTimedOut => '连接超时，将重试...';
+
+  @override
+  String get connections => '连接';
 
   @override
   String get couldNotLoadPreviousState => '无法加载先前的状态错误';
@@ -1331,13 +1332,13 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get deviceGroupNo => '无设备组';
 
   @override
+  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
+
+  @override
   String get deviceGroups => '设备组';
 
   @override
   String get deviceGroupsNotAdded => '尚未添加设备组';
-
-  @override
-  String get deviceGroupTooltip => '指定 --dg 选项的守护程序进程，并使用字符串将允许从用户连接到指定的主机：端口';
 
   @override
   String get deviceName => '设备名称';
@@ -1404,6 +1405,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get error => '错误';
 
   @override
+  String get errorActivationKeysConflict =>
+      '此 Atsign 之前已使用一组不同的密钥进行引导。请将其从应用中删除，然后重试。';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return '保存 atKeys 文件失败：$error';
   }
@@ -1424,6 +1429,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAtServerUnreachable => '无法连接到 atServer，请确保您有稳定的互联网连接。';
 
   @override
+  String get errorAtsignActivated => '此 Atsign 已被激活。';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配对，请联系支持人员。';
   }
@@ -1439,12 +1447,21 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAuthenticatinFailed => '身份验证失败。';
 
   @override
+  String get errorAuthenticationFailed => '身份验证失败。请检查您的详细信息，然后重试。';
+
+  @override
   String get errorAuthenticationTimedOut => '身份验证超时。';
+
+  @override
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return '启动期间出错：$errorMessage';
   }
+
+  @override
+  String get errorEnrollmentRevoked => '您的注册已被撤销。请重新登录以申请新的注册。';
 
   @override
   String get errorOtpRequestFailed => '请求 OTP 失败，请尝试重新发送，如果问题仍然存在，请联系支持人员。';
@@ -1458,6 +1475,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get errorRootDomainNotSupported => '自动激活不支持指定的根域。';
+
+  @override
+  String get errorServerUnavailable => '服务器当前不可用。请稍后再试。';
 
   @override
   String get errorSwitchAtsignFailed => '激活后切换 Atsign 失败。';
@@ -1553,6 +1573,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get localPortDescription => '您将在本地机器上使用的端口';
 
   @override
+  String get logType => '日志类型';
+
+  @override
   String get logs => '日志';
 
   @override
@@ -1566,9 +1589,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get logsView => '查看日志';
-
-  @override
-  String get logType => '日志类型';
 
   @override
   String get manageAtsigns => '管理 Atsign';
@@ -1589,6 +1609,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get monitoringStop => '停止监控';
 
   @override
+  String get msgAtsignUnreachable => '无法连接到 Atsign 服务器。';
+
+  @override
+  String get msgResponseTimeOut => '请求超时。请重试。';
+
+  @override
   String get myNoPortsMsg => '在 My NoPorts 中检索您的 Atsign →';
 
   @override
@@ -1602,6 +1628,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get noAtsignsAdded => '尚未添加 Atsign';
+
+  @override
+  String get noAtsignsToRemove => '未找到要删除的 Atsign。';
 
   @override
   String get noDescription => '无描述';
@@ -1747,9 +1776,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
-  String get profilesFailedLoaded => '配置文件加载失败';
-
-  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -1778,6 +1804,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileStatusStopping => '正在关闭';
+
+  @override
+  String get profilesFailedLoaded => '配置文件加载失败';
 
   @override
   String get quit => '退出';
@@ -1868,9 +1897,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get roleNotLoaded => '未加载角色';
 
   @override
-  String get roles => '角色';
-
-  @override
   String get roleSaveFailed => '保存角色失败';
 
   @override
@@ -1882,20 +1908,23 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get roleSelectToViewDetails => '选择角色以查看详细信息';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return '加载角色失败：$errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => '刷新角色';
-
-  @override
   String get roleUpdatingFailed => '更新角色失败';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return '更新角色失败：$errorMessage';
   }
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '加载角色失败：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '刷新角色';
 
   @override
   String get rootDomainDefault => '默认 (Prod)';
@@ -1911,6 +1940,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get saveLater => '稍后保存';
+
+  @override
+  String get selectAll => '全选';
 
   @override
   String get selectEnrollMethod => '选择您的注册方法';
@@ -2100,6 +2132,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
       '上傳或拖放您的一次性啟動檔案 (.yaml)';
 
   @override
+  String get activationInProgress => '正在啟動，請等待每個 Atsign 完成。';
+
+  @override
   String get activationKeyStatusActivated => '已啟動';
 
   @override
@@ -2116,6 +2151,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get activationManual => '手動啟動';
+
+  @override
+  String get activationRetryFailed => '重試失敗';
 
   @override
   String get activationStatus => '啟動狀態';
@@ -2180,16 +2218,16 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get atsignFrom => '來自 Atsign';
 
   @override
-  String get atsignsUser => '使用者 Atsign';
-
-  @override
-  String get atsignsUserTooltip => '類似「@alice」的 Atsign，將連線至其他裝置';
-
-  @override
   String get atsignTo => '至 Atsign';
 
   @override
   String get atsignUncreated => '沒有 Atsign？';
+
+  @override
+  String get atsignsUser => '使用者 Atsign';
+
+  @override
+  String get atsignsUserTooltip => '類似「@alice」的 Atsign，將連線至其他裝置';
 
   @override
   String get authenticate => '驗證';
@@ -2241,21 +2279,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get confirm => '確認';
 
   @override
-  String get connected => '已連線';
-
-  @override
-  String get connectionClosed => '連線已關閉，將重試...';
-
-  @override
-  String get connectionRetrying => '正在重試連線 (保持運作)...';
-
-  @override
-  String get connections => '連線';
-
-  @override
-  String get connectionTimedOut => '連線逾時，將重試...';
-
-  @override
   String get connectUriProtocolDescription =>
       '此設定會根據所選的通訊協定，在建立連線後自動啟動適當的應用程式。如果未選取通訊協定，則不會啟動任何應用程式。選取用於連線的通訊協定。';
 
@@ -2268,6 +2291,21 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   @override
   String get connectUriUsernameDescription =>
       '通訊協定（如 SSH）的可選使用者名稱 (例如，ssh://user@host 中的 user)';
+
+  @override
+  String get connected => '已連線';
+
+  @override
+  String get connectionClosed => '連線已關閉，將重試...';
+
+  @override
+  String get connectionRetrying => '正在重試連線 (保持運作)...';
+
+  @override
+  String get connectionTimedOut => '連線逾時，將重試...';
+
+  @override
+  String get connections => '連線';
 
   @override
   String get couldNotLoadPreviousState => '無法載入先前狀態錯誤';
@@ -2334,14 +2372,14 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get deviceGroupNo => '無裝置群組';
 
   @override
+  String get deviceGroupTooltip =>
+      '指定 --dg 選項的守護程序程序並使用字串，將允許從使用者連線至指定的 host:port';
+
+  @override
   String get deviceGroups => '裝置群組';
 
   @override
   String get deviceGroupsNotAdded => '尚未新增裝置群組';
-
-  @override
-  String get deviceGroupTooltip =>
-      '指定 --dg 選項的守護程序程序並使用字串，將允許從使用者連線至指定的 host:port';
 
   @override
   String get deviceName => '裝置名稱';
@@ -2408,6 +2446,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get error => '錯誤';
 
   @override
+  String get errorActivationKeysConflict =>
+      '此 Atsign 先前已使用一組不同的金鑰進行引導。請將其從應用程式中移除，然後重試。';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return '儲存 atKeys 檔案失敗：$error';
   }
@@ -2428,6 +2470,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAtServerUnreachable => '無法連線至 atServer，請確認您有穩定的網路連線。';
 
   @override
+  String get errorAtsignActivated => '此 Atsign 已被啟動。';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'Atsign $atsign 已配對，請聯絡支援人員。';
   }
@@ -2442,12 +2487,21 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAuthenticatinFailed => '身分驗證失敗。';
 
   @override
+  String get errorAuthenticationFailed => '身分驗證失敗。請檢查您的詳細資訊，然後重試。';
+
+  @override
   String get errorAuthenticationTimedOut => '身分驗證逾時。';
+
+  @override
+  String get errorCramAuthFailed => '啟動金鑰被 atServer 拒絕。此啟動檔案可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return '啟動期間發生錯誤：$errorMessage';
   }
+
+  @override
+  String get errorEnrollmentRevoked => '您的註冊已被撤銷。請重新登入以申請新的註冊。';
 
   @override
   String get errorOtpRequestFailed => '要求 OTP 失敗，請嘗試重新傳送，如果問題仍然存在，請聯絡支援人員。';
@@ -2461,6 +2515,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get errorRootDomainNotSupported => '自動啟動不支援指定的根網域。';
+
+  @override
+  String get errorServerUnavailable => '伺服器目前無法使用。請稍後再試。';
 
   @override
   String get errorSwitchAtsignFailed => '啟動後切換 Atsign 失敗。';
@@ -2556,6 +2613,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get localPortDescription => '您將在本機機器上使用的連接埠';
 
   @override
+  String get logType => '日誌類型';
+
+  @override
   String get logs => '日誌';
 
   @override
@@ -2569,9 +2629,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get logsView => '檢視日誌';
-
-  @override
-  String get logType => '日誌類型';
 
   @override
   String get manageAtsigns => '管理 Atsign';
@@ -2592,6 +2649,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get monitoringStop => '停止監控';
 
   @override
+  String get msgAtsignUnreachable => '無法連線至 Atsign 伺服器。';
+
+  @override
+  String get msgResponseTimeOut => '請求逾時。請重試。';
+
+  @override
   String get myNoPortsMsg => '在 My NoPorts 中檢索您的 Atsign →';
 
   @override
@@ -2605,6 +2668,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get noAtsignsAdded => '尚未新增 Atsign';
+
+  @override
+  String get noAtsignsToRemove => '找不到要移除的 Atsign。';
 
   @override
   String get noDescription => '無描述';
@@ -2749,9 +2815,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下設定檔已連線：';
 
   @override
-  String get profilesFailedLoaded => '設定檔載入失敗';
-
-  @override
   String get profileStatusFailedLoad => '載入失敗';
 
   @override
@@ -2780,6 +2843,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileStatusStopping => '正在關閉';
+
+  @override
+  String get profilesFailedLoaded => '設定檔載入失敗';
 
   @override
   String get quit => '退出';
@@ -2870,9 +2936,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get roleNotLoaded => '未載入角色';
 
   @override
-  String get roles => '角色';
-
-  @override
   String get roleSaveFailed => '儲存角色失敗';
 
   @override
@@ -2884,20 +2947,23 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get roleSelectToViewDetails => '選取角色以檢視詳細資訊';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return '載入角色失敗：$errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => '重新整理角色';
-
-  @override
   String get roleUpdatingFailed => '更新角色失敗';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return '更新角色失敗：$errorMessage';
   }
+
+  @override
+  String get roles => '角色';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return '載入角色失敗：$errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => '重新整理角色';
 
   @override
   String get rootDomainDefault => '預設 (Prod)';
@@ -2913,6 +2979,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get saveLater => '稍後儲存';
+
+  @override
+  String get selectAll => '全選';
 
   @override
   String get selectEnrollMethod => '選取您的註冊方法';
