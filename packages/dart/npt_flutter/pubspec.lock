@@ -906,7 +906,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.12.2"
+    version: "6.13.0"
   objective_c:
     dependency: transitive
     description:

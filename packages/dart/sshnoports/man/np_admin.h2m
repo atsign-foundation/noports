@@ -1,0 +1,12 @@
+[NAME]
+np_admin \- NoPorts policy administration web app and API
+[EXAMPLES]
+.nf
+np_admin -a @alice_policy
+.fi
+[SEE ALSO]
+npp(1), npp_atserver(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

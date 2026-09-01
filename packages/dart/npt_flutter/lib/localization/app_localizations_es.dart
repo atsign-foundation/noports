@@ -53,7 +53,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activationInProgress =>
-      'Activating, please wait until every Atsign has finished.';
+      'Activando, por favor espera hasta que cada Atsign haya terminado.';
 
   @override
   String get activationKeyStatusActivated => 'Activado';
@@ -74,7 +74,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activationManual => 'Activación Manual';
 
   @override
-  String get activationRetryFailed => 'Retry Failed';
+  String get activationRetryFailed => 'Reintento fallido';
 
   @override
   String get activationStatus => 'Estado de Activación';
@@ -142,17 +142,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get atsignFrom => 'Desde Atsign';
 
   @override
+  String get atsignTo => 'A Atsign';
+
+  @override
+  String get atsignUncreated => '¿No tienes un Atsign?';
+
+  @override
   String get atsignsUser => 'Atsign de Usuario';
 
   @override
   String get atsignsUserTooltip =>
       'Un Atsign como \"@alice\" que se conectará a otros dispositivos';
-
-  @override
-  String get atsignTo => 'A Atsign';
-
-  @override
-  String get atsignUncreated => '¿No tienes un Atsign?';
 
   @override
   String get authenticate => 'Autenticar';
@@ -207,23 +207,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirm => 'Confirmar';
 
   @override
-  String get connected => 'Conectado';
-
-  @override
-  String get connectionClosed => 'Conexión cerrada, se reintentará...';
-
-  @override
-  String get connectionRetrying =>
-      'Reintentando la conexión (mantener activa)...';
-
-  @override
-  String get connections => 'Conexiones';
-
-  @override
-  String get connectionTimedOut =>
-      'Tiempo de espera de la conexión agotado, se reintentará...';
-
-  @override
   String get connectUriProtocolDescription =>
       'Esta configuración inicia automáticamente la aplicación apropiada después de establecerse una conexión, según el protocolo seleccionado. Si no se selecciona ningún protocolo, no se iniciará ninguna aplicación. Selecciona el protocolo a utilizar para la conexión.';
 
@@ -236,6 +219,23 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get connectUriUsernameDescription =>
       'Nombre de usuario opcional para protocolos como SSH (por ejemplo, usuario en ssh://usuario@host)';
+
+  @override
+  String get connected => 'Conectado';
+
+  @override
+  String get connectionClosed => 'Conexión cerrada, se reintentará...';
+
+  @override
+  String get connectionRetrying =>
+      'Reintentando la conexión (mantener activa)...';
+
+  @override
+  String get connectionTimedOut =>
+      'Tiempo de espera de la conexión agotado, se reintentará...';
+
+  @override
+  String get connections => 'Conexiones';
 
   @override
   String get couldNotLoadPreviousState => 'Error al cargar el estado anterior';
@@ -304,15 +304,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deviceGroupNo => 'Ningún Grupo de Dispositivos';
 
   @override
+  String get deviceGroupTooltip =>
+      'Los procesos de demonio que especifican la opción --dg con una cadena permitirán conexiones desde el usuario a los host:puertos especificados';
+
+  @override
   String get deviceGroups => 'Grupos de Dispositivos';
 
   @override
   String get deviceGroupsNotAdded =>
       'Aún no se han agregado grupos de dispositivos';
-
-  @override
-  String get deviceGroupTooltip =>
-      'Los procesos de demonio que especifican la opción --dg con una cadena permitirán conexiones desde el usuario a los host:puertos especificados';
 
   @override
   String get deviceName => 'Nombre del Dispositivo';
@@ -383,7 +383,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorActivationKeysConflict =>
-      'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.';
+      'Este Atsign fue integrado previamente con un conjunto diferente de claves. Elimínalo de la aplicación e intenta de nuevo.';
 
   @override
   String errorAtKeySaveFailed(Object error) {
@@ -410,6 +410,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se puede conectar al atServer, asegúrate de tener una conexión a internet estable.';
 
   @override
+  String get errorAtsignActivated => 'Este Atsign ya ha sido activado.';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'El Atsign $atsign ya está vinculado, por favor contacta con soporte.';
   }
@@ -423,23 +426,31 @@ class AppLocalizationsEs extends AppLocalizations {
       'El Atsign no está disponible. Asegúrate de haber presionado \"Activar\" desde tu panel y tener una conexión a internet estable.';
 
   @override
-  String get errorCramAuthFailed =>
-      'The activation key was rejected by the atServer. This activation file may have already been used.';
-
-  @override
-  String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
-  }
-
-  @override
   String get errorAuthenticatinFailed => 'Autenticación fallida.';
+
+  @override
+  String get errorAuthenticationFailed =>
+      'Autenticación fallida. Por favor, verifica tus datos e intenta de nuevo.';
 
   @override
   String get errorAuthenticationTimedOut => 'La autenticación ha expirado.';
 
   @override
+  String get errorCramAuthFailed =>
+      'La clave de activación fue rechazada por el atServer. Es posible que este archivo de activación ya se haya utilizado.';
+
+  @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return 'Error durante el inicio: $errorMessage';
+  }
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Tu inscripción ha sido revocada. Por favor, inicia sesión nuevamente para solicitar una nueva inscripción.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'La integración falló: $details';
   }
 
   @override
@@ -456,6 +467,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get errorRootDomainNotSupported =>
       'El dominio raíz especificado no es compatible con la activación automática.';
+
+  @override
+  String get errorServerUnavailable =>
+      'El servidor no está disponible actualmente. Por favor, intenta de nuevo más tarde.';
 
   @override
   String get errorSwitchAtsignFailed =>
@@ -556,6 +571,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localPortDescription => 'El puerto que usarás en tu máquina local';
 
   @override
+  String get logType => 'Tipo de Registro';
+
+  @override
   String get logs => 'Registros';
 
   @override
@@ -571,9 +589,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get logsView => 'Ver Registros';
-
-  @override
-  String get logType => 'Tipo de Registro';
 
   @override
   String get manageAtsigns => 'Gestionar Atsign';
@@ -594,6 +609,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get monitoringStop => 'Detener Monitoreo';
 
   @override
+  String get msgAtsignUnreachable =>
+      'No se pudo contactar al servidor del Atsign.';
+
+  @override
+  String get msgResponseTimeOut =>
+      'El tiempo de espera de la solicitud se agotó. Por favor, intenta de nuevo.';
+
+  @override
   String get myNoPortsMsg => 'Recupera el tuyo en My NoPorts →';
 
   @override
@@ -607,6 +630,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noAtsignsAdded => 'Aún no se han agregado Atsigns';
+
+  @override
+  String get noAtsignsToRemove => 'No se encontraron Atsigns para eliminar.';
 
   @override
   String get noDescription => 'Sin descripción';
@@ -762,9 +788,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Los siguientes perfiles están conectados:';
 
   @override
-  String get profilesFailedLoaded => 'Error al cargar los perfiles';
-
-  @override
   String get profileStatusFailedLoad => 'Error al cargar';
 
   @override
@@ -793,6 +816,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileStatusStopping => 'Apagando';
+
+  @override
+  String get profilesFailedLoaded => 'Error al cargar los perfiles';
 
   @override
   String get quit => 'Salir';
@@ -829,12 +855,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get removeAtsign => 'Eliminar Atsign';
-
-  @override
-  String get selectAll => 'Select All';
-
-  @override
-  String get noAtsignsToRemove => 'No atsigns found to remove.';
 
   @override
   String get requestExpired =>
@@ -893,9 +913,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get roleNotLoaded => 'No se cargó ningún rol';
 
   @override
-  String get roles => 'Roles';
-
-  @override
   String get roleSaveFailed => 'Error al guardar el rol';
 
   @override
@@ -908,20 +925,23 @@ class AppLocalizationsEs extends AppLocalizations {
       'Selecciona un rol para ver los detalles';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return 'Error al cargar los roles: $errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => 'Refrescar Roles';
-
-  @override
   String get roleUpdatingFailed => 'Error al actualizar el rol';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return 'Error al actualizar el rol: $errorMessage';
   }
+
+  @override
+  String get roles => 'Roles';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return 'Error al cargar los roles: $errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => 'Refrescar Roles';
 
   @override
   String get rootDomainDefault => 'Predeterminado (Prod)';
@@ -937,6 +957,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveLater => 'Guardar para Después';
+
+  @override
+  String get selectAll => 'Seleccionar todo';
 
   @override
   String get selectEnrollMethod => 'Selecciona tu método de inscripción';
@@ -1075,23 +1098,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get waitingForApproval => 'Esperando aprobación...';
 
   @override
-  String get errorServerUnavailable =>
-      'The server is currently unavailable. Please try again later.';
-
-  @override
-  String get errorAtsignActivated => 'This atsign has already been activated.';
-
-  @override
-  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
-
-  @override
-  String get errorAuthenticationFailed =>
-      'Authentication failed. Please check your details and try again.';
-
-  @override
-  String get msgResponseTimeOut => 'The request timed out. Please try again.';
-
-  @override
   String get whatAreAtKeys => '¿Qué son las atKeys?';
 
   @override
@@ -1113,8 +1119,4 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recomendado)';
-
-  @override
-  String get errorEnrollmentRevoked =>
-      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }

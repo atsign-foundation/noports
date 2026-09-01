@@ -64,18 +64,25 @@ class _ResetAtsignDialogState extends State<ResetAtsignDialog> {
                     },
                   ),
                   const Divider(),
-                  ...loadedAtsigns.map(
-                    (atsign) => CheckboxListTile(
-                      title: Text(atsign),
-                      value: selected.contains(atsign),
-                      onChanged: (checked) {
-                        setState(() {
-                          if (checked ?? false) {
-                            selected.add(atsign);
-                          } else {
-                            selected.remove(atsign);
-                          }
-                        });
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: loadedAtsigns.length,
+                      itemBuilder: (context, index) {
+                        final String atsign = loadedAtsigns[index];
+                        return CheckboxListTile(
+                          title: Text(atsign),
+                          value: selected.contains(atsign),
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked ?? false) {
+                                selected.add(atsign);
+                              } else {
+                                selected.remove(atsign);
+                              }
+                            });
+                          },
+                        );
                       },
                     ),
                   ),

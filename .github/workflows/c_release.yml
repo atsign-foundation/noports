@@ -136,7 +136,7 @@ jobs:
         with:
           ref: c_release-${{github.run_number}}
       - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: Build tarballs in Docker
         run: |
           docker buildx build -t atsigncompany/sshnpdc \
@@ -202,14 +202,16 @@ jobs:
           cd tarballs
           echo "Before:"
           ls -latrR *
-          mv */*.tgz .
-          mv */*.tar.gz .
-          mv */*.zip .
+          shopt -s nullglob
+          packages=( */*.tgz */*.tar.gz */*.zip )
+          if ((${#packages[@]})); then
+            mv "${packages[@]}" .
+          fi
           rm -Rf -- */
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@ddf6a0d3d75b645153ad1ad60034b3fe2cb1eb63 # v26.7.0
+        uses: sbomify/github-action@ed3f547023f5a3cc82025a85f568f6baff4bda3f # v26.8.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'

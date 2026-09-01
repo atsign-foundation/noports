@@ -140,17 +140,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get atsignFrom => 'From Atsign';
 
   @override
+  String get atsignTo => 'To Atsign';
+
+  @override
+  String get atsignUncreated => 'Don\'t have an Atsign?';
+
+  @override
   String get atsignsUser => 'User Atsign';
 
   @override
   String get atsignsUserTooltip =>
       'An Atsign like \"@alice\" that will be connecting to other devices';
-
-  @override
-  String get atsignTo => 'To Atsign';
-
-  @override
-  String get atsignUncreated => 'Don\'t have an Atsign?';
 
   @override
   String get authenticate => 'Authenticate';
@@ -203,21 +203,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
-  String get connected => 'Connected';
-
-  @override
-  String get connectionClosed => 'Connection closed, will retry...';
-
-  @override
-  String get connectionRetrying => 'Retrying connection (keep-alive)...';
-
-  @override
-  String get connections => 'Connections';
-
-  @override
-  String get connectionTimedOut => 'Connection timed out, will retry...';
-
-  @override
   String get connectUriProtocolDescription =>
       'This setting automatically launches the appropriate application after a connection is established, based on the selected protocol. If no protocol is selected, no application will be launched. Select the protocol to use for the connection.';
 
@@ -230,6 +215,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectUriUsernameDescription =>
       'Optional username for protocols like SSH (e.g., user in ssh://user@host)';
+
+  @override
+  String get connected => 'Connected';
+
+  @override
+  String get connectionClosed => 'Connection closed, will retry...';
+
+  @override
+  String get connectionRetrying => 'Retrying connection (keep-alive)...';
+
+  @override
+  String get connectionTimedOut => 'Connection timed out, will retry...';
+
+  @override
+  String get connections => 'Connections';
 
   @override
   String get couldNotLoadPreviousState => 'Could not load previous state error';
@@ -297,14 +297,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceGroupNo => 'No Device Group';
 
   @override
+  String get deviceGroupTooltip =>
+      'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports';
+
+  @override
   String get deviceGroups => 'Device Groups';
 
   @override
   String get deviceGroupsNotAdded => 'No device groups added yet';
-
-  @override
-  String get deviceGroupTooltip =>
-      'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports';
 
   @override
   String get deviceName => 'Device Name';
@@ -401,6 +401,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to connect to the atServer, make sure you have a stable internet connection.';
 
   @override
+  String get errorAtsignActivated => 'This atsign has already been activated.';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'The Atsign $atsign is already paired, please contact support.';
   }
@@ -426,11 +429,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorAuthenticatinFailed => 'Authentication failed.';
 
   @override
+  String get errorAuthenticationFailed =>
+      'Authentication failed. Please check your details and try again.';
+
+  @override
   String get errorAuthenticationTimedOut => 'Authentication timed out.';
+
+  @override
+  String get errorCramAuthFailed =>
+      'The activation key was rejected by the atServer. This activation file may have already been used.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return 'Error during startup: $errorMessage';
+  }
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Onboarding failed: $details';
   }
 
   @override
@@ -447,6 +467,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorRootDomainNotSupported =>
       'The specified root domain is not supported by automatic activation.';
+
+  @override
+  String get errorServerUnavailable =>
+      'The server is currently unavailable. Please try again later.';
 
   @override
   String get errorSwitchAtsignFailed =>
@@ -547,6 +571,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The port you\'ll use on your local machine';
 
   @override
+  String get logType => 'Log Type';
+
+  @override
   String get logs => 'Logs';
 
   @override
@@ -562,9 +589,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logsView => 'View Logs';
-
-  @override
-  String get logType => 'Log Type';
 
   @override
   String get manageAtsigns => 'Manage Atsign';
@@ -585,6 +609,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monitoringStop => 'Stop Monitoring';
 
   @override
+  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
+
+  @override
+  String get msgResponseTimeOut => 'The request timed out. Please try again.';
+
+  @override
   String get myNoPortsMsg => 'Retrieve yours in My NoPorts →';
 
   @override
@@ -598,6 +628,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noAtsignsAdded => 'No Atsign added yet';
+
+  @override
+  String get noAtsignsToRemove => 'No atsigns found to remove.';
 
   @override
   String get noDescription => 'No description';
@@ -752,9 +785,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The following profile(s) are connected:';
 
   @override
-  String get profilesFailedLoaded => 'Profiles failed to load';
-
-  @override
   String get profileStatusFailedLoad => 'Failed to load';
 
   @override
@@ -783,6 +813,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStatusStopping => 'Shutting Off';
+
+  @override
+  String get profilesFailedLoaded => 'Profiles failed to load';
 
   @override
   String get quit => 'Quit';
@@ -883,9 +916,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleNotLoaded => 'No role loaded';
 
   @override
-  String get roles => 'Roles';
-
-  @override
   String get roleSaveFailed => 'Failed to save role';
 
   @override
@@ -897,20 +927,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleSelectToViewDetails => 'Select a role to view details';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return 'Failed to load roles: $errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => 'Refresh Roles';
-
-  @override
   String get roleUpdatingFailed => 'Failed to update role';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return 'Failed to update role: $errorMessage';
   }
+
+  @override
+  String get roles => 'Roles';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return 'Failed to load roles: $errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => 'Refresh Roles';
 
   @override
   String get rootDomainDefault => 'Default (Prod)';
@@ -926,6 +959,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveLater => 'Save Later';
+
+  @override
+  String get selectAll => 'Select All';
 
   @override
   String get selectEnrollMethod => 'Select your enrolment method';

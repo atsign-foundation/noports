@@ -170,10 +170,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     final strings = AppLocalizations.of(context)!;
 
     // Only ask once per activation file - a retry reuses the same folder.
+    final String? defaultDir = await _defaultAtKeysDir();
     String? selectedDirectory =
         _backupDirectory ??
         await FilePicker.getDirectoryPath(
           dialogTitle: strings.activationAtsignFileStorageLocation,
+          initialDirectory: defaultDir,
         );
 
     if (selectedDirectory == null) {
@@ -470,5 +472,14 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     } else {
       return "Activation Failed";
     }
+  }
+
+  static Future<String?> _defaultAtKeysDir() async {
+    final String? home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (home == null) return null;
+    final Directory dir = Directory(path.join(home, '.atsign', 'keys'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir.path;
   }
 }

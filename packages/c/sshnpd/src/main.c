@@ -25,7 +25,11 @@
 #include <signal.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
+#include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
+#include <srv/params.h>
+#include <srv/srv.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,12 +46,16 @@ static void exit_handler(int sig) {
   exit(1);
 }
 static void child_exit_handler(int sig) {
-  atlogger_log("child_exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n", sig);
-  int status;
-  pid_t pid = waitpid(-1, &status, WNOHANG);
-  if (pid > 0 && WIFEXITED(status)) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "pid %d exited\n", pid);
+  (void)sig;
+  // SIGCHLD is not queued: several children exiting close together coalesce
+  // into a single delivery, so reap in a loop or zombies accumulate until PID
+  // exhaustion. Only async-signal-safe calls here - waitpid is safe, atlogger
+  // (stdio + locks) is not, so no logging. errno is saved/restored so a signal
+  // landing mid-syscall on the main thread doesn't clobber its errno.
+  int saved_errno = errno;
+  while (waitpid(-1, NULL, WNOHANG) > 0) {
   }
+  errno = saved_errno;
 }
 
 static void free_if_not_null(void *ptr) {
@@ -58,6 +66,22 @@ static void free_if_not_null(void *ptr) {
 }
 
 int main(int argc, char **argv) {
+  // srv worker mode: run_srv_process re-execs the daemon like this when the
+  // standalone srv binary is not found next to it. Secrets arrive in the
+  // environment; the rest is parsed from argv. This path runs the relay in a
+  // fresh process image (no daemon keys/atServer sockets) and never returns to
+  // daemon startup.
+  if (argc >= 2 && strcmp(argv[1], "--__srv-worker") == 0) {
+    atlogger_set_logging_stream(stderr);
+    srv_params_t srv_params;
+    apply_default_values_to_srv_params(&srv_params);
+    if (parse_srv_params(&srv_params, argc - 1, (const char **)(argv + 1), NULL) != 0) {
+      return 1;
+    }
+    atlogger_set_logging_level(INFO);
+    return run_srv(&srv_params);
+  }
+
   int res = 0;
   atlogger_set_logging_stream(stderr);
 
@@ -91,6 +115,7 @@ int main(int argc, char **argv) {
   // explicitly pass free_fn here because it is okay for these params to be null sometimes
   // normally this would be an error
   res = atcommons_memlist_add(&memlist, params.manager_list, true, free_if_not_null);
+  res += atcommons_memlist_add(&memlist, params.normalized_manager_buf, true, free_if_not_null);
   // res won't overflow from summation as the function returns a max value of 2
   res += atcommons_memlist_add(&memlist, params.permitopen_hosts, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.permitopen_ports, true, free_if_not_null);
@@ -98,6 +123,7 @@ int main(int argc, char **argv) {
   res += atcommons_memlist_add(&memlist, NULL, true, mbedtls_psa_crypto_free);
   if (res > 0) {
     free(params.manager_list);
+    free(params.normalized_manager_buf);
     free(params.permitopen_hosts);
     free(params.permitopen_ports);
     free(params.permitopen_str);
@@ -199,30 +225,50 @@ int main(int argc, char **argv) {
   }
   memset(root_host, 0, sizeof(char) * root_host_size);
   uint16_t root_port = 0;
-  if (params.root_domain != NULL) {
+
+  // A 'proxy:' prefix on --root-domain (e.g. "proxy:proxy0001.atsign.org:443")
+  // means there is no atDirectory: every atServer connection goes to the given
+  // reverse proxy host and port instead. This matches the convention of the
+  // Dart at_lookup package, and lets a daemon run where only port 443 egress
+  // is allowed.
+  bool via_atserver_proxy = false;
+  const char *root_domain_str = params.root_domain;
+  if (root_domain_str != NULL && strncmp(root_domain_str, "proxy:", strlen("proxy:")) == 0) {
+    via_atserver_proxy = true;
+    root_domain_str += strlen("proxy:");
+    if (root_domain_str[0] == '\0') {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "No host given after 'proxy:' in --root-domain\n");
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+  }
+
+  if (root_domain_str != NULL) {
     // root_domain is something like 'root.atsign.wtf:64'
     // get the host and port and set them
-    char *colon_pos = strchr(params.root_domain, ':');
+    const char *colon_pos = strchr(root_domain_str, ':');
     if (colon_pos != NULL) {
-      size_t host_len = colon_pos - params.root_domain;
+      size_t host_len = colon_pos - root_domain_str;
       if (host_len >= host_name_max_length) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain host name is too long (it is >= %lu\n", host_name_max_length);
         atcommons_memlist_failure_free(&memlist);
         res = 1;
         return res;
       }
-      snprintf(root_host, root_host_size, "%.*s", (int)host_len, params.root_domain);
-      char *port_str = colon_pos + 1;
-      root_port = (uint16_t)atoi(port_str);
-      if (root_port == 0) {
+      snprintf(root_host, root_host_size, "%.*s", (int)host_len, root_domain_str);
+      const char *port_str = colon_pos + 1;
+      char *port_end = NULL;
+      long port_val = strtol(port_str, &port_end, 10);
+      if (port_end == port_str || *port_end != '\0' || port_val < 1 || port_val > UINT16_MAX) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Root domain port is not a valid number: %s\n", port_str);
         atcommons_memlist_failure_free(&memlist);
         res = 1;
         return res;
       }
+      root_port = (uint16_t)port_val;
     } else {
       // no port specified, use the default port
-      snprintf(root_host, root_host_size, "%s", params.root_domain);
+      snprintf(root_host, root_host_size, "%s", root_domain_str);
       root_port = DEFAULT_ROOT_PORT;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
     }
@@ -230,6 +276,11 @@ int main(int argc, char **argv) {
     // use the default root domain
     snprintf(root_host, root_host_size, "%s", DEFAULT_ROOT_HOST);
     root_port = DEFAULT_ROOT_PORT;
+  }
+  if (via_atserver_proxy) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                 "atServer connections will go via the reverse proxy %s:%d (no atDirectory lookups)\n", root_host,
+                 root_port);
   }
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
 
@@ -252,6 +303,11 @@ int main(int argc, char **argv) {
   }
   atclient_authenticate_options_set_atdirectory_host(&monitor_options, root_host);
   atclient_authenticate_options_set_atdirectory_port(&monitor_options, root_port);
+  if (via_atserver_proxy) {
+    // Setting the atServer address directly bypasses the atDirectory lookup
+    atclient_authenticate_options_set_atserver_host(&monitor_options, root_host);
+    atclient_authenticate_options_set_atserver_port(&monitor_options, root_port);
+  }
 
   // 7.a.3 pkam auth the monitor client
   atclient_monitor_set_read_timeout(&monitor_ctx, MONITOR_READ_TIMEOUT_MS); // 5 seconds for timeout
@@ -279,7 +335,11 @@ int main(int argc, char **argv) {
   }
   atclient_authenticate_options_set_atdirectory_host(&worker_options, root_host);
   atclient_authenticate_options_set_atdirectory_port(&worker_options, root_port);
-
+  if (via_atserver_proxy) {
+    // Setting the atServer address directly bypasses the atDirectory lookup
+    atclient_authenticate_options_set_atserver_host(&worker_options, root_host);
+    atclient_authenticate_options_set_atserver_port(&worker_options, root_port);
+  }
 
   res = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, &worker_options, NULL);
   if (res != 0 || !should_run) {
@@ -328,7 +388,30 @@ int main(int argc, char **argv) {
   cJSON_bool acceptsPublicKeys = params.sshpublickey;
   cJSON_AddItemToObject(supported_features, "acceptsPublicKeys", cJSON_CreateBool(acceptsPublicKeys));
   cJSON_AddItemToObject(supported_features, "supportsPortChoice", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "adjustableTimeout", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "supportsRamEscr", cJSON_CreateBool(true));
+  cJSON_AddItemToObject(supported_features, "twinKeys", cJSON_CreateBool(true));
   cJSON_AddItemToObject(ping_response_json, "supportedFeatures", supported_features);
+
+  cJSON *auth_modes = cJSON_CreateArray();
+  cJSON_AddItemToArray(auth_modes, cJSON_CreateString("payload"));
+  cJSON_AddItemToArray(auth_modes, cJSON_CreateString("escr"));
+  cJSON_AddItemToObject(ping_response_json, "authModes", auth_modes);
+
+  // Clients pre-fetch this uri via the relay so the relay can verify our escr
+  // auth signatures
+  char *signing_key_uri = public_signing_key_uri(&atkeys, params.atsign);
+  if (signing_key_uri == NULL) {
+    atcommons_memlist_failure_free(&memlist);
+    return 1;
+  }
+  res = atcommons_memlist_add(&memlist, signing_key_uri, true, free_if_not_null);
+  if (res != 0) {
+    free(signing_key_uri);
+    atcommons_memlist_failure_free(&memlist);
+    return res;
+  }
+  cJSON_AddItemToObject(ping_response_json, "publicSigningKeyUri", cJSON_CreateString(signing_key_uri));
 
   cJSON *allowed_services = cJSON_CreateArray();
   char *buf = malloc(sizeof(char) * 1024);
@@ -360,16 +443,60 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  // 9. Start the device refresh loop - if hide is off
-  res = handle_username_keys(&worker, (const char **)params.manager_list, params.manager_list_len, username,
-                             params.device, params.atsign, !params.hide);
-  if (res != 0) {
-    atcommons_memlist_failure_free(&memlist);
-    return res;
+  // 8.b Publish the public signing key (the PKAM public key) at the uri
+  // advertised in the ping response, so relays can verify escr auth
+  // signatures. Failure is not fatal: legacy relay auth still works.
+  {
+    const char *enrollment_id = "primary";
+    if (atkeys.enrollment_id != NULL && atkeys.enrollment_id[0] != '\0') {
+      enrollment_id = atkeys.enrollment_id;
+    }
+    char sk_keyname[128];
+    snprintf(sk_keyname, sizeof(sk_keyname), "_apsk.%s", enrollment_id);
+
+    atclient_atkey sk_key;
+    atclient_atkey_init(&sk_key);
+    res = atclient_atkey_create_public_key(&sk_key, sk_keyname, params.atsign, "a.__e");
+    if (res == 0) {
+      char *existing = NULL;
+      // The key legitimately doesn't exist on the very first run (e.g. a
+      // freshly enrolled atsign), so mute the SDK's error logging around the
+      // existence probe - same pattern atauth's wait_for_enrollment uses for
+      // expected failures
+      enum atlogger_logging_level log_level = atlogger_get_logging_level();
+      atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
+      int get_res = atclient_get_public_key(&worker, &sk_key, &existing, NULL);
+      atlogger_set_logging_level(log_level);
+      if (get_res == 0 && existing != NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Public signing key already published at %s\n",
+                     signing_key_uri);
+        free(existing);
+      } else {
+        res = atclient_put_public_key(&worker, &sk_key, atkeys.pkam_public_key_base64, NULL, NULL);
+        if (res == 0) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Published public signing key at %s\n",
+                       signing_key_uri);
+        }
+      }
+    }
+    if (res != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                   "Failed to publish the public signing key (%d) - escr relay auth will not work this session\n", res);
+      res = 0;
+    }
+    atclient_atkey_free(&sk_key);
   }
 
+  // 9. Share the username with each manager atSign - if hide is off.
+  // Best effort (matches the Dart daemon): failures for individual manager
+  // atSigns are logged inside handle_username_keys and must not prevent
+  // daemon startup.
+  handle_username_keys(&worker, (const char **)params.manager_list, params.manager_list_len, username, params.device,
+                       params.atsign, !params.hide);
+
   // 10. Start monitor
-  size_t regexlen = strlen(params.device) + strlen(SSHNP_NS) + 3;
+  size_t regexlen =
+      3 * strlen(params.device) + 2 * strlen(SSHNP_NS) + (params.policy != NULL ? strlen(params.policy) : 0) + 128;
   regex = malloc(sizeof(char) * regexlen); // needs to be declared before any gotos
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
@@ -383,7 +510,29 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  snprintf(regex, regexlen, "%s.%s@", params.device, SSHNP_NS);
+  if (params.policy != NULL) {
+    // In policy mode the monitor must also receive the policy service's rpc
+    // responses ('<type>.<reqId>.auth_checks.__rpcs...') and config pushes
+    // ('config.<device>.devices.policy...'), whose keys don't contain
+    // '<device>.sshnp@'. The atServer monitor filter is a regex, so this is
+    // the union of the three filters the Dart daemon subscribes with
+    // (requests, AtRpc responses, policy config pushes with the sender
+    // pinned). The device name is anchored in every alternative so 'iot' can
+    // never match keys for 'iot_device01' or 'my_iot'; the rpc alternative
+    // deliberately tolerates a missing '.sshnp' suffix on response keys. All
+    // alternatives are validated against Dart RegExp semantics (which is
+    // what the atServer evaluates). The in-loop classifier and the exact
+    // device match in the dispatcher remain as defense in depth.
+    snprintf(regex, regexlen,
+             "(^%s|\\.%s)\\.%s@|(success|error|ack|nack)\\.\\d+\\.auth_checks\\.__rpcs|\\.%s\\.devices\\.policy\\.%s%s",
+             params.device, params.device, SSHNP_NS, params.device, SSHNP_NS, params.policy);
+  } else {
+    // Same request filter the Dart daemon uses; the previous
+    // '<device>.sshnp@' form was unanchored, so a daemon for 'device01' also
+    // received (and then discarded) traffic for 'iot_device01'
+    snprintf(regex, regexlen, "(^%s|\\.%s)\\.%s@", params.device, params.device, SSHNP_NS);
+  }
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Monitor filter: %s\n", regex);
   res = atclient_monitor_start(&monitor_ctx, regex);
   if (res != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to start monitor\n");

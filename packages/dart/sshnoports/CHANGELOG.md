@@ -2,6 +2,18 @@
 
 <!-- pyml disable md034-->
 
+## v5.16.0
+
+* fix: man pages now generate correctly: `--help` / `--version` output is
+  help2man-friendly, and per-binary NAME / EXAMPLES / SEE ALSO boilerplate
+  is included (#2650)
+* feat: added `--version` to np_admin, npevents, npp_atserver and npp_file
+* fix: `npp_file --help` no longer crashes
+* fix: `noports` no longer emits ANSI escape codes when output is piped,
+  and no longer prints its banner in `--help` output
+* fix: `--help` and `--version` now print to stdout (GNU convention);
+  usage-on-error still goes to stderr
+
 ## v5.15.2
 
 * fix: close stdin in srv process; fixes fd leak
