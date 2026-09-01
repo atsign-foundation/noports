@@ -20,14 +20,9 @@ on:
 
 jobs:
   e2e_all:
-    # Runs on the @npe2e_org_* atSigns (see the atKeys step below). These are
-    # shared with the npe2e jobs, so `needs:` serializes this job after the
-    # npe2e jobs have finished and torn their daemons down (removeWhenStopped)
-    # -- that avoids double-booking the same atSigns within a run.
+    # These jobs need @npe2e_org_* Atsigns
+    # Avoids AtRecord interference
     needs: [npe2e_core_tests, npe2e_policy_tests, npe2e_relay_tests]
-    # Skip on fork / Dependabot PRs (secrets unavailable). `!cancelled()` keeps
-    # this running once npe2e *completes* even if a leg failed, so a flaky npe2e
-    # leg on shared infra can't skip e2e_all via the `needs:` dependency.
     if:
       ${{ !cancelled() && github.event.pull_request.head.repo.fork == false &&
       github.actor != 'dependabot[bot]'}}
@@ -42,9 +37,6 @@ jobs:
         run: |
           mkdir -p /tmp/e2e_all
           mkdir -p ~/.atsign/keys/
-          # atKeys for the @npe2e_org_* atSigns this job runs against. The legacy
-          # @e2e_all_v2_* atServers went unresponsive ~2026-06-13 and produced
-          # spurious old-client timeouts; the @npe2e_org_* atServers are healthy.
           echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
@@ -55,20 +47,31 @@ jobs:
       - name: Install expect
         run: |
           sudo apt-get install -y expect
+
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_org_client01_jttest @npe2e_org_daemon01_jttest @rv_am @npe2e_org_relay01_jttest @npe2e_org_policy01_jttest @npe2e_org_policy02_jttest @npe2e_org_relay02_jttest -p -r root.atsign.org
+          tests/e2e_all/scripts/main.sh \
+            @npe2e_org_client01_jttest \
+            @npe2e_org_daemon01_jttest \
+            @rv_am \
+            @npe2e_org_relay01_jttest \
+            @npe2e_org_policy01_jttest \
+            @npe2e_org_policy02_jttest \
+            @npe2e_org_relay02_jttest \
+            -p -r root.atsign.org
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
+
       - name: Zip /tmp/e2e_all
         if: ${{ always() }} # run even if test fails
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
+
       - name: Upload /tmp/e2e_all as artifact
         if: ${{ always() }} # run even if test fails
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -195,7 +198,7 @@ jobs:
       - name: Start srvd relay
         run: |
           chmod +x tests/npe2e/tools/ve/start_srvd.sh
-          tests/npe2e/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone" "$TEST_RUN_ID"
+          tests/npe2e/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
 
       - name: Run npe2e policy_tests
         run: |
