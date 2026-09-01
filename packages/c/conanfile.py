@@ -44,4 +44,4 @@ class at_cRecipe(ConanFile):
         tc.generate()
 
     def requirements(self):
-        self.requires("at_c/0.3.9")
+        self.requires("at_c/0.4.0")
