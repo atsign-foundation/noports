@@ -204,6 +204,32 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     params->manager_list_len = 0;
   }
 
+  // Normalize the policy atSign the same way as managers. policy.c compares it
+  // case- and dot-sensitively against the canonical `from` the atServer
+  // delivers, so a non-canonical operator value (e.g. "@Policy", "@pol.icy")
+  // would make every policy response fail to match and silently deny all
+  // non-manager clients. That fails safe, but normalize it for parity so the
+  // configured policy service actually works.
+  if (params->policy != NULL) {
+    char *normalized_policy = malloc(SSHNPD_ATSIGN_BUFFER_LEN);
+    if (normalized_policy == NULL) {
+      printf("Failed to allocate memory for normalized policy atSign\n");
+      free(params->normalized_manager_buf);
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    if (sshnpd_normalize_atsign(params->policy, normalized_policy, SSHNPD_ATSIGN_BUFFER_LEN) != 0) {
+      printf("Invalid policy-manager atSign: \"%s\"\n", params->policy);
+      free(normalized_policy);
+      free(params->normalized_manager_buf);
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    params->policy = normalized_policy;
+  }
+
   // Repeat for permit-open
   // Convert devicename to lower case
   for (char *c = params->device; c[0] != '\0'; c++) {
