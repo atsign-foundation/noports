@@ -30,6 +30,8 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
 
   AtEventConfig? elc;
 
+  final Set<String> _sharedElcWith = {};
+
   @override
   final NPARequestHandler handler;
 
@@ -105,9 +107,9 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
     subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
       (AtNotification n) async {
         if (n.value == null) return;
-        final Map<String, dynamic> v = jsonDecode(n.value!);
 
-        if (elc != null && v['needEventLoggingConfig'] == true) {
+        if (elc != null && !_sharedElcWith.contains(n.from)) {
+          _sharedElcWith.add(n.from);
           logger.info('Sharing event logging config with ${n.from}');
           await shareEventLoggingConfigWithAtsigns(
             config: elc!,
