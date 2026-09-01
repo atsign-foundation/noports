@@ -49,8 +49,19 @@ else
   echo "VE container started."
 fi
 
-echo "Waiting for pkamLoad to complete..."
+echo "Waiting for supervisor to be ready..."
+for i in $(seq 1 30); do
+  if docker exec "$CONTAINER_NAME" supervisorctl status >/dev/null 2>&1; then
+    echo "Supervisor ready after ${i}s"
+    break
+  fi
+  sleep 1
+done
+
+echo "Starting pkamLoad..."
 docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
+
+echo "Waiting for pkamLoad to complete..."
 
 elapsed=0
 while [ "$elapsed" -lt "$PKAM_LOAD_TIMEOUT" ]; do
