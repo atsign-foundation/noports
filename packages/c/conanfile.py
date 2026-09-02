@@ -8,7 +8,7 @@ from conan.tools.files import get
 
 class at_cRecipe(ConanFile):
     name = "noports"
-    version = "1.0.20"
+    version = "1.1.0"
     package_type = "application"
 
     # Optional metadata
