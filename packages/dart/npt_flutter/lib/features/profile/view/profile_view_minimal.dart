@@ -7,29 +7,17 @@ class ProfileViewMinimal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return Row(
-          children: [
-            const ProfileSelectBox(),
-            gapW10,
-            ProfileDisplayName(
-              width: SizeConfig.setProfileFieldWidthMinimalView(),
-            ),
-            gapW10,
-            ProfileStatusIndicator(
-              width: SizeConfig.setProfileFieldWidthMinimalView(
-                statusField: true,
-              ),
-            ),
-            const Spacer(),
-            const ProfileFavoriteButton(),
-            gapW10,
-            const ProfilePopupMenuButton(),
-            gapW20,
-          ],
-        );
-      },
+    return Row(
+      children: [
+        const ProfileSelectBox(),
+        gapW10,
+        const Expanded(flex: 3, child: ProfileDisplayName()),
+        gapW10,
+        const Expanded(flex: 3, child: ProfileStatusIndicator()),
+        const Spacer(),
+        const ProfileFavoriteButton(),
+        const ProfilePopupMenuButton(),
+      ],
     );
   }
 }
