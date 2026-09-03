@@ -483,10 +483,11 @@ exit:
   close(fds[0]);
   close(fds[1]);
 
-  // The thread which exited normally closed its own socket, but a canceled
-  // thread never gets the chance - without this, every torn-down connection
-  // leaks a file descriptor for the lifetime of a multi-mode srv process.
-  // Safe to call on both sides: mbedtls_net_free is a no-op once fd == -1.
+  // Both sockets are closed here and only here, after both relay threads have
+  // been joined: a thread closing its own socket while the peer thread could
+  // still write to it would allow the fd number to be reused by another
+  // session mid-write. Safe to call on both sides: mbedtls_net_free is a
+  // no-op once fd == -1.
   srv_side_free(&sides[0]);
   srv_side_free(&sides[1]);
 

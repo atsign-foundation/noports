@@ -108,7 +108,13 @@ void *srv_side_handle(void *side) {
       }
       memset(buffer, 0, BUFFER_LEN);
     }
-    mbedtls_net_close(&s->socket);
+    // Deliberately do NOT close s->socket here: the peer thread may be
+    // concurrently writing to it (s->other->socket from its point of view),
+    // and in multi mode a close here lets the kernel reuse the fd number for
+    // another session's socket - the peer's next write would then inject this
+    // session's data into an unrelated session. socket_to_socket's teardown
+    // closes both sockets via srv_side_free only after both threads have been
+    // joined, which is the only safe point.
   } else {
   }
 
