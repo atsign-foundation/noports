@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
   if (ping_response == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "cJSON_Print failed\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, ping_response, true, NULL);
   if (res != 0) {
@@ -515,7 +515,7 @@ int main(int argc, char **argv) {
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, regex, true, NULL);
   if (res != 0) {
@@ -564,7 +564,7 @@ int main(int argc, char **argv) {
   if (authkeys_filename == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, authkeys_filename, true, NULL);
   if (res != 0) {
