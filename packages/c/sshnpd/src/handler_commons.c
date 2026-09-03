@@ -310,12 +310,12 @@ int verify_envelope_contents(cJSON *envelope, enum payload_type type) {
 int verify_payload_contents(cJSON *payload, enum payload_type type) {
   bool has_valid_values = cJSON_IsObject(payload);
 
-  has_valid_values = cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
+  has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
 
   switch (type) {
   case payload_type_ssh: {
     cJSON *direct = cJSON_GetObjectItem(payload, "direct");
-    has_valid_values = cJSON_IsBool(direct);
+    has_valid_values = has_valid_values && cJSON_IsBool(direct);
 
     if (!has_valid_values) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
@@ -641,6 +641,10 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   bool twin_keys = session_aes_key_d2c_base64 != NULL && session_iv_d2c_base64 != NULL;
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
   char *identifier = cJSON_GetStringValue(session_id);
+  if (identifier == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload is missing a valid sessionId\n");
+    return 1;
+  }
   cJSON *final_res_payload = cJSON_CreateObject();
   cJSON_AddStringToObject(final_res_payload, "status", "connected");
   cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
