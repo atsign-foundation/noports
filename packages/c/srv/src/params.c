@@ -4,6 +4,8 @@
 #include <string.h>
 
 void apply_default_values_to_srv_params(srv_params_t *params) {
+  params->host = NULL;
+  params->port = 0;
   params->local_host = "localhost";
   params->local_port = 22;
   params->bind_local_port = 0;
