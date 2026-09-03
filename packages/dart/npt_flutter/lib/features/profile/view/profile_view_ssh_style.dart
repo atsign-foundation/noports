@@ -1,37 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/features/settings/models/settings.dart';
 
 class ProfileViewSshStyle extends StatelessWidget {
   const ProfileViewSshStyle({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final width = SizeConfig.setProfileFieldWidth();
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ProfileSelectBox(),
-            gapW10,
-            ProfileDisplayName(width: width),
-            gapW10,
-            ProfileDeviceName(width: width),
-            gapW10,
-            ProfileServiceView(width: width),
-            gapW10,
-            ProfileStatusIndicator(
-              width: SizeConfig.setProfileFieldWidth(statusField: true),
-            ),
-            gapW10,
-            const Flexible(child: ProfileFavoriteButton()),
-            gapW10,
-            const Flexible(child: ProfilePopupMenuButton()),
-            gapW10,
-          ],
-        );
-      },
+    return ProfileColumnsRow(
+      layout: PreferredViewLayout.sshStyle,
+      select: const ProfileSelectBox(),
+      cellBuilder: (ProfileColumn column, double width) =>
+          ProfileColumnCell(column: column, width: width),
+      favorite: const ProfileFavoriteButton(),
+      menu: const ProfilePopupMenuButton(),
     );
   }
 }

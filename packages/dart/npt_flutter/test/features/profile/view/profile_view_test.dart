@@ -122,6 +122,9 @@ void main() {
                 value: mockProfilesSelectedCubit,
               ),
               BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+              BlocProvider<ProfileColumnsCubit>(
+                create: (_) => ProfileColumnsCubit(),
+              ),
             ],
             child: const ProfileView(),
           ),
@@ -377,6 +380,9 @@ void main() {
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+                BlocProvider<ProfileColumnsCubit>(
+                  create: (_) => ProfileColumnsCubit(),
+                ),
               ],
               child: const ProfileViewMinimal(),
             ),
@@ -475,6 +481,9 @@ void main() {
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+                BlocProvider<ProfileColumnsCubit>(
+                  create: (_) => ProfileColumnsCubit(),
+                ),
               ],
               child: const ProfileViewSshStyle(),
             ),

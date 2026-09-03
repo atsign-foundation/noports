@@ -192,6 +192,9 @@ void main() {
             value: mockProfilesSelectedCubit,
           ),
           BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+          BlocProvider<ProfileColumnsCubit>(
+            create: (_) => ProfileColumnsCubit(),
+          ),
         ],
         child: MaterialApp(
           navigatorKey: App.navState, // Use the App.navState directly

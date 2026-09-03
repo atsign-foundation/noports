@@ -1,35 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/features/profile_list/profile_list.dart';
+import 'package:npt_flutter/features/settings/models/settings.dart';
 
 class ProfileViewMinimal extends StatelessWidget {
   const ProfileViewMinimal({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return Row(
-          children: [
-            const ProfileSelectBox(),
-            gapW10,
-            ProfileDisplayName(
-              width: SizeConfig.setProfileFieldWidthMinimalView(),
-            ),
-            gapW10,
-            ProfileStatusIndicator(
-              width: SizeConfig.setProfileFieldWidthMinimalView(
-                statusField: true,
-              ),
-            ),
-            const Spacer(),
-            const ProfileFavoriteButton(),
-            gapW10,
-            const ProfilePopupMenuButton(),
-            gapW20,
-          ],
-        );
-      },
+    return ProfileColumnsRow(
+      layout: PreferredViewLayout.minimal,
+      select: const ProfileSelectBox(),
+      cellBuilder: (ProfileColumn column, double width) =>
+          ProfileColumnCell(column: column, width: width),
+      favorite: const ProfileFavoriteButton(),
+      menu: const ProfilePopupMenuButton(),
     );
   }
 }

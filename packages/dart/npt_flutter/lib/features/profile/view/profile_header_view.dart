@@ -50,77 +50,50 @@ class ProfileHeaderView extends StatelessWidget {
                 return null;
               },
               builder: (BuildContext context, PreferredViewLayout? viewLayout) {
-                return LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final width = SizeConfig.setProfileFieldWidth();
-                    return switch (viewLayout) {
-                      null => const Center(child: Spinner()),
-                      PreferredViewLayout.minimal => CustomCard.profileHeader(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Sizes.p10,
+                if (viewLayout == null) {
+                  return const Center(child: Spinner());
+                }
+                return CustomCard.profileHeader(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: Sizes.p10),
+                    child: ProfileColumnsRow(
+                      layout: viewLayout,
+                      select: const ProfileSelectAllBox(),
+                      cellBuilder: (ProfileColumn column, double width) =>
+                          ProfileHeaderColumn(title: _title(strings, column)),
+                      dividerBuilder:
+                          (
+                            ProfileColumn column,
+                            double width,
+                            double availableWidth,
+                          ) => ProfileColumnDivider(
+                            key: ValueKey<ProfileColumn>(column),
+                            layout: viewLayout,
+                            column: column,
+                            width: width,
+                            availableWidth: availableWidth,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const ProfileSelectAllBox(),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.profileName,
-                                width:
-                                    SizeConfig.setProfileFieldWidthMinimalView(),
-                              ),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.status,
-                                width:
-                                    SizeConfig.setProfileFieldWidthMinimalView(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      PreferredViewLayout.sshStyle => CustomCard.profileHeader(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Sizes.p10,
-                          ),
-                          child: Row(
-                            children: [
-                              const ProfileSelectAllBox(),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.profileName,
-                                width: width,
-                              ),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.deviceName,
-                                width: width,
-                              ),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.serviceMapping,
-                                width: width,
-                              ),
-                              gapW10,
-                              ProfileHeaderColumn(
-                                title: strings.status,
-                                width: SizeConfig.setProfileFieldWidth(
-                                  statusField: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    };
-                  },
+                      favorite: gap0,
+                      menu: gap0,
+                    ),
+                  ),
                 );
               },
             );
         }
       },
     );
+  }
+
+  String _title(AppLocalizations strings, ProfileColumn column) {
+    return switch (column) {
+      ProfileColumn.profileName => strings.profileName,
+      ProfileColumn.deviceName => strings.deviceName,
+      ProfileColumn.serviceMapping => strings.serviceMapping,
+      ProfileColumn.status => strings.status,
+      ProfileColumn.select ||
+      ProfileColumn.favorite ||
+      ProfileColumn.menu => '',
+    };
   }
 }

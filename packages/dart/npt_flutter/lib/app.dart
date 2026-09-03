@@ -93,6 +93,10 @@ class App extends StatelessWidget {
             create: (_) => ProfilesRunningCubit(),
           ),
 
+          BlocProvider<ProfileColumnsCubit>(
+            create: (_) => ProfileColumnsCubit(),
+          ),
+
           /// A cubit which manages the system tray entries
           BlocProvider<TrayCubit>(create: (_) => TrayCubit()),
 

@@ -117,6 +117,9 @@ class StatusMessage extends StatelessWidget {
     super.key,
   });
 
+  static const double iconSize = Sizes.p20;
+  static const double statusTextMinWidth = Sizes.p40;
+
   final String tooltip;
   final String status;
   final Color color;
@@ -127,33 +130,43 @@ class StatusMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget iconWidget = showSpinner
         ? const SizedBox(
-            width: Sizes.p20,
-            height: Sizes.p20,
+            width: iconSize,
+            height: iconSize,
             child: CircularProgressIndicator(strokeWidth: 2.0),
           )
         : onPressed != null
-            ? InkWell(
-                borderRadius: BorderRadius.circular(Sizes.p12),
-                onTap: onPressed,
-                child: PhosphorIcon(icon, color: color, size: Sizes.p20),
-              )
-            : PhosphorIcon(icon, color: color, size: Sizes.p20);
+        ? InkWell(
+            borderRadius: BorderRadius.circular(Sizes.p12),
+            onTap: onPressed,
+            child: PhosphorIcon(icon, color: color, size: iconSize),
+          )
+        : PhosphorIcon(icon, color: color, size: iconSize);
 
     return Tooltip(
       verticalOffset: Sizes.p10n,
       message: tooltip,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          iconWidget,
-          gapW8,
-          Flexible(
-            child: Text(
-              status,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool showStatus =
+              constraints.maxWidth - iconSize - Sizes.p8 >= statusTextMinWidth;
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              if (showStatus) ...[
+                gapW8,
+                Flexible(
+                  child: Text(
+                    status,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -5,6 +5,7 @@
 // So verify that there will ALWAYS be an ancestor BlocProvider<ProfileBloc>
 // in the tree for the widgets which read / select it
 
+export 'profile_column_cell.dart';
 export 'profile_device_name.dart';
 export 'profile_display_name.dart';
 export 'profile_favorite_button.dart';
