@@ -12,6 +12,7 @@
 #include <atclient/json.h>
 #include <atlogger/atlogger.h>
 #include <sshnpd/handler_commons.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -307,6 +308,16 @@ int verify_envelope_contents(cJSON *envelope, enum payload_type type) {
   return verify_payload_contents(payload, type);
 }
 
+// A valid port is an integral JSON number in [1, 65535] — anything else would
+// invoke UB (or silently wrap) when later cast to uint16_t
+static bool is_valid_port(const cJSON *port) {
+  if (!cJSON_IsNumber(port)) {
+    return false;
+  }
+  double value = cJSON_GetNumberValue(port);
+  return value >= 1 && value <= 65535 && value == (double)(uint16_t)value;
+}
+
 int verify_payload_contents(cJSON *payload, enum payload_type type) {
   bool has_valid_values = cJSON_IsObject(payload);
 
@@ -328,16 +339,15 @@ int verify_payload_contents(cJSON *payload, enum payload_type type) {
     }
 
     has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "host")) &&
-                       cJSON_IsNumber(cJSON_GetObjectItem(payload, "port"));
+                       is_valid_port(cJSON_GetObjectItem(payload, "port"));
     break;
   }
   case payload_type_npt: {
     has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "rvdHost")) &&
-                       cJSON_IsNumber(cJSON_GetObjectItem(payload, "rvdPort")) &&
+                       is_valid_port(cJSON_GetObjectItem(payload, "rvdPort")) &&
                        cJSON_IsString(cJSON_GetObjectItem(payload, "requestedHost"));
 
-    cJSON *requested_port = cJSON_GetObjectItem(payload, "requestedPort");
-    has_valid_values = has_valid_values && cJSON_IsNumber(requested_port) && cJSON_GetNumberValue(requested_port) > 0;
+    has_valid_values = has_valid_values && is_valid_port(cJSON_GetObjectItem(payload, "requestedPort"));
     break;
   }
   }
