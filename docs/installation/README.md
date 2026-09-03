@@ -13,7 +13,7 @@ Getting Started Overview
 {% step %}
 ### <mark style="color:orange;">Sign up for NoPorts</mark>
 
-Sign up for a NoPorts subscription or free trial, which includes 2 atSigns.
+Sign up for a NoPorts subscription or free trial, which includes 2 Atsigns.
 {% endstep %}
 
 {% step %}
@@ -40,7 +40,7 @@ Use NoPorts or explore the use cases available [here](../use-cases/).
 Head over to [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans) to sign up for a subscription or free trial.
 
 {% hint style="warning" %}
-During registration, you will receive your client and device atSigns. Ensure that you make note of them for future reference.
+During registration, you will receive your atSigns. Ensure that you make note of them for future reference.
 {% endhint %}
 
 ### Quick Start for macOS and Windows Only
@@ -83,7 +83,7 @@ Select your operating system and remote device to see specific installation inst
 
 ### Other Installation Options
 
-<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-cover data-type="files"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>Cloud Installation</strong></td><td><a href="../.gitbook/assets/Cloud.png">Cloud.png</a></td><td><a href="cloud-installation-guides/">cloud-installation-guides</a></td></tr><tr><td><strong>OpenWrt Installation</strong></td><td><a href="../.gitbook/assets/Webserver.png">Webserver.png</a></td><td><a href="openwrt-installation-guide.md">openwrt-installation-guide.md</a></td></tr><tr><td><strong>Manual Installation</strong></td><td><a href="../.gitbook/assets/Manual Installation.png">Manual Installation.png</a></td><td><a href="advanced-installation-guides/">advanced-installation-guides</a></td></tr><tr><td><strong>Custom OS Installation</strong></td><td><a href="../.gitbook/assets/Custom OS Install.png">Custom OS Install.png</a></td><td><a href="custom-os-device-installs/">custom-os-device-installs</a></td></tr><tr><td><strong>Installs at Scale</strong></td><td><a href="../.gitbook/assets/atScale.png">atScale.png</a></td><td><a href="broken-reference">Broken link</a></td></tr><tr><td><strong>Upgrading NoPorts</strong></td><td><a href="../.gitbook/assets/Updating NoPorts.png">Updating NoPorts.png</a></td><td><a href="upgrading-noports-software/">upgrading-noports-software</a></td></tr></tbody></table>
+<table data-view="cards"><thead><tr><th></th><th data-hidden data-card-cover data-type="files"></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead><tbody><tr><td><strong>Cloud Installation</strong></td><td><a href="../.gitbook/assets/Cloud.png">Cloud.png</a></td><td><a href="cloud-installation-guides/">cloud-installation-guides</a></td></tr><tr><td><strong>OpenWrt Installation</strong></td><td><a href="../.gitbook/assets/Webserver.png">Webserver.png</a></td><td><a href="openwrt-installation-guide.md">openwrt-installation-guide.md</a></td></tr><tr><td><strong>Manual Installation</strong></td><td><a href="../.gitbook/assets/Manual Installation.png">Manual Installation.png</a></td><td><a href="advanced-installation-guides/">advanced-installation-guides</a></td></tr><tr><td><strong>Custom OS Installation</strong></td><td><a href="../.gitbook/assets/Custom OS Install.png">Custom OS Install.png</a></td><td><a href="custom-os-device-installs/">custom-os-device-installs</a></td></tr><tr><td><strong>Installs at Scale</strong></td><td><a href="../.gitbook/assets/atScale.png">atScale.png</a></td><td><a href="/broken/pages/0hpxWmYU7ywF5R1YYuji">Broken link</a></td></tr><tr><td><strong>Upgrading NoPorts</strong></td><td><a href="../.gitbook/assets/Updating NoPorts.png">Updating NoPorts.png</a></td><td><a href="upgrading-noports-software/">upgrading-noports-software</a></td></tr></tbody></table>
 
 ## Use NoPorts
 

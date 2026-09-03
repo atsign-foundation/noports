@@ -17,7 +17,7 @@ To make your NoPorts installation smoother and easier to understand, take a mome
 {% step %}
 ### <mark style="color:orange;">Sign up for NoPorts</mark>&#x20;
 
-Sign up for a NoPorts subscription or free trial, which includes 2 atSigns.
+Sign up for a NoPorts subscription or free trial, which includes 2 Atsigns.
 {% endstep %}
 
 {% step %}
@@ -44,7 +44,7 @@ Use NoPorts or explore the use cases available below.
 You'll need to head over to [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans) to sign up for a NoPorts subscription or free trial.&#x20;
 
 {% hint style="warning" %}
-During sign up, you will receive your atSigns. Ensure that you make note of them for reference during installation.
+During sign up, you will receive your Atsigns. Ensure that you make note of them for reference during installation.
 {% endhint %}
 
 ### <mark style="color:orange;">Steps 2 and 3. Install NoPorts</mark>

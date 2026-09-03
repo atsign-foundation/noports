@@ -1,5 +1,23 @@
 ---
 icon: arrow-up-from-square
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # NoPorts Client Upgrade
@@ -16,7 +34,7 @@ To check the current version of sshnp installed on your machine simply execute t
 
 {% tabs %}
 {% tab title="Linux" %}
-<pre class="language-sh"><code class="lang-sh"><strong>sshnp
+<pre class="language-sh"><code class="lang-sh"><strong>sshnp --version
 </strong></code></pre>
 
 The first line of output should contain the version information:
@@ -28,7 +46,7 @@ Version : x.x.x
 
 {% tab title="macOS" %}
 ```bash
-sshnp
+sshnp --version
 ```
 
 The first line of output should contain the version information:

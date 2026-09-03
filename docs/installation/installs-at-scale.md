@@ -1,6 +1,24 @@
 ---
 description: Typing is less fun after a few devices.
 icon: grid-horizontal
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Installs at Scale
@@ -11,7 +29,7 @@ This is an engineering guide, not a definitive solution, as every production env
 
 ### Other considerations
 
-Each atSign has a reasonable maximum of 25 devices that it can manage, so keep that in mind as you use this script to roll out devices. By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
+By default, the hostname is used as the `-d`DEVICE\_NAME. Your hostnames may not match the requirements of the DEVICE\_NAME flag.
 
 * Lowercase Alphanumeric max 15 Characters Snake Case before version 5.0.3
 * Case insensitive Alphanumeric max 36 Chars Snake Case from version 5.0.3 onwards.
@@ -128,7 +146,7 @@ su - $USERNAME sh -c "/usr/bin/tmux new-session -d -s sshnpd && tmux send-keys -
 
 ### Set up your environment.
 
-Each atSign has its own set of keys that are "cut" with at\_activate. This will cut the keys for the atSign and place them in `~/.atsign/keys`. Each machine requires the atKeys file to run sshnpd, so, we need to have a way to get them to each device. It is possible to ssh/scp them, but that becomes very cumbersome at scale. Instead, we encrypt the keys with AES256 and place them on a webserver. When the install script is run, it knows both the URL and the encryption password and can pull the atKeys file to the right place.
+Each Atsign has its own set of keys that are "cut" with at\_activate. This will cut the keys for the Atsign and place them in `~/.atsign/keys`. Each machine requires the atKeys file to run sshnpd, so, we need to have a way to get them to each device. It is possible to ssh/scp them, but that becomes very cumbersome at scale. Instead, we encrypt the keys with AES256 and place them on a webserver. When the install script is run, it knows both the URL and the encryption password and can pull the atKeys file to the right place.
 
 The steps are to (1) get the atKeys file as normal using at\_activate, then (2) encrypt them using a command like this:
 
@@ -170,7 +188,7 @@ export CONFIG_URL="https://raw.githubusercontent.com/cconstab/sshnpd_config/main
 Gist for sshnpd config file
 {% endembed %}
 
-The other variables set up the atSigns for the manager and device and for the device name itself. The device name by default uses the `hostname` using the shell command `$(hostname)` , but that only works if the hostname is compliant with the `-d` format of sshnpd. You can pick another way to identify the host or just make sure the hostname is compliant.
+The other variables set up the Atsigns for the manager and device and for the device name itself. The device name by default uses the `hostname` using the shell command `$(hostname)` , but that only works if the hostname is compliant with the `-d` format of sshnpd. You can pick another way to identify the host or just make sure the hostname is compliant.
 
 ### Running the install.sh (Note: Has to be run as root)
 
