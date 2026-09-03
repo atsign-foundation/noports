@@ -420,12 +420,20 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(ping_response_json, "publicSigningKeyUri", cJSON_CreateString(signing_key_uri));
 
   cJSON *allowed_services = cJSON_CreateArray();
-  char *buf = malloc(sizeof(char) * 1024);
   for (size_t i = 0; i < params.permitopen_len; i++) {
-    sprintf(buf, "%s:%u", params.permitopen_hosts[i], (unsigned int)params.permitopen_ports[i]);
+    size_t buflen = strlen(params.permitopen_hosts[i]) + 8; // ':' + up to 5 port digits + '\0' + slack
+    char *buf = malloc(buflen);
+    if (buf == NULL) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for allowedServices\n");
+      cJSON_Delete(allowed_services);
+      cJSON_Delete(ping_response_json);
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+    snprintf(buf, buflen, "%s:%u", params.permitopen_hosts[i], (unsigned int)params.permitopen_ports[i]);
     cJSON_AddItemToArray(allowed_services, cJSON_CreateString(buf));
+    free(buf);
   }
-  free(buf);
 
   cJSON_AddItemToObject(ping_response_json, "allowedServices", allowed_services);
 
