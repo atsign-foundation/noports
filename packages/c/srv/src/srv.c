@@ -392,6 +392,14 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   res = srv_side_init(&hints_b, &sides[1]);
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Failed to initialize connection for side b\n");
+    // side a is already connected (to sshd) - in a long-lived multi-mode srv,
+    // returning without closing it leaks one fd + one half-open sshd
+    // connection per failed connect request
+    srv_side_free(&sides[0]);
+    if (transform) {
+      mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+      mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    }
     return res;
   }
 
