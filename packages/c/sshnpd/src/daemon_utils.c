@@ -90,6 +90,10 @@ void free_atclient_without_disconnect(atclient *atclient) {
     atclient_connection_hooks_disable(conn);
   }
   free(conn->host);
+  // clear the pointer and its initialized flag so a later atclient_free
+  // cannot double-free it
+  conn->host = NULL;
+  conn->_is_host_initialized = false;
 
   // commented until https://github.com/atsign-foundation/at_c/issues/555
   // has been addressed
