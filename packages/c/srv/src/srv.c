@@ -168,7 +168,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       return res;
     }
   } else if (params->rv_auth == 1) {
-    atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
+    atlogger_log(TAG, DEBUG, "Sending auth string\n");
     int len = strlen(params->rvd_auth_string);
 
     int slen = mbedtls_net_send(&control_side.socket, (unsigned char *)params->rvd_auth_string, len);
@@ -284,13 +284,15 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
          *new_session_aes_key_d2c_string = NULL, *new_session_aes_iv_d2c_string = NULL;
 
-    atlogger_log(TAG, INFO, "requests buffer is: %s\n", work);
+    // Never log the buffer content: connect: lines carry live session AES
+    // keys and IVs
+    atlogger_log(TAG, DEBUG, "received %zu bytes of control requests\n", complete_len);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
     res = process_multiple_requests(work, &requests, &nrequests);
     if (res != 0) {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", work);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request in the control buffer\n");
       goto exit;
     }
 
@@ -301,12 +303,11 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       if (res != 0) {
         // A malformed request must not take down the whole srv (and every
         // active session with it) - skip it and keep serving the channel
-        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
-                     requests[i]);
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv in request %zu\n",
+                     i);
         continue;
       }
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s (%s)\n", messagetype,
-                   new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s (%s)\n", messagetype,
                    new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
