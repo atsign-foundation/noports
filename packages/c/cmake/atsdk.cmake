@@ -16,7 +16,7 @@ if(NOT atsdk_FOUND)
       # Head of at_c fix/atauth-code-review-findings (at_c#715): the
       # at_activate/atauth + atclient code review fixes, on top of v0.4.0.
       # Replace with the tagged release commit once at_c#715 lands.
-      GIT_TAG a4dd5e700062696da590ef987d7b3ad4bd4bd550
+      GIT_TAG 011c36236a5ba87620e3f1664db127558f7cd126
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
