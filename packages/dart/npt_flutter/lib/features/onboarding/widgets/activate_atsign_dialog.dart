@@ -1,9 +1,10 @@
 import 'dart:convert';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_client/at_client.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
@@ -17,14 +18,14 @@ class ActivateAtsignDialog extends StatefulWidget {
   final String registrarUrl;
   final String apiKey;
   final Atsign atsign;
-  final AtOnboardingConfig config;
+  final String rootDomain;
   final bool waitForTeapot;
   final NoPortsOnboardingUtil onboardingUtil;
   const ActivateAtsignDialog({
     super.key,
     required this.atsign,
     required this.apiKey,
-    required this.config,
+    required this.rootDomain,
     required this.registrarUrl,
     required this.waitForTeapot,
     required this.onboardingUtil,
@@ -45,6 +46,13 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
   ActivationStatus status = ActivationStatus.preparing;
   TextEditingController pinController = TextEditingController();
   FocusNode pinFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    pinController.dispose();
+    pinFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -85,12 +93,11 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
                   appContext: context,
                   length: widget.pinLength,
                   controller: pinController,
-                  onChanged: (value) {
-                    setState(() {
-                      pinController.text = value.toUpperCase();
-                    });
+                  autoDisposeControllers: false,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (_) {
+                    setState(() {});
                   },
-                  // Styling
                   animationType: AnimationType.fade,
                   pinTheme: PinTheme(
                     shape: PinCodeFieldShape.box,
@@ -150,10 +157,18 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
     } else {
       if (!mounted) return;
       if (status == ActivationStatus.preparing) {
+        String apiMessage;
+        try {
+          apiMessage = jsonDecode(res.body)["message"]?.toString() ?? res.body;
+        } catch (_) {
+          apiMessage = res.body;
+        }
+        final String userMessage =
+            apiMessage.toLowerCase().contains('unauthorized')
+                ? strings.errorOtpRequestFailed
+                : apiMessage;
         Navigator.of(context).pop(
-          AtOnboardingResult.error(
-            message: "@${jsonDecode(res.body)["message"]}",
-          ),
+          NoPortsOnboardingResult.error(message: userMessage),
         );
         return;
       }
@@ -174,7 +189,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
       if (pinFocusNode.hasFocus) {
         pinFocusNode.unfocus();
       }
-      Navigator.of(context).pop(AtOnboardingResult.cancelled());
+      Navigator.of(context).pop(NoPortsOnboardingResult.cancelled());
     },
   );
 
@@ -202,18 +217,27 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               otp: pinController.text.toUpperCase(),
             );
 
+            if (!mounted) return;
+
             if (cramkey == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.red,
-                  content: Text(strings.errorOtpVerificationFailed),
-                ),
-              );
+              App.log('OTP verification failed: $errorMessage'.loggable);
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      errorMessage?.isNotEmpty ?? false
+                          ? errorMessage!
+                          : strings.errorOtpVerificationFailed,
+                    ),
+                  ),
+                );
               setState(() {
-                pinController =
-                    TextEditingController(); // controller was disposed, make a new one
-                pinFocusNode =
-                    FocusNode(); // focus node was disposed, make a new one
+                pinController.dispose();
+                pinController = TextEditingController();
+                pinFocusNode.dispose();
+                pinFocusNode = FocusNode();
                 status = ActivationStatus.otpWait;
               });
               return;
@@ -233,7 +257,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               while (atsignStatus != AtSignStatus.teapot) {
                 // 6 * 5 = 30 seconds
                 // 12 * 5 = 60 seconds
-                if (round > 12) {
+                if (!mounted || round > 12) {
                   break;
                 }
                 await Future.delayed(const Duration(seconds: 5));
@@ -246,7 +270,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
               if (atsignStatus != AtSignStatus.teapot) {
                 if (mounted) {
                   Navigator.of(context).pop(
-                    AtOnboardingResult.error(
+                    NoPortsOnboardingResult.error(
                       message: strings.errorAuthenticationTimedOut,
                     ),
                   );
@@ -261,7 +285,8 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             var result = await util.onboardFromCramKey(
               atsign: widget.atsign,
               cramkey: cramkey,
-              config: widget.config,
+              rootDomain: widget.rootDomain,
+              strings: strings,
             );
 
             if (!mounted) return;

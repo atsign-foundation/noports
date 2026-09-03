@@ -47,7 +47,11 @@ class CustomContainer extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(Sizes.p10),
       ),
-      child: child,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(Sizes.p10),
+        child: child,
+      ),
     );
   }
 }

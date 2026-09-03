@@ -1,3 +1,21 @@
+## 1.1.0
+
+- fix: validate --root-domain port with strtol instead of atoi
+- fix: don't log an error when the public signing key doesn't exist yet 
+- fix: bring the monitor filters to exact Dart daemon parity
+- fix: anchor the device name in the devices.policy monitor filter alternative
+- fix: filter the policy-mode monitor server side like the Dart daemon
+- fix: don't treat policy service traffic as session requests
+- feat: support 'proxy:' root domains in csshnpd
+- feat: tell clients why a session request was denied (Dart daemon parity)
+- feat: policy service (--policy-manager) support in csshnpd
+- feat: ESCR relay authentication in csshnpd and c srv (supportsRamEscr)
+- feat: adjustableTimeout support in csshnpd
+- fix: log a summary after sharing username keys with manager atSigns
+- fix: sshnpd C daemon manager list handling and exact -m authorization
+- fix: stop leaking buffer and socket fd when a side thread is cancelled
+- feat: Add twinned session key (twinKeys) support to C sshnpd and srv
+
 ## 1.0.20
 
 - fix: only manager Atsigns can establish sshnp connections with csshnpd
