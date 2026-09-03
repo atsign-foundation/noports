@@ -399,7 +399,16 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   int exit_res = 0;
   pthread_t threads[2], tid;
   bool cancel_first = false;
-  pipe(fds);
+  if (pipe(fds) != 0) {
+    atlogger_log(TAG, ERROR, "Failed to create pipe\n");
+    srv_side_free(&sides[0]);
+    srv_side_free(&sides[1]);
+    if (transform) {
+      mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+      mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    }
+    return -1;
+  }
 
   srv_link_sides(&sides[0], &sides[1], fds);
 
@@ -422,7 +431,8 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
     slen += mbedtls_net_send(&sides[1].socket, (unsigned char *)"\n", 1);
     if (slen != len + 1) {
       atlogger_log(TAG, ERROR, "Failed to send auth string\n");
-      return -1;
+      exit_res = -1;
+      goto exit;
     }
   }
 
@@ -448,15 +458,32 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   }
 
   // Wait for all threads to finish and join them back to the main thread
-  int retval = 0;
+  // NB: retval must be a void * (not an int): pthread_join writes a full
+  // pointer through it. With an int here the extra bytes clobbered the
+  // adjacent `tid` local, which made the pthread_equal check below pick the
+  // just-joined thread as the one to cancel - on musl a joined thread's
+  // descriptor is unmapped with its stack, so that pthread_cancel segfaulted
+  // (issue #2891).
+  void *retval = NULL;
 
   // Wait for any pthread to exit
-  read(fds[0], &tid, sizeof(pthread_t));
+  ssize_t nread = read(fds[0], &tid, sizeof(pthread_t));
+  if (nread != sizeof(pthread_t)) {
+    // We can't know which side exited - cancel and reap both threads rather
+    // than joining an uninitialized thread id
+    atlogger_log(TAG, ERROR, "Failed to read exited thread id from pipe\n");
+    pthread_cancel(threads[0]);
+    pthread_cancel(threads[1]);
+    pthread_join(threads[0], NULL);
+    pthread_join(threads[1], NULL);
+    exit_res = -1;
+    goto exit;
+  }
 
   atlogger_log(TAG, DEBUG, "Joining exited thread\n");
 
   // When a thread exits, join it.
-  res = pthread_join(tid, (void *)&retval);
+  res = pthread_join(tid, &retval);
 
 cancel:
   // Then figure out which thread didn't close
