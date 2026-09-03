@@ -118,9 +118,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  // One last-sent timestamp per manager atSign; calloc leaves them at 0 so the
+  // first main-loop pass publishes device_info immediately
+  if (params.manager_list_len > 0) {
+    device_info_last_sent = calloc(params.manager_list_len, sizeof(time_t));
+    if (device_info_last_sent == NULL) {
+      printf("Failed to allocate memory for device info timestamps\n");
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+  }
+
   // explicitly pass free_fn here because it is okay for these params to be null sometimes
   // normally this would be an error
   res = atcommons_memlist_add(&memlist, params.manager_list, true, free_if_not_null);
+  res += atcommons_memlist_add(&memlist, device_info_last_sent, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.normalized_manager_buf, true, free_if_not_null);
   // res won't overflow from summation as the function returns a max value of 2
   res += atcommons_memlist_add(&memlist, params.permitopen_hosts, true, free_if_not_null);
@@ -129,6 +141,7 @@ int main(int argc, char **argv) {
   res += atcommons_memlist_add(&memlist, NULL, true, mbedtls_psa_crypto_free);
   if (res > 0) {
     free(params.manager_list);
+    free(device_info_last_sent);
     free(params.normalized_manager_buf);
     free(params.permitopen_hosts);
     free(params.permitopen_ports);
