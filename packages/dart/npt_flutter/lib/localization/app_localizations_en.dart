@@ -417,15 +417,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The Atsign is unavailable. Make sure you have pressed \"Activate\" from your dashboard and have a stable internet connection.';
 
   @override
-  String get errorCramAuthFailed =>
-      'The activation key was rejected by the atServer. This activation file may have already been used.';
-
-  @override
-  String errorOnboardingWithDetails(Object details) {
-    return 'Onboarding failed: $details';
-  }
-
-  @override
   String get errorAuthenticatinFailed => 'Authentication failed.';
 
   @override
@@ -854,12 +845,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAtsign => 'Remove Atsign';
 
   @override
-  String get selectAll => 'Select All';
-
-  @override
-  String get noAtsignsToRemove => 'No atsigns found to remove.';
-
-  @override
   String get requestExpired =>
       'The original request has expired. Please submit again';
 
@@ -1094,23 +1079,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waitingForApproval => 'Waiting for approval...';
 
   @override
-  String get errorServerUnavailable =>
-      'The server is currently unavailable. Please try again later.';
-
-  @override
-  String get errorAtsignActivated => 'This atsign has already been activated.';
-
-  @override
-  String get msgAtsignUnreachable => 'The atsign server could not be reached.';
-
-  @override
-  String get errorAuthenticationFailed =>
-      'Authentication failed. Please check your details and try again.';
-
-  @override
-  String get msgResponseTimeOut => 'The request timed out. Please try again.';
-
-  @override
   String get whatAreAtKeys => 'What are atKeys?';
 
   @override
@@ -1132,8 +1100,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yamlRecommended => 'YAML (Recommended)';
-
-  @override
-  String get errorEnrollmentRevoked =>
-      'Your enrollment has been revoked. Please sign in again to request a new enrollment.';
 }
