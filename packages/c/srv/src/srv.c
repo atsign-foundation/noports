@@ -707,13 +707,14 @@ static int parse_control_message(char *original, char **message_type, char **new
   while ((saveptr)[0] == ' ' || (saveptr)[0] == '\n') {
     saveptr = saveptr + 1;
   }
-  size_t trail;
-  do {
-    trail = strlen(saveptr) - 1;
-    if ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n') {
-      (saveptr)[trail] = '\0';
-    }
-  } while ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n');
+  size_t slen = strlen(saveptr);
+  while (slen > 0 && ((saveptr)[slen - 1] == ' ' || (saveptr)[slen - 1] == '\n')) {
+    (saveptr)[--slen] = '\0';
+  }
+  if (slen == 0) {
+    // all-whitespace message; the old strlen - 1 here underflowed to SIZE_MAX
+    return ret;
+  }
 
   for (int i = 0; i < 3; i++) {
     temp = strtok_r(saveptr, ":", &saveptr);
