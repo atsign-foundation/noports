@@ -672,6 +672,11 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
 
   unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
+  if (signing_input == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res payload\n");
+    res = 1;
+    goto clean_json;
+  }
 
   unsigned char signature[256];
   memset(signature, 0, 256);
@@ -696,6 +701,11 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   cJSON_AddItemToObject(final_res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
   cJSON_AddItemToObject(final_res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
   char *final_res_value = cJSON_PrintUnformatted(final_res_envelope);
+  if (final_res_value == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res envelope\n");
+    res = 1;
+    goto clean_json;
+  }
 
   atclient_atkey final_res_atkey;
   atclient_atkey_init(&final_res_atkey);
@@ -704,6 +714,7 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   char *keyname = malloc(sizeof(char) * keynamelen);
   if (keyname == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname\n");
+    res = 1;
     goto clean_final_res_value;
   }
 
