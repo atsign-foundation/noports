@@ -8,7 +8,7 @@ from conan.tools.files import get
 
 class at_cRecipe(ConanFile):
     name = "noports"
-    version = "1.0.20"
+    version = "1.1.0"
     package_type = "application"
 
     # Optional metadata
@@ -44,4 +44,4 @@ class at_cRecipe(ConanFile):
         tc.generate()
 
     def requirements(self):
-        self.requires("at_c/0.3.9")
+        self.requires("at_c/0.4.0")
