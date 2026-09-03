@@ -24,6 +24,23 @@
 
 static void *run_socket_to_socket(void *args);
 
+// Send exactly len bytes, retrying on partial writes and EINTR
+// (MBEDTLS_ERR_SSL_WANT_WRITE). Returns 0 on success.
+static int srv_send_all(mbedtls_net_context *sock, const unsigned char *buf, size_t len) {
+  size_t sent = 0;
+  while (sent < len) {
+    int res = mbedtls_net_send(sock, buf + sent, len - sent);
+    if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      continue;
+    }
+    if (res <= 0) {
+      return res != 0 ? res : -1;
+    }
+    sent += (size_t)res;
+  }
+  return 0;
+}
+
 // Connection timeout state for multi mode: the srv exits once there have been
 // no active socket-to-socket sessions for params->timeout seconds (matching
 // the SocketConnector timeout semantics of the Dart srv). One process runs at
@@ -169,12 +186,16 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
     }
   } else if (params->rv_auth == 1) {
     atlogger_log(TAG, DEBUG, "Sending auth string\n");
-    int len = strlen(params->rvd_auth_string);
+    size_t len = strlen(params->rvd_auth_string);
 
-    int slen = mbedtls_net_send(&control_side.socket, (unsigned char *)params->rvd_auth_string, len);
-    slen += mbedtls_net_send(&control_side.socket, (unsigned char *)"\n", 1);
-    if (slen != len + 1) {
+    if (srv_send_all(&control_side.socket, (unsigned char *)params->rvd_auth_string, len) != 0 ||
+        srv_send_all(&control_side.socket, (unsigned char *)"\n", 1) != 0) {
       atlogger_log(TAG, ERROR, "Failed to send auth string\n");
+      mbedtls_net_close(&control_side.socket);
+      if (params->rv_e2ee == 1) {
+        mbedtls_aes_free(&encrypter.aes_ctr.ctx);
+        mbedtls_aes_free(&decrypter.aes_ctr.ctx);
+      }
       return -1;
     }
   }
