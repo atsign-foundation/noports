@@ -12,6 +12,7 @@
 #include <atclient/json.h>
 #include <atlogger/atlogger.h>
 #include <sshnpd/handler_commons.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -307,15 +308,25 @@ int verify_envelope_contents(cJSON *envelope, enum payload_type type) {
   return verify_payload_contents(payload, type);
 }
 
+// A valid port is an integral JSON number in [1, 65535] — anything else would
+// invoke UB (or silently wrap) when later cast to uint16_t
+static bool is_valid_port(const cJSON *port) {
+  if (!cJSON_IsNumber(port)) {
+    return false;
+  }
+  double value = cJSON_GetNumberValue(port);
+  return value >= 1 && value <= 65535 && value == (double)(uint16_t)value;
+}
+
 int verify_payload_contents(cJSON *payload, enum payload_type type) {
   bool has_valid_values = cJSON_IsObject(payload);
 
-  has_valid_values = cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
+  has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
 
   switch (type) {
   case payload_type_ssh: {
     cJSON *direct = cJSON_GetObjectItem(payload, "direct");
-    has_valid_values = cJSON_IsBool(direct);
+    has_valid_values = has_valid_values && cJSON_IsBool(direct);
 
     if (!has_valid_values) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
@@ -328,16 +339,15 @@ int verify_payload_contents(cJSON *payload, enum payload_type type) {
     }
 
     has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "host")) &&
-                       cJSON_IsNumber(cJSON_GetObjectItem(payload, "port"));
+                       is_valid_port(cJSON_GetObjectItem(payload, "port"));
     break;
   }
   case payload_type_npt: {
     has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "rvdHost")) &&
-                       cJSON_IsNumber(cJSON_GetObjectItem(payload, "rvdPort")) &&
+                       is_valid_port(cJSON_GetObjectItem(payload, "rvdPort")) &&
                        cJSON_IsString(cJSON_GetObjectItem(payload, "requestedHost"));
 
-    cJSON *requested_port = cJSON_GetObjectItem(payload, "requestedPort");
-    has_valid_values = has_valid_values && cJSON_IsNumber(requested_port) && cJSON_GetNumberValue(requested_port) > 0;
+    has_valid_values = has_valid_values && is_valid_port(cJSON_GetObjectItem(payload, "requestedPort"));
     break;
   }
   }
@@ -641,6 +651,10 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   bool twin_keys = session_aes_key_d2c_base64 != NULL && session_iv_d2c_base64 != NULL;
   cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
   char *identifier = cJSON_GetStringValue(session_id);
+  if (identifier == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload is missing a valid sessionId\n");
+    return 1;
+  }
   cJSON *final_res_payload = cJSON_CreateObject();
   cJSON_AddStringToObject(final_res_payload, "status", "connected");
   cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
@@ -658,6 +672,11 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
 
   unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
+  if (signing_input == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res payload\n");
+    res = 1;
+    goto clean_json;
+  }
 
   unsigned char signature[256];
   memset(signature, 0, 256);
@@ -682,6 +701,11 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   cJSON_AddItemToObject(final_res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
   cJSON_AddItemToObject(final_res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
   char *final_res_value = cJSON_PrintUnformatted(final_res_envelope);
+  if (final_res_value == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res envelope\n");
+    res = 1;
+    goto clean_json;
+  }
 
   atclient_atkey final_res_atkey;
   atclient_atkey_init(&final_res_atkey);
@@ -690,6 +714,7 @@ int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *para
   char *keyname = malloc(sizeof(char) * keynamelen);
   if (keyname == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname\n");
+    res = 1;
     goto clean_final_res_value;
   }
 

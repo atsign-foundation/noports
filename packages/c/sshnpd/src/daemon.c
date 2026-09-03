@@ -144,10 +144,11 @@ void main_loop() {
       timeout_counter = 0;
       bool is_init = atclient_atnotification_is_decrypted_value_initialized(message.notification);
       bool has_key = atclient_atnotification_is_key_initialized(message.notification);
+      bool has_id = atclient_atnotification_is_id_initialized(message.notification) && message.notification->id != NULL;
       if (is_init) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
                      message.notification->decrypted_value);
-        if (!has_key || strcmp(message.notification->id, "-1") == 0) {
+        if (!has_key || !has_id || strcmp(message.notification->id, "-1") == 0) {
           break;
         }
 
@@ -196,6 +197,10 @@ void main_loop() {
         // strip notification.to from the front
         // first let's validate that notification.to is on the front
         char *head = message.notification->to;
+        if (!atclient_atnotification_is_to_initialized(message.notification) || head == NULL) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: notification has no 'to' field\n");
+          break;
+        }
         size_t head_len = strlen(head);
         if (strlen(key) < head_len) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,

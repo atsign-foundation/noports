@@ -30,6 +30,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *manager = NULL;
   char *permitopen = NULL;
   char *ephemeral_permissions = NULL;
+  // OPT_INTEGER writes a full int through the pointer, so it must not point at
+  // the uint16_t params->local_sshd_port directly
+  int local_sshd_port = params->local_sshd_port;
 
 // pragma GCC works for both gcc and clang
 #pragma GCC diagnostic push
@@ -58,7 +61,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "will be appended (defaults to \"root.atsign.org:64\"). A 'proxy:' prefix (e.g. "
                  "\"proxy:proxy0001.atsign.org:443\") skips the atDirectory and connects to every atServer via that "
                  "reverse proxy instead"),
-      OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
+      OPT_INTEGER(0, "local-sshd-port", &local_sshd_port, "Local sshd port to use"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
 
       // Doesn't do anything more, added in case old config would cause a parsing issue
@@ -74,6 +77,13 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   snprintf(description, sizeof(description), "Version : %s\n", SSHNPD_VERSION);
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
+
+  if (local_sshd_port < 1 || local_sshd_port > 65535) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): local-sshd-port must be 1-65535\n");
+    return 1;
+  }
+  params->local_sshd_port = (uint16_t)local_sshd_port;
 
   // Mandatory options
   if (params->atsign == NULL) {
