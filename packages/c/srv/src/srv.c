@@ -18,6 +18,10 @@
 // connection timeout
 #define SRV_CONTROL_POLL_MS 1000
 
+// Cap on a single buffered control-channel line. Legitimate connect: lines
+// are ~200 bytes; anything larger without a newline is discarded.
+#define SRV_CONTROL_LINE_CAP 8192
+
 static void *run_socket_to_socket(void *args);
 
 // Connection timeout state for multi mode: the srv exits once there have been
@@ -182,7 +186,22 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   fflush(stderr);
 
   unsigned char *buffer = malloc(4096 * sizeof(unsigned char));
-  if (buffer == NULL) {
+  // Control messages are newline-terminated lines, but TCP does not preserve
+  // message boundaries: a connect: line can arrive split across recvs, and
+  // several lines can arrive in one. Accumulate decrypted bytes in line_buf
+  // and only parse complete (newline-terminated) lines, staged into work.
+  char *line_buf = malloc(SRV_CONTROL_LINE_CAP);
+  char *work = malloc(SRV_CONTROL_LINE_CAP + 1);
+  size_t line_len = 0;
+  if (buffer == NULL || line_buf == NULL || work == NULL) {
+    free(buffer);
+    free(line_buf);
+    free(work);
+    mbedtls_net_close(&control_side.socket);
+    if (params->rv_e2ee == 1) {
+      mbedtls_aes_free(&encrypter.aes_ctr.ctx);
+      mbedtls_aes_free(&decrypter.aes_ctr.ctx);
+    }
     return -1;
   }
   memset(buffer, 0, 4096 * sizeof(unsigned char));
@@ -231,16 +250,47 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       buffer[len] = '\0';
     }
 
+    // Append the decrypted chunk to the line accumulator
+    if (line_len + len > SRV_CONTROL_LINE_CAP) {
+      atlogger_log(TAG, WARN, "Control channel line exceeded %d bytes without a newline - discarding buffered data\n",
+                   SRV_CONTROL_LINE_CAP);
+      line_len = 0;
+      if (len > SRV_CONTROL_LINE_CAP) {
+        memset(buffer, 0, 4096);
+        continue;
+      }
+    }
+    memcpy(line_buf + line_len, buffer, len);
+    line_len += len;
+
+    // Only parse up to the last complete (newline-terminated) line; keep any
+    // trailing partial line buffered for the next recv
+    size_t complete_len = 0;
+    for (size_t j = line_len; j > 0; j--) {
+      if (line_buf[j - 1] == '\n') {
+        complete_len = j;
+        break;
+      }
+    }
+    if (complete_len == 0) {
+      memset(buffer, 0, 4096);
+      continue;
+    }
+    memcpy(work, line_buf, complete_len);
+    work[complete_len] = '\0';
+    memmove(line_buf, line_buf + complete_len, line_len - complete_len);
+    line_len -= complete_len;
+
     char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
          *new_session_aes_key_d2c_string = NULL, *new_session_aes_iv_d2c_string = NULL;
 
-    atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
+    atlogger_log(TAG, INFO, "requests buffer is: %s\n", work);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
-    res = process_multiple_requests((char *)buffer, &requests, &nrequests);
+    res = process_multiple_requests(work, &requests, &nrequests);
     if (res != 0) {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", buffer);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", work);
       goto exit;
     }
 
@@ -249,9 +299,11 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_c2d_string, &new_session_aes_iv_c2d_string,
                                   &new_session_aes_key_d2c_string, &new_session_aes_iv_d2c_string);
       if (res != 0) {
+        // A malformed request must not take down the whole srv (and every
+        // active session with it) - skip it and keep serving the channel
         atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
                      requests[i]);
-        goto exit;
+        continue;
       }
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s (%s)\n", messagetype,
                    new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
@@ -358,6 +410,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
 exit:
   free(buffer);
+  free(line_buf);
+  free(work);
   if (requests)
     free(requests);
   mbedtls_net_close(&control_side.socket);
