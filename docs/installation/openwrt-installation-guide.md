@@ -23,9 +23,7 @@ layout:
 
 # OpenWrt Installation Guide
 
-{% embed url="https://vimeo.com/1060920058" %}
-OpenWrt installation walk through
-{% endembed %}
+{% embed url="https://vimeo.com/1223705738" %}
 
 ### Packages for OpenWrt 25.12+
 
