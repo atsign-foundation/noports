@@ -5,6 +5,7 @@
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
 #include <mbedtls/net_sockets.h>
+#include <mbedtls/platform_util.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -607,12 +608,15 @@ int create_transformer(const char *aes_key_base64, const char *aes_iv_base64, ch
   res = atchops_base64_decode(aes_key_base64, strlen(aes_key_base64), aes_key, AES_256_KEY_BYTES, &aes_key_len);
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
     atlogger_log(TAG, ERROR, "Error decoding session aes key\n");
+    mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
     return res != 0 ? res : 1;
   }
 
   mbedtls_aes_init(&transformer->aes_ctr.ctx); // FREE
   // NB: AES-CTR uses the encryption key schedule for both directions
   res = mbedtls_aes_setkey_enc(&transformer->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  // The key now lives in the AES key schedule; scrub the stack copy
+  mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Error setting session aes key\n");
     mbedtls_aes_free(&transformer->aes_ctr.ctx);

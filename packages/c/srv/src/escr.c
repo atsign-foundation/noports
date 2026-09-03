@@ -6,6 +6,7 @@
 #include <atlogger/atlogger.h>
 #include <mbedtls/aes.h>
 #include <mbedtls/net_sockets.h>
+#include <mbedtls/platform_util.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -148,6 +149,8 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
     mbedtls_aes_context aes_ctx;
     mbedtls_aes_init(&aes_ctx);
     int res = mbedtls_aes_setkey_enc(&aes_ctx, aes_key, 256);
+    // The key now lives in the AES key schedule; scrub the stack copy
+    mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
     if (res == 0) {
       size_t nc_off = 0;
       unsigned char stream_block[16] = {0};
