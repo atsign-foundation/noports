@@ -1,4 +1,4 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';

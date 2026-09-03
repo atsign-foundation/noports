@@ -185,6 +185,12 @@ abstract class AppLocalizations {
   /// **'Upload or drag & drop your one-time activation file (.yaml)'**
   String get activationFileUploadDragDropDescription;
 
+  /// No description provided for @activationInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating, please wait until every Atsign has finished.'**
+  String get activationInProgress;
+
   /// No description provided for @activationKeyStatusActivated.
   ///
   /// In en, this message translates to:
@@ -220,6 +226,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual Activation'**
   String get activationManual;
+
+  /// No description provided for @activationRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Failed'**
+  String get activationRetryFailed;
 
   /// No description provided for @activationStatus.
   ///
@@ -341,18 +353,6 @@ abstract class AppLocalizations {
   /// **'From Atsign'**
   String get atsignFrom;
 
-  /// No description provided for @atsignsUser.
-  ///
-  /// In en, this message translates to:
-  /// **'User Atsign'**
-  String get atsignsUser;
-
-  /// No description provided for @atsignsUserTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'An Atsign like \"@alice\" that will be connecting to other devices'**
-  String get atsignsUserTooltip;
-
   /// No description provided for @atsignTo.
   ///
   /// In en, this message translates to:
@@ -364,6 +364,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Don\'t have an Atsign?'**
   String get atsignUncreated;
+
+  /// No description provided for @atsignsUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User Atsign'**
+  String get atsignsUser;
+
+  /// No description provided for @atsignsUserTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'An Atsign like \"@alice\" that will be connecting to other devices'**
+  String get atsignsUserTooltip;
 
   /// No description provided for @authenticate.
   ///
@@ -449,36 +461,6 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
-  /// No description provided for @connected.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected'**
-  String get connected;
-
-  /// No description provided for @connectionClosed.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection closed, will retry...'**
-  String get connectionClosed;
-
-  /// No description provided for @connectionRetrying.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrying connection (keep-alive)...'**
-  String get connectionRetrying;
-
-  /// No description provided for @connections.
-  ///
-  /// In en, this message translates to:
-  /// **'Connections'**
-  String get connections;
-
-  /// No description provided for @connectionTimedOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection timed out, will retry...'**
-  String get connectionTimedOut;
-
   /// No description provided for @connectUriProtocolDescription.
   ///
   /// In en, this message translates to:
@@ -502,6 +484,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Optional username for protocols like SSH (e.g., user in ssh://user@host)'**
   String get connectUriUsernameDescription;
+
+  /// No description provided for @connected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connected;
+
+  /// No description provided for @connectionClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection closed, will retry...'**
+  String get connectionClosed;
+
+  /// No description provided for @connectionRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying connection (keep-alive)...'**
+  String get connectionRetrying;
+
+  /// No description provided for @connectionTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out, will retry...'**
+  String get connectionTimedOut;
+
+  /// No description provided for @connections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get connections;
 
   /// No description provided for @couldNotLoadPreviousState.
   ///
@@ -629,6 +641,12 @@ abstract class AppLocalizations {
   /// **'No Device Group'**
   String get deviceGroupNo;
 
+  /// No description provided for @deviceGroupTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports'**
+  String get deviceGroupTooltip;
+
   /// No description provided for @deviceGroups.
   ///
   /// In en, this message translates to:
@@ -640,12 +658,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No device groups added yet'**
   String get deviceGroupsNotAdded;
-
-  /// No description provided for @deviceGroupTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Daemon processes that specify the --dg option with a string will allow connections from user to the specified host:ports'**
-  String get deviceGroupTooltip;
 
   /// No description provided for @deviceName.
   ///
@@ -773,6 +785,12 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get error;
 
+  /// No description provided for @errorActivationKeysConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This Atsign was previously onboarded with a different set of keys. Remove it from the app and try again.'**
+  String get errorActivationKeysConflict;
+
   /// No description provided for @errorAtKeySaveFailed.
   ///
   /// In en, this message translates to:
@@ -809,6 +827,12 @@ abstract class AppLocalizations {
   /// **'Unable to connect to the atServer, make sure you have a stable internet connection.'**
   String get errorAtServerUnreachable;
 
+  /// No description provided for @errorAtsignActivated.
+  ///
+  /// In en, this message translates to:
+  /// **'This atsign has already been activated.'**
+  String get errorAtsignActivated;
+
   /// No description provided for @errorAtsignAlreadyPaired.
   ///
   /// In en, this message translates to:
@@ -833,17 +857,41 @@ abstract class AppLocalizations {
   /// **'Authentication failed.'**
   String get errorAuthenticatinFailed;
 
+  /// No description provided for @errorAuthenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please check your details and try again.'**
+  String get errorAuthenticationFailed;
+
   /// No description provided for @errorAuthenticationTimedOut.
   ///
   /// In en, this message translates to:
   /// **'Authentication timed out.'**
   String get errorAuthenticationTimedOut;
 
+  /// No description provided for @errorCramAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The activation key was rejected by the atServer. This activation file may have already been used.'**
+  String get errorCramAuthFailed;
+
   /// No description provided for @errorDuringStartupWithDetails.
   ///
   /// In en, this message translates to:
   /// **'Error during startup: {errorMessage}'**
   String errorDuringStartupWithDetails(Object errorMessage);
+
+  /// No description provided for @errorEnrollmentRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your enrollment has been revoked. Please sign in again to request a new enrollment.'**
+  String get errorEnrollmentRevoked;
+
+  /// No description provided for @errorOnboardingWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboarding failed: {details}'**
+  String errorOnboardingWithDetails(Object details);
 
   /// No description provided for @errorOtpRequestFailed.
   ///
@@ -868,6 +916,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The specified root domain is not supported by automatic activation.'**
   String get errorRootDomainNotSupported;
+
+  /// No description provided for @errorServerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is currently unavailable. Please try again later.'**
+  String get errorServerUnavailable;
 
   /// No description provided for @errorSwitchAtsignFailed.
   ///
@@ -1049,6 +1103,12 @@ abstract class AppLocalizations {
   /// **'The port you\'ll use on your local machine'**
   String get localPortDescription;
 
+  /// No description provided for @logType.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Type'**
+  String get logType;
+
   /// No description provided for @logs.
   ///
   /// In en, this message translates to:
@@ -1078,12 +1138,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Logs'**
   String get logsView;
-
-  /// No description provided for @logType.
-  ///
-  /// In en, this message translates to:
-  /// **'Log Type'**
-  String get logType;
 
   /// No description provided for @manageAtsigns.
   ///
@@ -1121,6 +1175,18 @@ abstract class AppLocalizations {
   /// **'Stop Monitoring'**
   String get monitoringStop;
 
+  /// No description provided for @msgAtsignUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The atsign server could not be reached.'**
+  String get msgAtsignUnreachable;
+
+  /// No description provided for @msgResponseTimeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Please try again.'**
+  String get msgResponseTimeOut;
+
   /// No description provided for @myNoPortsMsg.
   ///
   /// In en, this message translates to:
@@ -1150,6 +1216,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No Atsign added yet'**
   String get noAtsignsAdded;
+
+  /// No description provided for @noAtsignsToRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'No atsigns found to remove.'**
+  String get noAtsignsToRemove;
 
   /// No description provided for @noDescription.
   ///
@@ -1427,12 +1499,6 @@ abstract class AppLocalizations {
   /// **'The following profile(s) are connected:'**
   String get profileRunningCloseMsgStart;
 
-  /// No description provided for @profilesFailedLoaded.
-  ///
-  /// In en, this message translates to:
-  /// **'Profiles failed to load'**
-  String get profilesFailedLoaded;
-
   /// No description provided for @profileStatusFailedLoad.
   ///
   /// In en, this message translates to:
@@ -1492,6 +1558,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shutting Off'**
   String get profileStatusStopping;
+
+  /// No description provided for @profilesFailedLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles failed to load'**
+  String get profilesFailedLoaded;
 
   /// No description provided for @quit.
   ///
@@ -1649,12 +1721,6 @@ abstract class AppLocalizations {
   /// **'No role loaded'**
   String get roleNotLoaded;
 
-  /// No description provided for @roles.
-  ///
-  /// In en, this message translates to:
-  /// **'Roles'**
-  String get roles;
-
   /// No description provided for @roleSaveFailed.
   ///
   /// In en, this message translates to:
@@ -1673,18 +1739,6 @@ abstract class AppLocalizations {
   /// **'Select a role to view details'**
   String get roleSelectToViewDetails;
 
-  /// No description provided for @rolesLoadingFailedWithDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load roles: {errorMessage}'**
-  String rolesLoadingFailedWithDetails(Object errorMessage);
-
-  /// No description provided for @rolesRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh Roles'**
-  String get rolesRefresh;
-
   /// No description provided for @roleUpdatingFailed.
   ///
   /// In en, this message translates to:
@@ -1696,6 +1750,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update role: {errorMessage}'**
   String roleUpdatingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @roles.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get roles;
+
+  /// No description provided for @rolesLoadingFailedWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load roles: {errorMessage}'**
+  String rolesLoadingFailedWithDetails(Object errorMessage);
+
+  /// No description provided for @rolesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Roles'**
+  String get rolesRefresh;
 
   /// No description provided for @rootDomainDefault.
   ///
@@ -1726,6 +1798,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Later'**
   String get saveLater;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
 
   /// No description provided for @selectEnrollMethod.
   ///

@@ -1,7 +1,7 @@
 import 'dart:developer';
 
-import 'package:at_contacts_flutter/utils/init_contacts_service.dart';
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:at_auth/at_auth.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -9,6 +9,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
@@ -20,11 +21,11 @@ import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dia
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
-import 'package:npt_flutter/util/constants.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {
@@ -92,7 +93,7 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
 /// Shows the atsign menu and returns the selected option
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
-  final atsignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainStorage().getAllAtsigns();
 
   final result = await showMenu<String?>(
     context: context,
@@ -107,7 +108,7 @@ Future<String?> _showAtsignMenu(BuildContext context) async {
       borderRadius: BorderRadius.circular(Sizes.p8),
     ),
     items: [
-      ...(atsignList ?? []).map(
+      ...atsignList.map(
         (atsign) => PopupMenuItem<String>(
           padding: const EdgeInsets.all(Sizes.p0),
           value: atsign,
@@ -172,6 +173,9 @@ Future<void> _handleSelection(
 
 /// Handles the signout flow
 Future<void> _handleSignout(BuildContext context) async {
+  // A full signout starts over on the Connections tab, unlike an atsign
+  // switch which keeps the currently selected tab.
+  context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
     (route) => false,
@@ -232,7 +236,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   final rootDomain = atsignInfo.rootDomain;
 
   // Check if atsign already exists in keychain
-  final atsignList = await KeychainUtil.getAtsignList();
+  final atsignList = await KeychainStorage().getAllAtsigns();
 
   // Show loading dialog
 
@@ -246,21 +250,11 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   );
 
   try {
-    if (atsignList?.contains(newAtsign) ?? false) {
+    if (atsignList.contains(newAtsign)) {
       // Atsign exists in keychain - use existing flow
       await _performOnboarding(App.navState.currentContext!, newAtsign);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
-      final apiKey = await Constants.appAPIKey;
-      final config = AtOnboardingConfig(
-        atClientPreference: await AtClientMethods.loadAtClientPreference(
-          rootDomain,
-        ),
-        rootEnvironment: RootEnvironment.Production,
-        domain: rootDomain,
-        appAPIKey: apiKey,
-      );
-
       final util = await NoPortsOnboardingUtil.create(
         App.navState.currentContext!,
       );
@@ -269,11 +263,10 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         atsign: newAtsign,
       );
 
-      switch (onboardingResult?.status ?? AtOnboardingResultStatus.cancel) {
-        case AtOnboardingResultStatus.success:
+      switch (onboardingResult?.status ?? NoPortsOnboardingResultStatus.cancel) {
+        case NoPortsOnboardingResultStatus.success:
           await preSignout();
 
-          await initializeContactsService(rootDomain: rootDomain);
           AtClientManager.getInstance().atClient.syncService
               .addProgressListener(ProfileProgressListener());
           AtClientManager.getInstance().atClient.syncService.sync();
@@ -295,7 +288,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 
           App.log('atsign result is:$result'.loggable);
           return;
-        case AtOnboardingResultStatus.error:
+        case NoPortsOnboardingResultStatus.error:
           if (App.navState.currentContext!.mounted) {
             App.navState.currentContext!.read<OnboardingCubit>().setState(
               atsign: originalAtsign,
@@ -315,7 +308,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
           );
 
           break;
-        case AtOnboardingResultStatus.cancel:
+        case NoPortsOnboardingResultStatus.cancel:
           App.navState.currentContext!.read<OnboardingCubit>().setState(
             atsign: originalAtsign,
             rootDomain: originalRootDomain,
@@ -338,37 +331,42 @@ Future<void> _handleSwitchToAtsign(
 ) async {
   await preSignout();
 
-  log('change primary atsign called: $targetAtsign');
-
-  final changeSuccess = await AtOnboarding.changePrimaryAtsign(
-    atsign: targetAtsign,
-  );
-
-  if (!changeSuccess) return;
+  log('switching to atsign: $targetAtsign');
 
   final currentContext = App.navState.currentContext!;
   await _performOnboarding(currentContext, targetAtsign);
 }
 
-/// Performs the onboarding process for the given atsign
+/// Performs the onboarding process for the given atsign, which is already
+/// present in the local keychain.
 Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
   final rootDomain = context.read<OnboardingCubit>().getRootDomain();
-  final atClientPreference = await AtClientMethods.loadAtClientPreference(
-    rootDomain,
-  );
 
-  final onboardingResult = await AtOnboarding.onboard(
-    atsign: atsign,
-    context: context,
-    config: AtOnboardingConfig(
-      atClientPreference: atClientPreference,
-      domain: rootDomain,
-      rootEnvironment: RootEnvironment.Production,
-      appAPIKey: await Constants.appAPIKey,
-    ),
-  );
+  NoPortsOnboardingResult onboardingResult;
+  try {
+    final response = await AuthService().authenticate(
+      AtAuthRequest(
+        atsign,
+        atKeysIo: KeychainAtKeysIo(),
+        rootDomain: AtRootDomain.parse(rootDomain),
+      ),
+      backupKeys: [KeychainAtKeysIo()],
+    );
+    if (response.isSuccessful) {
+      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
+      onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
+    } else {
+      onboardingResult = NoPortsOnboardingResult.error(
+        message: context.mounted
+            ? AppLocalizations.of(context)!.onboardingError
+            : '',
+      );
+    }
+  } catch (e) {
+    onboardingResult = NoPortsOnboardingResult.error(message: e.toString());
+  }
 
-  if (onboardingResult.status == AtOnboardingResultStatus.success) {
+  if (onboardingResult.status == NoPortsOnboardingResultStatus.success) {
     await BackupKeyUtils().backupKeyStatusCheck();
     log("postOnbarding called");
     await postOnboard(atsign, rootDomain);
