@@ -41,9 +41,15 @@
 
 // Signal handling
 static void exit_handler(int sig) {
-  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n", sig);
+  // Only async-signal-safe calls here: atlogger (stdio + locks) can deadlock
+  // if the signal lands while the main thread holds the stream lock, and
+  // exit() would skip the graceful should_run teardown (memlist cleanup,
+  // device_info removal). write(2) is async-signal-safe.
+  (void)sig;
+  static const char msg[] = "Received exit signal, shutting down\n";
+  ssize_t ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
+  (void)ignored;
   should_run = 0;
-  exit(1);
 }
 static void child_exit_handler(int sig) {
   (void)sig;
