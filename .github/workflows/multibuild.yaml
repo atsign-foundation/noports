@@ -130,7 +130,7 @@ jobs:
         with:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
-        uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
       - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
