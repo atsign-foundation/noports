@@ -109,13 +109,19 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
         if (n.value == null) return;
 
         if (elc != null && !_sharedElcWith.contains(n.from)) {
-          _sharedElcWith.add(n.from);
-          logger.info('Sharing event logging config with ${n.from}');
-          await shareEventLoggingConfigWithAtsigns(
-            config: elc!,
-            atSigns: [n.from.toAtsign()],
-            namespace: DefaultArgs.eventLoggingNamespace,
-          );
+          try {
+            logger.info('Sharing event logging config with ${n.from}');
+            await shareEventLoggingConfigWithAtsigns(
+              config: elc!,
+              atSigns: [n.from.toAtsign()],
+              namespace: DefaultArgs.eventLoggingNamespace,
+            );
+            _sharedElcWith.add(n.from);
+          } catch (e) {
+            logger.warning(
+              'Failed to share event logging config with ${n.from}: $e',
+            );
+          }
         }
       },
     );

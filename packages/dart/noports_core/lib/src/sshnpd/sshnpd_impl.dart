@@ -310,19 +310,10 @@ class SshnpdImpl
 
     await subscribeToPolicyUpdates();
 
-    if (policyManagerAtsign != null) {
-      await _fetchEventLoggingConfig();
-    }
-
-    await _sendHeartbeatToPolicy();
+    await _policyCycle();
     Timer.periodic(
       DefaultSshnpdArgs.policyHeartbeatFrequency,
-      (_) async {
-        if (elc == null && policyManagerAtsign != null) {
-          await _fetchEventLoggingConfig();
-        }
-        await _sendHeartbeatToPolicy();
-      },
+      (_) async => await _policyCycle(),
     );
 
     logger.info('Daemon is running');
@@ -1902,6 +1893,17 @@ class SshnpdImpl
       return;
     }
     elc = AtEventConfig.fromJson(elcJson);
+  }
+
+  static const _configRetryDelay = Duration(seconds: 5);
+
+  Future<void> _policyCycle() async {
+    if (policyManagerAtsign == null) return;
+    await _sendHeartbeatToPolicy();
+    if (elc != null) return;
+
+    await Future.delayed(_configRetryDelay);
+    await _fetchEventLoggingConfig();
   }
 
   Future<void> _fetchEventLoggingConfig() async {
