@@ -8,15 +8,13 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileStatusIndicator extends StatelessWidget {
-  const ProfileStatusIndicator({required this.width, super.key});
-  final double width;
+  const ProfileStatusIndicator({this.width, super.key});
+  final double? width;
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    return SizedBox(
-      width: width,
-      child: BlocBuilder<ProfileBloc, ProfileState>(
+    final Widget content = BlocBuilder<ProfileBloc, ProfileState>(
         builder: (BuildContext context, ProfileState state) {
           log(state.runtimeType.toString());
           if (state is ProfileLoading) {
@@ -33,7 +31,10 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: strings.profileStatusLoadedMessage,
               status: strings.profileStatusLoaded,
               color: Colors.grey,
-              icon: PhosphorIcons.circle(PhosphorIconsStyle.fill),
+              icon: PhosphorIcons.play(PhosphorIconsStyle.fill),
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStartEvent());
+              },
             );
           }
           if (state is ProfileFailedSave) {
@@ -41,7 +42,10 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: strings.profileFailedSaveMessage,
               status: strings.profileStatusFailedSave,
               color: Colors.red,
-              icon: PhosphorIcons.circle(PhosphorIconsStyle.fill),
+              icon: PhosphorIcons.play(PhosphorIconsStyle.fill),
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStartEvent());
+              },
             );
           }
           if (state is ProfileFailedStart) {
@@ -49,7 +53,10 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: state.reason ?? strings.profileFailedUnknownMessage,
               status: strings.profileStatusFailedStart,
               color: Colors.red,
-              icon: PhosphorIcons.circle(PhosphorIconsStyle.fill),
+              icon: PhosphorIcons.play(PhosphorIconsStyle.fill),
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStartEvent());
+              },
             );
           }
           if (state is ProfileFailedLoad) {
@@ -66,6 +73,7 @@ class ProfileStatusIndicator extends StatelessWidget {
               status: strings.profileStatusStarting,
               color: Colors.grey,
               icon: PhosphorIcons.circleDashed(),
+              showSpinner: true,
             );
           }
           if (state is ProfileStarted) {
@@ -73,7 +81,10 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: strings.profileStatusStartedMessage,
               status: strings.profileStatusStarted,
               color: Colors.green,
-              icon: PhosphorIcons.circle(PhosphorIconsStyle.fill),
+              icon: PhosphorIcons.stop(PhosphorIconsStyle.fill),
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStopEvent());
+              },
             );
           }
           if (state is ProfileStopping) {
@@ -82,13 +93,18 @@ class ProfileStatusIndicator extends StatelessWidget {
               status: strings.profileStatusStopping,
               color: Colors.grey,
               icon: PhosphorIcons.circleDashed(),
+              showSpinner: true,
             );
           }
 
           return gap0;
         },
-      ),
-    );
+      );
+
+    if (width != null) {
+      return SizedBox(width: width, child: content);
+    }
+    return content;
   }
 }
 
@@ -98,6 +114,8 @@ class StatusMessage extends StatelessWidget {
     required this.status,
     required this.color,
     required this.icon,
+    this.onPressed,
+    this.showSpinner = false,
     super.key,
   });
 
@@ -105,15 +123,39 @@ class StatusMessage extends StatelessWidget {
   final String status;
   final Color color;
   final IconData icon;
+  final VoidCallback? onPressed;
+  final bool showSpinner;
   @override
   Widget build(BuildContext context) {
+    final Widget iconWidget = showSpinner
+        ? const SizedBox(
+            width: Sizes.p20,
+            height: Sizes.p20,
+            child: CircularProgressIndicator(strokeWidth: 2.0),
+          )
+        : onPressed != null
+            ? InkWell(
+                borderRadius: BorderRadius.circular(Sizes.p12),
+                onTap: onPressed,
+                child: PhosphorIcon(icon, color: color, size: Sizes.p20),
+              )
+            : PhosphorIcon(icon, color: color, size: Sizes.p20);
+
     return Tooltip(
       verticalOffset: Sizes.p10n,
       message: tooltip,
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: PhosphorIcon(icon, color: color),
-        title: Text(status),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          iconWidget,
+          gapW8,
+          Flexible(
+            child: Text(
+              status,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
