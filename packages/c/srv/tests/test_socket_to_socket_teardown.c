@@ -9,7 +9,9 @@
 //
 // This test bridges two local sockets through socket_to_socket and tears the
 // connection down repeatedly in both orders. The side-a-first ordering is the
-// one which crashed; on musl builds this test segfaults without the fix.
+// one which crashed; on musl x86-64 builds this test segfaults without the
+// fix (the clobber is UB - on other arches/libcs the corruption is silent, so
+// this test must run on musl x86-64 to be able to fail; see c_unit_tests.yaml).
 
 #include <srv/params.h>
 #include <srv/srv.h>
@@ -139,15 +141,13 @@ static int run_iteration(bool close_service_first) {
   relay_conn = accept_with_recv_timeout(relay_listener);
   if (service_conn < 0 || relay_conn < 0) {
     printf("accept failed\n");
-    pthread_join(runner_thread, NULL);
-    goto cleanup_listeners;
+    goto cleanup_session;
   }
 
   // Prove both side threads are up and bridging in both directions
   if (expect_bridged(relay_conn, service_conn, "ping") != 0 ||
       expect_bridged(service_conn, relay_conn, "pong") != 0) {
-    pthread_join(runner_thread, NULL);
-    goto cleanup_listeners;
+    goto cleanup_session;
   }
 
   // Tear down one side; socket_to_socket must join the exited thread, cancel
@@ -167,6 +167,21 @@ static int run_iteration(bool close_service_first) {
   }
 
   failures = 0;
+  goto cleanup_listeners;
+
+cleanup_session:
+  // Both conns must be closed before joining: while either is open its side
+  // thread stays parked in mbedtls_net_recv and never writes its id to the
+  // pipe, so socket_to_socket never returns and the join blocks forever.
+  if (service_conn >= 0) {
+    close(service_conn);
+    service_conn = -1;
+  }
+  if (relay_conn >= 0) {
+    close(relay_conn);
+    relay_conn = -1;
+  }
+  pthread_join(runner_thread, NULL);
 
 cleanup_listeners:
   if (service_conn >= 0) {

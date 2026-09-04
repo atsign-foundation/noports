@@ -1,5 +1,8 @@
 ## 1.9.4+31
 
+- FIX: Merged run/stop action into status indicator for resize-friendly profile rows.
+- FIX: Connections screen uses full available space instead of fixed-size card overlay.
+- FIX: Profile columns use flexible layout so device name and service mapping no longer truncate.
 - FEAT: APKAM enrollment dialog with approval wait and revocation error handling.
 - FEAT: Disable sign-in button while atsign activation is in progress.
 - FEAT: Revoked enrollment error messaging.

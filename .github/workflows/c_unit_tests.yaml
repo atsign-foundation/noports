@@ -29,3 +29,16 @@ jobs:
           cmake --build build
           ctest --test-dir build/sshnpd/tests --output-on-failure --timeout 2
           ctest --test-dir build/_deps/srv-lib-build/tests --output-on-failure --timeout 10
+
+      # The srv teardown regression test (issue #2891) can only fail on musl
+      # x86-64: glibc masks the corruption it guards against by caching joined
+      # thread stacks instead of unmapping them. Run the srv suite once more in
+      # an Alpine container so the guard has teeth.
+      - name: srv Unit CTest (musl x86-64)
+        run: |
+          docker run --rm -v "$PWD/packages/c:/src" alpine:3.21 sh -c '
+            apk add --no-cache build-base clang cmake git python3 &&
+            cmake -S /src/srv -B /build -DSRV_BUILD_TESTS=ON -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_C_FLAGS="-Wno-error -pthread" &&
+            cmake --build /build -j"$(nproc)" &&
+            ctest --test-dir /build/tests --output-on-failure --timeout 10'

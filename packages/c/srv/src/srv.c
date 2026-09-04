@@ -392,6 +392,8 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   res = srv_side_init(&hints_b, &sides[1]);
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Failed to initialize connection for side b\n");
+    // side a is already up and sides is stack-local, so the caller cannot free it
+    srv_side_free(&sides[0]);
     return res;
   }
 
