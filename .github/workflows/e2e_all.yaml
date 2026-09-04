@@ -44,12 +44,10 @@ jobs:
 
       - name: Setup VE
         run: |
-          chmod +x tests/tools/ve/setup_ve.sh
           tests/tools/ve/setup_ve.sh
 
       - name: Start srvd relay
         run: |
-          chmod +x tests/tools/ve/start_srvd.sh
           tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
 
       - name: Set stuff up
@@ -78,13 +76,11 @@ jobs:
       - name: Stop srvd relay
         if: always()
         run: |
-          chmod +x tests/tools/ve/stop_srvd.sh
           tests/tools/ve/stop_srvd.sh
 
       - name: Teardown VE
         if: always()
         run: |
-          chmod +x tests/tools/ve/teardown_ve.sh
           tests/tools/ve/teardown_ve.sh
 
       - name: Zip /tmp/e2e_all
@@ -198,7 +194,6 @@ jobs:
 
       - name: Setup VE
         run: |
-          chmod +x tests/tools/ve/setup_ve.sh
           tests/tools/ve/setup_ve.sh
 
       - name: dart pub get (tests/npe2e)
@@ -218,7 +213,6 @@ jobs:
 
       - name: Start srvd relay
         run: |
-          chmod +x tests/tools/ve/start_srvd.sh
           tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
 
       - name: Run npe2e policy_tests
