@@ -52,9 +52,11 @@ else
   echo "VE container started."
 fi
 
+# Note: 'supervisorctl status' exits 3 if any program is not RUNNING, so use
+# 'supervisorctl pid' (exit 0 as soon as supervisord answers) for readiness.
 echo "Waiting for supervisor to be ready..."
 for i in $(seq 1 30); do
-  if docker exec "$CONTAINER_NAME" supervisorctl status >/dev/null 2>&1; then
+  if docker exec "$CONTAINER_NAME" supervisorctl pid >/dev/null 2>&1; then
     echo "Supervisor ready after ${i}s"
     break
   fi
@@ -81,12 +83,17 @@ while [ "$elapsed" -lt "$PKAM_LOAD_TIMEOUT" ]; do
     docker exec "$CONTAINER_NAME" supervisorctl status || true
     exit 1
   fi
+  if ((elapsed % 20 == 0)); then
+    echo "  pkamLoad status: ${status:-unknown} (${elapsed}s / ${PKAM_LOAD_TIMEOUT}s)"
+  fi
   sleep 2
   elapsed=$((elapsed + 2))
 done
 if [ "$pkam_done" != "true" ]; then
   echo "ERROR: pkamLoad did not complete within ${PKAM_LOAD_TIMEOUT}s (last status: ${status:-unknown})"
   docker exec "$CONTAINER_NAME" supervisorctl status || true
+  echo "--- pkamLoad output tail ---"
+  docker exec "$CONTAINER_NAME" supervisorctl tail pkamLoad 2>/dev/null || true
   exit 1
 fi
 
@@ -129,12 +136,17 @@ lookup_secondary() {
 echo ""
 echo "Waiting for all ${#VE_ATSIGNS[@]} secondaries to be reachable (timeout ${SECONDARY_READY_TIMEOUT}s)..."
 deadline=$((SECONDS + SECONDARY_READY_TIMEOUT))
+last_note=$SECONDS
 for atsign in "${VE_ATSIGNS[@]}"; do
   while true; do
     addr=$(lookup_secondary "$atsign")
     if [[ "$addr" == *:* ]] && probe_tcp "${addr%:*}" "${addr##*:}"; then
       echo "  @${atsign}: ready at $addr"
       break
+    fi
+    if ((SECONDS - last_note >= 20)); then
+      echo "  still waiting for @${atsign}... (last root response: '${addr:-<none>}')"
+      last_note=$SECONDS
     fi
     if ((SECONDS >= deadline)); then
       echo "ERROR: @${atsign} secondary not reachable within ${SECONDARY_READY_TIMEOUT}s (last root response: '${addr:-<none>}')"
