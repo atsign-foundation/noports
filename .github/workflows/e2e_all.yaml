@@ -144,6 +144,7 @@ jobs:
             --client-atsign "@npe2e_org_client01_jttest" \
             --daemon-atsign "@npe2e_org_daemon01_jttest" \
             --relay-atsign "@rv_am" \
+            --unauthorized-atsign "@npe2e_org_client02_jttest" \
             --root-domain "root.atsign.org" \
             --base-directory "$LOGS_DIR" \
             --test-run-id "$TEST_RUN_ID" \
