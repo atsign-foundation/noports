@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,7 +11,6 @@ import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
-import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
 import 'package:npt_flutter/features/profile_list/widgets/profile_list_failed_load_content.dart';
@@ -27,7 +24,6 @@ import 'profile_list_view_test.mocks.dart';
 @GenerateNiceMocks([
   MockSpec<ProfileListBloc>(),
   MockSpec<ProfileCacheCubit>(),
-  MockSpec<SyncCubit>(),
   MockSpec<ProfileBloc>(),
   MockSpec<BackupKeyCubit>(),
   MockSpec<OnboardingCubit>(),
@@ -39,7 +35,6 @@ void main() {
   group('ProfileListView Widget Tests', () {
     late MockProfileListBloc mockProfileListBloc;
     late MockProfileCacheCubit mockProfileCacheCubit;
-    late MockSyncCubit mockSyncCubit;
     late MockProfileBloc mockProfileBloc;
     late MockBackupKeyCubit mockBackupKeyCubit;
     late MockOnboardingCubit mockOnboardingCubit;
@@ -68,7 +63,6 @@ void main() {
       darkMode: false,
       language: Language.english,
     );
-    late StreamController<bool> syncCubitStreamController;
 
     setUpAll(() {
       // Disable overflow errors in tests
@@ -84,15 +78,12 @@ void main() {
     setUp(() {
       mockProfileListBloc = MockProfileListBloc();
       mockProfileCacheCubit = MockProfileCacheCubit();
-      mockSyncCubit = MockSyncCubit();
       mockProfileBloc = MockProfileBloc();
       mockBackupKeyCubit = MockBackupKeyCubit();
       mockOnboardingCubit = MockOnboardingCubit();
       mockSettingsBloc = MockSettingsBloc();
       mockProfilesSelectedCubit = MockProfilesSelectedCubit();
       mockFavoriteBloc = MockFavoriteBloc();
-
-      syncCubitStreamController = StreamController<bool>.broadcast();
 
       // Provide dummy values for non-nullable states
       provideDummy<ProfileListState>(const ProfileListInitial());
@@ -114,11 +105,6 @@ void main() {
       when(
         mockProfileListBloc.stream,
       ).thenAnswer((_) => Stream.value(const ProfileListInitial()));
-
-      when(mockSyncCubit.state).thenReturn(true);
-      when(
-        mockSyncCubit.stream,
-      ).thenAnswer((_) => syncCubitStreamController.stream);
 
       when(mockProfileBloc.uuid).thenReturn(testUuid1);
       when(
@@ -183,7 +169,6 @@ void main() {
         providers: [
           BlocProvider<ProfileListBloc>.value(value: mockProfileListBloc),
           BlocProvider<ProfileCacheCubit>.value(value: mockProfileCacheCubit),
-          BlocProvider<SyncCubit>.value(value: mockSyncCubit),
           BlocProvider<BackupKeyCubit>.value(value: mockBackupKeyCubit),
           BlocProvider<OnboardingCubit>.value(value: mockOnboardingCubit),
           BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
@@ -325,59 +310,6 @@ void main() {
           mockProfileCacheCubit.getProfileBloc(testUuid2),
         ).called(greaterThanOrEqualTo(1));
       });
-
-      testWidgets(
-        'should display sync status when sync is in progress and when it completes',
-        (WidgetTester tester) async {
-          // Set test window size to match production
-          tester.view.physicalSize = const Size(1053, 691);
-          tester.view.devicePixelRatio = 1.0;
-
-          when(mockSyncCubit.state).thenReturn(true);
-
-          await tester.pumpWidget(
-            createWidgetUnderTest(const ProfileListLoaded(profiles: testUuids)),
-          );
-
-          // Initially, no snackbar should be visible
-          expect(find.byType(SnackBar), findsNothing);
-
-          // Trigger the listener by adding a new state to the stream
-          syncCubitStreamController.add(false);
-
-          // 4. Pump the widget tree to process the state change and build the snackbar
-          await tester.pump();
-
-          expect(find.byType(SnackBar), findsOneWidget);
-          expect(
-            find.textContaining(
-              AppLocalizations.of(App.navState.currentContext!)!.syncInProgress,
-            ),
-            findsOneWidget,
-          );
-
-          // Manually clear any remaining snackbars
-          ScaffoldMessenger.of(
-            tester.element(find.byType(Scaffold)),
-          ).clearSnackBars();
-          await tester.pumpAndSettle();
-
-          // Verify the first snackbar has disappeared
-          expect(find.byType(SnackBar), findsNothing);
-
-          syncCubitStreamController.add(true);
-
-          await tester.pump(const Duration(milliseconds: 100));
-
-          expect(find.byType(SnackBar), findsOneWidget);
-          expect(
-            find.textContaining(
-              AppLocalizations.of(App.navState.currentContext!)!.syncCompleted,
-            ),
-            findsOneWidget,
-          );
-        },
-      );
 
       testWidgets('should provide correct BlocProvider keys for profiles', (
         WidgetTester tester,
