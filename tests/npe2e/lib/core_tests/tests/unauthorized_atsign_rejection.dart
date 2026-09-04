@@ -162,7 +162,7 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
       exitCode: exitCode,
     );
     print(
-      'FAIL: sshnp succeeded as unauthorized atSign $context.unauthorizedAtsign '
+      'FAIL: sshnp succeeded as unauthorized atSign ${context.unauthorizedAtsign} '
       '— daemon should have rejected it',
     );
     printAllLogs(clientCapture: sshnpOutput, daemonLogFragment: logFragment);
@@ -174,7 +174,7 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
   //    rejected *this* request, not some other test's, and proves sshnp got far
   //    enough to actually notify the daemon.
   final String expectedRejection =
-      'Rejecting request from unauthorized atSign: $context.unauthorizedAtsign';
+      'Rejecting request from unauthorized atSign: ${context.unauthorizedAtsign}';
   if (!combinedDaemonLog.toLowerCase().contains(
     expectedRejection.toLowerCase(),
   )) {
