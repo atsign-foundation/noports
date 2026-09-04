@@ -14,7 +14,6 @@ import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
-import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/get_started_dialog.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/features/profile_list/widgets/connected_profiles_dialog.dart';
@@ -267,9 +266,6 @@ Future<void> _handleAddAtsign(BuildContext context) async {
         case NoPortsOnboardingResultStatus.success:
           await preSignout();
 
-          AtClientManager.getInstance().atClient.syncService
-              .addProgressListener(ProfileProgressListener());
-          AtClientManager.getInstance().atClient.syncService.sync();
           postOnboard(onboardingResult!.atsign!.toAtsign(), rootDomain);
           final result = await saveAtsignInformation(
             AtsignInformation(
