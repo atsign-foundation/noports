@@ -4,8 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONTAINER_NAME="${1:-ve_npe2e}"
 VE_IMAGE="atsigncompany/virtualenv:vip"
-PKAM_LOAD_TIMEOUT=300
-SECONDARY_READY_TIMEOUT=300
+SECONDARY_READY_TIMEOUT=600
 ROOT_HOST="vip.ve.atsign.zone"
 ROOT_PORT=64
 
@@ -66,36 +65,18 @@ done
 echo "Starting pkamLoad..."
 docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
 
-echo "Waiting for pkamLoad to complete..."
-
-# RUNNING means pkamLoad is still loading keys — only EXITED means done.
-elapsed=0
-pkam_done=false
-while [ "$elapsed" -lt "$PKAM_LOAD_TIMEOUT" ]; do
-  status=$(docker exec "$CONTAINER_NAME" supervisorctl status pkamLoad 2>/dev/null | awk '{print $2}' || true)
-  if [ "$status" = "EXITED" ]; then
-    echo "pkamLoad completed after ${elapsed}s"
-    pkam_done=true
-    break
-  fi
-  if [ "$status" = "FATAL" ]; then
-    echo "ERROR: pkamLoad entered FATAL state"
-    docker exec "$CONTAINER_NAME" supervisorctl status || true
-    exit 1
-  fi
-  if ((elapsed % 20 == 0)); then
-    echo "  pkamLoad status: ${status:-unknown} (${elapsed}s / ${PKAM_LOAD_TIMEOUT}s)"
-  fi
-  sleep 2
-  elapsed=$((elapsed + 2))
-done
-if [ "$pkam_done" != "true" ]; then
-  echo "ERROR: pkamLoad did not complete within ${PKAM_LOAD_TIMEOUT}s (last status: ${status:-unknown})"
-  docker exec "$CONTAINER_NAME" supervisorctl status || true
-  echo "--- pkamLoad output tail ---"
+# pkamLoad never exits: its script is 'sleep 25; install_PKAM_Keys; sleep
+# infinity', so RUNNING is its only healthy steady state and there is nothing
+# to wait for here. Key-load completion is verified per-atSign below via the
+# public 'pkaminstalled' marker that install_PKAM_Keys writes as it finishes
+# each atSign.
+status=$(docker exec "$CONTAINER_NAME" supervisorctl status pkamLoad 2>/dev/null | awk '{print $2}' || true)
+if [ "$status" = "FATAL" ] || [ "$status" = "BACKOFF" ]; then
+  echo "ERROR: pkamLoad is in $status state"
   docker exec "$CONTAINER_NAME" supervisorctl tail pkamLoad 2>/dev/null || true
   exit 1
 fi
+echo "pkamLoad status: ${status:-unknown} (loads keys in the background; completion is checked per-atSign below)"
 
 mkdir -p "$ATKEYS_DIR"
 echo "Downloading VE atKeys to $ATKEYS_DIR..."
@@ -113,16 +94,17 @@ for atsign in "${VE_ATSIGNS[@]}"; do
   fi
 done
 
-# Gate on every secondary being reachable the same way at_auth checks them:
-# ask the root server for the secondary's address, then probe the TCP port.
+# Gate on every atSign the tests use being fully ready: the root server
+# resolves it, its atServer accepts TLS, and install_PKAM_Keys has landed its
+# keys (it writes 'public:pkaminstalled<atsign> yes' per atSign as it
+# completes). The VE provisions ~40 atSigns; we only wait for ours.
 # This is what eliminates "secondary server is not running" flakes at test start.
-probe_tcp() {
-  local host="$1" port="$2"
-  if command -v nc >/dev/null 2>&1; then
-    nc -z -w 3 "$host" "$port" >/dev/null 2>&1
-  else
-    timeout 3 bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null
-  fi
+secondary_ready() {
+  local atsign="$1" hostport="$2" resp
+  # Response arrives glued to the '@' prompt, e.g. '@data:yes'.
+  resp=$({ printf 'lookup:pkaminstalled@%s\n' "$atsign"; sleep 2; } |
+    timeout 6 openssl s_client -connect "$hostport" -quiet -no_ign_eof 2>/dev/null || true)
+  [[ "$resp" == *"data:yes"* ]]
 }
 
 lookup_secondary() {
@@ -134,30 +116,32 @@ lookup_secondary() {
 }
 
 echo ""
-echo "Waiting for all ${#VE_ATSIGNS[@]} secondaries to be reachable (timeout ${SECONDARY_READY_TIMEOUT}s)..."
+echo "Waiting for the ${#VE_ATSIGNS[@]} test atSigns to be ready (resolvable + PKAM keys installed, timeout ${SECONDARY_READY_TIMEOUT}s)..."
 deadline=$((SECONDS + SECONDARY_READY_TIMEOUT))
 last_note=$SECONDS
 for atsign in "${VE_ATSIGNS[@]}"; do
   while true; do
     addr=$(lookup_secondary "$atsign")
-    if [[ "$addr" == *:* ]] && probe_tcp "${addr%:*}" "${addr##*:}"; then
-      echo "  @${atsign}: ready at $addr"
+    if [[ "$addr" == *:* ]] && secondary_ready "$atsign" "$addr"; then
+      echo "  @${atsign}: ready at $addr (pkam keys installed)"
       break
     fi
     if ((SECONDS - last_note >= 20)); then
-      echo "  still waiting for @${atsign}... (last root response: '${addr:-<none>}')"
+      echo "  still waiting for @${atsign}... (root lookup: '${addr:-<none>}')"
       last_note=$SECONDS
     fi
     if ((SECONDS >= deadline)); then
-      echo "ERROR: @${atsign} secondary not reachable within ${SECONDARY_READY_TIMEOUT}s (last root response: '${addr:-<none>}')"
-      echo "supervisorctl status:"
+      echo "ERROR: @${atsign} not ready within ${SECONDARY_READY_TIMEOUT}s (last root lookup: '${addr:-<none>}')"
+      echo "--- pkamLoad output tail ---"
+      docker exec "$CONTAINER_NAME" supervisorctl tail pkamLoad 2>/dev/null || true
+      echo "--- supervisorctl status ---"
       docker exec "$CONTAINER_NAME" supervisorctl status || true
       exit 1
     fi
     sleep 2
   done
 done
-echo "All ${#VE_ATSIGNS[@]} secondaries are reachable."
+echo "All ${#VE_ATSIGNS[@]} test atSigns are ready."
 
 echo ""
 echo "=== VE Setup Complete ==="
