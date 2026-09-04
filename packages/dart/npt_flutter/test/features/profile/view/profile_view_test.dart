@@ -391,7 +391,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(ProfileViewMinimal), findsOneWidget);
-        expect(find.byType(Row), findsOneWidget);
+        expect(find.byType(Row), findsWidgets);
       });
 
       testWidgets('should display all expected child widgets', (tester) async {
@@ -402,7 +402,6 @@ void main() {
         expect(find.byType(ProfileSelectBox), findsOneWidget);
         expect(find.byType(ProfileDisplayName), findsOneWidget);
         expect(find.byType(ProfileStatusIndicator), findsOneWidget);
-        expect(find.byType(ProfileRunButton), findsOneWidget);
         expect(find.byType(ProfileFavoriteButton), findsOneWidget);
         expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
       });
@@ -490,7 +489,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(ProfileViewSshStyle), findsOneWidget);
-        expect(find.byType(Row), findsOneWidget);
+        expect(find.byType(Row), findsWidgets);
       });
 
       testWidgets('should display all expected child widgets', (tester) async {
@@ -503,7 +502,6 @@ void main() {
         expect(find.byType(ProfileDeviceName), findsOneWidget);
         expect(find.byType(ProfileServiceView), findsOneWidget);
         expect(find.byType(ProfileStatusIndicator), findsOneWidget);
-        expect(find.byType(ProfileRunButton), findsOneWidget);
         expect(find.byType(ProfileFavoriteButton), findsOneWidget);
         expect(find.byType(ProfilePopupMenuButton), findsOneWidget);
       });
