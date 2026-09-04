@@ -16,120 +16,91 @@ on:
       - "docs/**"
     branches:
       - trunk
-      - release-v*.*.*
 
 jobs:
   e2e_all:
-    # Runs on the @npe2e_org_* atSigns (see the atKeys step below). These are
-    # shared with the npe2e job, so `needs: npe2e` serializes this job after the
-    # matrix has finished and torn its daemons down (removeWhenStopped) — that
-    # avoids double-booking the same atSigns within a run.
-    needs: npe2e
-    # Skip on fork / Dependabot PRs (secrets unavailable). `!cancelled()` keeps
-    # this running once npe2e *completes* even if a leg failed, so a flaky npe2e
-    # leg on shared infra can't skip e2e_all via the `needs:` dependency.
     if:
-      ${{ !cancelled() && github.event.pull_request.head.repo.fork == false &&
+      ${{ github.event.pull_request.head.repo.fork == false &&
       github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup dart
+
+      - name: Setup Dart
         uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
-      - name: Set stuff up 
-        run: |
-          mkdir -p /tmp/e2e_all
-          mkdir -p ~/.atsign/keys/
-          # atKeys for the @npe2e_org_* atSigns this job runs against. The legacy
-          # @e2e_all_v2_* atServers went unresponsive ~2026-06-13 and produced
-          # spurious old-client timeouts; the @npe2e_org_* atServers are healthy.
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy02_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}'  > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Install expect
         run: |
           sudo apt-get install -y expect
+
+      - name: Add VE host entry
+        run: |
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup VE
+        run: |
+          tests/tools/ve/setup_ve.sh
+
+      - name: Start srvd relay
+        run: |
+          tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
+
+      - name: Set stuff up
+        run: |
+          mkdir -p /tmp/e2e_all
+
       - name: Execute tests/e2e_all/scripts/main.sh
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
-          tests/e2e_all/scripts/main.sh @npe2e_org_client01_jttest @npe2e_org_daemon01_jttest @rv_am @npe2e_org_relay01_jttest @npe2e_org_policy01_jttest @npe2e_org_policy02_jttest @npe2e_org_relay02_jttest -p -r root.atsign.org
+          tests/e2e_all/scripts/main.sh \
+            @colin \
+            @barbara \
+            @relay1 \
+            @chris \
+            @curtly \
+            @gareth \
+            @gary \
+            -p -r vip.ve.atsign.zone
           test_exit_code=$?
           end_time=$(date +%s)
           echo "Test finished at: $(date)"
           echo "Total execution time: $((end_time - start_time)) seconds"
           exit $test_exit_code
+
+      - name: Stop srvd relay
+        if: always()
+        run: |
+          tests/tools/ve/stop_srvd.sh
+
+      - name: Teardown VE
+        if: always()
+        run: |
+          tests/tools/ve/teardown_ve.sh
+
       - name: Zip /tmp/e2e_all
-        if: ${{ always() }} # run even if test fails
+        if: ${{ always() }}
         run: |
           zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
+
       - name: Upload /tmp/e2e_all as artifact
-        if: ${{ always() }} # run even if test fails
+        if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip
 
-  npe2e:
-    # Don't run on PRs from a fork or Dependabot as the secrets aren't available
+  npe2e_core_tests:
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
       'dependabot[bot]'}}
-    name: npe2e (${{ matrix.test_suite }})
+    name: npe2e (core_tests)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - test_suite: core_tests
-            output_artifact: npe2e_core_tests_artifacts
-            logs_dir: npe2e_core_tests
-            command: |
-              dart run tests/npe2e/bin/core_tests.dart \
-                --client-atsign "@npe2e_org_client01_jttest" \
-                --daemon-atsign "@npe2e_org_daemon01_jttest" \
-                --relay-atsign "@rv_am" \
-                --root-domain "root.atsign.org" \
-                --base-directory "$LOGS_DIR" \
-                --test-run-id "$TEST_RUN_ID" \
-                --batch-size 5
-          - test_suite: policy_tests
-            output_artifact: npe2e_policy_tests_artifacts
-            logs_dir: npe2e_policy_tests
-            command: |
-              dart run tests/npe2e/bin/policy_tests.dart \
-                --client-atsign "@npe2e_org_client02_jttest" \
-                --daemon-atsign "@npe2e_org_daemon02_jttest" \
-                --relay-atsign "@rv_am" \
-                --npp-atsign "@npe2e_org_policy01_jttest" \
-                --npp-atserver-atsign "@npe2e_org_policy02_jttest" \
-                --root-domain "root.atsign.org" \
-                --base-directory "$LOGS_DIR" \
-                --test-run-id "$TEST_RUN_ID" \
-                --test-timeout-seconds 480 \
-                --batch-size 2
-          - test_suite: relay_tests
-            output_artifact: npe2e_relay_tests_artifacts
-            logs_dir: npe2e_relay_tests
-            command: |
-              dart run tests/npe2e/bin/relay_tests.dart \
-                --client-atsign "@npe2e_org_client03_jttest" \
-                --daemon-atsign "@npe2e_org_daemon03_jttest" \
-                --prod-relay "@rv_am" \
-                --self-relay-atsigns "@npe2e_org_relay01_jttest,@npe2e_org_relay02_jttest,@npe2e_org_relay03_jttest,@npe2e_org_relay04_jttest,@npe2e_org_relay05_jttest,@npe2e_org_relay06_jttest" \
-                --root-domain "root.atsign.org" \
-                --base-directory "$LOGS_DIR" \
-                --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
-                --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
-                --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
-                --test-run-id "$TEST_RUN_ID" \
-                --batch-size 3
 
     steps:
       - name: Checkout
@@ -150,12 +121,169 @@ jobs:
           mkdir -p ~/.atsign/keys/
           echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client02_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client03_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon02_jttest_key.atKeys
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Env variables
+        run: |
+          echo "LOGS_DIR=npe2e_core_tests" >> $GITHUB_ENV
+          echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Run npe2e core_tests
+        run: |
+          dart run tests/npe2e/bin/core_tests.dart \
+            --client-atsign "@npe2e_org_client01_jttest" \
+            --daemon-atsign "@npe2e_org_daemon01_jttest" \
+            --relay-atsign "@rv_am" \
+            --unauthorized-atsign "@npe2e_org_client02_jttest" \
+            --root-domain "root.atsign.org" \
+            --base-directory "$LOGS_DIR" \
+            --test-run-id "$TEST_RUN_ID" \
+            --batch-size 5
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "$LOGS_DIR" ]; then
+            zip -r npe2e_core_tests_artifacts.zip "$LOGS_DIR"
+            echo "Zipped $LOGS_DIR directory contents into npe2e_core_tests_artifacts.zip"
+          else
+            echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npe2e_core_tests_artifacts
+          path: npe2e_core_tests_artifacts.zip
+          if-no-files-found: warn
+
+  npe2e_policy_tests:
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    name: npe2e (policy_tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Install expect
+        run: |
+          sudo apt-get install -y expect
+
+      - name: Add VE host entry
+        run: |
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup VE
+        run: |
+          tests/tools/ve/setup_ve.sh
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Env variables
+        run: |
+          echo "LOGS_DIR=npe2e_policy_tests" >> $GITHUB_ENV
+          echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Start srvd relay
+        run: |
+          tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
+
+      - name: Run npe2e policy_tests
+        run: |
+          dart run tests/npe2e/bin/policy_tests.dart \
+            --client-atsign "@denise" \
+            --daemon-atsign "@don" \
+            --relay-atsign "@relay1" \
+            --npp-atsign "@xavier" \
+            --npp-atserver-atsign "@jeremy" \
+            --root-domain "vip.ve.atsign.zone" \
+            --base-directory "$LOGS_DIR" \
+            --test-run-id "$TEST_RUN_ID" \
+            --test-timeout-seconds 480 \
+            --batch-size 2
+
+      - name: Stop srvd relay
+        if: always()
+        run: |
+          tests/tools/ve/stop_srvd.sh
+
+      - name: Teardown VE
+        if: always()
+        run: |
+          tests/tools/ve/teardown_ve.sh
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "$LOGS_DIR" ]; then
+            zip -r npe2e_policy_tests_artifacts.zip "$LOGS_DIR"
+            echo "Zipped $LOGS_DIR directory contents into npe2e_policy_tests_artifacts.zip"
+          else
+            echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npe2e_policy_tests_artifacts
+          path: npe2e_policy_tests_artifacts.zip
+          if-no-files-found: warn
+
+  npe2e_relay_tests:
+    if:
+      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
+      'dependabot[bot]'}}
+    name: npe2e (relay_tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Install expect
+        run: |
+          sudo apt-get install -y expect
+
+      - name: Set up atKeys from GitHub secrets
+        run: |
+          mkdir -p ~/.atsign/keys/
+          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client03_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon03_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_POLICY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_policy02_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
           echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay03_jttest_key.atKeys
@@ -175,25 +303,30 @@ jobs:
 
       - name: Env variables
         run: |
-          echo "OUTPUT_ARTIFACT=${{ matrix.output_artifact }}" >> $GITHUB_ENV
-          echo "LOGS_DIR=${{ matrix.logs_dir }}" >> $GITHUB_ENV
-          # testRunId defaults to the git commit hash, which is identical across
-          # retries/re-runs of the same commit and causes them to collide on the
-          # same APKAM device enrollment against the shared atSigns. Derive an
-          # 8-char id unique per run+attempt instead.
+          echo "LOGS_DIR=npe2e_relay_tests" >> $GITHUB_ENV
           echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
 
-      - name: Run npe2e ${{ matrix.test_suite }}
+      - name: Run npe2e relay_tests
         run: |
-          ${{ matrix.command }}
-
+          dart run tests/npe2e/bin/relay_tests.dart \
+            --client-atsign "@npe2e_org_client03_jttest" \
+            --daemon-atsign "@npe2e_org_daemon03_jttest" \
+            --prod-relay "@rv_am" \
+            --self-relay-atsigns "@npe2e_org_relay01_jttest,@npe2e_org_relay02_jttest,@npe2e_org_relay03_jttest,@npe2e_org_relay04_jttest,@npe2e_org_relay05_jttest,@npe2e_org_relay06_jttest" \
+            --root-domain "root.atsign.org" \
+            --base-directory "$LOGS_DIR" \
+            --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
+            --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
+            --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
+            --test-run-id "$TEST_RUN_ID" \
+            --batch-size 3
 
       - name: Zip npe2e artifacts
         if: always()
         run: |
           if [ -d "$LOGS_DIR" ]; then
-            zip -r "$OUTPUT_ARTIFACT".zip "$LOGS_DIR"
-            echo "Zipped $LOGS_DIR directory contents into $OUTPUT_ARTIFACT.zip"
+            zip -r npe2e_relay_tests_artifacts.zip "$LOGS_DIR"
+            echo "Zipped $LOGS_DIR directory contents into npe2e_relay_tests_artifacts.zip"
           else
             echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
           fi
@@ -202,6 +335,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ env.OUTPUT_ARTIFACT }}
-          path: ${{ env.OUTPUT_ARTIFACT }}.zip
+          name: npe2e_relay_tests_artifacts
+          path: npe2e_relay_tests_artifacts.zip
           if-no-files-found: warn
