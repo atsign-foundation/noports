@@ -32,14 +32,16 @@ jobs:
 
       # The srv teardown regression test (issue #2891) can only fail on musl
       # x86-64: glibc masks the corruption it guards against by caching joined
-      # thread stacks instead of unmapping them. Run the srv suite once more in
-      # an Alpine container so the guard has teeth.
+      # thread stacks instead of unmapping them. Run the srv suite once more on
+      # the release musl toolchain so the guard has teeth. The toolchain image
+      # is a Dockerfile (not an inline image ref) so dependabot keeps its base
+      # digest fresh alongside the release Dockerfiles.
       - name: srv Unit CTest (musl x86-64)
         run: |
-          docker run --rm -v "$PWD/packages/c:/src" \
-            alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d \
-            sh -c '
-            apk add --no-cache build-base clang cmake git python3 &&
+          docker build -t srv-musl-tests \
+            -f packages/c/sshnpd/tools/Dockerfile.unit-tests \
+            packages/c/sshnpd/tools
+          docker run --rm -v "$PWD/packages/c:/src" srv-musl-tests sh -c '
             cmake -S /src/srv -B /build -DSRV_BUILD_TESTS=ON -DCMAKE_C_COMPILER=clang \
               -DCMAKE_C_FLAGS="-Wno-error -pthread" &&
             cmake --build /build -j"$(nproc)" &&
