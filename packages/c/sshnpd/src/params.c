@@ -211,6 +211,17 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       }
       params->manager_list[filtered_count++] = slot;
     }
+    if (filtered_count == 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Manager list is empty after filtering out device atSign\n");
+      free(norm_buf);
+      free(params->manager_list);
+      params->manager_list = NULL;
+      params->manager_list_len = 0;
+      free(params->permitopen_str);
+      params->permitopen_str = NULL;
+      return 1;
+    }
     params->manager_list_len = filtered_count;
     params->normalized_manager_buf = norm_buf;
   } else {
