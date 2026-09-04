@@ -36,7 +36,9 @@ jobs:
       # an Alpine container so the guard has teeth.
       - name: srv Unit CTest (musl x86-64)
         run: |
-          docker run --rm -v "$PWD/packages/c:/src" alpine:3.21 sh -c '
+          docker run --rm -v "$PWD/packages/c:/src" \
+            alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d \
+            sh -c '
             apk add --no-cache build-base clang cmake git python3 &&
             cmake -S /src/srv -B /build -DSRV_BUILD_TESTS=ON -DCMAKE_C_COMPILER=clang \
               -DCMAKE_C_FLAGS="-Wno-error -pthread" &&
