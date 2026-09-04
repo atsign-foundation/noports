@@ -1,0 +1,67 @@
+name: NoPorts Desktop MSIX
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      msix_version:
+        description: "Override msix_version (4-part, e.g. 1.9.4.1). Blank uses pubspec.yaml."
+        required: false
+        type: string
+  # Temporary: lets this workflow run before it lands on trunk, since
+  # workflow_dispatch is only offered for workflows on the default branch.
+  # Remove this push trigger when merging.
+  push:
+    branches:
+      - cc/msix-build
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: packages/dart/npt_flutter
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Flutter stable
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+
+      # .env is a declared asset in pubspec.yaml, so the build fails if it is absent.
+      # If the NPT_APP_API_KEY secret is unset the key is written blank, matching the
+      # behaviour of npt_flutter_release.yaml: the app then cannot activate a brand-new
+      # atSign, but existing atSigns and .atKeys imports work.
+      - name: Create .env
+        env:
+          APP_API_KEY: ${{ secrets.NPT_APP_API_KEY }}
+        run: printf 'APP_API_KEY=%s\n' "$APP_API_KEY" > .env
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: Run build runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Override msix_version
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.msix_version != ''
+        run: |
+          sed -i "s/^  msix_version: .*/  msix_version: ${{ github.event.inputs.msix_version }}/" pubspec.yaml
+          grep -n 'msix_version:' pubspec.yaml
+
+      # msix:create runs `flutter build windows --release` itself, then packs.
+      # pubspec.yaml sets `store: true`, so the package is left unsigned for
+      # Partner Center to sign on ingestion; --store makes that explicit.
+      - name: Build MSIX
+        run: dart run msix:create --store --output-path build/msix --output-name NoPortsDesktop
+
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: NoPortsDesktop-msix-${{ github.run_number }}
+          path: packages/dart/npt_flutter/build/msix/*.msix
+          if-no-files-found: error
