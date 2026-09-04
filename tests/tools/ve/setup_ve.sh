@@ -62,6 +62,38 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
+# The image autostarts a secondary for every demo atSign (~40). The tests only
+# use VE_ATSIGNS, so stop the rest — saves a couple of dozen idle Dart VMs.
+# Secondaries are named '<port>_@<atsign>' in supervisor; other programs
+# (root, redis, pkamLoad, ...) don't match '*_@*' and are left alone.
+# install_PKAM_Keys tolerates unreachable atSigns (logs and moves on).
+echo "Stopping secondaries the tests don't use..."
+programs=$(docker exec "$CONTAINER_NAME" supervisorctl status 2>/dev/null | awk '{print $1}' || true)
+to_stop=()
+for prog in $programs; do
+  case "$prog" in
+  *_@*) ;;
+  *) continue ;;
+  esac
+  name="${prog#*_@}"
+  keep=false
+  for atsign in "${VE_ATSIGNS[@]}"; do
+    if [ "$name" = "$atsign" ]; then
+      keep=true
+      break
+    fi
+  done
+  if [ "$keep" = "false" ]; then
+    to_stop+=("$prog")
+  fi
+done
+if [ "${#to_stop[@]}" -gt 0 ]; then
+  docker exec "$CONTAINER_NAME" supervisorctl stop "${to_stop[@]}" >/dev/null 2>&1 || true
+  echo "Stopped ${#to_stop[@]} unused secondaries; keeping ${#VE_ATSIGNS[@]} test atSigns."
+else
+  echo "No unused secondaries running."
+fi
+
 echo "Starting pkamLoad..."
 docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
 
