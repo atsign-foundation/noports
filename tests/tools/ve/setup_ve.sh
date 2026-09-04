@@ -4,7 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONTAINER_NAME="${1:-ve_npe2e}"
 VE_IMAGE="atsigncompany/virtualenv:vip"
-PKAM_LOAD_TIMEOUT=120
+PKAM_LOAD_TIMEOUT=300
+SECONDARY_READY_TIMEOUT=300
+ROOT_HOST="vip.ve.atsign.zone"
+ROOT_PORT=64
 
 ATKEYS_DIR="$HOME/.atsign/keys"
 
@@ -63,18 +66,28 @@ docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
 
 echo "Waiting for pkamLoad to complete..."
 
+# RUNNING means pkamLoad is still loading keys — only EXITED means done.
 elapsed=0
+pkam_done=false
 while [ "$elapsed" -lt "$PKAM_LOAD_TIMEOUT" ]; do
-  status=$(docker exec "$CONTAINER_NAME" supervisorctl status pkamLoad 2>/dev/null | awk '{print $2}')
-  if [ "$status" = "EXITED" ] || [ "$status" = "RUNNING" ]; then
-    echo "pkamLoad status: $status (${elapsed}s)"
+  status=$(docker exec "$CONTAINER_NAME" supervisorctl status pkamLoad 2>/dev/null | awk '{print $2}' || true)
+  if [ "$status" = "EXITED" ]; then
+    echo "pkamLoad completed after ${elapsed}s"
+    pkam_done=true
     break
+  fi
+  if [ "$status" = "FATAL" ]; then
+    echo "ERROR: pkamLoad entered FATAL state"
+    docker exec "$CONTAINER_NAME" supervisorctl status || true
+    exit 1
   fi
   sleep 2
   elapsed=$((elapsed + 2))
 done
-if [ "$elapsed" -ge "$PKAM_LOAD_TIMEOUT" ]; then
-  echo "WARNING: pkamLoad did not complete within ${PKAM_LOAD_TIMEOUT}s"
+if [ "$pkam_done" != "true" ]; then
+  echo "ERROR: pkamLoad did not complete within ${PKAM_LOAD_TIMEOUT}s (last status: ${status:-unknown})"
+  docker exec "$CONTAINER_NAME" supervisorctl status || true
+  exit 1
 fi
 
 mkdir -p "$ATKEYS_DIR"
@@ -92,6 +105,47 @@ for atsign in "${VE_ATSIGNS[@]}"; do
     echo "  @${atsign}: FAILED to download from $url"
   fi
 done
+
+# Gate on every secondary being reachable the same way at_auth checks them:
+# ask the root server for the secondary's address, then probe the TCP port.
+# This is what eliminates "secondary server is not running" flakes at test start.
+probe_tcp() {
+  local host="$1" port="$2"
+  if command -v nc >/dev/null 2>&1; then
+    nc -z -w 3 "$host" "$port" >/dev/null 2>&1
+  else
+    timeout 3 bash -c "exec 3<>/dev/tcp/$host/$port" 2>/dev/null
+  fi
+}
+
+lookup_secondary() {
+  # Root protocol: send the atSign name (no @), response is '@host:port' or 'null'.
+  # The '|| true' guards against pipefail tripping on openssl's SIGPIPE when
+  # head closes the pipe after the first line.
+  { echo "$1" | timeout 5 openssl s_client -connect "$ROOT_HOST:$ROOT_PORT" -quiet 2>/dev/null || true; } |
+    head -1 | tr -d '@[:space:]'
+}
+
+echo ""
+echo "Waiting for all ${#VE_ATSIGNS[@]} secondaries to be reachable (timeout ${SECONDARY_READY_TIMEOUT}s)..."
+deadline=$((SECONDS + SECONDARY_READY_TIMEOUT))
+for atsign in "${VE_ATSIGNS[@]}"; do
+  while true; do
+    addr=$(lookup_secondary "$atsign")
+    if [[ "$addr" == *:* ]] && probe_tcp "${addr%:*}" "${addr##*:}"; then
+      echo "  @${atsign}: ready at $addr"
+      break
+    fi
+    if ((SECONDS >= deadline)); then
+      echo "ERROR: @${atsign} secondary not reachable within ${SECONDARY_READY_TIMEOUT}s (last root response: '${addr:-<none>}')"
+      echo "supervisorctl status:"
+      docker exec "$CONTAINER_NAME" supervisorctl status || true
+      exit 1
+    fi
+    sleep 2
+  done
+done
+echo "All ${#VE_ATSIGNS[@]} secondaries are reachable."
 
 echo ""
 echo "=== VE Setup Complete ==="
