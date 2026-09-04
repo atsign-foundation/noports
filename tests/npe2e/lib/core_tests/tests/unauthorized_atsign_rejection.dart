@@ -15,17 +15,12 @@ import 'package:npe2e/test_result.dart';
 const String _metadataSshnpExecution = 'sshnpExecution';
 const String testName = 'unauthorized_atsign_rejection';
 
-// An atSign the runner holds atKeys for, but which is never in a core_tests
-// daemon's manager list — those run with `-m $clientAtsign`.
-const String _unauthorizedAtsign = '@npe2e_org_client02_jttest';
-
 /// Verifies that the C sshnpd daemon silently rejects ssh_request notifications
 /// from atSigns not in its manager list.
 ///
 /// The daemon is started with `-m $clientAtsign`, so sshnp runs as
-/// [_unauthorizedAtsign]. It must be an atSign we hold atKeys for: sshnp has to
-/// authenticate before it can send anything for the daemon to reject. That rules
-/// out the relay atSign (in CI, @rv_am — no atKeys on the runner).
+/// `context.unauthorizedAtsign`. It must be an atSign we hold atKeys for: sshnp
+/// has to authenticate before it can send anything for the daemon to reject.
 ///
 /// Asserts sshnp failed and that the daemon logged the rejection naming that
 /// atSign; the log check is what proves sshnp reached the daemon at all.
@@ -108,7 +103,7 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
   // ~/.atsign/keys/<atsign>_key.atKeys lookup.
   final List<String> sshnpArgs = [
     '-f',
-    _unauthorizedAtsign,
+    context.unauthorizedAtsign,
     '-t',
     context.daemonAtsign,
     '-d',
@@ -167,7 +162,7 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
       exitCode: exitCode,
     );
     print(
-      'FAIL: sshnp succeeded as unauthorized atSign $_unauthorizedAtsign '
+      'FAIL: sshnp succeeded as unauthorized atSign $context.unauthorizedAtsign '
       '— daemon should have rejected it',
     );
     printAllLogs(clientCapture: sshnpOutput, daemonLogFragment: logFragment);
@@ -179,7 +174,7 @@ Future<CoreTestResult> _runUnauthorizedAtsignRejectionTest({
   //    rejected *this* request, not some other test's, and proves sshnp got far
   //    enough to actually notify the daemon.
   final String expectedRejection =
-      'Rejecting request from unauthorized atSign: $_unauthorizedAtsign';
+      'Rejecting request from unauthorized atSign: $context.unauthorizedAtsign';
   if (!combinedDaemonLog.toLowerCase().contains(
     expectedRejection.toLowerCase(),
   )) {
