@@ -232,13 +232,11 @@ jobs:
       - name: Stop srvd relay
         if: always()
         run: |
-          chmod +x tests/tools/ve/stop_srvd.sh
           tests/tools/ve/stop_srvd.sh
 
       - name: Teardown VE
         if: always()
         run: |
-          chmod +x tests/tools/ve/teardown_ve.sh
           tests/tools/ve/teardown_ve.sh
 
       - name: Zip npe2e artifacts
