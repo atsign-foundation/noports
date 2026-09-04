@@ -21,6 +21,7 @@ class CoreTestsParams {
   late String clientAtsign;
   late String daemonAtsign;
   late String relayAtsign;
+  late String unauthorizedAtsign;
 
   // Case 2a - compile time defaults
   late bool help;
@@ -47,6 +48,7 @@ class CoreTestsParams {
     e2eAllV2Params.clientAtsign = argResults['client-atsign'];
     e2eAllV2Params.daemonAtsign = argResults['daemon-atsign'];
     e2eAllV2Params.relayAtsign = argResults['relay-atsign'];
+    e2eAllV2Params.unauthorizedAtsign = argResults['unauthorized-atsign'];
     e2eAllV2Params.rootDomain = argResults['root-domain'];
     e2eAllV2Params.verbose = argResults['verbose'];
     e2eAllV2Params.baseDirectory = argResults['base-directory'];
@@ -82,6 +84,12 @@ class CoreTestsParams {
       'relay-atsign',
       mandatory: true,
       help: 'Relay Atsign that will be used in tests',
+    );
+    argParser.addOption(
+      'unauthorized-atsign',
+      mandatory: true,
+      help:
+          'An atSign whose atKeys are available but is not in any daemon manager list, used for unauthorized rejection tests',
     );
     argParser.addOption(
       'root-domain',
