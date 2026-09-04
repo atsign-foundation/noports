@@ -41,9 +41,15 @@
 
 // Signal handling
 static void exit_handler(int sig) {
-  atlogger_log("exit_handler", ATLOGGER_LOGGING_LEVEL_WARN, "Received signal: %d\n", sig);
+  // Only async-signal-safe calls here: atlogger (stdio + locks) can deadlock
+  // if the signal lands while the main thread holds the stream lock, and
+  // exit() would skip the graceful should_run teardown (memlist cleanup,
+  // device_info removal). write(2) is async-signal-safe.
+  (void)sig;
+  static const char msg[] = "Received exit signal, shutting down\n";
+  ssize_t ignored = write(STDERR_FILENO, msg, sizeof(msg) - 1);
+  (void)ignored;
   should_run = 0;
-  exit(1);
 }
 static void child_exit_handler(int sig) {
   (void)sig;
@@ -112,9 +118,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  // One last-sent timestamp per manager atSign; calloc leaves them at 0 so the
+  // first main-loop pass publishes device_info immediately
+  if (params.manager_list_len > 0) {
+    device_info_last_sent = calloc(params.manager_list_len, sizeof(time_t));
+    if (device_info_last_sent == NULL) {
+      printf("Failed to allocate memory for device info timestamps\n");
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+  }
+
   // explicitly pass free_fn here because it is okay for these params to be null sometimes
   // normally this would be an error
   res = atcommons_memlist_add(&memlist, params.manager_list, true, free_if_not_null);
+  res += atcommons_memlist_add(&memlist, device_info_last_sent, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.normalized_manager_buf, true, free_if_not_null);
   // res won't overflow from summation as the function returns a max value of 2
   res += atcommons_memlist_add(&memlist, params.permitopen_hosts, true, free_if_not_null);
@@ -123,6 +141,7 @@ int main(int argc, char **argv) {
   res += atcommons_memlist_add(&memlist, NULL, true, mbedtls_psa_crypto_free);
   if (res > 0) {
     free(params.manager_list);
+    free(device_info_last_sent);
     free(params.normalized_manager_buf);
     free(params.permitopen_hosts);
     free(params.permitopen_ports);
@@ -414,12 +433,20 @@ int main(int argc, char **argv) {
   cJSON_AddItemToObject(ping_response_json, "publicSigningKeyUri", cJSON_CreateString(signing_key_uri));
 
   cJSON *allowed_services = cJSON_CreateArray();
-  char *buf = malloc(sizeof(char) * 1024);
   for (size_t i = 0; i < params.permitopen_len; i++) {
-    sprintf(buf, "%s:%u", params.permitopen_hosts[i], (unsigned int)params.permitopen_ports[i]);
+    size_t buflen = strlen(params.permitopen_hosts[i]) + 8; // ':' + up to 5 port digits + '\0' + slack
+    char *buf = malloc(buflen);
+    if (buf == NULL) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for allowedServices\n");
+      cJSON_Delete(allowed_services);
+      cJSON_Delete(ping_response_json);
+      atcommons_memlist_failure_free(&memlist);
+      return 1;
+    }
+    snprintf(buf, buflen, "%s:%u", params.permitopen_hosts[i], (unsigned int)params.permitopen_ports[i]);
     cJSON_AddItemToArray(allowed_services, cJSON_CreateString(buf));
+    free(buf);
   }
-  free(buf);
 
   cJSON_AddItemToObject(ping_response_json, "allowedServices", allowed_services);
 
@@ -430,7 +457,7 @@ int main(int argc, char **argv) {
   if (ping_response == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "cJSON_Print failed\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, ping_response, true, NULL);
   if (res != 0) {
@@ -501,7 +528,7 @@ int main(int argc, char **argv) {
   if (regex == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the monitor regex\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, regex, true, NULL);
   if (res != 0) {
@@ -550,7 +577,7 @@ int main(int argc, char **argv) {
   if (authkeys_filename == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
     atcommons_memlist_failure_free(&memlist);
-    return res;
+    return 1;
   }
   res = atcommons_memlist_add(&memlist, authkeys_filename, true, NULL);
   if (res != 0) {

@@ -5,6 +5,7 @@
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
 #include <mbedtls/net_sockets.h>
+#include <mbedtls/platform_util.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,28 @@
 // connection timeout
 #define SRV_CONTROL_POLL_MS 1000
 
+// Cap on a single buffered control-channel line. Legitimate connect: lines
+// are ~200 bytes; anything larger without a newline is discarded.
+#define SRV_CONTROL_LINE_CAP 8192
+
 static void *run_socket_to_socket(void *args);
+
+// Send exactly len bytes, retrying on partial writes and EINTR
+// (MBEDTLS_ERR_SSL_WANT_WRITE). Returns 0 on success.
+static int srv_send_all(mbedtls_net_context *sock, const unsigned char *buf, size_t len) {
+  size_t sent = 0;
+  while (sent < len) {
+    int res = mbedtls_net_send(sock, buf + sent, len - sent);
+    if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      continue;
+    }
+    if (res <= 0) {
+      return res != 0 ? res : -1;
+    }
+    sent += (size_t)res;
+  }
+  return 0;
+}
 
 // Connection timeout state for multi mode: the srv exits once there have been
 // no active socket-to-socket sessions for params->timeout seconds (matching
@@ -164,13 +186,17 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       return res;
     }
   } else if (params->rv_auth == 1) {
-    atlogger_log(TAG, DEBUG, "Sending auth string: %s\n", (unsigned char *)params->rvd_auth_string);
-    int len = strlen(params->rvd_auth_string);
+    atlogger_log(TAG, DEBUG, "Sending auth string\n");
+    size_t len = strlen(params->rvd_auth_string);
 
-    int slen = mbedtls_net_send(&control_side.socket, (unsigned char *)params->rvd_auth_string, len);
-    slen += mbedtls_net_send(&control_side.socket, (unsigned char *)"\n", 1);
-    if (slen != len + 1) {
+    if (srv_send_all(&control_side.socket, (unsigned char *)params->rvd_auth_string, len) != 0 ||
+        srv_send_all(&control_side.socket, (unsigned char *)"\n", 1) != 0) {
       atlogger_log(TAG, ERROR, "Failed to send auth string\n");
+      mbedtls_net_close(&control_side.socket);
+      if (params->rv_e2ee == 1) {
+        mbedtls_aes_free(&encrypter.aes_ctr.ctx);
+        mbedtls_aes_free(&decrypter.aes_ctr.ctx);
+      }
       return -1;
     }
   }
@@ -182,7 +208,22 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
   fflush(stderr);
 
   unsigned char *buffer = malloc(4096 * sizeof(unsigned char));
-  if (buffer == NULL) {
+  // Control messages are newline-terminated lines, but TCP does not preserve
+  // message boundaries: a connect: line can arrive split across recvs, and
+  // several lines can arrive in one. Accumulate decrypted bytes in line_buf
+  // and only parse complete (newline-terminated) lines, staged into work.
+  char *line_buf = malloc(SRV_CONTROL_LINE_CAP);
+  char *work = malloc(SRV_CONTROL_LINE_CAP + 1);
+  size_t line_len = 0;
+  if (buffer == NULL || line_buf == NULL || work == NULL) {
+    free(buffer);
+    free(line_buf);
+    free(work);
+    mbedtls_net_close(&control_side.socket);
+    if (params->rv_e2ee == 1) {
+      mbedtls_aes_free(&encrypter.aes_ctr.ctx);
+      mbedtls_aes_free(&decrypter.aes_ctr.ctx);
+    }
     return -1;
   }
   memset(buffer, 0, 4096 * sizeof(unsigned char));
@@ -231,16 +272,49 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       buffer[len] = '\0';
     }
 
+    // Append the decrypted chunk to the line accumulator
+    if (line_len + len > SRV_CONTROL_LINE_CAP) {
+      atlogger_log(TAG, WARN, "Control channel line exceeded %d bytes without a newline - discarding buffered data\n",
+                   SRV_CONTROL_LINE_CAP);
+      line_len = 0;
+      if (len > SRV_CONTROL_LINE_CAP) {
+        memset(buffer, 0, 4096);
+        continue;
+      }
+    }
+    memcpy(line_buf + line_len, buffer, len);
+    line_len += len;
+
+    // Only parse up to the last complete (newline-terminated) line; keep any
+    // trailing partial line buffered for the next recv
+    size_t complete_len = 0;
+    for (size_t j = line_len; j > 0; j--) {
+      if (line_buf[j - 1] == '\n') {
+        complete_len = j;
+        break;
+      }
+    }
+    if (complete_len == 0) {
+      memset(buffer, 0, 4096);
+      continue;
+    }
+    memcpy(work, line_buf, complete_len);
+    work[complete_len] = '\0';
+    memmove(line_buf, line_buf + complete_len, line_len - complete_len);
+    line_len -= complete_len;
+
     char *messagetype = NULL, *new_session_aes_key_c2d_string = NULL, *new_session_aes_iv_c2d_string = NULL,
          *new_session_aes_key_d2c_string = NULL, *new_session_aes_iv_d2c_string = NULL;
 
-    atlogger_log(TAG, INFO, "requests buffer is: %s\n", buffer);
+    // Never log the buffer content: connect: lines carry live session AES
+    // keys and IVs
+    atlogger_log(TAG, DEBUG, "received %zu bytes of control requests\n", complete_len);
 
     // First, check if the buffer contains just one or more requests
     size_t nrequests = 0;
-    res = process_multiple_requests((char *)buffer, &requests, &nrequests);
+    res = process_multiple_requests(work, &requests, &nrequests);
     if (res != 0) {
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request from: %s\n", buffer);
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find any request in the control buffer\n");
       goto exit;
     }
 
@@ -249,12 +323,13 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
       res = parse_control_message(requests[i], &messagetype, &new_session_aes_key_c2d_string, &new_session_aes_iv_c2d_string,
                                   &new_session_aes_key_d2c_string, &new_session_aes_iv_d2c_string);
       if (res != 0) {
-        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv from: %s\n",
-                     requests[i]);
-        goto exit;
+        // A malformed request must not take down the whole srv (and every
+        // active session with it) - skip it and keep serving the channel
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Failed to find request type, aes key and/or iv in request %zu\n",
+                     i);
+        continue;
       }
-      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s:%s:%s (%s)\n", messagetype,
-                   new_session_aes_key_c2d_string, new_session_aes_iv_c2d_string,
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "\tRECV: %s (%s)\n", messagetype,
                    new_session_aes_key_d2c_string != NULL ? "twinned keys" : "single key");
 
       if (strcmp(messagetype, "connect") == 0) {
@@ -358,6 +433,8 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
 exit:
   free(buffer);
+  free(line_buf);
+  free(work);
   if (requests)
     free(requests);
   mbedtls_net_close(&control_side.socket);
@@ -392,6 +469,14 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   res = srv_side_init(&hints_b, &sides[1]);
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Failed to initialize connection for side b\n");
+    // side a is already connected (to sshd) - in a long-lived multi-mode srv,
+    // returning without closing it leaks one fd + one half-open sshd
+    // connection per failed connect request
+    srv_side_free(&sides[0]);
+    if (transform) {
+      mbedtls_aes_free(&encrypter->aes_ctr.ctx);
+      mbedtls_aes_free(&decrypter->aes_ctr.ctx);
+    }
     return res;
   }
 
@@ -483,10 +568,11 @@ exit:
   close(fds[0]);
   close(fds[1]);
 
-  // The thread which exited normally closed its own socket, but a canceled
-  // thread never gets the chance - without this, every torn-down connection
-  // leaks a file descriptor for the lifetime of a multi-mode srv process.
-  // Safe to call on both sides: mbedtls_net_free is a no-op once fd == -1.
+  // Both sockets are closed here and only here, after both relay threads have
+  // been joined: a thread closing its own socket while the peer thread could
+  // still write to it would allow the fd number to be reused by another
+  // session mid-write. Safe to call on both sides: mbedtls_net_free is a
+  // no-op once fd == -1.
   srv_side_free(&sides[0]);
   srv_side_free(&sides[1]);
 
@@ -522,12 +608,15 @@ int create_transformer(const char *aes_key_base64, const char *aes_iv_base64, ch
   res = atchops_base64_decode(aes_key_base64, strlen(aes_key_base64), aes_key, AES_256_KEY_BYTES, &aes_key_len);
   if (res != 0 || aes_key_len != AES_256_KEY_BYTES) {
     atlogger_log(TAG, ERROR, "Error decoding session aes key\n");
+    mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
     return res != 0 ? res : 1;
   }
 
   mbedtls_aes_init(&transformer->aes_ctr.ctx); // FREE
   // NB: AES-CTR uses the encryption key schedule for both directions
   res = mbedtls_aes_setkey_enc(&transformer->aes_ctr.ctx, aes_key, AES_256_KEY_BITS);
+  // The key now lives in the AES key schedule; scrub the stack copy
+  mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
   if (res != 0) {
     atlogger_log(TAG, ERROR, "Error setting session aes key\n");
     mbedtls_aes_free(&transformer->aes_ctr.ctx);
@@ -644,13 +733,14 @@ static int parse_control_message(char *original, char **message_type, char **new
   while ((saveptr)[0] == ' ' || (saveptr)[0] == '\n') {
     saveptr = saveptr + 1;
   }
-  size_t trail;
-  do {
-    trail = strlen(saveptr) - 1;
-    if ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n') {
-      (saveptr)[trail] = '\0';
-    }
-  } while ((saveptr)[trail] == ' ' || (saveptr)[trail] == '\n');
+  size_t slen = strlen(saveptr);
+  while (slen > 0 && ((saveptr)[slen - 1] == ' ' || (saveptr)[slen - 1] == '\n')) {
+    (saveptr)[--slen] = '\0';
+  }
+  if (slen == 0) {
+    // all-whitespace message; the old strlen - 1 here underflowed to SIZE_MAX
+    return ret;
+  }
 
   for (int i = 0; i < 3; i++) {
     temp = strtok_r(saveptr, ":", &saveptr);
