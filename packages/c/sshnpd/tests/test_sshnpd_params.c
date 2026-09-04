@@ -1,3 +1,4 @@
+#include <atlogger/atlogger.h>
 #include "sshnpd/params.h"
 #include "sshnpd/permitopen.h"
 #include <stdio.h>
@@ -13,6 +14,8 @@ int permit_open_parse_test();
 int device_lower_test();
 int manager_list_test();
 int manager_list_trailing_comma_test();
+int manager_list_filter_device_atsign_test();
+int manager_list_filter_device_atsign_error_logged_test();
 
 int main() {
   int ret = 0;
@@ -47,6 +50,14 @@ int main() {
   }
   if (manager_list_trailing_comma_test()) {
     printf("manager_list_trailing_comma_test failed\n");
+    ret++;
+  }
+  if (manager_list_filter_device_atsign_test()) {
+    printf("manager_list_filter_device_atsign_test failed\n");
+    ret++;
+  }
+  if (manager_list_filter_device_atsign_error_logged_test()) {
+    printf("manager_list_filter_device_atsign_error_logged_test failed\n");
     ret++;
   }
 
@@ -455,6 +466,137 @@ int manager_list_trailing_comma_test() {
     }
 
     free(params);
+  }
+
+  return 0;
+}
+
+int manager_list_filter_device_atsign_test() {
+  struct {
+    const char *device_atsign;
+    const char *manager_input;
+    int expected_ret;
+    size_t expected_len;
+    const char *expected[2];
+  } cases[] = {
+      {"@device", "@alice,@device,@bob", 0, 2, {"@alice", "@bob"}},
+      {"@device", "@device,@alice", 0, 1, {"@alice", NULL}},
+      {"@device", "@alice,@device", 0, 1, {"@alice", NULL}},
+      {"@device", "@Device,@alice", 0, 1, {"@alice", NULL}},
+      {"@device", "@device", 1, 0, {NULL, NULL}},
+      {"@device", "@Device", 1, 0, {NULL, NULL}},
+      {"@device", "@device,@Device", 1, 0, {NULL, NULL}},
+  };
+
+  for (size_t c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
+    sshnpd_params *params = malloc(sizeof(sshnpd_params));
+    if (params == NULL) {
+      return 1;
+    }
+
+    char *manager_str = strdup(cases[c].manager_input);
+    if (manager_str == NULL) {
+      free(params);
+      return 1;
+    }
+    const char *argv[] = {
+        "sshnpd", "-a", cases[c].device_atsign, "-m", manager_str, "-d", "my_device",
+    };
+
+    apply_default_values_to_sshnpd_params(params);
+    int parse_ret = parse_sshnpd_params(params, 7, argv);
+    if (cases[c].expected_ret != 0) {
+      if (parse_ret == 0) {
+        printf("  input \"%s\": expected failure, but parse succeeded\n", cases[c].manager_input);
+        free(manager_str);
+        free(params);
+        return 1;
+      }
+      free(manager_str);
+      free(params);
+      continue;
+    }
+
+    if (parse_ret != 0) {
+      printf("  input \"%s\": expected parse success, but got %d\n", cases[c].manager_input, parse_ret);
+      free(manager_str);
+      free(params);
+      return 1;
+    }
+
+    if (params->manager_list_len != cases[c].expected_len) {
+      printf("  input \"%s\": expected len %zu, got %zu\n", cases[c].manager_input, cases[c].expected_len,
+             params->manager_list_len);
+      free(manager_str);
+      free(params);
+      return 1;
+    }
+    for (size_t i = 0; i < cases[c].expected_len; i++) {
+      if (strcmp(params->manager_list[i], cases[c].expected[i]) != 0) {
+        printf("  input \"%s\": expected [%zu] \"%s\", got \"%s\"\n", cases[c].manager_input, i, cases[c].expected[i],
+               params->manager_list[i]);
+        free(manager_str);
+        free(params);
+        return 1;
+      }
+    }
+
+    free(manager_str);
+    free(params);
+  }
+
+  return 0;
+}
+
+int manager_list_filter_device_atsign_error_logged_test() {
+  FILE *tmp = tmpfile();
+  if (tmp == NULL) {
+    return 1;
+  }
+  atlogger_set_logging_stream(tmp);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
+
+  sshnpd_params *params = malloc(sizeof(sshnpd_params));
+  if (params == NULL) {
+    fclose(tmp);
+    return 1;
+  }
+
+  char *manager_str = strdup("@device");
+  if (manager_str == NULL) {
+    free(params);
+    fclose(tmp);
+    return 1;
+  }
+
+  const char *argv[] = {
+      "sshnpd", "-a", "@device", "-m", manager_str, "-d", "my_device",
+  };
+
+  apply_default_values_to_sshnpd_params(params);
+  int parse_ret = parse_sshnpd_params(params, 7, argv);
+
+  // Restore logger stream and level
+  atlogger_set_logging_stream(stdout);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
+
+  free(manager_str);
+  free(params);
+
+  if (parse_ret == 0) {
+    fclose(tmp);
+    return 1;
+  }
+
+  rewind(tmp);
+  char log_buf[1024];
+  size_t bytes_read = fread(log_buf, 1, sizeof(log_buf) - 1, tmp);
+  log_buf[bytes_read] = '\0';
+  fclose(tmp);
+
+  if (strstr(log_buf, "ERROR") == NULL || strstr(log_buf, "Manager list is empty after filtering out device atSign") == NULL) {
+    printf("Expected ERROR log about empty manager list, got:\n%s\n", log_buf);
+    return 1;
   }
 
   return 0;
