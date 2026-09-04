@@ -524,7 +524,78 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupAdd => 'Agregar Grupo';
 
   @override
+  String get groupAddConnection => 'Añadir conexión';
+
+  @override
+  String get groupByType => 'Agrupar por tipo';
+
+  @override
+  String get groupCollapse => 'Contraer';
+
+  @override
+  String get groupDeleteFolder => 'Eliminar carpeta';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'Esta carpeta se eliminará. Las conexiones que contiene se conservarán.';
+
+  @override
+  String get groupExpand => 'Expandir';
+
+  @override
+  String get groupFolderName => 'Nombre de la carpeta';
+
+  @override
+  String get groupFolderNameRequired => 'Introduce un nombre de carpeta';
+
+  @override
+  String get groupLoadFailedRetry =>
+      'No se pudieron cargar las carpetas. Reintentar';
+
+  @override
+  String get groupMoveTo => 'Mover a';
+
+  @override
+  String get groupMoveToFolder => 'Mover a carpeta';
+
+  @override
   String get groupName => 'Nombre del Grupo';
+
+  @override
+  String get groupNewFolder => 'Nueva carpeta';
+
+  @override
+  String get groupNoFolder => 'Sin carpeta';
+
+  @override
+  String get groupRename => 'Renombrar';
+
+  @override
+  String get groupRenameFolder => 'Renombrar carpeta';
+
+  @override
+  String get groupStartAll => 'Iniciar todo';
+
+  @override
+  String get groupStopAll => 'Detener todo';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => 'Ninguno';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => 'Sin agrupar';
 
   @override
   String get import => 'Importar';

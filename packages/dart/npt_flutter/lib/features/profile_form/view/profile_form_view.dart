@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -10,7 +11,13 @@ import 'package:npt_flutter/widgets/custom_card.dart';
 class ProfileFormView extends StatelessWidget {
   final String uuid;
   final Profile? copyFrom;
-  const ProfileFormView(this.uuid, {super.key, this.copyFrom});
+  final String? groupId;
+  const ProfileFormView(
+    this.uuid, {
+    super.key,
+    this.copyFrom,
+    this.groupId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +145,14 @@ class ProfileFormView extends StatelessWidget {
                                                       .profile,
                                             ),
                                           );
+                                      if (groupId != null) {
+                                        context.read<ProfileGroupBloc>().add(
+                                          ProfileGroupMoveProfilesEvent(
+                                            profileIds: [uuid],
+                                            groupId: groupId,
+                                          ),
+                                        );
+                                      }
                                     },
                                     child: Text(strings.submit),
                                   ),
