@@ -270,7 +270,7 @@ class SrvImplInline implements Srv<SSHSocket> {
     // and D2C for the decrypter (or C2D for backwards compatibility)
     if (aesC2D != null && ivC2D != null) {
       final DartAesCtr algorithm = DartAesCtr.with256bits(
-        macAlgorithm: Hmac.sha256(),
+        macAlgorithm: MacAlgorithm.empty,
       );
       final SecretKey sessionAESKeyC2D = SecretKey(base64Decode(aesC2D!));
       final List<int> sessionIVC2D = base64Decode(ivC2D!);
