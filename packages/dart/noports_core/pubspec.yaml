@@ -36,6 +36,10 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
+  # TEMPORARY — remove before this PR leaves draft, once at_chops 3.7.0 is on
+  # pub.dev and the constraint above is raised to ^3.7.0.
+  at_chops:
+    path: ../../../../at_client_sdk-aesctr/packages/at_chops
 
 dev_dependencies:
   build_runner: ^2.4.12

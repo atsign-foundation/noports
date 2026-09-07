@@ -5,8 +5,6 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:cryptography/cryptography.dart';
-import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
@@ -14,6 +12,8 @@ import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:at_commons/at_commons.dart' as at_commons;
+
+import 'aes_ctr_transformer.dart';
 
 const newLineCodeUnit = 10;
 
@@ -269,42 +269,12 @@ class SrvImplInline implements Srv<SSHSocket> {
     // Only used on client side, so we know to use C2D for the encrypter
     // and D2C for the decrypter (or C2D for backwards compatibility)
     if (aesC2D != null && ivC2D != null) {
-      final DartAesCtr algorithm = DartAesCtr.with256bits(
-        macAlgorithm: MacAlgorithm.empty,
-      );
-      final SecretKey sessionAESKeyC2D = SecretKey(base64Decode(aesC2D!));
-      final List<int> sessionIVC2D = base64Decode(ivC2D!);
-
-      encrypter = (Stream<List<int>> stream) {
-        return algorithm.encryptStream(
-          stream,
-          secretKey: sessionAESKeyC2D,
-          nonce: sessionIVC2D,
-          onMac: (mac) {},
-        );
-      };
-      if (aesD2C == null) {
-        // backwards compatibility - use the same AES & IV
-        decrypter = (Stream<List<int>> stream) {
-          return algorithm.decryptStream(
-            stream,
-            secretKey: sessionAESKeyC2D,
-            nonce: sessionIVC2D,
-            mac: Mac.empty,
-          );
-        };
-      } else {
-        final SecretKey sessionAESKeyD2C = SecretKey(base64Decode(aesD2C!));
-        final List<int> sessionIVD2C = base64Decode(ivD2C!);
-        decrypter = (Stream<List<int>> stream) {
-          return algorithm.decryptStream(
-            stream,
-            secretKey: sessionAESKeyD2C,
-            nonce: sessionIVD2C,
-            mac: Mac.empty,
-          );
-        };
-      }
+      encrypter = createAesCtrTransformer(aesC2D!, ivC2D!);
+      // Backwards compatibility: without a D2C key, both directions share the
+      // C2D key and IV.
+      decrypter = aesD2C == null
+          ? createAesCtrTransformer(aesC2D!, ivC2D!)
+          : createAesCtrTransformer(aesD2C!, ivD2C!);
     }
 
     try {
@@ -486,39 +456,13 @@ class SrvImplDart implements Srv<SocketConnector> {
     twinKeys = (aesD2C != null);
   }
 
-  DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
-    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> iv = base64Decode(ivBase64);
+  // CTR encryption and decryption are the same transform, so both of these
+  // are the same call; they stay separate for the sake of the call sites.
+  DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) =>
+      createAesCtrTransformer(aesKeyBase64, ivBase64);
 
-    return (Stream<List<int>> stream) {
-      return algorithm.encryptStream(
-        stream,
-        secretKey: aesKey,
-        nonce: iv,
-        onMac: (mac) {},
-      );
-    };
-  }
-
-  DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
-    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> iv = base64Decode(ivBase64);
-
-    return (Stream<List<int>> stream) {
-      return algorithm.decryptStream(
-        stream,
-        secretKey: aesKey,
-        nonce: iv,
-        mac: Mac.empty,
-      );
-    };
-  }
+  DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) =>
+      createAesCtrTransformer(aesKeyBase64, ivBase64);
 
   @override
   Future<SocketConnector> run() async {
