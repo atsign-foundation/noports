@@ -1,3 +1,4 @@
+#include <atlogger/atlogger.h>
 #include <errno.h>
 #include <sshnpd/authorization.h>
 #include <sshnpd/params.h>
@@ -7,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LOGGER_TAG "sshnpd - params"
 #define default_permitopen "localhost:22,localhost:3389"
 void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
@@ -188,8 +190,13 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
       free(params->permitopen_str);
       return 1;
     }
+    char normalized_device_atsign[SSHNPD_ATSIGN_BUFFER_LEN];
+    bool has_normalized_device_atsign =
+        (sshnpd_normalize_atsign(params->atsign, normalized_device_atsign, sizeof(normalized_device_atsign)) == 0);
+
+    size_t filtered_count = 0;
     for (size_t i = 0; i < params->manager_list_len; i++) {
-      char *slot = norm_buf + i * SSHNPD_ATSIGN_BUFFER_LEN;
+      char *slot = norm_buf + filtered_count * SSHNPD_ATSIGN_BUFFER_LEN;
       if (sshnpd_normalize_atsign(params->manager_list[i], slot, SSHNPD_ATSIGN_BUFFER_LEN) != 0) {
         printf("Invalid manager atSign: \"%s\"\n", params->manager_list[i]);
         free(norm_buf);
@@ -197,8 +204,25 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
         free(params->permitopen_str);
         return 1;
       }
-      params->manager_list[i] = slot;
+      if (has_normalized_device_atsign && strcmp(slot, normalized_device_atsign) == 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                     "Device atSign \"%s\" included in --manager list; filtering out\n", slot);
+        continue;
+      }
+      params->manager_list[filtered_count++] = slot;
     }
+    if (filtered_count == 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Manager list is empty after filtering out device atSign\n");
+      free(norm_buf);
+      free(params->manager_list);
+      params->manager_list = NULL;
+      params->manager_list_len = 0;
+      free(params->permitopen_str);
+      params->permitopen_str = NULL;
+      return 1;
+    }
+    params->manager_list_len = filtered_count;
     params->normalized_manager_buf = norm_buf;
   } else {
     params->manager_list_len = 0;

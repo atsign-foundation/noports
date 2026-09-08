@@ -219,6 +219,7 @@ Future<void> coreTests(CoreTestsParams params) async {
     clientAtsign: params.clientAtsign,
     daemonAtsign: params.daemonAtsign,
     relayAtsign: params.relayAtsign,
+    unauthorizedAtsign: params.unauthorizedAtsign,
     rootDomain: params.rootDomain,
     remoteUsername: remoteUsername,
     identityFilePath: identityFile.path,

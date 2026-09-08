@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
 
   int res = 0;
   atlogger_set_logging_stream(stderr);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
 
   // setup initial values for global variables
   is_child_process = false;
