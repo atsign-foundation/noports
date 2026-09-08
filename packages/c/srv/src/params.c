@@ -4,6 +4,8 @@
 #include <string.h>
 
 void apply_default_values_to_srv_params(srv_params_t *params) {
+  params->host = NULL;
+  params->port = 0;
   params->local_host = "localhost";
   params->local_port = 22;
   params->bind_local_port = 0;
@@ -27,6 +29,11 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
 int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {
 
   char *relay_auth_mode = NULL;
+  // OPT_INTEGER writes a full int through the option pointer, so it must not
+  // point at the adjacent uint16_t port fields directly (a 4-byte store
+  // through &port also clobbered local_port)
+  int port = params->port;
+  int local_port = params->local_port;
 
 // pragma GCC works for both gcc and clang
 #pragma GCC diagnostic push
@@ -34,8 +41,8 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
   struct argparse_option options[] = {
       OPT_BOOLEAN(0, "help", NULL, "show this help message and exit", argparse_help_cb, 0, OPT_NONEG),
       OPT_STRING('h', "host", &params->host, "rvd host"),
-      OPT_INTEGER('p', "port", &params->port, "rvd port"),
-      OPT_INTEGER(0, "local-port", &params->local_port,
+      OPT_INTEGER('p', "port", &port, "rvd port"),
+      OPT_INTEGER(0, "local-port", &local_port,
                   "Local port (usually the sshd port) to bridge to; defaults to 22"),
       OPT_STRING(0, "local-host", &params->local_host, "Local host to bridge to; defaults to localhost"),
 #if ALLOW_BIND_LOCAL_PORT
@@ -64,6 +71,14 @@ int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_
   snprintf(description, sizeof(description), "Version : %s\n", SRV_VERSION);
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
+
+  if (port < 0 || port > 65535 || local_port < 1 || local_port > 65535) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): ports must be 1-65535\n");
+    return 1;
+  }
+  params->port = (uint16_t)port;
+  params->local_port = (uint16_t)local_port;
 
   // Mandatory options
   if (params->host == NULL) {
