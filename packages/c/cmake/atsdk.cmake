@@ -12,9 +12,10 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      # at_c v0.4.0: atchops_rsa_encrypt output-buffer bound (at_c#709,
-      # breaking signature change) on top of the v0.3.11 proxy/enroll support
-      GIT_TAG 295c5d2b43264ac57432d4ceceee7955986d32de
+      # at_c trunk with the atauth/onboarding code-review fixes (at_c#715)
+      # on top of v0.4.0; repoint to the v0.4.1 tag once at_c releases it
+      # (release prep is at_c#716)
+      GIT_TAG caca5f443d20040b3775a4960d7575b946499c2f
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
