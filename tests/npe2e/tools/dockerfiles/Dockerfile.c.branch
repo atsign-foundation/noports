@@ -8,19 +8,17 @@ ARG branch=trunk
 
 RUN set -eux ; \
     mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
-    apt-get update ; \
-    apt-get install -y git gcc ; \
     cd ${REPO_DIR} ; \
     git clone ${URL} . ; \
     git checkout ${branch} ; \
     cd ${REPO_DIR}/packages/c/sshnpd ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv ./build/at_activate ${OUTPUT_DIR}/at_activate ; \
     mv ./build/sshnpd ${OUTPUT_DIR}/sshnpd ; \
     mv ./build/libsshnpd-lib.a ${OUTPUT_DIR}/libsshnpd-lib.a ; \
     cd ${REPO_DIR}/packages/c/srv ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
