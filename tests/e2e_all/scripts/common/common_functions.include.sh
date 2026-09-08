@@ -763,10 +763,15 @@ runDockerDaemon() {
   logInfo "Starting container for: Type: $type, Version: $version, atDirectory: $atDirectoryHost Flags: $daemonFlags, Device name: $deviceName, Client atSign: $clientAt, Daemon atSign: $daemonAt"
 
   containerName="e2e_all-$deviceName"
+  local addHostArgs=""
+  if [ "$atDirectoryHost" != "root.atsign.org" ]; then
+    addHostArgs="--add-host $atDirectoryHost:host-gateway"
+  fi
   local dockerRunCommand="sudo docker run \
     --rm \
     -d \
     --name \"$containerName\" \
+    $addHostArgs \
     -v \"$testRuntimeDir/keys/:/atsign/.atsign/keys/\" \
     \"$tag\" \
     /bin/bash -c \"sudo service ssh start && /usr/local/bin/sshnpd -a $daemonAt -m $clientAt -d $deviceName $daemonFlags --root-domain $atDirectoryHost -v\""
