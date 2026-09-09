@@ -6,6 +6,7 @@
 #include <atlogger/atlogger.h>
 #include <mbedtls/aes.h>
 #include <mbedtls/net_sockets.h>
+#include <mbedtls/platform_util.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,6 +86,26 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
     goto too_long;
   }
 
+  // atchops_rsa_sign has no output-size parameter: mbedtls writes
+  // modulus-size bytes into sig. The wire format (and sig buffer) assume
+  // RSA-2048, so a larger operator-supplied signing key would overflow the
+  // stack - enforce the modulus size before signing. The DER INTEGER encoding
+  // pads the modulus with a leading 0x00 (the MSB is always set), so compare
+  // significant bytes, not raw length.
+  {
+    const unsigned char *n_bytes = signing_key->n.value;
+    size_t n_sig = signing_key->n.len;
+    while (n_sig > 0 && n_bytes[0] == 0x00) {
+      n_bytes++;
+      n_sig--;
+    }
+    if (n_sig != ESCR_RSA_SIG_BYTES) {
+      atlogger_log(TAG, ERROR, "escr signing key is not RSA-2048 (modulus significant bytes=%zu) - refusing to sign\n",
+                   n_sig);
+      return 1;
+    }
+  }
+
   // Sign the payload bytes: RSASSA-PKCS1-v1_5 over SHA-256
   unsigned char sig[ESCR_RSA_SIG_BYTES];
   if (atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)p_json, strlen(p_json), sig) != 0) {
@@ -128,6 +149,8 @@ int srv_escr_build_response(const char *session_id, const char *challenge, const
     mbedtls_aes_context aes_ctx;
     mbedtls_aes_init(&aes_ctx);
     int res = mbedtls_aes_setkey_enc(&aes_ctx, aes_key, 256);
+    // The key now lives in the AES key schedule; scrub the stack copy
+    mbedtls_platform_zeroize(aes_key, sizeof(aes_key));
     if (res == 0) {
       size_t nc_off = 0;
       unsigned char stream_block[16] = {0};
