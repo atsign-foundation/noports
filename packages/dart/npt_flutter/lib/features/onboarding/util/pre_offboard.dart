@@ -15,6 +15,7 @@ Future<bool> preSignout() async {
   context?.read<ProfilesSelectedCubit>().deselectAll();
   context?.read<FavoriteBloc>().clearAll();
   context?.read<ProfileListBloc>().clearAll();
+  context?.read<ProfileGroupBloc>().clearAll();
   context?.read<SettingsBloc>().clear();
   context?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon

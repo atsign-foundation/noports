@@ -1013,11 +1013,149 @@ abstract class AppLocalizations {
   /// **'Add Group'**
   String get groupAdd;
 
+  /// No description provided for @groupAddConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add connection'**
+  String get groupAddConnection;
+
+  /// No description provided for @groupByType.
+  ///
+  /// In en, this message translates to:
+  /// **'Group by type'**
+  String get groupByType;
+
+  /// No description provided for @groupCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get groupCollapse;
+
+  /// No description provided for @groupDeleteFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get groupDeleteFolder;
+
+  /// No description provided for @groupDeleteFolderMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder will be deleted. The connections inside it will be kept.'**
+  String get groupDeleteFolderMessage;
+
+  /// No description provided for @groupExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get groupExpand;
+
+  /// No description provided for @groupFolderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get groupFolderName;
+
+  /// No description provided for @groupFolderNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a folder name'**
+  String get groupFolderNameRequired;
+
+  /// No description provided for @groupLoadFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders failed to load. Retry'**
+  String get groupLoadFailedRetry;
+
+  /// No description provided for @groupMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get groupMoveTo;
+
+  /// No description provided for @groupMoveToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get groupMoveToFolder;
+
   /// No description provided for @groupName.
   ///
   /// In en, this message translates to:
   /// **'Group Name'**
   String get groupName;
+
+  /// No description provided for @groupNewFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get groupNewFolder;
+
+  /// No description provided for @groupNoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get groupNoFolder;
+
+  /// No description provided for @groupRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get groupRename;
+
+  /// No description provided for @groupRenameFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get groupRenameFolder;
+
+  /// No description provided for @groupStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all'**
+  String get groupStartAll;
+
+  /// No description provided for @groupStopAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop all'**
+  String get groupStopAll;
+
+  /// No description provided for @groupTypeHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP'**
+  String get groupTypeHttp;
+
+  /// No description provided for @groupTypeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get groupTypeNone;
+
+  /// No description provided for @groupTypeRdp.
+  ///
+  /// In en, this message translates to:
+  /// **'RDP'**
+  String get groupTypeRdp;
+
+  /// No description provided for @groupTypeSsh.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH'**
+  String get groupTypeSsh;
+
+  /// No description provided for @groupTypeVnc.
+  ///
+  /// In en, this message translates to:
+  /// **'VNC'**
+  String get groupTypeVnc;
+
+  /// No description provided for @groupUngrouped.
+  ///
+  /// In en, this message translates to:
+  /// **'Ungrouped'**
+  String get groupUngrouped;
 
   /// No description provided for @import.
   ///

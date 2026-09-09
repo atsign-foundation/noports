@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
-import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
@@ -72,11 +72,16 @@ class _ProfileListViewState extends State<ProfileListView> {
                       children: [
                         isFullProfile
                             ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
+                                  ProfileGroupSortToggle(),
+                                  Spacer(),
                                   ProfileListAddButton(),
                                   gapW10,
+                                  ProfileGroupCreateButton(),
+                                  gapW10,
                                   ProfileListImportButton(),
+                                  gapW10,
+                                  ProfileGroupMoveButton(),
                                   gapW10,
                                   ProfileSelectedExportButton(),
                                   gapW10,
@@ -95,35 +100,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                         if (isFullProfile) const ProfileHeaderView(),
                         if (isFullProfile)
                           Expanded(
-                            child: ListView.builder(
-                              addAutomaticKeepAlives: false,
-                              addRepaintBoundaries: false,
-                              itemCount: state.profiles.length,
-                              itemBuilder: (context, index) {
-                                return BlocProvider.value(
-                                  key: Key(
-                                    "ProfileListView-BlocProvider-${profiles[index]}",
-                                  ),
-                                  value: context
-                                      .read<ProfileCacheCubit>()
-                                      .getProfileBloc(profiles[index]),
-                                  child: Container(
-                                    decoration: const BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Color(0xFFE0E0E0),
-                                        ),
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: Sizes.p8,
-                                      horizontal: Sizes.p10,
-                                    ),
-                                    child: const ProfileView(),
-                                  ),
-                                );
-                              },
-                            ),
+                            child: ProfileGroupedListView(profiles: profiles),
                           ),
                         if (!isFullProfile)
                           Expanded(
