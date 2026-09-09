@@ -36,10 +36,13 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
-  # TEMPORARY — remove before this PR leaves draft, once at_chops 3.7.0 is on
-  # pub.dev and the constraint above is raised to ^3.7.0.
+  # TEMPORARY — integration-branch override: at_chops 3.7.0 is not yet on
+  # pub.dev, so pull it from the at_client_sdk PR #2220 branch.
   at_chops:
-    path: ../../../../at_client_sdk-aesctr/packages/at_chops
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: st/aes-ctr-ffi
+      path: packages/at_chops
 
 dev_dependencies:
   build_runner: ^2.4.12

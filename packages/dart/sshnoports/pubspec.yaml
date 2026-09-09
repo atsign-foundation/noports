@@ -29,6 +29,14 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
+  # TEMPORARY — integration-branch override: at_chops 3.7.0 is not yet on
+  # pub.dev, so pull it from the at_client_sdk PR #2220 branch. Overrides do
+  # not propagate from noports_core, so it is repeated here for the binaries.
+  at_chops:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: st/aes-ctr-ffi
+      path: packages/at_chops
 
 dev_dependencies:
   lints: ^6.1.0
