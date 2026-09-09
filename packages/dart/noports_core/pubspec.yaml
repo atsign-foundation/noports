@@ -43,6 +43,12 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk.git
       ref: st/aes-ctr-ffi
       path: packages/at_chops
+  # TEMPORARY — integration-branch override: flush-gated backpressure so srv
+  # memory stays bounded when the writer outruns the tunnel.
+  socket_connector:
+    git:
+      url: https://github.com/atsign-foundation/socket_connector.git
+      ref: cconstab/backpressure
 
 dev_dependencies:
   build_runner: ^2.4.12
