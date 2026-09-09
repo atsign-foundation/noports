@@ -1,3 +1,10 @@
+# 6.14.0
+
+- fix: share event logging config once as cached key instead of on every
+  heartbeat
+- fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
+
 # 6.13.0
 
 - feat: added `binaryName` and `formatCliHelp` to utils, for generating

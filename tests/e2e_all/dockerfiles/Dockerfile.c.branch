@@ -8,23 +8,21 @@ ARG branch=trunk
 
 RUN set -eux ; \
     mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
-    apt-get update ; \
-    apt-get install -y git gcc ; \
     cd ${REPO_DIR} ; \
     git clone ${URL} . ; \
     git checkout ${branch} ; \
     cd ${REPO_DIR}/packages/c/sshnpd ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv ./build/at_activate ${OUTPUT_DIR}/at_activate ; \
     mv ./build/sshnpd ${OUTPUT_DIR}/sshnpd ; \
     mv ./build/libsshnpd-lib.a ${OUTPUT_DIR}/libsshnpd-lib.a ; \
     cd ${REPO_DIR}/packages/c/srv ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:6807d7d67dc9d412facfd4357507a24b2c72eb4af2c6232c43e0687fd82cb06d AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:1f83c03fa0267ab1d47875f9f83b10857ff57375046de97f2ad1369d39e49fc4 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
