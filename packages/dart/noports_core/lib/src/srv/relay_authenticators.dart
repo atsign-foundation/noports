@@ -136,12 +136,19 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool receivedChallenge = false;
     bool authenticated = false;
-    StreamController<Uint8List> sc = StreamController();
+    // Forward pause/resume to the socket subscription: when the consumer of
+    // sc.stream applies backpressure it must reach the socket and close the
+    // TCP window, rather than buffering without bound in this controller.
+    late final StreamSubscription<Uint8List> subscription;
+    StreamController<Uint8List> sc = StreamController(
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+    );
     List<int> buffer = [];
 
     Mutex listenMutex = Mutex();
 
-    socket.listen(
+    subscription = socket.listen(
       (Uint8List data) async {
         await listenMutex.acquire();
         try {
