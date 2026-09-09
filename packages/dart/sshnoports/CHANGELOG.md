@@ -2,6 +2,13 @@
 
 <!-- pyml disable md034-->
 
+## v5.17.0
+
+* fix: share event logging config once as cached key instead of on every
+  heartbeat
+* fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
+
 ## v5.16.0
 
 * fix: man pages now generate correctly: `--help` / `--version` output is
