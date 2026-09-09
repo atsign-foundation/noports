@@ -113,6 +113,8 @@ class SshnpdImpl
   @override
   AtEventConfig? elc;
 
+  bool _loggedElcMiss = false;
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -308,11 +310,10 @@ class SshnpdImpl
 
     await subscribeToPolicyUpdates();
 
-    // If using a policy service, tell it we're here
-    await _sendHeartbeatToPolicy();
+    await _policyCycle();
     Timer.periodic(
       DefaultSshnpdArgs.policyHeartbeatFrequency,
-      (_) async => await _sendHeartbeatToPolicy(),
+      (_) async => await _policyCycle(),
     );
 
     logger.info('Daemon is running');
@@ -1881,20 +1882,48 @@ class SshnpdImpl
   }
 
   Future<void> handlePolicyConfigNotification(AtNotification n) async {
-    logger.shout('Config from policy: ${n.key} : ${n.value}');
+    logger.info('Config from policy: ${n.key} : ${n.value}');
     if (n.value == null) {
       return;
     }
     final json = jsonDecode(n.value!);
     final elcJson = json['eventLoggingConfig'];
     if (elcJson == null) {
-      logger.shout('No eventLoggingConfig');
+      logger.info('No eventLoggingConfig in policy config notification');
       return;
     }
     elc = AtEventConfig.fromJson(elcJson);
   }
 
-  /// If using a policy service, tell it we're here
+  static const _configRetryDelay = Duration(seconds: 5);
+
+  Future<void> _policyCycle() async {
+    if (policyManagerAtsign == null) return;
+    await _sendHeartbeatToPolicy();
+    if (elc != null) return;
+
+    await Future.delayed(_configRetryDelay);
+    await _fetchEventLoggingConfig();
+  }
+
+  Future<void> _fetchEventLoggingConfig() async {
+    try {
+      elc = await getEventLoggingConfig(
+        atSign: policyManagerAtsign!,
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      _loggedElcMiss = false;
+      logger.info('Fetched event logging config: $elc');
+    } on AtKeyNotFoundException {
+      if (!_loggedElcMiss) {
+        _loggedElcMiss = true;
+        logger.info('No event logging config from $policyManagerAtsign yet');
+      }
+    } catch (e) {
+      logger.warning('Failed to fetch event logging config: $e');
+    }
+  }
+
   Future<void> _sendHeartbeatToPolicy() async {
     if (policyManagerAtsign == null) {
       return;
@@ -1911,10 +1940,14 @@ class SshnpdImpl
 
     logger.info('Sending heartbeat to policy service $policyManagerAtsign');
 
-    /// send it
+    final Map<String, dynamic> heartbeatPayload = Map.of(pingResponse);
+    if (elc == null) {
+      heartbeatPayload['needEventLoggingConfig'] = true;
+    }
+
     await _notify(
       atKey: atKey,
-      value: jsonEncode(pingResponse),
+      value: jsonEncode(heartbeatPayload),
       ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
     );
   }

@@ -18,6 +18,7 @@ updates:
       - "/packages/dart/sshnoports/tools/"
       - "/tests/e2e_all/dockerfiles/"
       - "/tests/end2end_tests/image/"
+      - "/tests/npe2e/tools/dockerfiles/"
     schedule:
       interval: "daily"
     cooldown:
