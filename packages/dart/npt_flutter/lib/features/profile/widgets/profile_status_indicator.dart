@@ -142,7 +142,7 @@ class StatusMessage extends StatelessWidget {
             : PhosphorIcon(icon, color: color, size: Sizes.p20);
 
     return Tooltip(
-      verticalOffset: Sizes.p10n,
+      preferBelow: false,
       message: tooltip,
       child: Row(
         mainAxisSize: MainAxisSize.min,

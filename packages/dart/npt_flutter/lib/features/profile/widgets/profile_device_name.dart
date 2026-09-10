@@ -22,7 +22,7 @@ class ProfileDeviceName extends StatelessWidget {
         if (tuple == null) return gap0;
         var (deviceName, sshnpdAtsign) = tuple;
         return Tooltip(
-          verticalOffset: Sizes.p10n,
+          preferBelow: false,
           message: '$deviceName$sshnpdAtsign',
           child: Text(
             '$deviceName$sshnpdAtsign',
