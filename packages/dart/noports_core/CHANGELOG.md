@@ -1,3 +1,11 @@
+# 6.14.1
+
+- fix: the relay auth stream wrappers (the srv-side relay authenticator and
+  both srvd-side relay auth verifiers) now forward pause/resume from their
+  `StreamController` to the socket subscription, so backpressure applied by
+  the consumer of the wrapped stream reaches the socket and closes the TCP
+  window instead of buffering without bound in the wrapper
+
 # 6.14.0
 
 - fix: share event logging config once as cached key instead of on every
