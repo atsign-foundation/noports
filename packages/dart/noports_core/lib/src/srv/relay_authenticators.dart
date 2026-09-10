@@ -143,6 +143,12 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
     socket.listen(
       (Uint8List data) async {
+        // Fast path: safe only because no `await` separates the residual
+        // flush below from `authenticated` flipping to true.
+        if (authenticated) {
+          sc.add(data);
+          return;
+        }
         await listenMutex.acquire();
         try {
           if (authenticated) {

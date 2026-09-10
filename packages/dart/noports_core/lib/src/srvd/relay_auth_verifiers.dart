@@ -336,6 +336,18 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     socket.listen(
       (Uint8List data) async {
+        // Fast path: safe only because no `await` separates `authenticated`
+        // flipping to true (below) from the residual flush that follows it.
+        if (authenticated) {
+          if (!sc.isClosed) {
+            try {
+              sc.add(data);
+            } catch (err) {
+              logger.shout('post-verify sc.add failed with $err');
+            }
+          }
+          return;
+        }
         await listenMutex.acquire();
         try {
           if (authenticated) {
