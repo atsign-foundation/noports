@@ -33,7 +33,7 @@ RUN \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
-  apt-get update && apt-get install -y adduser autoconf curl gcc make ; \
+  apt-get update && apt-get install -y adduser autoconf ca-certificates curl gcc make ; \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
@@ -56,6 +56,9 @@ COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage /etc/cacert /etc/cacert
+# Dart images no longer carry root certs in /runtime/, so copy them explicitly
+COPY --from=buildimage /etc/ssl/certs /etc/ssl/certs
+COPY --from=buildimage /usr/share/ca-certificates /usr/share/ca-certificates
 WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
