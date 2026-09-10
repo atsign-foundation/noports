@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:at_chops/at_chops_ffi.dart';
-import 'package:cryptography/cryptography.dart';
-import 'package:cryptography/dart.dart';
 import 'package:meta/meta.dart';
+import 'package:openssl3/evp.dart' as ossl;
 import 'package:socket_connector/socket_connector.dart';
 
 /// Builds the AES-CTR [DataTransformer] pair that carries tunnel traffic.
@@ -14,53 +12,54 @@ import 'package:socket_connector/socket_connector.dart';
 /// serves both directions — the caller decides which end of the tunnel a
 /// transformer is attached to.
 ///
-/// Where libcrypto is available the transform runs through at_chops'
-/// OpenSSL-backed [AesCtrFfiCipher] (AES-NI); otherwise it falls back to the
-/// pure-Dart [DartAesCtr] this replaced. Both produce the same keystream, so
-/// the two ends of a tunnel may resolve differently and still interoperate.
+/// The transform runs through `package:openssl3` — OpenSSL 3.5 libcrypto
+/// bundled with the application as a code asset — so it takes the AES-NI
+/// path on every host, with no dependency on a system libcrypto and no
+/// pure-Dart fallback branch. The keystream is byte-identical to both the
+/// at_chops FFI implementation and the pre-swap `DartAesCtr`, so this end
+/// interoperates with peers running either.
 ///
 /// [aesKeyBase64] must decode to 16, 24 or 32 bytes and [ivBase64] to exactly
 /// 16 — both are checked here rather than on the first byte, so a misconfigured
 /// tunnel fails where it is set up and not as an error on a stream someone is
 /// already reading.
 ///
-/// [cipherFactory] exists so tests can force the pure-Dart branch on a host
-/// that has libcrypto; production callers leave it alone.
+/// [cipherStreamFactory] exists so tests can inject a broken cipher stream;
+/// production callers leave it alone.
 DataTransformer createAesCtrTransformer(
   String aesKeyBase64,
   String ivBase64, {
   @visibleForTesting
-  AesCtrFfiCipher? Function(AESKey, InitialisationVector) cipherFactory =
-      AtPqc.aesCtrStreamCipher,
+  ossl.CipherStream Function(ossl.Cipher, Uint8List)? cipherStreamFactory,
 }) {
-  final AESKey aesKey = AESKey(aesKeyBase64);
-  final InitialisationVector iv = InitialisationVector.fromBase64(ivBase64);
-  final int keyLength = base64Decode(aesKeyBase64).length;
+  final Uint8List key = base64Decode(aesKeyBase64);
+  final Uint8List iv = base64Decode(ivBase64);
 
-  if (keyLength != 16 && keyLength != 24 && keyLength != 32) {
+  if (key.length != 16 && key.length != 24 && key.length != 32) {
     throw ArgumentError.value(
-      keyLength,
+      key.length,
       'aesKeyBase64',
       'AES key must decode to 16, 24 or 32 bytes',
     );
   }
-  if (iv.ivBytes.length != AesCtrFfiCipher.ivLength) {
+  if (iv.length != 16) {
     throw ArgumentError.value(
-      iv.ivBytes.length,
+      iv.length,
       'ivBase64',
-      'AES-CTR IV must decode to exactly ${AesCtrFfiCipher.ivLength} bytes',
+      'AES-CTR IV must decode to exactly 16 bytes',
     );
   }
 
+  final ossl.Cipher cipher = ossl.Cipher.aesCtr(key);
+  final ossl.CipherStream Function(ossl.Cipher, Uint8List) makeStream =
+      cipherStreamFactory ?? (c, v) => c.encryptStream(v);
+
   return (Stream<List<int>> stream) {
-    // Constructed per stream, not per call to this function: the cipher holds
-    // a keystream position, so two streams sharing one instance would each get
-    // half a keystream. A DataTransformer may be invoked more than once.
-    final AesCtrFfiCipher? cipher = cipherFactory(aesKey, iv);
-    if (cipher == null) {
-      return _pureDartTransform(stream, aesKeyBase64, ivBase64, keyLength);
-    }
-    return _ffiTransform(stream, cipher);
+    // Constructed per stream, not per call to this function: the CipherStream
+    // holds a keystream position, so two streams sharing one instance would
+    // each get half a keystream. A DataTransformer may be invoked more than
+    // once.
+    return _transform(stream, makeStream(cipher, iv));
   };
 }
 
@@ -71,7 +70,8 @@ DataTransformer createAesCtrTransformer(
 /// subscription is driven by hand rather than with `async*` or `map`:
 ///
 /// - `stream.map(cipher.update)` never disposes at all, leaking one
-///   `EVP_CIPHER_CTX` per tunnel.
+///   `EVP_CIPHER_CTX` per tunnel (openssl3's [NativeFinalizer] would reclaim
+///   it eventually, but eventually is not when a tunnel closes).
 /// - `async*` with `try`/`finally` around `await for` does dispose, but not
 ///   when you want: a generator suspended on `await for` does not run its
 ///   `finally` until the *source* stream closes, so a downstream cancel over a
@@ -80,9 +80,9 @@ DataTransformer createAesCtrTransformer(
 /// Here `onCancel` disposes immediately. `onPause`/`onResume` forward to the
 /// source so backpressure still reaches the socket, and a source error is
 /// terminal rather than forwarded — see `terminate` below.
-Stream<List<int>> _ffiTransform(
+Stream<List<int>> _transform(
   Stream<List<int>> stream,
-  AesCtrFfiCipher cipher,
+  ossl.CipherStream cipher,
 ) {
   StreamSubscription<List<int>>? subscription;
   late final StreamController<List<int>> controller;
@@ -105,11 +105,7 @@ Stream<List<int>> _ffiTransform(
           // otherwise land on a closed controller.
           if (controller.isClosed) return;
           try {
-            controller.add(
-              cipher.update(
-                chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
-              ),
-            );
+            controller.add(cipher.update(chunk));
           } catch (error, stackTrace) {
             // The context is unusable once a transform fails; nothing after
             // this chunk would decrypt anyway, so tear the whole thing down.
@@ -135,30 +131,4 @@ Stream<List<int>> _ffiTransform(
   );
 
   return controller.stream;
-}
-
-/// The path taken on a host with no usable libcrypto.
-///
-/// `encryptStream` serves both directions: CTR is its own inverse, and
-/// `DartAesCtr.decryptStream` is verified to emit the same bytes over the same
-/// input (`aes_ctr_transformer_test.dart`).
-Stream<List<int>> _pureDartTransform(
-  Stream<List<int>> stream,
-  String aesKeyBase64,
-  String ivBase64,
-  int keyLength,
-) {
-  // Keyed to match [AesCtrFfiCipher]'s 16/24/32 contract, so the branch a host
-  // happens to take never changes which keys it accepts.
-  final DartAesCtr algorithm = switch (keyLength) {
-    16 => DartAesCtr.with128bits(macAlgorithm: MacAlgorithm.empty),
-    24 => DartAesCtr.with192bits(macAlgorithm: MacAlgorithm.empty),
-    _ => DartAesCtr.with256bits(macAlgorithm: MacAlgorithm.empty),
-  };
-  return algorithm.encryptStream(
-    stream,
-    secretKey: SecretKey(base64Decode(aesKeyBase64)),
-    nonce: base64Decode(ivBase64),
-    onMac: (Mac mac) {},
-  );
 }

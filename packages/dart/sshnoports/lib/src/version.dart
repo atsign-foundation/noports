@@ -1,2 +1,2 @@
 // Generated code. Do not modify.
-const packageVersion = '5.16.0+integration';
+const packageVersion = '5.16.0+openssl3';
