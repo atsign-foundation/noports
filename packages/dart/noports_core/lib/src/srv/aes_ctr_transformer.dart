@@ -137,6 +137,83 @@ Stream<List<int>> _ffiTransform(
   return controller.stream;
 }
 
+/// Builds the AES-CTR [ChunkTransformer] that carries tunnel traffic via
+/// [AesCtrFfiCipher.updateView]'s zero-copy path, skipping the extra
+/// [StreamController] and subscription [createAesCtrTransformer]'s
+/// [DataTransformer] needs.
+///
+/// Returns `null` when libcrypto isn't available — [ChunkTransformer] has no
+/// pure-Dart equivalent, so the caller falls back to
+/// [createAesCtrTransformer] as a [DataTransformer] on [Side.transformer]
+/// instead. [aesKeyBase64]/[ivBase64] are validated exactly as
+/// [createAesCtrTransformer] validates them.
+ChunkTransformer? createAesCtrChunkTransformer(
+  String aesKeyBase64,
+  String ivBase64, {
+  @visibleForTesting
+  AesCtrFfiCipher? Function(AESKey, InitialisationVector) cipherFactory =
+      AtPqc.aesCtrStreamCipher,
+}) {
+  final AESKey aesKey = AESKey(aesKeyBase64);
+  final InitialisationVector iv = InitialisationVector.fromBase64(ivBase64);
+  final int keyLength = base64Decode(aesKeyBase64).length;
+
+  if (keyLength != 16 && keyLength != 24 && keyLength != 32) {
+    throw ArgumentError.value(
+      keyLength,
+      'aesKeyBase64',
+      'AES key must decode to 16, 24 or 32 bytes',
+    );
+  }
+  if (iv.ivBytes.length != AesCtrFfiCipher.ivLength) {
+    throw ArgumentError.value(
+      iv.ivBytes.length,
+      'ivBase64',
+      'AES-CTR IV must decode to exactly ${AesCtrFfiCipher.ivLength} bytes',
+    );
+  }
+
+  final AesCtrFfiCipher? cipher = cipherFactory(aesKey, iv);
+  if (cipher == null) return null;
+  return _AesCtrChunkTransformer(cipher);
+}
+
+/// Wraps one [AesCtrFfiCipher] as a [ChunkTransformer]. [transform] returns
+/// [AesCtrFfiCipher.updateView]'s view unchanged: [SocketConnector] only
+/// ever reads it synchronously before writing it to a socket, which is
+/// exactly what [ChunkTransformer.transform] and [AesCtrFfiCipher.updateView]
+/// each separately promise is safe.
+///
+/// A failed [transform] disposes the cipher immediately, mirroring
+/// [_ffiTransform]'s terminal-dispose behavior: the context is unusable once
+/// one transform fails, so nothing after the failing chunk would decrypt
+/// correctly anyway.
+class _AesCtrChunkTransformer implements ChunkTransformer {
+  _AesCtrChunkTransformer(this._cipher);
+
+  final AesCtrFfiCipher _cipher;
+  bool _disposed = false;
+
+  @override
+  Uint8List transform(List<int> data) {
+    try {
+      return _cipher.updateView(
+        data is Uint8List ? data : Uint8List.fromList(data),
+      );
+    } catch (_) {
+      dispose();
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _cipher.dispose();
+  }
+}
+
 /// The path taken on a host with no usable libcrypto.
 ///
 /// `encryptStream` serves both directions: CTR is its own inverse, and

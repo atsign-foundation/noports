@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:at_chops/at_chops.dart';
+import 'package:at_chops/at_chops_ffi.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
@@ -539,17 +539,6 @@ class SrvImplDart implements Srv<SocketConnector> {
     required InternetAddress relayAddress,
     required Duration timeout,
   }) async {
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
-    if (aesC2D != null && ivC2D != null) {
-      encrypter = createEncrypter(aesC2D!, ivC2D!);
-      if (aesD2C == null) {
-        // Backwards compatibility - use the same key & iv
-        decrypter = createDecrypter(aesC2D!, ivC2D!);
-      } else {
-        decrypter = createDecrypter(aesD2C!, ivD2C!);
-      }
-    }
     // client side
     InternetAddress localAddress = await resolveRequestedLocalHost();
     SocketConnector sc = await SocketConnector.serverToSocket(
@@ -559,12 +548,21 @@ class SrvImplDart implements Srv<SocketConnector> {
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
       logger: ioSinkForLogger(logger),
-      transformAtoB: encrypter,
-      transformBtoA: decrypter,
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) async {
         logger.info('beforeJoining called');
+        // One connection per call to this function, so it's safe to
+        // construct the transformer pair here rather than hoisting it.
+        if (aesC2D != null && ivC2D != null) {
+          setAesCtrTransformer(sideA, aesC2D!, ivC2D!);
+          if (aesD2C == null) {
+            // Backwards compatibility - use the same key & iv
+            setAesCtrTransformer(sideB, aesC2D!, ivC2D!);
+          } else {
+            setAesCtrTransformer(sideB, aesD2C!, ivD2C!);
+          }
+        }
         // Authenticate the sideB socket (to the rvd)
         if (relayAuthenticator != null) {
           logger.info(
@@ -871,8 +869,8 @@ class SrvImplDart implements Srv<SocketConnector> {
             socketIVD2C = socketIVC2D;
           }
 
-          sideA.transformer = createEncrypter(socketAESKeyC2D, socketIVC2D);
-          sideB.transformer = createDecrypter(socketAESKeyD2C, socketIVD2C);
+          setAesCtrTransformer(sideA, socketAESKeyC2D, socketIVC2D);
+          setAesCtrTransformer(sideB, socketAESKeyD2C, socketIVD2C);
 
           logger.info(
             '_runClientSideMulti (_clientSideEncryptedSocket)'
@@ -1340,16 +1338,6 @@ class SrvImplDart implements Srv<SocketConnector> {
   Future<SocketConnector> _runDaemonSideSingle({
     required InternetAddress relayAddress,
   }) async {
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
-    if (aesC2D != null && ivC2D != null) {
-      decrypter = createDecrypter(aesC2D!, ivC2D!);
-      if (aesD2C == null) {
-        encrypter = createEncrypter(aesC2D!, ivC2D!);
-      } else {
-        encrypter = createEncrypter(aesD2C!, ivD2C!);
-      }
-    }
     InternetAddress localAddress = await resolveRequestedLocalHost();
 
     bool verbose = Platform.environment['SRV_TRACE'] == 'true';
@@ -1365,7 +1353,16 @@ class SrvImplDart implements Srv<SocketConnector> {
       );
     }
     Socket sideASocket = await Socket.connect(localAddress, localPort);
-    Side sideA = Side(sideASocket, true, transformer: encrypter);
+    Side sideA = Side(sideASocket, true);
+    // One connection per call to this function, so it's safe to construct
+    // the transformer pair here rather than hoisting it.
+    if (aesC2D != null && ivC2D != null) {
+      if (aesD2C == null) {
+        setAesCtrTransformer(sideA, aesC2D!, ivC2D!);
+      } else {
+        setAesCtrTransformer(sideA, aesD2C!, ivD2C!);
+      }
+    }
     unawaited(
       socketConnector.handleSingleConnection(sideA).catchError((err) {
         logSink.writeln(
@@ -1380,7 +1377,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       );
     }
     Socket sideBSocket = await Socket.connect(relayAddress, streamingPort);
-    Side sideB = Side(sideBSocket, false, transformer: decrypter);
+    Side sideB = Side(sideBSocket, false);
+    if (aesC2D != null && ivC2D != null) {
+      setAesCtrTransformer(sideB, aesC2D!, ivC2D!);
+    }
 
     // Authenticate the sideB socket (to the rvd)
     if (relayAuthenticator != null) {
@@ -1416,6 +1416,41 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     return socketConnector;
+  }
+}
+
+/// Sets [side]'s transformer to AES-CTR over ([aesKeyBase64], [ivBase64]),
+/// preferring [createAesCtrChunkTransformer]'s mutex-free path and falling
+/// back to [createAesCtrTransformer]'s [DataTransformer] only when libcrypto
+/// isn't available. Never leaves both unset: that would silently relay this
+/// side's data unencrypted, with no error anywhere.
+///
+/// Callers must construct one transformer per connection — the cipher a
+/// [ChunkTransformer] or [DataTransformer] closes over holds a keystream
+/// position, so two connections sharing one would each get half a keystream.
+void setAesCtrTransformer(
+  Side side,
+  String aesKeyBase64,
+  String ivBase64, {
+  @visibleForTesting
+  AesCtrFfiCipher? Function(AESKey, InitialisationVector) cipherFactory =
+      AtPqc.aesCtrStreamCipher,
+}) {
+  final ChunkTransformer? chunkTransformer = createAesCtrChunkTransformer(
+    aesKeyBase64,
+    ivBase64,
+    // ignore: invalid_use_of_visible_for_testing_member
+    cipherFactory: cipherFactory,
+  );
+  if (chunkTransformer != null) {
+    side.chunkTransformer = chunkTransformer;
+  } else {
+    side.transformer = createAesCtrTransformer(
+      aesKeyBase64,
+      ivBase64,
+      // ignore: invalid_use_of_visible_for_testing_member
+      cipherFactory: cipherFactory,
+    );
   }
 }
 
