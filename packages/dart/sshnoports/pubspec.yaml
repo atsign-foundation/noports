@@ -14,7 +14,7 @@ dependencies:
   at_cli_commons: ^3.0.1
   at_client: ^3.11.0
   args: 2.7.0
-  socket_connector: 2.4.1
+  socket_connector: 2.5.0
   # Pinned: dartssh2 added SSHSocket.flush in the 2.22.2 minor release (a semver
   # slip that breaks `implements SSHSocket`), so pin it here rather than let this
   # app float to a surprise-breaking release.
