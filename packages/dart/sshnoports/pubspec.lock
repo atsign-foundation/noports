@@ -66,13 +66,14 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_chops
-      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
+      path: "packages/at_chops"
+      ref: "2b3afe5612bbe450943b39e9f677bba8ff26f0c7"
+      resolved-ref: "2b3afe5612bbe450943b39e9f677bba8ff26f0c7"
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "3.7.0"
   at_cli_commons:
     dependency: "direct main"
     description:
@@ -607,7 +608,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.14.1"
+    version: "6.14.1+ffichunk"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -680,6 +681,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
+  pqcrypto:
+    dependency: transitive
+    description:
+      name: pqcrypto
+      sha256: fa8bd7eac5ccb4389f4003715a79b1b601ca9439cb81d1174a1e06da75306b39
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   process:
     dependency: transitive
     description:
@@ -747,11 +756,12 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.1"
+      path: "."
+      ref: bd8d85a743b122cac536db5aacf8df80d651c248
+      resolved-ref: bd8d85a743b122cac536db5aacf8df80d651c248
+      url: "https://github.com/atsign-foundation/socket_connector.git"
+    source: git
+    version: "2.5.1"
   source_map_stack_trace:
     dependency: transitive
     description:

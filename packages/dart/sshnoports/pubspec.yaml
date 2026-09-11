@@ -1,7 +1,7 @@
 name: sshnoports
 publish_to: none
 
-version: 5.16.1
+version: 5.16.1+ffichunk
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -29,6 +29,19 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
+  # TEMPORARY — integration-branch overrides (repeated here because overrides
+  # do not propagate from noports_core to the package the binaries build from).
+  # at_chops 3.7.0 (updateView) from at_client_sdk trunk; socket_connector
+  # from srei's ChunkTransformer PR #39, which carries the 2.5.1 flush-gate fix.
+  at_chops:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: 2b3afe5612bbe450943b39e9f677bba8ff26f0c7
+      path: packages/at_chops
+  socket_connector:
+    git:
+      url: https://github.com/atsign-foundation/socket_connector.git
+      ref: bd8d85a743b122cac536db5aacf8df80d651c248
 
 dev_dependencies:
   lints: ^6.1.0

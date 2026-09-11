@@ -2,7 +2,7 @@ name: noports_core
 description: Core library code for sshnoports
 homepage: https://docs.atsign.com/
 
-version: 6.14.1
+version: 6.14.1+ffichunk
 
 environment:
   sdk: ^3.8.0
@@ -36,20 +36,21 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
-  # TEMPORARY — remove before this PR leaves draft, once at_chops 3.7.0 is on
-  # pub.dev and the constraint above is raised to ^3.7.0. Needed for
-  # AesCtrFfiCipher.updateView, used by createAesCtrChunkTransformer. Points
-  # at a local worktree path — will not resolve on another machine or in CI
-  # until at_chops 3.7.0 publishes.
+  # TEMPORARY — integration-branch override: at_chops 3.7.0 (updateView, used
+  # by createAesCtrChunkTransformer) is not yet on pub.dev; pull it from
+  # at_client_sdk trunk.
   at_chops:
-    path: ../../../../at_client_sdk-phase1/packages/at_chops
-  # TEMPORARY — remove before this PR leaves draft, once the ChunkTransformer
-  # feature is on pub.dev and the constraint above is raised to match. Needed
-  # for the ChunkTransformer type createAesCtrChunkTransformer implements.
-  # Points at a local worktree path — will not resolve on another machine or
-  # in CI until socket_connector publishes ChunkTransformer.
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: 2b3afe5612bbe450943b39e9f677bba8ff26f0c7
+      path: packages/at_chops
+  # TEMPORARY — integration-branch override: ChunkTransformer is not yet on
+  # pub.dev; pull socket_connector from srei's PR #39 branch, which also
+  # carries the 2.5.1 flush-gate fix (merged in).
   socket_connector:
-    path: ../../../../socket_connector-chunk-transformer
+    git:
+      url: https://github.com/atsign-foundation/socket_connector.git
+      ref: bd8d85a743b122cac536db5aacf8df80d651c248
 
 dev_dependencies:
   build_runner: ^2.4.12
