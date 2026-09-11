@@ -324,7 +324,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
-    StreamController<Uint8List> sc = StreamController();
+    // Forward pause/resume to the socket subscription: when the consumer of
+    // sc.stream applies backpressure it must reach the socket and close the
+    // TCP window, rather than buffering without bound in this controller.
+    late final StreamSubscription<Uint8List> subscription;
+    StreamController<Uint8List> sc = StreamController(
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+    );
     logger.info('starting listen');
     List<int> buffer = [];
 
@@ -334,7 +341,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     Mutex listenMutex = Mutex();
 
-    socket.listen(
+    subscription = socket.listen(
       (Uint8List data) async {
         // Fast path: safe only because no `await` separates `authenticated`
         // flipping to true (below) from the residual flush that follows it.
@@ -544,10 +551,17 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket) async {
     Completer<(bool, Stream<Uint8List>?)> completer = Completer();
     bool authenticated = false;
-    StreamController<Uint8List> sc = StreamController();
+    // Forward pause/resume to the socket subscription: when the consumer of
+    // sc.stream applies backpressure it must reach the socket and close the
+    // TCP window, rather than buffering without bound in this controller.
+    late final StreamSubscription<Uint8List> subscription;
+    StreamController<Uint8List> sc = StreamController(
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+    );
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
-    socket.listen(
+    subscription = socket.listen(
       (Uint8List data) {
         if (authenticated) {
           if (!sc.isClosed) {
