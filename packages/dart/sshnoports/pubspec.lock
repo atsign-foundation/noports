@@ -748,8 +748,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: bfaa5c7038e27fc6d09718b5a5069e20dc2f6bcf
-      resolved-ref: bfaa5c7038e27fc6d09718b5a5069e20dc2f6bcf
+      ref: c486bb3d6108d414140029dd1b6a44104dae620b
+      resolved-ref: c486bb3d6108d414140029dd1b6a44104dae620b
       url: "https://github.com/atsign-foundation/socket_connector.git"
     source: git
     version: "2.5.1"
