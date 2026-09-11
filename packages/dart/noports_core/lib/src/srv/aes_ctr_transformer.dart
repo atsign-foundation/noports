@@ -3,10 +3,44 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops_ffi.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
 import 'package:meta/meta.dart';
 import 'package:socket_connector/socket_connector.dart';
+
+bool _cipherPathLogged = false;
+
+@visibleForTesting
+void resetAesCtrCipherPathLog() => _cipherPathLogged = false;
+
+/// Records which AES-CTR backend this process resolved, once.
+///
+/// The fallback is otherwise invisible: a host with no usable libcrypto still
+/// tunnels correctly, just slowly, and since a tunnel runs at the speed of its
+/// slowest end one quiet fallback caps a link whose other end is on the FFI
+/// path.
+///
+/// Logging only the first resolution is safe because the answer cannot change
+/// within a process: `AtPqc.aesCtrStreamCipher` returns null purely on
+/// `_aesCtrSupported`, a `static final` probed once, and a bad key or IV makes
+/// `AesCtrFfiCipher.fromLib` throw rather than return null. So a null here
+/// means libcrypto, and nothing else.
+void _logCipherPath({required bool ffi}) {
+  if (_cipherPathLogged) return;
+  _cipherPathLogged = true;
+  final AtSignLogger logger = AtSignLogger('AesCtrTransformer');
+  if (ffi) {
+    logger.info('AES-CTR backend: OpenSSL via FFI');
+  } else {
+    logger.warning(
+      'AES-CTR backend: pure-Dart — no usable libcrypto was found. Traffic is '
+      'encrypted correctly but far more slowly, and a tunnel runs at the speed '
+      'of its slowest end, so this caps the link even if the far end has '
+      'libcrypto.',
+    );
+  }
+}
 
 /// Builds the AES-CTR [DataTransformer] pair that carries tunnel traffic.
 ///
@@ -57,6 +91,7 @@ DataTransformer createAesCtrTransformer(
     // a keystream position, so two streams sharing one instance would each get
     // half a keystream. A DataTransformer may be invoked more than once.
     final AesCtrFfiCipher? cipher = cipherFactory(aesKey, iv);
+    _logCipherPath(ffi: cipher != null);
     if (cipher == null) {
       return _pureDartTransform(stream, aesKeyBase64, ivBase64, keyLength);
     }
@@ -174,6 +209,7 @@ ChunkTransformer? createAesCtrChunkTransformer(
   }
 
   final AesCtrFfiCipher? cipher = cipherFactory(aesKey, iv);
+  _logCipherPath(ffi: cipher != null);
   if (cipher == null) return null;
   return _AesCtrChunkTransformer(cipher);
 }
