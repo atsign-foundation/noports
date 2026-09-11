@@ -34,7 +34,7 @@ Complete these steps **on the machine you are connecting to (Windows)**
 
 ### <mark style="color:orange;">Step 7:</mark> Download and run the Installer
 
-Download the NoPorts msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-windows-x64.zip). You can run the MSI inside the sshnp-windows zip.
+Download the NoPorts msi installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPorts-x64.msi). You can run the MSI inside the sshnp-windows zip.
 
 Ensure both Core Tools & Daemon Service are being installed.
 
@@ -42,18 +42,18 @@ Ensure both Core Tools & Daemon Service are being installed.
 
 ### <mark style="color:orange;">Step 8:</mark> Initiate Atsign authorization request
 
-Open a terminal (Command Prompt or PowerShell) and run the following command to make an authorization request.&#x20;
+Open a terminal (Command Prompt or PowerShell) and run the following command to make an authorization request.
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
 `@<REPLACE>_np` with your **device Atsign**,
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 5**,&#x20;
+`<PASSCODE>` with the **passcode generated in Step 5**,
 
-`<USER>` with your **Windows username**,&#x20;
+`<USER>` with your **Windows username**,
 
-`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
@@ -136,7 +136,7 @@ With both machines now configured, the final steps bring us back to the machine 
    7. Remote Host - The hostname or IP address of the machine you are connecting to.
    8. Remote Port - The port that will be used on the remote machine.
 
-For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).
 
 ### <mark style="color:orange;">Step 13:</mark> Establish a connection
 
