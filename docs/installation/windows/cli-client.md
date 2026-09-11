@@ -2,11 +2,11 @@
 
 ### Step 1: Download the Installer
 
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip). Then unzip the file.
+Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/download/v5.8.7/NoPortsInstaller-windows-x64.zip).
 
 ### Step 2: Client Install
 
-Launch the NoPortsInstaller.exe program and allow it administrative permissions:
+Launch the NoPorts-x64.msi program and allow it administrative permissions:
 
 <figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 16.44.12@2x.png" alt=""><figcaption></figcaption></figure>
 

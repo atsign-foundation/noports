@@ -1,5 +1,23 @@
 ---
 icon: square-sliders
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # sshnpd configuration
@@ -11,7 +29,7 @@ sshnpd -m @<_client> -a @<_device> -d <name>
 ```
 
 {% hint style="info" %}
-Replace the \<??> with your specific atSign details
+Replace the \<??> with your specific Atsign details
 {% endhint %}
 
 ### Overview
@@ -24,7 +42,7 @@ These mainly mirror the parameters from [sshnp](../basic-usage-1/), but there's 
 
 ### 1. -a, --atsign
 
-This argument is the device address, a.k.a. the to address, since this is the address that the device is associated with. This argument is mandatory, in the form of an atSign. For example:
+This argument is the device address, a.k.a. the to address, since this is the address that the device is associated with. This argument is mandatory, in the form of an Atsign. For example:
 
 ```
 sshnpd ... -a @alice_device ...
@@ -48,7 +66,7 @@ sshnpd ... -p @alice_policy ...
 
 ### 3. -d, --device
 
-The device name. This is used to associate multiple devices with the same atSign. By default the value is `default` so unless you want that as the device name you will need to include this parameter. For example:
+The device name. This is used to associate multiple devices with the same Atsign. By default the value is `default` so unless you want that as the device name you will need to include this parameter. For example:
 
 ```
 sshnpd ... -d my_device ...
@@ -80,9 +98,9 @@ The rest of the configuration for `sshnpd` is contained in a separate guide:
 
 If you installed sshnpd through the universal installer, then you can modify the `/etc/systemd/system/sshnpd.service.d/override.conf`  file to take advantage of the configurations and options listed above to tailor sshnpd to your needs.
 
-Lots of configuration can be done to sshnpd by editing this file, such as changing the user that sshnpd runs as, changing the atSigns, enabling/disabling verbose logging, and more.
+Lots of configuration can be done to sshnpd by editing this file, such as changing the user that sshnpd runs as, changing the Atsign, enabling/disabling verbose logging, and more.
 
-Sample `override.conf`file:
+Below is a sample `override.conf` file:
 
 ```sh
 # MANDATORY: User to run the daemon as
@@ -113,14 +131,14 @@ Environment=additional_args=""
 
 Adding additional arguments is as simple as modifying the `Environment=additional_args=""`string found inside of `override.conf` .
 
-The example adds the `--permit-open` to the string of additional args which enables clients to access ports 22, 3389, and 2221 on localhost.
+The example below adds the `--permit-open` to the string of additional args which enables clients to access ports 22, 3389, and 2221 on localhost.
 
 ```sh
 # Any additional command line arguments for sshnpd
 Environment=additional_args="--permit-open \"localhost:22,localhost:3389,localhost:2221\""
 ```
 
-Don't forget to update sshnpd by executing (may require sudo):
+Don't forget to update sshnpd by executing by executing the following. May require sudo.
 
 ```sh
 systemctl daemon-reload

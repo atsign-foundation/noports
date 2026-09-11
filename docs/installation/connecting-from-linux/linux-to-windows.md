@@ -1,9 +1,31 @@
 ---
 description: How to install NoPorts when connecting from Linux to Windows
 icon: windows
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Linux to Windows
+
+### Prerequisite
+
+Before starting the NoPorts installation, ensure you have **at least two atSigns** available. If you don’t yet have any atSigns, you can sign up for a NoPorts subscription or free trial at [my.noports.com/no-ports-plans](https://my.noports.com/no-ports-plans).
 
 ### Step 1 to Step 4
 
@@ -13,9 +35,17 @@ These initial steps set up the machine initiating the connection.
 
 <summary>On the machine you are connecting from</summary>
 
+{% hint style="warning" %}
+In this installation guide, `@example01_np` will represent the client atSign, while `@example02_np` will represent the device atSign.
+{% endhint %}
+
 ### <mark style="color:orange;">Step 1:</mark> Download and run the Installer
 
-Download the installer from GitHub by running the following command:
+{% hint style="warning" %}
+Do not run the following commands while logged in as the root user. Instead, use `sudo` from a regular account when elevated privileges are required, and create a regular account if one does not already exist.
+{% endhint %}
+
+Open a terminal and download the installer from GitHub by running the following command:
 
 ```bash
 curl -L https://github.com/atsign-foundation/noports/releases/latest/download/universal.sh -o universal.sh
@@ -27,27 +57,39 @@ To check if the installation downloaded correctly:
 stat universal.sh
 ```
 
-Make the script executable and run the script.
+Make the script executable and run the script by running the command below:
 
 ```bash
 chmod u+x universal.sh
 ./universal.sh
 ```
 
-### <mark style="color:orange;">Step 2:</mark> Activate your client atSign
-
-{% hint style="warning" %}
-If you've already activated your **client** atSign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
+{% hint style="info" %}
+You may be asked to enter your password if your machine requires sudo privileges.
 {% endhint %}
 
-This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atSign.
+**The install type**
+
+* Enter  `client` when prompted.
+
+**Your Atsigns (Skip this step)**
+
+* To skip this step, simply press the Enter/Return key twice. Your Atsigns will be activated in the upcoming steps.
+
+### <mark style="color:orange;">Step 2:</mark> Activate your client Atsign (@example01\_np)
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_client` with your **client atSign.**
+If you've already activated your **client** Atsign on another device, this step will not work. Instead, follow this guide: [reuse-your-client-atsign-on-another-machine](../../installation-faq/reuse-your-client-atsign-on-another-machine/ "mention")
+{% endhint %}
+
+This command activates your Atsign and prompts you to enter an OTP. This is only done during the setup of a brand new Atsign.
+
+{% hint style="warning" %}
+Replace `@<REPLACE>_np` with your **client Atsign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_client
+~/.local/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -56,16 +98,16 @@ at\_activate will pause and wait for the input of a one-time pin (OTP) sent to y
 \
 Once activated, the master keys will save at `~/.atsign/keys`.
 
-### <mark style="color:orange;">Step 3:</mark> Activate your device atSign
+### <mark style="color:orange;">Step 3:</mark> Activate your device Atsign (@example02\_np)
 
-Run the same command, but for your device atSign.
+Run the same command, but for your device Atsign.
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_device` with your **device atSign.**
+Replace `@<REPLACE>_np` with your **device Atsign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_device
+~/.local/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -74,57 +116,27 @@ at\_activate will pause and wait for the input of a one-time pin (OTP) sent to y
 \
 Once activated, the master keys will save at `~/.atsign/keys`.
 
-### <mark style="color:orange;">Step 4:</mark> Generate an atSign authorization passcode for your device atSign
+### <mark style="color:orange;">Step 4:</mark> Generate an Atsign authorization passcode for your device Atsign
 
 Run the following command to generate a 6-character one-time passcode. You will use this passcode in **Step 6.**
 
 {% hint style="warning" %}
-Replace `@<REPLACE>_device` with your device **atSign.**
+Replace `@<REPLACE>_np` with your device **Atsign.**
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate otp -a @<REPLACE>_device
+~/.local/bin/at_activate otp -a @<REPLACE>_np
 ```
 
 </details>
 
-### Step 5 and Step 6
+### Step 5 to Step 7
 
 After setting up the machine you're connecting from, you'll configure the machine you're connecting to.
 
-<details>
+{% include "../../.gitbook/includes/5.13-windows-device-steps.md" %}
 
-<summary>On the machine you are connecting to</summary>
-
-### <mark style="color:orange;">Step 5:</mark> Download and run the Installer
-
-Download the installer [from GitHub](https://github.com/atsign-foundation/noports/releases/latest/download/NoPortsInstaller-windows-x64.zip). Then unzip the file.
-
-Install the Device Software
-
-5.1 Click **Device Install**
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.46.42@2x.png" alt=""><figcaption></figcaption></figure>
-
-5.2 Enter both of your atSigns into the associated fields, then pick a device name, and click **Next**. You will need to enter this device name in S**tep 7**.
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.50.56@2x.png" alt=""><figcaption></figcaption></figure>
-
-5.3 If you wish to add additional arguments to pass sshnpd enter them, then click **Next**.
-
-<figure><img src="../../.gitbook/assets/CleanShot 2025-01-20 at 17.51.22@2x.png" alt=""><figcaption></figcaption></figure>
-
-5.4 Wait for the installation to complete, then click **Next**.
-
-### <mark style="color:orange;">Step 6:</mark> Initiate atSign authorization request
-
-You will see the following screen. Enter the **one-time passcode generated in Step 4** on the machine you are connecting from. Then click **Generate**.
-
-<figure><img src="../../.gitbook/assets/Screenshot 2025-04-02 at 11.58.00 AM.png" alt=""><figcaption></figcaption></figure>
-
-</details>
-
-### Step 7 and Step 8
+### Step 8 and Step 9
 
 With both machines now configured, the final steps bring us back to the machine initiating the connection.
 
@@ -132,28 +144,24 @@ With both machines now configured, the final steps bring us back to the machine 
 
 <summary>On the machine you are connecting from</summary>
 
-### <mark style="color:orange;">Step 7:</mark> Approve the atSign authorization request
+### <mark style="color:orange;">Step 8:</mark> Approve the Atsign authorization request
 
 Run the following command:
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
-`@<REPLACE>_device` with your **device atSign**,
+`@<REPLACE>_np` with your **device Atsign**,
 
-`@<REPLACE_NAME>` with the unique **device name** **from Step 5.**
+`@<REPLACE_NAME>` with the **device name** **from Step 5.**
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate approve -a @<REPLACE>_device --arx noports --drx <DEVICE_NAME>
+~/.local/bin/at_activate approve -a @<REPLACE>_np --arx noports --drx <DEVICE_NAME>
 ```
 
-### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
+### <mark style="color:orange;">Step 9:</mark> Use NoPorts!
 
 That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
 
 </details>
-
-### Connecting more machines to your device atSign
-
-To connect more machines to your device atSign, repeat **Steps 4 through 7**.

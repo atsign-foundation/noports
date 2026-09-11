@@ -1,3 +1,24 @@
+---
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
+---
+
 # Generate a new set of cryptographic keys
 
 "<mark style="color:red;">**Old machine**</mark>" is the machine that has the **original** set of cryptographic keys that were generated. "<mark style="color:orange;">**New machine**</mark>" is the device you want the new set of cryptographic keys on.
@@ -9,7 +30,7 @@ Choose the operating system that is running on your old machine.
 {% tabs %}
 {% tab title="MacOS/Linux" %}
 {% hint style="warning" %}
-Make sure to replace `<REPLACE_client>` with your client atSign
+Make sure to replace `<REPLACE_client>` with your client Atsign
 {% endhint %}
 
 ```
@@ -44,7 +65,7 @@ Choose the operating system that is running on your new machine.
 {% tab title="Running MacOS/Linux" %}
 {% hint style="warning" %}
 Make sure to replace the appropriate values:\
-`<REPLACE_client>` with your client atSign\
+`<REPLACE_client>` with your client Atsign\
 `<client_device_name>` with a unique name for the device\
 `<PASSCODE>` with the passcode from **Step 1**
 {% endhint %}

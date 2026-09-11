@@ -1,8 +1,26 @@
 ---
 description: >-
-  Each device atSign can be used for multiple devices and so each device needs a
+  Each device Atsign can be used for multiple devices and so each device needs a
   unique name.
 icon: memo-circle-info
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # How to name a device

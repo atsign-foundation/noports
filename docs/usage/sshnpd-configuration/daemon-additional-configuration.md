@@ -1,6 +1,24 @@
 ---
 description: NoPorts daemon `sshnpd` additional configuration
 icon: gear
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Daemon Additional Configuration
@@ -9,7 +27,7 @@ icon: gear
 
 ### -k, --key-file, --keyFile
 
-Specify the `.atKeys` file for the `-a, --atsign` atSign if it's not stored in `~/.atsign/keys`
+Specify the `.atKeys` file for the `-a, --atsign` Atsign if it's not stored in `~/.atsign/keys`
 
 ### -s, --\[no-]sshpublickey
 
@@ -17,7 +35,7 @@ When set, will update authorized\_keys to include public key sent by manager.
 
 ### -h, --hide
 
-Hides the device from advertising its information to the manager atSign. Even with this enabled, sshnpd will still respond to ping requests from the manager. (This takes priority over the \[now deprecated] -u / --un-hide flag).
+Hides the device from advertising its information to the manager Atsign. Even with this enabled, sshnpd will still respond to ping requests from the manager. (This takes priority over the \[now deprecated] -u / --un-hide flag).
 
 ### -v, --\[no-]verbose
 
@@ -37,7 +55,7 @@ atDirectory domain
 
 ### --device-group
 
-The name of this device's group. When delegated authorization is being used then the group name is sent to the authorizer service as well as the device name, this daemon's atSign, and the client atSign which is requesting a connection
+The name of this device's group. When delegated authorization is being used then the group name is sent to the authorizer service as well as the device name, this daemon's Atsign, and the client Atsign which is requesting a connection
 
 (Defaults to "\_\_none\_\_")
 

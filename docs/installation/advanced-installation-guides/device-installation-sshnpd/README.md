@@ -1,99 +1,45 @@
 ---
-description: Begin with the three steps below
 icon: server
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Device Installation
 
-### Overview
+There are three steps to getting a device installed:
 
-The NoPorts daemon (a.k.a. sshnpd) is installable as a background service in many ways. Choose the best option for your environment. The service may be installed as a `systemd unit`, `docker container`, `tmux session`, or as a background job using `cron` and `nohup`. The binaries can also be installed standalone so that you can install your own custom background service.
+### 1. Install binaries
 
-### :warning: This guide doesn't support Windows
+As described in [Installation Explained](../) this can be done using the `universal.sh` install script, installing  from a package manager (e.g. apt or dnf for Linux or brew for MacOS), or simply downloading the binary archive from [GitHub releases](https://github.com/atsign-foundation/noports/releases) and expanding it to your preferred destination.
 
-On Windows, we strongly recommend sticking to our automated installation process on Windows. This is because properly installing NoPorts as a Windows service requires making entries in the registry. If you want to create a custom installer for your organization, please speak to us directly at [info@noports.com](mailto:info@noports.com).
+### 2. Provide config
 
-### Step 1. Download
+The NoPorts daemon `sshnpd` will look for config in `/etc/noports/sshnpd.yaml`. The `universal.sh` script will set this up for you in response to prompts, or it can be edited manually.
 
-### Step 1.1. Download from GitHub
+Config can also be provided in a different file location using the `--config` flag.
 
-You can [download a release from GitHub](https://github.com/atsign-foundation/noports/releases/), or see the table below to download the latest release for your platform.
+Or config options can be passed directly to `sshnpd` using [command line flags](../../../usage/sshnpd-configuration/)
 
-### 1.b. Download using curl
+### 3. Provide device atKeys file
 
-| Architecture | Linux                                                                                                                | macOS                                                                                                                        | Windows                                                                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| x64          | [sshnp-linux-x64.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-x64.tgz)     | [sshnp-macos-x64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-x64.zip) (intel)     | [sshnp-windows-x64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-windows-x64.zip) |
-| arm64        | [sshnp-linux-arm64.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm64.tgz) | [sshnp-macos-arm64.zip](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-arm64.zip) (apple) |                                                                                                                      |
-| arm          | [sshnp-linux-arm.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm.tgz)     |                                                                                                                              |                                                                                                                      |
-| risc-v       | [sshnp-linux-riscv.tgz](https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv.tgz) |                                                                                                                              |                                                                                                                      |
+The NoPorts address used by a device (say `@exampledevice_np`) is held in a file that defaults to `$HOME/.atsign/keys/@exampledevice_np.atKeys`
 
-### Step 1.2. Download using curl
+The `at_activate` command is used to create the atKeys file.
 
-Alternatively, if you want to download from the command line, you can do so with curl.
-
-{% tabs %}
-{% tab title="Linux" %}
-**x64:**
-
-```sh
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-x64.tgz -o sshnp.tgz
-```
-
-**arm64:**
-
-```bash
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm64.tgz -o sshnp.tgz
-```
-
-**arm:**
-
-```bash
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm.tgz -o sshnp.tgz
-```
-
-**risc-v:**
-
-```bash
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv.tgz -o sshnp.tgz
-```
-{% endtab %}
-
-{% tab title="macOS" %}
-**x64 (intel):**
-
-```bash
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-x64.zip -o sshnp.zip
-```
-
-**arm64 (apple):**
-
-```bash
-curl -fSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-macos-arm64.zip -o sshnp.zip
-```
-{% endtab %}
-{% endtabs %}
-
-### Step 2. Unpack the Archive
-
-If you downloaded from GitHub, the file name may be slightly different.
-
-{% tabs %}
-{% tab title="Linux" %}
-```bash
-tar -xf sshnp.tgz
-```
-{% endtab %}
-
-{% tab title="macOS" %}
-```bash
-unzip sshnp.zip
-```
-{% endtab %}
-{% endtabs %}
-
-### Step 3. Install sshnpd
-
-See the links in the table below to continue with the installation process.
-
-<table><thead><tr><th width="196" data-type="content-ref">Installation method</th><th>When to use this method</th></tr></thead><tbody><tr><td><a href="systemd-unit.md">systemd-unit.md</a></td><td>You are on Linux and have root access. (Recommended)</td></tr><tr><td><a href="tmux-session.md">tmux-session.md</a></td><td>You have tmux installed, or can install it. (Deprecated)</td></tr><tr><td><a href="headless.md">headless.md</a></td><td>If you do not have root access and cannot install tmux (Deprecated)</td></tr><tr><td><a href="standalone-binaries.md">standalone-binaries.md</a></td><td>You want to manually setup the background service after downloading the binaries. (roll your own)</td></tr></tbody></table>
+Usually atKeys on a device are created by performing an enrollment operation `at_activate enroll ...` , but it's also possible to activate an atKey directly on a device using `at_activate ...`
