@@ -40,8 +40,11 @@ Desktop, never here.
   The release bundle needs the Visual C++ runtime; CI copies
   `msvcp140.dll`, `vcruntime140.dll` and `vcruntime140_1.dll` next to the
   exe with `tools/bundle_msvc_runtime.ps1` (app-local deployment, as the
-  Flutter docs recommend for non-MSIX apps). Run it yourself after a local
-  `flutter build windows` if the target machine lacks the VC redist. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
+  Flutter docs recommend for non-MSIX apps). The script picks the x64,
+  arm64 or x86 redist to match the build output; today everything NoPorts
+  ships for Windows is x64, which also runs under emulation on ARM PCs.
+  Run it yourself after a local `flutter build windows` if the target
+  machine lacks the VC redist. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
   the service is `sshnpd` (controlled with `sc.exe`), logs come from the
   Application Event Log. The MSI installs the app under
   `Program Files\NoPorts\NoPortsConfig`, adds a Start Menu shortcut and

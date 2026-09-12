@@ -14,14 +14,28 @@
   ship a bundle that only works on developer machines.
 
 .PARAMETER Destination
-  Folder containing noports_config.exe. Defaults to the release output.
+  Folder containing noports_config.exe. Defaults to the x64 release output.
+
+.PARAMETER Arch
+  Which redist to bundle: x64, arm64 or x86. The DLLs are not
+  interchangeable between CPU architectures. Defaults to the architecture
+  segment of the Destination path (build\windows\<arch>\...), which is what
+  `flutter build windows` produced. An x64 app running under emulation on a
+  Windows ARM PC still needs the x64 DLLs.
 #>
 param(
-  [string]$Destination = "build\windows\x64\runner\Release"
+  [string]$Destination = "build\windows\x64\runner\Release",
+  [ValidateSet('x64', 'arm64', 'x86')]
+  [string]$Arch
 )
 
 $ErrorActionPreference = 'Stop'
 $dlls = @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')
+
+if (-not $Arch) {
+  if ($Destination -match '[\\/](x64|arm64|x86)[\\/]') { $Arch = $Matches[1] }
+  else { Write-Error "Cannot tell the CPU architecture from '$Destination'; pass -Arch." }
+}
 
 function Find-RedistDir {
   $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -31,14 +45,14 @@ function Find-RedistDir {
     if ($vs) {
       $crt = Get-ChildItem -Path (Join-Path $vs 'VC\Redist\MSVC') -Directory -ErrorAction SilentlyContinue |
         Sort-Object Name -Descending |
-        ForEach-Object { Join-Path $_.FullName 'x64\Microsoft.VC143.CRT' } |
+        ForEach-Object { Join-Path $_.FullName "$Arch\Microsoft.VC143.CRT" } |
         Where-Object { Test-Path $_ } |
         Select-Object -First 1
       if ($crt) { return $crt }
     }
   }
   if ($env:VCToolsRedistDir) {
-    $crt = Join-Path $env:VCToolsRedistDir 'x64\Microsoft.VC143.CRT'
+    $crt = Join-Path $env:VCToolsRedistDir "$Arch\Microsoft.VC143.CRT"
     if (Test-Path $crt) { return $crt }
   }
   return $null
@@ -46,7 +60,7 @@ function Find-RedistDir {
 
 $src = Find-RedistDir
 if (-not $src) {
-  Write-Error "Could not find the Visual C++ redist folder (Microsoft.VC143.CRT). Is Visual Studio with the C++ workload installed?"
+  Write-Error "Could not find the $Arch Visual C++ redist folder (Microsoft.VC143.CRT). Is Visual Studio with the C++ workload installed?"
 }
 if (-not (Test-Path $Destination)) {
   Write-Error "Destination $Destination does not exist. Run 'flutter build windows --release' first."
@@ -56,5 +70,5 @@ foreach ($dll in $dlls) {
   $from = Join-Path $src $dll
   if (-not (Test-Path $from)) { Write-Error "Missing $from" }
   Copy-Item $from -Destination $Destination -Force
-  Write-Host "Bundled $dll from $src"
+  Write-Host "Bundled $Arch $dll from $src"
 }
