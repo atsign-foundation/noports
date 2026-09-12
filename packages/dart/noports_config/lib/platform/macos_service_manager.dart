@@ -88,11 +88,29 @@ class MacosServiceManager extends ServiceManager {
   Future<bool> _loaded() async =>
       (await Process.run('launchctl', ['print', '${await _domain()}/$label'])).exitCode == 0;
 
+  /// launchd appends to StandardOutPath forever and never rotates it.
+  /// Keep one previous generation; done just before a (re)start so the
+  /// daemon reopens the fresh file.
+  static const maxLogBytes = 5 * 1024 * 1024;
+
+  Future<void> _rotateLogIfLarge() async {
+    try {
+      if (await logFile.exists() && await logFile.length() > maxLogBytes) {
+        final old = File('${logFile.path}.1');
+        if (await old.exists()) await old.delete();
+        await logFile.rename(old.path);
+      }
+    } catch (_) {
+      // Not worth failing a start over.
+    }
+  }
+
   @override
   Future<void> start() async {
     if (!plistFile.existsSync()) {
       throw ServiceException('No service definition at ${plistFile.path}. Install the service first.');
     }
+    await _rotateLogIfLarge();
     final domain = await _domain();
     if (!await _loaded()) {
       await runChecked('launchctl', ['bootstrap', domain, plistFile.path]);
@@ -120,6 +138,7 @@ class MacosServiceManager extends ServiceManager {
 
   @override
   Future<void> restart() async {
+    await _rotateLogIfLarge();
     if (await _loaded()) {
       await runChecked('launchctl', ['kickstart', '-k', '${await _domain()}/$label']);
       await waitFor((s) => s.isRunning, timeout: const Duration(seconds: 15));
