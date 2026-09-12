@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_utils/at_utils.dart';
+import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
 
 class KeysException implements Exception {
@@ -27,7 +27,7 @@ class KeysRepository {
       final json = jsonDecode(file.readAsStringSync());
       if (json is Map) {
         for (final k in json.keys) {
-          if (k is String && k.startsWith('@')) return AtUtils.fixAtSign(k);
+          if (k is String && k.startsWith('@')) return Atsigns.normalize(k);
         }
       }
     } catch (_) {
@@ -35,7 +35,7 @@ class KeysRepository {
     }
     final name = file.uri.pathSegments.last;
     final m = RegExp(r'^(@?[a-zA-Z0-9_]+)_key\.atKeys$').firstMatch(name);
-    return m == null ? null : AtUtils.fixAtSign(m.group(1)!);
+    return m == null ? null : Atsigns.normalize(m.group(1)!);
   }
 
   static bool looksLikeAtKeys(File file) {
@@ -99,11 +99,12 @@ class KeysRepository {
 
   /// Whether the file the daemon will use for [atsign] exists, taking an
   /// explicit config path into account.
-  File? resolve(String? atsign, String? configuredPath) {
+  File? resolve(String? rawAtsign, String? configuredPath) {
     if (configuredPath != null && configuredPath.trim().isNotEmpty) {
       return File(_expandHome(configuredPath.trim()));
     }
-    if (atsign == null || atsign.isEmpty) return null;
+    final atsign = Atsigns.normalize(rawAtsign);
+    if (atsign == null) return null;
     final managed = paths.keysFileFor(atsign);
     if (managed.existsSync()) return managed;
     final home = paths.serviceHomeDir;
@@ -111,7 +112,7 @@ class KeysRepository {
       return File(
         '${home.path}${Platform.pathSeparator}.atsign'
         '${Platform.pathSeparator}keys${Platform.pathSeparator}'
-        '${AtUtils.fixAtSign(atsign)}_key.atKeys',
+        '${atsign}_key.atKeys',
       );
     }
     return managed;

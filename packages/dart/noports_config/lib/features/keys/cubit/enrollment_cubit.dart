@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-import 'package:at_utils/at_utils.dart';
+import 'package:noports_config/platform/atsigns.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
@@ -91,9 +91,13 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     required String deviceName,
     required String passcode,
   }) async {
-    final atsign = AtUtils.fixAtSign(rawAtsign.trim());
+    final atsign = Atsigns.normalize(rawAtsign);
     final device = deviceName.trim();
     final code = passcode.trim();
+    if (atsign == null) {
+      emit(state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atSign.'));
+      return;
+    }
     if (device.isEmpty || code.isEmpty) {
       emit(state.copyWith(error: 'Device name and passcode are required.'));
       return;

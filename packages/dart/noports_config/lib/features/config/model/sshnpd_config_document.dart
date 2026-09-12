@@ -1,4 +1,4 @@
-import 'package:at_utils/at_utils.dart';
+import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:yaml/yaml.dart';
@@ -155,11 +155,13 @@ class SshnpdConfigDocument {
     return [];
   }
 
+  /// Adds the '@' when the value is a plausible atSign; leaves anything
+  /// else untouched so validation can report it instead of throwing.
   static String? _formatAtsign(String? v) {
     if (v == null) return null;
     final t = v.trim();
     if (t.isEmpty) return null;
-    return AtUtils.fixAtSign(t);
+    return Atsigns.normalize(t) ?? t;
   }
 
   /// Problems that would stop the daemon starting or make it unreachable.
@@ -212,8 +214,7 @@ class SshnpdConfigDocument {
     return problems;
   }
 
-  static bool isValidAtsign(String s) =>
-      RegExp(r'^@?[a-zA-Z0-9_]{1,55}$').hasMatch(s.trim());
+  static bool isValidAtsign(String s) => Atsigns.isValid(s);
 
   static bool isValidPermitOpen(String s) {
     final t = s.trim();
