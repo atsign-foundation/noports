@@ -167,12 +167,15 @@ jobs:
           TAG: noports_config-dev
         run: |
           ls -l dist
+          # A release lives on a tag, and GitHub will not move an existing
+          # tag through the release API (--target is ignored once the tag
+          # exists). Delete release and tag together, then recreate at the
+          # commit we just built, so the tag always points at the built code.
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --target "$GITHUB_SHA" --prerelease \
-              --notes "Development build of NoPorts Configuration from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}. Not for production." >/dev/null
-          else
-            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "NoPorts Configuration (dev build)" \
-              --notes "Development build of NoPorts Configuration from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}. Not for production." >/dev/null
+            gh release delete "$TAG" --yes --cleanup-tag
           fi
-          gh release upload "$TAG" dist/* --clobber
+          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
+            --title "NoPorts Configuration (dev build)" \
+            --notes "Development build of NoPorts Configuration from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}. Not for production." \
+            dist/*
           gh release view "$TAG" --json url -q .url
