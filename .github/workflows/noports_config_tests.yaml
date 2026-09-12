@@ -1,0 +1,85 @@
+name: noports_config
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - trunk
+    paths:
+      - ".github/workflows/noports_config_tests.yaml"
+      - "packages/dart/noports_config/**"
+      - "packages/dart/noports_core/**"
+  pull_request:
+    branches:
+      - trunk
+    paths:
+      - ".github/workflows/noports_config_tests.yaml"
+      - "packages/dart/noports_config/**"
+      - "packages/dart/noports_core/**"
+
+defaults:
+  run:
+    working-directory: packages/dart/noports_config
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: "stable"
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Generated l10n is committed and up to date
+        run: git diff --exit-code -- lib/l10n
+      - run: flutter analyze
+      - run: flutter test
+      - name: Run osv-scanner
+        working-directory: .
+        uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/noports_config/pubspec.lock
+
+  # Proves the desktop targets compile. The MSI build in multibuild.yaml
+  # only runs on release tags, so this is the day-to-day check.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            artifact: build/windows/x64/runner/Release
+          - os: ubuntu-latest
+            target: linux
+            artifact: build/linux/x64/release/bundle
+          - os: macos-latest
+            target: macos
+            artifact: build/macos/Build/Products/Release
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: "stable"
+          cache: false
+      - name: Linux desktop build dependencies
+        if: ${{ matrix.target == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev
+      - run: flutter pub get
+      - run: flutter build ${{ matrix.target }} --release
+      - name: List bundle
+        shell: bash
+        run: ls -R ${{ matrix.artifact }} | head -40
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: noports_config-${{ matrix.target }}
+          path: packages/dart/noports_config/${{ matrix.artifact }}
+          retention-days: 7
