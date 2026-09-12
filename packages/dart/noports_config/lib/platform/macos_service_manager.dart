@@ -28,6 +28,14 @@ class MacosServiceManager extends ServiceManager {
   File get logFile =>
       File(p.join(paths.userHomeDir.path, '.sshnpd', 'logs', 'sshnpd.log'));
 
+  /// A second, scheduled LaunchAgent that keeps [logFile] from growing
+  /// forever, since launchd never rotates StandardOutPath itself.
+  String get rotateLabel => '$label.logrotate';
+
+  File get rotatePlistFile => File(
+    p.join(paths.userHomeDir.path, 'Library', 'LaunchAgents', '$rotateLabel.plist'),
+  );
+
   @override
   String get logSourceDescription => plistFile.existsSync() &&
           parseProgramArguments(plistFile.readAsStringSync()).isNotEmpty &&
@@ -55,6 +63,9 @@ class MacosServiceManager extends ServiceManager {
             'service definition to run from the configuration file.';
       } else if (args.isNotEmpty && !File(args.first).existsSync()) {
         warning = 'The service points at ${args.first}, which does not exist.';
+      } else if (!rotatePlistFile.existsSync()) {
+        warning = 'Log rotation for ${logFile.path} is not set up, so the file '
+            'will grow without limit. Update the service definition to add it.';
       }
     }
     final result = await Process.run('launchctl', ['print', '${await _domain()}/$label']);
@@ -174,6 +185,28 @@ class MacosServiceManager extends ServiceManager {
       flush: true,
     );
     await runChecked('launchctl', ['bootstrap', await _domain(), plistFile.path]);
+    await _installLogRotation();
+  }
+
+  /// Every six hours: if the log is over [maxLogBytes], copy it to `.1`
+  /// and truncate it in place. launchd opens StandardOutPath with O_APPEND,
+  /// so the running daemon carries on writing at the new end and never has
+  /// to be restarted for this.
+  Future<void> _installLogRotation() async {
+    final domain = await _domain();
+    if (await Process.run('launchctl', ['print', '$domain/$rotateLabel']).then((r) => r.exitCode == 0)) {
+      await Process.run('launchctl', ['bootout', '$domain/$rotateLabel']);
+    }
+    await rotatePlistFile.writeAsString(
+      buildRotatePlist(
+        label: rotateLabel,
+        logPath: logFile.path,
+        maxBytes: maxLogBytes,
+        intervalSeconds: 6 * 60 * 60,
+      ),
+      flush: true,
+    );
+    await runChecked('launchctl', ['bootstrap', domain, rotatePlistFile.path]);
   }
 
   @override
@@ -231,6 +264,42 @@ $args
 \t<string>${_xml(logPath)}</string>
 \t<key>StandardErrorPath</key>
 \t<string>${_xml(logPath)}</string>
+</dict>
+</plist>
+''';
+  }
+
+  /// Shell one-liner used by the rotation agent. Kept as a static so it
+  /// can be unit tested.
+  static String rotateScript(String logPath, int maxBytes) {
+    final q = "'${logPath.replaceAll("'", "'\\''")}'";
+    return 'f=$q; if [ -f "\$f" ] && [ "\$(stat -f %z "\$f")" -gt $maxBytes ]; '
+        'then cp "\$f" "\$f.1" && : > "\$f"; fi';
+  }
+
+  static String buildRotatePlist({
+    required String label,
+    required String logPath,
+    required int maxBytes,
+    required int intervalSeconds,
+  }) {
+    return '''
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>Label</key>
+\t<string>${_xml(label)}</string>
+\t<key>ProgramArguments</key>
+\t<array>
+\t\t<string>/bin/sh</string>
+\t\t<string>-c</string>
+\t\t<string>${_xml(rotateScript(logPath, maxBytes))}</string>
+\t</array>
+\t<key>StartInterval</key>
+\t<integer>$intervalSeconds</integer>
+\t<key>RunAtLoad</key>
+\t<true/>
 </dict>
 </plist>
 ''';
