@@ -32,7 +32,7 @@ class ServiceView extends StatelessWidget {
             if (state.elevated == false) ...[
               const _ElevationBanner(),
               gapH16,
-            ] else if (!Platform.isWindows) ...[
+            ] else if (Platform.isLinux) ...[
               InsetPanel(
                 child: Row(
                   children: [
@@ -50,7 +50,42 @@ class ServiceView extends StatelessWidget {
             _ServiceCard(state: state),
             gapH16,
             if (status != null && !status.isInstalled) ...[
-              InsetPanel(child: Text(strings.serviceNotInstalledBody)),
+              _NoticePanel(
+                icon: Icons.info_outline,
+                color: AppColor.onSurfaceColor,
+                text: context.read<ServiceCubit>().manager.canInstall
+                    ? strings.serviceNotInstalledInstallable
+                    : strings.serviceNotInstalledBody,
+                action: context.read<ServiceCubit>().manager.canInstall
+                    ? FilledButton.icon(
+                        onPressed: state.isBusy || state.elevated == false
+                            ? null
+                            : () => context.read<ServiceCubit>().install(),
+                        icon: state.busy == ServiceAction.install
+                            ? const _Busy()
+                            : const Icon(Icons.add_circle_outline),
+                        label: Text(strings.installService),
+                      )
+                    : null,
+              ),
+              gapH16,
+            ] else if (status?.warning != null) ...[
+              _NoticePanel(
+                icon: Icons.warning_amber_rounded,
+                color: AppColor.warningColor,
+                text: status!.warning!,
+                action: context.read<ServiceCubit>().manager.canInstall
+                    ? OutlinedButton.icon(
+                        onPressed: state.isBusy
+                            ? null
+                            : () => context.read<ServiceCubit>().install(),
+                        icon: state.busy == ServiceAction.install
+                            ? const _Busy()
+                            : const Icon(Icons.build_outlined),
+                        label: Text(strings.updateServiceDefinition),
+                      )
+                    : null,
+              ),
               gapH16,
             ],
             _LogCard(state: state),
@@ -285,6 +320,33 @@ class _LogCard extends StatelessWidget {
         ],
       ),
       child: LogPanel(text: state.logs, height: 320),
+    );
+  }
+}
+
+class _NoticePanel extends StatelessWidget {
+  const _NoticePanel({
+    required this.icon,
+    required this.color,
+    required this.text,
+    this.action,
+  });
+  final IconData icon;
+  final Color color;
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return InsetPanel(
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          gapW12,
+          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+          if (action != null) ...[gapW16, action!],
+        ],
+      ),
     );
   }
 }

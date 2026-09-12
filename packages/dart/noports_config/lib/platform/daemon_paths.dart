@@ -14,7 +14,18 @@ class DaemonPaths {
     required this.binDir,
     required this.serviceHomeDir,
     required this.userHomeDir,
+    this.configNeedsPrivileges = false,
+    this.legacyConfigFiles = const [],
   });
+
+  /// Whether writing [configDir] needs administrator rights (Linux:
+  /// /etc/noports). Windows is already elevated; macOS uses a per-user
+  /// LaunchAgent so everything is user owned.
+  final bool configNeedsPrivileges;
+
+  /// Older or system-wide locations to seed a new config from when the
+  /// real one does not exist yet.
+  final List<File> legacyConfigFiles;
 
   /// Home of the person using this app (not root, even under sudo). Keys
   /// the app enrolls or imports live in `~/.atsign/keys` here, owned by
@@ -23,7 +34,7 @@ class DaemonPaths {
   /// service account (root / LocalSystem) can read.
   final Directory userHomeDir;
 
-  /// Directory holding sshnpd.yaml. Root / administrator owned.
+  /// Directory holding sshnpd.yaml.
   final Directory configDir;
 
   /// Directory the NoPorts CLI binaries were installed to.
@@ -107,11 +118,20 @@ class DaemonPaths {
       );
     }
     if (Platform.isMacOS) {
+      // universal.sh installs sshnpd per user: binary in ~/.local/bin and a
+      // LaunchAgent in ~/Library/LaunchAgents, running as the user. So the
+      // config is per user too, and no root is involved anywhere.
+      final home = _userHome();
       return DaemonPaths._(
-        configDir: Directory('/Library/Application Support/NoPorts'),
-        binDir: _firstWithBinary(['/usr/local/bin', '/opt/homebrew/bin']),
-        serviceHomeDir: Directory('/var/root'),
-        userHomeDir: _userHome(),
+        configDir: Directory(p.join(home.path, 'Library', 'Application Support', 'NoPorts')),
+        binDir: _firstWithBinary([
+          p.join(home.path, '.local', 'bin'),
+          '/usr/local/bin',
+          '/opt/homebrew/bin',
+        ]),
+        serviceHomeDir: home,
+        userHomeDir: home,
+        legacyConfigFiles: [File('/Library/Application Support/NoPorts/sshnpd.yaml')],
       );
     }
     return DaemonPaths._(
@@ -119,6 +139,7 @@ class DaemonPaths {
       binDir: _firstWithBinary(['/usr/local/bin', '/usr/bin']),
       serviceHomeDir: Directory('/root'),
       userHomeDir: _userHome(),
+      configNeedsPrivileges: true,
     );
   }
 

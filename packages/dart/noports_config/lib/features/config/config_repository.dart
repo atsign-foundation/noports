@@ -7,9 +7,9 @@ import 'package:noports_config/platform/privileged_runner.dart';
 
 /// Reads and writes the daemon's sshnpd.yaml on disk.
 ///
-/// Reading is done as the current user (the file is world readable).
-/// Writing goes through [PrivilegedRunner] because the config directory is
-/// owned by root / administrators.
+/// Reading is done as the current user. Writing goes through
+/// [PrivilegedRunner] only where the config directory is root owned
+/// (see [DaemonPaths.configNeedsPrivileges]).
 class ConfigRepository {
   ConfigRepository({
     DaemonPaths? paths,
@@ -31,12 +31,26 @@ class ConfigRepository {
   static Future<String> _bundledTemplate() =>
       rootBundle.loadString('assets/sshnpd.template.yaml');
 
-  /// Loads the file, or the bundled template if there is none yet.
+  /// Loads the file. If there is none yet, seeds from a legacy location or
+  /// the bundled template; either way `existed` is false so the first save
+  /// creates the real file.
   Future<({SshnpdConfigDocument doc, bool existed})> load() async {
     if (await file.exists()) {
       final text = await file.readAsString();
       if (text.trim().isNotEmpty) {
         return (doc: SshnpdConfigDocument.parse(text), existed: true);
+      }
+    }
+    for (final legacy in paths.legacyConfigFiles) {
+      try {
+        if (await legacy.exists()) {
+          final text = await legacy.readAsString();
+          if (text.trim().isNotEmpty) {
+            return (doc: SshnpdConfigDocument.parse(text), existed: false);
+          }
+        }
+      } catch (_) {
+        // unreadable legacy file: ignore
       }
     }
     return (doc: SshnpdConfigDocument.parse(await _template()), existed: false);
@@ -51,8 +65,8 @@ class ConfigRepository {
     );
     await staged.writeAsString(doc.source, flush: true);
     try {
-      if (Platform.isWindows) {
-        // Already elevated: plain file operations.
+      if (!paths.configNeedsPrivileges) {
+        // User owned (macOS) or already elevated (Windows).
         await paths.configDir.create(recursive: true);
         if (await file.exists()) await file.copy('${file.path}.bak');
         await staged.copy(file.path);

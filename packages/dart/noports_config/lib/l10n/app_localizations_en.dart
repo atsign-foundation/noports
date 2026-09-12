@@ -143,11 +143,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privilegePromptNote =>
-      'Saving the configuration and starting or stopping the service need administrator rights. You will be asked for your password each time; everything else runs as you.';
+      'Saving the configuration and starting or stopping the service need administrator rights. You will be asked to authenticate each time; everything else runs as you.';
 
   @override
   String get serviceNotInstalledBody =>
       'No sshnpd service is registered on this machine. Reinstall NoPorts with the daemon service feature selected.';
+
+  @override
+  String get serviceNotInstalledInstallable =>
+      'No sshnpd service is registered for your account yet. Install it to run the daemon at login from sshnpd.yaml.';
+
+  @override
+  String get installService => 'Install service';
+
+  @override
+  String get updateServiceDefinition => 'Update service definition';
+
+  @override
+  String get serviceInstalled => 'Service installed';
 
   @override
   String serviceActionFailed(String message) {

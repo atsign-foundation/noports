@@ -136,6 +136,7 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     final config = context.read<ConfigCubit>();
     final service = context.read<ServiceCubit>();
     final health = context.read<HealthCubit>();
+    final strings = AppLocalizations.of(context);
     setState(() {
       _failure = null;
       _phase = _Phase.saving;
@@ -150,14 +151,19 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.starting);
-    final installed = service.state.status?.isInstalled ?? false;
+    var installed = service.state.status?.isInstalled ?? false;
+    final legacy = service.state.status?.warning != null;
+    if ((!installed || legacy) && service.manager.canInstall) {
+      installed = await service.install();
+      if (!installed) _failure = service.state.error;
+    }
     if (installed) {
       final running = service.state.status?.isRunning ?? false;
       _startedOk = running ? await service.restart() : await service.start();
       if (!_startedOk) _failure = service.state.error;
     } else {
       _startedOk = false;
-      _failure = AppLocalizations.of(context).serviceNotInstalledBody;
+      _failure = strings.serviceNotInstalledBody;
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.checking);

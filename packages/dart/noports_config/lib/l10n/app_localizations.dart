@@ -355,7 +355,7 @@ abstract class AppLocalizations {
   /// No description provided for @privilegePromptNote.
   ///
   /// In en, this message translates to:
-  /// **'Saving the configuration and starting or stopping the service need administrator rights. You will be asked for your password each time; everything else runs as you.'**
+  /// **'Saving the configuration and starting or stopping the service need administrator rights. You will be asked to authenticate each time; everything else runs as you.'**
   String get privilegePromptNote;
 
   /// No description provided for @serviceNotInstalledBody.
@@ -363,6 +363,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sshnpd service is registered on this machine. Reinstall NoPorts with the daemon service feature selected.'**
   String get serviceNotInstalledBody;
+
+  /// No description provided for @serviceNotInstalledInstallable.
+  ///
+  /// In en, this message translates to:
+  /// **'No sshnpd service is registered for your account yet. Install it to run the daemon at login from sshnpd.yaml.'**
+  String get serviceNotInstalledInstallable;
+
+  /// No description provided for @installService.
+  ///
+  /// In en, this message translates to:
+  /// **'Install service'**
+  String get installService;
+
+  /// No description provided for @updateServiceDefinition.
+  ///
+  /// In en, this message translates to:
+  /// **'Update service definition'**
+  String get updateServiceDefinition;
+
+  /// No description provided for @serviceInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Service installed'**
+  String get serviceInstalled;
 
   /// No description provided for @serviceActionFailed.
   ///

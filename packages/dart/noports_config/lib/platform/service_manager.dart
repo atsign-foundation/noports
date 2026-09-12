@@ -14,7 +14,13 @@ class ServiceStatus extends Equatable {
     this.pid,
     this.exitCode,
     this.detail,
+    this.warning,
   });
+
+  /// Something about the service definition the user should know, e.g. a
+  /// LaunchAgent that passes settings on the command line and so ignores
+  /// parts of sshnpd.yaml.
+  final String? warning;
 
   final ServiceState state;
 
@@ -36,7 +42,7 @@ class ServiceStatus extends Equatable {
   const ServiceStatus.notInstalled() : this(state: ServiceState.notInstalled);
 
   @override
-  List<Object?> get props => [state, startType, pid, exitCode, detail];
+  List<Object?> get props => [state, startType, pid, exitCode, detail, warning];
 }
 
 class ServiceException implements Exception {
@@ -72,6 +78,13 @@ abstract class ServiceManager {
 
   /// Whether this process has the rights needed to control the service.
   Future<bool> isElevated();
+
+  /// Whether [install] is supported: writing the service definition so the
+  /// daemon runs from sshnpd.yaml. Used when nothing is installed yet, or
+  /// to replace a legacy definition (see [ServiceStatus.warning]).
+  bool get canInstall => false;
+
+  Future<void> install() => throw UnsupportedError('install not supported here');
 
   static ServiceManager? _instance;
 

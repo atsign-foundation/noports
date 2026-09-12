@@ -30,10 +30,10 @@ Desktop, never here.
 
 ## Platform notes
 
-* **Privileges.** The app runs as the ordinary user. Only the operations
-  that need it (writing the config directory, starting / stopping the
-  service) go through `PrivilegedRunner`, which prompts each time. That
-  keeps the keys the app writes owned by the user, not root.
+* **Privileges.** The app runs as the ordinary user. Only operations that
+  need it go through `PrivilegedRunner`, which prompts each time; today
+  that is Linux config writes and systemctl. Keys the app writes are
+  always owned by the user.
 * **Windows.** The manifest requests administrator so a UAC prompt appears
   on launch (Windows has no per-operation prompt); the user account is
   still the same, so keys go to `%USERPROFILE%\.atsign\keys`. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
@@ -41,11 +41,15 @@ Desktop, never here.
   Application Event Log. The MSI installs the app under
   `Program Files\NoPorts\NoPortsConfig`, adds a Start Menu shortcut and
   offers to launch it from the installer's finish page.
-* **macOS.** Config in `/Library/Application Support/NoPorts`, service is
-  the `com.atsign.sshnpd` LaunchDaemon. Privileged steps use
-  `osascript ... with administrator privileges`. Do not run the app with
-  `sudo`; if you do, it still resolves keys against `SUDO_USER`'s home.
-  Not sandboxed.
+* **macOS.** Follows universal.sh: everything is per user and nothing
+  needs root. The daemon is the `com.atsign.sshnpd` LaunchAgent in
+  `~/Library/LaunchAgents`, binary in `~/.local/bin`, config in
+  `~/Library/Application Support/NoPorts/sshnpd.yaml`, log in
+  `~/.sshnpd/logs/sshnpd.log`. The app can install the LaunchAgent, or
+  rewrite a legacy one that passes settings as command line flags (those
+  override the YAML), so the daemon runs with `--config <yaml>`. An
+  existing system-wide `/Library/Application Support/NoPorts/sshnpd.yaml`
+  is used to seed the per-user file. Not sandboxed.
 * **Linux.** `/etc/noports/sshnpd.yaml`, `systemctl`, `journalctl`. Privileged
   steps use `pkexec`.
 

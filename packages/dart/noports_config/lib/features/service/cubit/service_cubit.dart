@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
-enum ServiceAction { none, start, stop, restart }
+enum ServiceAction { none, start, stop, restart, install }
 
 class ServiceCubitState extends Equatable {
   const ServiceCubitState({
@@ -102,6 +102,9 @@ class ServiceCubit extends Cubit<ServiceCubitState> {
   Future<bool> start() => _run(ServiceAction.start, _manager.start);
   Future<bool> stop() => _run(ServiceAction.stop, _manager.stop);
   Future<bool> restart() => _run(ServiceAction.restart, _manager.restart);
+
+  /// Write the service definition (and load it). macOS only for now.
+  Future<bool> install() => _run(ServiceAction.install, _manager.install);
 
   Future<bool> _run(ServiceAction action, Future<void> Function() fn) async {
     if (state.isBusy) return false;
