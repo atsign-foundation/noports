@@ -7,7 +7,7 @@ import 'package:noports_config/features/config/model/sshnpd_config_document.dart
 enum ConfigStatus { initial, loading, ready, error }
 
 class ConfigState extends Equatable {
-  const ConfigState({
+  ConfigState({
     this.status = ConfigStatus.initial,
     this.doc,
     this.savedSource,
@@ -16,13 +16,18 @@ class ConfigState extends Equatable {
     this.yamlError,
     this.showAdvanced = false,
     this.saving = false,
-  });
+  }) : source = doc?.source ?? '';
 
   final ConfigStatus status;
 
-  /// Working copy. Mutated in place by the cubit; [source] changes drive
-  /// rebuilds.
+  /// Working copy. Mutated in place by the cubit.
   final SshnpdConfigDocument? doc;
+
+  /// Snapshot of [doc]'s text taken when this state was created. It must be
+  /// a stored value, not a getter: consecutive states share the same [doc]
+  /// object, so a getter would make old and new states compare equal and
+  /// the bloc would swallow the emit.
+  final String source;
 
   /// Text as last loaded from or written to disk, for dirty tracking and
   /// revert.
@@ -37,7 +42,6 @@ class ConfigState extends Equatable {
   final bool showAdvanced;
   final bool saving;
 
-  String get source => doc?.source ?? '';
   bool get isDirty => doc != null && source != savedSource;
   bool get isUnconfigured => doc?.isUnconfigured ?? true;
   List<ConfigProblem> get problems => doc?.validate() ?? const [];
@@ -81,7 +85,7 @@ class ConfigState extends Equatable {
 
 /// Owns the working copy of sshnpd.yaml for the whole app.
 class ConfigCubit extends Cubit<ConfigState> {
-  ConfigCubit(this._repo) : super(const ConfigState());
+  ConfigCubit(this._repo) : super(ConfigState());
 
   final ConfigRepository _repo;
 

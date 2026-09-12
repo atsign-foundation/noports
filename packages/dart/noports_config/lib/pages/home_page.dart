@@ -20,11 +20,15 @@ class HomePage extends StatelessWidget {
     final nav = context.watch<NavCubit>().state;
     final config = context.watch<ConfigCubit>().state;
 
-    // Pop the wizard the first time we learn the config is empty.
-    final showWizard = nav.wizard ||
-        (!nav.wizardDismissed &&
-            config.status == ConfigStatus.ready &&
-            config.isUnconfigured);
+    // Decide once, when the config has loaded, whether to start in the
+    // wizard. Afterwards only explicit navigation changes it.
+    if (!nav.decided && config.status == ConfigStatus.ready) {
+      final navCubit = context.read<NavCubit>();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => navCubit.decideInitial(unconfigured: config.isUnconfigured),
+      );
+    }
+    final showWizard = nav.wizard;
 
     final tabs = [
       strings.tabStatus,
@@ -41,7 +45,9 @@ class HomePage extends StatelessWidget {
           context.read<NavCubit>().select(HomeTab.values[i]);
         },
       ),
-      body: showWizard
+      body: !nav.decided
+          ? const Center(child: CircularProgressIndicator.adaptive())
+          : showWizard
           ? const SetupWizardView()
           : IndexedStack(
               index: nav.tab.index,

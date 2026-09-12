@@ -18,7 +18,7 @@ this one on the machine you connect *to*.
 | --- | --- |
 | Status | Live service state, Start / Stop / Restart, start mode, PID, last exit code, recent log lines from the platform log (Event Log, launchd, journald). |
 | Configuration | A form generated from the daemon's own option definitions, plus a raw YAML editor over the same document. Save, Revert, Save and restart. Comments in the file are preserved. |
-| Keys | Shows which `.atKeys` file the daemon will use and whether it exists. Enrolls the device through APKAM: the user pastes the OTP or PIN from the Authenticator tab of NoPorts Desktop on their client, the request is approved there, and the new keys land in `<config dir>/keys` where the service account can read them. Importing an existing `.atKeys` file is kept as a secondary option for fleets and recovery. |
+| Keys | Shows which `.atKeys` file the daemon will use and whether it exists. Enrolls the device through APKAM: the user pastes the OTP or PIN from the Authenticator tab of NoPorts Desktop on their client, the request is approved there, and the new keys land in the user's own `~/.atsign/keys` (where `at_activate` puts them); `sshnpd.yaml` gets the absolute path so the root / LocalSystem service can read the file. Existing key files are never overwritten. Importing an existing `.atKeys` file is kept as a secondary option for fleets and recovery. |
 | Diagnostics | In-app checks (config valid, keys present, access configured, binary present, atDirectory reachable, service state) and a button to run `sshnpd --doctor` for the full report. |
 
 When `sshnpd.yaml` has no device atSign the app opens on a four step
@@ -30,20 +30,24 @@ Desktop, never here.
 
 ## Platform notes
 
-* **Windows.** Requires administrator; the manifest requests it so a UAC
-  prompt appears on launch. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
+* **Privileges.** The app runs as the ordinary user. Only the operations
+  that need it (writing the config directory, starting / stopping the
+  service) go through `PrivilegedRunner`, which prompts each time. That
+  keeps the keys the app writes owned by the user, not root.
+* **Windows.** The manifest requests administrator so a UAC prompt appears
+  on launch (Windows has no per-operation prompt); the user account is
+  still the same, so keys go to `%USERPROFILE%\.atsign\keys`. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
   the service is `sshnpd` (controlled with `sc.exe`), logs come from the
   Application Event Log. The MSI installs the app under
   `Program Files\NoPorts\NoPortsConfig`, adds a Start Menu shortcut and
   offers to launch it from the installer's finish page.
-* **macOS.** Needs root to write `/Library/Application Support/NoPorts`
-  and drive `launchctl` (label `com.atsign.sshnpd`). When launched as a
-  normal user the app relaunches itself through the system password prompt
-  (`osascript ... with administrator privileges`) and exits. Not sandboxed.
-* **Linux.** `/etc/noports/sshnpd.yaml`, `systemctl`, `journalctl`. Relaunches
-  through `pkexec` when not root.
-* Set `NOPORTS_CONFIG_NO_ELEVATE=1` to skip the relaunch, e.g. under
-  `flutter run`; the UI then shows what it cannot do.
+* **macOS.** Config in `/Library/Application Support/NoPorts`, service is
+  the `com.atsign.sshnpd` LaunchDaemon. Privileged steps use
+  `osascript ... with administrator privileges`. Do not run the app with
+  `sudo`; if you do, it still resolves keys against `SUDO_USER`'s home.
+  Not sandboxed.
+* **Linux.** `/etc/noports/sshnpd.yaml`, `systemctl`, `journalctl`. Privileged
+  steps use `pkexec`.
 
 ## Layout
 
@@ -55,7 +59,7 @@ lib/
   platform/
     daemon_paths.dart             where config / keys / binaries live per OS
     service_manager.dart          abstract service control + factory
-    elevation.dart                relaunch as root on macOS / Linux
+    privileged_runner.dart        run one command as admin (osascript / pkexec / direct)
     windows_/macos_/linux_service_manager.dart
   features/
     config/
@@ -97,7 +101,8 @@ flutter build windows --release
 ```
 
 On Windows, `flutter run` must itself be started from an elevated shell
-because of the `requireAdministrator` manifest.
+because of the `requireAdministrator` manifest. On macOS and Linux run it
+as yourself; the password prompt appears when you save or touch the service.
 
 ## Release
 

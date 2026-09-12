@@ -1,14 +1,18 @@
 import 'dart:io';
 
+import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 /// systemd control for the sshnpd unit installed by universal.sh or the
 /// deb/rpm packages.
 class LinuxServiceManager extends ServiceManager {
-  LinuxServiceManager({this.serviceName = 'sshnpd'});
+  LinuxServiceManager({this.serviceName = 'sshnpd', PrivilegedRunner? runner})
+    : _runner = runner;
 
   @override
   final String serviceName;
+  final PrivilegedRunner? _runner;
+  PrivilegedRunner get runner => _runner ?? PrivilegedRunner.instance;
 
   @override
   String get logSourceDescription => 'journalctl -u $serviceName';
@@ -50,7 +54,7 @@ class LinuxServiceManager extends ServiceManager {
 
   @override
   Future<void> start() async {
-    await runChecked('systemctl', ['start', serviceName]);
+    await runner.runShell('systemctl start $serviceName');
     final s = await waitFor((s) => !s.isTransitioning);
     if (!s.isRunning) {
       throw ServiceException(
@@ -61,13 +65,13 @@ class LinuxServiceManager extends ServiceManager {
 
   @override
   Future<void> stop() async {
-    await runChecked('systemctl', ['stop', serviceName]);
+    await runner.runShell('systemctl stop $serviceName');
     await waitFor((s) => s.state == ServiceState.stopped);
   }
 
   @override
   Future<void> restart() async {
-    await runChecked('systemctl', ['restart', serviceName]);
+    await runner.runShell('systemctl restart $serviceName');
     await waitFor((s) => !s.isTransitioning);
   }
 
@@ -87,8 +91,5 @@ class LinuxServiceManager extends ServiceManager {
   }
 
   @override
-  Future<bool> isElevated() async {
-    final result = await Process.run('id', ['-u']);
-    return result.stdout.toString().trim() == '0';
-  }
+  Future<bool> isElevated() => runner.isAvailable();
 }

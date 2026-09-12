@@ -351,11 +351,6 @@ class _DeviceStep extends StatelessWidget {
             icon: const Icon(Icons.computer_outlined, size: 16),
             label: Text(strings.hostname),
           ),
-          ConfigFieldWidget(
-            field: ConfigSchema.byOption(SshnpdOption.deviceGroup),
-            value: doc.get(ConfigSchema.byOption(SshnpdOption.deviceGroup).path),
-            onChanged: (v) => cubit.setField(ConfigSchema.byOption(SshnpdOption.deviceGroup), v),
-          ),
         ],
       ),
     );

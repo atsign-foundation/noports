@@ -192,16 +192,31 @@ class KeyValueRow extends StatelessWidget {
 }
 
 /// Monospace, scrollable, selectable log panel.
-class LogPanel extends StatelessWidget {
+class LogPanel extends StatefulWidget {
   const LogPanel({super.key, required this.text, this.height = 260});
 
   final String text;
   final double height;
 
   @override
+  State<LogPanel> createState() => _LogPanelState();
+}
+
+class _LogPanelState extends State<LogPanel> {
+  // Own controller so the always-visible scrollbar is not left hunting for
+  // the enclosing ListView's position.
+  final _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
+      height: widget.height,
       width: double.infinity,
       padding: const EdgeInsets.all(Sizes.p12),
       decoration: BoxDecoration(
@@ -209,10 +224,12 @@ class LogPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(Sizes.p10),
       ),
       child: Scrollbar(
+        controller: _controller,
         thumbVisibility: true,
         child: SingleChildScrollView(
+          controller: _controller,
           child: SelectableText(
-            text,
+            widget.text,
             style: const TextStyle(
               fontFamily: 'monospace',
               fontSize: 12,

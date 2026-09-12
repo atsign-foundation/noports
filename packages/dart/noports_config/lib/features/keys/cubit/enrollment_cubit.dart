@@ -63,8 +63,8 @@ class EnrollmentState extends Equatable {
 ///
 /// The passcode (OTP or PIN) comes from the NoPorts Desktop app's
 /// Authenticator tab on the client, which also approves the request. The
-/// resulting .atKeys file is written straight into the daemon's managed
-/// keys directory.
+/// resulting .atKeys file is written to the user's ~/.atsign/keys, and is
+/// never written over an existing file.
 class EnrollmentCubit extends Cubit<EnrollmentState> {
   EnrollmentCubit({
     required this.rootDomain,
@@ -110,8 +110,10 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     AtOnboardingService? svc;
     try {
       if (await dest.exists()) {
-        // A stale file here would make createAtKeysFile refuse to write.
-        await dest.rename('${dest.path}.old');
+        throw StateError(
+          'Keys for $atsign already exist at ${dest.path}. Not overwriting them. '
+          'Use that file, or move it away first if this device really needs new keys.',
+        );
       }
       await dest.parent.create(recursive: true);
       final pref = AtOnboardingPreference()
@@ -133,7 +135,7 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       if (_cancelled) return;
 
       emit(state.copyWith(step: EnrollmentStep.creatingKeys));
-      await svc.createAtKeysFile(er, atKeysFile: dest, allowOverwrite: true);
+      await svc.createAtKeysFile(er, atKeysFile: dest, allowOverwrite: false);
       await KeysRepository.restrictPermissions(dest);
       emit(state.copyWith(step: EnrollmentStep.done, keysFile: dest));
     } catch (e) {
@@ -153,7 +155,7 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   }
 
   static String _describe(Object e) {
-    var s = e.toString().replaceFirst(RegExp(r'^\w*Exception: '), '');
+    var s = e.toString().replaceFirst(RegExp(r'^(\w*Exception|Bad state): '), '');
     if (s.contains('denied')) return 'The enrollment request was denied in NoPorts Desktop.';
     if (s.contains('otp') || s.contains('OTP') || s.contains('invalid passcode')) {
       return 'The passcode was not accepted. Copy a fresh OTP, or the PIN, from NoPorts Desktop\'s Authenticator tab.';

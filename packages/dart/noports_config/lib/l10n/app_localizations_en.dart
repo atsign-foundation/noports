@@ -139,7 +139,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notElevatedBody =>
-      'This app is not running with administrator rights, so it can read settings but cannot save them or control the service. Close it and launch it again as an administrator (on macOS and Linux: with sudo).';
+      'This app is not running with administrator rights, so it can read settings but cannot save them or control the service. Close it and launch it again as an administrator.';
+
+  @override
+  String get privilegePromptNote =>
+      'Saving the configuration and starting or stopping the service need administrator rights. You will be asked for your password each time; everything else runs as you.';
 
   @override
   String get serviceNotInstalledBody =>
@@ -271,7 +275,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String keysManagedDir(String dir) {
-    return 'Keys imported here are stored in $dir so the service account can read them.';
+    return 'Keys enrolled or imported here are kept in your own $dir and referenced by absolute path in the daemon configuration. Existing key files are never overwritten.';
   }
 
   @override
@@ -313,7 +317,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enrollCardBody =>
-      'Cuts a new set of keys for the device atSign using APKAM. The request is approved from the NoPorts Desktop app on your client, which holds the atSign\'s manager keys.';
+      'Cuts a new set of keys for the device atSign using APKAM and saves them in your ~/.atsign/keys. The request is approved from the NoPorts Desktop app on your client, which holds the atSign\'s manager keys.';
 
   @override
   String get enrollHowTitle => 'Before you start';

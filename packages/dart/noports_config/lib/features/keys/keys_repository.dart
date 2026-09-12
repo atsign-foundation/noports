@@ -11,8 +11,8 @@ class KeysException implements Exception {
   String toString() => message;
 }
 
-/// Copies .atKeys files into the daemon's managed keys directory and
-/// tightens their permissions.
+/// Copies .atKeys files into the user's ~/.atsign/keys directory and
+/// tightens their permissions. Never overwrites an existing keys file.
 class KeysRepository {
   KeysRepository({DaemonPaths? paths}) : _paths = paths;
 
@@ -49,7 +49,9 @@ class KeysRepository {
     }
   }
 
-  /// Copies [source] to the managed directory. Returns the destination.
+  /// Copies [source] to the user's keys directory. Returns the destination.
+  /// If a different file for the same atSign is already there it is left
+  /// alone and a [KeysException] is thrown; the user must move it first.
   Future<File> import(File source, String atsign) async {
     if (!await source.exists()) {
       throw KeysException('File not found: ${source.path}');
@@ -58,10 +60,19 @@ class KeysRepository {
       throw KeysException('${source.path} is not an .atKeys file.');
     }
     final dest = paths.keysFileFor(atsign);
-    await dest.parent.create(recursive: true);
-    if (source.absolute.path != dest.absolute.path) {
-      await source.copy(dest.path);
+    if (source.absolute.path == dest.absolute.path) {
+      // Already where it belongs; just use it.
+      return dest;
     }
+    if (await dest.exists()) {
+      if (await dest.readAsString() == await source.readAsString()) return dest;
+      throw KeysException(
+        'Keys for $atsign already exist at ${dest.path}. '
+        'Not overwriting them. Move that file away first if you really mean to replace it.',
+      );
+    }
+    await dest.parent.create(recursive: true);
+    await source.copy(dest.path);
     await restrictPermissions(dest);
     return dest;
   }

@@ -5,7 +5,24 @@ import 'package:noports_config/features/config/config_repository.dart';
 import 'package:noports_config/features/config/cubit/config_cubit.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_core/sshnpd.dart';
+
+/// Runs the shell script directly; the temp dir is ours so no rights needed.
+class DirectRunner extends PrivilegedRunner {
+  @override
+  Future<String> runShell(String script) async {
+    final r = await Process.run('sh', ['-c', script]);
+    if (r.exitCode != 0) throw Exception(r.stderr.toString());
+    return r.stdout.toString();
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+
+  @override
+  Future<bool> alreadyPrivileged() async => true;
+}
 
 void main() {
   late Directory tmp;
@@ -20,6 +37,7 @@ void main() {
         binDir: Directory('${tmp.path}/bin'),
       ),
       template: () async => template,
+      runner: DirectRunner(),
     );
   });
 

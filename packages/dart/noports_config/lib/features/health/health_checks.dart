@@ -70,9 +70,9 @@ class KeysFileCheck extends HealthCheck {
     final file = ctx.keys.resolve(doc.atsign, doc.keysFile);
     if (file == null) return fail('Could not work out where the keys file should be.');
     if (!file.existsSync()) {
-      final hint = Platform.isWindows && doc.keysFile == null
-          ? ' The service runs as LocalSystem, whose home directory is not yours, '
-                'so import the keys on the Keys tab rather than relying on ~/.atsign/keys.'
+      final hint = doc.keysFile == null
+          ? ' The service does not run as you, so ~/.atsign/keys means the service '
+                'account\'s home. Set the keys path explicitly (enrolling on the Keys tab does this).'
           : '';
       return fail('${file.path} not found.$hint');
     }

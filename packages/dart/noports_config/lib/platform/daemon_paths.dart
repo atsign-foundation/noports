@@ -13,10 +13,17 @@ class DaemonPaths {
     required this.configDir,
     required this.binDir,
     required this.serviceHomeDir,
+    required this.userHomeDir,
   });
 
-  /// Directory holding sshnpd.yaml. Keys imported by this app go in a
-  /// `keys` sub-directory so the service account can always read them.
+  /// Home of the person using this app (not root, even under sudo). Keys
+  /// the app enrolls or imports live in `~/.atsign/keys` here, owned by
+  /// the user, exactly where at_activate and NoPorts Desktop keep them.
+  /// sshnpd.yaml then points at that file by absolute path, which the
+  /// service account (root / LocalSystem) can read.
+  final Directory userHomeDir;
+
+  /// Directory holding sshnpd.yaml. Root / administrator owned.
   final Directory configDir;
 
   /// Directory the NoPorts CLI binaries were installed to.
@@ -29,7 +36,8 @@ class DaemonPaths {
 
   File get configFile => File(p.join(configDir.path, 'sshnpd.yaml'));
 
-  Directory get keysDir => Directory(p.join(configDir.path, 'keys'));
+  Directory get keysDir =>
+      Directory(p.join(userHomeDir.path, '.atsign', 'keys'));
 
   String get sshnpdBinaryName => Platform.isWindows ? 'sshnpd.exe' : 'sshnpd';
 
@@ -52,11 +60,37 @@ class DaemonPaths {
     required Directory configDir,
     required Directory binDir,
     Directory? serviceHomeDir,
+    Directory? userHomeDir,
   }) => DaemonPaths._(
     configDir: configDir,
     binDir: binDir,
     serviceHomeDir: serviceHomeDir,
+    userHomeDir: userHomeDir ?? Directory(p.join(configDir.parent.path, 'home')),
   );
+
+  /// The real user's home, seeing through sudo.
+  static Directory _userHome() {
+    final env = Platform.environment;
+    if (Platform.isWindows) {
+      return Directory(env['USERPROFILE'] ?? r'C:\Users\Default');
+    }
+    final sudoUser = env['SUDO_USER'];
+    if (sudoUser != null && sudoUser.isNotEmpty && sudoUser != 'root') {
+      try {
+        if (Platform.isMacOS) {
+          final r = Process.runSync('dscl', ['.', '-read', '/Users/$sudoUser', 'NFSHomeDirectory']);
+          final m = RegExp(r'NFSHomeDirectory:\s*(\S+)').firstMatch(r.stdout.toString());
+          if (m != null) return Directory(m.group(1)!);
+        } else {
+          final r = Process.runSync('getent', ['passwd', sudoUser]);
+          final parts = r.stdout.toString().trim().split(':');
+          if (parts.length > 5 && parts[5].isNotEmpty) return Directory(parts[5]);
+        }
+      } catch (_) {}
+      return Directory(Platform.isMacOS ? '/Users/$sudoUser' : '/home/$sudoUser');
+    }
+    return Directory(env['HOME'] ?? '/');
+  }
 
   static DaemonPaths _detect() {
     if (Platform.isWindows) {
@@ -69,6 +103,7 @@ class DaemonPaths {
         serviceHomeDir: Directory(
           p.join(systemRoot, 'System32', 'config', 'systemprofile'),
         ),
+        userHomeDir: _userHome(),
       );
     }
     if (Platform.isMacOS) {
@@ -76,12 +111,14 @@ class DaemonPaths {
         configDir: Directory('/Library/Application Support/NoPorts'),
         binDir: _firstWithBinary(['/usr/local/bin', '/opt/homebrew/bin']),
         serviceHomeDir: Directory('/var/root'),
+        userHomeDir: _userHome(),
       );
     }
     return DaemonPaths._(
       configDir: Directory('/etc/noports'),
       binDir: _firstWithBinary(['/usr/local/bin', '/usr/bin']),
       serviceHomeDir: Directory('/root'),
+      userHomeDir: _userHome(),
     );
   }
 

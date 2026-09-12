@@ -1,13 +1,17 @@
 import 'dart:io';
 
+import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
-/// launchd control for the sshnpd LaunchDaemon. Requires root; the UI
-/// explains this when [isElevated] is false.
+/// launchd control for the sshnpd LaunchDaemon. Status is read as the
+/// current user; start and stop go through the admin password prompt.
 class MacosServiceManager extends ServiceManager {
-  MacosServiceManager({this.label = 'com.atsign.sshnpd'});
+  MacosServiceManager({this.label = 'com.atsign.sshnpd', PrivilegedRunner? runner})
+    : _runner = runner;
 
   final String label;
+  final PrivilegedRunner? _runner;
+  PrivilegedRunner get runner => _runner ?? PrivilegedRunner.instance;
 
   @override
   String get serviceName => label;
@@ -22,14 +26,17 @@ class MacosServiceManager extends ServiceManager {
     final result = await Process.run('launchctl', ['print', 'system/$label']);
     final out = result.stdout.toString() + result.stderr.toString();
     if (result.exitCode != 0) {
-      if (File(plistPath).existsSync()) {
-        return ServiceStatus(
-          state: ServiceState.stopped,
-          startType: 'Not loaded',
-          detail: out.trim(),
-        );
-      }
-      return const ServiceStatus.notInstalled();
+      if (!File(plistPath).existsSync()) return const ServiceStatus.notInstalled();
+      // Reading the system domain can be refused for non-root users; fall
+      // back to looking for the process.
+      final pg = await Process.run('pgrep', ['-x', 'sshnpd']);
+      final pid = int.tryParse(pg.stdout.toString().trim().split('\n').first);
+      return ServiceStatus(
+        state: pid != null ? ServiceState.running : ServiceState.stopped,
+        startType: 'Run at load',
+        pid: pid,
+        detail: out.trim(),
+      );
     }
     final stateStr =
         RegExp(r'state = (\w+)').firstMatch(out)?.group(1) ?? 'unknown';
@@ -55,13 +62,12 @@ class MacosServiceManager extends ServiceManager {
 
   @override
   Future<void> start() async {
-    final loaded =
-        (await Process.run('launchctl', ['print', 'system/$label'])).exitCode ==
-        0;
-    if (!loaded) {
-      await runChecked('launchctl', ['bootstrap', 'system', plistPath]);
-    }
-    await runChecked('launchctl', ['kickstart', 'system/$label']);
+    final q = PrivilegedRunner.q;
+    await runner.runShell(
+      '( launchctl print system/$label >/dev/null 2>&1 || '
+      'launchctl bootstrap system ${q(plistPath)} ) && '
+      'launchctl kickstart system/$label',
+    );
     await waitFor((s) => s.isRunning);
   }
 
@@ -69,8 +75,20 @@ class MacosServiceManager extends ServiceManager {
   Future<void> stop() async {
     // bootout unloads the job, which is the only way to stop a KeepAlive
     // daemon without launchd immediately respawning it.
-    await runChecked('launchctl', ['bootout', 'system/$label']);
+    await runner.runShell('launchctl bootout system/$label');
     await waitFor((s) => !s.isRunning);
+  }
+
+  @override
+  Future<void> restart() async {
+    // One prompt instead of two.
+    final q = PrivilegedRunner.q;
+    await runner.runShell(
+      '( launchctl bootout system/$label 2>/dev/null || true ) && '
+      'launchctl bootstrap system ${q(plistPath)} && '
+      'launchctl kickstart system/$label',
+    );
+    await waitFor((s) => s.isRunning);
   }
 
   @override
@@ -91,8 +109,5 @@ class MacosServiceManager extends ServiceManager {
   }
 
   @override
-  Future<bool> isElevated() async {
-    final result = await Process.run('id', ['-u']);
-    return result.stdout.toString().trim() == '0';
-  }
+  Future<bool> isElevated() => runner.isAvailable();
 }

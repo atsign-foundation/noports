@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +31,20 @@ class ServiceView extends StatelessWidget {
           children: [
             if (state.elevated == false) ...[
               const _ElevationBanner(),
+              gapH16,
+            ] else if (!Platform.isWindows) ...[
+              InsetPanel(
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_outline, size: 18),
+                    gapW12,
+                    Expanded(
+                      child: Text(strings.privilegePromptNote,
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                  ],
+                ),
+              ),
               gapH16,
             ],
             _ServiceCard(state: state),
