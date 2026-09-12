@@ -34,9 +34,14 @@ Desktop, never here.
   need it go through `PrivilegedRunner`, which prompts each time; today
   that is Linux config writes and systemctl. Keys the app writes are
   always owned by the user.
-* **Windows.** The manifest requests administrator so a UAC prompt appears
-  on launch (Windows has no per-operation prompt); the user account is
-  still the same, so keys go to `%USERPROFILE%\.atsign\keys`. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
+* **Windows.** The linker's `/MANIFESTUAC` requests administrator so a UAC
+  prompt appears on launch (Windows has no per-operation prompt); the user
+  account is still the same, so keys go to `%USERPROFILE%\.atsign\keys`.
+  The release bundle needs the Visual C++ runtime; CI copies
+  `msvcp140.dll`, `vcruntime140.dll` and `vcruntime140_1.dll` next to the
+  exe with `tools/bundle_msvc_runtime.ps1` (app-local deployment, as the
+  Flutter docs recommend for non-MSIX apps). Run it yourself after a local
+  `flutter build windows` if the target machine lacks the VC redist. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
   the service is `sshnpd` (controlled with `sc.exe`), logs come from the
   Application Event Log. The MSI installs the app under
   `Program Files\NoPorts\NoPortsConfig`, adds a Start Menu shortcut and

@@ -220,6 +220,7 @@ jobs:
         run: |
           flutter pub get
           flutter build windows --release
+          pwsh ./tools/bundle_msvc_runtime.ps1
           mkdir -p ../../../tools/windows-msi/bin/noports_config
           cp -r build/windows/x64/runner/Release/* ../../../tools/windows-msi/bin/noports_config/
       - name: Sign Executables with Azure Artifact Signing (Windows only)
