@@ -39,7 +39,6 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - name: Run osv-scanner
-        working-directory: .
         uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
         with:
           scan-args: |-
