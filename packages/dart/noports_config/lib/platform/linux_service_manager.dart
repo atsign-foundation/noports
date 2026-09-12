@@ -87,6 +87,11 @@ class LinuxServiceManager extends ServiceManager {
       'short-iso',
     ]);
     final out = result.stdout.toString().trim();
+    if (result.exitCode != 0) {
+      final err = result.stderr.toString().trim();
+      return 'Could not read the journal${err.isEmpty ? '' : ': $err'}.\n'
+          'Add yourself to the systemd-journal group, or run: journalctl -u $serviceName';
+    }
     return out.isEmpty ? 'No journal entries for $serviceName.' : out;
   }
 

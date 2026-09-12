@@ -77,17 +77,24 @@ class KeysRepository {
     return dest;
   }
 
-  /// Best effort: the keys should be readable by the service account and
-  /// administrators only.
+  /// Best effort: the keys should be readable by the owner, the service
+  /// account and administrators only.
   static Future<void> restrictPermissions(File file) async {
     try {
       if (Platform.isWindows) {
+        // The app runs elevated, but the user's ordinary processes carry a
+        // UAC-filtered token where Administrators is deny-only, so the user
+        // must be granted explicitly or they lose access to their own keys.
+        final user = Platform.environment['USERNAME'];
+        final domain = Platform.environment['USERDOMAIN'];
         await Process.run('icacls', [
           file.path,
           '/inheritance:r',
           '/grant:r',
-          '*S-1-5-18:(R)', // SYSTEM
+          '*S-1-5-18:(R)', // LocalSystem, which the service runs as
           '*S-1-5-32-544:(F)', // Administrators
+          if (user != null && user.isNotEmpty)
+            '${domain != null && domain.isNotEmpty ? '$domain\\' : ''}$user:(F)',
         ]);
       } else {
         await Process.run('chmod', ['600', file.path]);
