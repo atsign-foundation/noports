@@ -1,0 +1,53 @@
+name: noports_config
+description: "NoPorts Configuration: desktop tool for configuring and controlling the NoPorts daemon (sshnpd)."
+publish_to: "none"
+
+# Keep in step with the MSI ProductVersion when cutting a release; the app
+# shows this in the app bar.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management (same stack as npt_flutter)
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # Daemon schema, defaults and onboarding
+  noports_core:
+    path: ../noports_core
+  at_onboarding_cli: ^1.14.2
+  at_utils: ^3.4.0
+
+  # Config file editing (comment preserving)
+  yaml: ^3.1.2
+  yaml_edit: ^2.2.2
+
+  # Desktop plumbing
+  file_picker: ^11.0.3
+  window_manager: ^0.4.2
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.0
+  path: ^1.9.0
+  intl: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  bloc_test: ^9.1.7
+
+dependency_overrides:
+  pointycastle: ^4.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/

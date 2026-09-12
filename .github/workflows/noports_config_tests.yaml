@@ -1,0 +1,305 @@
+name: noports_config
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: "Also publish the archives as assets on the noports_config-dev prerelease"
+        type: boolean
+        default: false
+  push:
+    branches:
+      - trunk
+    paths:
+      - ".github/workflows/noports_config_tests.yaml"
+      - "packages/dart/noports_config/**"
+      - "packages/dart/noports_core/**"
+  pull_request:
+    branches:
+      - trunk
+    paths:
+      - ".github/workflows/noports_config_tests.yaml"
+      - "packages/dart/noports_config/**"
+      - "packages/dart/noports_core/**"
+
+defaults:
+  run:
+    working-directory: packages/dart/noports_config
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: "stable"
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Generated l10n is committed and up to date
+        run: git diff --exit-code -- lib/l10n
+      - run: flutter analyze
+      - run: flutter test
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/noports_config/pubspec.lock
+
+  # Proves the desktop targets compile and produces one archive per target
+  # for hands-on testing. The MSI build in multibuild.yaml only runs on
+  # release tags, so this is the day-to-day check.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            arch: x64
+            bundle: build/windows/x64/runner/Release
+          # Native Windows on ARM. Experimental: Flutter builds arm64 only
+          # on an arm64 host, and the NoPorts CLI binaries are not shipped
+          # for Windows arm64 yet, so the app would run but find no daemon.
+          - os: windows-11-arm
+            target: windows
+            arch: arm64
+            bundle: build/windows/arm64/runner/Release
+            experimental: true
+          - os: ubuntu-latest
+            target: linux
+            arch: x64
+            bundle: build/linux/x64/release/bundle
+          # Flutter desktop supports x64 and arm64 on Linux, not armv7 or
+          # riscv64, so the daemon's other Linux targets have no app build.
+          - os: ubuntu-24.04-arm
+            target: linux
+            arch: arm64
+            bundle: build/linux/arm64/release/bundle
+          # Flutter macOS release builds are universal (arm64 + x86_64).
+          - os: macos-latest
+            target: macos
+            arch: universal
+            bundle: build/macos/Build/Products/Release
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental == true }}
+    env:
+      ARCHIVE_BASE: noports_config-${{ matrix.target }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        if: ${{ matrix.arch != 'arm64' }}
+        with:
+          channel: "stable"
+          cache: false
+      # Flutter publishes SDK archives for x64 hosts only, so the action has
+      # nothing to download on ARM runners. A shallow clone of the stable
+      # branch bootstraps the matching arm64 Dart SDK and engine artifacts.
+      - name: Install Flutter from git (arm64 hosts)
+        if: ${{ matrix.arch == 'arm64' }}
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+      - name: Linux desktop build dependencies
+        if: ${{ matrix.target == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev
+      - run: flutter pub get
+      - run: flutter build ${{ matrix.target }} --release
+      - name: Bundle the Visual C++ runtime (Windows only)
+        if: ${{ matrix.target == 'windows' }}
+        shell: pwsh
+        run: ./tools/bundle_msvc_runtime.ps1 -Destination "${{ matrix.bundle }}"
+      - name: Archive (Windows)
+        if: ${{ matrix.target == 'windows' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path "${{ matrix.bundle }}\*" -DestinationPath "dist\$env:ARCHIVE_BASE.zip"
+          Get-ChildItem dist
+      - name: Archive (Linux)
+        if: ${{ matrix.target == 'linux' }}
+        run: |
+          mkdir -p dist
+          tar -C "${{ matrix.bundle }}" -czf "dist/$ARCHIVE_BASE.tar.gz" .
+          ls -l dist
+      - name: Archive (macOS)
+        if: ${{ matrix.target == 'macos' }}
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent "${{ matrix.bundle }}/NoPorts Configuration.app" "dist/$ARCHIVE_BASE.zip"
+          ls -l dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.ARCHIVE_BASE }}
+          path: packages/dart/noports_config/dist/*
+          retention-days: 14
+          if-no-files-found: error
+
+  # Sign the Windows and macOS archives with the same credentials the
+  # release pipeline uses. Only when publishing: ordinary PR runs must not
+  # need secrets or the protected environment. Linux has no signing
+  # convention here yet.
+  sign:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: noports_config-windows-x64
+            os: windows-latest
+            kind: windows
+            environment: azure-signing
+          - name: noports_config-windows-arm64
+            os: windows-latest
+            kind: windows
+            environment: azure-signing
+          - name: noports_config-macos-universal
+            os: macos-latest
+            kind: macos
+    runs-on: ${{ matrix.os }}
+    environment: ${{ matrix.environment }}
+    permissions:
+      id-token: write # OIDC for Azure Trusted Signing
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: dist
+
+      # ---- Windows: Azure Trusted Signing, same as multibuild.yaml ----
+      - name: Expand archive (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        shell: pwsh
+        run: Expand-Archive dist\${{ matrix.name }}.zip -DestinationPath unpacked
+      - name: Azure Login (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Sign exe and dlls (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: 'https://eus.codesigning.azure.net/'
+          signing-account-name: 'atsign-github-signing'
+          certificate-profile-name: 'Atsign-Software-Signing'
+          files-folder: '${{ github.workspace }}\unpacked'
+          files-folder-filter: 'exe,dll'
+          files-folder-recurse: true
+          file-digest: 'SHA256'
+          timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
+          timestamp-digest: 'SHA256'
+      - name: Re-archive (Windows)
+        if: ${{ matrix.kind == 'windows' }}
+        shell: pwsh
+        run: |
+          Remove-Item dist\${{ matrix.name }}.zip
+          Compress-Archive -Path unpacked\* -DestinationPath dist\${{ matrix.name }}.zip
+          Get-AuthenticodeSignature unpacked\noports_config.exe | Format-List Status, SignerCertificate
+
+      # ---- macOS: Developer ID codesign + notarize + staple ----
+      - name: Expand archive (macOS)
+        if: ${{ matrix.kind == 'macos' }}
+        run: ditto -x -k dist/${{ matrix.name }}.zip unpacked
+      - name: Codesign (macOS)
+        if: ${{ matrix.kind == 'macos' }}
+        env:
+          MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
+          MACOS_CODESIGN_CERT_PASSWORD: ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/noports-codesign.p12
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o "$CERT_PATH"
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          APP="unpacked/NoPorts Configuration.app"
+          # Inside out: bundled frameworks first, then the app itself.
+          find "$APP/Contents/Frameworks" -maxdepth 1 -name "*.framework" -print0 | while IFS= read -r -d '' fw; do
+            /usr/bin/codesign --force --options runtime --timestamp -s "$MACOS_SIGNING_IDENTITY" "$fw"
+          done
+          /usr/bin/codesign --force --options runtime --timestamp \
+            --entitlements packages/dart/noports_config/macos/Runner/Release.entitlements \
+            -s "$MACOS_SIGNING_IDENTITY" "$APP"
+          /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP"
+      - name: Notarize and staple (macOS)
+        if: ${{ matrix.kind == 'macos' }}
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          APP="unpacked/NoPorts Configuration.app"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --apple-id "$MACOS_APPLE_ID" --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" --wait
+          xcrun stapler staple "$APP"
+          spctl --assess --type execute --verbose=2 "$APP"
+          rm dist/${{ matrix.name }}.zip
+          ditto -c -k --keepParent "$APP" dist/${{ matrix.name }}.zip
+
+      - name: Replace the unsigned artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*
+          overwrite: true
+          if-no-files-found: error
+
+  # Opt in from "Run workflow" to publish every archive as an asset on the
+  # rolling `noports_config-dev` prerelease, so testers can download them
+  # without a GitHub login or digging through run artifacts.
+  prerelease:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create or update the dev prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: noports_config-dev
+        run: |
+          ls -l dist
+          # A release lives on a tag, and GitHub will not move an existing
+          # tag through the release API (--target is ignored once the tag
+          # exists). Delete release and tag together, then recreate at the
+          # commit we just built, so the tag always points at the built code.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes --cleanup-tag
+          fi
+          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
+            --title "NoPorts Configuration (dev build)" \
+            --notes "Development build of NoPorts Configuration from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}. Not for production." \
+            dist/*
+          gh release view "$TAG" --json url -q .url

@@ -1,0 +1,135 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:noports_config/platform/atsigns.dart';
+import 'package:noports_config/platform/daemon_paths.dart';
+
+class KeysException implements Exception {
+  KeysException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// Copies .atKeys files into the user's ~/.atsign/keys directory and
+/// tightens their permissions. Never overwrites an existing keys file.
+class KeysRepository {
+  KeysRepository({DaemonPaths? paths}) : _paths = paths;
+
+  final DaemonPaths? _paths;
+  DaemonPaths get paths => _paths ?? DaemonPaths.instance;
+
+  /// The atSign a .atKeys file belongs to. Files written by the atPlatform
+  /// tooling carry it as the one JSON key that starts with '@'; otherwise
+  /// fall back to the conventional `@name_key.atKeys` file name.
+  static String? atsignOf(File file) {
+    try {
+      final json = jsonDecode(file.readAsStringSync());
+      if (json is Map) {
+        for (final k in json.keys) {
+          if (k is String && k.startsWith('@')) return Atsigns.normalize(k);
+        }
+      }
+    } catch (_) {
+      // fall through to the file name
+    }
+    final name = file.uri.pathSegments.last;
+    final m = RegExp(r'^(@?[a-zA-Z0-9_]+)_key\.atKeys$').firstMatch(name);
+    return m == null ? null : Atsigns.normalize(m.group(1)!);
+  }
+
+  static bool looksLikeAtKeys(File file) {
+    try {
+      final json = jsonDecode(file.readAsStringSync());
+      return json is Map &&
+          json.containsKey('aesPkamPrivateKey') &&
+          json.containsKey('selfEncryptionKey');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Copies [source] to the user's keys directory. Returns the destination.
+  /// If a different file for the same atSign is already there it is left
+  /// alone and a [KeysException] is thrown; the user must move it first.
+  Future<File> import(File source, String atsign) async {
+    if (!await source.exists()) {
+      throw KeysException('File not found: ${source.path}');
+    }
+    if (!looksLikeAtKeys(source)) {
+      throw KeysException('${source.path} is not an .atKeys file.');
+    }
+    final dest = paths.keysFileFor(atsign);
+    if (source.absolute.path == dest.absolute.path) {
+      // Already where it belongs; just use it.
+      return dest;
+    }
+    if (await dest.exists()) {
+      if (await dest.readAsString() == await source.readAsString()) return dest;
+      throw KeysException(
+        'Keys for $atsign already exist at ${dest.path}. '
+        'Not overwriting them. Move that file away first if you really mean to replace it.',
+      );
+    }
+    await dest.parent.create(recursive: true);
+    await source.copy(dest.path);
+    await restrictPermissions(dest);
+    return dest;
+  }
+
+  /// Best effort: the keys should be readable by the owner, the service
+  /// account and administrators only.
+  static Future<void> restrictPermissions(File file) async {
+    try {
+      if (Platform.isWindows) {
+        // The app runs elevated, but the user's ordinary processes carry a
+        // UAC-filtered token where Administrators is deny-only, so the user
+        // must be granted explicitly or they lose access to their own keys.
+        final user = Platform.environment['USERNAME'];
+        final domain = Platform.environment['USERDOMAIN'];
+        await Process.run('icacls', [
+          file.path,
+          '/inheritance:r',
+          '/grant:r',
+          '*S-1-5-18:(R)', // LocalSystem, which the service runs as
+          '*S-1-5-32-544:(F)', // Administrators
+          if (user != null && user.isNotEmpty)
+            '${domain != null && domain.isNotEmpty ? '$domain\\' : ''}$user:(F)',
+        ]);
+      } else {
+        await Process.run('chmod', ['600', file.path]);
+      }
+    } catch (_) {
+      // Not fatal; the daemon will still start.
+    }
+  }
+
+  /// Whether the file the daemon will use for [atsign] exists, taking an
+  /// explicit config path into account.
+  File? resolve(String? rawAtsign, String? configuredPath) {
+    if (configuredPath != null && configuredPath.trim().isNotEmpty) {
+      return File(_expandHome(configuredPath.trim()));
+    }
+    final atsign = Atsigns.normalize(rawAtsign);
+    if (atsign == null) return null;
+    final managed = paths.keysFileFor(atsign);
+    if (managed.existsSync()) return managed;
+    final home = paths.serviceHomeDir;
+    if (home != null) {
+      return File(
+        '${home.path}${Platform.pathSeparator}.atsign'
+        '${Platform.pathSeparator}keys${Platform.pathSeparator}'
+        '${atsign}_key.atKeys',
+      );
+    }
+    return managed;
+  }
+
+  static String _expandHome(String path) {
+    if (!path.startsWith('~')) return path;
+    final home = Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    return home + path.substring(1);
+  }
+}

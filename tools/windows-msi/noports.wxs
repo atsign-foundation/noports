@@ -26,10 +26,20 @@
             Description="Install NoPorts Daemon as a Windows service (sshnpd)">
       <ComponentGroupRef Id="sshnpdComponents" />
     </Feature>
+    <!-- Optional Feature - Configuration app (selected by default) -->
+    <Feature Id="ConfigAppFeature" Title="NoPorts Configuration" Level="1"
+            Description="Desktop app to configure the daemon, manage its keys and start or stop the service">
+      <ComponentGroupRef Id="configAppComponents" />
+    </Feature>
     <!-- Directory structure -->
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="INSTALLFOLDER" Name="NoPorts"/>
+      <Directory Id="INSTALLFOLDER" Name="NoPorts">
+        <!-- The Flutter app is a directory (exe, flutter_windows.dll, data\).
+             Keep it out of the way of the CLI binaries on PATH. -->
+        <Directory Id="CONFIGAPPFOLDER" Name="NoPortsConfig" />
+      </Directory>
     </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
     <StandardDirectory Id="CommonAppDataFolder">
       <Directory Id="APPDATADIR" Name="NoPorts"/>
     </StandardDirectory>
@@ -37,6 +47,18 @@
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
     <!-- Use the Feature Tree UI -->
     <ui:WixUI Id="WixUI_FeatureTree" />
+
+    <!-- Exit dialog: offer to open the configuration app. Only on a fresh
+         install with the app feature selected; silent installs never see the
+         dialog, and upgrades already have a config. -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Configure the NoPorts daemon now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" />
+    <CustomAction Id="LaunchConfigApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchConfigApp"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and NOT WIX_UPGRADE_DETECTED and &amp;ConfigAppFeature = 3" />
+    </UI>
   </Package>
   <!-- Core product component group -->
   <Fragment>
@@ -89,6 +111,22 @@
       </Component>
       <Component Id="CertUpdaterScript" Guid="*">
         <File Id="certupdaterfile" Source="certupdater.ps1" Name="certupdater.ps1" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <!-- Configuration app component group -->
+  <Fragment>
+    <ComponentGroup Id="configAppComponents">
+      <!-- Everything `flutter build windows` put in the Release folder. CI
+           copies it to bin\noports_config before building the MSI. -->
+      <Files Include="bin\noports_config\**" Directory="CONFIGAPPFOLDER" />
+      <Component Id="configAppShortcut" Directory="ProgramMenuFolder" Guid="7c1d0a52-6b7e-4f0e-9b57-3c2f9d6a1e21">
+        <Shortcut Id="configAppStartMenuShortcut"
+                  Name="NoPorts Configuration"
+                  Description="Configure the NoPorts daemon and control its service"
+                  Target="[CONFIGAPPFOLDER]noports_config.exe"
+                  WorkingDirectory="CONFIGAPPFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\Atsign\NoPorts" Name="ConfigAppShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
