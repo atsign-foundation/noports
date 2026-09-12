@@ -91,9 +91,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        if: ${{ matrix.arch != 'arm64' }}
         with:
           channel: "stable"
           cache: false
+      # Flutter publishes SDK archives for x64 hosts only, so the action has
+      # nothing to download on ARM runners. A shallow clone of the stable
+      # branch bootstraps the matching arm64 Dart SDK and engine artifacts.
+      - name: Install Flutter from git (arm64 hosts)
+        if: ${{ matrix.arch == 'arm64' }}
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
       - name: Linux desktop build dependencies
         if: ${{ matrix.target == 'linux' }}
         run: |
