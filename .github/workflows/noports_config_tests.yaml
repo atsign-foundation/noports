@@ -53,12 +53,21 @@ jobs:
         include:
           - os: windows-latest
             target: windows
+            arch: x64
             artifact: build/windows/x64/runner/Release
           - os: ubuntu-latest
             target: linux
+            arch: x64
             artifact: build/linux/x64/release/bundle
+          # Flutter desktop supports x64 and arm64 on Linux, not armv7 or
+          # riscv64, so the daemon's other Linux targets have no app build.
+          - os: ubuntu-24.04-arm
+            target: linux
+            arch: arm64
+            artifact: build/linux/arm64/release/bundle
           - os: macos-latest
             target: macos
+            arch: universal
             artifact: "build/macos/Build/Products/Release/*.app"
     runs-on: ${{ matrix.os }}
     steps:
@@ -83,6 +92,6 @@ jobs:
         run: ls -R ${{ matrix.artifact }} | head -40
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: noports_config-${{ matrix.target }}
+          name: noports_config-${{ matrix.target }}-${{ matrix.arch }}
           path: packages/dart/noports_config/${{ matrix.artifact }}
           retention-days: 7

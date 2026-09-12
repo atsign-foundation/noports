@@ -59,7 +59,12 @@ Desktop, never here.
   existing system-wide `/Library/Application Support/NoPorts/sshnpd.yaml`
   is used to seed the per-user file. Not sandboxed.
 * **Linux.** `/etc/noports/sshnpd.yaml`, `systemctl`, `journalctl`. Privileged
-  steps use `pkexec`.
+  steps use `pkexec`, which needs a polkit agent (any desktop session has
+  one). Flutter desktop builds for x64 and arm64 only, so there is no app
+  for the daemon's armv7 and riscv64 targets. The bundle links the system
+  GTK 3 rather than shipping it; at run time it needs `libgtk-3-0`,
+  `libglib2.0-0` and, for the file picker, `zenity` (or `qarma` / `kdialog`).
+  Packaging for Linux (deb / rpm alongside sshnpd) is not wired up yet.
 
 ## Layout
 
