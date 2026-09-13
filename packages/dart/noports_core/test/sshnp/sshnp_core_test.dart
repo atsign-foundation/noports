@@ -366,7 +366,7 @@ void main() {
       MockNotificationService mockNotificationService =
           MockNotificationService();
 
-      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
           any(),
