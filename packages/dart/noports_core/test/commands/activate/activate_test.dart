@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_utils.dart';
@@ -9,7 +8,7 @@ import 'package:noports_core/src/commands/activate/activate.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:test/test.dart';
 
-class MockAtOnboardingService extends Mock implements AtOnboardingService {}
+class MockActivateFlows extends Mock implements ActivateFlows {}
 
 class MockAtOnboardingPreference extends Mock
     implements AtOnboardingPreference {}
@@ -17,7 +16,8 @@ class MockAtOnboardingPreference extends Mock
 class MockAtClient extends Mock implements AtClient {}
 
 void main() {
-  late MockAtOnboardingService mockOnboardingService;
+  late MockActivateFlows flows;
+  late MockAtClient client;
   late ActivateParams params;
   late Activate activate;
 
@@ -26,8 +26,15 @@ void main() {
   const testDeviceName = 'test_device';
   const testOtp = '123456';
 
+  setUpAll(() {
+    registerFallbackValue(InMemoryAtKeysIo());
+    registerFallbackValue(AtClientPreference());
+  });
+
   setUp(() {
-    mockOnboardingService = MockAtOnboardingService();
+    flows = MockActivateFlows();
+    client = MockAtClient();
+    when(() => client.stop()).thenAnswer((_) async {});
 
     AtSignLogger.root_level = 'WARNING';
   });
@@ -74,7 +81,7 @@ void main() {
         type: ActivateType.cram,
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
       expect(() => activate.cramAuthenticate(), throwsA(isA<ArgumentError>()));
     });
@@ -86,9 +93,13 @@ void main() {
         cramSecret: testCramSecret,
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
-      when(() => mockOnboardingService.onboard()).thenAnswer((_) async => true);
+      when(() => flows.activate(any(),
+          cramSecret: any(named: 'cramSecret'),
+          keys: any(named: 'keys'),
+          preference: any(named: 'preference'),
+          storage: any(named: 'storage'))).thenAnswer((_) async => client);
 
       final result = await activate.cramAuthenticate();
 
@@ -102,11 +113,14 @@ void main() {
         cramSecret: testCramSecret,
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
-      when(
-        () => mockOnboardingService.onboard(),
-      ).thenAnswer((_) async => false);
+      when(() => flows.activate(any(),
+              cramSecret: any(named: 'cramSecret'),
+              keys: any(named: 'keys'),
+              preference: any(named: 'preference'),
+              storage: any(named: 'storage')))
+          .thenThrow(Exception('cram authentication failed'));
 
       final result = await activate.cramAuthenticate();
 
@@ -122,7 +136,7 @@ void main() {
         deviceName: testDeviceName,
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
       expect(() => activate.enroll(), throwsA(isA<ArgumentError>()));
     });
@@ -136,22 +150,16 @@ void main() {
         atKeysFilePath: 'dummy_keys_file',
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
-      final fakeResponse = AtEnrollmentResponse(
-        'enrollmentId',
-        EnrollmentStatus.approved,
-      );
-
-      when(
-        () => mockOnboardingService.enroll(
-          params.appName,
-          params.deviceName!,
-          params.otp!,
-          params.namespaces,
-          atKeysFile: any(named: 'atKeysFile'),
-        ),
-      ).thenAnswer((_) async => fakeResponse);
+      when(() => flows.enroll(any(),
+          otp: params.otp!,
+          app: params.appName,
+          device: params.deviceName!,
+          namespaces: params.namespaces,
+          keys: any(named: 'keys'),
+          preference: any(named: 'preference'),
+          storage: any(named: 'storage'))).thenAnswer((_) async => client);
 
       final result = await activate.enroll();
       expect(result, equals(0));
@@ -166,22 +174,17 @@ void main() {
         atKeysFilePath: 'dummy_keys_file',
         rootDomain: 'root.test.com',
       );
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
 
-      final fakeResponse = AtEnrollmentResponse(
-        'enrollmentId',
-        EnrollmentStatus.denied,
-      );
-
-      when(
-        () => mockOnboardingService.enroll(
-          params.appName,
-          params.deviceName!,
-          params.otp!,
-          params.namespaces,
-          atKeysFile: any(named: 'atKeysFile'),
-        ),
-      ).thenAnswer((_) async => fakeResponse);
+      when(() => flows.enroll(any(),
+              otp: params.otp!,
+              app: params.appName,
+              device: params.deviceName!,
+              namespaces: params.namespaces,
+              keys: any(named: 'keys'),
+              preference: any(named: 'preference'),
+              storage: any(named: 'storage')))
+          .thenThrow(AtEnrollmentException('enrollment denied'));
 
       final result = await activate.enroll();
       expect(result, equals(1));
@@ -198,7 +201,7 @@ void main() {
         rootDomain: 'root.test.com',
       );
 
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
       expect(activate.getKeysFile(), isNull);
     });
 
@@ -213,7 +216,7 @@ void main() {
         rootDomain: 'root.test.com',
       );
 
-      activate = Activate(mockOnboardingService, params);
+      activate = Activate(flows, params);
       expect(activate.getKeysFile()?.path, equals(File(testKeysPath).path));
     });
   });

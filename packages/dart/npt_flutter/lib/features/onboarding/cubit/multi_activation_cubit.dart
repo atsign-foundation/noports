@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_lookup/at_lookup.dart';
 import 'package:at_server_status/at_server_status.dart';
@@ -15,6 +14,7 @@ import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
@@ -61,9 +61,9 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
 
   /// Bulk activation only ever onboards atsigns we have just confirmed are up
   /// and sitting in teapot, so there is no newly-registered atsign to wait for
-  /// provisioning. Without this, `AtAuth` falls back to
-  /// `AtNetworkTimeouts.defaultOnboardingTimeout` (5 minutes) per atsign, and a
-  /// file full of dud atsigns stalls the dialog for 5 minutes each.
+  /// provisioning. Without this, activation polls for provisioning for five
+  /// minutes per atsign, and a file full of dud atsigns stalls the dialog for
+  /// 5 minutes each.
   static const Duration onboardTimeout = Duration(seconds: 90);
 
   /// Where the .atKeys backups go. Remembered from the first [activateAll] run
@@ -239,8 +239,8 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         }
 
         // Nothing to onboard against: the atsign isn't in the atDirectory, or
-        // its atServer is down. Fail it now instead of letting AtAuth poll for
-        // provisioning that is never coming.
+        // its atServer is down. Fail it now instead of letting activation poll
+        // for provisioning that is never coming.
         if (status != AtSignStatus.teapot) {
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
@@ -265,47 +265,22 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         App.log('Activating atsign ${entry.atsign}...'.loggable);
 
         try {
-          // A fresh AuthService() per atsign: AtAuthImpl caches atLookUp/atChops
-          // internally, so reusing one instance across atsigns would
-          // authenticate the second atsign against the first one's lookup.
           Atsign atsign = entry.atsign;
           String cramSecret = entry.activationKey;
 
           // The atServer says this atsign is in teapot, so any keys we still
           // hold for it locally are from a previous life of the atsign (it was
-          // reset on the registrar). AtAuth.onboard refuses to run at all while
-          // they exist, so drop them first.
+          // reset on the registrar). Activation refuses to overwrite them, so
+          // drop them first.
           await NoPortsOnboardingUtil.discardStaleKeys(atsign);
 
-          var onboardingRequest = AtOnboardingRequest(atsign)
-            ..rootDomain = AtRootDomain.parse('root.atsign.org');
+          await _activateIntoKeychain(atsign, cramSecret);
 
-          var response = await AuthService().onboard(
-            onboardingRequest,
-            cramSecret,
-            timeout: onboardTimeout,
+          await backUpActivatedAtsigns(selectedDirectory, atsign);
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.activated,
           );
-
-          // Bulk activation never brings up an AtClient for these atsigns, so
-          // each iteration must close its own authenticated lookup - nothing
-          // else owns it.
-          await (response.atLookUp as AtLookupImpl?)?.close();
-
-          // 6. Update Result
-          if (response.isSuccessful) {
-            await backUpActivatedAtsigns(selectedDirectory, atsign);
-            currentEntries[i] = entry.copyWith(
-              activationKeyStatus: ActivationKeyStatus.activated,
-            );
-            App.log('Successfully activated ${entry.atsign}'.loggable);
-          } else {
-            // Change to show that it failed to activate.`
-            currentEntries[i] = entry.copyWith(
-              activationKeyStatus: ActivationKeyStatus.failed,
-              failureReason: strings.errorAuthenticatinFailed,
-            );
-            App.log('Failed to activate ${entry.atsign}'.loggable);
-          }
+          App.log('Successfully activated ${entry.atsign}'.loggable);
         } catch (e) {
           App.log('Exception activating ${entry.atsign}: $e'.loggable);
           currentEntries[i] = entry.copyWith(
@@ -340,6 +315,30 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         'Some Atsigns failed to activate. Please check the status for each Atsign.'
             .loggable,
       );
+    }
+  }
+
+  /// Activates [atsign] with [cramSecret], leaving its keys in the keychain
+  /// and nothing else behind: bulk activation never keeps a client for these
+  /// atsigns, so the one the activation opens is stopped at once and the
+  /// storage it opened on is deleted.
+  Future<void> _activateIntoKeychain(Atsign atsign, String cramSecret) async {
+    final scratch = await Directory.systemTemp.createTemp('npt-activate-');
+    try {
+      final preference = await AtClientMethods.loadAtClientPreference(
+        'root.atsign.org',
+      )
+        ..hiveStoragePath = scratch.path
+        ..commitLogPath = scratch.path;
+      final client = await atsign.activate(
+        cramSecret: cramSecret,
+        keys: KeychainAtKeysIo(),
+        preference: preference,
+        provisioningBudget: onboardTimeout,
+      );
+      await client.stop();
+    } finally {
+      if (await scratch.exists()) await scratch.delete(recursive: true);
     }
   }
 
@@ -445,8 +444,8 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     String fileLocation,
     Atsign atsign,
   ) async {
-    // AuthService().onboard defaults to writing through KeychainAtKeysIo, so
-    // the freshly-activated keys are already in the keychain at this point.
+    // Activation wrote the keys through KeychainAtKeysIo, so the
+    // freshly-activated keys are already in the keychain at this point.
     final atKeys = await KeychainStorage().getAtsign(atsign);
     if (atKeys == null) return;
 

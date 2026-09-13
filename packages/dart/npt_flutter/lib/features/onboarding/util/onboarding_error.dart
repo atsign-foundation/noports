@@ -4,8 +4,8 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 /// Turns an onboarding or authentication failure into a message that names the
 /// actual cause.
 ///
-/// [AtOnboardingResponse] carries no error field - at_auth reports every
-/// failure by throwing - so the exception is the only place the cause exists.
+/// Activation and sign in report every failure by throwing, so the exception
+/// is the only place the cause exists.
 /// Collapsing it into a flat "Authentication failed." leaves whoever hit it
 /// with nothing to act on, so recognised failures get a specific message and
 /// everything else is shown verbatim rather than swallowed.
@@ -21,9 +21,10 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
     return strings.errorCramAuthFailed;
   }
 
-  // AtAuth.onboard refuses to run while keys for this atsign already exist
+  // Activation refuses to overwrite keys for this atsign that already exist
   // locally, whatever the atServer says.
-  if (detail.contains('already onboarded')) {
+  if (detail.contains('already onboarded') ||
+      detail.contains('already has an entry')) {
     return strings.errorActivationKeysConflict;
   }
 

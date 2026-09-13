@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:at_auth/at_auth.dart' show ServerEnrollmentRequest;
 import 'package:at_client_flutter/at_client_flutter.dart';
 
 import '../../logging/models/loggable.dart';
@@ -22,14 +21,13 @@ class Count extends Loggable {
 class PendingRequestsCountCubit extends LoggingCubit<Count> {
   PendingRequestsCountCubit() : super(const Count(0));
 
-  final FlutterEnrollmentService _enrollmentService = FlutterEnrollmentService();
-  StreamSubscription<ServerEnrollmentRequest>? _subscription;
+  StreamSubscription<Enrollment>? _subscription;
 
   /// Starts tracking pending enrollment requests. Must only be called once an
-  /// AtClient exists (i.e. after onboarding) - the enrollment service
-  /// dereferences the current AtClient, which throws pre-onboarding.
+  /// AtClient exists (i.e. after onboarding) - the count is read off the
+  /// current AtClient, which throws pre-onboarding.
   void start() {
-    _subscription ??= _enrollmentService.getEnrollments().listen(
+    _subscription ??= _client.enrollments.requests.listen(
       (_) => getPendingRequests(),
     );
     getPendingRequests();
@@ -41,14 +39,10 @@ class PendingRequestsCountCubit extends LoggingCubit<Count> {
     emit(const Count(0));
   }
 
+  AtClient get _client => AtClientManager.getInstance().atClient;
+
   Future<void> getPendingRequests() async {
-    final atLookUp = AtClientManager.getInstance().atClient
-        .getRemoteSecondary()!
-        .atLookUp;
-    final requests = await _enrollmentService.list(
-      [EnrollmentStatus.pending],
-      atLookUp,
-    );
+    final requests = await _client.enrollments.pending();
     emit(Count(requests.length));
   }
 

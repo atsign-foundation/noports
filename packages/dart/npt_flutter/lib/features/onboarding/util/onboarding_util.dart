@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_server_status/at_server_status.dart';
 import 'package:file_picker/file_picker.dart';
@@ -53,9 +52,8 @@ class NoPortsOnboardingUtil {
   ///
   /// Resetting an atsign on the registrar wipes the atServer but leaves this
   /// device's copy of the keys behind. Those keys can never authenticate again,
-  /// and `AtAuth.onboard` refuses to run at all while they exist
-  /// ("... is already onboarded. Cannot perform onboarding again."), so every
-  /// re-activation attempt fails until they are removed.
+  /// and activation refuses to overwrite them, so every re-activation attempt
+  /// fails until they are removed.
   ///
   /// Returns true if stale keys were found and removed.
   static Future<bool> discardStaleKeys(Atsign atsign) async {
@@ -268,23 +266,21 @@ class NoPortsOnboardingUtil {
     }
 
     final atKeysIo = FileAtKeysIo(filePath: (_) => result.files.single.path!);
-    final authRequest = AtAuthRequest(
-      atsign,
-      atKeysIo: atKeysIo,
-      rootDomain: AtRootDomain.parse(rootDomain),
-    );
 
     try {
-      final response = await AuthService().authenticate(
-        authRequest,
-        backupKeys: [KeychainAtKeysIo()],
+      final client = await AtClientMethods.openAndAdopt(
+        atsign: atsign,
+        keys: atKeysIo,
+        rootDomain: rootDomain,
       );
-      if (!response.isSuccessful) {
+      final state = client.connection.current;
+      if (state.isRefused) {
+        await client.stop();
         return NoPortsOnboardingResult.error(
-          message: strings.errorAuthenticatinFailed,
+          message: describeOnboardingError(state.error, strings),
         );
       }
-      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
+      await _backUpToKeychain(atsign, atKeysIo);
       return NoPortsOnboardingResult.success(atsign: atsign);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(
@@ -298,6 +294,14 @@ class NoPortsOnboardingUtil {
         message: describeOnboardingError(e, strings),
       );
     }
+  }
+
+  /// Copies the keys a file sign in opened on into the keychain, unless it
+  /// already holds the atsign.
+  Future<void> _backUpToKeychain(Atsign atsign, AtKeysIo source) async {
+    final held = await KeychainStorage().getAllAtsigns();
+    if (held.contains(atsign)) return;
+    await KeychainAtKeysIo().write(atsign, await source.read(atsign));
   }
 
   /// Returns true if the user completed the selection and wants to proceed with onboarding. Returns false if the user cancelled the selection.
@@ -346,21 +350,31 @@ class NoPortsOnboardingUtil {
 
     if (atsigns.contains(atsign)) {
       Object? authFailure;
+      bool revokedByServer = false;
       try {
-        final response = await AuthService().authenticate(
-          AtAuthRequest(
-            atsign,
-            atKeysIo: KeychainAtKeysIo(),
-            rootDomain: AtRootDomain.parse(rootDomain),
-          ),
-          backupKeys: [KeychainAtKeysIo()],
+        final client = await AtClientMethods.openAndAdopt(
+          atsign: atsign,
+          keys: KeychainAtKeysIo(),
+          rootDomain: rootDomain,
         );
-        if (response.isSuccessful) {
-          await AtClientMethods.activateFromAuthResponse(response, rootDomain);
-          onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
+        final state = client.connection.current;
+        if (state.isRefused) {
+          await client.stop();
+          revokedByServer = state.cause == AtConnectionCause.revoked;
+          authFailure =
+              state.error ??
+              AppLocalizations.of(context)!.errorAuthenticatinFailed;
         } else {
-          authFailure = AppLocalizations.of(context)!.errorAuthenticatinFailed;
+          onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
         }
+      } on AtEnrollmentPendingException {
+        // The keychain holds an enrollment this device submitted and never
+        // completed; the APKAM flow picks it up where it left off.
+        if (!context.mounted) return;
+        onboardingResult = await handleAtsignByStatus(
+          context: context,
+          atsign: atsign,
+        );
       } catch (e) {
         App.log('Authentication failed for $atsign: $e'.loggable);
         authFailure = e;
@@ -372,7 +386,9 @@ class NoPortsOnboardingUtil {
             : onboardingErrorDetail(authFailure);
 
         final bool isRevoked =
-            errorDetail.contains('AT0027') || errorDetail.contains('is revoked');
+            revokedByServer ||
+            errorDetail.contains('AT0027') ||
+            errorDetail.contains('is revoked');
 
         if (isRevoked) {
           await discardStaleKeys(atsign);
