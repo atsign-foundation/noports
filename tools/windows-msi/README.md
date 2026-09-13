@@ -27,8 +27,25 @@ WixUI_FeatureTree: Welcome, License, Custom Setup, Ready, Progress, Finish.
 - `noports.en-us.wxl` overrides the stock WixUI wording (welcome text, page
   titles). Add a string with the same Id as the WixUI one to change more.
 - `banner.bmp` (493x58) and `dialog.bmp` (493x312) are the branding images,
-  generated from the NoPorts logo with ImageMagick; `noports.ico` is the app
-  icon reused for Apps & Features and the Start Menu shortcut.
+  generated with ImageMagick from `packages/dart/npt_flutter/assets/noports_logo.svg`
+  (wordmark) and `packages/dart/npt_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png`
+  (mark); `noports.ico` is a multi-size icon from the same 1024px mark, used
+  for Apps & Features, the Start Menu shortcut and the app's own window icon.
+  Regenerate:
+
+  ```bash
+  MARK=../../packages/dart/npt_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png
+  WM=../../packages/dart/npt_flutter/assets/noports_logo.svg
+  magick "$MARK" -define icon:auto-resize=256,128,64,48,32,16 noports.ico
+  magick -background none -density 300 "$WM" -resize 136x /tmp/wm136.png
+  magick -background none -density 300 "$WM" -resize 120x /tmp/wm120.png
+  magick -size 493x312 xc:white \( -size 164x312 xc:"#FFEDE9" \) -gravity NorthWest -composite \
+    \( "$MARK" -resize 88x88 \) -gravity NorthWest -geometry +38+36 -composite \
+    /tmp/wm136.png -gravity NorthWest -geometry +14+140 -composite \
+    -fill "#F05E3E" -draw "rectangle 164,0 166,312" -type TrueColor BMP3:dialog.bmp
+  magick -size 493x58 xc:white /tmp/wm120.png -gravity East -geometry +10+0 -composite \
+    -fill "#F05E3E" -draw "rectangle 0,55 493,58" -type TrueColor BMP3:banner.bmp
+  ```
 
 ## Usage
 
