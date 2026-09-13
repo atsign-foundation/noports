@@ -62,7 +62,10 @@
               Value="The NoPorts tools are installed. The device daemon service is registered but not running yet: open NoPorts Configuration to enroll this device with NoPorts Desktop, choose who may connect, and start it. You can find it in the Start Menu at any time." />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open NoPorts Configuration now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <Property Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" />
+    <!-- Set at run time once directories are resolved, rather than as a
+         static Property, to avoid WIX1077 (property reference inside a
+         property value). WixShellExec formats the value before launching. -->
+    <SetProperty Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" After="CostFinalize" Sequence="both" />
     <CustomAction Id="LaunchConfigApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
     <UI>
       <!-- Only when the app feature is actually being installed (action state 3 = local). -->
