@@ -121,6 +121,18 @@ On Windows, `flutter run` must itself be started from an elevated shell
 because of the `requireAdministrator` manifest. On macOS and Linux run it
 as yourself; the password prompt appears when you save or touch the service.
 
+## CI and test builds
+
+`.github/workflows/noports_config_tests.yaml` analyzes, tests and builds
+five targets (Windows x64 / arm64, Linux x64 / arm64, macOS universal) on
+every push, keeping one archive per target as a run artifact for 30 days.
+Start it by hand from the Actions tab with **sign_artifacts** ticked and the
+Windows and macOS archives are signed (Azure Trusted Signing; Developer ID
+plus notarisation) and replace the unsigned artifacts on that run. Nothing
+is ever released or tagged from this workflow: releases come only from
+`v*` tags on trunk through multibuild.yaml, which the OpenSSF Scorecard
+Signed-Releases check depends on.
+
 ## Release
 
 Built by `.github/workflows/multibuild.yaml` on the Windows runner, signed

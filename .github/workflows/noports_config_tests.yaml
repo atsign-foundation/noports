@@ -6,8 +6,8 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      publish_prerelease:
-        description: "Also publish the archives as assets on the noports_config-dev prerelease"
+      sign_artifacts:
+        description: "Sign the Windows and macOS archives (uses the release signing credentials); the signed archives replace the unsigned run artifacts"
         type: boolean
         default: false
   push:
@@ -140,15 +140,16 @@ jobs:
         with:
           name: ${{ env.ARCHIVE_BASE }}
           path: packages/dart/noports_config/dist/*
-          retention-days: 14
+          retention-days: 30
           if-no-files-found: error
 
   # Sign the Windows and macOS archives with the same credentials the
-  # release pipeline uses. Only when publishing: ordinary PR runs must not
-  # need secrets or the protected environment. Linux has no signing
-  # convention here yet.
+  # release pipeline uses, and attach them to this run as artifacts (no
+  # release or tag is created: releases come from trunk tags only). Only on
+  # request: ordinary PR runs must not need secrets or the protected
+  # environment. Linux has no signing convention here yet.
   sign:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_artifacts }}
     needs: build
     strategy:
       fail-fast: false
@@ -259,47 +260,11 @@ jobs:
           rm dist/${{ matrix.name }}.zip
           ditto -c -k --keepParent "$APP" dist/${{ matrix.name }}.zip
 
-      - name: Replace the unsigned artifact
+      - name: Replace the unsigned artifact with the signed one
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.name }}
           path: dist/*
           overwrite: true
+          retention-days: 30
           if-no-files-found: error
-
-  # Opt in from "Run workflow" to publish every archive as an asset on the
-  # rolling `noports_config-dev` prerelease, so testers can download them
-  # without a GitHub login or digging through run artifacts.
-  prerelease:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
-    needs: [build, sign]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          path: dist
-          merge-multiple: true
-      - name: Create or update the dev prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: noports_config-dev
-        run: |
-          ls -l dist
-          # A release lives on a tag, and GitHub will not move an existing
-          # tag through the release API (--target is ignored once the tag
-          # exists). Delete release and tag together, then recreate at the
-          # commit we just built, so the tag always points at the built code.
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release delete "$TAG" --yes --cleanup-tag
-          fi
-          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease \
-            --title "NoPorts Configuration (dev build)" \
-            --notes "Development build of NoPorts Configuration from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}. Not for production." \
-            dist/*
-          gh release view "$TAG" --json url -q .url
