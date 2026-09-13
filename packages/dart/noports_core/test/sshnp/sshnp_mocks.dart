@@ -34,6 +34,24 @@ class SubscribeStub extends Mock implements SubscribeCaller {}
 
 class MockAtClient extends Mock implements AtClient {}
 
+/// What publishing the client's APKAM signing key touches on [atClient]:
+/// its atSign, and the `put` that writes the `_apsk` record. A channel's
+/// `initialize` publishes before anything a test is about, so a mock that
+/// answers neither fails there with a null where a `Future<bool>` was
+/// expected. A test that cares what is published re-stubs `put`.
+void stubSigningKeyPublish(MockAtClient atClient, {String atSign = '@alice'}) {
+  registerFallbackValue(AtKey());
+  registerFallbackValue(PutRequestOptions());
+  when(() => atClient.getCurrentAtSign()).thenReturn(atSign);
+  when(
+    () => atClient.put(
+      any(),
+      any(),
+      putRequestOptions: any(named: 'putRequestOptions'),
+    ),
+  ).thenAnswer((_) async => true);
+}
+
 class MockNotificationService extends Mock implements NotificationService {}
 
 class MockSshnpParams extends Mock implements SshnpParams {

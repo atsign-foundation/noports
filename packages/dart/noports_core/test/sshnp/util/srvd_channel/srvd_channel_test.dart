@@ -84,7 +84,7 @@ void main() {
       );
 
       when(() => mockAtClient.atChops).thenReturn(atChops);
-      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
           any(),
