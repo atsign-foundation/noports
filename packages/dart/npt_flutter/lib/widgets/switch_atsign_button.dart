@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +10,7 @@ import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
@@ -26,6 +26,7 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
+import 'package:npt_flutter/widgets/connection_indicator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {
@@ -50,6 +51,7 @@ class SwitchAtsignButton extends StatelessWidget {
           ),
           child: Row(
             children: [
+              const ConnectionIndicator(),
               SvgPicture.asset(
                 'assets/At.svg',
                 width: Sizes.p16,
@@ -344,23 +346,21 @@ Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
 
   NoPortsOnboardingResult onboardingResult;
   try {
-    final response = await AuthService().authenticate(
-      AtAuthRequest(
-        atsign,
-        atKeysIo: KeychainAtKeysIo(),
-        rootDomain: AtRootDomain.parse(rootDomain),
-      ),
-      backupKeys: [KeychainAtKeysIo()],
+    final client = await AtClientMethods.openAndAdopt(
+      atsign: atsign,
+      keys: KeychainAtKeysIo(),
+      rootDomain: rootDomain,
     );
-    if (response.isSuccessful) {
-      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
-      onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
-    } else {
+    final state = client.connection.current;
+    if (state.isRefused) {
+      await client.stop();
       onboardingResult = NoPortsOnboardingResult.error(
         message: context.mounted
-            ? AppLocalizations.of(context)!.onboardingError
+            ? describeOnboardingError(state.error, AppLocalizations.of(context)!)
             : '',
       );
+    } else {
+      onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
     }
   } catch (e) {
     onboardingResult = NoPortsOnboardingResult.error(message: e.toString());

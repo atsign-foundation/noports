@@ -155,10 +155,10 @@ void main() {
   });
 
   group('onboardTimeout', () {
-    test('is far below the 5 minute AtAuth onboarding poll default', () {
+    test('is far below the 5 minute provisioning budget default', () {
       // A file of dud atsigns used to sit on the activating screen for
-      // 5 minutes each because AtAuth polled for provisioning that was never
-      // coming.
+      // 5 minutes each because activation polled for provisioning that was
+      // never coming.
       expect(
         MultiActivationCubit.onboardTimeout,
         lessThan(const Duration(minutes: 5)),

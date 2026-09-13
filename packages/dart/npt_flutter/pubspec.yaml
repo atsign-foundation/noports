@@ -37,9 +37,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  at_auth: ^3.3.0
-  at_client: ^3.14.0
-  at_client_flutter: ^1.1.4
+  at_client: ^3.15.0-rc1
+  at_client_flutter: ^2.0.0-rc1
   at_commons: ^5.13.0
   at_server_status: ^1.1.1
   at_utils: ^3.4.0

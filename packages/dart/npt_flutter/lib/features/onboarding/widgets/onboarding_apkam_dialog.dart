@@ -1,7 +1,5 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -40,18 +38,15 @@ class OnboardingApkamDialog extends StatefulWidget {
 }
 
 class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
-  String get atsign => widget.atsign;
+  Atsign get atsign => widget.atsign;
   AtClientPreference get atClientPreference => widget.atClientPreference;
 
   static const _kPinLength = 6;
-  static const _kMaxApprovalRetries = 288;
   static const _kApprovalRetryInterval = Duration(seconds: 10);
 
   late OnboardingStatus onboardingStatus;
-  final KeychainStorage keychainStorage = KeychainStorage();
   late final TextEditingController pinController;
 
-  bool hasExpired = false;
   String? _enrollmentError;
 
   @override
@@ -91,45 +86,40 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     }
   }
 
+  /// The device name an enrollment is submitted under: the device's own name
+  /// with anything but letters and digits removed, since the atServer takes
+  /// no spaces or special characters. Deterministic, so a restart can find
+  /// the enrollment it submitted.
+  Future<String> _enrollmentDeviceName() async {
+    final regExp = RegExp(r'[^a-zA-Z0-9]');
+    return (await getDeviceName()).replaceAll(regExp, '');
+  }
+
+  /// Picks up an enrollment this device submitted and never completed, whose
+  /// keys are still in the keychain, and waits for it; otherwise asks for an
+  /// OTP.
   Future<void> init() async {
-    final sentEnrollRequest = await keychainStorage.readEnrollmentData(atsign);
-    App.log('Sent enroll request: ${sentEnrollRequest?.enrollmentId}'.loggable);
+    PendingEnrollment? pending;
+    try {
+      pending = await atsign.resumeEnrollment(
+        app: Constants.namespace,
+        device: await _enrollmentDeviceName(),
+        keys: KeychainAtKeysIo(),
+        preference: atClientPreference,
+      );
+    } catch (e) {
+      App.log('No enrollment to resume for $atsign: $e'.loggable);
+    }
+    App.log('Pending enroll request: ${pending?.enrollmentId}'.loggable);
 
-    if (sentEnrollRequest == null) {
+    if (pending == null) {
       setState(() {
         onboardingStatus = OnboardingStatus.otpRequired;
       });
       return;
     }
 
-    final expired =
-        DateTime.now()
-            .toUtc()
-            .difference(
-              DateTime.fromMillisecondsSinceEpoch(
-                sentEnrollRequest.enrollmentSubmissionTimeEpoch,
-              ),
-            )
-            .inHours >=
-        48;
-
-    if (expired) {
-      await keychainStorage.deleteEnrollmentData(atsign);
-      setState(() {
-        hasExpired = true;
-        onboardingStatus = OnboardingStatus.otpRequired;
-      });
-      return;
-    }
-
-    final response = AtEnrollmentResponse(
-      sentEnrollRequest.enrollmentId,
-      EnrollmentStatus.pending,
-      atSign: atsign,
-      rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
-      atAuthKeys: sentEnrollRequest.atAuthKeys,
-    );
-    await _waitForApprovalAndFinish(response);
+    await _waitForApprovalAndFinish(pending);
   }
 
   Future<void> onApproved() async {
@@ -159,81 +149,70 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     }
   }
 
-  /// Waits for the enrollment behind [response] to be approved, then
-  /// completes the PKAM handshake with the resulting auth keys and sets up
-  /// the AtClient. On any failure (denial, timeout, error) the enrollment
-  /// data is dropped so the app doesn't keep resuming a dead enrollment.
-  Future<void> _waitForApprovalAndFinish(AtEnrollmentResponse response) async {
+  /// Waits for [pending] to be approved, then opens the app's client on the
+  /// keys the approval completed. On any failure (denial, timeout, error)
+  /// what the enrollment left in the keychain is dropped, so the app doesn't
+  /// keep resuming a dead enrollment.
+  Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
     });
 
     try {
-      await AtEnrollment.create().waitForApproval(
-        response,
-        maxRetries: _kMaxApprovalRetries,
+      await AtClientMethods.stopCurrentClient();
+      final client = await pending.client(
+        atClientPreference,
         retryInterval: _kApprovalRetryInterval,
       );
-
-      final authRequest = AtAuthRequest(
-        atsign,
-        atAuthKeys: response.atAuthKeys!,
-        rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
-      );
-      final authResponse = await AuthService().authenticate(
-        authRequest,
-        backupKeys: [KeychainAtKeysIo()],
-      );
-
-      await keychainStorage.deleteEnrollmentData(atsign);
-
-      if (!authResponse.isSuccessful) {
-        await onDenied();
-        return;
-      }
-
-      await AtClientMethods.activateFromAuthResponse(
-        authResponse,
-        atClientPreference.rootDomain,
-      );
+      AtClientMethods.adopt(client);
       await onApproved();
     } catch (e, st) {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
-      await keychainStorage.deleteEnrollmentData(atsign);
+      await _discard(pending);
       await onDenied();
+    }
+  }
+
+  /// Drops what [pending] left in the keychain: the whole entry when it holds
+  /// no credential of its own, otherwise just this enrollment's material.
+  Future<void> _discard(PendingEnrollment pending) async {
+    final keychain = KeychainAtKeysIo();
+    try {
+      final keys = await keychain.read(atsign);
+      if (keys.holdsAuthenticationMaterial) {
+        await keychain.update(atsign, (keys) {
+          keys.discardEnrollment(pending.enrollmentId);
+          return true;
+        });
+      } else {
+        await KeychainStorage().removeAtsignFromKeychain(atsign);
+      }
+    } catch (e) {
+      App.log('Could not drop enrollment ${pending.enrollmentId}: $e'.loggable);
     }
   }
 
   Future<void> otpSubmit(String otp) async {
     setState(() {
       onboardingStatus = OnboardingStatus.validatingOtp;
-      hasExpired = false;
       _enrollmentError = null;
     });
 
-    // Device name cannot contain spaces or special characters
-    final regExp = RegExp(r'[^a-zA-Z0-9]');
-    final deviceName = (await getDeviceName()).replaceAll(regExp, '');
+    final deviceName = await _enrollmentDeviceName();
     App.log('Device Name: $deviceName'.loggable);
 
-    final enrollmentRequest = AtEnrollmentRequest(
-      atSign: atsign,
-      rootDomain: AtRootDomain.parse(atClientPreference.rootDomain),
-      appName: Constants.namespace,
-      deviceName: deviceName,
-      otp: otp,
-      namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
-    );
-
-    App.log('About to enroll with $enrollmentRequest'.loggable);
-
     try {
-      final enrollResponse = await FlutterEnrollmentService().enroll(
-        enrollmentRequest,
+      final pending = await atsign.enroll(
+        otp: otp,
+        app: Constants.namespace,
+        device: deviceName,
+        namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
+        keys: KeychainAtKeysIo(),
+        preference: atClientPreference,
       );
-      App.log('Enroll response: $enrollResponse'.loggable);
-      await _waitForApprovalAndFinish(enrollResponse);
+      App.log('Enrollment ${pending.enrollmentId} submitted'.loggable);
+      await _waitForApprovalAndFinish(pending);
     } on AtException catch (e, st) {
       App.log('AtException - Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
@@ -291,13 +270,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 strings.findOtp,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              if (hasExpired) ...[
-                gapH4,
-                Text(
-                  strings.requestExpired,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ],
               if (_enrollmentError != null) ...[
                 gapH4,
                 Text(

@@ -1,4 +1,3 @@
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
@@ -25,8 +24,8 @@ void main() {
 
   group('describeOnboardingError', () {
     test('names the stale-keys conflict', () {
-      // The exact throw from at_auth when keys already exist locally.
-      final error = AtAuthenticationException(
+      // The exact throw when keys already exist locally.
+      final error = AtException(
         'atSign: @alice is already onboarded. Cannot perform onboarding again.',
       );
       expect(
@@ -36,7 +35,7 @@ void main() {
     });
 
     test('names a rejected CRAM secret', () {
-      final error = AtAuthenticationException(
+      final error = AtException(
         'Cram authentication failed. Please check the cram key and try again',
       );
       expect(
