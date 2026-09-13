@@ -16,6 +16,15 @@ Binaries are expected to be in windows-msi/bin
   - built C# BinaryServices (sshnpdService.exe, nppService.exe, etc..)
     - see `packages\csharp\WindowsBinaryService\README.md` for more details.
 
+## Architectures
+
+CI builds two MSIs: `NoPorts-<version>-x64.msi` on `windows-latest` and
+`NoPorts-<version>-arm64.msi` on `windows-11-arm` (native Windows on ARM;
+Dart, .NET Native AOT and the Flutter app are all compiled arm64 there, and
+`wix build -arch arm64` picks the arm64 custom actions). Both share the
+UpgradeCode, so installing one over the other is a normal major upgrade.
+The x64 MSI also runs on ARM PCs under emulation.
+
 ## What the installer shows
 
 WixUI_FeatureTree: Welcome, License, Custom Setup, Ready, Progress, Finish.

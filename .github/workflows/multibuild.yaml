@@ -59,6 +59,7 @@ jobs:
       id-token: write # For OIDC token used by Azure signing
     runs-on: ${{ matrix.os }}
     environment: ${{ matrix.environment }}
+    continue-on-error: ${{ matrix.experimental == true }}
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
@@ -113,10 +114,25 @@ jobs:
             environment: azure-signing
             output-name: sshnp-windows-x64
             arch: "amd64"
+            winarch: "x64"
             cross: ""
             ext: ".exe"
             bundle: "windows"
             platform: "windows"
+          # Native Windows on ARM. Dart, .NET and WiX all support arm64;
+          # Flutter is installed from git because it publishes SDK archives
+          # for x64 hosts only. Marked experimental until it has shipped a
+          # few times, so a failure here cannot block a release.
+          - os: windows-11-arm
+            environment: azure-signing
+            output-name: sshnp-windows-arm64
+            arch: "arm64"
+            winarch: "arm64"
+            cross: ""
+            ext: ".exe"
+            bundle: "windows"
+            platform: "windows"
+            experimental: true
     env:
       ARCH: ${{ matrix.arch }}
       BINS: "at_activate noports npevents npp npp_atserver npp_file npt srv sshnp sshnpd"
@@ -212,23 +228,30 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
         run: |
-          dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
-          mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
-      - name: Install Flutter (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
+          dotnet publish --configuration Release -p:DefineConstants="SSHNPD" -r win-${{ matrix.winarch }}
+          mv bin/Release/net*/win-${{ matrix.winarch }}/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Install Flutter (Windows x64 only)
+        if: ${{ matrix.platform == 'windows' && matrix.winarch == 'x64' }}
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           cache: false
+      - name: Install Flutter from git (Windows arm64 only)
+        if: ${{ matrix.platform == 'windows' && matrix.winarch == 'arm64' }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
       - name: Build NoPorts Configuration app (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/dart/noports_config
         run: |
           flutter pub get
           flutter build windows --release
-          pwsh ./tools/bundle_msvc_runtime.ps1
+          pwsh ./tools/bundle_msvc_runtime.ps1 -Destination "build\windows\${{ matrix.winarch }}\runner\Release"
           mkdir -p ../../../tools/windows-msi/bin/noports_config
-          cp -r build/windows/x64/runner/Release/* ../../../tools/windows-msi/bin/noports_config/
+          cp -r build/windows/${{ matrix.winarch }}/runner/Release/* ../../../tools/windows-msi/bin/noports_config/
       - name: Sign Executables with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
@@ -258,9 +281,9 @@ jobs:
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
               -d ProductVersion="${VERSION}" \
               -culture en-US -loc noports.en-us.wxl \
-              -arch x64 -o build/NoPorts.msi noports.wxs
-          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
-          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi
+              -arch ${{ matrix.winarch }} -o build/NoPorts.msi noports.wxs
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-${{ matrix.winarch }}.msi
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${{ matrix.winarch }}.msi
       - name: Sign Installer with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
