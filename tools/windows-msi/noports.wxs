@@ -16,19 +16,25 @@
     <!-- Apps & Features metadata -->
     <Property Id="ARPHELPLINK" Value="https://docs.noports.com" />
     <Property Id="ARPURLINFOABOUT" Value="https://noports.com" />
-    <!-- Main Feature - Core Tools (always installed) -->
-    <Feature Id="CoreTools" Title="NoPorts Core Tools" Level="1" 
-            Description="Core NoPorts command-line tools">
+    <Property Id="ARPCOMMENTS" Value="Reach this machine from anywhere without open ports." />
+    <Icon Id="NoPortsIcon" SourceFile="noports.ico" />
+    <Property Id="ARPPRODUCTICON" Value="NoPortsIcon" />
+
+    <!-- Features as the user sees them on the "Custom Setup" page. Titles
+         and descriptions are the only explanation they get, so say what
+         each piece is for. All are on by default; Custom Setup lets an
+         admin drop the service or the app on, say, a client-only box. -->
+    <Feature Id="CoreTools" Title="Command-line tools" Level="1" Display="expand"
+             AllowAbsent="no"
+             Description="The NoPorts command-line tools (sshnp, npt, npp, srv, at_activate, noports and the daemon binary sshnpd), added to the system PATH. Required.">
       <ComponentGroupRef Id="ProductComponents" />
     </Feature>
-    <!-- Optional Feature - Service (selected by default, installed stopped) -->
-    <Feature Id="ServiceFeature" Title="NoPorts Daemon Service" Level="1" 
-            Description="Install NoPorts Daemon as a Windows service (sshnpd)">
+    <Feature Id="ServiceFeature" Title="Device daemon service (sshnpd)" Level="1" Display="expand"
+             Description="Registers sshnpd as a Windows service so this machine can be reached over NoPorts. It is installed but not started: it needs a device atSign, keys and a list of who may connect first. NoPorts Configuration sets those up and starts it.">
       <ComponentGroupRef Id="sshnpdComponents" />
     </Feature>
-    <!-- Optional Feature - Configuration app (selected by default) -->
-    <Feature Id="ConfigAppFeature" Title="NoPorts Configuration" Level="1"
-            Description="Desktop app to configure the daemon, manage its keys and start or stop the service">
+    <Feature Id="ConfigAppFeature" Title="NoPorts Configuration app" Level="1" Display="expand"
+             Description="Desktop app that walks you through setting up the daemon: enroll this device with NoPorts Desktop, choose who can connect, then start, stop and watch the service. Available from the Start Menu afterwards. Recommended.">
       <ComponentGroupRef Id="configAppComponents" />
     </Feature>
     <!-- Directory structure -->
@@ -43,21 +49,25 @@
     <StandardDirectory Id="CommonAppDataFolder">
       <Directory Id="APPDATADIR" Name="NoPorts"/>
     </StandardDirectory>
-    <!-- License File -->
+    <!-- Installer UI: Welcome, License, Custom Setup (feature tree), Ready,
+         Progress, Finish. Wording overrides live in noports.en-us.wxl. -->
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
-    <!-- Use the Feature Tree UI -->
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
     <ui:WixUI Id="WixUI_FeatureTree" />
 
-    <!-- Exit dialog: offer to open the configuration app. Only on a fresh
-         install with the app feature selected; silent installs never see the
-         dialog, and upgrades already have a config. -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Configure the NoPorts daemon now" />
+    <!-- Finish page: say what state things are in and offer to open the
+         configuration app. Silent installs never see this dialog. -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT"
+              Value="The NoPorts tools are installed. The device daemon service is registered but not running yet: open NoPorts Configuration to enroll this device with NoPorts Desktop, choose who may connect, and start it. You can find it in the Start Menu at any time." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open NoPorts Configuration now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" />
     <CustomAction Id="LaunchConfigApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
     <UI>
+      <!-- Only when the app feature is actually being installed (action state 3 = local). -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchConfigApp"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and NOT WIX_UPGRADE_DETECTED and &amp;ConfigAppFeature = 3" />
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and &amp;ConfigAppFeature = 3" />
     </UI>
   </Package>
   <!-- Core product component group -->
@@ -125,7 +135,8 @@
                   Name="NoPorts Configuration"
                   Description="Configure the NoPorts daemon and control its service"
                   Target="[CONFIGAPPFOLDER]noports_config.exe"
-                  WorkingDirectory="CONFIGAPPFOLDER" />
+                  WorkingDirectory="CONFIGAPPFOLDER"
+                  Icon="NoPortsIcon" />
         <RegistryValue Root="HKCU" Key="Software\Atsign\NoPorts" Name="ConfigAppShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>

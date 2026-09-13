@@ -231,7 +231,10 @@ jobs:
           signing-account-name: 'atsign-github-signing'
           certificate-profile-name: 'Atsign-Software-Signing'
           files-folder: '${{ github.workspace }}'
-          files-folder-filter: 'exe'
+          # dll: the NoPorts Configuration app ships flutter_windows.dll and
+          # plugin dlls inside the MSI (the MSVC runtime dlls are already
+          # Microsoft-signed and are left alone by the service).
+          files-folder-filter: 'exe,dll'
           files-folder-recurse: true
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
@@ -248,6 +251,7 @@ jobs:
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
               -d ProductVersion="${VERSION}" \
+              -culture en-US -loc noports.en-us.wxl \
               -arch x64 -o build/NoPorts.msi noports.wxs
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
           cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi
