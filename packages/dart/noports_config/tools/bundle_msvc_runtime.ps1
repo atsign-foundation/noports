@@ -43,24 +43,28 @@ function Find-RedistDir {
     $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Redist.14.Latest -property installationPath
     if (-not $vs) { $vs = & $vswhere -latest -products * -property installationPath }
     if ($vs) {
+      # Newest toolset first. VS 2022 and VS 2026 both ship the 14.4x toolset
+      # as Microsoft.VC143.CRT; match any VC14x so a future rename does not
+      # break the build (the three DLL names have been stable since VS 2015).
       $crt = Get-ChildItem -Path (Join-Path $vs 'VC\Redist\MSVC') -Directory -ErrorAction SilentlyContinue |
         Sort-Object Name -Descending |
-        ForEach-Object { Join-Path $_.FullName "$Arch\Microsoft.VC143.CRT" } |
-        Where-Object { Test-Path $_ } |
-        Select-Object -First 1
+        ForEach-Object { Get-ChildItem -Path (Join-Path $_.FullName $Arch) -Directory -Filter 'Microsoft.VC14*.CRT' -ErrorAction SilentlyContinue } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1 -ExpandProperty FullName
       if ($crt) { return $crt }
     }
   }
   if ($env:VCToolsRedistDir) {
-    $crt = Join-Path $env:VCToolsRedistDir "$Arch\Microsoft.VC143.CRT"
-    if (Test-Path $crt) { return $crt }
+    $crt = Get-ChildItem -Path (Join-Path $env:VCToolsRedistDir $Arch) -Directory -Filter 'Microsoft.VC14*.CRT' -ErrorAction SilentlyContinue |
+      Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+    if ($crt) { return $crt }
   }
   return $null
 }
 
 $src = Find-RedistDir
 if (-not $src) {
-  Write-Error "Could not find the $Arch Visual C++ redist folder (Microsoft.VC143.CRT). Is Visual Studio with the C++ workload installed?"
+  Write-Error "Could not find the $Arch Visual C++ redist folder (Microsoft.VC14x.CRT). Is Visual Studio with the C++ workload installed?"
 }
 if (-not (Test-Path $Destination)) {
   Write-Error "Destination $Destination does not exist. Run 'flutter build windows --release' first."
