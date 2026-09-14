@@ -4,8 +4,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops_ffi.dart';
+import 'package:at_utils/at_logger.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srv/aes_ctr_transformer.dart';
 import 'package:noports_core/src/srv/srv_impl.dart' show setAesCtrTransformer;
@@ -50,6 +52,14 @@ Future<List<int>> _legacyTransform(
 
 /// Forces the pure-Dart branch on a host that has libcrypto.
 AesCtrFfiCipher? _noCipher(AESKey key, InitialisationVector iv) => null;
+
+/// Collects log records instead of printing them.
+class _CapturingLoggingHandler implements LoggingHandler {
+  final List<LogRecord> records = <LogRecord>[];
+
+  @override
+  void call(LogRecord record) => records.add(record);
+}
 
 Future<List<int>> _collect(
   DataTransformer transformer,
@@ -152,43 +162,35 @@ void main() {
       expect(roundTripped, plaintext);
     });
 
-    test(
-      'one transformer serves repeated streams independently',
-      () async {
-        // A DataTransformer may be invoked more than once. Each invocation must
-        // start a fresh keystream — sharing one stateful cipher across streams
-        // would hand each of them half a keystream. Only the FFI branch holds a
-        // cipher to share; the fallback builds a DartAesCtr per invocation and
-        // would pass without the bug being possible.
-        final DataTransformer transformer = createAesCtrTransformer(aesKey, iv);
-        final List<List<int>> chunks = chunksOf(128, 1024);
+    test('one transformer serves repeated streams independently', () async {
+      // A DataTransformer may be invoked more than once. Each invocation must
+      // start a fresh keystream — sharing one stateful cipher across streams
+      // would hand each of them half a keystream. Only the FFI branch holds a
+      // cipher to share; the fallback builds a DartAesCtr per invocation and
+      // would pass without the bug being possible.
+      final DataTransformer transformer = createAesCtrTransformer(aesKey, iv);
+      final List<List<int>> chunks = chunksOf(128, 1024);
 
-        expect(
-          await _collect(transformer, chunks),
-          await _collect(transformer, chunks),
-        );
-      },
-      skip: needsFfi,
-    );
+      expect(
+        await _collect(transformer, chunks),
+        await _collect(transformer, chunks),
+      );
+    }, skip: needsFfi);
 
-    test(
-      'an abandoned stream is cleaned up',
-      () async {
-        // Cancelling mid-tunnel is the common case, and the path on which a
-        // native context leaks if the transform does not release it. The
-        // fallback has no context to leak.
-        final StreamController<List<int>> controller =
-            StreamController<List<int>>();
-        final StreamSubscription<List<int>> subscription =
-            createAesCtrTransformer(aesKey, iv)(controller.stream).listen(null);
+    test('an abandoned stream is cleaned up', () async {
+      // Cancelling mid-tunnel is the common case, and the path on which a
+      // native context leaks if the transform does not release it. The
+      // fallback has no context to leak.
+      final StreamController<List<int>> controller =
+          StreamController<List<int>>();
+      final StreamSubscription<List<int>> subscription =
+          createAesCtrTransformer(aesKey, iv)(controller.stream).listen(null);
 
-        controller.add(Uint8List.fromList(<int>[1, 2, 3]));
-        await Future<void>.delayed(Duration.zero);
-        await subscription.cancel();
-        await controller.close();
-      },
-      skip: needsFfi,
-    );
+      controller.add(Uint8List.fromList(<int>[1, 2, 3]));
+      await Future<void>.delayed(Duration.zero);
+      await subscription.cancel();
+      await controller.close();
+    }, skip: needsFfi);
 
     test(
       'a source error ends the stream rather than being forwarded',
@@ -291,22 +293,18 @@ void main() {
       );
     });
 
-    test(
-      'agrees with the FFI branch, so tunnel ends may differ',
-      () async {
-        // The acceptance criterion of issue #2216: an FFI end and a pure-Dart
-        // end have to interoperate.
-        final List<List<int>> chunks = chunksOf(7, 2048);
-        expect(
-          await _collect(createAesCtrTransformer(aesKey, iv), chunks),
-          await _collect(
-            createAesCtrTransformer(aesKey, iv, cipherFactory: _noCipher),
-            chunks,
-          ),
-        );
-      },
-      skip: needsFfi,
-    );
+    test('agrees with the FFI branch, so tunnel ends may differ', () async {
+      // The acceptance criterion of issue #2216: an FFI end and a pure-Dart
+      // end have to interoperate.
+      final List<List<int>> chunks = chunksOf(7, 2048);
+      expect(
+        await _collect(createAesCtrTransformer(aesKey, iv), chunks),
+        await _collect(
+          createAesCtrTransformer(aesKey, iv, cipherFactory: _noCipher),
+          chunks,
+        ),
+      );
+    }, skip: needsFfi);
 
     test('accepts the same key lengths as the FFI branch', () async {
       const String key128 = 'AAIEBggKDA4QEhQWGBocHg==';
@@ -327,42 +325,37 @@ void main() {
   });
 
   group('createAesCtrChunkTransformer', () {
-    test(
-      'matches createAesCtrTransformer at the same keystream position, at '
-      'any chunk size',
-      () async {
-        final List<int> expected = await _legacyTransform(
-          chunksOf(1024, 4096),
+    test('matches createAesCtrTransformer at the same keystream position, at '
+        'any chunk size', () async {
+      final List<int> expected = await _legacyTransform(
+        chunksOf(1024, 4096),
+        aesKey,
+        iv,
+      );
+      for (final int size in <int>[1, 7, 16, 1000, 4096]) {
+        final ChunkTransformer transformer = createAesCtrChunkTransformer(
           aesKey,
           iv,
-        );
-        for (final int size in <int>[1, 7, 16, 1000, 4096]) {
-          final ChunkTransformer transformer =
-              createAesCtrChunkTransformer(aesKey, iv)!;
-          final List<int> actual = <int>[];
-          try {
-            for (final List<int> chunk in chunksOf(size, 4096)) {
-              actual.addAll(transformer.transform(chunk));
-            }
-          } finally {
-            transformer.dispose();
+        )!;
+        final List<int> actual = <int>[];
+        try {
+          for (final List<int> chunk in chunksOf(size, 4096)) {
+            actual.addAll(transformer.transform(chunk));
           }
-          expect(actual, expected, reason: 'chunk size $size diverged');
+        } finally {
+          transformer.dispose();
         }
-      },
-      skip: needsFfi,
-    );
+        expect(actual, expected, reason: 'chunk size $size diverged');
+      }
+    }, skip: needsFfi);
 
-    test(
-      'returns null without libcrypto, the same trigger as the '
-      "DataTransformer path's pure-Dart fallback",
-      () {
-        expect(
-          createAesCtrChunkTransformer(aesKey, iv, cipherFactory: _noCipher),
-          isNull,
-        );
-      },
-    );
+    test('returns null without libcrypto, the same trigger as the '
+        "DataTransformer path's pure-Dart fallback", () {
+      expect(
+        createAesCtrChunkTransformer(aesKey, iv, cipherFactory: _noCipher),
+        isNull,
+      );
+    });
 
     test('rejects a bad key or IV length where the tunnel is configured', () {
       expect(
@@ -381,41 +374,35 @@ void main() {
       );
     });
 
-    test(
-      'a failed transform disposes the cipher; a later chunk still throws '
-      'rather than silently succeeding',
-      () {
-        final ChunkTransformer transformer = createAesCtrChunkTransformer(
-          aesKey,
-          iv,
-          cipherFactory: (AESKey k, InitialisationVector v) {
-            final AesCtrFfiCipher c = AtPqc.aesCtrStreamCipher(k, v)!;
-            c.dispose();
-            return c;
-          },
-        )!;
-        expect(
-          () => transformer.transform(Uint8List.fromList(<int>[1, 2, 3])),
-          throwsA(isA<StateError>()),
-        );
-        expect(
-          () => transformer.transform(Uint8List.fromList(<int>[4, 5, 6])),
-          throwsA(isA<StateError>()),
-        );
-      },
-      skip: needsFfi,
-    );
+    test('a failed transform disposes the cipher; a later chunk still throws '
+        'rather than silently succeeding', () {
+      final ChunkTransformer transformer = createAesCtrChunkTransformer(
+        aesKey,
+        iv,
+        cipherFactory: (AESKey k, InitialisationVector v) {
+          final AesCtrFfiCipher c = AtPqc.aesCtrStreamCipher(k, v)!;
+          c.dispose();
+          return c;
+        },
+      )!;
+      expect(
+        () => transformer.transform(Uint8List.fromList(<int>[1, 2, 3])),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        () => transformer.transform(Uint8List.fromList(<int>[4, 5, 6])),
+        throwsA(isA<StateError>()),
+      );
+    }, skip: needsFfi);
 
-    test(
-      'dispose is idempotent',
-      () {
-        final ChunkTransformer transformer =
-            createAesCtrChunkTransformer(aesKey, iv)!;
-        transformer.dispose();
-        expect(transformer.dispose, returnsNormally);
-      },
-      skip: needsFfi,
-    );
+    test('dispose is idempotent', () {
+      final ChunkTransformer transformer = createAesCtrChunkTransformer(
+        aesKey,
+        iv,
+      )!;
+      transformer.dispose();
+      expect(transformer.dispose, returnsNormally);
+    }, skip: needsFfi);
   });
 
   group('setAesCtrTransformer', () {
@@ -424,52 +411,130 @@ void main() {
     // staying null: that relays this side's data unmodified, with no error
     // anywhere, so these check the actual bytes rather than just which
     // field got set.
-    test(
-      'prefers the chunk transformer when libcrypto is available, and it '
-      'actually encrypts',
-      () {
-        final Side side = Side(_MockSocket(), true);
-        setAesCtrTransformer(side, aesKey, iv);
-        expect(side.chunkTransformer, isNotNull);
-        expect(side.transformer, isNull);
+    test('prefers the chunk transformer when libcrypto is available, and it '
+        'actually encrypts', () {
+      final Side side = Side(_MockSocket(), true);
+      setAesCtrTransformer(side, aesKey, iv);
+      expect(side.chunkTransformer, isNotNull);
+      expect(side.transformer, isNull);
 
-        final Uint8List plaintext = Uint8List.fromList(
-          utf8.encode('not ciphertext yet'),
-        );
-        final List<int> ciphertext = side.chunkTransformer!.transform(
-          plaintext,
-        );
-        expect(
-          ciphertext,
-          isNot(equals(plaintext)),
-          reason: 'a no-op transform would relay this in the clear',
-        );
-      },
-      skip: needsFfi,
-    );
+      final Uint8List plaintext = Uint8List.fromList(
+        utf8.encode('not ciphertext yet'),
+      );
+      final List<int> ciphertext = side.chunkTransformer!.transform(plaintext);
+      expect(
+        ciphertext,
+        isNot(equals(plaintext)),
+        reason: 'a no-op transform would relay this in the clear',
+      );
+    }, skip: needsFfi);
+
+    test('falls back to the DataTransformer, which actually encrypts, when '
+        'the chunk path is unavailable', () async {
+      final Side side = Side(_MockSocket(), true);
+      setAesCtrTransformer(side, aesKey, iv, cipherFactory: _noCipher);
+      expect(side.chunkTransformer, isNull);
+      expect(side.transformer, isNotNull);
+
+      final Uint8List plaintext = Uint8List.fromList(
+        utf8.encode('not ciphertext yet'),
+      );
+      final List<int> ciphertext = await _collect(
+        side.transformer!,
+        <List<int>>[plaintext],
+      );
+      expect(
+        ciphertext,
+        isNot(equals(plaintext)),
+        reason:
+            'a side with neither transformer set relays plaintext '
+            'with no error anywhere — the fallback must actually encrypt',
+      );
+    });
+  });
+
+  group('cipher path logging', () {
+    late _CapturingLoggingHandler handler;
+    late List<LogRecord> records;
+    late LoggingHandler previousHandler;
+    late String previousRootLevel;
+
+    setUp(() {
+      handler = _CapturingLoggingHandler();
+      records = handler.records;
+      previousHandler = AtSignLogger.defaultLoggingHandler;
+      previousRootLevel = AtSignLogger.root_level;
+      AtSignLogger.defaultLoggingHandler = handler;
+      AtSignLogger.root_level = 'info';
+      resetAesCtrCipherPathLog();
+    });
+
+    // Both of these are process-global: other test files set root_level and
+    // assert on it, so leaving either changed leaks across the suite.
+    tearDown(() {
+      AtSignLogger.defaultLoggingHandler = previousHandler;
+      AtSignLogger.root_level = previousRootLevel;
+      resetAesCtrCipherPathLog();
+    });
 
     test(
-      'falls back to the DataTransformer, which actually encrypts, when '
-      'the chunk path is unavailable',
+      'the pure-Dart fallback warns, naming libcrypto and the cost',
       () async {
-        final Side side = Side(_MockSocket(), true);
-        setAesCtrTransformer(side, aesKey, iv, cipherFactory: _noCipher);
-        expect(side.chunkTransformer, isNull);
-        expect(side.transformer, isNotNull);
+        // The whole point: an operator seeing only degraded throughput has
+        // nothing to go on unless this line exists.
+        createAesCtrChunkTransformer(aesKey, iv, cipherFactory: _noCipher);
 
-        final Uint8List plaintext = Uint8List.fromList(
-          utf8.encode('not ciphertext yet'),
-        );
-        final List<int> ciphertext = await _collect(side.transformer!, <
-          List<int>
-        >[plaintext]);
+        expect(records, hasLength(1));
+        expect(records.single.level, Level.WARNING);
+        expect(records.single.message.toLowerCase(), contains('libcrypto'));
         expect(
-          ciphertext,
-          isNot(equals(plaintext)),
-          reason: 'a side with neither transformer set relays plaintext '
-              'with no error anywhere — the fallback must actually encrypt',
+          records.single.message.toLowerCase(),
+          contains('pure-dart'),
+          reason: 'the line has to name the backend that was actually used',
         );
       },
     );
+
+    test('the FFI path logs at info, not as a warning', () {
+      createAesCtrChunkTransformer(aesKey, iv);
+
+      expect(records, hasLength(1));
+      expect(records.single.level, Level.INFO);
+      expect(records.single.message.toLowerCase(), contains('ffi'));
+    }, skip: needsFfi);
+
+    test('it logs once per process, not once per connection', () async {
+      // srv in -multi mode resolves a pair of transformers per connection.
+      // libcrypto cannot appear or vanish mid-process, so repeating this
+      // would be noise that buries the line it matters on.
+      for (int i = 0; i < 5; i++) {
+        createAesCtrChunkTransformer(aesKey, iv, cipherFactory: _noCipher);
+      }
+
+      expect(records, hasLength(1));
+    });
+
+    test('the DataTransformer path logs too, at stream time', () async {
+      // createAesCtrTransformer resolves its cipher inside the returned
+      // closure, so building the transformer alone must not be what logs —
+      // otherwise the control-channel and inline paths stay silent.
+      final DataTransformer transformer = createAesCtrTransformer(
+        aesKey,
+        iv,
+        cipherFactory: _noCipher,
+      );
+      expect(
+        records,
+        isEmpty,
+        reason: 'nothing is resolved until a stream runs',
+      );
+
+      await _collect(transformer, <List<int>>[
+        Uint8List.fromList(<int>[1, 2, 3]),
+      ]);
+
+      expect(records, hasLength(1));
+      expect(records.single.level, Level.WARNING);
+    });
   });
 }
