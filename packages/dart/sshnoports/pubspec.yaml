@@ -36,7 +36,7 @@ dependency_overrides:
   at_chops:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk.git
-      ref: 2b3afe5612bbe450943b39e9f677bba8ff26f0c7
+      ref: 688486e448ed8f08b96ed92ea197072e9b1c7249
       path: packages/at_chops
   socket_connector:
     git:

@@ -69,8 +69,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/at_chops"
-      ref: "2b3afe5612bbe450943b39e9f677bba8ff26f0c7"
-      resolved-ref: "2b3afe5612bbe450943b39e9f677bba8ff26f0c7"
+      ref: "688486e448ed8f08b96ed92ea197072e9b1c7249"
+      resolved-ref: "688486e448ed8f08b96ed92ea197072e9b1c7249"
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "3.7.0"
@@ -354,14 +354,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
-  dart_periphery:
-    dependency: transitive
-    description:
-      name: dart_periphery
-      sha256: "1c933dae787d65e6e66ee89db4a58ed74dc9213b83cea10c344585a256ca498a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.20"
   dart_style:
     dependency: transitive
     description:
@@ -649,14 +641,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  platform:
-    dependency: transitive
-    description:
-      name: platform
-      sha256: "5d6b1b0036a5f331ebc77c850ebc8506cbc1e9416c27e59b439f917a902a4984"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.6"
   pointycastle:
     dependency: "direct overridden"
     description:
@@ -689,14 +673,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
-  process:
-    dependency: transitive
-    description:
-      name: process
-      sha256: c6248e4526673988586e8c00bb22a49210c258dc91df5227d5da9748ecf79744
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.5"
   pub_semver:
     dependency: transitive
     description:
