@@ -52,8 +52,16 @@ void main() {
     providers: [
       BlocProvider(create: (_) => NavCubit()),
       BlocProvider.value(value: config),
-      BlocProvider(create: (_) => ServiceCubit(FakeServiceManager(), pollInterval: const Duration(hours: 1))),
-      BlocProvider(create: (_) => HealthCubit(paths: paths, services: FakeServiceManager())),
+      BlocProvider(
+        create: (_) => ServiceCubit(
+          FakeServiceManager(),
+          pollInterval: const Duration(hours: 1),
+        ),
+      ),
+      BlocProvider(
+        create: (_) =>
+            HealthCubit(paths: paths, services: FakeServiceManager()),
+      ),
     ],
     child: MaterialApp(
       theme: AppTheme.light(),
@@ -63,48 +71,59 @@ void main() {
     ),
   );
 
-  testWidgets('wizard: typing the atSign clears the error and enables Next', timeout: const Timeout(Duration(seconds: 60)),
-      (tester) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  testWidgets(
+    'wizard: typing the atSign clears the error and enables Next',
+    timeout: const Timeout(Duration(seconds: 60)),
+    (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
 
-    final config = ConfigCubit(ConfigRepository(paths: paths, template: () async => template));
-    // Real file I/O must run outside the fake-async zone of testWidgets.
-    await tester.runAsync(() => config.load());
-    expect(config.state.status, ConfigStatus.ready);
-    await tester.pumpWidget(app(config));
-    // One frame to build, one for the post-frame wizard decision, one to show it.
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+      final config = ConfigCubit(
+        ConfigRepository(paths: paths, template: () async => template),
+      );
+      // Real file I/O must run outside the fake-async zone of testWidgets.
+      await tester.runAsync(() => config.load());
+      expect(config.state.status, ConfigStatus.ready);
+      await tester.pumpWidget(app(config));
+      // One frame to build, one for the post-frame wizard decision, one to show it.
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Set up this device for NoPorts'), findsOneWidget);
-    expect(find.text('A device atSign is required.'), findsOneWidget);
+      expect(find.text('Set up this device for NoPorts'), findsOneWidget);
+      expect(find.text('A device atSign is required.'), findsOneWidget);
 
-    // Type the way a person does: one key at a time, into each field.
-    // (No pumpAndSettle after focusing a TextField: the caret blinks forever.)
-    Future<void> type(Finder f, String text) async {
-      var typed = '';
-      for (final ch in text.split('')) {
-        typed += ch;
-        await tester.enterText(f, typed);
-        await tester.pump();
+      // Type the way a person does: one key at a time, into each field.
+      // (No pumpAndSettle after focusing a TextField: the caret blinks forever.)
+      Future<void> type(Finder f, String text) async {
+        var typed = '';
+        for (final ch in text.split('')) {
+          typed += ch;
+          await tester.enterText(f, typed);
+          await tester.pump();
+        }
       }
-    }
-    final fields = find.byType(TextField);
-    expect(fields, findsNWidgets(2), reason: 'atSign and device name only');
-    await type(fields.at(1), 'tarial');
-    await type(fields.at(0), '@ssh_1');
-    await tester.pump(const Duration(milliseconds: 300));
 
-    expect(config.state.doc!.atsign, '@ssh_1');
-    expect(find.text('Set up this device for NoPorts'), findsOneWidget,
-        reason: 'wizard must stay open while the user is in it');
-    expect(find.text('A device atSign is required.'), findsNothing);
+      final fields = find.byType(TextField);
+      expect(fields, findsNWidgets(2), reason: 'atSign and device name only');
+      await type(fields.at(1), 'tarial');
+      await type(fields.at(0), '@ssh_1');
+      await tester.pump(const Duration(milliseconds: 300));
 
-    final next = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Next'));
-    expect(next.onPressed, isNotNull);
-    await config.close();
-  });
+      expect(config.state.doc!.atsign, '@ssh_1');
+      expect(
+        find.text('Set up this device for NoPorts'),
+        findsOneWidget,
+        reason: 'wizard must stay open while the user is in it',
+      );
+      expect(find.text('A device atSign is required.'), findsNothing);
+
+      final next = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Next'),
+      );
+      expect(next.onPressed, isNotNull);
+      await config.close();
+    },
+  );
 }

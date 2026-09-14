@@ -27,7 +27,8 @@ class ConfigFieldWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppLocalizations.of(context);
     final def = field.defaultValue;
-    final showDefault = def != null &&
+    final showDefault =
+        def != null &&
         def.toString().isNotEmpty &&
         def.toString() != '__none__' &&
         field.kind != FieldKind.boolean &&
@@ -159,7 +160,9 @@ class ConfigFieldWidget extends StatelessWidget {
           ],
         );
       case FieldKind.boolean:
-        final b = value is bool ? value as bool : (field.defaultValue as bool? ?? false);
+        final b = value is bool
+            ? value as bool
+            : (field.defaultValue as bool? ?? false);
         return Align(
           alignment: Alignment.centerLeft,
           child: Switch(value: b, onChanged: onChanged),
@@ -168,9 +171,14 @@ class ConfigFieldWidget extends StatelessWidget {
         return SizedBox(
           width: 200,
           child: DropdownButtonFormField<String>(
-            initialValue: value == null ? 'default' : (value == true ? 'on' : 'off'),
+            initialValue: value == null
+                ? 'default'
+                : (value == true ? 'on' : 'off'),
             items: [
-              DropdownMenuItem(value: 'default', child: Text(strings.defaultLabel)),
+              DropdownMenuItem(
+                value: 'default',
+                child: Text(strings.defaultLabel),
+              ),
               DropdownMenuItem(value: 'on', child: Text(strings.onLabel)),
               DropdownMenuItem(value: 'off', child: Text(strings.offLabel)),
             ],
@@ -238,7 +246,9 @@ class SyncedTextField extends StatefulWidget {
 }
 
 class _SyncedTextFieldState extends State<SyncedTextField> {
-  late final TextEditingController _c = TextEditingController(text: widget.value);
+  late final TextEditingController _c = TextEditingController(
+    text: widget.value,
+  );
 
   @override
   void didUpdateWidget(covariant SyncedTextField old) {
@@ -332,7 +342,9 @@ class _StringListFieldState extends State<StringListField> {
                   InputChip(
                     label: Text(item),
                     backgroundColor: Colors.white,
-                    side: const BorderSide(color: AppColor.textFieldBorderColor),
+                    side: const BorderSide(
+                      color: AppColor.textFieldBorderColor,
+                    ),
                     onDeleted: () => widget.onChanged(
                       widget.items.where((e) => e != item).toList(),
                     ),

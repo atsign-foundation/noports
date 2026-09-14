@@ -22,8 +22,10 @@ class ServiceView extends StatelessWidget {
     final strings = AppLocalizations.of(context);
     return BlocConsumer<ServiceCubit, ServiceCubitState>(
       listenWhen: (a, b) => a.error != b.error && b.error != null,
-      listener: (context, state) =>
-          CustomSnackBar.error(context, strings.serviceActionFailed(state.error!)),
+      listener: (context, state) => CustomSnackBar.error(
+        context,
+        strings.serviceActionFailed(state.error!),
+      ),
       builder: (context, state) {
         final status = state.status;
         return ListView(
@@ -39,8 +41,10 @@ class ServiceView extends StatelessWidget {
                     const Icon(Icons.lock_outline, size: 18),
                     gapW12,
                     Expanded(
-                      child: Text(strings.privilegePromptNote,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      child: Text(
+                        strings.privilegePromptNote,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
                   ],
                 ),
@@ -118,13 +122,15 @@ class _ElevationBanner extends StatelessWidget {
               children: [
                 Text(
                   strings.notElevatedTitle,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.black87,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.black87),
                 ),
                 gapH4,
-                Text(strings.notElevatedBody,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  strings.notElevatedBody,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -145,7 +151,9 @@ class _ServiceCard extends StatelessWidget {
     final status = state.status;
     final config = context.watch<ConfigCubit>().state;
     final canControl =
-        state.elevated != false && (status?.isInstalled ?? false) && !state.isBusy;
+        state.elevated != false &&
+        (status?.isInstalled ?? false) &&
+        !state.isBusy;
 
     return SectionCard(
       title: strings.serviceTitle,
@@ -277,9 +285,9 @@ class _DeviceSummary extends StatelessWidget {
       children: [
         Text(
           strings.deviceSummary(doc.deviceName ?? 'default', doc.atsign!),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.black87,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
         ),
         gapH4,
         Text(
@@ -343,7 +351,9 @@ class _NoticePanel extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           gapW12,
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+          ),
           if (action != null) ...[gapW16, action!],
         ],
       ),

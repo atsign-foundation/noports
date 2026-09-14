@@ -127,7 +127,8 @@ class KeysRepository {
 
   static String _expandHome(String path) {
     if (!path.startsWith('~')) return path;
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     return home + path.substring(1);

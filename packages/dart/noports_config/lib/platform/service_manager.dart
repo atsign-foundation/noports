@@ -5,7 +5,14 @@ import 'package:noports_config/platform/linux_service_manager.dart';
 import 'package:noports_config/platform/macos_service_manager.dart';
 import 'package:noports_config/platform/windows_service_manager.dart';
 
-enum ServiceState { running, stopped, starting, stopping, notInstalled, unknown }
+enum ServiceState {
+  running,
+  stopped,
+  starting,
+  stopping,
+  notInstalled,
+  unknown,
+}
 
 class ServiceStatus extends Equatable {
   const ServiceStatus({
@@ -84,7 +91,8 @@ abstract class ServiceManager {
   /// to replace a legacy definition (see [ServiceStatus.warning]).
   bool get canInstall => false;
 
-  Future<void> install() => throw UnsupportedError('install not supported here');
+  Future<void> install() =>
+      throw UnsupportedError('install not supported here');
 
   static ServiceManager? _instance;
 
@@ -132,7 +140,11 @@ Future<String> runChecked(
   if (result.exitCode != 0 && throwOnError) {
     final err = result.stderr.toString().trim();
     throw ServiceException(
-      err.isNotEmpty ? err : out.trim().isNotEmpty ? out.trim() : 'exit ${result.exitCode}',
+      err.isNotEmpty
+          ? err
+          : out.trim().isNotEmpty
+          ? out.trim()
+          : 'exit ${result.exitCode}',
     );
   }
   return out;

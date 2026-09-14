@@ -33,11 +33,17 @@ class MacosServiceManager extends ServiceManager {
   String get rotateLabel => '$label.logrotate';
 
   File get rotatePlistFile => File(
-    p.join(paths.userHomeDir.path, 'Library', 'LaunchAgents', '$rotateLabel.plist'),
+    p.join(
+      paths.userHomeDir.path,
+      'Library',
+      'LaunchAgents',
+      '$rotateLabel.plist',
+    ),
   );
 
   @override
-  String get logSourceDescription => plistFile.existsSync() &&
+  String get logSourceDescription =>
+      plistFile.existsSync() &&
           parseProgramArguments(plistFile.readAsStringSync()).isNotEmpty &&
           _standardOutPath(plistFile.readAsStringSync()) != null
       ? _standardOutPath(plistFile.readAsStringSync())!
@@ -58,17 +64,22 @@ class MacosServiceManager extends ServiceManager {
     if (plistExists) {
       final args = parseProgramArguments(plistFile.readAsStringSync());
       if (!isManagedDefinition(args, paths.configFile.path)) {
-        warning = 'The service definition passes settings on the command line '
+        warning =
+            'The service definition passes settings on the command line '
             '(${args.skip(1).join(' ')}). Those override sshnpd.yaml. Update the '
             'service definition to run from the configuration file.';
       } else if (args.isNotEmpty && !File(args.first).existsSync()) {
         warning = 'The service points at ${args.first}, which does not exist.';
       } else if (!rotatePlistFile.existsSync()) {
-        warning = 'Log rotation for ${logFile.path} is not set up, so the file '
+        warning =
+            'Log rotation for ${logFile.path} is not set up, so the file '
             'will grow without limit. Update the service definition to add it.';
       }
     }
-    final result = await Process.run('launchctl', ['print', '${await _domain()}/$label']);
+    final result = await Process.run('launchctl', [
+      'print',
+      '${await _domain()}/$label',
+    ]);
     final out = result.stdout.toString() + result.stderr.toString();
     if (result.exitCode != 0) {
       if (!plistExists) return const ServiceStatus.notInstalled();
@@ -79,9 +90,15 @@ class MacosServiceManager extends ServiceManager {
         warning: warning,
       );
     }
-    final stateStr = RegExp(r'state = ([\w ]+)').firstMatch(out)?.group(1)?.trim() ?? 'unknown';
-    final pid = int.tryParse(RegExp(r'pid = (\d+)').firstMatch(out)?.group(1) ?? '');
-    final exit = int.tryParse(RegExp(r'last exit code = (\d+)').firstMatch(out)?.group(1) ?? '');
+    final stateStr =
+        RegExp(r'state = ([\w ]+)').firstMatch(out)?.group(1)?.trim() ??
+        'unknown';
+    final pid = int.tryParse(
+      RegExp(r'pid = (\d+)').firstMatch(out)?.group(1) ?? '',
+    );
+    final exit = int.tryParse(
+      RegExp(r'last exit code = (\d+)').firstMatch(out)?.group(1) ?? '',
+    );
     return ServiceStatus(
       state: switch (stateStr) {
         'running' => ServiceState.running,
@@ -97,7 +114,11 @@ class MacosServiceManager extends ServiceManager {
   }
 
   Future<bool> _loaded() async =>
-      (await Process.run('launchctl', ['print', '${await _domain()}/$label'])).exitCode == 0;
+      (await Process.run('launchctl', [
+        'print',
+        '${await _domain()}/$label',
+      ])).exitCode ==
+      0;
 
   /// launchd appends to StandardOutPath forever and never rotates it.
   /// Keep one previous generation; done just before a (re)start so the
@@ -119,7 +140,9 @@ class MacosServiceManager extends ServiceManager {
   @override
   Future<void> start() async {
     if (!plistFile.existsSync()) {
-      throw ServiceException('No service definition at ${plistFile.path}. Install the service first.');
+      throw ServiceException(
+        'No service definition at ${plistFile.path}. Install the service first.',
+      );
     }
     await _rotateLogIfLarge();
     final domain = await _domain();
@@ -127,7 +150,10 @@ class MacosServiceManager extends ServiceManager {
       await runChecked('launchctl', ['bootstrap', domain, plistFile.path]);
     }
     await runChecked('launchctl', ['kickstart', '-k', '$domain/$label']);
-    final s = await waitFor((s) => s.isRunning, timeout: const Duration(seconds: 15));
+    final s = await waitFor(
+      (s) => s.isRunning,
+      timeout: const Duration(seconds: 15),
+    );
     if (!s.isRunning) {
       throw ServiceException(
         'The daemon did not stay running'
@@ -151,7 +177,11 @@ class MacosServiceManager extends ServiceManager {
   Future<void> restart() async {
     await _rotateLogIfLarge();
     if (await _loaded()) {
-      await runChecked('launchctl', ['kickstart', '-k', '${await _domain()}/$label']);
+      await runChecked('launchctl', [
+        'kickstart',
+        '-k',
+        '${await _domain()}/$label',
+      ]);
       await waitFor((s) => s.isRunning, timeout: const Duration(seconds: 15));
     } else {
       await start();
@@ -172,7 +202,10 @@ class MacosServiceManager extends ServiceManager {
     if (plistFile.existsSync()) {
       await plistFile.copy('${plistFile.path}.bak');
       if (await _loaded()) {
-        await Process.run('launchctl', ['bootout', '${await _domain()}/$label']);
+        await Process.run('launchctl', [
+          'bootout',
+          '${await _domain()}/$label',
+        ]);
       }
     }
     await plistFile.parent.create(recursive: true);
@@ -184,7 +217,11 @@ class MacosServiceManager extends ServiceManager {
       ),
       flush: true,
     );
-    await runChecked('launchctl', ['bootstrap', await _domain(), plistFile.path]);
+    await runChecked('launchctl', [
+      'bootstrap',
+      await _domain(),
+      plistFile.path,
+    ]);
     await _installLogRotation();
   }
 
@@ -194,7 +231,10 @@ class MacosServiceManager extends ServiceManager {
   /// to be restarted for this.
   Future<void> _installLogRotation() async {
     final domain = await _domain();
-    if (await Process.run('launchctl', ['print', '$domain/$rotateLabel']).then((r) => r.exitCode == 0)) {
+    if (await Process.run('launchctl', [
+      'print',
+      '$domain/$rotateLabel',
+    ]).then((r) => r.exitCode == 0)) {
       await Process.run('launchctl', ['bootout', '$domain/$rotateLabel']);
     }
     await rotatePlistFile.writeAsString(
@@ -220,13 +260,20 @@ class MacosServiceManager extends ServiceManager {
       return text.isEmpty ? 'Log file $path is empty.' : text;
     }
     final result = await Process.run('log', [
-      'show', '--style', 'compact', '--last', '2h',
-      '--predicate', 'process == "sshnpd"',
+      'show',
+      '--style',
+      'compact',
+      '--last',
+      '2h',
+      '--predicate',
+      'process == "sshnpd"',
     ]);
     final all = result.stdout.toString().trim().split('\n');
     final tail = all.length > lines ? all.sublist(all.length - lines) : all;
     final text = tail.join('\n').trim();
-    return text.isEmpty ? 'No log entries for sshnpd in the last 2 hours.' : text;
+    return text.isEmpty
+        ? 'No log entries for sshnpd in the last 2 hours.'
+        : text;
   }
 
   @override
@@ -244,7 +291,9 @@ class MacosServiceManager extends ServiceManager {
     required List<String> programArguments,
     required String logPath,
   }) {
-    final args = programArguments.map((a) => '\t\t<string>${_xml(a)}</string>').join('\n');
+    final args = programArguments
+        .map((a) => '\t\t<string>${_xml(a)}</string>')
+        .join('\n');
     return '''
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -306,18 +355,29 @@ $args
   }
 
   static List<String> parseProgramArguments(String plist) {
-    final m = RegExp(r'<key>ProgramArguments</key>\s*<array>(.*?)</array>', dotAll: true)
-        .firstMatch(plist);
+    final m = RegExp(
+      r'<key>ProgramArguments</key>\s*<array>(.*?)</array>',
+      dotAll: true,
+    ).firstMatch(plist);
     if (m == null) return const [];
     return RegExp(r'<string>(.*?)</string>', dotAll: true)
         .allMatches(m.group(1)!)
-        .map((x) => x.group(1)!.trim().replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>'))
+        .map(
+          (x) => x
+              .group(1)!
+              .trim()
+              .replaceAll('&amp;', '&')
+              .replaceAll('&lt;', '<')
+              .replaceAll('&gt;', '>'),
+        )
         .toList();
   }
 
   static String? _standardOutPath(String plist) {
-    final m = RegExp(r'<key>StandardOutPath</key>\s*<string>(.*?)</string>', dotAll: true)
-        .firstMatch(plist);
+    final m = RegExp(
+      r'<key>StandardOutPath</key>\s*<string>(.*?)</string>',
+      dotAll: true,
+    ).firstMatch(plist);
     return m?.group(1)?.trim();
   }
 

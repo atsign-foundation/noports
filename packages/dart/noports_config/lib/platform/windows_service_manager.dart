@@ -43,7 +43,8 @@ class WindowsServiceManager extends ServiceManager {
       );
     }
     final stateMatch = RegExp(r'STATE\s*:\s*(\d+)').firstMatch(out);
-    final state = _stateNames[int.tryParse(stateMatch?.group(1) ?? '')] ??
+    final state =
+        _stateNames[int.tryParse(stateMatch?.group(1) ?? '')] ??
         ServiceState.unknown;
     final pid = int.tryParse(
       RegExp(r'PID\s*:\s*(\d+)').firstMatch(out)?.group(1) ?? '',
@@ -60,9 +61,9 @@ class WindowsServiceManager extends ServiceManager {
     }
     String? startType;
     final qc = await Process.run('sc', ['qc', serviceName]);
-    final st = RegExp(r'START_TYPE\s*:\s*\d+\s+(\w+)')
-        .firstMatch(qc.stdout.toString())
-        ?.group(1);
+    final st = RegExp(
+      r'START_TYPE\s*:\s*\d+\s+(\w+)',
+    ).firstMatch(qc.stdout.toString())?.group(1);
     if (st != null) {
       startType = switch (st) {
         'AUTO_START' => 'Automatic',

@@ -54,7 +54,9 @@ class KeysActions {
     if (atsign == null) {
       CustomSnackBar.error(
         context,
-        strings.keysImportFailed('Could not tell which atSign this file is for.'),
+        strings.keysImportFailed(
+          'Could not tell which atSign this file is for.',
+        ),
       );
       return null;
     }

@@ -31,7 +31,8 @@ class SshnpdConfigDocument {
   static dynamic _plain(dynamic node) {
     if (node is YamlMap || node is Map) {
       return <String, dynamic>{
-        for (final e in (node as Map).entries) e.key.toString(): _plain(e.value),
+        for (final e in (node as Map).entries)
+          e.key.toString(): _plain(e.value),
       };
     }
     if (node is YamlList || node is List) {
@@ -147,10 +148,17 @@ class SshnpdConfigDocument {
   List<String> _list(SshnpdOption o) {
     final v = getOption(o);
     if (v is List) {
-      return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      return v
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     if (v is String && v.trim().isNotEmpty) {
-      return v.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      return v
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     return [];
   }
@@ -170,46 +178,68 @@ class SshnpdConfigDocument {
     final problems = <ConfigProblem>[];
     final a = atsign;
     if (a == null) {
-      problems.add(ConfigProblem(SshnpdOption.atsign, 'A device atSign is required.'));
+      problems.add(
+        ConfigProblem(SshnpdOption.atsign, 'A device atSign is required.'),
+      );
     } else if (!isValidAtsign(a)) {
-      problems.add(ConfigProblem(SshnpdOption.atsign, '"$a" is not a valid atSign.'));
+      problems.add(
+        ConfigProblem(SshnpdOption.atsign, '"$a" is not a valid atSign.'),
+      );
     }
     for (final m in managers) {
       if (!isValidAtsign(m)) {
-        problems.add(ConfigProblem(SshnpdOption.managers, '"$m" is not a valid atSign.'));
+        problems.add(
+          ConfigProblem(SshnpdOption.managers, '"$m" is not a valid atSign.'),
+        );
       }
     }
     final pm = policyManager;
     if (pm != null && !isValidAtsign(pm)) {
-      problems.add(ConfigProblem(SshnpdOption.policyManager, '"$pm" is not a valid atSign.'));
+      problems.add(
+        ConfigProblem(
+          SshnpdOption.policyManager,
+          '"$pm" is not a valid atSign.',
+        ),
+      );
     }
     if (managers.isEmpty && pm == null) {
-      problems.add(ConfigProblem(
-        SshnpdOption.managers,
-        'Add at least one manager atSign or a policy atSign, otherwise nobody can connect.',
-      ));
+      problems.add(
+        ConfigProblem(
+          SshnpdOption.managers,
+          'Add at least one manager atSign or a policy atSign, otherwise nobody can connect.',
+        ),
+      );
     }
     for (final po in permitOpen) {
       if (!isValidPermitOpen(po)) {
-        problems.add(ConfigProblem(
-          SshnpdOption.permitOpen,
-          '"$po" must be host:port, or *:* for everything.',
-        ));
+        problems.add(
+          ConfigProblem(
+            SshnpdOption.permitOpen,
+            '"$po" must be host:port, or *:* for everything.',
+          ),
+        );
       }
     }
     final port = getOption(SshnpdOption.localSshdPort);
     if (port != null) {
       final n = port is int ? port : int.tryParse(port.toString());
       if (n == null || n < 1 || n > 65535) {
-        problems.add(ConfigProblem(SshnpdOption.localSshdPort, 'Port must be between 1 and 65535.'));
+        problems.add(
+          ConfigProblem(
+            SshnpdOption.localSshdPort,
+            'Port must be between 1 and 65535.',
+          ),
+        );
       }
     }
     final dn = deviceName;
     if (dn != null && !RegExp(r'^[a-zA-Z0-9_-]{1,36}$').hasMatch(dn)) {
-      problems.add(ConfigProblem(
-        SshnpdOption.device,
-        'Device name may only contain letters, numbers, underscore and dash (max 36).',
-      ));
+      problems.add(
+        ConfigProblem(
+          SshnpdOption.device,
+          'Device name may only contain letters, numbers, underscore and dash (max 36).',
+        ),
+      );
     }
     return problems;
   }

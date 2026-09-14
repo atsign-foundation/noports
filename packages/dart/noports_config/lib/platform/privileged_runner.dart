@@ -40,7 +40,9 @@ class _DirectRunner extends PrivilegedRunner {
     final r = await Process.run('cmd', ['/c', script]);
     if (r.exitCode != 0) {
       throw ServiceException(
-        (r.stderr.toString().trim().isNotEmpty ? r.stderr : r.stdout).toString().trim(),
+        (r.stderr.toString().trim().isNotEmpty ? r.stderr : r.stdout)
+            .toString()
+            .trim(),
       );
     }
     return r.stdout.toString();

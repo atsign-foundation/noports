@@ -76,7 +76,8 @@ class DaemonPaths {
     configDir: configDir,
     binDir: binDir,
     serviceHomeDir: serviceHomeDir,
-    userHomeDir: userHomeDir ?? Directory(p.join(configDir.parent.path, 'home')),
+    userHomeDir:
+        userHomeDir ?? Directory(p.join(configDir.parent.path, 'home')),
   );
 
   /// The real user's home, seeing through sudo.
@@ -89,16 +90,27 @@ class DaemonPaths {
     if (sudoUser != null && sudoUser.isNotEmpty && sudoUser != 'root') {
       try {
         if (Platform.isMacOS) {
-          final r = Process.runSync('dscl', ['.', '-read', '/Users/$sudoUser', 'NFSHomeDirectory']);
-          final m = RegExp(r'NFSHomeDirectory:\s*(\S+)').firstMatch(r.stdout.toString());
+          final r = Process.runSync('dscl', [
+            '.',
+            '-read',
+            '/Users/$sudoUser',
+            'NFSHomeDirectory',
+          ]);
+          final m = RegExp(
+            r'NFSHomeDirectory:\s*(\S+)',
+          ).firstMatch(r.stdout.toString());
           if (m != null) return Directory(m.group(1)!);
         } else {
           final r = Process.runSync('getent', ['passwd', sudoUser]);
           final parts = r.stdout.toString().trim().split(':');
-          if (parts.length > 5 && parts[5].isNotEmpty) return Directory(parts[5]);
+          if (parts.length > 5 && parts[5].isNotEmpty) {
+            return Directory(parts[5]);
+          }
         }
       } catch (_) {}
-      return Directory(Platform.isMacOS ? '/Users/$sudoUser' : '/home/$sudoUser');
+      return Directory(
+        Platform.isMacOS ? '/Users/$sudoUser' : '/home/$sudoUser',
+      );
     }
     return Directory(env['HOME'] ?? '/');
   }
@@ -123,7 +135,9 @@ class DaemonPaths {
       // config is per user too, and no root is involved anywhere.
       final home = _userHome();
       return DaemonPaths._(
-        configDir: Directory(p.join(home.path, 'Library', 'Application Support', 'NoPorts')),
+        configDir: Directory(
+          p.join(home.path, 'Library', 'Application Support', 'NoPorts'),
+        ),
         binDir: _firstWithBinary([
           p.join(home.path, '.local', 'bin'),
           '/usr/local/bin',
@@ -131,7 +145,9 @@ class DaemonPaths {
         ]),
         serviceHomeDir: home,
         userHomeDir: home,
-        legacyConfigFiles: [File('/Library/Application Support/NoPorts/sshnpd.yaml')],
+        legacyConfigFiles: [
+          File('/Library/Application Support/NoPorts/sshnpd.yaml'),
+        ],
       );
     }
     return DaemonPaths._(

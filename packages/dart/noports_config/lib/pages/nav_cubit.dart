@@ -4,7 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 enum HomeTab { status, configuration, keys, diagnostics }
 
 class NavState extends Equatable {
-  const NavState({this.tab = HomeTab.status, this.wizard = false, this.decided = false});
+  const NavState({
+    this.tab = HomeTab.status,
+    this.wizard = false,
+    this.decided = false,
+  });
   final HomeTab tab;
 
   /// Show the first-run wizard instead of the tabs.

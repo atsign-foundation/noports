@@ -39,17 +39,25 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     final strings = AppLocalizations.of(context);
     final config = context.watch<ConfigCubit>().state;
     final doc = config.doc;
-    if (doc == null) return const Center(child: CircularProgressIndicator.adaptive());
+    if (doc == null) {
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
 
     final keysFile = KeysRepository().resolve(doc.atsign, doc.keysFile);
     final keysReady = doc.atsign != null && (keysFile?.existsSync() ?? false);
     final accessReady = doc.managers.isNotEmpty || doc.policyManager != null;
     final deviceReady = doc.validate().every(
-      (p) => p.option != SshnpdOption.device &&
+      (p) =>
+          p.option != SshnpdOption.device &&
           !(p.option == SshnpdOption.atsign && doc.atsign != null),
     );
 
-    final steps = [strings.stepDevice, strings.stepKeys, strings.stepAccess, strings.stepFinish];
+    final steps = [
+      strings.stepDevice,
+      strings.stepKeys,
+      strings.stepAccess,
+      strings.stepFinish,
+    ];
     final canNext = switch (_step) {
       0 => deviceReady && doc.atsign != null,
       1 => keysReady,
@@ -67,12 +75,15 @@ class _SetupWizardViewState extends State<SetupWizardView> {
             children: [
               Text(
                 strings.wizardTitle,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.black87,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(color: Colors.black87),
               ),
               gapH8,
-              Text(strings.wizardIntro, style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                strings.wizardIntro,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               gapH24,
               _StepHeader(steps: steps, current: _step),
               gapH16,
@@ -187,7 +198,9 @@ class _StepHeader extends StatelessWidget {
             Expanded(
               child: Container(
                 height: 2,
-                color: i <= current ? AppColor.primaryColor : AppColor.dividerColor,
+                color: i <= current
+                    ? AppColor.primaryColor
+                    : AppColor.dividerColor,
               ),
             ),
           Row(
@@ -200,7 +213,9 @@ class _StepHeader extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: i <= current ? AppColor.primaryColor : Colors.white,
                   border: Border.all(
-                    color: i <= current ? AppColor.primaryColor : AppColor.dividerColor,
+                    color: i <= current
+                        ? AppColor.primaryColor
+                        : AppColor.dividerColor,
                     width: 2,
                   ),
                 ),
@@ -209,7 +224,9 @@ class _StepHeader extends StatelessWidget {
                     : Text(
                         '${i + 1}',
                         style: TextStyle(
-                          color: i <= current ? Colors.white : AppColor.onSurfaceColor,
+                          color: i <= current
+                              ? Colors.white
+                              : AppColor.onSurfaceColor,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -219,8 +236,12 @@ class _StepHeader extends StatelessWidget {
               Text(
                 steps[i],
                 style: TextStyle(
-                  fontWeight: i == current ? FontWeight.w600 : FontWeight.normal,
-                  color: i <= current ? Colors.black87 : AppColor.onSurfaceColor,
+                  fontWeight: i == current
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                  color: i <= current
+                      ? Colors.black87
+                      : AppColor.onSurfaceColor,
                 ),
               ),
               gapW8,
@@ -243,7 +264,9 @@ class _KeysStep extends StatelessWidget {
     return SectionCard(
       title: strings.enrollCardTitle,
       subtitle: strings.wizardKeysBody,
-      trailing: keysReady ? StatusPill.success(label: strings.wizardKeysReady(doc.atsign!)) : null,
+      trailing: keysReady
+          ? StatusPill.success(label: strings.wizardKeysReady(doc.atsign!))
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -251,12 +274,25 @@ class _KeysStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(strings.enrollHowTitle,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black87)),
+                Text(
+                  strings.enrollHowTitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(color: Colors.black87),
+                ),
                 gapH4,
-                Text(strings.enrollHowStep1, style: Theme.of(context).textTheme.bodySmall),
-                Text(strings.enrollHowStep2, style: Theme.of(context).textTheme.bodySmall),
-                Text(strings.enrollHowStep3, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  strings.enrollHowStep1,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  strings.enrollHowStep2,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  strings.enrollHowStep3,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -299,7 +335,10 @@ class _AccessStep extends StatelessWidget {
               field: ConfigSchema.byOption(o),
               value: doc.get(ConfigSchema.byOption(o).path),
               problem: problems
-                  .where((p) => p.option == o && !p.message.startsWith('Add at least'))
+                  .where(
+                    (p) =>
+                        p.option == o && !p.message.startsWith('Add at least'),
+                  )
                   .map((p) => p.message)
                   .join('\n')
                   .let((s) => s.isEmpty ? null : s),
@@ -364,7 +403,11 @@ class _DeviceStep extends StatelessWidget {
 }
 
 class _FinishStep extends StatelessWidget {
-  const _FinishStep({required this.phase, required this.failure, required this.startedOk});
+  const _FinishStep({
+    required this.phase,
+    required this.failure,
+    required this.startedOk,
+  });
   final _Phase phase;
   final String? failure;
   final bool startedOk;
@@ -383,33 +426,62 @@ class _FinishStep extends StatelessWidget {
           InsetPanel(
             child: Column(
               children: [
-                KeyValueRow(label: strings.stepKeys, value: Text(doc.atsign ?? '-')),
+                KeyValueRow(
+                  label: strings.stepKeys,
+                  value: Text(doc.atsign ?? '-'),
+                ),
                 KeyValueRow(
                   label: strings.stepAccess,
-                  value: Text([
-                    ...doc.managers,
-                    if (doc.policyManager != null) 'policy ${doc.policyManager}',
-                  ].join(', ')),
+                  value: Text(
+                    [
+                      ...doc.managers,
+                      if (doc.policyManager != null)
+                        'policy ${doc.policyManager}',
+                    ].join(', '),
+                  ),
                 ),
-                KeyValueRow(label: strings.stepDevice, value: Text(doc.deviceName ?? 'default')),
+                KeyValueRow(
+                  label: strings.stepDevice,
+                  value: Text(doc.deviceName ?? 'default'),
+                ),
               ],
             ),
           ),
           if (phase != _Phase.idle) ...[
             gapH16,
-            _PhaseRow(label: strings.wizardSaving, active: phase == _Phase.saving, done: phase.index > _Phase.saving.index),
-            _PhaseRow(label: strings.wizardStarting, active: phase == _Phase.starting, done: phase.index > _Phase.starting.index, failed: phase.index > _Phase.starting.index && !startedOk),
-            _PhaseRow(label: strings.wizardChecking, active: phase == _Phase.checking, done: phase == _Phase.done),
+            _PhaseRow(
+              label: strings.wizardSaving,
+              active: phase == _Phase.saving,
+              done: phase.index > _Phase.saving.index,
+            ),
+            _PhaseRow(
+              label: strings.wizardStarting,
+              active: phase == _Phase.starting,
+              done: phase.index > _Phase.starting.index,
+              failed: phase.index > _Phase.starting.index && !startedOk,
+            ),
+            _PhaseRow(
+              label: strings.wizardChecking,
+              active: phase == _Phase.checking,
+              done: phase == _Phase.done,
+            ),
           ],
           if (failure != null) ...[
             gapH12,
-            Text(failure!, style: const TextStyle(color: AppColor.errorColor, fontSize: 12)),
+            Text(
+              failure!,
+              style: const TextStyle(color: AppColor.errorColor, fontSize: 12),
+            ),
           ],
           if (phase == _Phase.done) ...[
             gapH16,
             Text(
-              health.allPassed && startedOk ? strings.wizardComplete : strings.wizardCompleteWithIssues,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+              health.allPassed && startedOk
+                  ? strings.wizardComplete
+                  : strings.wizardCompleteWithIssues,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
             ),
             gapH12,
             HealthResultsList(results: health.results),
@@ -421,7 +493,12 @@ class _FinishStep extends StatelessWidget {
 }
 
 class _PhaseRow extends StatelessWidget {
-  const _PhaseRow({required this.label, required this.active, required this.done, this.failed = false});
+  const _PhaseRow({
+    required this.label,
+    required this.active,
+    required this.done,
+    this.failed = false,
+  });
   final String label;
   final bool active;
   final bool done;
@@ -434,13 +511,21 @@ class _PhaseRow extends StatelessWidget {
       child: Row(
         children: [
           if (active)
-            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
           else if (failed)
             const Icon(Icons.error, size: 18, color: AppColor.errorColor)
           else if (done)
             const Icon(Icons.check_circle, size: 18, color: Color(0xFF3E7D1F))
           else
-            const Icon(Icons.circle_outlined, size: 18, color: AppColor.dividerColor),
+            const Icon(
+              Icons.circle_outlined,
+              size: 18,
+              color: AppColor.dividerColor,
+            ),
           gapW8,
           Text(label),
         ],

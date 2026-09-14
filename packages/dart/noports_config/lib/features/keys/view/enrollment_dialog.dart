@@ -49,7 +49,10 @@ class EnrollmentDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => EnrollmentCubit(rootDomain: rootDomain),
-      child: _Body(initialAtsign: initialAtsign, initialDeviceName: initialDeviceName),
+      child: _Body(
+        initialAtsign: initialAtsign,
+        initialDeviceName: initialDeviceName,
+      ),
     );
   }
 }
@@ -65,7 +68,9 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   late final _atsign = TextEditingController(text: widget.initialAtsign ?? '');
-  late final _device = TextEditingController(text: widget.initialDeviceName ?? '');
+  late final _device = TextEditingController(
+    text: widget.initialDeviceName ?? '',
+  );
   final _code = TextEditingController();
 
   @override
@@ -109,8 +114,12 @@ class _BodyState extends State<_Body> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(strings.enrollHowTitle,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black87)),
+                      Text(
+                        strings.enrollHowTitle,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleSmall?.copyWith(color: Colors.black87),
+                      ),
                       gapH4,
                       Text(strings.enrollHowStep1, style: small),
                       Text(strings.enrollHowStep2, style: small),
@@ -122,32 +131,46 @@ class _BodyState extends State<_Body> {
                 TextField(
                   controller: _atsign,
                   enabled: editing,
-                  decoration: InputDecoration(labelText: strings.enterAtsign, hintText: '@mydevice_np'),
+                  decoration: InputDecoration(
+                    labelText: strings.enterAtsign,
+                    hintText: '@mydevice_np',
+                  ),
                 ),
                 gapH12,
                 TextField(
                   controller: _device,
                   enabled: editing,
-                  decoration: InputDecoration(labelText: strings.enrollDeviceName, hintText: 'default'),
+                  decoration: InputDecoration(
+                    labelText: strings.enrollDeviceName,
+                    hintText: 'default',
+                  ),
                 ),
                 gapH12,
                 TextField(
                   controller: _code,
                   enabled: editing,
                   autofocus: true,
-                  decoration: InputDecoration(labelText: strings.enrollPasscode, hintText: strings.enrollPasscodeHint),
+                  decoration: InputDecoration(
+                    labelText: strings.enrollPasscode,
+                    hintText: strings.enrollPasscodeHint,
+                  ),
                   onSubmitted: (_) => editing ? _submit(cubit) : null,
                 ),
                 if (state.busy) ...[
                   gapH16,
                   Row(
                     children: [
-                      const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                       gapW12,
                       Expanded(
                         child: Text(switch (state.step) {
                           EnrollmentStep.submitting => strings.enrollSubmitting,
-                          EnrollmentStep.awaitingApproval => strings.enrollAwaitingApproval,
+                          EnrollmentStep.awaitingApproval =>
+                            strings.enrollAwaitingApproval,
                           _ => strings.enrollCreatingKeys,
                         }),
                       ),
@@ -162,13 +185,18 @@ class _BodyState extends State<_Body> {
                         Expanded(
                           child: SelectableText(
                             state.enrollmentId!,
-                            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         IconButton(
                           tooltip: strings.copy,
                           iconSize: 16,
-                          onPressed: () => Clipboard.setData(ClipboardData(text: state.enrollmentId!)),
+                          onPressed: () => Clipboard.setData(
+                            ClipboardData(text: state.enrollmentId!),
+                          ),
                           icon: const Icon(Icons.copy_outlined),
                         ),
                       ],
@@ -177,7 +205,13 @@ class _BodyState extends State<_Body> {
                 ],
                 if (state.error != null) ...[
                   gapH12,
-                  Text(state.error!, style: const TextStyle(color: AppColor.errorColor, fontSize: 12)),
+                  Text(
+                    state.error!,
+                    style: const TextStyle(
+                      color: AppColor.errorColor,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ],
             ),

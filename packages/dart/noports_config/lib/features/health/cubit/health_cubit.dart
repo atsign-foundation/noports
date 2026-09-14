@@ -42,7 +42,13 @@ class HealthState extends Equatable {
   );
 
   @override
-  List<Object?> get props => [results, running, doctorOutput, doctorRunning, error];
+  List<Object?> get props => [
+    results,
+    running,
+    doctorOutput,
+    doctorRunning,
+    error,
+  ];
 }
 
 class HealthCubit extends Cubit<HealthState> {
@@ -90,7 +96,9 @@ class HealthCubit extends Cubit<HealthState> {
       try {
         results.add(await c.run(ctx));
       } catch (e) {
-        results.add(HealthResult(c.title, CheckLevel.fail, 'Check crashed: $e'));
+        results.add(
+          HealthResult(c.title, CheckLevel.fail, 'Check crashed: $e'),
+        );
       }
       emit(state.copyWith(results: List.of(results)));
     }
@@ -109,7 +117,12 @@ class HealthCubit extends Cubit<HealthState> {
         environment: {'SSHNPD_CONFIG': paths.configFile.path},
       ).timeout(const Duration(minutes: 2));
       final out = (r.stdout.toString() + r.stderr.toString()).trim();
-      emit(state.copyWith(doctorOutput: out.isEmpty ? '(no output)' : out, doctorRunning: false));
+      emit(
+        state.copyWith(
+          doctorOutput: out.isEmpty ? '(no output)' : out,
+          doctorRunning: false,
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(doctorRunning: false, error: e.toString()));
     }

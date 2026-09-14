@@ -18,19 +18,38 @@ void main() {
 
   test('parses legacy program arguments and flags them as unmanaged', () {
     final args = MacosServiceManager.parseProgramArguments(legacy);
-    expect(args, ['/Users/me/.local/bin/sshnpd', '-a', '@ssh_1', '--po', '*:*']);
-    expect(MacosServiceManager.isManagedDefinition(args, '/x/sshnpd.yaml'), isFalse);
+    expect(args, [
+      '/Users/me/.local/bin/sshnpd',
+      '-a',
+      '@ssh_1',
+      '--po',
+      '*:*',
+    ]);
+    expect(
+      MacosServiceManager.isManagedDefinition(args, '/x/sshnpd.yaml'),
+      isFalse,
+    );
   });
 
   test('built plist round-trips and is recognised as managed', () {
     final plist = MacosServiceManager.buildPlist(
       label: 'com.atsign.sshnpd',
-      programArguments: ['/Users/me/.local/bin/sshnpd', '--config', '/Users/me/Library/Application Support/NoPorts/sshnpd.yaml'],
+      programArguments: [
+        '/Users/me/.local/bin/sshnpd',
+        '--config',
+        '/Users/me/Library/Application Support/NoPorts/sshnpd.yaml',
+      ],
       logPath: '/Users/me/.sshnpd/logs/sshnpd.log',
     );
     final args = MacosServiceManager.parseProgramArguments(plist);
     expect(args.length, 3);
-    expect(MacosServiceManager.isManagedDefinition(args, '/Users/me/Library/Application Support/NoPorts/sshnpd.yaml'), isTrue);
+    expect(
+      MacosServiceManager.isManagedDefinition(
+        args,
+        '/Users/me/Library/Application Support/NoPorts/sshnpd.yaml',
+      ),
+      isTrue,
+    );
     expect(plist, contains('<key>StandardOutPath</key>'));
     expect(plist, contains('<key>RunAtLoad</key>'));
   });

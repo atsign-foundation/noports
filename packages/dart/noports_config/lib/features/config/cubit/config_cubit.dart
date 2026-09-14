@@ -149,7 +149,9 @@ class ConfigCubit extends Cubit<ConfigState> {
     emit(state.copyWith(saving: true, clearError: true));
     try {
       await _repo.save(doc);
-      emit(state.copyWith(saving: false, savedSource: doc.source, existed: true));
+      emit(
+        state.copyWith(saving: false, savedSource: doc.source, existed: true),
+      );
       return true;
     } catch (e) {
       emit(state.copyWith(saving: false, error: e.toString()));
@@ -163,6 +165,11 @@ class ConfigCubit extends Cubit<ConfigState> {
       load();
       return;
     }
-    emit(state.copyWith(doc: SshnpdConfigDocument.parse(saved), clearYamlError: true));
+    emit(
+      state.copyWith(
+        doc: SshnpdConfigDocument.parse(saved),
+        clearYamlError: true,
+      ),
+    );
   }
 }

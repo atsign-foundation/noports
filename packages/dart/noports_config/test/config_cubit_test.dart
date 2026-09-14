@@ -89,7 +89,11 @@ void main() {
     cubit.replaceYaml('atsign: [unclosed');
     expect(cubit.state.yamlError, isNotNull);
     expect(cubit.state.source, saved); // document untouched
-    cubit.replaceYaml(saved.replaceFirst("'@dev'", "'@other'").replaceFirst('"@dev"', '"@other"'));
+    cubit.replaceYaml(
+      saved
+          .replaceFirst("'@dev'", "'@other'")
+          .replaceFirst('"@dev"', '"@other"'),
+    );
     expect(cubit.state.yamlError, isNull);
     expect(cubit.state.doc!.atsign, '@other');
   });

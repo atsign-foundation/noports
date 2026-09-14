@@ -136,10 +136,7 @@ class StatusPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: color),
-            gapW4,
-          ],
+          if (icon != null) ...[Icon(icon, size: 14, color: color), gapW4],
           Text(
             label,
             style: TextStyle(
@@ -172,16 +169,16 @@ class KeyValueRow extends StatelessWidget {
             width: 140,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColor.onSurfaceColor,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColor.onSurfaceColor),
             ),
           ),
           Expanded(
             child: DefaultTextStyle.merge(
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.black87,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
               child: value,
             ),
           ),

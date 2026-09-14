@@ -19,24 +19,35 @@ void main() {
             for (final rest in perms([...l]..removeAt(i))) [l[i], ...rest],
         ];
 
-  test('any typing order of atsign, device name and group works key by key', () {
-    for (final order in perms(inputs.keys.toList())) {
-      final doc = SshnpdConfigDocument.parse(template);
-      for (final o in order) {
-        final f = ConfigSchema.byOption(o);
-        var typed = '';
-        for (final ch in inputs[o]!.split('')) {
-          typed += ch;
-          doc.set(f.path, typed);
-          expect(doc.get(f.path), typed, reason: 'order $order while typing "$typed"');
+  test(
+    'any typing order of atsign, device name and group works key by key',
+    () {
+      for (final order in perms(inputs.keys.toList())) {
+        final doc = SshnpdConfigDocument.parse(template);
+        for (final o in order) {
+          final f = ConfigSchema.byOption(o);
+          var typed = '';
+          for (final ch in inputs[o]!.split('')) {
+            typed += ch;
+            doc.set(f.path, typed);
+            expect(
+              doc.get(f.path),
+              typed,
+              reason: 'order $order while typing "$typed"',
+            );
+          }
         }
+        expect(doc.atsign, '@ssh_1', reason: 'order $order');
+        expect(doc.deviceName, 'tarial');
+        expect(doc.deviceGroup, 'none');
+        final msgs = doc.validate().map((p) => p.message).toList();
+        expect(
+          msgs,
+          isNot(contains('A device atSign is required.')),
+          reason: 'order $order',
+        );
+        expect(msgs.where((m) => m.contains('Device name')), isEmpty);
       }
-      expect(doc.atsign, '@ssh_1', reason: 'order $order');
-      expect(doc.deviceName, 'tarial');
-      expect(doc.deviceGroup, 'none');
-      final msgs = doc.validate().map((p) => p.message).toList();
-      expect(msgs, isNot(contains('A device atSign is required.')), reason: 'order $order');
-      expect(msgs.where((m) => m.contains('Device name')), isEmpty);
-    }
-  });
+    },
+  );
 }

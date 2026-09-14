@@ -46,7 +46,9 @@ class HealthView extends StatelessWidget {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.health_and_safety_outlined),
                         label: Text(strings.runChecks),
@@ -58,7 +60,9 @@ class HealthView extends StatelessWidget {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.medical_services_outlined),
                         label: Text(strings.runFullDoctor),
@@ -87,8 +91,12 @@ class HealthView extends StatelessWidget {
                   tooltip: strings.copy,
                   icon: const Icon(Icons.copy_outlined),
                   onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: state.doctorOutput!));
-                    if (context.mounted) CustomSnackBar.info(context, strings.copied);
+                    await Clipboard.setData(
+                      ClipboardData(text: state.doctorOutput!),
+                    );
+                    if (context.mounted) {
+                      CustomSnackBar.info(context, strings.copied);
+                    }
                   },
                 ),
                 child: LogPanel(text: state.doctorOutput!, height: 420),
@@ -129,12 +137,23 @@ class _ResultRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     final (icon, color, label) = switch (result.level) {
-      CheckLevel.pass => (Icons.check_circle, const Color(0xFF3E7D1F), strings.checkPass),
-      CheckLevel.warn => (Icons.warning_amber_rounded, AppColor.warningColor, strings.checkWarn),
+      CheckLevel.pass => (
+        Icons.check_circle,
+        const Color(0xFF3E7D1F),
+        strings.checkPass,
+      ),
+      CheckLevel.warn => (
+        Icons.warning_amber_rounded,
+        AppColor.warningColor,
+        strings.checkWarn,
+      ),
       CheckLevel.fail => (Icons.error, AppColor.errorColor, strings.checkFail),
     };
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Sizes.p16, vertical: Sizes.p12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Sizes.p16,
+        vertical: Sizes.p12,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -146,9 +165,9 @@ class _ResultRow extends StatelessWidget {
               children: [
                 Text(
                   result.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.black87,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
                 ),
                 gapH4,
                 SelectableText(
@@ -159,7 +178,14 @@ class _ResultRow extends StatelessWidget {
             ),
           ),
           gapW12,
-          Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

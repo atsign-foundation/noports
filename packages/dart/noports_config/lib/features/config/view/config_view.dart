@@ -79,9 +79,8 @@ class _ConfigViewState extends State<ConfigView> {
                         gapH4,
                         Text(
                           strings.configFile(path),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColor.onSurfaceColor,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColor.onSurfaceColor),
                         ),
                         if (!state.existed)
                           Text(
@@ -93,8 +92,10 @@ class _ConfigViewState extends State<ConfigView> {
                     ),
                   ),
                   if (!_yamlMode) ...[
-                    Text(strings.showAdvanced,
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      strings.showAdvanced,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     Switch(
                       value: state.showAdvanced,
                       onChanged: cubit.toggleAdvanced,
@@ -143,8 +144,9 @@ class _FormEditor extends StatelessWidget {
       ),
       children: [
         for (final section in ConfigSection.values)
-          if (ConfigSchema.inSection(section)
-              .any((f) => !f.advanced || state.showAdvanced)) ...[
+          if (ConfigSchema.inSection(
+            section,
+          ).any((f) => !f.advanced || state.showAdvanced)) ...[
             SectionCard(
               title: section.title,
               child: Column(
@@ -185,8 +187,9 @@ class _YamlEditor extends StatefulWidget {
 }
 
 class _YamlEditorState extends State<_YamlEditor> {
-  late final TextEditingController _c =
-      TextEditingController(text: widget.state.source);
+  late final TextEditingController _c = TextEditingController(
+    text: widget.state.source,
+  );
 
   @override
   void didUpdateWidget(covariant _YamlEditor old) {
@@ -225,7 +228,10 @@ class _YamlEditorState extends State<_YamlEditor> {
               ),
               child: Text(
                 strings.yamlInvalid(widget.state.yamlError!),
-                style: const TextStyle(color: AppColor.errorColor, fontSize: 12),
+                style: const TextStyle(
+                  color: AppColor.errorColor,
+                  fontSize: 12,
+                ),
               ),
             ),
           Expanded(
@@ -305,7 +311,8 @@ class _ActionBar extends StatelessWidget {
     final strings = AppLocalizations.of(context);
     final cubit = context.read<ConfigCubit>();
     final serviceState = context.watch<ServiceCubit>().state;
-    final canControl = serviceState.elevated != false &&
+    final canControl =
+        serviceState.elevated != false &&
         (serviceState.status?.isInstalled ?? false);
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -346,7 +353,8 @@ class _ActionBar extends StatelessWidget {
           ),
           gapW8,
           OutlinedButton(
-            onPressed: state.saving ||
+            onPressed:
+                state.saving ||
                     serviceState.elevated == false ||
                     (!state.isDirty && state.existed)
                 ? null

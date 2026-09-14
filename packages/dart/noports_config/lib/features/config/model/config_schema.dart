@@ -91,7 +91,8 @@ class ConfigSchema {
       label: 'Device atSign',
       kind: FieldKind.atsign,
       section: ConfigSection.atsign,
-      description: 'The atSign this device runs as. Its keys must be present '
+      description:
+          'The atSign this device runs as. Its keys must be present '
           'on this machine (see the Keys tab).',
       required: true,
       placeholder: '@mydevice_np',
@@ -101,7 +102,8 @@ class ConfigSchema {
       label: 'Keys file',
       kind: FieldKind.filePath,
       section: ConfigSection.atsign,
-      description: 'Path to the .atKeys file for the device atSign. Leave '
+      description:
+          'Path to the .atKeys file for the device atSign. Leave '
           'empty to use the service account\'s ~/.atsign/keys directory. '
           'Importing keys on the Keys tab fills this in for you.',
     ),
@@ -118,7 +120,8 @@ class ConfigSchema {
       label: 'atDirectory (root server)',
       kind: FieldKind.text,
       section: ConfigSection.atsign,
-      description: 'Leave as root.atsign.org unless you host your own '
+      description:
+          'Leave as root.atsign.org unless you host your own '
           'atSigns. Use proxy:host:port to go through a proxy.',
       advanced: true,
       placeholder: 'root.atsign.org',
@@ -130,7 +133,8 @@ class ConfigSchema {
       label: 'Manager atSigns',
       kind: FieldKind.atsignList,
       section: ConfigSection.access,
-      description: 'Client atSigns allowed to connect to this device. At '
+      description:
+          'Client atSigns allowed to connect to this device. At '
           'least one manager or a policy atSign is required.',
       placeholder: '@myclient',
     ),
@@ -139,7 +143,8 @@ class ConfigSchema {
       label: 'Policy atSign',
       kind: FieldKind.atsign,
       section: ConfigSection.access,
-      description: 'Optional. An atSign running a NoPorts policy service '
+      description:
+          'Optional. An atSign running a NoPorts policy service '
           'that decides who may connect. Managers above bypass policy.',
       placeholder: '@mypolicy',
     ),
@@ -148,7 +153,8 @@ class ConfigSchema {
       label: 'Permitted destinations',
       kind: FieldKind.stringList,
       section: ConfigSection.access,
-      description: 'host:port pairs clients may reach through this device. '
+      description:
+          'host:port pairs clients may reach through this device. '
           'Empty means localhost:22 and localhost:3389, or *:* when a policy '
           'atSign is set.',
       placeholder: 'localhost:3389',
@@ -160,7 +166,8 @@ class ConfigSchema {
       label: 'Device name',
       kind: FieldKind.text,
       section: ConfigSection.device,
-      description: 'Name clients use to pick this device when several share '
+      description:
+          'Name clients use to pick this device when several share '
           'one atSign. Letters, numbers, underscore and dash only.',
       placeholder: 'default',
     ),
@@ -169,7 +176,8 @@ class ConfigSchema {
       label: 'Device group',
       kind: FieldKind.text,
       section: ConfigSection.device,
-      description: 'Optional group name used by policy services for fleet '
+      description:
+          'Optional group name used by policy services for fleet '
           'management.',
       advanced: true,
     ),
@@ -178,7 +186,8 @@ class ConfigSchema {
       label: 'Hide from managers',
       kind: FieldKind.boolean,
       section: ConfigSection.device,
-      description: 'Do not advertise this device\'s details to manager '
+      description:
+          'Do not advertise this device\'s details to manager '
           'atSigns. It still answers pings.',
       advanced: true,
     ),
@@ -196,7 +205,8 @@ class ConfigSchema {
       label: 'Add client public keys to authorized_keys',
       kind: FieldKind.boolean,
       section: ConfigSection.ssh,
-      description: 'Convenience for single-user devices. Not recommended in '
+      description:
+          'Convenience for single-user devices. Not recommended in '
           'shared or enterprise settings.',
     ),
     ConfigField(
@@ -205,7 +215,8 @@ class ConfigSchema {
       kind: FieldKind.choice,
       section: ConfigSection.ssh,
       choices: ['openssh', 'dart'],
-      description: 'openssh uses the ssh binary on PATH (recommended). dart '
+      description:
+          'openssh uses the ssh binary on PATH (recommended). dart '
           'uses the built-in client.',
       advanced: true,
     ),
@@ -269,7 +280,8 @@ class ConfigSchema {
       label: 'Clear cached public keys on start',
       kind: FieldKind.boolean,
       section: ConfigSection.runtime,
-      description: 'Set after resetting one of your atSigns so the daemon '
+      description:
+          'Set after resetting one of your atSigns so the daemon '
           'picks up its new public key. Turn off again afterwards.',
       advanced: true,
     ),

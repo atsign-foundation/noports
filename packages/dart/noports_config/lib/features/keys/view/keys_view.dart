@@ -66,7 +66,9 @@ class KeysView extends StatelessWidget {
                         gapW8,
                         Expanded(
                           child: Text(
-                            strings.keysManagedDir(DaemonPaths.instance.keysDir.path),
+                            strings.keysManagedDir(
+                              DaemonPaths.instance.keysDir.path,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -85,7 +87,9 @@ class KeysView extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: () async {
                       final a = await KeysActions.enroll(context);
-                      if (a != null && context.mounted) await _afterChange(context);
+                      if (a != null && context.mounted) {
+                        await _afterChange(context);
+                      }
                     },
                     icon: const Icon(Icons.verified_user_outlined),
                     label: Text(strings.enrollTitle),
@@ -103,16 +107,23 @@ class KeysView extends StatelessWidget {
             gapH16,
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: AppColor.warningColor),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColor.warningColor,
+                ),
                 gapW8,
                 Expanded(
-                  child: Text(strings.backupKeysReminder,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    strings.backupKeysReminder,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: () async {
                     final a = await KeysActions.importKeys(context);
-                    if (a != null && context.mounted) await _afterChange(context);
+                    if (a != null && context.mounted) {
+                      await _afterChange(context);
+                    }
                   },
                   icon: const Icon(Icons.file_upload_outlined, size: 16),
                   label: Text(strings.importKeys),

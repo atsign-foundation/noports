@@ -55,7 +55,14 @@ class EnrollmentState extends Equatable {
   );
 
   @override
-  List<Object?> get props => [step, atsign, deviceName, enrollmentId, error, keysFile?.path];
+  List<Object?> get props => [
+    step,
+    atsign,
+    deviceName,
+    enrollmentId,
+    error,
+    keysFile?.path,
+  ];
 }
 
 /// APKAM enrollment of this device, the same thing as
@@ -69,7 +76,8 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   EnrollmentCubit({
     required this.rootDomain,
     DaemonPaths? paths,
-    AtOnboardingService Function(String atsign, AtOnboardingPreference pref)? serviceFactory,
+    AtOnboardingService Function(String atsign, AtOnboardingPreference pref)?
+    serviceFactory,
   }) : _paths = paths,
        _serviceFactory = serviceFactory ?? AtOnboardingServiceImpl.new,
        super(const EnrollmentState());
@@ -81,7 +89,8 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
 
   final String rootDomain;
   final DaemonPaths? _paths;
-  final AtOnboardingService Function(String, AtOnboardingPreference) _serviceFactory;
+  final AtOnboardingService Function(String, AtOnboardingPreference)
+  _serviceFactory;
   bool _cancelled = false;
 
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
@@ -95,7 +104,9 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     final device = deviceName.trim();
     final code = passcode.trim();
     if (atsign == null) {
-      emit(state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atSign.'));
+      emit(
+        state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atSign.'),
+      );
       return;
     }
     if (device.isEmpty || code.isEmpty) {
@@ -103,12 +114,14 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       return;
     }
     _cancelled = false;
-    emit(state.copyWith(
-      step: EnrollmentStep.submitting,
-      atsign: atsign,
-      deviceName: device,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        step: EnrollmentStep.submitting,
+        atsign: atsign,
+        deviceName: device,
+        clearError: true,
+      ),
+    );
 
     final dest = paths.keysFileFor(atsign);
     AtOnboardingService? svc;
@@ -129,10 +142,12 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
 
       final er = await svc.sendEnrollRequest(appName, device, code, namespaces);
       if (_cancelled) return;
-      emit(state.copyWith(
-        step: EnrollmentStep.awaitingApproval,
-        enrollmentId: er.enrollmentId,
-      ));
+      emit(
+        state.copyWith(
+          step: EnrollmentStep.awaitingApproval,
+          enrollmentId: er.enrollmentId,
+        ),
+      );
 
       // Poll for up to ~30 minutes; the user has to go and approve it.
       await svc.awaitApproval(er, logProgress: false, maxRetries: 180);
@@ -144,7 +159,9 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       emit(state.copyWith(step: EnrollmentStep.done, keysFile: dest));
     } catch (e) {
       if (_cancelled) return;
-      emit(state.copyWith(step: EnrollmentStep.enterDetails, error: _describe(e)));
+      emit(
+        state.copyWith(step: EnrollmentStep.enterDetails, error: _describe(e)),
+      );
     } finally {
       try {
         await svc?.close();
@@ -159,12 +176,21 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   }
 
   static String _describe(Object e) {
-    var s = e.toString().replaceFirst(RegExp(r'^(\w*Exception|Bad state): '), '');
-    if (s.contains('denied')) return 'The enrollment request was denied in NoPorts Desktop.';
-    if (s.contains('otp') || s.contains('OTP') || s.contains('invalid passcode')) {
+    var s = e.toString().replaceFirst(
+      RegExp(r'^(\w*Exception|Bad state): '),
+      '',
+    );
+    if (s.contains('denied')) {
+      return 'The enrollment request was denied in NoPorts Desktop.';
+    }
+    if (s.contains('otp') ||
+        s.contains('OTP') ||
+        s.contains('invalid passcode')) {
       return 'The passcode was not accepted. Copy a fresh OTP, or the PIN, from NoPorts Desktop\'s Authenticator tab.';
     }
-    if (s.contains('timed out') || s.contains('Timed out') || s.contains('max retries')) {
+    if (s.contains('timed out') ||
+        s.contains('Timed out') ||
+        s.contains('max retries')) {
       return 'Gave up waiting for approval. Approve the request in NoPorts Desktop and try again.';
     }
     return s;

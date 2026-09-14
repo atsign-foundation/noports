@@ -13,9 +13,13 @@ void main() {
     final shipped = File(
       '../sshnoports/bundles/core/config/sshnpd.yaml',
     ).readAsStringSync();
-    expect(template, shipped,
-        reason: 'copy packages/dart/sshnoports/bundles/core/config/sshnpd.yaml '
-            'to assets/sshnpd.template.yaml');
+    expect(
+      template,
+      shipped,
+      reason:
+          'copy packages/dart/sshnoports/bundles/core/config/sshnpd.yaml '
+          'to assets/sshnpd.template.yaml',
+    );
   });
 
   test('every schema field has a config key that parses', () {

@@ -19,7 +19,9 @@ class App extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => NavCubit()),
         BlocProvider(create: (_) => ConfigCubit(ConfigRepository())..load()),
-        BlocProvider(create: (_) => ServiceCubit(ServiceManager.instance)..init()),
+        BlocProvider(
+          create: (_) => ServiceCubit(ServiceManager.instance)..init(),
+        ),
         BlocProvider(create: (_) => HealthCubit()),
       ],
       child: MaterialApp(
