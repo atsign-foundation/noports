@@ -25,6 +25,24 @@ Dart, .NET Native AOT and the Flutter app are all compiled arm64 there, and
 UpgradeCode, so installing one over the other is a normal major upgrade.
 The x64 MSI also runs on ARM PCs under emulation.
 
+## Uninstall, repair, change
+
+Standard Windows Installer behaviour, nothing custom:
+
+- Settings > Apps > Installed apps > NoPorts > Uninstall.
+- Running the same MSI again opens maintenance mode: Change (re-open the
+  feature tree to add or drop the service or the configuration app), Repair,
+  Remove.
+- Scripted: `msiexec /x NoPorts-x64.msi /qn`, or
+  `Get-Package -Name NoPorts | Uninstall-Package`.
+
+Uninstall stops and removes the `sshnpd` service, the binaries, the Start Menu
+shortcut and the PATH entry. It deliberately keeps
+`%ProgramData%\NoPorts\sshnpd.yaml` (component is `Permanent` and
+`NeverOverwrite`) so a reinstall or upgrade keeps the device's configuration,
+and it never touches the device keys in the user's `~\.atsign\keys`. Delete
+those by hand for a clean machine.
+
 ## What the installer shows
 
 WixUI_FeatureTree: Welcome, License, Custom Setup, Ready, Progress, Finish.
