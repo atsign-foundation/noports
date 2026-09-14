@@ -67,12 +67,12 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **The install type**
 
-* Enter  `device` when prompted.
+* Enter `device` when prompted.
 
 **Your atSigns**
 
 * Client Atsign: e.g., `@example01_np`
-* Device Atsign: e.g., `@example02_np`&#x20;
+* Device Atsign: e.g., `@example02_np`
 
 **Your device name**
 
@@ -80,21 +80,21 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 ### <mark style="color:orange;">Step 8:</mark> Initiate Atsign authorization request
 
-Run the following command to make an authorization request:&#x20;
+Run the following command to make an authorization request:
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
 `@<REPLACE>_np` with your **device Atsign**,
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 5**,&#x20;
+`<PASSCODE>` with the **passcode generated in Step 5**,
 
-`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
+<pre class="language-bash"><code class="lang-bash">/usr/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
 <strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
 </strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_np_key.atKeys \
@@ -143,7 +143,7 @@ With both machines now configured, the final steps bring us back to the machine 
    7. Remote Host - The hostname or IP address of the machine you are connecting to.
    8. Remote Port - The port that will be used on the remote machine.
 
-For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+For reference, we've documented our most common use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).
 
 ### <mark style="color:orange;">Step 12:</mark> Establish a connection
 

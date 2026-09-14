@@ -66,7 +66,7 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **The install type**
 
-* Enter  `client` when prompted.
+* Enter `client` when prompted.
 
 **Your Atsigns (Skip this step)**
 
@@ -167,12 +167,12 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **The install type**
 
-* Enter  `device` when prompted.
+* Enter `device` when prompted.
 
 **Your atSigns**
 
 * Client Atsign: e.g., `@example01_np`
-* Device Atsign: e.g., `@example02_np`&#x20;
+* Device Atsign: e.g., `@example02_np`
 
 **Your device name**
 
@@ -180,21 +180,21 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 ### <mark style="color:orange;">Step 6:</mark> Initiate Atsign authorization request
 
-Run the following command to make an authorization request:&#x20;
+Run the following command to make an authorization request:
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
 `@<REPLACE>_np` with your **device Atsign**,
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
+`<PASSCODE>` with the **passcode generated in Step 4**,
 
-`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
 
-<pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
+<pre class="language-bash"><code class="lang-bash">/usr/bin/at_activate enroll -a @&#x3C;REPLACE>_np \
 <strong>  -s &#x3C;PASSCODE> \
 </strong><strong>  -p noports \
 </strong><strong>  -k ~/.atsign/keys/@&#x3C;REPLACE>_np_key.atKeys \
@@ -238,7 +238,6 @@ Be sure to replace the following values:
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
 
-That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).
 
 </details>
-

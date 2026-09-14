@@ -72,7 +72,7 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **The install type**
 
-* Enter  `client` when prompted.
+* Enter `client` when prompted.
 
 **Your Atsigns (Skip this step)**
 
@@ -91,7 +91,7 @@ Replace `@<REPLACE>_np` with your **client Atsign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_np
+/usr/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -109,7 +109,7 @@ Replace `@<REPLACE>_np` with your **device Atsign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_np
+/usr/bin/at_activate -a @<REPLACE>_np
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -127,7 +127,7 @@ Replace `@<REPLACE>_np` with your device **Atsign.**
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate otp -a @<REPLACE>_np
+/usr/bin/at_activate otp -a @<REPLACE>_np
 ```
 
 </details>
@@ -169,12 +169,12 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 **The install type**
 
-* Enter  `device` when prompted.
+* Enter `device` when prompted.
 
 **Your Atsigns**
 
 * Client Atsign: e.g., `@example01_np`
-* Device Atsign: e.g., `@example02_np`&#x20;
+* Device Atsign: e.g., `@example02_np`
 
 **Your device name**
 
@@ -182,16 +182,16 @@ You may be asked to enter your password if your machine requires sudo privileges
 
 ### <mark style="color:orange;">Step 6:</mark> Initiate atSign authorization request
 
-Run the following command to make an authorization request.&#x20;
+Run the following command to make an authorization request.
 
 {% hint style="warning" %}
 Be sure to replace the following values:
 
 `@<REPLACE>_np` with your **device Atsign**,
 
-&#x20;`<PASSCODE>` with the **passcode generated in Step 4**,&#x20;
+`<PASSCODE>` with the **passcode generated in Step 4**,
 
-`@<REPLACE>_np_key` with your **device Atsign**,&#x20;
+`@<REPLACE>_np_key` with your **device Atsign**,
 
 `<DEVICE_NAME>` with the name of the machine you are on
 {% endhint %}
@@ -235,11 +235,11 @@ Be sure to replace the following values:
 {% endhint %}
 
 ```bash
-~/.local/bin/at_activate approve -a @<REPLACE>_np --arx noports --drx <DEVICE_NAME>
+/usr/bin/at_activate approve -a @<REPLACE>_np --arx noports --drx <DEVICE_NAME>
 ```
 
 ### <mark style="color:orange;">Step 8:</mark> Use NoPorts!
 
-That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).&#x20;
+That's it. You can start using NoPorts or explore some of the documented use cases, including [MCP](../../use-cases/mcp.md), [SSH](../../use-cases/ssh.md), [RDP](../../use-cases/rdp.md), [SFTP](../../use-cases/sftp.md), [Web Server](../../use-cases/web-server.md), and [SMB](../../use-cases/smb.md).
 
 </details>
