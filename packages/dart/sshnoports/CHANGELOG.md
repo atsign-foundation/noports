@@ -2,6 +2,12 @@
 
 <!-- pyml disable md034-->
 
+## v5.16.1
+
+* fix: relay auth stream wrappers now propagate backpressure to the socket,
+  so a fast writer through an authenticated relay can no longer inflate
+  srv/srvd memory without bound (~1 GB per 10 s observed under iperf3)
+
 ## v5.16.0
 
 * fix: share event logging config once as cached key instead of on every
