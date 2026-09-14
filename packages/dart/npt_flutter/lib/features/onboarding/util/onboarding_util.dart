@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_server_status/at_server_status.dart';
+import 'package:at_lookup/at_lookup.dart'
+    show AtSignServerCheck, AtSignServerState, checkAtSignServer;
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
@@ -25,10 +26,7 @@ import 'package:npt_flutter/util/constants.dart';
 
 import '../../../app.dart';
 
-export 'package:at_server_status/at_server_status.dart' show AtStatus;
-
 class NoPortsOnboardingUtil {
-  AtServerStatus? _atServerStatus;
   late final String rootDomain;
   late final String? apiKey;
   NoPortsOnboardingUtil._();
@@ -41,10 +39,19 @@ class NoPortsOnboardingUtil {
     return util;
   }
 
-  /// A method to check whether an atsign has been activated or not
-  Future<AtStatus> atServerStatus(Atsign atsign) async {
-    _atServerStatus ??= AtStatusImpl(rootUrl: rootDomain, rootPort: 64);
-    return _atServerStatus!.get(atsign);
+  /// Where [atsign] stands: whether the atDirectory knows it, whether its
+  /// atServer answers, and whether it has been activated.
+  Future<AtSignServerCheck> checkAtServer(Atsign atsign) async {
+    final lookUp = secureSocketLookUps()(
+      atSign: atsign,
+      rootDomain: AtRootDomain(rootDomain, 64),
+      authenticator: null,
+    );
+    try {
+      return await checkAtSignServer(lookUp, atsign);
+    } finally {
+      await lookUp.close();
+    }
   }
 
   /// Drops the keychain entry for [atsign] when the atServer says it is not
@@ -78,11 +85,11 @@ class NoPortsOnboardingUtil {
   }) async {
     final strings = AppLocalizations.of(context)!;
 
-    AtStatus status;
+    AtSignServerCheck check;
     try {
-      status = await atServerStatus(atsign);
+      check = await checkAtServer(atsign);
     } catch (e) {
-      App.log('Error checking atServerStatus: $e'.loggable);
+      App.log('Error checking the atServer: $e'.loggable);
 
       return NoPortsOnboardingResult.error(
         message: strings.errorAtServerUnavailable,
@@ -91,17 +98,16 @@ class NoPortsOnboardingUtil {
 
     if (!context.mounted) return null;
 
-    final initialStatus = status.status();
+    final initialState = check.state;
     NoPortsOnboardingResult? result;
 
-    switch (initialStatus) {
-      case AtSignStatus.unavailable:
+    switch (initialState) {
+      case AtSignServerState.directoryUnreachable:
         await Future.delayed(const Duration(seconds: 2));
         if (!context.mounted) return null;
         try {
-          final AtSignStatus? retryStatus =
-              (await atServerStatus(atsign)).status();
-          if (retryStatus == AtSignStatus.activated) {
+          final retry = await checkAtServer(atsign);
+          if (retry.state == AtSignServerState.activated) {
             result = await _handleActivatedAtsign(
               context: context,
               atsign: atsign,
@@ -114,32 +120,31 @@ class NoPortsOnboardingUtil {
         result = await _handleActivation(
           context: context,
           atsign: atsign,
-          initialStatus: initialStatus,
+          initialState: initialState,
           strings: strings,
         );
 
-      case AtSignStatus.teapot:
+      case AtSignServerState.notActivated:
         result = await _handleActivation(
           context: context,
           atsign: atsign,
-          initialStatus: initialStatus,
+          initialState: initialState,
           strings: strings,
         );
 
-      case AtSignStatus.activated:
+      case AtSignServerState.activated:
         result = await _handleActivatedAtsign(
           context: context,
           atsign: atsign,
           strings: strings,
         );
 
-      case AtSignStatus.notFound:
+      case AtSignServerState.notInDirectory:
         result = NoPortsOnboardingResult.error(
           message: strings.errorAtsignNotExist,
         );
 
-      case null:
-      case AtSignStatus.error:
+      case AtSignServerState.atServerUnreachable:
         result = NoPortsOnboardingResult.error(
           message: strings.errorAtServerUnavailable,
         );
@@ -148,11 +153,12 @@ class NoPortsOnboardingUtil {
     return result;
   }
 
-  /// Handles activation flow for unavailable/teapot atsigns
+  /// Handles activation flow for atsigns that are not yet activated, or whose
+  /// atDirectory could not be reached
   Future<NoPortsOnboardingResult?> _handleActivation({
     required BuildContext context,
     required Atsign atsign,
-    AtSignStatus? initialStatus,
+    AtSignServerState? initialState,
     required AppLocalizations strings,
   }) async {
     // When onboarding from teapot, set backup status to false (atKeys not backed up)
@@ -186,7 +192,7 @@ class NoPortsOnboardingUtil {
         rootDomain: rootDomain,
         registrarUrl: regUrl,
         onboardingUtil: this,
-        waitForTeapot: initialStatus != AtSignStatus.teapot,
+        waitForTeapot: initialState != AtSignServerState.notActivated,
       ),
     );
 
@@ -398,14 +404,14 @@ class NoPortsOnboardingUtil {
             atsign: atsign,
           );
         } else {
-          AtSignStatus? status;
+          AtSignServerState? state;
           try {
-            status = (await atServerStatus(atsign)).status();
+            state = (await checkAtServer(atsign)).state;
           } catch (_) {
-            status = null;
+            state = null;
           }
 
-          if (status == AtSignStatus.teapot) {
+          if (state == AtSignServerState.notActivated) {
             await discardStaleKeys(atsign);
             if (!context.mounted) return;
             onboardingResult = await handleAtsignByStatus(

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:at_lookup/at_lookup.dart';
-import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -218,18 +217,18 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         // A retry only re-runs the entries that are still waiting.
         if (entry.activationKeyStatus != ActivationKeyStatus.waiting) continue;
 
-        //1. Ask the atServer where this atsign stands. AtStatusImpl swallows
-        // its own errors, but guard anyway - one bad atsign must not abort the
-        // whole file.
-        AtSignStatus? status;
+        //1. Ask the atServer where this atsign stands. The check reports its
+        // own failures as states, but guard anyway - one bad atsign must not
+        // abort the whole file.
+        AtSignServerState? status;
         try {
-          status = (await onboardingUtil.atServerStatus(entry.atsign)).status();
+          status = (await onboardingUtil.checkAtServer(entry.atsign)).state;
         } catch (e) {
           App.log('Error checking status of ${entry.atsign}: $e'.loggable);
           status = null;
         }
 
-        if (status == AtSignStatus.activated) {
+        if (status == AtSignServerState.activated) {
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.alreadyActivated,
           );
@@ -241,14 +240,10 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         // Nothing to onboard against: the atsign isn't in the atDirectory, or
         // its atServer is down. Fail it now instead of letting activation poll
         // for provisioning that is never coming.
-        if (status != AtSignStatus.teapot) {
+        if (status != AtSignServerState.notActivated) {
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
-            failureReason: await _unreachableReason(
-              onboardingUtil,
-              entry.atsign,
-              strings,
-            ),
+            failureReason: _unreachableReason(status, strings),
           );
           publish();
           App.log(
@@ -342,32 +337,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
-  /// Says why an atsign the atServer wouldn't talk to is unreachable.
-  ///
-  /// `AtStatusImpl` swallows the atDirectory exception and reports both "this
-  /// atsign has no atDirectory entry" and "the atDirectory is unreachable" as
-  /// [AtSignStatus.unavailable], which are very different things for a tester
-  /// staring at a failed row. Ask the atDirectory directly - it only happens on
-  /// the failure path, and it answers in a couple of hundred milliseconds.
-  Future<String> _unreachableReason(
-    NoPortsOnboardingUtil onboardingUtil,
-    Atsign atsign,
+  /// Says why an atsign that cannot be activated now is out of reach, from
+  /// the [state] the atServer check reported; null when the check itself
+  /// failed.
+  String _unreachableReason(
+    AtSignServerState? state,
     AppLocalizations strings,
-  ) async {
-    try {
-      await CacheableSecondaryAddressFinder(
-        onboardingUtil.rootDomain,
-        64,
-      ).findSecondary(atsign);
-      // The atDirectory knows this atsign, so its atServer is down or still
-      // being provisioned.
-      return strings.errorAtsignUnavailable;
-    } on SecondaryNotFoundException {
-      return strings.errorAtsignNotExist;
-    } catch (_) {
-      return strings.errorAtServerUnavailable;
-    }
-  }
+  ) => switch (state) {
+    AtSignServerState.notInDirectory => strings.errorAtsignNotExist,
+    // The atDirectory knows this atsign, so its atServer is down or still
+    // being provisioned.
+    AtSignServerState.atServerUnreachable => strings.errorAtsignUnavailable,
+    _ => strings.errorAtServerUnavailable,
+  };
 
 
   /// Check if any Atsign has a failed activation status.
