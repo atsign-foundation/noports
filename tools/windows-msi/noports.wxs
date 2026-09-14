@@ -10,6 +10,9 @@
   <Package Name="NoPorts" Language="1033" Version="$(var.ProductVersion)"
            Manufacturer="Atsign" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
+    <!-- Shown in the UAC prompt's details and in file Properties. Match the
+         signing certificate's subject. -->
+    <SummaryInformation Description="NoPorts installer" Manufacturer="Atsign, Inc." Keywords="NoPorts, sshnpd, Atsign" />
     <MajorUpgrade AllowSameVersionUpgrades="yes"
                   DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
