@@ -21,21 +21,23 @@ class ProfileRepository {
     AtClient atClient = _client;
 
     String namespace = Constants.namespace ?? '';
-    List<AtKey> keys;
+    List<String> keyStrs;
     try {
-      keys = await atClient.getAtKeys(
+      keyStrs = await atClient.getKeys(
         regex: '.${Uuid.profilesSubNamespace}.$namespace',
+        useRemoteAtServer: true,
       );
     } catch (e) {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
-      keys = [];
+      keyStrs = [];
     }
-    return keys.map(
-      (key) => key.key.substring(
+    return keyStrs.map((keyStr) {
+      final atKey = AtKey.fromString(keyStr);
+      return atKey.key.substring(
         0,
-        key.key.indexOf('.${Uuid.profilesSubNamespace}'),
-      ),
-    );
+        atKey.key.indexOf('.${Uuid.profilesSubNamespace}'),
+      );
+    });
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {
@@ -54,7 +56,9 @@ class ProfileRepository {
     Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
     try {
-      var value = await atClient.get(key);
+      final GetRequestOptions gro = GetRequestOptions()
+        ..useRemoteAtServer = true;
+      var value = await atClient.get(key, getRequestOptions: gro);
       var profile = Profile.fromJson(jsonDecode(value.value));
       _profileCache[uuid] = profile;
       return profile;
@@ -72,7 +76,13 @@ class ProfileRepository {
     AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
-      return await atClient.put(key, jsonEncode(profile.toJson()));
+      final PutRequestOptions pro = PutRequestOptions()
+        ..useRemoteAtServer = true;
+      return await atClient.put(
+        key,
+        jsonEncode(profile.toJson()),
+        putRequestOptions: pro,
+      );
     } catch (e) {
       App.log('[ERROR] putProfile(${profile.uuid}) failed: $e'.loggable);
       return false;
@@ -86,7 +96,9 @@ class ProfileRepository {
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
-      return await atClient.delete(key);
+      final DeleteRequestOptions dro = DeleteRequestOptions()
+        ..useRemoteAtServer = true;
+      return await atClient.delete(key, deleteRequestOptions: dro);
     } catch (e) {
       App.log('[ERROR] deleteProfile($uuid) failed: $e'.loggable);
       return false;

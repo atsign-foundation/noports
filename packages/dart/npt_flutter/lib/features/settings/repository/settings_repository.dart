@@ -27,8 +27,11 @@ class SettingsRepository {
   Future<Settings?> getSettings() async {
     AtClient atClient = _client;
     try {
+      final GetRequestOptions gro = GetRequestOptions()
+        ..useRemoteAtServer = true;
       var value = await atClient.get(
         settingsAtKey..sharedBy = atClient.getCurrentAtSign(),
+        getRequestOptions: gro,
       );
       if (value.value == null) {
         // No settings saved, so use the defaults
@@ -44,7 +47,13 @@ class SettingsRepository {
   Future<bool> putSettings(Settings settings) async {
     AtClient atClient = _client;
     try {
-      return await atClient.put(settingsAtKey, jsonEncode(settings.toJson()));
+      final PutRequestOptions pro = PutRequestOptions()
+        ..useRemoteAtServer = true;
+      return await atClient.put(
+        settingsAtKey,
+        jsonEncode(settings.toJson()),
+        putRequestOptions: pro,
+      );
     } catch (e) {
       return false;
     }
@@ -53,8 +62,11 @@ class SettingsRepository {
   Future<bool> deleteSettings(Settings settings) async {
     AtClient atClient = _client;
     try {
+      final DeleteRequestOptions dro = DeleteRequestOptions()
+        ..useRemoteAtServer = true;
       return await atClient.delete(
         settingsAtKey..sharedBy = atClient.getCurrentAtSign(),
+        deleteRequestOptions: dro,
       );
     } catch (_) {
       return false;

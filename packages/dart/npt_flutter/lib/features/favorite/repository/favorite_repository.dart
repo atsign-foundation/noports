@@ -8,6 +8,7 @@ import 'package:npt_flutter/util/constants.dart';
 class FavoriteRepository {
   final AtClient? _atClient;
   Map<String, Favorite>? _favoriteCache;
+  bool _cacheInitialized = false;
 
   FavoriteRepository({AtClient? atClient}) : _atClient = atClient;
 
@@ -23,15 +24,22 @@ class FavoriteRepository {
   }
 
   Future<Map<String, Favorite>?> getFavorites({bool useCache = true}) async {
-    if (useCache && _favoriteCache != null) return _favoriteCache;
-    _favoriteCache ??= {};
+    if (useCache && _cacheInitialized && _favoriteCache != null) {
+      return _favoriteCache;
+    }
+    _favoriteCache = {};
 
     Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     AtKey key = getFavoriteAtKey(sharedBy: atsign);
 
     try {
-      var value = await _client.get(key);
-      if (value.value == null) return _favoriteCache;
+      final GetRequestOptions gro = GetRequestOptions()
+        ..useRemoteAtServer = true;
+      var value = await _client.get(key, getRequestOptions: gro);
+      if (value.value == null) {
+        _cacheInitialized = true;
+        return _favoriteCache;
+      }
       var json = jsonDecode(value.value);
       if (json is! Map) {
         throw 'favorites from the atServer is not a Map';
@@ -46,6 +54,7 @@ class FavoriteRepository {
     } catch (e) {
       App.log('[ERROR] getFavorites: $e'.loggable);
     }
+    _cacheInitialized = true;
     return _favoriteCache;
   }
 
@@ -53,7 +62,13 @@ class FavoriteRepository {
     Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     AtKey key = getFavoriteAtKey(sharedBy: atsign);
     try {
-      return await _client.put(key, jsonEncode(_favoriteCache));
+      final PutRequestOptions pro = PutRequestOptions()
+        ..useRemoteAtServer = true;
+      return await _client.put(
+        key,
+        jsonEncode(_favoriteCache),
+        putRequestOptions: pro,
+      );
     } catch (e) {
       App.log('[ERROR] _putFavorites: $e'.loggable);
       return false;
@@ -61,12 +76,14 @@ class FavoriteRepository {
   }
 
   Future<bool> addFavorite(Favorite favorite) async {
+    if (!_cacheInitialized) await getFavorites();
     _favoriteCache ??= {};
     _favoriteCache?[favorite.uuid] = favorite;
     return _putFavorites();
   }
 
   Future<bool> removeFavorites(Iterable<String> uuids) async {
+    if (!_cacheInitialized) await getFavorites();
     _favoriteCache ??= {};
     for (final uuid in uuids) {
       _favoriteCache?.remove(uuid);
