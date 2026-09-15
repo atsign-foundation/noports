@@ -16,6 +16,7 @@ Future<void> postOnboard(Atsign atsign, String rootDomain) async {
   // Start loading application data in the background as soon as we have an atClient
   context?.read<FavoriteBloc>().add(const FavoriteLoadEvent());
   context?.read<ProfileListBloc>().add(const ProfileListLoadEvent());
+  context?.read<ProfileGroupBloc>().add(const ProfileGroupLoadEvent());
   context?.read<SettingsBloc>().add(const SettingsLoadEvent());
   context?.read<PendingRequestsCountCubit>().start();
   await context?.read<PolicyCubit>().loadRoles(AppLocalizations.of(context)!);

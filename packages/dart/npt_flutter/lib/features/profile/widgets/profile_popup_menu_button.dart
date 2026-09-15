@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/profile_form_page.dart';
@@ -26,6 +27,13 @@ class ProfilePopupMenuButton extends StatelessWidget {
         state is ProfileStarting ||
         state is ProfileStarted ||
         state is ProfileStopping;
+    final ProfileGroupState groupState = context
+        .watch<ProfileGroupBloc>()
+        .state;
+    final ProfileGroupData? groupData =
+        (groupState is ProfileGroupsLoaded && !groupState.sortByType)
+        ? groupState.data
+        : null;
     return PopupMenuButton<PopupMenuEntry>(
       padding: EdgeInsets.zero,
       itemBuilder: (_) {
@@ -73,11 +81,27 @@ class ProfilePopupMenuButton extends StatelessWidget {
                   arguments: ProfileFormPageArguments(
                     Uuid.generate(),
                     copyFrom: copyFrom,
+                    groupId: groupData?.groupForProfile(copyFrom.uuid)?.uuid,
                   ),
                 );
               }
             },
           ),
+          if (groupData != null)
+            PopupMenuItem(
+              child: Row(
+                children: [
+                  PhosphorIcon(PhosphorIcons.folderOpen()),
+                  gapW10,
+                  Text(strings.groupMoveToFolder),
+                ],
+              ),
+              onTap: () {
+                var state = context.read<ProfileBloc>().state;
+                if (state is! ProfileLoadedState) return;
+                ProfileGroupActions.moveToFolder(context, [state.uuid]);
+              },
+            ),
           PopupMenuItem(
             child: Row(
               children: [

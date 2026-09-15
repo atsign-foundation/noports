@@ -522,7 +522,78 @@ class AppLocalizationsPt extends AppLocalizations {
   String get groupAdd => 'Adicionar Grupo';
 
   @override
+  String get groupAddConnection => 'Adicionar conexão';
+
+  @override
+  String get groupByType => 'Agrupar por tipo';
+
+  @override
+  String get groupCollapse => 'Recolher';
+
+  @override
+  String get groupDeleteFolder => 'Excluir pasta';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get groupExpand => 'Expandir';
+
+  @override
+  String get groupFolderName => 'Nome da pasta';
+
+  @override
+  String get groupFolderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get groupLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get groupMoveTo => 'Mover para';
+
+  @override
+  String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
   String get groupName => 'Nome do Grupo';
+
+  @override
+  String get groupNewFolder => 'Nova pasta';
+
+  @override
+  String get groupNoFolder => 'Sem pasta';
+
+  @override
+  String get groupRename => 'Renomear';
+
+  @override
+  String get groupRenameFolder => 'Renomear pasta';
+
+  @override
+  String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String get groupStopAll => 'Parar todos';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => 'Nenhum';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => 'Sem grupo';
 
   @override
   String get import => 'Importar';
@@ -1639,7 +1710,78 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get groupAdd => 'Adicionar Grupo';
 
   @override
+  String get groupAddConnection => 'Adicionar conexão';
+
+  @override
+  String get groupByType => 'Agrupar por tipo';
+
+  @override
+  String get groupCollapse => 'Recolher';
+
+  @override
+  String get groupDeleteFolder => 'Excluir pasta';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get groupExpand => 'Expandir';
+
+  @override
+  String get groupFolderName => 'Nome da pasta';
+
+  @override
+  String get groupFolderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get groupLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get groupMoveTo => 'Mover para';
+
+  @override
+  String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
   String get groupName => 'Nome do Grupo';
+
+  @override
+  String get groupNewFolder => 'Nova pasta';
+
+  @override
+  String get groupNoFolder => 'Sem pasta';
+
+  @override
+  String get groupRename => 'Renomear';
+
+  @override
+  String get groupRenameFolder => 'Renomear pasta';
+
+  @override
+  String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String get groupStopAll => 'Parar todos';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => 'Nenhum';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => 'Sem grupo';
 
   @override
   String get import => 'Importar';
