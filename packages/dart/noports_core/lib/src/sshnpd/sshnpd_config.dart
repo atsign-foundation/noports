@@ -409,6 +409,10 @@ class SshnpdConfigBroker implements ConfigurationBroker {
       );
     }
     var value = _cached?.config?.valueOrNull(key);
+    // Backwards compatibility for legacy root-domain config key.
+    if (key == '/atsign/root' && value == null) {
+      value = _cached?.config?.valueOrNull('/atsign/root-domain');
+    }
     switch (key) {
       case '/access/managers':
       case '/access/permitopen':
