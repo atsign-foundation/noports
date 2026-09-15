@@ -45,12 +45,13 @@ dependency_overrides:
       ref: 688486e448ed8f08b96ed92ea197072e9b1c7249
       path: packages/at_chops
   # TEMPORARY — integration-branch override: ChunkTransformer is not yet on
-  # pub.dev; pull socket_connector from srei's PR #41 tip (stacked on #39: review
-  # fixes for crashes, leaks, OOM), which also carries the 2.5.1 flush-gate fix.
+  # pub.dev; pull socket_connector from srei's PR #41 tip (targets trunk now
+  # that #39 merged 2026-09-15): review fixes for crashes, leaks and OOM, plus
+  # copy-before-Socket.add for transformers that reuse their output buffer.
   socket_connector:
     git:
       url: https://github.com/atsign-foundation/socket_connector.git
-      ref: 313275bdf24c944e485da3e92125a09f2f6b666f
+      ref: 53194be7986dec60a473a791bc244fc5648999f3
 
 dev_dependencies:
   build_runner: ^2.4.12

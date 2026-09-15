@@ -32,7 +32,8 @@ dependency_overrides:
   # TEMPORARY — integration-branch overrides (repeated here because overrides
   # do not propagate from noports_core to the package the binaries build from).
   # at_chops 3.7.0 (updateView) from at_client_sdk trunk; socket_connector
-  # from srei's PR #41 tip (ChunkTransformer #39 + review fixes + 2.5.1 flush gate).
+  # from srei's PR #41 tip (#39 ChunkTransformer, now merged, plus review
+  # fixes and the buffer-copy fix).
   at_chops:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk.git
@@ -41,7 +42,7 @@ dependency_overrides:
   socket_connector:
     git:
       url: https://github.com/atsign-foundation/socket_connector.git
-      ref: 313275bdf24c944e485da3e92125a09f2f6b666f
+      ref: 53194be7986dec60a473a791bc244fc5648999f3
 
 dev_dependencies:
   lints: ^6.1.0
