@@ -219,7 +219,7 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     EnumOption(
       enumParser: EnumParser(SupportedSshClient.values),
       argName: 'ssh-client',
-      configKey: '/ssh/client',
+      configKey: '/ssh/ssh-client',
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.sshClient,
       helpText: 'What to use for outbound ssh connections.',
