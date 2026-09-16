@@ -5,6 +5,11 @@
   `StreamController` to the socket subscription, so backpressure applied by
   the consumer of the wrapped stream reaches the socket and closes the TCP
   window instead of buffering without bound in the wrapper
+- build: socket_connector bumped to ^2.6.0, which bounds in-process relay
+  buffering with flush-gated backpressure (4 MiB high-water mark per
+  direction), enables TCP keep-alive on relayed sockets, and fixes a race in
+  2.5.0 where the backpressure flush could collide with a write and close a
+  relay side mid-stream, or stall one direction for good
 
 # 6.14.0
 
