@@ -7,10 +7,12 @@
 * fix: relay auth stream wrappers now propagate backpressure to the socket,
   so a fast writer through an authenticated relay can no longer inflate
   srv/srvd memory without bound (~1 GB per 10 s observed under iperf3)
-* build: socket_connector pinned to 2.5.0, which bounds in-process relay
+* build: socket_connector pinned to 2.6.0, which bounds in-process relay
   buffering with flush-gated backpressure and enables TCP keep-alive on
   relayed sockets; with both fixes, iperf3 sender and receiver rates through
-  a tunnel converge instead of the sender filling process memory
+  a tunnel converge instead of the sender filling process memory. 2.6.0 also
+  fixes a race in 2.5.0's backpressure flush that could close a relay side
+  mid-stream or stall one direction for good
 
 ## v5.16.0
 
