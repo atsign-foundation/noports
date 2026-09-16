@@ -31,6 +31,7 @@
 - CHORE: Remove win32 dev dependency (unused).
 - CHORE: Override phosphor_flutter with Flutter 3.x compatibility fork.
 - CHORE: Updated localization strings.
+- FEAT: Use the remote atServer as the source of truth instead of synchronizing a local store.
 
 ## 1.9.3+30
 
