@@ -583,7 +583,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.9.4+31";
+				CURRENT_PROJECT_VERSION = "1.9.5+32";
 				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
@@ -724,7 +724,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.9.4+31";
+				CURRENT_PROJECT_VERSION = "1.9.5+32";
 				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
@@ -753,7 +753,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = "1.9.4+31";
+				CURRENT_PROJECT_VERSION = "1.9.5+32";
 				DEVELOPMENT_TEAM = ZM5424R79D;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Noports Desktop";
