@@ -8,7 +8,6 @@ import 'package:npt_flutter/util/constants.dart';
 class FavoriteRepository {
   final AtClient? _atClient;
   Map<String, Favorite>? _favoriteCache;
-  bool _cacheInitialized = false;
 
   FavoriteRepository({AtClient? atClient}) : _atClient = atClient;
 
@@ -24,20 +23,17 @@ class FavoriteRepository {
   }
 
   Future<Map<String, Favorite>?> getFavorites({bool useCache = true}) async {
-    if (useCache && _cacheInitialized && _favoriteCache != null) {
-      return _favoriteCache;
-    }
-    _favoriteCache = {};
+    if (useCache && _favoriteCache != null) return _favoriteCache;
+    _favoriteCache = null;
+    final Map<String, Favorite> loadedFavorites = {};
 
     Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     AtKey key = getFavoriteAtKey(sharedBy: atsign);
 
     try {
-      final GetRequestOptions gro = GetRequestOptions()
-        ..useRemoteAtServer = true;
-      var value = await _client.get(key, getRequestOptions: gro);
+      var value = await _client.get(key);
       if (value.value == null) {
-        _cacheInitialized = true;
+        _favoriteCache = loadedFavorites;
         return _favoriteCache;
       }
       var json = jsonDecode(value.value);
@@ -49,26 +45,20 @@ class FavoriteRepository {
         if (json[key] is! Map) continue;
         final fav = Favorite.fromJson(json[key]);
         if (fav == null) continue;
-        _favoriteCache?[fav.uuid] = fav;
+        loadedFavorites[fav.uuid] = fav;
       }
+      _favoriteCache = loadedFavorites;
     } catch (e) {
       App.log('[ERROR] getFavorites: $e'.loggable);
     }
-    _cacheInitialized = true;
-    return _favoriteCache;
+    return _favoriteCache ?? loadedFavorites;
   }
 
   Future<bool> _putFavorites() async {
     Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     AtKey key = getFavoriteAtKey(sharedBy: atsign);
     try {
-      final PutRequestOptions pro = PutRequestOptions()
-        ..useRemoteAtServer = true;
-      return await _client.put(
-        key,
-        jsonEncode(_favoriteCache),
-        putRequestOptions: pro,
-      );
+      return await _client.put(key, jsonEncode(_favoriteCache));
     } catch (e) {
       App.log('[ERROR] _putFavorites: $e'.loggable);
       return false;
@@ -76,18 +66,21 @@ class FavoriteRepository {
   }
 
   Future<bool> addFavorite(Favorite favorite) async {
-    if (!_cacheInitialized) await getFavorites();
-    _favoriteCache ??= {};
-    _favoriteCache?[favorite.uuid] = favorite;
+    if (!await _initializeCache()) return false;
+    _favoriteCache![favorite.uuid] = favorite;
     return _putFavorites();
   }
 
   Future<bool> removeFavorites(Iterable<String> uuids) async {
-    if (!_cacheInitialized) await getFavorites();
-    _favoriteCache ??= {};
+    if (!await _initializeCache()) return false;
     for (final uuid in uuids) {
-      _favoriteCache?.remove(uuid);
+      _favoriteCache!.remove(uuid);
     }
     return _putFavorites();
+  }
+
+  Future<bool> _initializeCache() async {
+    if (_favoriteCache == null) await getFavorites();
+    return _favoriteCache != null;
   }
 }

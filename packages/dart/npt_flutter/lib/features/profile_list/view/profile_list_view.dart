@@ -31,119 +31,115 @@ class _ProfileListViewState extends State<ProfileListView> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context)!;
-    final bodyMedium = Theme.of(context).textTheme.bodyMedium;
     SizeConfig().init();
 
     return BlocBuilder<ProfileListBloc, ProfileListState>(
-      builder: (context, state) {
+      builder: (BuildContext context, ProfileListState state) {
         return switch (state) {
           ProfileListInitial() ||
           ProfileListLoading() => const Center(child: Spinner()),
           ProfileListFailedLoad() => const ProfileListFailedLoadContent(),
-          ProfileListLoaded() => BlocBuilder<ProfileListBloc, ProfileListState>(
-            builder: (BuildContext context, ProfileListState state) {
-              if (state is! ProfileListLoaded) {
-                return gap0;
-              }
-
-              final profiles = state.profiles.toList();
-              final isFullProfile = profiles.isNotEmpty;
-              log('profile: isFullProfile: $isFullProfile');
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Sizes.p20,
-                  vertical: Sizes.p10,
-                ),
-                child: Column(
-                  children: [
-                    isFullProfile
-                        ? const Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ProfileListAddButton(),
-                              gapW10,
-                              ProfileListImportButton(),
-                              gapW10,
-                              ProfileSelectedExportButton(),
-                              gapW10,
-                              ProfileSelectedDeleteButton(),
-                            ],
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ProfileListAddButton(),
-                              gapW10,
-                              ProfileListImportButton(),
-                            ],
-                          ),
-                    gapH8,
-                    if (isFullProfile) const ProfileHeaderView(),
-                    if (isFullProfile)
-                      Expanded(
-                        child: ListView.builder(
-                          addAutomaticKeepAlives: false,
-                          addRepaintBoundaries: false,
-                          itemCount: state.profiles.length,
-                          itemBuilder: (context, index) {
-                            return BlocProvider.value(
-                              key: Key(
-                                "ProfileListView-BlocProvider-${profiles[index]}",
-                              ),
-                              value: context
-                                  .read<ProfileCacheCubit>()
-                                  .getProfileBloc(profiles[index]),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Color(0xFFE0E0E0),
-                                    ),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: Sizes.p8,
-                                  horizontal: Sizes.p10,
-                                ),
-                                child: const ProfileView(),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    if (!isFullProfile)
-                      Expanded(
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/empty_state_profile_bg.svg',
-                                height: Sizes.p200,
-                              ),
-                              gapH16,
-                              const DemoProfileInfoWidget(),
-                              gapH16,
-                              Text(
-                                strings.emptyProfileMessage,
-                                style: bodyMedium?.copyWith(
-                                  fontSize: Sizes.p16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
+          ProfileListLoaded(:final profiles) => _buildLoadedProfiles(
+            context,
+            profiles,
           ),
         };
       },
+    );
+  }
+
+  Widget _buildLoadedProfiles(
+    BuildContext context,
+    Iterable<String> profileIds,
+  ) {
+    final AppLocalizations strings = AppLocalizations.of(context)!;
+    final TextStyle? bodyMedium = Theme.of(context).textTheme.bodyMedium;
+    final List<String> profiles = profileIds.toList();
+    final bool isFullProfile = profiles.isNotEmpty;
+    log('profile: isFullProfile: $isFullProfile');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Sizes.p20,
+        vertical: Sizes.p10,
+      ),
+      child: Column(
+        children: [
+          isFullProfile
+              ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ProfileListAddButton(),
+                    gapW10,
+                    ProfileListImportButton(),
+                    gapW10,
+                    ProfileSelectedExportButton(),
+                    gapW10,
+                    ProfileSelectedDeleteButton(),
+                  ],
+                )
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ProfileListAddButton(),
+                    gapW10,
+                    ProfileListImportButton(),
+                  ],
+                ),
+          gapH8,
+          if (isFullProfile) const ProfileHeaderView(),
+          if (isFullProfile)
+            Expanded(
+              child: ListView.builder(
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+                itemCount: profiles.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return BlocProvider<ProfileBloc>.value(
+                    key: Key("ProfileListView-BlocProvider-${profiles[index]}"),
+                    value: context.read<ProfileCacheCubit>().getProfileBloc(
+                      profiles[index],
+                    ),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Color(0xFFE0E0E0)),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: Sizes.p8,
+                        horizontal: Sizes.p10,
+                      ),
+                      child: const ProfileView(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          if (!isFullProfile)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/empty_state_profile_bg.svg',
+                      height: Sizes.p200,
+                    ),
+                    gapH16,
+                    const DemoProfileInfoWidget(),
+                    gapH16,
+                    Text(
+                      strings.emptyProfileMessage,
+                      style: bodyMedium?.copyWith(fontSize: Sizes.p16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

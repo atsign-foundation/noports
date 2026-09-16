@@ -52,12 +52,7 @@ void main() {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
         final atValue = AtValue()..value = jsonEncode(testProfile.toJson());
 
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer((_) async => atValue);
+        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
         // First call - should hit AtClient
         final firstResult = await repository.getProfile(testUuid);
@@ -73,24 +68,14 @@ void main() {
         expect(secondResult!.uuid, equals(testUuid));
 
         // Verify AtClient was only called once
-        verify(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.get(atKey)).called(1);
       });
 
       test('should bypass cache when useCache is false', () async {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
         final atValue = AtValue()..value = jsonEncode(testProfile.toJson());
 
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer((_) async => atValue);
+        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
         // First call
         await repository.getProfile(testUuid, useCache: false);
@@ -102,12 +87,7 @@ void main() {
         expect(result!.uuid, equals(testUuid));
 
         // Verify AtClient was called twice
-        verify(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(2);
+        verify(mockAtClient.get(atKey)).called(2);
       });
 
       test('should update cache when putProfile is called', () async {
@@ -124,21 +104,13 @@ void main() {
 
         // Put original profile
         when(
-          mockAtClient.put(
-            atKey,
-            jsonEncode(testProfile.toJson()),
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
+          mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
         ).thenAnswer((_) async => true);
         await repository.putProfile(testProfile);
 
         // Put updated profile
         when(
-          mockAtClient.put(
-            atKey,
-            jsonEncode(updatedProfile.toJson()),
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
+          mockAtClient.put(atKey, jsonEncode(updatedProfile.toJson())),
         ).thenAnswer((_) async => true);
         await repository.putProfile(updatedProfile);
 
@@ -149,12 +121,7 @@ void main() {
         expect(result.sshnpdAtsign, equals('@updated_device'.toAtsign()));
 
         // Should not have called get on AtClient since it's cached
-        verifyNever(
-          mockAtClient.get(
-            any,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        );
+        verifyNever(mockAtClient.get(any));
       });
 
       test('should remove from cache when deleteProfile is called', () async {
@@ -162,43 +129,24 @@ void main() {
 
         // First, put a profile in cache
         when(
-          mockAtClient.put(
-            atKey,
-            jsonEncode(testProfile.toJson()),
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
+          mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
         ).thenAnswer((_) async => true);
         await repository.putProfile(testProfile);
 
         // Then delete it
-        when(
-          mockAtClient.delete(
-            atKey,
-            deleteRequestOptions: anyNamed('deleteRequestOptions'),
-          ),
-        ).thenAnswer((_) async => true);
+        when(mockAtClient.delete(atKey)).thenAnswer((_) async => true);
         final deleteResult = await repository.deleteProfile(testUuid);
         expect(deleteResult, isTrue);
 
         // Verify profile is removed from cache by checking it tries to fetch from AtClient
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenThrow(Exception('Not found'));
+        when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
         final cachedProfile = await repository.getProfile(
           testUuid,
           useCache: true,
         );
         expect(cachedProfile, isNull);
 
-        verify(
-          mockAtClient.delete(
-            atKey,
-            deleteRequestOptions: anyNamed('deleteRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.delete(atKey)).called(1);
       });
     });
 
@@ -210,12 +158,7 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
           final atValue = AtValue()..value = jsonEncode(testProfile.toJson());
 
-          when(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).thenAnswer((_) async => atValue);
+          when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
           final result = await repository.getProfile(testUuid);
 
@@ -224,12 +167,7 @@ void main() {
           expect(result.displayName, equals('Test Profile'));
           expect(result.sshnpdAtsign, equals('@test_device'));
           expect(result.deviceName, equals('test-device'));
-          verify(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).called(1);
+          verify(mockAtClient.get(atKey)).called(1);
         });
 
         test('should return null when AtClient throws exception', () async {
@@ -238,21 +176,13 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
 
           when(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
+            mockAtClient.get(atKey),
           ).thenThrow(Exception('Profile not found'));
 
           final result = await repository.getProfile(testUuid);
 
           expect(result, isNull);
-          verify(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).called(1);
+          verify(mockAtClient.get(atKey)).called(1);
         });
 
         test('should handle JSON decode errors gracefully', () async {
@@ -261,22 +191,12 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
           final atValue = AtValue()..value = 'invalid json';
 
-          when(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).thenAnswer((_) async => atValue);
+          when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
           final result = await repository.getProfile(testUuid);
 
           expect(result, isNull);
-          verify(
-            mockAtClient.get(
-              atKey,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).called(1);
+          verify(mockAtClient.get(atKey)).called(1);
         });
 
         test('should handle null atSign gracefully', () async {
@@ -297,22 +217,14 @@ void main() {
             ).toProfileAtKey(sharedBy: testAtsign);
 
             when(
-              mockAtClient.put(
-                atKey,
-                jsonEncode(testProfile.toJson()),
-                putRequestOptions: anyNamed('putRequestOptions'),
-              ),
+              mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
             ).thenAnswer((_) async => true);
 
             final result = await repository.putProfile(testProfile);
 
             expect(result, isTrue);
             verify(
-              mockAtClient.put(
-                atKey,
-                jsonEncode(testProfile.toJson()),
-                putRequestOptions: anyNamed('putRequestOptions'),
-              ),
+              mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
             ).called(1);
 
             // Verify profile is cached
@@ -330,22 +242,14 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
 
           when(
-            mockAtClient.put(
-              atKey,
-              jsonEncode(testProfile.toJson()),
-              putRequestOptions: anyNamed('putRequestOptions'),
-            ),
+            mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
           ).thenThrow(Exception('Put failed'));
 
           final result = await repository.putProfile(testProfile);
 
           expect(result, isFalse);
           verify(
-            mockAtClient.put(
-              atKey,
-              jsonEncode(testProfile.toJson()),
-              putRequestOptions: anyNamed('putRequestOptions'),
-            ),
+            mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
           ).called(1);
         });
 
@@ -355,11 +259,7 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
 
           when(
-            mockAtClient.put(
-              atKey,
-              jsonEncode(testProfile.toJson()),
-              putRequestOptions: anyNamed('putRequestOptions'),
-            ),
+            mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
           ).thenThrow(Exception('Put failed'));
 
           await repository.putProfile(testProfile);
@@ -391,39 +291,20 @@ void main() {
 
             // First, put a profile in cache
             when(
-              mockAtClient.put(
-                atKey,
-                jsonEncode(testProfile.toJson()),
-                putRequestOptions: anyNamed('putRequestOptions'),
-              ),
+              mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
             ).thenAnswer((_) async => true);
             await repository.putProfile(testProfile);
 
             // Then delete it
-            when(
-              mockAtClient.delete(
-                atKey,
-                deleteRequestOptions: anyNamed('deleteRequestOptions'),
-              ),
-            ).thenAnswer((_) async => true);
+            when(mockAtClient.delete(atKey)).thenAnswer((_) async => true);
 
             final result = await repository.deleteProfile(testUuid);
 
             expect(result, isTrue);
-            verify(
-              mockAtClient.delete(
-                atKey,
-                deleteRequestOptions: anyNamed('deleteRequestOptions'),
-              ),
-            ).called(1);
+            verify(mockAtClient.delete(atKey)).called(1);
 
             // Verify profile is removed from cache
-            when(
-              mockAtClient.get(
-                atKey,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenThrow(Exception('Not found'));
+            when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
             final cachedProfile = await repository.getProfile(
               testUuid,
               useCache: true,
@@ -438,21 +319,13 @@ void main() {
           ).toProfileAtKey(sharedBy: testAtsign);
 
           when(
-            mockAtClient.delete(
-              atKey,
-              deleteRequestOptions: anyNamed('deleteRequestOptions'),
-            ),
+            mockAtClient.delete(atKey),
           ).thenThrow(Exception('Delete failed'));
 
           final result = await repository.deleteProfile(testUuid);
 
           expect(result, isFalse);
-          verify(
-            mockAtClient.delete(
-              atKey,
-              deleteRequestOptions: anyNamed('deleteRequestOptions'),
-            ),
-          ).called(1);
+          verify(mockAtClient.delete(atKey)).called(1);
         });
 
         test(
@@ -464,31 +337,19 @@ void main() {
 
             // First, put a profile in cache
             when(
-              mockAtClient.put(
-                atKey,
-                jsonEncode(testProfile.toJson()),
-                putRequestOptions: anyNamed('putRequestOptions'),
-              ),
+              mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
             ).thenAnswer((_) async => true);
             await repository.putProfile(testProfile);
 
             // Mock delete failure
             when(
-              mockAtClient.delete(
-                atKey,
-                deleteRequestOptions: anyNamed('deleteRequestOptions'),
-              ),
+              mockAtClient.delete(atKey),
             ).thenThrow(Exception('Delete failed'));
 
             await repository.deleteProfile(testUuid);
 
             // Profile should still be removed from cache
-            when(
-              mockAtClient.get(
-                atKey,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenThrow(Exception('Not found'));
+            when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
             final cachedProfile = await repository.getProfile(
               testUuid,
               useCache: true,
@@ -542,12 +403,7 @@ void main() {
             final profile = profiles[i];
             final atKey = Uuid(uuid).toProfileAtKey(sharedBy: testAtsign);
 
-            when(
-              mockAtClient.get(
-                atKey,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenAnswer(
+            when(mockAtClient.get(atKey)).thenAnswer(
               (_) async => AtValue()..value = jsonEncode(profile.toJson()),
             );
           }
@@ -579,12 +435,7 @@ void main() {
             final atKey1 = const Uuid(
               'uuid1',
             ).toProfileAtKey(sharedBy: testAtsign);
-            when(
-              mockAtClient.get(
-                atKey1,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenAnswer(
+            when(mockAtClient.get(atKey1)).thenAnswer(
               (_) async =>
                   AtValue()..value = jsonEncode(successProfile.toJson()),
             );
@@ -596,18 +447,8 @@ void main() {
             final atKey3 = const Uuid(
               'uuid3',
             ).toProfileAtKey(sharedBy: testAtsign);
-            when(
-              mockAtClient.get(
-                atKey2,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenThrow(Exception('Not found'));
-            when(
-              mockAtClient.get(
-                atKey3,
-                getRequestOptions: anyNamed('getRequestOptions'),
-              ),
-            ).thenThrow(Exception('Not found'));
+            when(mockAtClient.get(atKey2)).thenThrow(Exception('Not found'));
+            when(mockAtClient.get(atKey3)).thenThrow(Exception('Not found'));
 
             final result = await repository.getProfiles(uuids);
 
@@ -624,12 +465,7 @@ void main() {
 
             for (final uuid in uuids) {
               final atKey = Uuid(uuid).toProfileAtKey(sharedBy: testAtsign);
-              when(
-                mockAtClient.get(
-                  atKey,
-                  getRequestOptions: anyNamed('getRequestOptions'),
-                ),
-              ).thenThrow(Exception('Not found'));
+              when(mockAtClient.get(atKey)).thenThrow(Exception('Not found'));
             }
 
             final result = await repository.getProfiles(uuids);
@@ -669,11 +505,7 @@ void main() {
             'uuid1',
           ).toProfileAtKey(sharedBy: testAtsign);
           when(
-            mockAtClient.put(
-              atKey1,
-              jsonEncode(profile1.toJson()),
-              putRequestOptions: anyNamed('putRequestOptions'),
-            ),
+            mockAtClient.put(atKey1, jsonEncode(profile1.toJson())),
           ).thenAnswer((_) async => true);
           await repository.putProfile(profile1);
 
@@ -681,12 +513,7 @@ void main() {
           final atKey2 = const Uuid(
             'uuid2',
           ).toProfileAtKey(sharedBy: testAtsign);
-          when(
-            mockAtClient.get(
-              atKey2,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).thenAnswer(
+          when(mockAtClient.get(atKey2)).thenAnswer(
             (_) async => AtValue()..value = jsonEncode(profile2.toJson()),
           );
 
@@ -696,25 +523,15 @@ void main() {
           expect(result.map((p) => p.uuid).toList(), equals(uuids));
 
           // Verify profile1 was not fetched from AtClient (cached)
-          verifyNever(
-            mockAtClient.get(
-              atKey1,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          );
+          verifyNever(mockAtClient.get(atKey1));
           // Verify profile2 was fetched from AtClient
-          verify(
-            mockAtClient.get(
-              atKey2,
-              getRequestOptions: anyNamed('getRequestOptions'),
-            ),
-          ).called(1);
+          verify(mockAtClient.get(atKey2)).called(1);
         });
       });
 
       group('getProfileUuids', () {
         test('should return profile UUIDs from AtClient', () async {
-          final mockKeys = [
+          final List<String> mockKeys = [
             'uuid1.profiles.noports$testAtsign',
             'uuid2.profiles.noports$testAtsign',
             'uuid3.profiles.noports$testAtsign',
@@ -773,23 +590,13 @@ void main() {
           testUuid,
         ).toProfileAtKey(sharedBy: testAtsign);
 
-        when(
-          mockAtClient.get(
-            expectedAtKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer(
+        when(mockAtClient.get(expectedAtKey)).thenAnswer(
           (_) async => AtValue()..value = jsonEncode(testProfile.toJson()),
         );
 
         await repository.getProfile(testUuid);
 
-        verify(
-          mockAtClient.get(
-            expectedAtKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.get(expectedAtKey)).called(1);
       });
 
       test('should use consistent AtKey format across operations', () async {
@@ -798,54 +605,26 @@ void main() {
         ).toProfileAtKey(sharedBy: testAtsign);
 
         when(
-          mockAtClient.put(
-            atKey,
-            jsonEncode(testProfile.toJson()),
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
+          mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
         ).thenAnswer((_) async => true);
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer(
+        when(mockAtClient.get(atKey)).thenAnswer(
           (_) async => AtValue()..value = jsonEncode(testProfile.toJson()),
         );
-        when(
-          mockAtClient.delete(
-            atKey,
-            deleteRequestOptions: anyNamed('deleteRequestOptions'),
-          ),
-        ).thenAnswer((_) async => true);
+        when(mockAtClient.delete(atKey)).thenAnswer((_) async => true);
 
         // Test put
         await repository.putProfile(testProfile);
         verify(
-          mockAtClient.put(
-            atKey,
-            jsonEncode(testProfile.toJson()),
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
+          mockAtClient.put(atKey, jsonEncode(testProfile.toJson())),
         ).called(1);
 
         // Test get
         await repository.getProfile(testProfile.uuid, useCache: false);
-        verify(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.get(atKey)).called(1);
 
         // Test delete
         await repository.deleteProfile(testProfile.uuid);
-        verify(
-          mockAtClient.delete(
-            atKey,
-            deleteRequestOptions: anyNamed('deleteRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.delete(atKey)).called(1);
       });
     });
 
@@ -866,25 +645,11 @@ void main() {
       test('should handle AtClient network errors gracefully', () async {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
 
+        when(mockAtClient.get(atKey)).thenThrow(Exception('Network error'));
         when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
+          mockAtClient.put(atKey, any),
         ).thenThrow(Exception('Network error'));
-        when(
-          mockAtClient.put(
-            atKey,
-            any,
-            putRequestOptions: anyNamed('putRequestOptions'),
-          ),
-        ).thenThrow(Exception('Network error'));
-        when(
-          mockAtClient.delete(
-            atKey,
-            deleteRequestOptions: anyNamed('deleteRequestOptions'),
-          ),
-        ).thenThrow(Exception('Network error'));
+        when(mockAtClient.delete(atKey)).thenThrow(Exception('Network error'));
 
         // Should not throw, should return null/false
         final getResult = await repository.getProfile(testUuid);
@@ -901,34 +666,19 @@ void main() {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
         final atValue = AtValue()..value = '{invalid json}';
 
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer((_) async => atValue);
+        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
         final result = await repository.getProfile(testUuid);
 
         expect(result, isNull);
-        verify(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(1);
+        verify(mockAtClient.get(atKey)).called(1);
       });
 
       test('should handle concurrent operations correctly', () async {
         final atKey = const Uuid(testUuid).toProfileAtKey(sharedBy: testAtsign);
         final atValue = AtValue()..value = jsonEncode(testProfile.toJson());
 
-        when(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).thenAnswer((_) async => atValue);
+        when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
 
         // Simulate concurrent gets
         final futures = List.generate(
@@ -943,12 +693,7 @@ void main() {
         }
 
         // Should have called AtClient 5 times since useCache is false
-        verify(
-          mockAtClient.get(
-            atKey,
-            getRequestOptions: anyNamed('getRequestOptions'),
-          ),
-        ).called(5);
+        verify(mockAtClient.get(atKey)).called(5);
       });
     });
   });

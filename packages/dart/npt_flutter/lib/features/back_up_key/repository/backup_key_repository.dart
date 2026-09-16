@@ -26,9 +26,7 @@ class BackUpKeyRepository {
     if (atsign != null) key.sharedBy(atsign);
 
     try {
-      final GetRequestOptions gro = GetRequestOptions()
-        ..useRemoteAtServer = true;
-      final value = await atClient.get(key.build(), getRequestOptions: gro);
+      final value = await atClient.get(key.build());
       log('getBackupKeyStatus: ${value.value}');
       return _fromJson(jsonDecode(value.value));
     } catch (e) {
@@ -48,13 +46,7 @@ class BackUpKeyRepository {
     if (atsign != null) key.sharedBy(atsign);
 
     try {
-      final PutRequestOptions pro = PutRequestOptions()
-        ..useRemoteAtServer = true;
-      return await atClient.put(
-        key.build(),
-        jsonEncode(_toJson(status)),
-        putRequestOptions: pro,
-      );
+      return await atClient.put(key.build(), jsonEncode(_toJson(status)));
     } catch (e) {
       App.log('[ERROR] getbackupKeyStatus() failed: $e'.loggable);
       return false;

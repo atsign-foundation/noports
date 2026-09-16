@@ -20,22 +20,22 @@ class ProfileRepository {
   Future<Iterable<String>?> getProfileUuids() async {
     AtClient atClient = _client;
 
-    String namespace = Constants.namespace ?? '';
-    List<String> keyStrs;
+    final String namespace = Constants.namespace;
+    List<String> keyStrings;
     try {
-      keyStrs = await atClient.getKeys(
+      keyStrings = await atClient.getKeys(
         regex: '.${Uuid.profilesSubNamespace}.$namespace',
         useRemoteAtServer: true,
       );
     } catch (e) {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
-      keyStrs = [];
+      keyStrings = [];
     }
-    return keyStrs.map((keyStr) {
-      final atKey = AtKey.fromString(keyStr);
-      return atKey.key.substring(
+    return keyStrings.map((keyString) {
+      final AtKey key = AtKey.fromString(keyString);
+      return key.key.substring(
         0,
-        atKey.key.indexOf('.${Uuid.profilesSubNamespace}'),
+        key.key.indexOf('.${Uuid.profilesSubNamespace}'),
       );
     });
   }
@@ -56,9 +56,7 @@ class ProfileRepository {
     Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
     try {
-      final GetRequestOptions gro = GetRequestOptions()
-        ..useRemoteAtServer = true;
-      var value = await atClient.get(key, getRequestOptions: gro);
+      var value = await atClient.get(key);
       var profile = Profile.fromJson(jsonDecode(value.value));
       _profileCache[uuid] = profile;
       return profile;
@@ -76,13 +74,7 @@ class ProfileRepository {
     AtKey key = Uuid(profile.uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
-      final PutRequestOptions pro = PutRequestOptions()
-        ..useRemoteAtServer = true;
-      return await atClient.put(
-        key,
-        jsonEncode(profile.toJson()),
-        putRequestOptions: pro,
-      );
+      return await atClient.put(key, jsonEncode(profile.toJson()));
     } catch (e) {
       App.log('[ERROR] putProfile(${profile.uuid}) failed: $e'.loggable);
       return false;
@@ -96,9 +88,7 @@ class ProfileRepository {
     AtKey key = Uuid(uuid).toProfileAtKey(sharedBy: atsign);
 
     try {
-      final DeleteRequestOptions dro = DeleteRequestOptions()
-        ..useRemoteAtServer = true;
-      return await atClient.delete(key, deleteRequestOptions: dro);
+      return await atClient.delete(key);
     } catch (e) {
       App.log('[ERROR] deleteProfile($uuid) failed: $e'.loggable);
       return false;
