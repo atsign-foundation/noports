@@ -66,13 +66,14 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_chops
-      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
+      path: "packages/at_chops"
+      ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
+      resolved-ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "3.7.0"
   at_cli_commons:
     dependency: "direct main"
     description:
@@ -353,14 +354,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
-  dart_periphery:
-    dependency: transitive
-    description:
-      name: dart_periphery
-      sha256: "1c933dae787d65e6e66ee89db4a58ed74dc9213b83cea10c344585a256ca498a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.20"
   dart_style:
     dependency: transitive
     description:
@@ -648,14 +641,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  platform:
-    dependency: transitive
-    description:
-      name: platform
-      sha256: "5d6b1b0036a5f331ebc77c850ebc8506cbc1e9416c27e59b439f917a902a4984"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.6"
   pointycastle:
     dependency: "direct overridden"
     description:
@@ -680,14 +665,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  process:
+  pqcrypto:
     dependency: transitive
     description:
-      name: process
-      sha256: c6248e4526673988586e8c00bb22a49210c258dc91df5227d5da9748ecf79744
+      name: pqcrypto
+      sha256: fa8bd7eac5ccb4389f4003715a79b1b601ca9439cb81d1174a1e06da75306b39
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.5"
+    version: "0.3.1"
   pub_semver:
     dependency: transitive
     description:
@@ -747,11 +732,12 @@ packages:
   socket_connector:
     dependency: "direct main"
     description:
-      name: socket_connector
-      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.1"
+      path: "."
+      ref: c93f103ec6156abbc8c626c0ae15e586c7e0cde8
+      resolved-ref: c93f103ec6156abbc8c626c0ae15e586c7e0cde8
+      url: "https://github.com/atsign-foundation/socket_connector.git"
+    source: git
+    version: "2.5.1"
   source_map_stack_trace:
     dependency: transitive
     description:

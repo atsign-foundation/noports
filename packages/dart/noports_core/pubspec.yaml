@@ -36,20 +36,25 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
-  # TEMPORARY — remove before this PR leaves draft, once at_chops 3.7.0 is on
-  # pub.dev and the constraint above is raised to ^3.7.0. Needed for
-  # AesCtrFfiCipher.updateView, used by createAesCtrChunkTransformer. Points
-  # at a local worktree path — will not resolve on another machine or in CI
-  # until at_chops 3.7.0 publishes.
+  # TEMPORARY — remove once at_chops 3.7.0 is on pub.dev and the constraint
+  # above is raised to ^3.7.0. Needed for AesCtrFfiCipher.updateView, used by
+  # createAesCtrChunkTransformer. updateView is merged to at_client_sdk trunk
+  # but not yet published, so pin to the trunk commit that has it — a local
+  # path override won't resolve on another machine or in CI.
   at_chops:
-    path: ../../../../at_client_sdk-phase1/packages/at_chops
-  # TEMPORARY — remove before this PR leaves draft, once the ChunkTransformer
-  # feature is on pub.dev and the constraint above is raised to match. Needed
-  # for the ChunkTransformer type createAesCtrChunkTransformer implements.
-  # Points at a local worktree path — will not resolve on another machine or
-  # in CI until socket_connector publishes ChunkTransformer.
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      path: packages/at_chops
+      ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
+  # TEMPORARY — remove once socket_connector publishes ChunkTransformer and
+  # the constraint above is raised to match. ChunkTransformer is merged to
+  # socket_connector trunk but not yet released past 2.4.1 on pub.dev, so pin
+  # to the trunk commit that has it — a local path override won't resolve on
+  # another machine or in CI.
   socket_connector:
-    path: ../../../../socket_connector-chunk-transformer
+    git:
+      url: https://github.com/atsign-foundation/socket_connector.git
+      ref: c93f103ec6156abbc8c626c0ae15e586c7e0cde8
 
 dev_dependencies:
   build_runner: ^2.4.12
