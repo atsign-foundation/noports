@@ -29,16 +29,6 @@ dependencies:
 
 dependency_overrides:
   pointycastle: ^4.0.0
-  # TEMPORARY — remove once at_chops 3.7.0 is on pub.dev. noports_core's own
-  # override doesn't propagate here since pub only applies overrides from the
-  # root package being resolved — sshnoports resolves independently and needs
-  # the same pin, or `dart compile exe bin/srv.dart` fails to find
-  # AesCtrFfiCipher.updateView. See packages/dart/noports_core/pubspec.yaml.
-  at_chops:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      path: packages/at_chops
-      ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
 
 dev_dependencies:
   lints: ^6.1.0

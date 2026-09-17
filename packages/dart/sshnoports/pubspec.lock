@@ -66,13 +66,12 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/at_chops"
-      ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
-      resolved-ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_chops
+      sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
+      url: "https://pub.dev"
+    source: hosted
     version: "3.7.0"
   at_cli_commons:
     dependency: "direct main"
