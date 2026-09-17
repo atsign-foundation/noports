@@ -38,6 +38,64 @@ RUN \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
+  # ---- libcrypto for the scratch image ----------------------------------
+  # at_chops runs AES-CTR through OpenSSL via dart:ffi and falls back to a much
+  # slower pure-Dart cipher when libcrypto cannot be dlopen'd. The scratch stage
+  # gets its entire userland from the dart image's /runtime/, which carries the
+  # loader, libc, libm, libpthread, libdl, libresolv, librt, libnss_dns and the
+  # CA certs -- no libcrypto. Scratch also has no ld.so.cache, so at_chops' bare
+  # `libcrypto.so.3` candidate has nothing to resolve against either. Without
+  # this block the daemon always takes the slow path, silently.
+  #
+  # Taken from THIS stage, which is also where /runtime/ comes from, so the
+  # glibc ABI matches by construction -- never source it from another image.
+  # libcrypto only; at_chops' FFI path does not reference libssl.
+  #
+  # ORDER MATTERS: this must stay ahead of the static-openssh build below, both
+  # so apt failures surface before a ~10min compile, and so the glob cannot pick
+  # up that build's OpenSSL 3.2.1 output instead of Debian's.
+  #
+  # Rejected alternative: producing a shared .so in static-openssh.sh by dropping
+  # `no-shared`. That leaves the existing --with-ldflags=-static ssh link at the
+  # mercy of linker search order, and ships Jan-2024 OpenSSL with the patching
+  # burden moved onto us.
+  #
+  # Discovery is a glob, not a package name: trixie renamed libssl3 ->
+  # libssl3t64; `ldconfig -p` is not on a non-root PATH and reports the cache
+  # rather than the file; a hardcoded $TARGETARCH triplet is three paths to
+  # maintain by hand across amd64/arm64/armv7.
+  (apt-get install -y libssl3t64 || apt-get install -y libssl3 || apt-get install -y openssl) ; \
+  LIBCRYPTO="$(ls -1 /usr/lib/*/libcrypto.so.3 /lib/*/libcrypto.so.3 2>/dev/null | head -n1)" ; \
+  # The checks below are deliberately fatal. This bug class degrades *silently* --
+  # the daemon keeps working, just slower -- so a base-image change that breaks
+  # the FFI path has to break the build instead of quietly costing throughput.
+  # Please don't soften them to warnings. The scratch stage has no shell and can
+  # assert nothing, which is exactly why all of it has to live here.
+  #
+  # 1. the library is present
+  test -n "${LIBCRYPTO}" || { echo "FATAL: no libcrypto.so.3 in the dart base image"; exit 1; } ; \
+  command -v readelf >/dev/null || { echo "FATAL: readelf missing (binutils)"; exit 1; } ; \
+  # 2. it exports the symbol at_chops probes with. Debian builds OpenSSL 3.x with
+  #    a version script, so the name reads EVP_CIPHER_fetch@@OPENSSL_3.0.0 -- the
+  #    (@|$) alternation matches that and the bare form. A plain `$` anchor here
+  #    would fail the build on a perfectly good library.
+  readelf --dyn-syms -W "${LIBCRYPTO}" | grep -qE ' EVP_CIPHER_fetch(@|$)' \
+    || { echo "FATAL: ${LIBCRYPTO} does not export EVP_CIPHER_fetch"; exit 1; } ; \
+  # 3. every DT_NEEDED is already in /runtime/, because scratch gets nothing else.
+  #    The allowlist is read out of /runtime/ itself so a base-image bump tracks
+  #    automatically rather than going stale. armv7 is the likely failure here:
+  #    gcc may emit libatomic.so.1 calls for OpenSSL's atomics.
+  RUNTIME_SONAMES="$(find /runtime -name '*.so*' -printf '%f\n' | sort -u)" ; \
+  for need in $(readelf -d -W "${LIBCRYPTO}" | sed -n 's/.*NEEDED.*\[\(.*\)\]/\1/p'); do \
+    echo "${RUNTIME_SONAMES}" | grep -qx "${need}" \
+      || { echo "FATAL: ${LIBCRYPTO} needs ${need}, which is not in /runtime/" ; \
+           echo "Remedy: stage that .so alongside libcrypto and COPY it too." ; exit 1; } ; \
+  done ; \
+  mkdir -p /staging/lib ; \
+  cp -L "${LIBCRYPTO}" /staging/lib/libcrypto.so.3 ; \
+  chmod 0644 /staging/lib/libcrypto.so.3 ; \
+  readelf -d -W /staging/lib/libcrypto.so.3 \
+    | sed -n 's/.*NEEDED.*\[\(.*\)\]/staged libcrypto NEEDED \1/p' ; \
   # build static openssh binaries
   cd ${WORKDIR}/${OPENSSH} ; \
   ARCH=${TARGETARCH} ./static-openssh.sh ; \
@@ -64,5 +122,12 @@ COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
 COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
 COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
+# /runtime/ carries no libcrypto and scratch has no ld.so.cache, so hand at_chops
+# an absolute path. Preferred over LD_LIBRARY_PATH: deterministic without a
+# cache, scoped to the one consumer, and when it breaks at_chops logs a named
+# warning ("...is set but could not be opened") rather than silently degrading.
+# sshnpd spawns srv with includeParentEnvironment: true, so one ENV covers both.
+COPY --from=buildimage /staging/lib/libcrypto.so.3 /usr/local/at/lib/libcrypto.so.3
+ENV AT_CHOPS_LIBCRYPTO_PATH=/usr/local/at/lib/libcrypto.so.3
 USER atsign
 ENTRYPOINT ["/usr/local/at/sshnpd"]
