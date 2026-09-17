@@ -1,3 +1,11 @@
+# 6.14.2
+
+- fix: `Npt.done` now completes when startup fails, instead of never
+  completing. `run` and `runInline` close the session on their way out when
+  they throw, so callers may always await `done` without having to call
+  `close` themselves first. A caller that awaited `done` after a failed
+  startup previously waited forever. See #2789.
+
 # 6.14.1
 
 - fix: the relay auth stream wrappers (the srv-side relay authenticator and
