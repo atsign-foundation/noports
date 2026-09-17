@@ -918,10 +918,12 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<void> _handleMultiConnectRequest(
     SocketConnector sc,
-    InternetAddress relayAddress,
-    DataTransformer? encrypter,
-    DataTransformer? decrypter,
-  ) async {
+    InternetAddress relayAddress, {
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
+  }) async {
     logger.info(
       '_runDaemonSideMulti'
       ' control channel received connect request - '
@@ -943,8 +945,15 @@ class SrvImplDart implements Srv<SocketConnector> {
         Side candidateSideB = Side(
           await Socket.connect(relayAddress, streamingPort),
           false,
-          transformer: decrypter,
         );
+        // One connection per call to this function, so it's safe to
+        // construct the transformer here rather than hoisting it. Goes
+        // through setAesCtrTransformer (not a bare DataTransformer) so a
+        // libcrypto host gets the ChunkTransformer, whose disposal
+        // socket_connector's _closeSide actually calls.
+        if (aesC2D != null && ivC2D != null) {
+          setAesCtrTransformer(candidateSideB, aesC2D, ivC2D);
+        }
         unawaited(
           candidateSideB.socket.done
               .then((v) => logger.info('relay socket done'))
@@ -1011,7 +1020,14 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     try {
       sideASocketActual = await Socket.connect(localAddress, localPort);
-      sideA = Side(sideASocketActual, true, transformer: encrypter);
+      sideA = Side(sideASocketActual, true);
+      if (aesC2D != null && ivC2D != null) {
+        if (aesD2C == null) {
+          setAesCtrTransformer(sideA, aesC2D, ivC2D);
+        } else {
+          setAesCtrTransformer(sideA, aesD2C, ivD2C!);
+        }
+      }
     } catch (e) {
       logger.shout(
         'Failed to connect locally ($localAddress:$localPort)'
@@ -1049,39 +1065,34 @@ class SrvImplDart implements Srv<SocketConnector> {
   ) async {
     message = message.trim();
     List<String> args = message.split(":");
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
+    String? aesC2D;
+    String? ivC2D;
+    String? aesD2C;
+    String? ivD2C;
     switch (args.first) {
       case 'connect':
-        if (message == 'connect:no:encrypt') {
-          // unencrypted session
-          encrypter = null;
-          decrypter = null;
-        } else {
+        if (message != 'connect:no:encrypt') {
           // Encrypted session, we expect params
           if (args.length < 3) {
             logger.severe('Malformed control message: [$message]');
             return;
           }
-          String aesC2D = args[1];
-          String ivC2D = args[2];
-          decrypter = createDecrypter(aesC2D, ivC2D);
-          if (args.length == 3) {
-            // we only have one key & iv
-            encrypter = createEncrypter(aesC2D, ivC2D);
-          } else {
+          aesC2D = args[1];
+          ivC2D = args[2];
+          if (args.length != 3) {
             // we have two keys & ivs
-            String aesD2C = args[3];
-            String ivD2C = args[4];
-            encrypter = createEncrypter(aesD2C, ivD2C);
+            aesD2C = args[3];
+            ivD2C = args[4];
           }
         }
 
         await _handleMultiConnectRequest(
           sc,
           relayAddress,
-          encrypter,
-          decrypter,
+          aesC2D: aesC2D,
+          ivC2D: ivC2D,
+          aesD2C: aesD2C,
+          ivD2C: ivD2C,
         );
         break;
       case 'heartbeat':

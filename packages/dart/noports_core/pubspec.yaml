@@ -46,15 +46,6 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk.git
       path: packages/at_chops
       ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
-  # TEMPORARY — remove once socket_connector publishes ChunkTransformer and
-  # the constraint above is raised to match. ChunkTransformer is merged to
-  # socket_connector trunk but not yet released past 2.4.1 on pub.dev, so pin
-  # to the trunk commit that has it — a local path override won't resolve on
-  # another machine or in CI.
-  socket_connector:
-    git:
-      url: https://github.com/atsign-foundation/socket_connector.git
-      ref: c93f103ec6156abbc8c626c0ae15e586c7e0cde8
 
 dev_dependencies:
   build_runner: ^2.4.12

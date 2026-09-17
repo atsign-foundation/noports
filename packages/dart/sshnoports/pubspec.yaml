@@ -39,13 +39,6 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk.git
       path: packages/at_chops
       ref: f14248122f31f79ca0a2e24c5e6b94d7fc366881
-  # TEMPORARY — remove once socket_connector publishes ChunkTransformer.
-  # Same reason as at_chops above — this package resolves independently of
-  # noports_core's overrides. See packages/dart/noports_core/pubspec.yaml.
-  socket_connector:
-    git:
-      url: https://github.com/atsign-foundation/socket_connector.git
-      ref: c93f103ec6156abbc8c626c0ae15e586c7e0cde8
 
 dev_dependencies:
   lints: ^6.1.0
