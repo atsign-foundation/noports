@@ -9,8 +9,6 @@
 - fix: srvd's daemon-multi control-channel path now disposes its AES-CTR
   cipher on connection close too, instead of leaking an `EVP_CIPHER_CTX`
   and its native buffers per connection
-- build: `at_chops` bumped to ^3.7.0 (published), dropping the git override
-  that pinned it to an unreleased commit
 
 # 6.14.1
 
