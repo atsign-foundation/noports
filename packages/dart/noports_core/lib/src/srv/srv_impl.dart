@@ -328,6 +328,10 @@ class WrappedSSHSocket implements SSHSocket {
   late StreamSink<List<int>> _sink;
   late Stream<Uint8List> _stream;
 
+  /// The plaintext sink [encrypter] reads from; closing it lets an FFI-backed
+  /// [encrypter] see its source's `onDone` and dispose, instead of leaking.
+  StreamController<Uint8List>? _plaintextSink;
+
   Future<void> Function() onClose;
   void Function() onDestroy;
 
@@ -343,6 +347,7 @@ class WrappedSSHSocket implements SSHSocket {
       _sink = underlyingSink;
     } else {
       StreamController<Uint8List> sc = StreamController<Uint8List>();
+      _plaintextSink = sc;
       Stream<List<int>> encrypted = encrypter!(sc.stream);
       encrypted.listen(underlyingSink.add);
       _sink = sc;
@@ -357,11 +362,13 @@ class WrappedSSHSocket implements SSHSocket {
 
   @override
   Future<void> close() async {
+    await _plaintextSink?.close();
     await onClose();
   }
 
   @override
   void destroy() {
+    unawaited(_plaintextSink?.close());
     onDestroy();
   }
 
