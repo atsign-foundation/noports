@@ -38,22 +38,18 @@ RUN \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
   chown -R atsign:atsign $HOMEDIR ; \
-  # Stage libcrypto for the scratch stage: at_chops dlopen's it for AES-CTR and
-  # silently falls back to a slow pure-Dart cipher otherwise, and /runtime/ ships
-  # none. Keep ahead of static-openssh.sh, whose OpenSSL 3.2.1 output would
-  # otherwise match the glob. Checks are fatal by design: what they catch is
-  # invisible at runtime. Rationale and rejected alternatives: PR #2929.
-  # Glob rather than a package name -- trixie renamed libssl3 -> libssl3t64.
+  # Stage libcrypto: /runtime/ ships none, so at_chops silently falls back to a
+  # slow pure-Dart AES-CTR. Must precede static-openssh.sh, whose OpenSSL 3.2.1
+  # output matches the glob. Package renamed libssl3 -> libssl3t64 in trixie.
   (apt-get install -y libssl3t64 || apt-get install -y libssl3 || apt-get install -y openssl) ; \
   LIBCRYPTO="$(ls -1 /usr/lib/*/libcrypto.so.3 /lib/*/libcrypto.so.3 2>/dev/null | head -n1)" ; \
   test -n "${LIBCRYPTO}" || { echo "FATAL: no libcrypto.so.3 in the dart base image"; exit 1; } ; \
   command -v readelf >/dev/null || { echo "FATAL: readelf missing (binutils)"; exit 1; } ; \
-  # Debian version-scripts OpenSSL: the name reads EVP_CIPHER_fetch@@OPENSSL_3.0.0.
+  # Debian versions the symbol: it reads EVP_CIPHER_fetch@@OPENSSL_3.0.0.
   readelf --dyn-syms -W "${LIBCRYPTO}" | grep -qE ' EVP_CIPHER_fetch(@|$)' \
     || { echo "FATAL: ${LIBCRYPTO} does not export EVP_CIPHER_fetch"; exit 1; } ; \
-  # libcrypto's own deps are resolved by ld.so, not by AT_CHOPS_LIBCRYPTO_PATH, so
-  # they go where /runtime/ already keeps libc.so.6 -- derived, so no hardcoded
-  # triplet. Explicit list, not auto-staging: a new shared dep belongs in a diff.
+  # ld.so resolves these, not AT_CHOPS_LIBCRYPTO_PATH, so they go beside
+  # /runtime/'s libc.so.6. Listed explicitly: a new dep belongs in a diff.
   STAGED_EXTRAS="libz.so.1 libzstd.so.1" ; \
   RUNTIME_LIBDIR="$(dirname "$(find /runtime -name 'libc.so.6' | head -n1)")" ; \
   test "${RUNTIME_LIBDIR}" != "." \
@@ -68,8 +64,7 @@ RUN \
   done ; \
   cp -L "${LIBCRYPTO}" /staging/lib/libcrypto.so.3 ; \
   chmod 0644 /staging/lib/libcrypto.so.3 ; \
-  # Allowlist = /runtime/'s sonames + STAGED_EXTRAS, over every staged library.
-  # All gaps are collected, so one build names the whole remainder.
+  # Every staged library's DT_NEEDED must be in /runtime/ or STAGED_EXTRAS.
   ALLOWED="$( { find /runtime -name '*.so*' -printf '%f\n' ; printf '%s\n' ${STAGED_EXTRAS} ; } | sort -u)" ; \
   MISSING="" ; \
   for lib in /staging/lib/libcrypto.so.3 $(find /staging/rootlib -type f) ; do \
@@ -109,12 +104,8 @@ COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/
 COPY --from=buildimage  /usr/local/at/ssh-keygen /usr/local/at/
 COPY --from=buildimage  /usr/local/at/ssh /usr/local/at/
-# /runtime/ carries no libcrypto and scratch has no ld.so.cache, so hand at_chops
-# an absolute path. Preferred over LD_LIBRARY_PATH: deterministic without a
-# cache, scoped to the one consumer, and when it breaks at_chops logs a named
-# warning ("...is set but could not be opened") rather than silently degrading.
-# sshnpd spawns srv with includeParentEnvironment: true, so one ENV covers both.
-# Deps go in /runtime/'s own lib dir: the only place ld.so looks in this image.
+# scratch has no ld.so.cache, so at_chops needs an absolute path. sshnpd spawns
+# srv with includeParentEnvironment: true, so one ENV covers both processes.
 COPY --from=buildimage /staging/rootlib/ /
 COPY --from=buildimage /staging/lib/libcrypto.so.3 /usr/local/at/lib/libcrypto.so.3
 ENV AT_CHOPS_LIBCRYPTO_PATH=/usr/local/at/lib/libcrypto.so.3
