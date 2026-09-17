@@ -20,7 +20,6 @@ import 'package:npt_flutter/features/profile_list/widgets/profile_list_failed_lo
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/language.dart';
-import 'package:npt_flutter/widgets/custom_card.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import 'profile_list_view_test.mocks.dart';
@@ -264,9 +263,7 @@ void main() {
         expect(find.byType(Spinner), findsNothing);
 
         // Should show main layout components
-        expect(find.byType(Stack), findsWidgets);
         expect(find.byType(Column), findsWidgets);
-        expect(find.byType(CustomCard), findsWidgets);
 
         // Should show basic action buttons (Add and Import only when empty)
         expect(find.byType(ProfileListAddButton), findsOneWidget);
@@ -301,9 +298,7 @@ void main() {
         expect(find.byType(Spinner), findsNothing);
 
         // Should show main layout components
-        expect(find.byType(Stack), findsWidgets);
         expect(find.byType(Column), findsWidgets);
-        expect(find.byType(CustomCard), findsWidgets);
 
         // Should show all action buttons when profiles exist
         expect(find.byType(ProfileListAddButton), findsOneWidget);

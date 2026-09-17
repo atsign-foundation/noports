@@ -53,6 +53,8 @@ class NPAParams {
     // Basic arguments
     parser.addFlag('help', negatable: false, help: 'Usage instructions');
 
+    parser.addFlag('version', negatable: false, help: 'Print version');
+
     parser.addOption(
       'atsign',
       abbr: 'a',

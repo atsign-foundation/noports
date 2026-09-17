@@ -66,7 +66,7 @@ jobs:
         with:
           ref: npt-release-${{github.run_number}}
       - name: Generate SBOM
-        uses: sbomify/github-action@ddf6a0d3d75b645153ad1ad60034b3fe2cb1eb63 # v26.7.0
+        uses: sbomify/github-action@ed3f547023f5a3cc82025a85f568f6baff4bda3f # v26.8.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'xUUCaZd4OWr1'
@@ -125,7 +125,7 @@ jobs:
           flutter build windows --release
 
       - name: Azure Login
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}

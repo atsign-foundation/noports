@@ -10,6 +10,12 @@ import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:sshnoports/src/print_version.dart';
 
+const String _description =
+    'NoPorts socket relay client: bridges traffic between a local socket'
+    ' and the NoPorts relay. Note: srv is not intended to be directly'
+    ' executed by NoPorts users; srv processes are spawned by the daemon'
+    ' or client programs as required.';
+
 Future<void> main(List<String> args) async {
   AtSignLogger.root_level = 'INFO';
   var fileLoggingHandler = TmpFileLoggingHandler();
@@ -68,12 +74,9 @@ Future<void> main(List<String> args) async {
         negatable: false,
         help: 'Set this flag when we want multiple connections via the rvd');
 
-  void printUsage() {
-    printVersion();
-    stderr.writeln(parser.usage);
-    stderr.writeln('Note: srv is not intended to be directly executed'
-        ' by NoPorts users; srv processes are spawned by the daemon or'
-        ' client programs as required.');
+  void printUsage({IOSink? sink}) {
+    (sink ?? stderr).write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
   }
 
   await runZonedGuarded(() async {
@@ -92,7 +95,7 @@ Future<void> main(List<String> args) async {
       }
 
       if (parsed.wasParsed('help')) {
-        printUsage();
+        printUsage(sink: stdout);
         exit(0);
       }
 

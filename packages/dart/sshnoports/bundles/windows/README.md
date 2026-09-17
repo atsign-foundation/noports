@@ -9,6 +9,37 @@ or optionally run this command in powershell.
 msiexec /i ".\NoPorts.msi"
 ```
 
+## Upgrading
+
+Installing a newer MSI over an existing install performs a major upgrade: the old version is
+uninstalled and the new one installed in its place. Two things to know:
+
+- **The `sshnpd` service is restarted for you.** The upgrade stops and removes the old service and
+  starts the new one. If it does not come back up, check the Event Viewer under `Application` and
+  start it manually with `Start-Service sshnpd`. (On a *fresh* install the service is installed but
+  left stopped, because it has no config yet — see Post-Installation below.)
+- **`PATH` is rewritten**, so already-open terminals need restarting before they see the new
+  binaries.
+
+Your config at `%PROGRAMDATA%\NoPorts\sshnpd.yaml` and your keys in
+`C:\Users\<USER>\.atsign\keys\` are left untouched by the upgrade.
+
+## Troubleshooting
+
+### The installer takes a long time before prompting for admin rights
+
+Windows validates the installer's code signature before showing the UAC prompt. If the machine's
+trusted root certificates are stale, or it cannot reach the certificate revocation servers, that
+check can block for tens of seconds. `certupdater.ps1` is installed alongside the binaries in
+`C:\Program Files\NoPorts\` and refreshes the trusted root store from Windows Update:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "C:\Program Files\NoPorts\certupdater.ps1"
+```
+
+It self-elevates, so run it from any shell. This is also worth trying if the NoPorts binaries
+themselves fail to establish TLS connections.
+
 ## Post-Installation
 
 ### Device Side

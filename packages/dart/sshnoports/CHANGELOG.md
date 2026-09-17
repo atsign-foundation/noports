@@ -2,6 +2,38 @@
 
 <!-- pyml disable md034-->
 
+## v5.16.1
+
+* fix: relay auth stream wrappers now propagate backpressure to the socket,
+  so a fast writer through an authenticated relay can no longer inflate
+  srv/srvd memory without bound (~1 GB per 10 s observed under iperf3)
+* build: socket_connector pinned to 2.6.0, which bounds in-process relay
+  buffering with flush-gated backpressure and enables TCP keep-alive on
+  relayed sockets; with both fixes, iperf3 sender and receiver rates through
+  a tunnel converge instead of the sender filling process memory. 2.6.0 also
+  fixes a race in 2.5.0's backpressure flush that could close a relay side
+  mid-stream or stall one direction for good
+
+## v5.16.0
+
+* fix: share event logging config once as cached key instead of on every
+  heartbeat
+* fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
+* fix: man pages now generate correctly: `--help` / `--version` output is
+  help2man-friendly, and per-binary NAME / EXAMPLES / SEE ALSO boilerplate
+  is included (#2650)
+* feat: added `--version` to np_admin, npevents, npp_atserver and npp_file
+* fix: `npp_file --help` no longer crashes
+* fix: `noports` no longer emits ANSI escape codes when output is piped,
+  and no longer prints its banner in `--help` output
+* fix: `--help` and `--version` now print to stdout (GNU convention);
+  usage-on-error still goes to stderr
+
+## v5.15.2
+
+* fix: close stdin in srv process; fixes fd leak
+
 ## v5.15.1
 
 * fix: Trust our brew tap when used with brew => 6

@@ -4,8 +4,13 @@ import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+
+const String _description =
+    'NoPorts relay daemon: the rendezvous service via which NoPorts clients'
+    ' and daemons exchange end-to-end encrypted traffic.';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -18,8 +23,8 @@ void main(List<String> args) async {
   try {
     r = SrvdParams.parser.parse(args);
   } catch (_) {
-    printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: SrvdParams.parser.usage));
     exit(0);
   }
 
@@ -29,8 +34,8 @@ void main(List<String> args) async {
   }
 
   if (r.wasParsed('help')) {
-    printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stdout.write(formatCliHelp(
+        description: _description, optionsUsage: SrvdParams.parser.usage));
     exit(0);
   }
 
@@ -39,8 +44,8 @@ void main(List<String> args) async {
   try {
     p = await SrvdParams.fromArgs(args);
   } on ArgumentError catch (e) {
-    printVersion();
-    stderr.writeln(SrvdParams.parser.usage);
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: SrvdParams.parser.usage));
     stderr.writeln('\n$e');
     exit(1);
   }
@@ -114,8 +119,8 @@ void main(List<String> args) async {
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       ),
       usageCallback: (e, s) {
-        printVersion();
-        stderr.writeln(SrvdParams.parser.usage);
+        stderr.write(formatCliHelp(
+            description: _description, optionsUsage: SrvdParams.parser.usage));
         stderr.writeln('\n$e');
       },
     );

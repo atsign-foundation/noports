@@ -1,5 +1,5 @@
 # BASE
-FROM debian:stable-20260803-slim@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b AS base
+FROM debian:stable-20260824-slim@sha256:04634311a8d5fc442b6eb06d792293c4f3e2268652ca7634e00ce8ef5cc0a28a AS base
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -10,7 +10,7 @@ CMD sudo service ssh start
 
 RUN set -eux ; \
   apt-get update ; \
-  apt-get install -y openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
+  apt-get install -y ca-certificates openssh-server sudo vim nano iproute2 nmap tmux curl cron ; \
   groupadd --gid ${GROUP_ID} ${USER} ; \
   useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
   usermod -aG sudo ${USER} ; \
@@ -26,7 +26,7 @@ RUN set -eux ; \
 
 # BRANCH
 # BUILD BRANCH
-FROM dart:3.12.2@sha256:5ac89dbcae4327278b257920e2786df0f22c87adc630017266b67cfcceef8348 AS build-branch
+FROM dart:3.13.4@sha256:240919fc0edd80498fa9f7ab59afa35b9b390591f2da3d725801e58ab693012f AS build-branch
 
 ENV URL=https://github.com/atsign-foundation/noports.git
 ENV REPO_DIR=/app/repo
@@ -65,7 +65,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # LOCAL
 # BUILD LOCAL
-FROM dart:3.12.2@sha256:5ac89dbcae4327278b257920e2786df0f22c87adc630017266b67cfcceef8348 AS build-local
+FROM dart:3.13.4@sha256:240919fc0edd80498fa9f7ab59afa35b9b390591f2da3d725801e58ab693012f AS build-local
 
 ENV REPO_DIR=/app/repo
 ENV PACKAGE_DIR=${REPO_DIR}/packages/dart/sshnoports
@@ -101,7 +101,7 @@ ENTRYPOINT cp -r /mount/. ${HOMEDIR} && sudo service ssh start && sh ${HOMEDIR}/
 
 # RELEASE
 # BUILD RELEASE
-FROM debian:stable-20260803-slim@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b AS build-release
+FROM debian:stable-20260824-slim@sha256:04634311a8d5fc442b6eb06d792293c4f3e2268652ca7634e00ce8ef5cc0a28a AS build-release
 
 ARG release
 

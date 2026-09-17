@@ -1,0 +1,12 @@
+# Dockerfile.unit-tests
+# Toolchain image for running the C unit tests against musl libc on x86-64,
+# used by .github/workflows/c_unit_tests.yaml. The srv teardown regression
+# test (issue #2891) can only fail on musl x86-64, so the suite runs once in
+# this container in addition to the glibc runner.
+#
+# Kept as a Dockerfile (rather than an inline image reference in the workflow)
+# so dependabot bumps the base image digest along with the other docker
+# images. Deliberately the same base as Dockerfile.musl: the tests should run
+# on the toolchain the release binaries ship from.
+FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+RUN apk add --no-cache build-base clang cmake coreutils git linux-headers make ninja python3

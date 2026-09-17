@@ -11,9 +11,14 @@ import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
 // local packages
 import 'package:sshnoports/src/print_version.dart';
+
+const String _description =
+    'NoPorts TCP client: opens an encrypted TCP tunnel to a service on a'
+    ' remote device which has no open ports.';
 
 void main(List<String> args) async {
   const int keepAliveDefaultTimeoutHours = 24;
@@ -50,8 +55,8 @@ void main(List<String> args) async {
 
   // Create the printUsage closure
   void printUsage({Object? error}) {
-    printVersion();
-    stderr.writeln(parser.usage);
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -299,7 +304,8 @@ void main(List<String> args) async {
       }
 
       if (parsedArgs['help'] == true) {
-        print(parser.usage);
+        stdout.write(formatCliHelp(
+            description: _description, optionsUsage: parser.usage));
         exit(0);
       }
 

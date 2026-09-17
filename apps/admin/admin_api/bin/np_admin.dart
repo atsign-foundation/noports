@@ -1,11 +1,18 @@
 import 'dart:io';
 
 import 'package:admin_api/src/expose_apis.dart' as expose;
+import 'package:admin_api/src/version.dart' as admin;
 import 'package:alfred/alfred.dart';
 import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/admin.dart';
+import 'package:noports_core/utils.dart';
+import 'package:noports_core/version.dart' as core;
+
+const String _description =
+    'NoPorts admin: serves the NoPorts policy administration web app'
+    ' and its REST API.';
 
 void main(List<String> args) async {
   final ArgParser parser = CLIBase.createArgsParser(
@@ -26,23 +33,41 @@ void main(List<String> args) async {
       mandatory: false,
       defaultsTo: '3000');
 
+  parser.addFlag('version', negatable: false, help: 'Print version');
+
   final ArgResults parsedArgs;
   final String bindIp;
   final int bindPort;
   try {
     parsedArgs = parser.parse(args);
+
+    if (parsedArgs['help'] == true) {
+      stdout.write(
+          formatCliHelp(description: _description, optionsUsage: parser.usage));
+      exit(0);
+    }
+
+    if (parsedArgs['version'] == true) {
+      stdout.writeln(
+          '$binaryName ${admin.packageVersion} (core ${core.packageVersion})');
+      exit(0);
+    }
+
     bindIp = parsedArgs[bindIpArgName];
     bindPort = int.parse(parsedArgs[bindPortArgName]);
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(err);
     exit(1);
   }
@@ -61,15 +86,18 @@ void main(List<String> args) async {
   try {
     cli = await CLIBase.fromCommandLineArgs(args, parser: parser);
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${parser.usage}\n');
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     stderr.writeln(err);
     stderr.writeln(err.runtimeType);
     exit(1);

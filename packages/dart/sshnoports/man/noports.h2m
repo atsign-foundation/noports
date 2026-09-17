@@ -1,0 +1,13 @@
+[NAME]
+noports \- NoPorts CLI for atSign activation and key issuance
+[EXAMPLES]
+.nf
+noports activate '@alice:cram:secret123'
+noports issue-keys -a @alice
+.fi
+[SEE ALSO]
+at_activate(1), sshnp(1), sshnpd(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

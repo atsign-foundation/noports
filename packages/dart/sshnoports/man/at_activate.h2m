@@ -1,0 +1,8 @@
+[NAME]
+at_activate \- activate and manage atSigns
+[SEE ALSO]
+noports(1), sshnp(1), sshnpd(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

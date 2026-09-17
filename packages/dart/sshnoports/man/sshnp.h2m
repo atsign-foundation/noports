@@ -1,0 +1,13 @@
+[NAME]
+sshnp \- NoPorts SSH client
+[EXAMPLES]
+.nf
+sshnp -f @alice_client -t @alice_device -d my_server
+sshnp -f @alice_client -t @alice_device -d my_server -r @rv_am -i ~/.ssh/id_ed25519
+.fi
+[SEE ALSO]
+sshnpd(1), npt(1), srv(1), srvd(1), at_activate(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

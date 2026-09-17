@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/util/constants.dart';

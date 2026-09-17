@@ -1,3 +1,43 @@
+## 1.1.1
+
+- fix: srv segfault on connection teardown (pthread_join clobbered tid)
+- fix: C daemon filters device atSign out of the manager atSign list
+- fix: handle the case where the only manager atSign is the device atSign
+- fix: sshnpd + srv code review findings (24 fixes: bounds checks, leak
+  fixes, error-path hardening, log hygiene)
+- build(deps): bump atsdk to at_c v0.4.1 for the atauth/onboarding
+  code-review fixes (at_c#715)
+- build: musl test toolchain moved into a dependabot-tracked Dockerfile
+
+## 1.1.0
+
+- fix: validate --root-domain port with strtol instead of atoi
+- fix: don't log an error when the public signing key doesn't exist yet 
+- fix: bring the monitor filters to exact Dart daemon parity
+- fix: anchor the device name in the devices.policy monitor filter alternative
+- fix: filter the policy-mode monitor server side like the Dart daemon
+- fix: don't treat policy service traffic as session requests
+- feat: support 'proxy:' root domains in csshnpd
+- feat: tell clients why a session request was denied (Dart daemon parity)
+- feat: policy service (--policy-manager) support in csshnpd
+- feat: ESCR relay authentication in csshnpd and c srv (supportsRamEscr)
+- feat: adjustableTimeout support in csshnpd
+- fix: log a summary after sharing username keys with manager atSigns
+- fix: sshnpd C daemon manager list handling and exact -m authorization
+- fix: stop leaking buffer and socket fd when a side thread is cancelled
+- feat: Add twinned session key (twinKeys) support to C sshnpd and srv
+
+## 1.0.20
+
+- fix: only manager Atsigns can establish sshnp connections with csshnpd
+- fix: ssh public key validation in csshnpd
+- fix: trailing comma parsing
+- fix: is_manager_atsign NULL checks
+- feat: normalize manager atSign format
+- chore: warn when a permit open is denied
+- chore: move is_manager_atsign authorization check earlier in daemon
+- test: unit test gaps for csshnpd
+
 ## 1.0.19
 
 - build(deps): Bump at_c to use MbedTLS 3.6.7

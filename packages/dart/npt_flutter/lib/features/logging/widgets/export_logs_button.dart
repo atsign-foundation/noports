@@ -17,7 +17,7 @@ class ExportLogsButton extends StatelessWidget {
       onPressed: () async {
         var list = context.read<LogsCubit>().logs;
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        String? outputFile = await FilePicker.platform.saveFile(
+        String? outputFile = await FilePicker.saveFile(
           dialogTitle: strings.selectExportFile,
           fileName: 'NoPorts-${strings.logs}-$timestamp.txt',
         );

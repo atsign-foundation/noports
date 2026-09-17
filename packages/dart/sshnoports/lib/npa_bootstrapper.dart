@@ -5,7 +5,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
-import 'package:sshnoports/src/print_version.dart';
 
 Future<void> run(
   NPARequestHandler handler,
@@ -32,8 +31,9 @@ Future<void> run(
             uniqueID: 'single'),
       ),
       usageCallback: (e, s) {
-        printVersion();
-        stdout.writeln(NPAParams.parser.usage);
+        stderr.write(formatCliHelp(
+            description: 'NoPorts policy service.',
+            optionsUsage: NPAParams.parser.usage));
         stderr.writeln('\n$e');
       },
     );

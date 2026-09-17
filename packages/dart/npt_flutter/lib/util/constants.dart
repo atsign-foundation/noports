@@ -39,7 +39,7 @@ class Constants {
     };
   }
 
-  static const kWindowsMinWindowSize = Size(1053, 691);
+  static const kWindowsMinWindowSize = Size(920, 600);
 }
 
 /// Constants for string that does not need to be localized.

@@ -52,6 +52,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Faça o upload ou arraste e solte seu arquivo de ativação de uso único (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'A ativar, por favor aguarde até que cada Atsign termine.';
+
+  @override
   String get activationKeyStatusActivated => 'Ativado';
 
   @override
@@ -68,6 +72,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get activationManual => 'Ativação Manual';
+
+  @override
+  String get activationRetryFailed => 'A tentativa falhou';
 
   @override
   String get activationStatus => 'Status de Ativação';
@@ -133,17 +140,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get atsignFrom => 'De Atsign';
 
   @override
+  String get atsignTo => 'Para Atsign';
+
+  @override
+  String get atsignUncreated => 'Não tem um Atsign?';
+
+  @override
   String get atsignsUser => 'Atsign de Usuário';
 
   @override
   String get atsignsUserTooltip =>
       'Um Atsign como \"@alice\" que estará se conectando a outros dispositivos';
-
-  @override
-  String get atsignTo => 'Para Atsign';
-
-  @override
-  String get atsignUncreated => 'Não tem um Atsign?';
 
   @override
   String get authenticate => 'Autenticar';
@@ -198,22 +205,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get confirm => 'Confirmar';
 
   @override
-  String get connected => 'Conectado';
-
-  @override
-  String get connectionClosed => 'Conexão fechada, tentará novamente...';
-
-  @override
-  String get connectionRetrying => 'Reconectando (keep-alive)...';
-
-  @override
-  String get connections => 'Conexões';
-
-  @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connectUriProtocolDescription =>
       'Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.';
 
@@ -226,6 +217,22 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get connectUriUsernameDescription =>
       'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
+
+  @override
+  String get connected => 'Conectado';
+
+  @override
+  String get connectionClosed => 'Conexão fechada, tentará novamente...';
+
+  @override
+  String get connectionRetrying => 'Reconectando (keep-alive)...';
+
+  @override
+  String get connectionTimedOut =>
+      'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connections => 'Conexões';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -294,15 +301,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get deviceGroupNo => 'Nenhum Grupo de Dispositivos';
 
   @override
+  String get deviceGroupTooltip =>
+      'Processos daemon que especificam a opção --dg com uma string permitirão conexões do usuário para os host:portas especificados';
+
+  @override
   String get deviceGroups => 'Grupos de Dispositivos';
 
   @override
   String get deviceGroupsNotAdded =>
       'Nenhum grupo de dispositivos adicionado ainda';
-
-  @override
-  String get deviceGroupTooltip =>
-      'Processos daemon que especificam a opção --dg com uma string permitirão conexões do usuário para os host:portas especificados';
 
   @override
   String get deviceName => 'Nome do Dispositivo';
@@ -372,6 +379,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get error => 'Erro';
 
   @override
+  String get errorActivationKeysConflict =>
+      'Este Atsign foi integrado anteriormente com um conjunto diferente de chaves. Remova-o da aplicação e tente novamente.';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return 'Falha ao salvar o arquivo atKeys: $error';
   }
@@ -396,6 +407,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Não é possível conectar ao atServer, verifique se você tem uma conexão de internet estável.';
 
   @override
+  String get errorAtsignActivated => 'Este Atsign já foi ativado.';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'O Atsign $atsign já está emparelhado, entre em contato com o suporte.';
   }
@@ -412,12 +426,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorAuthenticatinFailed => 'Falha na autenticação.';
 
   @override
+  String get errorAuthenticationFailed =>
+      'Falha na autenticação. Por favor, verifique os seus detalhes e tente novamente.';
+
+  @override
   String get errorAuthenticationTimedOut =>
       'Tempo limite de autenticação excedido.';
 
   @override
+  String get errorCramAuthFailed =>
+      'A chave de ativação foi rejeitada pelo atServer. Este ficheiro de ativação pode já ter sido usado.';
+
+  @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return 'Erro durante a inicialização: $errorMessage';
+  }
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'A sua inscrição foi revogada. Por favor, inicie sessão novamente para solicitar uma nova inscrição.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Falha na integração: $details';
   }
 
   @override
@@ -434,6 +465,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get errorRootDomainNotSupported =>
       'O domínio raiz especificado não é suportado pela ativação automática.';
+
+  @override
+  String get errorServerUnavailable =>
+      'O servidor está indisponível no momento. Por favor, tente novamente mais tarde.';
 
   @override
   String get errorSwitchAtsignFailed =>
@@ -535,6 +570,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'A porta que você usará em sua máquina local';
 
   @override
+  String get logType => 'Tipo de Log';
+
+  @override
   String get logs => 'Logs';
 
   @override
@@ -550,9 +588,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get logsView => 'Visualizar Logs';
-
-  @override
-  String get logType => 'Tipo de Log';
 
   @override
   String get manageAtsigns => 'Gerenciar Atsign';
@@ -573,6 +608,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get monitoringStop => 'Parar Monitoramento';
 
   @override
+  String get msgAtsignUnreachable =>
+      'Não foi possível aceder ao servidor do Atsign.';
+
+  @override
+  String get msgResponseTimeOut =>
+      'O tempo limite do pedido foi excedido. Por favor, tente novamente.';
+
+  @override
   String get myNoPortsMsg => 'Recupere o seu em My NoPorts →';
 
   @override
@@ -586,6 +629,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get noAtsignsAdded => 'Nenhum Atsign adicionado ainda';
+
+  @override
+  String get noAtsignsToRemove => 'Nenhum Atsign encontrado para remover.';
 
   @override
   String get noDescription => 'Sem descrição';
@@ -742,9 +788,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
-  String get profilesFailedLoaded => 'Falha ao carregar os perfis';
-
-  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -773,6 +816,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileStatusStopping => 'Desligando';
+
+  @override
+  String get profilesFailedLoaded => 'Falha ao carregar os perfis';
 
   @override
   String get quit => 'Sair';
@@ -867,9 +913,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get roleNotLoaded => 'Nenhuma função carregada';
 
   @override
-  String get roles => 'Funções';
-
-  @override
   String get roleSaveFailed => 'Falha ao salvar a função';
 
   @override
@@ -882,20 +925,23 @@ class AppLocalizationsPt extends AppLocalizations {
       'Selecione uma função para ver os detalhes';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao carregar as funções: $errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => 'Atualizar Funções';
-
-  @override
   String get roleUpdatingFailed => 'Falha ao atualizar a função';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return 'Falha ao atualizar a função: $errorMessage';
   }
+
+  @override
+  String get roles => 'Funções';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return 'Falha ao carregar as funções: $errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => 'Atualizar Funções';
 
   @override
   String get rootDomainDefault => 'Padrão (Prod)';
@@ -911,6 +957,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get saveLater => 'Salvar Mais Tarde';
+
+  @override
+  String get selectAll => 'Selecionar Tudo';
 
   @override
   String get selectEnrollMethod => 'Selecione seu método de inscrição';
@@ -1120,6 +1169,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Faça o upload ou arraste e solte seu arquivo de ativação de uso único (.yaml)';
 
   @override
+  String get activationInProgress =>
+      'Ativando, por favor aguarde até que cada Atsign termine.';
+
+  @override
   String get activationKeyStatusActivated => 'Ativado';
 
   @override
@@ -1136,6 +1189,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get activationManual => 'Ativação Manual';
+
+  @override
+  String get activationRetryFailed => 'Falha ao tentar novamente';
 
   @override
   String get activationStatus => 'Status de Ativação';
@@ -1201,17 +1257,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get atsignFrom => 'De Atsign';
 
   @override
+  String get atsignTo => 'Para Atsign';
+
+  @override
+  String get atsignUncreated => 'Não tem um Atsign?';
+
+  @override
   String get atsignsUser => 'Atsign de Usuário';
 
   @override
   String get atsignsUserTooltip =>
       'Um Atsign como \"@alice\" que estará se conectando a outros dispositivos';
-
-  @override
-  String get atsignTo => 'Para Atsign';
-
-  @override
-  String get atsignUncreated => 'Não tem um Atsign?';
 
   @override
   String get authenticate => 'Autenticar';
@@ -1266,22 +1322,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get confirm => 'Confirmar';
 
   @override
-  String get connected => 'Conectado';
-
-  @override
-  String get connectionClosed => 'Conexão fechada, tentará novamente...';
-
-  @override
-  String get connectionRetrying => 'Reconectando (keep-alive)...';
-
-  @override
-  String get connections => 'Conexões';
-
-  @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connectUriProtocolDescription =>
       'Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.';
 
@@ -1294,6 +1334,22 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get connectUriUsernameDescription =>
       'Nome de usuário opcional para protocolos como SSH (por exemplo, usuário em ssh://usuário@host)';
+
+  @override
+  String get connected => 'Conectado';
+
+  @override
+  String get connectionClosed => 'Conexão fechada, tentará novamente...';
+
+  @override
+  String get connectionRetrying => 'Reconectando (keep-alive)...';
+
+  @override
+  String get connectionTimedOut =>
+      'Tempo limite da conexão, tentará novamente...';
+
+  @override
+  String get connections => 'Conexões';
 
   @override
   String get couldNotLoadPreviousState =>
@@ -1362,15 +1418,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get deviceGroupNo => 'Nenhum Grupo de Dispositivos';
 
   @override
+  String get deviceGroupTooltip =>
+      'Processos daemon que especificam a opção --dg com uma string permitirão conexões do usuário para os host:portas especificados';
+
+  @override
   String get deviceGroups => 'Grupos de Dispositivos';
 
   @override
   String get deviceGroupsNotAdded =>
       'Nenhum grupo de dispositivos adicionado ainda';
-
-  @override
-  String get deviceGroupTooltip =>
-      'Processos daemon que especificam a opção --dg com uma string permitirão conexões do usuário para os host:portas especificados';
 
   @override
   String get deviceName => 'Nome do Dispositivo';
@@ -1440,6 +1496,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get error => 'Erro';
 
   @override
+  String get errorActivationKeysConflict =>
+      'Este Atsign foi integrado anteriormente com um conjunto diferente de chaves. Remova-o do aplicativo e tente novamente.';
+
+  @override
   String errorAtKeySaveFailed(Object error) {
     return 'Falha ao salvar o arquivo atKeys: $error';
   }
@@ -1464,6 +1524,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Não é possível conectar ao atServer, verifique se você tem uma conexão de internet estável.';
 
   @override
+  String get errorAtsignActivated => 'Este Atsign já foi ativado.';
+
+  @override
   String errorAtsignAlreadyPaired(Object atsign) {
     return 'O Atsign $atsign já está emparelhado, entre em contato com o suporte.';
   }
@@ -1480,12 +1543,29 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get errorAuthenticatinFailed => 'Falha na autenticação.';
 
   @override
+  String get errorAuthenticationFailed =>
+      'Falha na autenticação. Por favor, verifique seus detalhes e tente novamente.';
+
+  @override
   String get errorAuthenticationTimedOut =>
       'Tempo limite de autenticação excedido.';
 
   @override
+  String get errorCramAuthFailed =>
+      'A chave de ativação foi rejeitada pelo atServer. Este arquivo de ativação pode já ter sido usado.';
+
+  @override
   String errorDuringStartupWithDetails(Object errorMessage) {
     return 'Erro durante a inicialização: $errorMessage';
+  }
+
+  @override
+  String get errorEnrollmentRevoked =>
+      'Sua inscrição foi revogada. Por favor, entre novamente para solicitar uma nova inscrição.';
+
+  @override
+  String errorOnboardingWithDetails(Object details) {
+    return 'Falha na integração: $details';
   }
 
   @override
@@ -1502,6 +1582,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get errorRootDomainNotSupported =>
       'O domínio raiz especificado não é suportado pela ativação automática.';
+
+  @override
+  String get errorServerUnavailable =>
+      'O servidor está indisponível no momento. Por favor, tente novamente mais tarde.';
 
   @override
   String get errorSwitchAtsignFailed =>
@@ -1603,6 +1687,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'A porta que você usará em sua máquina local';
 
   @override
+  String get logType => 'Tipo de Log';
+
+  @override
   String get logs => 'Logs';
 
   @override
@@ -1618,9 +1705,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get logsView => 'Visualizar Logs';
-
-  @override
-  String get logType => 'Tipo de Log';
 
   @override
   String get manageAtsigns => 'Gerenciar Atsign';
@@ -1641,6 +1725,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get monitoringStop => 'Parar Monitoramento';
 
   @override
+  String get msgAtsignUnreachable =>
+      'Não foi possível acessar o servidor do Atsign.';
+
+  @override
+  String get msgResponseTimeOut =>
+      'O tempo limite da solicitação foi excedido. Por favor, tente novamente.';
+
+  @override
   String get myNoPortsMsg => 'Recupere o seu em My NoPorts →';
 
   @override
@@ -1654,6 +1746,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get noAtsignsAdded => 'Nenhum Atsign adicionado ainda';
+
+  @override
+  String get noAtsignsToRemove => 'Nenhum Atsign encontrado para remover.';
 
   @override
   String get noDescription => 'Sem descrição';
@@ -1810,9 +1905,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
-  String get profilesFailedLoaded => 'Falha ao carregar os perfis';
-
-  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -1841,6 +1933,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileStatusStopping => 'Desligando';
+
+  @override
+  String get profilesFailedLoaded => 'Falha ao carregar os perfis';
 
   @override
   String get quit => 'Sair';
@@ -1935,9 +2030,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get roleNotLoaded => 'Nenhuma função carregada';
 
   @override
-  String get roles => 'Funções';
-
-  @override
   String get roleSaveFailed => 'Falha ao salvar a função';
 
   @override
@@ -1950,20 +2042,23 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Selecione uma função para ver os detalhes';
 
   @override
-  String rolesLoadingFailedWithDetails(Object errorMessage) {
-    return 'Falha ao carregar as funções: $errorMessage';
-  }
-
-  @override
-  String get rolesRefresh => 'Atualizar Funções';
-
-  @override
   String get roleUpdatingFailed => 'Falha ao atualizar a função';
 
   @override
   String roleUpdatingFailedWithDetails(Object errorMessage) {
     return 'Falha ao atualizar a função: $errorMessage';
   }
+
+  @override
+  String get roles => 'Funções';
+
+  @override
+  String rolesLoadingFailedWithDetails(Object errorMessage) {
+    return 'Falha ao carregar as funções: $errorMessage';
+  }
+
+  @override
+  String get rolesRefresh => 'Atualizar Funções';
 
   @override
   String get rootDomainDefault => 'Padrão (Prod)';
@@ -1979,6 +2074,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get saveLater => 'Salvar Mais Tarde';
+
+  @override
+  String get selectAll => 'Selecionar Tudo';
 
   @override
   String get selectEnrollMethod => 'Selecione seu método de inscrição';

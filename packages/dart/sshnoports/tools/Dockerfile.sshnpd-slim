@@ -9,7 +9,7 @@
 # as of 5th Feb 2024 - Will check state as 3.3 Stable is released
 #FROM dart:beta-sdk AS buildimage
 
-FROM dart:3.12.2@sha256:5ac89dbcae4327278b257920e2786df0f22c87adc630017266b67cfcceef8348  AS buildimage
+FROM dart:3.13.4@sha256:240919fc0edd80498fa9f7ab59afa35b9b390591f2da3d725801e58ab693012f  AS buildimage
 ARG TARGETARCH
 ENV PACKAGEDIR=packages/dart/sshnoports
 ENV OPENSSH=tools/static-openssh
@@ -33,7 +33,7 @@ RUN \
   dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
   dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
   # create atsign account
-  apt-get update && apt-get install -y adduser autoconf curl gcc make ; \
+  apt-get update && apt-get install -y adduser autoconf ca-certificates curl gcc make ; \
   addgroup --gid $GROUP_ID atsign ; \
   useradd --system --uid $USER_ID --gid $GROUP_ID --shell /bin/bash \
   --home $HOMEDIR atsign ; \
@@ -56,6 +56,9 @@ COPY --from=buildimage /runtime/ /
 COPY --from=buildimage /etc/passwd /etc/passwd
 COPY --from=buildimage /etc/group /etc/group
 COPY --from=buildimage /etc/cacert /etc/cacert
+# Dart images no longer carry root certs in /runtime/, so copy them explicitly
+COPY --from=buildimage /etc/ssl/certs /etc/ssl/certs
+COPY --from=buildimage /usr/share/ca-certificates /usr/share/ca-certificates
 WORKDIR /usr/local/at
 COPY --from=buildimage  /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage  /usr/local/at/srv /usr/local/at/

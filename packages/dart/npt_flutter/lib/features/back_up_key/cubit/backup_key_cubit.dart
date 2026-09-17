@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'dart:typed_data';
 
-import 'package:at_backupkey_flutter/services/backupkey_service.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
@@ -49,15 +47,18 @@ class BackupKeyCubit extends Cubit<bool> {
     final context = App.navState.currentContext!;
     final strings = AppLocalizations.of(context)!;
     var atsign = context.read<OnboardingCubit>().getAtsign();
-    // Build file data
-    var aesEncryptedKeys = await BackUpKeyService.getEncryptedKeys(atsign);
-    var keyString = jsonEncode(aesEncryptedKeys);
-    final List<int> codeUnits = keyString.codeUnits;
-    final Uint8List data = Uint8List.fromList(codeUnits);
+    final atKeys = await KeychainStorage().getAtsign(atsign);
+    if (atKeys == null) {
+      CustomSnackBar.error(
+        content: strings.errorAtKeySaveFailed('no keys found for $atsign'),
+      );
+      return;
+    }
 
     try {
       final result = await BackUpKeyRepository().saveAtKeysToPath(
-        data: data,
+        atsign: atsign,
+        atKeys: atKeys,
         dialogTitle: strings.backupKeyDialogTitle,
         fileName: '${atsign}_key.atKeys',
       );

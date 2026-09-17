@@ -7,27 +7,41 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
+import 'package:sshnoports/src/print_version.dart';
 
 late AtSignLogger logger;
 
+const String _description =
+    'NoPorts policy service which stores its policy data on the policy'
+    " atSign's atServer.";
+
 void main(List<String> args) async {
   try {
-    if (NPAParams.parser.parse(args)['help'] == true) {
-      print(NPAParams.parser.usage);
+    final parsedArgs = NPAParams.parser.parse(args);
+    if (parsedArgs['help'] == true) {
+      stdout.write(formatCliHelp(
+          description: _description, optionsUsage: NPAParams.parser.usage));
+      exit(0);
+    }
+    if (parsedArgs['version'] == true) {
+      printVersion();
       exit(0);
     }
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPAParams.parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPAParams.parser.usage));
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPAParams.parser.usage));
     stderr.writeln(err);
     exit(1);
   }
@@ -36,7 +50,8 @@ void main(List<String> args) async {
   try {
     p = await NPAParams.fromArgs(args);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPAParams.parser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPAParams.parser.usage));
     stderr.writeln(err);
     exit(1);
   }

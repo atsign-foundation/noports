@@ -20,6 +20,7 @@ import 'package:npe2e/core_tests/tests/v4_dart_inline.dart';
 import 'package:npe2e/core_tests/tests/v4_openssh_print.dart';
 import 'package:npe2e/core_tests/tests/v5_dart_inline.dart';
 import 'package:npe2e/core_tests/tests/v5_openssh_inline.dart';
+import 'package:npe2e/core_tests/tests/unauthorized_atsign_rejection.dart';
 import 'package:npe2e/core_tests/tests/v5_openssh_print.dart';
 import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/docker_instance.dart';
@@ -218,6 +219,7 @@ Future<void> coreTests(CoreTestsParams params) async {
     clientAtsign: params.clientAtsign,
     daemonAtsign: params.daemonAtsign,
     relayAtsign: params.relayAtsign,
+    unauthorizedAtsign: params.unauthorizedAtsign,
     rootDomain: params.rootDomain,
     remoteUsername: remoteUsername,
     identityFilePath: identityFile.path,
@@ -259,7 +261,9 @@ Future<void> coreTests(CoreTestsParams params) async {
         '    ${testResult.testName} $extra - Exit code: ${testResult.exitCode}',
       );
     }
-    return;
+    throw Exception(
+      '${failedMinusSFlagResults.length} 001_minus_s_flag test(s) failed',
+    );
   }
 
   // Part 2: do all other tests
@@ -333,6 +337,13 @@ Future<void> coreTests(CoreTestsParams params) async {
     ),
   );
 
+  remainingTestFactories.addAll(
+    runUnauthorizedAtsignRejectionTests(
+      context: context,
+      daemonVersions: daemonVersions,
+    ),
+  );
+
   final List<CoreTestResult> remainingResults =
       await _runFuturesWithConcurrency(
         remainingTestFactories,
@@ -397,6 +408,10 @@ Future<void> coreTests(CoreTestsParams params) async {
     '    Test execution time: ${formatDuration(testExecutionStopwatch.elapsed)}',
   );
   print('    Overall time: ${formatDuration(overallStopwatch.elapsed)}');
+
+  if (failedTests > 0) {
+    throw Exception('$failedTests test(s) failed');
+  }
 }
 
 /// Runs a list of test factory functions with controlled concurrency, per-test

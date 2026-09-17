@@ -7,6 +7,7 @@ class CoreTestsContext {
   final String clientAtsign;
   final String daemonAtsign;
   final String relayAtsign;
+  final String unauthorizedAtsign;
   final String rootDomain;
   final String remoteUsername;
   final String identityFilePath;
@@ -21,6 +22,7 @@ class CoreTestsContext {
     required this.clientAtsign,
     required this.daemonAtsign,
     required this.relayAtsign,
+    required this.unauthorizedAtsign,
     required this.rootDomain,
     required this.remoteUsername,
     required this.identityFilePath,

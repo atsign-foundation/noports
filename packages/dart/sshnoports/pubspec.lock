@@ -607,7 +607,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.12.2"
+    version: "6.14.1"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -748,10 +748,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
+      sha256: f4115e0a02d9f909b3ea4c43d5c2186092da9e167c61ba0e212164a4d8bcb2a2
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.6.0"
   source_map_stack_trace:
     dependency: transitive
     description:
