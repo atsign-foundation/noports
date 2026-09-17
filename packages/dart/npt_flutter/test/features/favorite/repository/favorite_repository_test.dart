@@ -35,6 +35,9 @@ void main() {
       // Mock AtClientManager singleton behavior
       when(mockAtClientManager.atClient).thenReturn(mockAtClient);
       when(mockAtClient.getCurrentAtSign()).thenReturn(testAtsign);
+      when(
+        mockAtClient.get(any),
+      ).thenAnswer((_) async => AtValue()..value = null);
     });
 
     group('AtKey Generation', () {
@@ -250,6 +253,48 @@ void main() {
           cachedFavorites[testFavoriteProfile2.uuid],
           isA<FavoriteProfile>(),
         );
+      });
+
+      test(
+        'should preserve remote favorites when cache is not initialized',
+        () async {
+          final atKey = FavoriteRepository.getFavoriteAtKey(
+            sharedBy: testAtsign,
+          );
+          final AtValue atValue = AtValue()
+            ..value = jsonEncode({
+              testFavoriteProfile2.uuid: testFavoriteProfile2.toJson(),
+            });
+          String? writtenValue;
+
+          when(mockAtClient.get(atKey)).thenAnswer((_) async => atValue);
+          when(mockAtClient.put(atKey, any)).thenAnswer((invocation) async {
+            writtenValue = invocation.positionalArguments[1] as String;
+            return true;
+          });
+
+          final bool result = await repository.addFavorite(testFavoriteProfile);
+
+          expect(result, isTrue);
+          final Map<String, dynamic> savedFavorites =
+              (jsonDecode(writtenValue!) as Map).cast<String, dynamic>();
+          expect(
+            savedFavorites.keys,
+            containsAll([testFavoriteProfile.uuid, testFavoriteProfile2.uuid]),
+          );
+        },
+      );
+
+      test('should not write when the initial remote read fails', () async {
+        final atKey = FavoriteRepository.getFavoriteAtKey(sharedBy: testAtsign);
+        when(
+          mockAtClient.get(atKey),
+        ).thenThrow(const SocketException('Network error'));
+
+        final bool result = await repository.addFavorite(testFavoriteProfile);
+
+        expect(result, isFalse);
+        verifyNever(mockAtClient.put(any, any));
       });
 
       test('should return false when AtClient put fails', () async {

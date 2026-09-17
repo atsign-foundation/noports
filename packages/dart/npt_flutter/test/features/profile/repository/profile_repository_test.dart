@@ -531,14 +531,17 @@ void main() {
 
       group('getProfileUuids', () {
         test('should return profile UUIDs from AtClient', () async {
-          final mockKeys = [
-            AtKey()..key = 'uuid1.profiles.noports',
-            AtKey()..key = 'uuid2.profiles.noports',
-            AtKey()..key = 'uuid3.profiles.noports',
+          final List<String> mockKeys = [
+            'uuid1.profiles.noports$testAtsign',
+            'uuid2.profiles.noports$testAtsign',
+            'uuid3.profiles.noports$testAtsign',
           ];
 
           when(
-            mockAtClient.getAtKeys(regex: '.profiles.noports'),
+            mockAtClient.getKeys(
+              regex: '.profiles.noports',
+              useRemoteAtServer: true,
+            ),
           ).thenAnswer((_) async => mockKeys);
 
           final result = await repository.getProfileUuids();
@@ -552,7 +555,10 @@ void main() {
           'should return empty list when AtClient throws exception',
           () async {
             when(
-              mockAtClient.getAtKeys(regex: '.profiles.noports'),
+              mockAtClient.getKeys(
+                regex: '.profiles.noports',
+                useRemoteAtServer: true,
+              ),
             ).thenThrow(Exception('Failed to get keys'));
 
             final result = await repository.getProfileUuids();
@@ -564,8 +570,11 @@ void main() {
 
         test('should handle empty key list', () async {
           when(
-            mockAtClient.getAtKeys(regex: '.profiles.noports'),
-          ).thenAnswer((_) async => <AtKey>[]);
+            mockAtClient.getKeys(
+              regex: '.profiles.noports',
+              useRemoteAtServer: true,
+            ),
+          ).thenAnswer((_) async => <String>[]);
 
           final result = await repository.getProfileUuids();
 
