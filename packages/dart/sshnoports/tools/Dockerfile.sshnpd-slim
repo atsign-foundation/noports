@@ -96,7 +96,7 @@ RUN \
   #    for: a new shared dependency should land in review as a diff, not be
   #    pulled in silently. armv7 may yet add libatomic.so.1 for OpenSSL's
   #    atomics; if the build says so, add it here.
-  STAGED_EXTRAS="libz.so.1" ; \
+  STAGED_EXTRAS="libz.so.1 libzstd.so.1" ; \
   RUNTIME_LIBDIR="$(dirname "$(find /runtime -name 'libc.so.6' | head -n1)")" ; \
   test "${RUNTIME_LIBDIR}" != "." \
     || { echo "FATAL: no libc.so.6 under /runtime/ -- base image layout changed"; exit 1; } ; \
@@ -114,16 +114,22 @@ RUN \
   #    allowlist is /runtime/'s own sonames plus STAGED_EXTRAS, read at build
   #    time so a base-image bump tracks it automatically instead of going stale.
   #    Applied to every staged library, so a dependency's own dependencies are
-  #    asserted too rather than assumed.
+  #    asserted too rather than assumed. Every gap is collected and reported
+  #    together: one build names the whole remainder instead of one soname
+  #    per ~7min CI cycle.
   ALLOWED="$( { find /runtime -name '*.so*' -printf '%f\n' ; printf '%s\n' ${STAGED_EXTRAS} ; } | sort -u)" ; \
+  MISSING="" ; \
   for lib in /staging/lib/libcrypto.so.3 $(find /staging/rootlib -type f) ; do \
-    for need in $(readelf -d -W "${lib}" | sed -n 's/.*NEEDED.*\[\(.*\)\]/\1/p'); do \
-      echo "${ALLOWED}" | grep -qx "${need}" \
-        || { echo "FATAL: ${lib} needs ${need}, which is neither in /runtime/ nor staged" ; \
-             echo "Remedy: add ${need} to STAGED_EXTRAS above." ; exit 1; } ; \
+    NEEDS="$(readelf -d -W "${lib}" | sed -n 's/.*NEEDED.*\[\(.*\)\]/\1/p')" ; \
+    echo "staged $(basename ${lib}) NEEDED: $(echo ${NEEDS} | tr '\n' ' ')" ; \
+    for need in ${NEEDS}; do \
+      echo "${ALLOWED}" | grep -qx "${need}" || MISSING="${MISSING} ${need}" ; \
     done ; \
-    echo "staged $(basename ${lib}) NEEDED: $(readelf -d -W "${lib}" | sed -n 's/.*NEEDED.*\[\(.*\)\]/\1/p' | tr '\n' ' ')" ; \
   done ; \
+  MISSING="$(printf '%s\n' ${MISSING} | sort -u | tr '\n' ' ')" ; \
+  test -z "${MISSING# }" || { \
+    echo "FATAL: staged libraries need sonames the scratch image will not have:${MISSING}" ; \
+    echo "Remedy: add them to STAGED_EXTRAS above, then rebuild." ; exit 1; } ; \
   # build static openssh binaries
   cd ${WORKDIR}/${OPENSSH} ; \
   ARCH=${TARGETARCH} ./static-openssh.sh ; \
