@@ -487,7 +487,7 @@ packages:
       path: "../../packages/dart/noports_core"
       relative: true
     source: path
-    version: "6.14.1"
+    version: "6.14.2"
   openssh_ed25519:
     dependency: transitive
     description:
