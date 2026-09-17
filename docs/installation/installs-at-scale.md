@@ -1,6 +1,5 @@
 ---
 description: Typing is less fun after a few devices.
-icon: grid-horizontal
 layout:
   width: default
   title:
@@ -18,6 +17,8 @@ layout:
   tags:
     visible: true
   actions:
+    visible: true
+  anchors:
     visible: true
 ---
 
@@ -112,7 +113,7 @@ set -eux; \
         arm64) \
             SSHNPD_IMAGE="https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-arm64.tgz" ;; \
         riscv64) \
-            SSHNPD_IMAGE="https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv.tgz" ;; \
+            SSHNPD_IMAGE="https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-riscv64.tgz" ;; \
         *) \
             echo "Unsupported architecture" ; \
             exit 5;; \
