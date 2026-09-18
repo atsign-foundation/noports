@@ -1,5 +1,9 @@
 # 6.14.2
 
+- feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
+  AES-CTR cipher via FFI, using hardware acceleration (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) when libcrypto is available, falling
+  back to the pure-Dart cipher otherwise
 - fix: `WrappedSSHSocket.close()`/`destroy()` now tears down the
   `StreamController` feeding its AES-CTR encrypter, instead of only closing
   the underlying socket. The FFI-backed cipher only disposes on that
