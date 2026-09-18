@@ -2,12 +2,13 @@
 
 <!-- pyml disable md034-->
 
-## v5.16.1
+## v5.17.0
 
-_Combines the withdrawn v5.16.0 pre-release (tag/GH release deleted, but
-its Docker images were already pushed) with the changes below — nothing
-in v5.16.0 is missing from this list._
-
+* feat: `srv`/`srvd` tunnel traffic now runs through `at_chops`'s
+  OpenSSL-backed AES-CTR cipher via FFI, using hardware acceleration
+  (AES-NI on x86, ARMv8 Crypto Extensions on arm64) when `libcrypto` is
+  available, falling back to the pure-Dart cipher otherwise
+  (`noports_core` 6.15.0)
 * fix: `sshnpd`, `sshnp`, `srvd`, `npt`, `npp`, and `at_activate` Docker
   images now install root CA certificates again, so their Dart runtimes can
   validate atServer TLS connections (newer Dart base images stopped
@@ -52,6 +53,14 @@ in v5.16.0 is missing from this list._
   and no longer prints its banner in `--help` output
 * fix: `--help` and `--version` now print to stdout (GNU convention);
   usage-on-error still goes to stderr
+
+## v5.16.0 (withdrawn)
+
+_Tagged and released, then pulled for being premature — before its Docker
+images could be removed too. `release-v5.16.0`, `amd64-release-v5.16.0`, and
+`canary-v5.16.0` are still live on Docker Hub. Superseded by v5.17.0 above,
+which carries everything v5.16.0 would have shipped plus the fixes and the
+hardware-accelerated AES-CTR feature listed there._
 
 ## v5.15.2
 
