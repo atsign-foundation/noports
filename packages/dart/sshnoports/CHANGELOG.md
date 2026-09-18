@@ -44,6 +44,16 @@
   heartbeat
 * fix: daemon policy config logs downgraded from SHOUT to INFO to stop
   flooding Windows Event Viewer
+
+## v5.16.0 (withdrawn)
+
+_Tagged and released on 2026-08-21, then pulled for being premature. The git
+tag and GitHub release were deleted, but its Docker images
+(`release-v5.16.0`, `amd64-release-v5.16.0`, `canary-v5.16.0`) are still
+live, so this content is preserved here rather than folded into v5.17.0
+above — everything below shipped in that release and predates the fixes
+and the hardware-accelerated AES-CTR feature listed under v5.17.0._
+
 * fix: man pages now generate correctly: `--help` / `--version` output is
   help2man-friendly, and per-binary NAME / EXAMPLES / SEE ALSO boilerplate
   is included (#2650)
@@ -53,14 +63,6 @@
   and no longer prints its banner in `--help` output
 * fix: `--help` and `--version` now print to stdout (GNU convention);
   usage-on-error still goes to stderr
-
-## v5.16.0 (withdrawn)
-
-_Tagged and released, then pulled for being premature — before its Docker
-images could be removed too. `release-v5.16.0`, `amd64-release-v5.16.0`, and
-`canary-v5.16.0` are still live on Docker Hub. Superseded by v5.17.0 above,
-which carries everything v5.16.0 would have shipped plus the fixes and the
-hardware-accelerated AES-CTR feature listed there._
 
 ## v5.15.2
 
