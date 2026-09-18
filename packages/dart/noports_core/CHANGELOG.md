@@ -7,6 +7,11 @@
 
 # 6.14.2
 
+- fix: `Npt.done` now completes when startup fails, instead of never
+  completing. `run` and `runInline` close the session on their way out when
+  they throw, so callers may always await `done` without having to call
+  `close` themselves first. A caller that awaited `done` after a failed
+  startup previously waited forever. See #2789.
 - fix: `WrappedSSHSocket.close()`/`destroy()` now tears down the
   `StreamController` feeding its AES-CTR encrypter, instead of only closing
   the underlying socket. The FFI-backed cipher only disposes on that

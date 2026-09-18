@@ -15,10 +15,43 @@ import 'package:socket_connector/socket_connector.dart';
 part 'profile_event.dart';
 part 'profile_state.dart';
 
+/// Creates the [Npt] for one connection attempt. Injectable so that tests can
+/// drive the start/retry loop without a live daemon.
+typedef NptFactory =
+    Npt Function({required AtClient atClient, required NptParams params});
+
 class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
+  /// Matches the retry cadence of the npt binary - see `sshnoports/bin/npt.dart`
+  static const defaultRetryDelay = Duration(seconds: 5);
+
+  /// How long to wait between keep-alive attempts. Injectable so that tests
+  /// don't have to spend it.
+  final Duration retryDelay;
+
   final String uuid;
   final ProfileRepository _repo;
-  ProfileBloc(this._repo, this.uuid) : super(ProfileInitial(uuid)) {
+  final NptFactory _createNpt;
+  final AtClient Function() _getAtClient;
+
+  /// The [Npt] of the session being started or running, if any. [_onStop] is a
+  /// separate handler and cannot reach [_onStart]'s locals, so it needs this to
+  /// tear a session down.
+  Npt? _activeNpt;
+
+  /// Set by [_onStop] to break [_onStart]'s keep-alive loop.
+  bool _stopRequested = false;
+
+  static AtClient _currentAtClient() => AtClientManager.getInstance().atClient;
+
+  ProfileBloc(
+    this._repo,
+    this.uuid, {
+    NptFactory createNpt = Npt.create,
+    AtClient Function() getAtClient = _currentAtClient,
+    this.retryDelay = defaultRetryDelay,
+  }) : _createNpt = createNpt,
+       _getAtClient = getAtClient,
+       super(ProfileInitial(uuid)) {
     on<ProfileLoadEvent>(_onLoad);
     on<ProfileLoadOrCreateEvent>(_onLoadOrCreate);
     on<ProfileEditEvent>(_onEdit);
@@ -144,18 +177,16 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     }
     // ProfileLoaded and ProfileFailedSave are both ProfileLoadedState
     var profile = (state as ProfileLoadedState).profile;
+    _stopRequested = false;
     emit(ProfileStarting(uuid, profile: profile));
     App.navState.currentContext?.read<ProfilesRunningCubit>().prepare(uuid);
 
-    AtClient atClient = AtClientManager.getInstance().atClient;
+    AtClient atClient = _getAtClient();
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
     Atsign? atsign = atClient.getCurrentAtSign()?.toAtsign();
     if (atsign == null) {
-      emit(ProfileFailedStart(uuid, profile: profile));
-      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-        uuid,
-      );
+      _failStart(emit, profile);
       return;
     }
 
@@ -163,25 +194,70 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         ?.read<SettingsBloc>()
         .state;
     if (currentSettingsState is! SettingsLoadedState) {
-      emit(
-        ProfileFailedStart(
-          uuid,
-          profile: profile,
-          reason: strings.settingsCouldNotFetch,
-        ),
-      );
-      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-        uuid,
-      );
+      _failStart(emit, profile, reason: strings.settingsCouldNotFetch);
       return;
     }
     var settings = currentSettingsState.settings;
 
-    void Function()? cancel;
-    SocketConnector? sc;
+    /// The whole keep-alive loop lives inside this one handler invocation so
+    /// that [emit] stays valid for the lifetime of the session. [emit.isDone]
+    /// covers the bloc being closed underneath us, e.g. the app quitting
+    /// part way through a retry.
+    while (!emit.isDone) {
+      var failure = await _runSession(emit, profile, atClient, atsign, settings);
+
+      if (_stopRequested || emit.isDone) break;
+
+      if (!profile.keepAlive) {
+        if (failure != null) {
+          _failStart(emit, profile, reason: failure);
+          return;
+        }
+        break;
+      }
+
+      emit(
+        ProfileStarting(
+          uuid,
+          profile: profile,
+          status: failure ?? strings.connectionClosed,
+        ),
+      );
+      await Future.delayed(retryDelay);
+      if (_stopRequested || emit.isDone) break;
+      emit(
+        ProfileStarting(
+          uuid,
+          profile: profile,
+          status: strings.connectionRetrying,
+        ),
+      );
+    }
+
+    if (!emit.isDone) emit(ProfileLoaded(uuid, profile: profile));
+  }
+
+  /// Runs a single connection attempt through to the end of its session.
+  ///
+  /// Returns null if the session was established and later ended, otherwise a
+  /// display reason for why it could not be established. Always closes the
+  /// [Npt] on the way out - that is what releases [Npt.done], and skipping it
+  /// on the failure path is what used to wedge this bloc forever.
+  Future<String?> _runSession(
+    Emitter<ProfileState> emit,
+    Profile profile,
+    AtClient atClient,
+    Atsign atsign,
+    Settings settings,
+  ) async {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    final running = App.navState.currentContext?.read<ProfilesRunningCubit>();
+
     Npt? npt;
+    StreamSubscription<String>? progressSub;
+    StreamSubscription<String>? errorSub;
     try {
-      npt = Npt.create(
+      npt = _createNpt(
         atClient: atClient,
         params: profile.toNptParams(
           clientAtsign: atsign,
@@ -190,59 +266,30 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           overrideRelayWithFallback: settings.overrideRelay,
         ),
       );
+      _activeNpt = npt;
 
-      var progressSub = npt.progressStream?.listen((msg) {
+      void reportProgress(String msg) {
+        // Don't drag the UI back to "connecting" once a stop is under way
+        if (_stopRequested || emit.isDone) return;
         emit(ProfileStarting(uuid, profile: profile, status: msg));
-      });
-
-      var errorSub = npt.logStream?.listen((err) {
-        emit(ProfileStarting(uuid, profile: profile, status: err));
-      });
-
-      cancel = () {
-        progressSub?.cancel();
-        progressSub = null;
-
-        errorSub?.cancel();
-        errorSub = null;
-
-        if (sc is SocketConnector) sc.close();
-      };
-
-      sc = await npt.runInline();
-
-      if (sc is TimedOutSocketConnector) {
-        cancel();
-        emit(
-          ProfileFailedStart(
-            uuid,
-            profile: profile,
-            reason: strings.nptStartupTimedout,
-          ),
-        );
-        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-          uuid,
-        );
-        return;
       }
 
-      if (sc.closed) {
-        cancel();
-        emit(
-          ProfileFailedStart(
-            uuid,
-            profile: profile,
-            reason: strings.socketconnectorClosedPrematurely,
-          ),
-        );
-        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-          uuid,
-        );
-        return;
+      progressSub = npt.progressStream?.listen(reportProgress);
+      errorSub = npt.logStream?.listen(reportProgress);
+
+      SocketConnector sc = await npt.runInline();
+
+      if (_stopRequested) {
+        // Stopped while connecting - this connector was never cached, so
+        // nothing else is going to close it
+        sc.close();
+        return null;
       }
+
+      if (sc.closed) return strings.socketconnectorClosedPrematurely;
 
       // Save the socket connector to state so it can be used to stop npt later
-      App.navState.currentContext?.read<ProfilesRunningCubit>().cache(uuid, sc);
+      running?.cache(uuid, sc);
       emit(ProfileStarted(uuid, profile: profile));
 
       // Launch the connection URI if provided
@@ -250,167 +297,47 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       if (uri != null && uri.isNotEmpty) {
         UriHandlerService.handleUri(uri);
       }
-    } catch (err) {
-      cancel?.call();
-      emit(
-        ProfileFailedStart(
-          uuid,
-          profile: profile,
-          reason: strings.errorDuringStartupWithDetails(err.toString()),
-        ),
-      );
-      App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-        uuid,
-      );
-    } finally {
-      if (npt != null) {
-        await npt.done;
-        cancel?.call();
-        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-          uuid,
-        );
 
-        // If keep-alive is enabled and the session ended (but the profile wasn't explicitly stopped),
-        // retry the connection after a delay
-        if (profile.keepAlive && state is ProfileStarted) {
-          await _retryConnection(emit, profile, atClient, atsign, settings);
-        } else {
-          emit(ProfileLoaded(uuid, profile: profile));
-        }
-      }
+      /// Parks here for the lifetime of the session
+      await npt.done;
+      return null;
+    } catch (err) {
+      return strings.errorDuringStartupWithDetails(err.toString());
+    } finally {
+      await npt?.close();
+      // Per attempt, not per loop: otherwise this attempt's progress messages
+      // would emit into the next attempt's state
+      await progressSub?.cancel();
+      await errorSub?.cancel();
+      _activeNpt = null;
+      running?.invalidate(uuid);
     }
   }
 
-  Future<void> _retryConnection(
+  void _failStart(
     Emitter<ProfileState> emit,
-    Profile profile,
-    AtClient atClient,
-    Atsign atsign,
-    Settings settings,
-  ) async {
-    // Wait 5 seconds before retrying, similar to npt binary
-    await Future.delayed(const Duration(seconds: 5));
-
-    // Check if the profile was stopped during the delay
-    if (state is! ProfileStarted) {
-      emit(ProfileLoaded(uuid, profile: profile));
-      return;
-    }
-    final strings = AppLocalizations.of(App.navState.currentContext!)!;
-
-    // Emit starting state for retry
-    emit(
-      ProfileStarting(
-        uuid,
-        profile: profile,
-        status: strings.connectionRetrying,
-      ),
-    );
-
-    void Function()? cancel;
-    SocketConnector? sc;
-    Npt? npt;
-
-    try {
-      npt = Npt.create(
-        atClient: atClient,
-        params: profile.toNptParams(
-          clientAtsign: atsign,
-          rootDomain: atClient.getPreferences()!.rootDomain,
-          fallbackRelayAtsign: settings.relayAtsign,
-          overrideRelayWithFallback: settings.overrideRelay,
-        ),
-      );
-
-      var progressSub = npt.progressStream?.listen((msg) {
-        emit(ProfileStarting(uuid, profile: profile, status: msg));
-      });
-
-      var errorSub = npt.logStream?.listen((err) {
-        emit(ProfileStarting(uuid, profile: profile, status: err));
-      });
-
-      cancel = () {
-        progressSub?.cancel();
-        progressSub = null;
-
-        errorSub?.cancel();
-        errorSub = null;
-
-        if (sc is SocketConnector) sc.close();
-      };
-
-      sc = await npt.runInline();
-
-      if (sc is TimedOutSocketConnector) {
-        cancel();
-        // For retry, just log the timeout and let it retry again
-        emit(
-          ProfileStarting(
-            uuid,
-            profile: profile,
-            status: strings.connectionTimedOut,
-          ),
-        );
-      } else if (sc.closed) {
-        cancel();
-        emit(
-          ProfileStarting(
-            uuid,
-            profile: profile,
-            status: strings.connectionClosed,
-          ),
-        );
-      } else {
-        // Success - cache the connector and emit started state
-        App.navState.currentContext?.read<ProfilesRunningCubit>().cache(
-          uuid,
-          sc,
-        );
-        emit(ProfileStarted(uuid, profile: profile));
-
-        // Launch the connection URI if provided
-        final uri = profile.constructedConnectUri;
-        if (uri != null && uri.isNotEmpty) {
-          UriHandlerService.handleUri(uri);
-        }
-      }
-    } catch (err) {
-      cancel?.call();
-      emit(
-        ProfileStarting(
-          uuid,
-          profile: profile,
-          status: strings.retryFailedWithDetails(err.toString()),
-        ),
-      );
-    } finally {
-      if (npt != null) {
-        await npt.done;
-        cancel?.call();
-        App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(
-          uuid,
-        );
-
-        // Continue retrying if keep-alive is still enabled and profile is still "started"
-        if (profile.keepAlive && state is ProfileStarted) {
-          await _retryConnection(emit, profile, atClient, atsign, settings);
-        } else {
-          emit(ProfileLoaded(uuid, profile: profile));
-        }
-      }
-    }
+    Profile profile, {
+    String? reason,
+  }) {
+    emit(ProfileFailedStart(uuid, profile: profile, reason: reason));
+    App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
   }
 
   Future<void> _onStop(
     ProfileStopEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state is! ProfileStarted) return;
-    var profile = (state as ProfileStarted).profile;
+    // ProfileStarting is stoppable too, so that a connection attempt which is
+    // failing to establish can always be abandoned
+    if (state is! ProfileStarted && state is! ProfileStarting) return;
+    var profile = (state as ProfileLoadedState).profile;
+    _stopRequested = true;
     emit(ProfileStopping(uuid, profile: profile));
+
+    // Releases [_runSession]'s `await npt.done` for a running session. Mid
+    // startup it cannot abort the in-flight call, so the loop instead exits
+    // once that call settles.
+    await _activeNpt?.close();
     App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
   }
 }
-
-class TimedOutSocketConnector extends SocketConnector {}
