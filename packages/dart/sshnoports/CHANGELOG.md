@@ -38,22 +38,20 @@
 * fix: sshnpd's `--ssh-client` option now persists to and reads from the
   correct config key (`/ssh/ssh-client`), instead of a key
   (`/ssh/client`) it never actually wrote
-* fix: Windows MSI installer stamps the correct `ProductVersion` again
-  (was stale), fixing major-upgrade detection in Apps & Features
-* fix: share event logging config once as cached key instead of on every
-  heartbeat
-* fix: daemon policy config logs downgraded from SHOUT to INFO to stop
-  flooding Windows Event Viewer
 
 ## v5.16.0 (withdrawn)
 
-_Tagged and released on 2026-08-21, then pulled for being premature. The git
-tag and GitHub release were deleted, but its Docker images
+_Tagged and released 2026-09-09 via #2911, then pulled for being premature.
+The git tag and GitHub release were deleted, but its Docker images
 (`release-v5.16.0`, `amd64-release-v5.16.0`, `canary-v5.16.0`) are still
 live, so this content is preserved here rather than folded into v5.17.0
 above — everything below shipped in that release and predates the fixes
 and the hardware-accelerated AES-CTR feature listed under v5.17.0._
 
+* fix: share event logging config once as cached key instead of on every
+  heartbeat
+* fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
 * fix: man pages now generate correctly: `--help` / `--version` output is
   help2man-friendly, and per-binary NAME / EXAMPLES / SEE ALSO boilerplate
   is included (#2650)
@@ -63,6 +61,10 @@ and the hardware-accelerated AES-CTR feature listed under v5.17.0._
   and no longer prints its banner in `--help` output
 * fix: `--help` and `--version` now print to stdout (GNU convention);
   usage-on-error still goes to stderr
+* fix: Windows MSI installer stamps the correct `ProductVersion` again
+  (was stale), fixing major-upgrade detection in Apps & Features — code
+  landed on trunk before the tag but was never given its own changelog
+  entry in the original release
 
 ## v5.15.2
 
