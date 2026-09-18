@@ -2,7 +2,11 @@
 
 <!-- pyml disable md034-->
 
-## v5.16.0
+## v5.16.1
+
+_Combines the withdrawn v5.16.0 pre-release (tag/GH release deleted, but
+its Docker images were already pushed) with the changes below — nothing
+in v5.16.0 is missing from this list._
 
 * fix: `sshnpd`, `sshnp`, `srvd`, `npt`, `npp`, and `at_activate` Docker
   images now install root CA certificates again, so their Dart runtimes can
