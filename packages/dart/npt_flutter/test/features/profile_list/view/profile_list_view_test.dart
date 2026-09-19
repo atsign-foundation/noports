@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,6 +14,7 @@ import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
@@ -23,6 +25,10 @@ import 'package:npt_flutter/util/language.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import 'profile_list_view_test.mocks.dart';
+
+class MockProfileGroupBloc
+    extends MockBloc<ProfileGroupEvent, ProfileGroupState>
+    implements ProfileGroupBloc {}
 
 @GenerateNiceMocks([
   MockSpec<ProfileListBloc>(),
@@ -46,6 +52,7 @@ void main() {
     late MockSettingsBloc mockSettingsBloc;
     late MockProfilesSelectedCubit mockProfilesSelectedCubit;
     late MockFavoriteBloc mockFavoriteBloc;
+    late MockProfileGroupBloc mockProfileGroupBloc;
 
     const testUuid1 = 'test-uuid-1';
     const testUuid2 = 'test-uuid-2';
@@ -173,6 +180,13 @@ void main() {
       when(
         mockFavoriteBloc.stream,
       ).thenAnswer((_) => Stream.value(const FavoritesInitial()));
+
+      mockProfileGroupBloc = MockProfileGroupBloc();
+      whenListen(
+        mockProfileGroupBloc,
+        const Stream<ProfileGroupState>.empty(),
+        initialState: const ProfileGroupsInitial(),
+      );
     });
 
     Widget createWidgetUnderTest(ProfileListState state) {
@@ -191,6 +205,7 @@ void main() {
             value: mockProfilesSelectedCubit,
           ),
           BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+          BlocProvider<ProfileGroupBloc>.value(value: mockProfileGroupBloc),
         ],
         child: MaterialApp(
           navigatorKey: App.navState, // Use the App.navState directly

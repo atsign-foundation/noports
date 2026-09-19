@@ -488,7 +488,76 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupAdd => '添加组';
 
   @override
+  String get groupAddConnection => '添加连接';
+
+  @override
+  String get groupByType => '按类型分组';
+
+  @override
+  String get groupCollapse => '折叠';
+
+  @override
+  String get groupDeleteFolder => '删除文件夹';
+
+  @override
+  String get groupDeleteFolderMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get groupExpand => '展开';
+
+  @override
+  String get groupFolderName => '文件夹名称';
+
+  @override
+  String get groupFolderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get groupLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get groupMoveTo => '移动到';
+
+  @override
+  String get groupMoveToFolder => '移动到文件夹';
+
+  @override
   String get groupName => '组名';
+
+  @override
+  String get groupNewFolder => '新建文件夹';
+
+  @override
+  String get groupNoFolder => '无文件夹';
+
+  @override
+  String get groupRename => '重命名';
+
+  @override
+  String get groupRenameFolder => '重命名文件夹';
+
+  @override
+  String get groupStartAll => '全部启动';
+
+  @override
+  String get groupStopAll => '全部停止';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => '无';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => '未分组';
 
   @override
   String get import => '导入';
@@ -1533,7 +1602,76 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get groupAdd => '添加组';
 
   @override
+  String get groupAddConnection => '添加连接';
+
+  @override
+  String get groupByType => '按类型分组';
+
+  @override
+  String get groupCollapse => '折叠';
+
+  @override
+  String get groupDeleteFolder => '删除文件夹';
+
+  @override
+  String get groupDeleteFolderMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get groupExpand => '展开';
+
+  @override
+  String get groupFolderName => '文件夹名称';
+
+  @override
+  String get groupFolderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get groupLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get groupMoveTo => '移动到';
+
+  @override
+  String get groupMoveToFolder => '移动到文件夹';
+
+  @override
   String get groupName => '组名';
+
+  @override
+  String get groupNewFolder => '新建文件夹';
+
+  @override
+  String get groupNoFolder => '无文件夹';
+
+  @override
+  String get groupRename => '重命名';
+
+  @override
+  String get groupRenameFolder => '重命名文件夹';
+
+  @override
+  String get groupStartAll => '全部启动';
+
+  @override
+  String get groupStopAll => '全部停止';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => '无';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => '未分组';
 
   @override
   String get import => '导入';
@@ -2578,7 +2716,76 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get groupAdd => '新增群組';
 
   @override
+  String get groupAddConnection => '新增連線';
+
+  @override
+  String get groupByType => '按類型分組';
+
+  @override
+  String get groupCollapse => '收合';
+
+  @override
+  String get groupDeleteFolder => '刪除資料夾';
+
+  @override
+  String get groupDeleteFolderMessage => '此資料夾將被刪除。其中的連線將被保留。';
+
+  @override
+  String get groupExpand => '展開';
+
+  @override
+  String get groupFolderName => '資料夾名稱';
+
+  @override
+  String get groupFolderNameRequired => '請輸入資料夾名稱';
+
+  @override
+  String get groupLoadFailedRetry => '資料夾載入失敗。重試';
+
+  @override
+  String get groupMoveTo => '移至';
+
+  @override
+  String get groupMoveToFolder => '移至資料夾';
+
+  @override
   String get groupName => '群組名稱';
+
+  @override
+  String get groupNewFolder => '新增資料夾';
+
+  @override
+  String get groupNoFolder => '無資料夾';
+
+  @override
+  String get groupRename => '重新命名';
+
+  @override
+  String get groupRenameFolder => '重新命名資料夾';
+
+  @override
+  String get groupStartAll => '全部啟動';
+
+  @override
+  String get groupStopAll => '全部停止';
+
+  @override
+  String get groupTypeHttp => 'HTTP';
+
+  @override
+  String get groupTypeNone => '無';
+
+  @override
+  String get groupTypeRdp => 'RDP';
+
+  @override
+  String get groupTypeSsh => 'SSH';
+
+  @override
+  String get groupTypeVnc => 'VNC';
+
+  @override
+  String get groupUngrouped => '未分組';
 
   @override
   String get import => '匯入';
