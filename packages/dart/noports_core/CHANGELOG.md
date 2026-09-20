@@ -1,3 +1,10 @@
+# 6.15.0
+
+- feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
+  AES-CTR cipher via FFI, using hardware acceleration (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) when libcrypto is available, falling
+  back to the pure-Dart cipher otherwise
+
 # 6.14.2
 
 - fix: `Npt.done` now completes when startup fails, instead of never
