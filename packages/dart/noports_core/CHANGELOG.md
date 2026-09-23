@@ -1,3 +1,22 @@
+# 6.15.0
+
+- feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
+  AES-CTR cipher via FFI, using hardware acceleration (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) when libcrypto is available, falling
+  back to the pure-Dart cipher otherwise
+
+# 6.14.2
+
+- fix: `WrappedSSHSocket.close()`/`destroy()` now tears down the
+  `StreamController` feeding its AES-CTR encrypter, instead of only closing
+  the underlying socket. The FFI-backed cipher only disposes on that
+  controller's `onDone`/`onCancel`/`onError`, so the native
+  `EVP_CIPHER_CTX` previously leaked until GC on a teardown that went
+  through `close()`/`destroy()` rather than `sink.close()`.
+- fix: srvd's daemon-multi control-channel path now disposes its AES-CTR
+  cipher on connection close too, instead of leaking an `EVP_CIPHER_CTX`
+  and its native buffers per connection
+
 # 6.14.1
 
 - fix: the relay auth stream wrappers (the srv-side relay authenticator and

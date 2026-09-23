@@ -69,10 +69,10 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
+      sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.7.0"
   at_cli_commons:
     dependency: "direct main"
     description:
@@ -353,14 +353,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
-  dart_periphery:
-    dependency: transitive
-    description:
-      name: dart_periphery
-      sha256: "1c933dae787d65e6e66ee89db4a58ed74dc9213b83cea10c344585a256ca498a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.20"
   dart_style:
     dependency: transitive
     description:
@@ -607,7 +599,7 @@ packages:
       path: "../noports_core"
       relative: true
     source: path
-    version: "6.14.1"
+    version: "6.15.0"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -648,14 +640,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  platform:
-    dependency: transitive
-    description:
-      name: platform
-      sha256: "5d6b1b0036a5f331ebc77c850ebc8506cbc1e9416c27e59b439f917a902a4984"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.6"
   pointycastle:
     dependency: "direct overridden"
     description:
@@ -680,14 +664,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  process:
+  pqcrypto:
     dependency: transitive
     description:
-      name: process
-      sha256: c6248e4526673988586e8c00bb22a49210c258dc91df5227d5da9748ecf79744
+      name: pqcrypto
+      sha256: fa8bd7eac5ccb4389f4003715a79b1b601ca9439cb81d1174a1e06da75306b39
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.5"
+    version: "0.3.1"
   pub_semver:
     dependency: transitive
     description:

@@ -2,8 +2,17 @@
 
 <!-- pyml disable md034-->
 
-## v5.16.1
+## v5.17.0
 
+* feat: `srv`/`srvd` tunnel traffic now runs through `at_chops`'s
+  OpenSSL-backed AES-CTR cipher via FFI, using hardware acceleration
+  (AES-NI on x86, ARMv8 Crypto Extensions on arm64) when `libcrypto` is
+  available, falling back to the pure-Dart cipher otherwise
+  (`noports_core` 6.15.0)
+* fix: `sshnpd`, `sshnp`, `srvd`, `npt`, `npp`, and `at_activate` Docker
+  images now install root CA certificates again, so their Dart runtimes can
+  validate atServer TLS connections (newer Dart base images stopped
+  bundling them)
 * fix: relay auth stream wrappers now propagate backpressure to the socket,
   so a fast writer through an authenticated relay can no longer inflate
   srv/srvd memory without bound (~1 GB per 10 s observed under iperf3)
@@ -13,8 +22,31 @@
   a tunnel converge instead of the sender filling process memory. 2.6.0 also
   fixes a race in 2.5.0's backpressure flush that could close a relay side
   mid-stream or stall one direction for good
+* fix: `WrappedSSHSocket.close()`/`destroy()` now tear down the
+  `StreamController` feeding its AES-CTR encrypter, instead of only closing
+  the underlying socket. The FFI-backed cipher only disposes on that
+  controller's `onDone`/`onCancel`/`onError`, so the native
+  `EVP_CIPHER_CTX` previously leaked until GC on a teardown that went
+  through `close()`/`destroy()` rather than `sink.close()`
+* fix: srvd's daemon-multi control-channel path now disposes its AES-CTR
+  cipher on connection close too, instead of leaking an `EVP_CIPHER_CTX`
+  and its native buffers per connection
+* fix: `sshnpd-slim` now ships `libcrypto` in its Docker image, so AES-CTR
+  runs through OpenSSL's hardware-accelerated path (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) instead of silently falling back to
+  the slower, software-only pure-Dart cipher
+* fix: sshnpd's `--ssh-client` option now persists to and reads from the
+  correct config key (`/ssh/ssh-client`), instead of a key
+  (`/ssh/client`) it never actually wrote
 
-## v5.16.0
+## v5.16.0 (withdrawn)
+
+_Tagged and released 2026-09-09 via #2911, then pulled for being premature.
+The git tag and GitHub release were deleted, but its Docker images
+(`release-v5.16.0`, `amd64-release-v5.16.0`, `canary-v5.16.0`) are still
+live, so this content is preserved here rather than folded into v5.17.0
+above — everything below shipped in that release and predates the fixes
+and the hardware-accelerated AES-CTR feature listed under v5.17.0._
 
 * fix: share event logging config once as cached key instead of on every
   heartbeat
@@ -29,6 +61,10 @@
   and no longer prints its banner in `--help` output
 * fix: `--help` and `--version` now print to stdout (GNU convention);
   usage-on-error still goes to stderr
+* fix: Windows MSI installer stamps the correct `ProductVersion` again
+  (was stale), fixing major-upgrade detection in Apps & Features — code
+  landed on trunk before the tag but was never given its own changelog
+  entry in the original release
 
 ## v5.15.2
 
