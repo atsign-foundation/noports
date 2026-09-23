@@ -264,6 +264,9 @@ jobs:
       'dependabot[bot]'}}
     name: npe2e (relay_tests)
     runs-on: ubuntu-latest
+    concurrency:
+      group: npe2e-relay-jttest-atsigns
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
