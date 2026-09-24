@@ -15,8 +15,18 @@ class ProfileGroupBloc
   /// hasn't changed.
   bool _persisted = true;
 
+  /// Bumped on every load and sign out, so a load still waiting on a sync
+  /// doesn't emit once it has been superseded.
+  int _session = 0;
+
+  /// Puts in flight, and every save so far, so a refresh that raced a local
+  /// edit is dropped instead of reverting it.
+  int _saving = 0;
+  int _saves = 0;
+
   ProfileGroupBloc(this._repo) : super(const ProfileGroupsInitial()) {
     on<ProfileGroupLoadEvent>(_onLoad);
+    on<ProfileGroupRefreshEvent>(_onRefresh);
     on<ProfileGroupCreateEvent>(_onCreate);
     on<ProfileGroupRenameEvent>(_onRename);
     on<ProfileGroupDeleteEvent>(_onDelete);
@@ -26,13 +36,66 @@ class ProfileGroupBloc
     on<ProfileGroupReorderFoldersEvent>(_onReorderFolders);
   }
 
-  void clearAll() => emit(const ProfileGroupsInitial());
+  void clearAll() {
+    _session++;
+    _repo.stopWatching();
+    emit(const ProfileGroupsInitial());
+  }
+
+  @override
+  Future<void> close() {
+    _session++;
+    _repo.stopWatching();
+    return super.close();
+  }
 
   Future<void> _onLoad(
     ProfileGroupLoadEvent event,
     Emitter<ProfileGroupState> emit,
   ) async {
+    final int session = ++_session;
     emit(const ProfileGroupsLoading());
+
+    ProfileGroupData? data;
+    bool synced = true;
+    try {
+      // A copy older than the atServer's must not be shown and saved over it.
+      synced = await _repo.waitForSync();
+      if (synced) {
+        if (session != _session) return;
+        data = await _repo.getProfileGroups();
+      }
+    } catch (_) {
+      data = null;
+    }
+    if (session != _session) return;
+
+    if (data == null) {
+      emit(const ProfileGroupsFailedLoad());
+      if (!synced) {
+        // Loads again on its own once sync catches up.
+        _repo.watchSync(() {
+          if (!isClosed && state is ProfileGroupsFailedLoad) {
+            add(const ProfileGroupLoadEvent());
+          }
+        }, caughtUpOnly: true);
+      }
+      return;
+    }
+    _persisted = true;
+    emit(ProfileGroupsLoaded(data));
+    _repo.watchSync(() {
+      if (!isClosed) add(const ProfileGroupRefreshEvent());
+    });
+  }
+
+  Future<void> _onRefresh(
+    ProfileGroupRefreshEvent event,
+    Emitter<ProfileGroupState> emit,
+  ) async {
+    if (state is! ProfileGroupsLoaded || _saving > 0) return;
+    final int session = _session;
+    final int saves = _saves;
 
     ProfileGroupData? data;
     try {
@@ -40,11 +103,8 @@ class ProfileGroupBloc
     } catch (_) {
       data = null;
     }
-
-    if (data == null) {
-      emit(const ProfileGroupsFailedLoad());
-      return;
-    }
+    if (data == null || session != _session || saves != _saves) return;
+    if (state is! ProfileGroupsLoaded) return;
     _persisted = true;
     emit(ProfileGroupsLoaded(data));
   }
@@ -58,10 +118,14 @@ class ProfileGroupBloc
       return;
     }
     emit(ProfileGroupsLoaded(data));
+    _saves++;
+    _saving++;
     try {
       _persisted = await _repo.putProfileGroups(data);
     } catch (_) {
       _persisted = false;
+    } finally {
+      _saving--;
     }
   }
 

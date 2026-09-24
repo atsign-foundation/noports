@@ -16,6 +16,16 @@ final class ProfileGroupLoadEvent extends ProfileGroupEvent {
   }
 }
 
+/// Re-reads the folders after a sync, without going through a loading state.
+final class ProfileGroupRefreshEvent extends ProfileGroupEvent {
+  const ProfileGroupRefreshEvent();
+
+  @override
+  String toString() {
+    return 'ProfileGroupRefreshEvent';
+  }
+}
+
 final class ProfileGroupCreateEvent extends ProfileGroupEvent {
   final String name;
   final Iterable<String> profileIds;
