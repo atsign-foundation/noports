@@ -12,11 +12,13 @@ class ProfileListRow extends StatelessWidget {
   final int? reorderIndex;
 
   final bool dimmed;
+  final bool dragEnabled;
 
   const ProfileListRow({
     required this.uuid,
     this.reorderIndex,
     this.dimmed = false,
+    this.dragEnabled = true,
     super.key,
   });
 
@@ -38,7 +40,7 @@ class ProfileListRow extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              ProfileDragHandle(index: reorderIndex),
+              ProfileDragHandle(index: reorderIndex, enabled: dragEnabled),
               const Expanded(child: ProfileView()),
             ],
           ),

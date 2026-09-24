@@ -29,16 +29,17 @@ class _DragSession {
   /// Kept fixed during the drag: the list reports indices into it.
   final ProfileGroupLayout layout;
   final int oldIndex;
-  final Key draggedKey;
   final bool isFolder;
 
   /// The selection travelling with a dragged row; empty for a folder drag.
   final List<String> movedIds;
 
-  const _DragSession({
+  /// Released, and applied if it moved; only the drop animation is left.
+  bool dropped = false;
+
+  _DragSession({
     required this.layout,
     required this.oldIndex,
-    required this.draggedKey,
     required this.isFolder,
     required this.movedIds,
   });
@@ -100,10 +101,15 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     // Item count must stay fixed during a drag or it gets cancelled, so the
     // empty ungrouped header stays in the list and only shows on a drag.
     final bool rowDragging = _drag != null && !_drag!.isFolder;
+    // One drag at a time: a press on a grip during a drag or its drop
+    // animation would make the list cancel it.
+    final bool dragEnabled = _drag == null;
 
     return Listener(
       // A cancelled drag reports neither its end nor a reorder.
-      onPointerCancel: (_) => _endDrag(),
+      onPointerCancel: (_) {
+        if (_drag?.dropped == false) _endDrag();
+      },
       child: ReorderableListView.builder(
         buildDefaultDragHandles: false,
         itemCount: layout.entries.length,
@@ -134,6 +140,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
                   }
                 }),
                 reorderIndex: group != null ? index : null,
+                dragEnabled: dragEnabled,
                 onMoveUp: folderIndex > 0
                     ? () => _moveFolder(folderIds, folderIndex, -1)
                     : null,
@@ -160,6 +167,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
                 uuid: uuid,
                 reorderIndex: index,
                 dimmed: dimRows,
+                dragEnabled: dragEnabled,
               );
           }
         },
@@ -183,37 +191,54 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
       _drag = _DragSession(
         layout: layout,
         oldIndex: index,
-        draggedKey: entry.key,
         isFolder: entry is ProfileListHeaderEntry,
         movedIds: movedIds,
       );
     });
   }
 
-  /// Fires on pointer release. A drop back where the item started never
-  /// reaches [_onReorderItem], so it ends the drag here instead.
+  /// Fires on pointer release, before the drop animation. The drop is applied
+  /// here: autoscroll can still move the gap during the animation, and the
+  /// list then reports a different move or none at all.
   void _onReorderEnd(int insertIndex) {
     final _DragSession? session = _drag;
     if (session == null) return;
-    if (insertIndex == session.oldIndex ||
-        insertIndex == session.oldIndex + 1) {
-      _endDrag();
+    session.dropped = true;
+    final int oldIndex = session.oldIndex;
+    if (insertIndex == oldIndex || insertIndex == oldIndex + 1) return;
+    _applyDrop(
+      session.layout,
+      oldIndex,
+      insertIndex > oldIndex ? insertIndex - 1 : insertIndex,
+      session,
+    );
+  }
+
+  /// Fires once the drop animation ends. Also receives screen reader moves,
+  /// which arrive without a drag session and are ignored during one.
+  void _onReorderItem(ProfileGroupLayout layout, int oldIndex, int newIndex) {
+    final _DragSession? session = _drag;
+    if (session == null) {
+      _applyDrop(layout, oldIndex, newIndex, null);
+      return;
     }
+    if (oldIndex != session.oldIndex) return;
+    if (!session.dropped) {
+      _applyDrop(session.layout, oldIndex, newIndex, session);
+    }
+    _endDrag();
   }
 
   void _endDrag() {
     if (_drag != null && mounted) setState(() => _drag = null);
   }
 
-  /// Also receives screen reader moves, which arrive without a drag session.
-  void _onReorderItem(ProfileGroupLayout layout, int oldIndex, int newIndex) {
-    final _DragSession? session =
-        _drag != null &&
-            oldIndex < layout.entries.length &&
-            layout.entries[oldIndex].key == _drag!.draggedKey
-        ? _drag
-        : null;
-
+  void _applyDrop(
+    ProfileGroupLayout layout,
+    int oldIndex,
+    int newIndex,
+    _DragSession? session,
+  ) {
     final ProfileGroupEvent? event = layout.resolveDrop(
       oldIndex: oldIndex,
       newIndex: newIndex,
@@ -222,10 +247,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     );
     final ProfileGroupBloc bloc = context.read<ProfileGroupBloc>();
     final ProfileGroupState state = bloc.state;
-    if (event == null || state is! ProfileGroupsLoaded) {
-      _endDrag();
-      return;
-    }
+    if (event == null || state is! ProfileGroupsLoaded) return;
 
     final ProfileGroupData current = _pending ?? state.data;
     final ProfileGroupData next = switch (event) {
@@ -239,16 +261,13 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
       ),
       _ => current,
     };
-    final bool changed = next != current;
-    final bool movedSelection = (session?.movedIds.length ?? 0) > 1;
+    if (next == current) return;
 
-    setState(() {
-      _drag = null;
-      if (changed) _pending = next;
-    });
-    if (!changed) return;
+    setState(() => _pending = next);
     bloc.add(event);
-    if (movedSelection) context.read<ProfilesSelectedCubit>().deselectAll();
+    if ((session?.movedIds.length ?? 0) > 1) {
+      context.read<ProfilesSelectedCubit>().deselectAll();
+    }
   }
 
   void _moveFolder(List<String> folderIds, int index, int delta) {
@@ -261,28 +280,60 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
   }
 
   Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
-    final int count = _drag?.movedIds.length ?? 0;
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (BuildContext context, Widget? child) {
-        final double t = Curves.easeInOut.transform(animation.value);
-        return Material(elevation: lerpDouble(0, 6, t)!, child: child);
+    final _DragSession? session = _drag;
+    final int count = session?.movedIds.length ?? 0;
+    // The proxy goes away at the end of every drag, including the ones the
+    // list never reports, so the session can't outlive it.
+    return _OnDispose(
+      onDispose: () {
+        if (identical(_drag, session)) _endDrag();
       },
-      child: count > 1
-          ? Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                child,
-                Positioned(
-                  top: Sizes.p4,
-                  left: Sizes.p4,
-                  child: _CountBadge(count: count),
-                ),
-              ],
-            )
-          : child,
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (BuildContext context, Widget? child) {
+          final double t = Curves.easeInOut.transform(animation.value);
+          return IgnorePointer(
+            child: Material(elevation: lerpDouble(0, 6, t)!, child: child),
+          );
+        },
+        child: count > 1
+            ? Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  child,
+                  Positioned(
+                    top: Sizes.p4,
+                    left: Sizes.p4,
+                    child: _CountBadge(count: count),
+                  ),
+                ],
+              )
+            : child,
+      ),
     );
   }
+}
+
+/// Calls [onDispose] after the frame in which this widget is removed.
+class _OnDispose extends StatefulWidget {
+  final VoidCallback onDispose;
+  final Widget child;
+  const _OnDispose({required this.onDispose, required this.child});
+
+  @override
+  State<_OnDispose> createState() => _OnDisposeState();
+}
+
+class _OnDisposeState extends State<_OnDispose> {
+  @override
+  void dispose() {
+    final VoidCallback onDispose = widget.onDispose;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onDispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _CountBadge extends StatelessWidget {

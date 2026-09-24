@@ -24,6 +24,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
   final ProfileGroup? group;
 
   final int? reorderIndex;
+  final bool dragEnabled;
 
   /// Move the folder one place up or down. Null disables the menu item.
   final VoidCallback? onMoveUp;
@@ -37,6 +38,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
     required this.onToggleCollapsed,
     this.group,
     this.reorderIndex,
+    this.dragEnabled = true,
     this.onMoveUp,
     this.onMoveDown,
     super.key,
@@ -56,7 +58,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          ProfileDragHandle(index: reorderIndex),
+          ProfileDragHandle(index: reorderIndex, enabled: dragEnabled),
           IconButton(
             tooltip: collapsed ? strings.groupExpand : strings.groupCollapse,
             onPressed: onToggleCollapsed,

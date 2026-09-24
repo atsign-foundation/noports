@@ -8,13 +8,20 @@ class ProfileDragHandle extends StatelessWidget {
   static const double width = Sizes.p24;
 
   final int? index;
-  const ProfileDragHandle({required this.index, super.key});
+  final bool enabled;
+
+  const ProfileDragHandle({
+    required this.index,
+    this.enabled = true,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (index == null) return const SizedBox(width: width);
     return ReorderableDragStartListener(
       index: index!,
+      enabled: enabled,
       child: MouseRegion(
         cursor: SystemMouseCursors.grab,
         child: SizedBox(
