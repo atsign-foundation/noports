@@ -46,9 +46,11 @@ final class ProfileGroup extends Loggable {
     final List<dynamic> rawIds = json[_profileIdsKey] is List
         ? json[_profileIdsKey] as List<dynamic>
         : const <dynamic>[];
+    final dynamic uuid = json[_uuidKey];
+    final dynamic name = json[_nameKey];
     return ProfileGroup(
-      uuid: json[_uuidKey] as String? ?? '',
-      name: json[_nameKey] as String? ?? '',
+      uuid: uuid is String ? uuid : '',
+      name: name is String ? name : '',
       profileIds: rawIds.whereType<String>().toList(),
     );
   }
