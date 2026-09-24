@@ -101,6 +101,18 @@ static void test_permits_open(void) {
   decision.permit_open_len = 1;
   check(policy_permits_open(&decision, "anything", 12345), "*:* permits everything");
   policy_decision_free(&decision);
+
+  // malformed ports must fail closed, not widen into a wildcard
+  char *bad_ports[] = {"localhost:", "localhost:ssh", "localhost:0", "localhost:65536"};
+  decision.permit_open = calloc(4, sizeof(char *));
+  for (int i = 0; i < 4; i++) {
+    decision.permit_open[i] = strdup(bad_ports[i]);
+  }
+  decision.permit_open_len = 4;
+  decision.authorized = true;
+  check(!policy_permits_open(&decision, "localhost", 22), "malformed port entry is skipped, not a wildcard");
+  check(!policy_permits_open(&decision, "localhost", 0), "port 0 entry never matches");
+  policy_decision_free(&decision);
 }
 
 static void test_is_policy_service_message(void) {

@@ -4,6 +4,7 @@
 #include <atclient/json.h>
 #include <atclient/notify.h>
 #include <atlogger/atlogger.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,8 +70,21 @@ bool policy_permits_open(const sshnpd_policy_decision *decision, const char *hos
 
     bool host_matches =
         (host_len == 1 && entry[0] == '*') || (strlen(host) == host_len && strncmp(entry, host, host_len) == 0);
-    uint16_t entry_port = (uint16_t)strtoul(port_str, NULL, 10);
-    bool port_matches = strcmp(port_str, "*") == 0 || entry_port == 0 || entry_port == port;
+
+    bool port_matches;
+    if (strcmp(port_str, "*") == 0) {
+      port_matches = true;
+    } else {
+      // fail closed: a malformed, empty, or out-of-range port must never
+      // widen into a wildcard - skip the entry instead
+      char *end;
+      errno = 0;
+      unsigned long entry_port = strtoul(port_str, &end, 10);
+      if (end == port_str || *end != '\0' || errno == ERANGE || entry_port < 1 || entry_port > 65535) {
+        continue;
+      }
+      port_matches = (uint16_t)entry_port == port;
+    }
 
     if (host_matches && port_matches) {
       return true;

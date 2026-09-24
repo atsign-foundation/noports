@@ -100,6 +100,17 @@ int handle_username_keys(atclient *atclient, const char **atsigns, size_t num_at
   return 0;
 }
 
+// After SSHNPD_DEVICE_INFO_MAX_ATTEMPTS consecutive failures for the current
+// manager, give up until the next refresh window rather than retrying it on
+// every main-loop pass
+static void device_info_failed_attempt(time_t now) {
+  if (++device_info_attempts >= SSHNPD_DEVICE_INFO_MAX_ATTEMPTS) {
+    device_info_last_sent[device_info_pos] = now;
+    device_info_attempts = 0;
+    device_info_pos++;
+  }
+}
+
 void send_next_device_info(atclient *atclient, sshnpd_params *params) {
   int ret;
   const char *TAG = "send_next_device_info";
@@ -128,7 +139,7 @@ void send_next_device_info(atclient *atclient, sshnpd_params *params) {
 
   if (ret != 0) {
     atclient_atkey_free(&atkey);
-    device_info_attempts++;
+    device_info_failed_attempt(now);
     return;
   }
 
@@ -172,9 +183,10 @@ void send_next_device_info(atclient *atclient, sshnpd_params *params) {
     atclient_atkey_free(&atkey);
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to refresh device info entry for %s\n", atsign);
-      device_info_attempts++;
+      device_info_failed_attempt(now);
       return;
     }
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Refreshed device info entry for %s\n", atsign);
   } else {
     enum atlogger_logging_level previous_level = atlogger_get_logging_level();
     atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
@@ -183,6 +195,7 @@ void send_next_device_info(atclient *atclient, sshnpd_params *params) {
     atclient_atkey_free(&atkey);
   }
 
+  device_info_last_sent[device_info_pos] = now;
   device_info_attempts = 0;
   device_info_pos++;
 }

@@ -3,7 +3,7 @@
     "requires": [
         "mbedtls/3.6.7#22f77b8f8a238f8f519183cc1a6d9a20%1784897548.9733994",
         "cjson/1.7.19#0f1d9770c2c7898029ef69e0df621838%1757507235.3264372",
-        "at_c/0.4.0#c59d3ba1b0bbb654d3ea19b77e23db38%1788282728.8634486"
+        "at_c/0.4.1#a1c034ee3cf06f76ee2809ac8e08abc3%1788946041.5673366"
     ],
     "build_requires": [],
     "python_requires": [],

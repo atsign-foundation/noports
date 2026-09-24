@@ -120,7 +120,7 @@ jobs:
     steps:
       - name: Azure Login (Windows only)
         if: ${{ matrix.platform == 'windows' }}
-        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -139,7 +139,7 @@ jobs:
           cache: false
       - name: Set up QEMU (Linux riscv64 and armv7 only)
         if: ${{ matrix.arch == 'riscv64' || matrix.arch == 'armv7' }}
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
           platforms: ${{ matrix.arch }}
       - name: Create directories

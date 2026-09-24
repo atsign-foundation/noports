@@ -1,3 +1,42 @@
+# 6.15.0
+
+- feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
+  AES-CTR cipher via FFI, using hardware acceleration (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) when libcrypto is available, falling
+  back to the pure-Dart cipher otherwise
+
+# 6.14.2
+
+- fix: `WrappedSSHSocket.close()`/`destroy()` now tears down the
+  `StreamController` feeding its AES-CTR encrypter, instead of only closing
+  the underlying socket. The FFI-backed cipher only disposes on that
+  controller's `onDone`/`onCancel`/`onError`, so the native
+  `EVP_CIPHER_CTX` previously leaked until GC on a teardown that went
+  through `close()`/`destroy()` rather than `sink.close()`.
+- fix: srvd's daemon-multi control-channel path now disposes its AES-CTR
+  cipher on connection close too, instead of leaking an `EVP_CIPHER_CTX`
+  and its native buffers per connection
+
+# 6.14.1
+
+- fix: the relay auth stream wrappers (the srv-side relay authenticator and
+  both srvd-side relay auth verifiers) now forward pause/resume from their
+  `StreamController` to the socket subscription, so backpressure applied by
+  the consumer of the wrapped stream reaches the socket and closes the TCP
+  window instead of buffering without bound in the wrapper
+- build: socket_connector bumped to ^2.6.0, which bounds in-process relay
+  buffering with flush-gated backpressure (4 MiB high-water mark per
+  direction), enables TCP keep-alive on relayed sockets, and fixes a race in
+  2.5.0 where the backpressure flush could collide with a write and close a
+  relay side mid-stream, or stall one direction for good
+
+# 6.14.0
+
+- fix: share event logging config once as cached key instead of on every
+  heartbeat
+- fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
+
 # 6.13.0
 
 - feat: added `binaryName` and `formatCliHelp` to utils, for generating

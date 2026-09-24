@@ -1,3 +1,14 @@
+## 1.1.1
+
+- fix: srv segfault on connection teardown (pthread_join clobbered tid)
+- fix: C daemon filters device atSign out of the manager atSign list
+- fix: handle the case where the only manager atSign is the device atSign
+- fix: sshnpd + srv code review findings (24 fixes: bounds checks, leak
+  fixes, error-path hardening, log hygiene)
+- build(deps): bump atsdk to at_c v0.4.1 for the atauth/onboarding
+  code-review fixes (at_c#715)
+- build: musl test toolchain moved into a dependabot-tracked Dockerfile
+
 ## 1.1.0
 
 - fix: validate --root-domain port with strtol instead of atoi

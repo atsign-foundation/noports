@@ -40,7 +40,7 @@ int reconnect_atclient() {
 
   if (!atclient_is_connected(&worker)) {
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Worker client is not connected, attempting to reconnect:\n");
-    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, NULL, NULL);
+    ret = atclient_pkam_authenticate(&worker, params.atsign, &atkeys, &worker_options, NULL);
 
     if (ret != 0) {
       atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to reconnect to the atServer.\n");
@@ -62,7 +62,7 @@ exit:
 int reconnect_monitor() {
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Seems the monitor connection is down, trying to reconnect\n");
 
-  int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, NULL);
+  int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, &monitor_options);
   if (ret != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                  "Monitor connection failed to reconnect, trying again in 1 second...\n");
@@ -90,6 +90,10 @@ void free_atclient_without_disconnect(atclient *atclient) {
     atclient_connection_hooks_disable(conn);
   }
   free(conn->host);
+  // clear the pointer and its initialized flag so a later atclient_free
+  // cannot double-free it
+  conn->host = NULL;
+  conn->_is_host_initialized = false;
 
   // commented until https://github.com/atsign-foundation/at_c/issues/555
   // has been addressed
