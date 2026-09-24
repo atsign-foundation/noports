@@ -527,9 +527,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get groupAddConnection => 'Añadir conexión';
 
   @override
-  String get groupByType => 'Agrupar por tipo';
-
-  @override
   String get groupCollapse => 'Contraer';
 
   @override
@@ -553,10 +550,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron cargar las carpetas. Reintentar';
 
   @override
+  String get groupMoveDown => 'Bajar';
+
+  @override
   String get groupMoveTo => 'Mover a';
 
   @override
   String get groupMoveToFolder => 'Mover a carpeta';
+
+  @override
+  String get groupMoveUp => 'Subir';
 
   @override
   String get groupName => 'Nombre del Grupo';
@@ -578,21 +581,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get groupStopAll => 'Detener todo';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => 'Ninguno';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => 'Sin agrupar';

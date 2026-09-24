@@ -10,6 +10,11 @@ part 'profile_group_state.dart';
 class ProfileGroupBloc
     extends LoggingBloc<ProfileGroupEvent, ProfileGroupState> {
   final ProfileGroupRepository _repo;
+
+  /// False after a failed save, so the next save retries even if the data
+  /// hasn't changed.
+  bool _persisted = true;
+
   ProfileGroupBloc(this._repo) : super(const ProfileGroupsInitial()) {
     on<ProfileGroupLoadEvent>(_onLoad);
     on<ProfileGroupCreateEvent>(_onCreate);
@@ -17,7 +22,8 @@ class ProfileGroupBloc
     on<ProfileGroupDeleteEvent>(_onDelete);
     on<ProfileGroupMoveProfilesEvent>(_onMoveProfiles);
     on<ProfileGroupRemoveProfilesEvent>(_onRemoveProfiles);
-    on<ProfileGroupSetSortByTypeEvent>(_onSetSortByType);
+    on<ProfileGroupPlaceProfilesEvent>(_onPlaceProfiles);
+    on<ProfileGroupReorderFoldersEvent>(_onReorderFolders);
   }
 
   void clearAll() => emit(const ProfileGroupsInitial());
@@ -39,6 +45,7 @@ class ProfileGroupBloc
       emit(const ProfileGroupsFailedLoad());
       return;
     }
+    _persisted = true;
     emit(ProfileGroupsLoaded(data));
   }
 
@@ -46,10 +53,16 @@ class ProfileGroupBloc
     ProfileGroupData data,
     Emitter<ProfileGroupState> emit,
   ) async {
+    final ProfileGroupState current = state;
+    if (_persisted && current is ProfileGroupsLoaded && current.data == data) {
+      return;
+    }
     emit(ProfileGroupsLoaded(data));
     try {
-      await _repo.putProfileGroups(data);
-    } catch (_) {}
+      _persisted = await _repo.putProfileGroups(data);
+    } catch (_) {
+      _persisted = false;
+    }
   }
 
   Future<void> _onCreate(
@@ -64,13 +77,13 @@ class ProfileGroupBloc
       name: event.name,
       profileIds: event.profileIds.toSet().toList(),
     );
-    final List<ProfileGroup> groups =
-        data.groups
-            .map((ProfileGroup g) => g.withoutProfiles(event.profileIds))
-            .toList()
-          ..add(group);
-
-    await _save(data.copyWith(groups: groups), emit);
+    final ProfileGroupData stripped = data.withoutProfilesEverywhere(
+      event.profileIds,
+    );
+    await _save(
+      stripped.copyWith(groups: <ProfileGroup>[...stripped.groups, group]),
+      emit,
+    );
   }
 
   Future<void> _onRename(
@@ -97,13 +110,22 @@ class ProfileGroupBloc
   ) async {
     if (state is! ProfileGroupsLoaded) return;
     final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
-    if (data.groupById(event.groupId) == null) return;
+    final ProfileGroup? deleted = data.groupById(event.groupId);
+    if (deleted == null) return;
 
-    final List<ProfileGroup> groups = data.groups
-        .where((ProfileGroup g) => g.uuid != event.groupId)
-        .toList();
-
-    await _save(data.copyWith(groups: groups), emit);
+    // Ungroup the members while the folder still exists, then drop it.
+    final ProfileGroupData ungrouped = data.withProfilesUngrouped(
+      deleted.profileIds,
+      visibleUngrouped: event.visibleUngrouped,
+    );
+    await _save(
+      ungrouped.copyWith(
+        groups: ungrouped.groups
+            .where((ProfileGroup g) => g.uuid != event.groupId)
+            .toList(),
+      ),
+      emit,
+    );
   }
 
   Future<void> _onMoveProfiles(
@@ -116,14 +138,29 @@ class ProfileGroupBloc
       return;
     }
 
+    if (event.groupId == null) {
+      await _save(
+        data.withProfilesUngrouped(
+          event.profileIds,
+          visibleUngrouped: event.visibleUngrouped,
+        ),
+        emit,
+      );
+      return;
+    }
+
     final List<ProfileGroup> groups = data.groups.map((ProfileGroup g) {
       if (g.uuid == event.groupId) {
         return g.withProfiles(event.profileIds);
       }
       return g.withoutProfiles(event.profileIds);
     }).toList();
+    final Set<String> moved = event.profileIds.toSet();
+    final List<String> ungrouped = data.ungrouped
+        .where((String id) => !moved.contains(id))
+        .toList();
 
-    await _save(data.copyWith(groups: groups), emit);
+    await _save(data.copyWith(groups: groups, ungrouped: ungrouped), emit);
   }
 
   Future<void> _onRemoveProfiles(
@@ -133,27 +170,33 @@ class ProfileGroupBloc
     if (state is! ProfileGroupsLoaded) return;
     final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
 
-    final Set<String> toRemove = event.profileIds.toSet();
-    final bool affected = data.groups.any(
-      (ProfileGroup g) => g.profileIds.any(toRemove.contains),
-    );
-    if (!affected) return;
-
-    final List<ProfileGroup> groups = data.groups
-        .map((ProfileGroup g) => g.withoutProfiles(toRemove))
-        .toList();
-
-    await _save(data.copyWith(groups: groups), emit);
+    await _save(data.withoutProfilesEverywhere(event.profileIds), emit);
   }
 
-  Future<void> _onSetSortByType(
-    ProfileGroupSetSortByTypeEvent event,
+  Future<void> _onPlaceProfiles(
+    ProfileGroupPlaceProfilesEvent event,
     Emitter<ProfileGroupState> emit,
   ) async {
     if (state is! ProfileGroupsLoaded) return;
     final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
-    if (data.sortByType == event.sortByType) return;
 
-    await _save(data.copyWith(sortByType: event.sortByType), emit);
+    await _save(
+      data.placeProfiles(
+        profileIds: event.profileIds,
+        groupId: event.groupId,
+        sectionOrder: event.sectionOrder,
+      ),
+      emit,
+    );
+  }
+
+  Future<void> _onReorderFolders(
+    ProfileGroupReorderFoldersEvent event,
+    Emitter<ProfileGroupState> emit,
+  ) async {
+    if (state is! ProfileGroupsLoaded) return;
+    final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
+
+    await _save(data.withFoldersOrdered(event.groupIds), emit);
   }
 }

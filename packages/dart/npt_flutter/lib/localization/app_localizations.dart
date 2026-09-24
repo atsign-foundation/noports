@@ -1019,12 +1019,6 @@ abstract class AppLocalizations {
   /// **'Add connection'**
   String get groupAddConnection;
 
-  /// No description provided for @groupByType.
-  ///
-  /// In en, this message translates to:
-  /// **'Group by type'**
-  String get groupByType;
-
   /// No description provided for @groupCollapse.
   ///
   /// In en, this message translates to:
@@ -1067,6 +1061,12 @@ abstract class AppLocalizations {
   /// **'Folders failed to load. Retry'**
   String get groupLoadFailedRetry;
 
+  /// No description provided for @groupMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get groupMoveDown;
+
   /// No description provided for @groupMoveTo.
   ///
   /// In en, this message translates to:
@@ -1078,6 +1078,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move to folder'**
   String get groupMoveToFolder;
+
+  /// No description provided for @groupMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get groupMoveUp;
 
   /// No description provided for @groupName.
   ///
@@ -1120,36 +1126,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop all'**
   String get groupStopAll;
-
-  /// No description provided for @groupTypeHttp.
-  ///
-  /// In en, this message translates to:
-  /// **'HTTP'**
-  String get groupTypeHttp;
-
-  /// No description provided for @groupTypeNone.
-  ///
-  /// In en, this message translates to:
-  /// **'None'**
-  String get groupTypeNone;
-
-  /// No description provided for @groupTypeRdp.
-  ///
-  /// In en, this message translates to:
-  /// **'RDP'**
-  String get groupTypeRdp;
-
-  /// No description provided for @groupTypeSsh.
-  ///
-  /// In en, this message translates to:
-  /// **'SSH'**
-  String get groupTypeSsh;
-
-  /// No description provided for @groupTypeVnc.
-  ///
-  /// In en, this message translates to:
-  /// **'VNC'**
-  String get groupTypeVnc;
 
   /// No description provided for @groupUngrouped.
   ///

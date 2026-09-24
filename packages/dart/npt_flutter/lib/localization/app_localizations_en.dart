@@ -518,9 +518,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupAddConnection => 'Add connection';
 
   @override
-  String get groupByType => 'Group by type';
-
-  @override
   String get groupCollapse => 'Collapse';
 
   @override
@@ -543,10 +540,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupLoadFailedRetry => 'Folders failed to load. Retry';
 
   @override
+  String get groupMoveDown => 'Move down';
+
+  @override
   String get groupMoveTo => 'Move to';
 
   @override
   String get groupMoveToFolder => 'Move to folder';
+
+  @override
+  String get groupMoveUp => 'Move up';
 
   @override
   String get groupName => 'Group Name';
@@ -568,21 +571,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get groupStopAll => 'Stop all';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => 'None';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => 'Ungrouped';

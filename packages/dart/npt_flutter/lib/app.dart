@@ -79,8 +79,8 @@ class App extends StatelessWidget {
             create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
           ),
 
-          /// Custom folders and the "group by type" preference for the
-          /// connections list, persisted as a single blob on the atServer
+          /// Custom folders and the manual order of the connections list,
+          /// persisted as a single blob on the atServer
           BlocProvider<ProfileGroupBloc>(
             create: (ctx) =>
                 ProfileGroupBloc(ctx.read<ProfileGroupRepository>()),

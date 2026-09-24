@@ -47,12 +47,15 @@ final class ProfileGroupRenameEvent extends ProfileGroupEvent {
   }
 }
 
+/// Deletes [groupId]. Its profiles become ungrouped, ordered by
+/// [visibleUngrouped] when given.
 final class ProfileGroupDeleteEvent extends ProfileGroupEvent {
   final String groupId;
-  const ProfileGroupDeleteEvent({required this.groupId});
+  final List<String>? visibleUngrouped;
+  const ProfileGroupDeleteEvent({required this.groupId, this.visibleUngrouped});
 
   @override
-  List<Object?> get props => [groupId];
+  List<Object?> get props => [groupId, visibleUngrouped];
 
   @override
   String toString() {
@@ -61,17 +64,20 @@ final class ProfileGroupDeleteEvent extends ProfileGroupEvent {
 }
 
 /// Moves [profileIds] into the group [groupId].
-/// A null [groupId] removes the profiles from every group.
+/// A null [groupId] ungroups them instead, ordered by [visibleUngrouped]
+/// when given.
 final class ProfileGroupMoveProfilesEvent extends ProfileGroupEvent {
   final Iterable<String> profileIds;
   final String? groupId;
+  final List<String>? visibleUngrouped;
   const ProfileGroupMoveProfilesEvent({
     required this.profileIds,
     required this.groupId,
+    this.visibleUngrouped,
   });
 
   @override
-  List<Object?> get props => [profileIds, groupId];
+  List<Object?> get props => [profileIds, groupId, visibleUngrouped];
 
   @override
   String toString() {
@@ -92,15 +98,38 @@ final class ProfileGroupRemoveProfilesEvent extends ProfileGroupEvent {
   }
 }
 
-final class ProfileGroupSetSortByTypeEvent extends ProfileGroupEvent {
-  final bool sortByType;
-  const ProfileGroupSetSortByTypeEvent(this.sortByType);
+/// Places [profileIds] into folder [groupId] (null means ungrouped) at
+/// [sectionOrder], after a drag-and-drop.
+final class ProfileGroupPlaceProfilesEvent extends ProfileGroupEvent {
+  final List<String> profileIds;
+  final String? groupId;
+  final List<String> sectionOrder;
+  const ProfileGroupPlaceProfilesEvent({
+    required this.profileIds,
+    required this.groupId,
+    required this.sectionOrder,
+  });
 
   @override
-  List<Object?> get props => [sortByType];
+  List<Object?> get props => [profileIds, groupId, sectionOrder];
 
   @override
   String toString() {
-    return 'ProfileGroupSetSortByTypeEvent($sortByType)';
+    return 'ProfileGroupPlaceProfilesEvent(profileIds: $profileIds, '
+        'groupId: $groupId, sectionOrder: $sectionOrder)';
+  }
+}
+
+/// Reorders folders to follow [groupIds].
+final class ProfileGroupReorderFoldersEvent extends ProfileGroupEvent {
+  final List<String> groupIds;
+  const ProfileGroupReorderFoldersEvent(this.groupIds);
+
+  @override
+  List<Object?> get props => [groupIds];
+
+  @override
+  String toString() {
+    return 'ProfileGroupReorderFoldersEvent($groupIds)';
   }
 }

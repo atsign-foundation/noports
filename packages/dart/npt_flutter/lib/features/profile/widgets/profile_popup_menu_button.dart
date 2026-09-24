@@ -30,8 +30,7 @@ class ProfilePopupMenuButton extends StatelessWidget {
     final ProfileGroupState groupState = context
         .watch<ProfileGroupBloc>()
         .state;
-    final ProfileGroupData? groupData =
-        (groupState is ProfileGroupsLoaded && !groupState.sortByType)
+    final ProfileGroupData? groupData = groupState is ProfileGroupsLoaded
         ? groupState.data
         : null;
     return PopupMenuButton<PopupMenuEntry>(

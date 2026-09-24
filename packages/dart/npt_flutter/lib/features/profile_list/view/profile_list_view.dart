@@ -73,7 +73,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                         isFullProfile
                             ? const Row(
                                 children: [
-                                  ProfileGroupSortToggle(),
+                                  ProfileGroupLoadRetryButton(),
                                   Spacer(),
                                   ProfileListAddButton(),
                                   gapW10,

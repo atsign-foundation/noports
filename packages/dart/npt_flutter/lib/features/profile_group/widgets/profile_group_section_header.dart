@@ -4,6 +4,7 @@ import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart'
 import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
 import 'package:npt_flutter/features/profile_group/util/profile_group_actions.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
+import 'package:npt_flutter/features/profile_list/widgets/profile_drag_handle.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -11,14 +12,22 @@ import 'package:npt_flutter/widgets/confirmation_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileGroupSectionHeader extends StatelessWidget {
+  static const double _menuSlotWidth = 48;
+
   final String title;
   final IconData icon;
   final List<String> uuids;
   final bool collapsed;
   final VoidCallback onToggleCollapsed;
 
-  /// Null for automatic sections (type buckets, ungrouped profiles).
+  /// Null for the ungrouped section.
   final ProfileGroup? group;
+
+  final int? reorderIndex;
+
+  /// Move the folder one place up or down. Null disables the menu item.
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   const ProfileGroupSectionHeader({
     required this.title,
@@ -27,6 +36,9 @@ class ProfileGroupSectionHeader extends StatelessWidget {
     required this.collapsed,
     required this.onToggleCollapsed,
     this.group,
+    this.reorderIndex,
+    this.onMoveUp,
+    this.onMoveDown,
     super.key,
   });
 
@@ -44,6 +56,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
+          ProfileDragHandle(index: reorderIndex),
           IconButton(
             tooltip: collapsed ? strings.groupExpand : strings.groupCollapse,
             onPressed: onToggleCollapsed,
@@ -56,21 +69,26 @@ class ProfileGroupSectionHeader extends StatelessWidget {
           ),
           PhosphorIcon(icon, size: Sizes.p20),
           gapW8,
-          Flexible(
-            child: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                gapW8,
+                Text(
+                  '${uuids.length}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColor.onSurfaceColor,
+                  ),
+                ),
+              ],
             ),
           ),
-          gapW8,
-          Text(
-            '${uuids.length}',
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: AppColor.onSurfaceColor),
-          ),
-          const Spacer(),
           BlocSelector<ProfilesRunningCubit, ProfilesRunningState, int>(
             selector: (ProfilesRunningState state) => uuids
                 .where(
@@ -109,10 +127,17 @@ class ProfileGroupSectionHeader extends StatelessWidget {
               );
             },
           ),
-          if (group != null)
-            _ProfileGroupMenuButton(group: group!)
-          else
-            const SizedBox(width: Sizes.p40),
+          // Fixed slot keeps start/stop buttons aligned across headers.
+          SizedBox(
+            width: _menuSlotWidth,
+            child: group == null
+                ? null
+                : _ProfileGroupMenuButton(
+                    group: group!,
+                    onMoveUp: onMoveUp,
+                    onMoveDown: onMoveDown,
+                  ),
+          ),
         ],
       ),
     );
@@ -121,7 +146,13 @@ class ProfileGroupSectionHeader extends StatelessWidget {
 
 class _ProfileGroupMenuButton extends StatelessWidget {
   final ProfileGroup group;
-  const _ProfileGroupMenuButton({required this.group});
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+  const _ProfileGroupMenuButton({
+    required this.group,
+    required this.onMoveUp,
+    required this.onMoveDown,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +182,28 @@ class _ProfileGroupMenuButton extends StatelessWidget {
             onTap: () => ProfileGroupActions.renameFolder(context, group),
           ),
           PopupMenuItem(
+            enabled: onMoveUp != null,
+            onTap: onMoveUp,
+            child: Row(
+              children: <Widget>[
+                PhosphorIcon(PhosphorIcons.arrowUp()),
+                gapW10,
+                Text(strings.groupMoveUp),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            enabled: onMoveDown != null,
+            onTap: onMoveDown,
+            child: Row(
+              children: <Widget>[
+                PhosphorIcon(PhosphorIcons.arrowDown()),
+                gapW10,
+                Text(strings.groupMoveDown),
+              ],
+            ),
+          ),
+          PopupMenuItem(
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.trash()),
@@ -166,7 +219,15 @@ class _ProfileGroupMenuButton extends StatelessWidget {
                   message: strings.groupDeleteFolderMessage,
                   actionText: strings.delete,
                   action: () {
-                    bloc.add(ProfileGroupDeleteEvent(groupId: group.uuid));
+                    bloc.add(
+                      ProfileGroupDeleteEvent(
+                        groupId: group.uuid,
+                        // Read on confirm, not when the dialog opened.
+                        visibleUngrouped: context.mounted
+                            ? ProfileGroupActions.visibleUngrouped(context)
+                            : null,
+                      ),
+                    );
                   },
                 ),
               );

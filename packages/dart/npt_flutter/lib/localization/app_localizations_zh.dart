@@ -491,9 +491,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupAddConnection => '添加连接';
 
   @override
-  String get groupByType => '按类型分组';
-
-  @override
   String get groupCollapse => '折叠';
 
   @override
@@ -515,10 +512,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupLoadFailedRetry => '文件夹加载失败。重试';
 
   @override
+  String get groupMoveDown => '下移';
+
+  @override
   String get groupMoveTo => '移动到';
 
   @override
   String get groupMoveToFolder => '移动到文件夹';
+
+  @override
+  String get groupMoveUp => '上移';
 
   @override
   String get groupName => '组名';
@@ -540,21 +543,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get groupStopAll => '全部停止';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => '无';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => '未分组';
@@ -1605,9 +1593,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get groupAddConnection => '添加连接';
 
   @override
-  String get groupByType => '按类型分组';
-
-  @override
   String get groupCollapse => '折叠';
 
   @override
@@ -1629,10 +1614,16 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get groupLoadFailedRetry => '文件夹加载失败。重试';
 
   @override
+  String get groupMoveDown => '下移';
+
+  @override
   String get groupMoveTo => '移动到';
 
   @override
   String get groupMoveToFolder => '移动到文件夹';
+
+  @override
+  String get groupMoveUp => '上移';
 
   @override
   String get groupName => '组名';
@@ -1654,21 +1645,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get groupStopAll => '全部停止';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => '无';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => '未分组';
@@ -2719,9 +2695,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get groupAddConnection => '新增連線';
 
   @override
-  String get groupByType => '按類型分組';
-
-  @override
   String get groupCollapse => '收合';
 
   @override
@@ -2743,10 +2716,16 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get groupLoadFailedRetry => '資料夾載入失敗。重試';
 
   @override
+  String get groupMoveDown => '下移';
+
+  @override
   String get groupMoveTo => '移至';
 
   @override
   String get groupMoveToFolder => '移至資料夾';
+
+  @override
+  String get groupMoveUp => '上移';
 
   @override
   String get groupName => '群組名稱';
@@ -2768,21 +2747,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get groupStopAll => '全部停止';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => '無';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => '未分組';

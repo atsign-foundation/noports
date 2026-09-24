@@ -39,7 +39,6 @@ final class ProfileGroupsLoaded extends ProfileGroupState {
   const ProfileGroupsLoaded(this.data);
 
   List<ProfileGroup> get groups => data.groups;
-  bool get sortByType => data.sortByType;
 
   @override
   List<Object?> get props => [data];

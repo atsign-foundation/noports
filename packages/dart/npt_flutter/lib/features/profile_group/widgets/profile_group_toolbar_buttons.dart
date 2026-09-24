@@ -4,62 +4,32 @@ import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart'
 import 'package:npt_flutter/features/profile_group/util/profile_group_actions.dart';
 import 'package:npt_flutter/features/profile_list/cubit/profiles_selected_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
-import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Toggle between custom folders and automatic grouping by connection type.
-class ProfileGroupSortToggle extends StatelessWidget {
-  const ProfileGroupSortToggle({super.key});
+/// Retry button shown only when folders failed to load.
+class ProfileGroupLoadRetryButton extends StatelessWidget {
+  const ProfileGroupLoadRetryButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context)!;
     return BlocBuilder<ProfileGroupBloc, ProfileGroupState>(
       builder: (BuildContext context, ProfileGroupState state) {
-        switch (state) {
-          case ProfileGroupsFailedLoad():
-            return TextButton.icon(
-              onPressed: () {
-                context.read<ProfileGroupBloc>().add(
-                  const ProfileGroupLoadEvent(),
-                );
-              },
-              icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
-              label: Text(strings.groupLoadFailedRetry),
-            );
-          case ProfileGroupsLoaded():
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                PhosphorIcon(PhosphorIcons.squaresFour(), size: Sizes.p20),
-                gapW8,
-                Text(strings.groupByType),
-                gapW8,
-                Switch(
-                  key: const Key('ProfileGroupSortToggle-Switch'),
-                  activeThumbColor: Colors.black,
-                  activeTrackColor: AppColor.primaryColor,
-                  value: state.sortByType,
-                  onChanged: (bool value) {
-                    context.read<ProfileGroupBloc>().add(
-                      ProfileGroupSetSortByTypeEvent(value),
-                    );
-                  },
-                ),
-              ],
-            );
-          case ProfileGroupsInitial():
-          case ProfileGroupsLoading():
-            return gap0;
-        }
+        if (state is! ProfileGroupsFailedLoad) return gap0;
+        return TextButton.icon(
+          onPressed: () {
+            context.read<ProfileGroupBloc>().add(const ProfileGroupLoadEvent());
+          },
+          icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
+          label: Text(strings.groupLoadFailedRetry),
+        );
       },
     );
   }
 }
 
-/// Creates an empty folder. Hidden while profiles are selected or while
-/// grouping by type is active.
+/// Creates an empty folder. Hidden while profiles are selected.
 class ProfileGroupCreateButton extends StatelessWidget {
   const ProfileGroupCreateButton({super.key});
 
@@ -71,8 +41,7 @@ class ProfileGroupCreateButton extends StatelessWidget {
       builder: (BuildContext context, bool anySelected) {
         if (anySelected) return gap0;
         return BlocSelector<ProfileGroupBloc, ProfileGroupState, bool>(
-          selector: (ProfileGroupState state) =>
-              state is ProfileGroupsLoaded && !state.sortByType,
+          selector: (ProfileGroupState state) => state is ProfileGroupsLoaded,
           builder: (BuildContext context, bool foldersEnabled) {
             if (!foldersEnabled) return gap0;
             return ElevatedButton.icon(
@@ -89,7 +58,7 @@ class ProfileGroupCreateButton extends StatelessWidget {
 }
 
 /// Moves the selected profiles into a folder. Shown only while profiles are
-/// selected and folders are active.
+/// selected and folders have loaded.
 class ProfileGroupMoveButton extends StatelessWidget {
   const ProfileGroupMoveButton({super.key});
 
@@ -105,8 +74,7 @@ class ProfileGroupMoveButton extends StatelessWidget {
       builder: (BuildContext context, Set<String> selected) {
         if (selected.isEmpty) return gap0;
         return BlocSelector<ProfileGroupBloc, ProfileGroupState, bool>(
-          selector: (ProfileGroupState state) =>
-              state is ProfileGroupsLoaded && !state.sortByType,
+          selector: (ProfileGroupState state) => state is ProfileGroupsLoaded,
           builder: (BuildContext context, bool foldersEnabled) {
             if (!foldersEnabled) return gap0;
             return ElevatedButton.icon(

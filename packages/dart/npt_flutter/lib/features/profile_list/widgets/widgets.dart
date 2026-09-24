@@ -1,3 +1,4 @@
+export 'profile_drag_handle.dart';
 export 'profile_list_add_button.dart';
 export 'profile_list_import_button.dart';
 export 'profile_list_refresh_button.dart';

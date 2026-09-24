@@ -525,9 +525,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get groupAddConnection => 'Adicionar conexão';
 
   @override
-  String get groupByType => 'Agrupar por tipo';
-
-  @override
   String get groupCollapse => 'Recolher';
 
   @override
@@ -551,10 +548,16 @@ class AppLocalizationsPt extends AppLocalizations {
       'Falha ao carregar as pastas. Tentar novamente';
 
   @override
+  String get groupMoveDown => 'Mover para baixo';
+
+  @override
   String get groupMoveTo => 'Mover para';
 
   @override
   String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get groupMoveUp => 'Mover para cima';
 
   @override
   String get groupName => 'Nome do Grupo';
@@ -576,21 +579,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get groupStopAll => 'Parar todos';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => 'Nenhum';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => 'Sem grupo';
@@ -1713,9 +1701,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get groupAddConnection => 'Adicionar conexão';
 
   @override
-  String get groupByType => 'Agrupar por tipo';
-
-  @override
   String get groupCollapse => 'Recolher';
 
   @override
@@ -1739,10 +1724,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Falha ao carregar as pastas. Tentar novamente';
 
   @override
+  String get groupMoveDown => 'Mover para baixo';
+
+  @override
   String get groupMoveTo => 'Mover para';
 
   @override
   String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get groupMoveUp => 'Mover para cima';
 
   @override
   String get groupName => 'Nome do Grupo';
@@ -1764,21 +1755,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get groupStopAll => 'Parar todos';
-
-  @override
-  String get groupTypeHttp => 'HTTP';
-
-  @override
-  String get groupTypeNone => 'Nenhum';
-
-  @override
-  String get groupTypeRdp => 'RDP';
-
-  @override
-  String get groupTypeSsh => 'SSH';
-
-  @override
-  String get groupTypeVnc => 'VNC';
 
   @override
   String get groupUngrouped => 'Sem grupo';

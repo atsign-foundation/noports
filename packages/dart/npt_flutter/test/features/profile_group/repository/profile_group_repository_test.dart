@@ -21,7 +21,6 @@ void main() {
       groups: <ProfileGroup>[
         ProfileGroup(uuid: 'g1', name: 'One', profileIds: <String>['a', 'b']),
       ],
-      sortByType: true,
     );
 
     setUp(() {

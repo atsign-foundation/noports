@@ -5,6 +5,7 @@ import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart'
 import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
 import 'package:npt_flutter/features/profile_group/widgets/profile_group_name_dialog.dart';
 import 'package:npt_flutter/features/profile_group/widgets/profile_group_picker_dialog.dart';
+import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/profile_form_page.dart';
@@ -12,6 +13,17 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileGroupActions {
+  /// The ungrouped section as the connections list currently shows it, so
+  /// moved-out profiles land at the end. Null if it isn't available yet.
+  static List<String>? visibleUngrouped(BuildContext context) {
+    final ProfileGroupState groups = context.read<ProfileGroupBloc>().state;
+    final ProfileListState profiles = context.read<ProfileListBloc>().state;
+    if (groups is! ProfileGroupsLoaded || profiles is! ProfileListLoaded) {
+      return null;
+    }
+    return groups.data.resolveUngrouped(profiles.profiles);
+  }
+
   static void startAll(BuildContext context, Iterable<String> uuids) {
     final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
     for (final String uuid in uuids) {
@@ -95,7 +107,16 @@ class ProfileGroupActions {
 
     switch (pick) {
       case ProfileGroupPickNone():
-        bloc.add(ProfileGroupMoveProfilesEvent(profileIds: ids, groupId: null));
+        bloc.add(
+          ProfileGroupMoveProfilesEvent(
+            profileIds: ids,
+            groupId: null,
+            // Re-read here, not before the dialog, in case a sync changed it.
+            visibleUngrouped: context.mounted
+                ? visibleUngrouped(context)
+                : null,
+          ),
+        );
       case ProfileGroupPickExisting(:final String groupId):
         bloc.add(
           ProfileGroupMoveProfilesEvent(profileIds: ids, groupId: groupId),
