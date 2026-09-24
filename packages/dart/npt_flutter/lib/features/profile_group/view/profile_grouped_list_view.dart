@@ -73,7 +73,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
               data: _pending ?? groupState.data,
               loaded: widget.profiles,
               collapsed: _collapsed,
-              ungroupedTitle: AppLocalizations.of(context)!.groupUngrouped,
+              ungroupedTitle: AppLocalizations.of(context)!.groupNoFolder,
             );
         return _buildReorderable(layout);
       },

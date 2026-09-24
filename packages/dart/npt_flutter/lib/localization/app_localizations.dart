@@ -1127,12 +1127,6 @@ abstract class AppLocalizations {
   /// **'Stop all'**
   String get groupStopAll;
 
-  /// No description provided for @groupUngrouped.
-  ///
-  /// In en, this message translates to:
-  /// **'Ungrouped'**
-  String get groupUngrouped;
-
   /// No description provided for @import.
   ///
   /// In en, this message translates to:

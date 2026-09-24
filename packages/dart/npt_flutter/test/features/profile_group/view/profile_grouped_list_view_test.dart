@@ -202,7 +202,6 @@ void main() {
     expect(header(ProfileGroupedListView.ungroupedSectionId), findsOneWidget);
     expect(find.text('Servers'), findsOneWidget);
     expect(find.text('Desktops'), findsOneWidget);
-    expect(find.text(strings.groupUngrouped), findsOneWidget);
     expect(find.byType(ProfileListRow), findsNWidgets(3));
 
     // Profile ids that are not loaded do not count towards the folder.

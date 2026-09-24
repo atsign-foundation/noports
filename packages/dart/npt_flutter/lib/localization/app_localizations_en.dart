@@ -573,9 +573,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupStopAll => 'Stop all';
 
   @override
-  String get groupUngrouped => 'Ungrouped';
-
-  @override
   String get import => 'Import';
 
   @override

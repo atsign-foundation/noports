@@ -545,9 +545,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupStopAll => '全部停止';
 
   @override
-  String get groupUngrouped => '未分组';
-
-  @override
   String get import => '导入';
 
   @override
@@ -1647,9 +1644,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get groupStopAll => '全部停止';
 
   @override
-  String get groupUngrouped => '未分组';
-
-  @override
   String get import => '导入';
 
   @override
@@ -2747,9 +2741,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get groupStopAll => '全部停止';
-
-  @override
-  String get groupUngrouped => '未分組';
 
   @override
   String get import => '匯入';

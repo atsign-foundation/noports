@@ -581,9 +581,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get groupStopAll => 'Parar todos';
 
   @override
-  String get groupUngrouped => 'Sem grupo';
-
-  @override
   String get import => 'Importar';
 
   @override
@@ -1755,9 +1752,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get groupStopAll => 'Parar todos';
-
-  @override
-  String get groupUngrouped => 'Sem grupo';
 
   @override
   String get import => 'Importar';
