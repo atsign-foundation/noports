@@ -83,16 +83,17 @@ class ProfileGroupActions {
   }
 
   /// Asks the user which folder [profileIds] should live in, then applies it.
-  static Future<void> moveToFolder(
+  /// Returns false if the user cancelled.
+  static Future<bool> moveToFolder(
     BuildContext context,
     Iterable<String> profileIds,
   ) async {
     final ProfileGroupBloc bloc = context.read<ProfileGroupBloc>();
     final ProfileGroupState state = bloc.state;
-    if (state is! ProfileGroupsLoaded) return;
+    if (state is! ProfileGroupsLoaded) return false;
     final AppLocalizations strings = AppLocalizations.of(context)!;
     final List<String> ids = profileIds.toList();
-    if (ids.isEmpty) return;
+    if (ids.isEmpty) return false;
 
     final ProfileGroupPick? pick = await showDialog<ProfileGroupPick>(
       context: context,
@@ -103,7 +104,7 @@ class ProfileGroupActions {
             : null,
       ),
     );
-    if (pick == null) return;
+    if (pick == null) return false;
 
     switch (pick) {
       case ProfileGroupPickNone():
@@ -122,15 +123,16 @@ class ProfileGroupActions {
           ProfileGroupMoveProfilesEvent(profileIds: ids, groupId: groupId),
         );
       case ProfileGroupPickNew():
-        if (!context.mounted) return;
+        if (!context.mounted) return false;
         final String? name = await showDialog<String>(
           context: context,
           builder: (BuildContext _) =>
               ProfileGroupNameDialog(title: strings.groupNewFolder),
         );
-        if (name == null || name.isEmpty) return;
+        if (name == null || name.isEmpty) return false;
         bloc.add(ProfileGroupCreateEvent(name: name, profileIds: ids));
     }
+    return true;
   }
 
   static void addConnectionToFolder(String groupId) {

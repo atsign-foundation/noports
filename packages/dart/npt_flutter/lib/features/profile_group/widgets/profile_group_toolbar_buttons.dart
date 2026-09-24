@@ -82,8 +82,9 @@ class ProfileGroupMoveButton extends StatelessWidget {
               onPressed: () async {
                 final ProfilesSelectedCubit selectedCubit = context
                     .read<ProfilesSelectedCubit>();
-                await ProfileGroupActions.moveToFolder(context, selected);
-                selectedCubit.deselectAll();
+                if (await ProfileGroupActions.moveToFolder(context, selected)) {
+                  selectedCubit.deselectAll();
+                }
               },
               label: Text(strings.groupMoveTo),
               icon: PhosphorIcon(PhosphorIcons.folderOpen()),
