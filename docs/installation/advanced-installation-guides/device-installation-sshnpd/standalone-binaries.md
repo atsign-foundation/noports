@@ -1,61 +1,46 @@
 ---
-description: >-
-  Follow these two steps to install the NoPorts daemon so you can install your
-  own background service.
+description: The NoPorts daemon doesn't have to be run by systemd
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
-# Standalone Binaries
+# Running without systemd
 
-### Step 1. Run the installer
+Once NoPorts is installed with a `/etc/noports/sshnpd.yaml` config and an atKeys file all that's needed to start the daemon is to run `sshnpd` .
 
-{% tabs %}
-{% tab title="Linux" %}
-1. Change directories into the unpacked download:
+But... without systemd there's nothing to restart `sshnpd` if it exits, and there's nothing capturing logs (and compressing, rotating and pruning them).
 
-```sh
-cd sshnp
+At the most basic level a simple script will restart the daemon if it fails:
+
+```bash
+#!/bin/bash
+BACKOFF_INTERVAL=10
+while true; do
+  sshnpd
+  sleep "$BACKOFF_INTERVAL"
+done
 ```
 
-2. Then run the installer:
+Whatever runs `sshnpd` should be some kind of background task (so it doesn't exit when the session launching it is disconnected). For example redirect logs and run in background with:
 
-```sh
-./install.sh sshnpd
+```
+nohup sshnpd > sshnpd.log 2> sshnpd.err < /dev/null &
 ```
 
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh sshnpd
-```
-{% endtab %}
-
-{% tab title="macOS" %}
-1. Change directories into the unpacked download:
-
-```sh
-cd sshnp
-```
-
-2. Then run the installer:
-
-```sh
-./install.sh sshnpd
-```
-
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh sshnpd
-```
-{% endtab %}
-{% endtabs %}
-
-### Step 2. Set up the installer
-
-You are on your own for setting up the background service to start sshnpd. See our other options if you need help setting this up.
-
-### Step 3. All Done!
-
-You can now proceed to [installing your client](../client-installation-sshnp.md), or if you've already done that, check out our [usage guide](../../../usage/basic-usage-1/).
+A similar effect can be achieved by running `sshnpd` inside a terminal multiplexer such as [GNU Screen](https://www.gnu.org/software/screen/) or [Tmux](https://en.wikipedia.org/wiki/Tmux).

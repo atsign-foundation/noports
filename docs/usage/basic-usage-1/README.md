@@ -1,5 +1,23 @@
 ---
 icon: rectangle-terminal
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # sshnp Usage
@@ -23,7 +41,7 @@ This guide covers the basics to understanding the parameters of and invoking ssh
 
 ### -f, --from
 
-This argument is the client address, a.k.a. the from address, since we are **connecting** **from** the client. This argument is mandatory, in the form of an atSign. For example:
+This argument is the client address, a.k.a. the from address, since we are **connecting** **from** the client. This argument is mandatory, in the form of an Atsign. For example:
 
 ```bash
 sshnp ... -f @alice_client ...
@@ -31,7 +49,7 @@ sshnp ... -f @alice_client ...
 
 ### -t, --to
 
-This argument is the device address, a.k.a. the to address, since we are **connecting** **to** the device. This argument is mandatory, in the form of an atSign. For example:
+This argument is the device address, a.k.a. the to address, since we are **connecting** **to** the device. This argument is mandatory, in the form of an Atsign. For example:
 
 ```bash
 sshnp ... -t @alice_device ...
