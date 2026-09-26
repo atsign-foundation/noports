@@ -1,3 +1,7 @@
+## 1.9.5+32
+
+- FEAT: Use the remote atServer as the source of truth instead of synchronizing a local store.
+
 ## 1.9.4+31
 
 - FIX: Merged run/stop action into status indicator for resize-friendly profile rows.

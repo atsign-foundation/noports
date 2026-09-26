@@ -20,22 +20,24 @@ class ProfileRepository {
   Future<Iterable<String>?> getProfileUuids() async {
     AtClient atClient = _client;
 
-    String namespace = Constants.namespace ?? '';
-    List<AtKey> keys;
+    final String namespace = Constants.namespace;
+    List<String> keyStrings;
     try {
-      keys = await atClient.getAtKeys(
+      keyStrings = await atClient.getKeys(
         regex: '.${Uuid.profilesSubNamespace}.$namespace',
+        useRemoteAtServer: true,
       );
     } catch (e) {
       App.log('[ERROR] getProfileUuids failed: $e'.loggable);
-      keys = [];
+      keyStrings = [];
     }
-    return keys.map(
-      (key) => key.key.substring(
+    return keyStrings.map((keyString) {
+      final AtKey key = AtKey.fromString(keyString);
+      return key.key.substring(
         0,
         key.key.indexOf('.${Uuid.profilesSubNamespace}'),
-      ),
-    );
+      );
+    });
   }
 
   Future<Iterable<Profile>> getProfiles(Iterable<String> uuids) {

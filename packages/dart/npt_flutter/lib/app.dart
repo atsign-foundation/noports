@@ -7,7 +7,6 @@ import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
 import 'package:npt_flutter/features/back_up_key/repository/backup_key_repository.dart';
 import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
-import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
@@ -104,8 +103,6 @@ class App extends StatelessWidget {
             create: (ctx) => PendingRequestsCountCubit(),
           ),
 
-          /// A cubit which tracks the sync status of the profiles
-          BlocProvider<SyncCubit>(create: (_) => SyncCubit()),
           // A cubit which tracks if the atkey is backed up
           BlocProvider<BackupKeyCubit>(create: (ctx) => BackupKeyCubit()),
           BlocProvider<PolicyCubit>(
