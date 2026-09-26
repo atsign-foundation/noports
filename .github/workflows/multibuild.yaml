@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
+      # github.ref_name with '/' replaced: artifact names may not contain a
+      # slash, and a workflow_dispatch from a branch like user/feature has one.
+      safe_ref: ${{ steps.safe_ref.outputs.safe_ref }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create action branch
@@ -39,6 +42,9 @@ jobs:
           fi
       - name: Push changes to branch
         run: git push --set-upstream origin multibuild-${{github.run_number}}
+      - name: Artifact-safe ref name
+        id: safe_ref
+        run: echo "safe_ref=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
       - name: Extract Version from pubspec.yaml
         id: extract_version
         working-directory: ./packages/dart/sshnoports
@@ -53,6 +59,7 @@ jobs:
       id-token: write # For OIDC token used by Azure signing
     runs-on: ${{ matrix.os }}
     environment: ${{ matrix.environment }}
+    continue-on-error: ${{ matrix.experimental == true }}
     defaults:
       run:
         working-directory: ./packages/dart/sshnoports
@@ -107,10 +114,25 @@ jobs:
             environment: azure-signing
             output-name: sshnp-windows-x64
             arch: "amd64"
+            winarch: "x64"
             cross: ""
             ext: ".exe"
             bundle: "windows"
             platform: "windows"
+          # Native Windows on ARM. Dart, .NET and WiX all support arm64;
+          # Flutter is installed from git because it publishes SDK archives
+          # for x64 hosts only. Marked experimental until it has shipped a
+          # few times, so a failure here cannot block a release.
+          - os: windows-11-arm
+            environment: azure-signing
+            output-name: sshnp-windows-arm64
+            arch: "arm64"
+            winarch: "arm64"
+            cross: ""
+            ext: ".exe"
+            bundle: "windows"
+            platform: "windows"
+            experimental: true
     env:
       ARCH: ${{ matrix.arch }}
       BINS: "at_activate noports npevents npp npp_atserver npp_file npt srv sshnp sshnpd"
@@ -206,8 +228,30 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
         run: |
-          dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
-          mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+          dotnet publish --configuration Release -p:DefineConstants="SSHNPD" -r win-${{ matrix.winarch }}
+          mv bin/Release/net*/win-${{ matrix.winarch }}/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Install Flutter (Windows x64 only)
+        if: ${{ matrix.platform == 'windows' && matrix.winarch == 'x64' }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: false
+      - name: Install Flutter from git (Windows arm64 only)
+        if: ${{ matrix.platform == 'windows' && matrix.winarch == 'arm64' }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+      - name: Build NoPorts Configuration app (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/dart/noports_config
+        run: |
+          flutter pub get
+          flutter build windows --release
+          pwsh ./tools/bundle_msvc_runtime.ps1 -Destination "build\windows\${{ matrix.winarch }}\runner\Release"
+          mkdir -p ../../../tools/windows-msi/bin/noports_config
+          cp -r build/windows/${{ matrix.winarch }}/runner/Release/* ../../../tools/windows-msi/bin/noports_config/
       - name: Sign Executables with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
@@ -216,7 +260,10 @@ jobs:
           signing-account-name: 'atsign-github-signing'
           certificate-profile-name: 'Atsign-Software-Signing'
           files-folder: '${{ github.workspace }}'
-          files-folder-filter: 'exe'
+          # dll: the NoPorts Configuration app ships flutter_windows.dll and
+          # plugin dlls inside the MSI (the MSVC runtime dlls are already
+          # Microsoft-signed and are left alone by the service).
+          files-folder-filter: 'exe,dll'
           files-folder-recurse: true
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
@@ -228,14 +275,15 @@ jobs:
           dotnet tool install --global wix --version 6.0.2
           wix extension add -g WixToolset.Util.wixext/6.0.2
           wix extension add -g WixToolset.UI.wixext/6.0.2
-          mkdir bin
+          mkdir -p bin
           cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,noports,sshnp,npp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
               -d ProductVersion="${VERSION}" \
-              -arch x64 -o build/NoPorts.msi noports.wxs
-          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-x64.msi
-          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-x64.msi
+              -culture en-US -loc noports.en-us.wxl \
+              -arch ${{ matrix.winarch }} -o build/NoPorts.msi noports.wxs
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${VERSION}-${{ matrix.winarch }}.msi
+          cp build/NoPorts.msi ../../packages/dart/sshnoports/tarball/NoPorts-${{ matrix.winarch }}.msi
       - name: Sign Installer with Azure Artifact Signing (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
@@ -314,7 +362,7 @@ jobs:
         with:
           name:
             ${{ matrix.output-name
-            }}-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+            }}-${{needs.verify_tags.outputs.safe_ref}}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
@@ -343,7 +391,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name:
-            sshnp-web-admin-noarch-${{github.ref_name}}-${{github.run_number
+            sshnp-web-admin-noarch-${{needs.verify_tags.outputs.safe_ref}}-${{github.run_number
             }}-${{github.run_attempt}}
           path: ./apps/admin/webapp/tarball
           if-no-files-found: error
@@ -375,15 +423,23 @@ jobs:
           path: ./packages/dart/sshnoports/bundles/universal.sh
           if-no-files-found: error
 
-  github-release:
-    name: >-
-      Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, web_build, universal_sh]
+  # Runs for every multibuild, tag or branch dispatch: gather every build,
+  # generate the SBOM, checksum everything, attest it, and keep the whole
+  # bundle as one artifact. Publishing to a GitHub Release is the separate,
+  # tag-only job below.
+  sbom:
+    name: Generate SBOM, checksums and attestation
+    needs: [verify_tags, main_build, web_build, universal_sh]
+    # universal_sh is skipped on branch dispatches; that must not skip us.
+    if: >-
+      always() && needs.main_build.result == 'success' &&
+      needs.web_build.result == 'success' &&
+      (needs.universal_sh.result == 'success' || needs.universal_sh.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     permissions:
-      contents: write # Mandatory for making GitHub Releases
+      contents: read
       id-token: write # Mandatory for sigstore
       attestations: write
     steps:
@@ -402,33 +458,22 @@ jobs:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
           LOCK_FILE: './packages/dart/sshnoports/pubspec.lock'
-          COMPONENT_VERSION: ${{github.ref_name}}-gha${{github.run_number}}
-          OUTPUT_FILE: 'tarballs/noports_dart-${{github.ref_name}}-sbom.cdx.json'
+          COMPONENT_VERSION: ${{needs.verify_tags.outputs.safe_ref}}-gha${{github.run_number}}
+          OUTPUT_FILE: 'tarballs/noports_dart-${{needs.verify_tags.outputs.safe_ref}}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
-          UPLOAD: true
-      - name: Move packages for signing
+          # Only releases go to the sbomify component; branch builds are
+          # generated and attested but not uploaded.
+          UPLOAD: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Flatten the downloaded artifacts
+        working-directory: tarballs
         run: |
-          cd tarballs
-          mv */*.deb .
-          mv */*.msi .
-          mv */*.rpm .
-          mv */*.sh .
-          mv */*.tgz .
-          mv */*.zip .
-          rm -Rf -- */
+          find . -mindepth 2 -type f -exec mv -t . {} +
+          find . -mindepth 1 -type d -exec rm -rf {} +
+          ls -l
       - name: Generate SHA256 checksums
         working-directory: tarballs
         run: sha256sum * > checksums.txt
-      - name: Upload artifacts to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI.
-        # `tarballs/` contains the built packages, and the
-        # sbomify produced SBOMs
-        run: >-
-          gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
-          github.repository }}'
       - id: hash
         name: Pass artifact hashes for SLSA provenance
         working-directory: tarballs
@@ -438,16 +483,43 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: "tarballs/**"
+      - name: Upload the release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: noports-release-bundle-${{needs.verify_tags.outputs.safe_ref}}-${{github.run_number}}-${{github.run_attempt}}
+          path: tarballs/
+          if-no-files-found: error
+
+  # Tag-only: publish the attested bundle to the GitHub Release for the tag.
+  github-release:
+    name: Upload artifacts to the GitHub Release
+    needs: [verify_tags, sbom]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Mandatory for making GitHub Releases
+    steps:
+      - name: Download the release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: noports-release-bundle-${{needs.verify_tags.outputs.safe_ref}}-${{github.run_number}}-${{github.run_attempt}}
+          path: tarballs/
+      - name: Upload artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload '${{ github.ref_name }}' tarballs/** --repo '${{
+          github.repository }}'
 
   provenance:
-    needs: [github-release]
+    needs: [sbom, github-release]
     permissions:
       actions: read # Needed for detection of GitHub Actions environment.
       id-token: write # Needed for provenance signing and ID
       contents: write # Needed for release uploads
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # 5a775b367a56d5bd118a224a811bba288150a563
     with:
-      base64-subjects: "${{ needs.github-release.outputs.hashes }}"
+      base64-subjects: "${{ needs.sbom.outputs.hashes }}"
       upload-assets: true
 
   cleanup:
