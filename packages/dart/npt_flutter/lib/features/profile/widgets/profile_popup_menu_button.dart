@@ -113,7 +113,7 @@ class ProfilePopupMenuButton extends StatelessWidget {
               var state = context.read<ProfileBloc>().state;
               if (state is! ProfileLoadedState) return;
 
-              var json = state.profile.toExportableJson();
+              var json = Export.exportableProfiles([state.profile]).single;
 
               showDialog(
                 context: context,

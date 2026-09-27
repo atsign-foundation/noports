@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/models/profile.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -33,6 +34,28 @@ enum ExportableProfileFiletype {
 
 class Export {
   static const profilesKey = 'profiles';
+  static const favoriteKey = 'favorite';
+
+  /// Exportable json for [profiles], marking the ones in the user's favorites
+  /// so an import can restore them.
+  static List<Map<String, dynamic>> exportableProfiles(
+    Iterable<Profile> profiles,
+  ) {
+    final FavoritesState? favorites = App.navState.currentContext
+        ?.read<FavoriteBloc>()
+        .state;
+    final Set<String> favoriteUuids = favorites is FavoritesLoaded
+        ? favorites.profileUuids
+        : const <String>{};
+    return <Map<String, dynamic>>[
+      for (final Profile profile in profiles)
+        <String, dynamic>{
+          ...profile.toExportableJson(),
+          if (favoriteUuids.contains(profile.uuid)) favoriteKey: true,
+        },
+    ];
+  }
+
   @visibleForTesting
   static Future<File?> pickAndCreateFile(
     ExportableProfileFiletype filetype,
@@ -109,16 +132,21 @@ class Export {
         throw 'profiles is not a List in this document';
       }
 
-      var profiles = (json[profilesKey] as List)
-          .map((e) {
-            if (e is! Map) return null;
-            return Profile.fromJson(e.cast<String, dynamic>());
-          })
-          .where((e) => e != null)
-          .cast<Profile>();
-      App.navState.currentContext?.read<ProfileListBloc>().add(
-        ProfileListAddEvent(profiles),
-      );
+      final List<Profile> profiles = <Profile>[];
+      final List<Profile> favorites = <Profile>[];
+      for (final dynamic e in json[profilesKey] as List) {
+        if (e is! Map) continue;
+        final Profile profile = Profile.fromJson(e.cast<String, dynamic>());
+        profiles.add(profile);
+        if (e[favoriteKey] == true) favorites.add(profile);
+      }
+      final BuildContext? context = App.navState.currentContext;
+      context?.read<ProfileListBloc>().add(ProfileListAddEvent(profiles));
+      for (final Profile profile in favorites) {
+        context?.read<FavoriteBloc>().add(
+          FavoriteAddEvent(FavoriteProfile(uuid: profile.uuid)),
+        );
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         CustomSnackBar.success(content: strings.fileImported);
       });
