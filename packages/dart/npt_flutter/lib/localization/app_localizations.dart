@@ -1607,6 +1607,54 @@ abstract class AppLocalizations {
   /// **'The following profile(s) are connected:'**
   String get profileRunningCloseMsgStart;
 
+  /// No description provided for @profileSearchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get profileSearchClear;
+
+  /// No description provided for @profileSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search connections'**
+  String get profileSearchHint;
+
+  /// No description provided for @profileSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No connections match your search'**
+  String get profileSearchNoResults;
+
+  /// No description provided for @profileSortFavoritesFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites first'**
+  String get profileSortFavoritesFirst;
+
+  /// No description provided for @profileSortManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual order'**
+  String get profileSortManual;
+
+  /// No description provided for @profileSortNameAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, A to Z'**
+  String get profileSortNameAscending;
+
+  /// No description provided for @profileSortNameDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, Z to A'**
+  String get profileSortNameDescending;
+
+  /// No description provided for @profileSortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get profileSortTooltip;
+
   /// No description provided for @profileStatusFailedLoad.
   ///
   /// In en, this message translates to:

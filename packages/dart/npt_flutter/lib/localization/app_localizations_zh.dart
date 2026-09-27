@@ -790,6 +790,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -1889,6 +1913,30 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -2985,6 +3033,30 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileRunningCloseMsgStart => '以下設定檔已連線：';
+
+  @override
+  String get profileSearchClear => '清除搜尋';
+
+  @override
+  String get profileSearchHint => '搜尋連線';
+
+  @override
+  String get profileSearchNoResults => '沒有符合搜尋的連線';
+
+  @override
+  String get profileSortFavoritesFirst => '最愛優先';
+
+  @override
+  String get profileSortManual => '手動排序';
+
+  @override
+  String get profileSortNameAscending => '名稱（A 至 Z）';
+
+  @override
+  String get profileSortNameDescending => '名稱（Z 至 A）';
+
+  @override
+  String get profileSortTooltip => '排序';
 
   @override
   String get profileStatusFailedLoad => '載入失敗';

@@ -16,7 +16,24 @@ import 'package:npt_flutter/styles/sizes.dart';
 /// followed by an ungrouped section once any folder exists.
 class ProfileGroupedListView extends StatefulWidget {
   final List<String> profiles;
-  const ProfileGroupedListView({required this.profiles, super.key});
+
+  /// Filters and sorts the connections of each section; null keeps the
+  /// manual order.
+  final List<String> Function(List<String> uuids)? arrange;
+  final bool searching;
+  final bool Function(ProfileGroup folder)? folderMatches;
+
+  /// False when [arrange] shows another order than the manual one.
+  final bool reorderable;
+
+  const ProfileGroupedListView({
+    required this.profiles,
+    this.arrange,
+    this.searching = false,
+    this.folderMatches,
+    this.reorderable = true,
+    super.key,
+  });
 
   static const String ungroupedSectionId =
       ProfileGroupLayout.ungroupedSectionId;
@@ -66,7 +83,9 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
       },
       builder: (BuildContext context, ProfileGroupState groupState) {
         if (groupState is! ProfileGroupsLoaded) {
-          return _buildPlain(widget.profiles);
+          return _buildPlain(
+            widget.arrange?.call(widget.profiles) ?? widget.profiles,
+          );
         }
         final ProfileGroupLayout layout =
             _drag?.layout ??
@@ -75,6 +94,9 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
               loaded: widget.profiles,
               collapsed: _collapsed,
               ungroupedTitle: AppLocalizations.of(context)!.groupNoFolder,
+              arrange: widget.arrange,
+              searching: widget.searching,
+              folderMatches: widget.folderMatches,
             );
         return _buildReorderable(layout);
       },
@@ -105,6 +127,73 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     // animation would make the list cancel it.
     final bool dragEnabled = _drag == null;
 
+    Widget buildEntry(BuildContext context, int index) {
+      final ProfileListEntry entry = layout.entries[index];
+      switch (entry) {
+        case ProfileListHeaderEntry(:final ProfileGroupSection section):
+          final ProfileGroup? group = section.group;
+          final int folderIndex = group == null
+              ? -1
+              : folderIds.indexOf(group.uuid);
+          final bool shown =
+              group != null || section.uuids.isNotEmpty || rowDragging;
+          final Widget header = ProfileGroupSectionHeader(
+            title: section.title,
+            icon: section.icon,
+            uuids: section.uuids,
+            group: group,
+            collapsed: layout.collapsed.contains(section.id),
+            // While searching every folder is open and its neighbours may
+            // be hidden, so collapsing and moving are off.
+            onToggleCollapsed: widget.searching
+                ? null
+                : () => setState(() {
+                    if (!_collapsed.remove(section.id)) {
+                      _collapsed.add(section.id);
+                    }
+                  }),
+            reorderIndex: group != null && widget.reorderable ? index : null,
+            dragEnabled: dragEnabled,
+            onMoveUp: !widget.searching && folderIndex > 0
+                ? () => _moveFolder(folderIds, folderIndex, -1)
+                : null,
+            onMoveDown:
+                !widget.searching &&
+                    folderIndex >= 0 &&
+                    folderIndex < folderIds.length - 1
+                ? () => _moveFolder(folderIds, folderIndex, 1)
+                : null,
+          );
+          return ClipRect(
+            key: entry.key,
+            child: AnimatedAlign(
+              alignment: Alignment.topCenter,
+              heightFactor: shown ? 1 : 0,
+              duration: const Duration(milliseconds: 150),
+              child: ExcludeSemantics(
+                excluding: !shown,
+                child: IgnorePointer(ignoring: !shown, child: header),
+              ),
+            ),
+          );
+        case ProfileListRowEntry(:final String uuid):
+          return ProfileListRow(
+            key: entry.key,
+            uuid: uuid,
+            reorderIndex: widget.reorderable ? index : null,
+            dimmed: dimRows,
+            dragEnabled: dragEnabled,
+          );
+      }
+    }
+
+    if (!widget.reorderable) {
+      // A plain list, so screen readers aren't offered moves that do nothing.
+      return ListView.builder(
+        itemCount: layout.entries.length,
+        itemBuilder: buildEntry,
+      );
+    }
     return Listener(
       // A cancelled drag reports neither its end nor a reorder.
       onPointerCancel: (_) {
@@ -118,59 +207,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
         onReorderItem: (int oldIndex, int newIndex) =>
             _onReorderItem(layout, oldIndex, newIndex),
         proxyDecorator: _proxyDecorator,
-        itemBuilder: (BuildContext context, int index) {
-          final ProfileListEntry entry = layout.entries[index];
-          switch (entry) {
-            case ProfileListHeaderEntry(:final ProfileGroupSection section):
-              final ProfileGroup? group = section.group;
-              final int folderIndex = group == null
-                  ? -1
-                  : folderIds.indexOf(group.uuid);
-              final bool shown =
-                  group != null || section.uuids.isNotEmpty || rowDragging;
-              final Widget header = ProfileGroupSectionHeader(
-                title: section.title,
-                icon: section.icon,
-                uuids: section.uuids,
-                group: group,
-                collapsed: layout.collapsed.contains(section.id),
-                onToggleCollapsed: () => setState(() {
-                  if (!_collapsed.remove(section.id)) {
-                    _collapsed.add(section.id);
-                  }
-                }),
-                reorderIndex: group != null ? index : null,
-                dragEnabled: dragEnabled,
-                onMoveUp: folderIndex > 0
-                    ? () => _moveFolder(folderIds, folderIndex, -1)
-                    : null,
-                onMoveDown:
-                    folderIndex >= 0 && folderIndex < folderIds.length - 1
-                    ? () => _moveFolder(folderIds, folderIndex, 1)
-                    : null,
-              );
-              return ClipRect(
-                key: entry.key,
-                child: AnimatedAlign(
-                  alignment: Alignment.topCenter,
-                  heightFactor: shown ? 1 : 0,
-                  duration: const Duration(milliseconds: 150),
-                  child: ExcludeSemantics(
-                    excluding: !shown,
-                    child: IgnorePointer(ignoring: !shown, child: header),
-                  ),
-                ),
-              );
-            case ProfileListRowEntry(:final String uuid):
-              return ProfileListRow(
-                key: entry.key,
-                uuid: uuid,
-                reorderIndex: index,
-                dimmed: dimRows,
-                dragEnabled: dragEnabled,
-              );
-          }
-        },
+        itemBuilder: buildEntry,
       ),
     );
   }

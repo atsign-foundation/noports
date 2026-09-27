@@ -18,7 +18,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
   final IconData icon;
   final List<String> uuids;
   final bool collapsed;
-  final VoidCallback onToggleCollapsed;
+  final VoidCallback? onToggleCollapsed;
 
   /// Null for the ungrouped section.
   final ProfileGroup? group;

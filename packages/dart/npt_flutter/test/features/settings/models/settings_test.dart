@@ -237,7 +237,7 @@ void main() {
 
         final props = settings.props;
 
-        expect(props, hasLength(5));
+        expect(props, hasLength(7));
         expect(props[0], '@rv_am');
         expect(props[1], true);
         expect(props[2], PreferredViewLayout.sshStyle);

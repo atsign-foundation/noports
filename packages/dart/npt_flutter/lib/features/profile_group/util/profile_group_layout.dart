@@ -71,11 +71,17 @@ class ProfileGroupLayout {
     this.collapsed,
   );
 
+  /// [arrange] filters and sorts each section's connections. While
+  /// [searching], folders without a match are left out unless
+  /// [folderMatches], and none is collapsed.
   factory ProfileGroupLayout.build({
     required ProfileGroupData data,
     required List<String> loaded,
     required Set<String> collapsed,
     required String ungroupedTitle,
+    List<String> Function(List<String> uuids)? arrange,
+    bool searching = false,
+    bool Function(ProfileGroup folder)? folderMatches,
   }) {
     final Set<String> loadedSet = loaded.toSet();
     final Set<String> claimed = <String>{};
@@ -87,9 +93,12 @@ class ProfileGroupLayout {
           id: group.uuid,
           title: group.name,
           icon: PhosphorIcons.folder(),
-          uuids: group.profileIds
-              .where((String id) => loadedSet.contains(id) && claimed.add(id))
-              .toList(),
+          uuids: _arranged(
+            group.profileIds
+                .where((String id) => loadedSet.contains(id) && claimed.add(id))
+                .toList(),
+            arrange,
+          ),
           group: group,
         ),
       );
@@ -99,15 +108,23 @@ class ProfileGroupLayout {
         id: ungroupedSectionId,
         title: ungroupedTitle,
         icon: PhosphorIcons.folderDashed(),
-        uuids: data.resolveUngrouped(loaded),
+        uuids: _arranged(data.resolveUngrouped(loaded), arrange),
       ),
     );
 
     final bool showHeaders = data.groups.isNotEmpty;
     final List<ProfileListEntry> entries = <ProfileListEntry>[];
     for (final ProfileGroupSection section in sections) {
+      if (searching &&
+          section.group != null &&
+          section.uuids.isEmpty &&
+          !(folderMatches?.call(section.group!) ?? false)) {
+        continue;
+      }
       if (showHeaders) entries.add(ProfileListHeaderEntry(section));
-      if (showHeaders && collapsed.contains(section.id)) continue;
+      if (showHeaders && !searching && collapsed.contains(section.id)) {
+        continue;
+      }
       for (final String uuid in section.uuids) {
         entries.add(ProfileListRowEntry(uuid, section));
       }
@@ -116,9 +133,14 @@ class ProfileGroupLayout {
       sections,
       entries,
       showHeaders,
-      Set<String>.unmodifiable(collapsed),
+      Set<String>.unmodifiable(searching ? const <String>{} : collapsed),
     );
   }
+
+  static List<String> _arranged(
+    List<String> uuids,
+    List<String> Function(List<String> uuids)? arrange,
+  ) => arrange == null ? uuids : arrange(uuids);
 
   List<String> get folderIds => <String>[
     for (final ProfileGroupSection section in sections)

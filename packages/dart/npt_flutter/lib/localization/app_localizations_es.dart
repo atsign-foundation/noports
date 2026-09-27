@@ -844,6 +844,31 @@ class AppLocalizationsEs extends AppLocalizations {
       'Los siguientes perfiles están conectados:';
 
   @override
+  String get profileSearchClear => 'Borrar búsqueda';
+
+  @override
+  String get profileSearchHint => 'Buscar conexiones';
+
+  @override
+  String get profileSearchNoResults =>
+      'Ninguna conexión coincide con tu búsqueda';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primero';
+
+  @override
+  String get profileSortManual => 'Orden manual';
+
+  @override
+  String get profileSortNameAscending => 'Nombre, de la A a la Z';
+
+  @override
+  String get profileSortNameDescending => 'Nombre, de la Z a la A';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Error al cargar';
 
   @override

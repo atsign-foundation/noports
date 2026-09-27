@@ -22,7 +22,10 @@ class ProfileGroupLoadRetryButton extends StatelessWidget {
             context.read<ProfileGroupBloc>().add(const ProfileGroupLoadEvent());
           },
           icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
-          label: Text(strings.groupLoadFailedRetry),
+          label: Text(
+            strings.groupLoadFailedRetry,
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       },
     );

@@ -844,6 +844,31 @@ class AppLocalizationsPt extends AppLocalizations {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -2015,6 +2040,31 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get profileRunningCloseMsgStart =>
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
+
+  @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
 
   @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
