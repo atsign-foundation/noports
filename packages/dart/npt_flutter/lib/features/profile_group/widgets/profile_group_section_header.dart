@@ -12,7 +12,8 @@ import 'package:npt_flutter/widgets/confirmation_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileGroupSectionHeader extends StatelessWidget {
-  static const double _menuSlotWidth = 48;
+  /// Same widths as a row's star and menu, so the columns line up.
+  static const double _slotWidth = Sizes.p40;
 
   final String title;
   final IconData icon;
@@ -129,9 +130,30 @@ class ProfileGroupSectionHeader extends StatelessWidget {
               );
             },
           ),
-          // Fixed slot keeps start/stop buttons aligned across headers.
           SizedBox(
-            width: _menuSlotWidth,
+            width: _slotWidth,
+            child: group == null
+                ? null
+                : IconButton(
+                    onPressed: () => context.read<ProfileGroupBloc>().add(
+                      ProfileGroupSetFavoriteEvent(
+                        groupId: group!.uuid,
+                        favorite: !group!.favorite,
+                      ),
+                    ),
+                    icon: PhosphorIcon(
+                      group!.favorite
+                          ? PhosphorIcons.star(PhosphorIconsStyle.fill)
+                          : PhosphorIcons.star(),
+                      color: group!.favorite
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                  ),
+          ),
+          // Fixed slots keep start/stop buttons aligned across headers.
+          SizedBox(
+            width: _slotWidth,
             child: group == null
                 ? null
                 : _ProfileGroupMenuButton(

@@ -5,17 +5,26 @@ final class ProfileGroup extends Loggable {
   final String name;
   final List<String> profileIds;
 
+  /// Starred: listed in the tray menu, where it starts or stops the folder.
+  final bool favorite;
+
   const ProfileGroup({
     required this.uuid,
     required this.name,
     this.profileIds = const <String>[],
+    this.favorite = false,
   });
 
-  ProfileGroup copyWith({String? name, List<String>? profileIds}) {
+  ProfileGroup copyWith({
+    String? name,
+    List<String>? profileIds,
+    bool? favorite,
+  }) {
     return ProfileGroup(
       uuid: uuid,
       name: name ?? this.name,
       profileIds: profileIds ?? this.profileIds,
+      favorite: favorite ?? this.favorite,
     );
   }
 
@@ -41,6 +50,7 @@ final class ProfileGroup extends Loggable {
   static const String _uuidKey = 'uuid';
   static const String _nameKey = 'name';
   static const String _profileIdsKey = 'profileIds';
+  static const String _favoriteKey = 'favorite';
 
   factory ProfileGroup.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawIds = json[_profileIdsKey] is List
@@ -52,6 +62,7 @@ final class ProfileGroup extends Loggable {
       uuid: uuid is String ? uuid : '',
       name: name is String ? name : '',
       profileIds: rawIds.whereType<String>().toList(),
+      favorite: json[_favoriteKey] == true,
     );
   }
 
@@ -59,14 +70,16 @@ final class ProfileGroup extends Loggable {
     _uuidKey: uuid,
     _nameKey: name,
     _profileIdsKey: profileIds,
+    if (favorite) _favoriteKey: true,
   };
 
   @override
-  List<Object?> get props => [uuid, name, profileIds];
+  List<Object?> get props => [uuid, name, profileIds, favorite];
 
   @override
   String toString() {
-    return 'ProfileGroup(uuid: $uuid, name: $name, profileIds: $profileIds)';
+    return 'ProfileGroup(uuid: $uuid, name: $name, profileIds: $profileIds, '
+        'favorite: $favorite)';
   }
 }
 

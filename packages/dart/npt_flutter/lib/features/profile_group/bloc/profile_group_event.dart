@@ -143,3 +143,21 @@ final class ProfileGroupReorderFoldersEvent extends ProfileGroupEvent {
     return 'ProfileGroupReorderFoldersEvent($groupIds)';
   }
 }
+
+final class ProfileGroupSetFavoriteEvent extends ProfileGroupEvent {
+  final String groupId;
+  final bool favorite;
+  const ProfileGroupSetFavoriteEvent({
+    required this.groupId,
+    required this.favorite,
+  });
+
+  @override
+  List<Object?> get props => [groupId, favorite];
+
+  @override
+  String toString() {
+    return 'ProfileGroupSetFavoriteEvent(groupId: $groupId, '
+        'favorite: $favorite)';
+  }
+}

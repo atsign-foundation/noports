@@ -34,6 +34,7 @@ class ProfileGroupBloc
     on<ProfileGroupRemoveProfilesEvent>(_onRemoveProfiles);
     on<ProfileGroupPlaceProfilesEvent>(_onPlaceProfiles);
     on<ProfileGroupReorderFoldersEvent>(_onReorderFolders);
+    on<ProfileGroupSetFavoriteEvent>(_onSetFavorite);
   }
 
   void clearAll() {
@@ -262,5 +263,26 @@ class ProfileGroupBloc
     final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
 
     await _save(data.withFoldersOrdered(event.groupIds), emit);
+  }
+
+  Future<void> _onSetFavorite(
+    ProfileGroupSetFavoriteEvent event,
+    Emitter<ProfileGroupState> emit,
+  ) async {
+    if (state is! ProfileGroupsLoaded) return;
+    final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
+
+    await _save(
+      data.copyWith(
+        groups: data.groups
+            .map(
+              (ProfileGroup g) => g.uuid == event.groupId
+                  ? g.copyWith(favorite: event.favorite)
+                  : g,
+            )
+            .toList(),
+      ),
+      emit,
+    );
   }
 }

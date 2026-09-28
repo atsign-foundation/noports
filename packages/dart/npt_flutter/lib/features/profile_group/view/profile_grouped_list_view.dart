@@ -22,6 +22,7 @@ class ProfileGroupedListView extends StatefulWidget {
   final List<String> Function(List<String> uuids)? arrange;
   final bool searching;
   final bool Function(ProfileGroup folder)? folderMatches;
+  final bool favoriteFoldersFirst;
 
   /// False when [arrange] shows another order than the manual one.
   final bool reorderable;
@@ -31,6 +32,8 @@ class ProfileGroupedListView extends StatefulWidget {
     this.arrange,
     this.searching = false,
     this.folderMatches,
+    this.favoriteFoldersFirst = false,
+
     this.reorderable = true,
     super.key,
   });
@@ -97,6 +100,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
               arrange: widget.arrange,
               searching: widget.searching,
               folderMatches: widget.folderMatches,
+              favoriteFoldersFirst: widget.favoriteFoldersFirst,
             );
         return _buildReorderable(layout);
       },
@@ -143,8 +147,9 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
             uuids: section.uuids,
             group: group,
             collapsed: layout.collapsed.contains(section.id),
-            // While searching every folder is open and its neighbours may
-            // be hidden, so collapsing and moving are off.
+            // While searching every folder is open, and whenever the order
+            // shown isn't the manual one moving would save it, so
+            // collapsing and moving are off.
             onToggleCollapsed: widget.searching
                 ? null
                 : () => setState(() {
@@ -154,11 +159,11 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
                   }),
             reorderIndex: group != null && widget.reorderable ? index : null,
             dragEnabled: dragEnabled,
-            onMoveUp: !widget.searching && folderIndex > 0
+            onMoveUp: widget.reorderable && folderIndex > 0
                 ? () => _moveFolder(folderIds, folderIndex, -1)
                 : null,
             onMoveDown:
-                !widget.searching &&
+                widget.reorderable &&
                     folderIndex >= 0 &&
                     folderIndex < folderIds.length - 1
                 ? () => _moveFolder(folderIds, folderIndex, 1)

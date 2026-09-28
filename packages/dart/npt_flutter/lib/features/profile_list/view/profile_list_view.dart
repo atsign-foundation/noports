@@ -257,6 +257,7 @@ class _FilteredList extends StatelessWidget {
                               filter.apply(uuids, favorites),
                     searching: filter.searching,
                     folderMatches: filter.folderMatches,
+                    favoriteFoldersFirst: filter.favoritesFirst,
                     reorderable: filter.isDefault,
                   ),
                 ),

@@ -73,7 +73,8 @@ class ProfileGroupLayout {
 
   /// [arrange] filters and sorts each section's connections. While
   /// [searching], folders without a match are left out unless
-  /// [folderMatches], and none is collapsed.
+  /// [folderMatches], and none is collapsed. With [favoriteFoldersFirst],
+  /// starred folders come before the others.
   factory ProfileGroupLayout.build({
     required ProfileGroupData data,
     required List<String> loaded,
@@ -82,12 +83,19 @@ class ProfileGroupLayout {
     List<String> Function(List<String> uuids)? arrange,
     bool searching = false,
     bool Function(ProfileGroup folder)? folderMatches,
+    bool favoriteFoldersFirst = false,
   }) {
     final Set<String> loadedSet = loaded.toSet();
     final Set<String> claimed = <String>{};
     final List<ProfileGroupSection> sections = <ProfileGroupSection>[];
 
-    for (final ProfileGroup group in data.groups) {
+    final Iterable<ProfileGroup> folders = favoriteFoldersFirst
+        ? <ProfileGroup>[
+            ...data.groups.where((ProfileGroup g) => g.favorite),
+            ...data.groups.where((ProfileGroup g) => !g.favorite),
+          ]
+        : data.groups;
+    for (final ProfileGroup group in folders) {
       sections.add(
         ProfileGroupSection(
           id: group.uuid,
