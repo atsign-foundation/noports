@@ -22,19 +22,23 @@ class ProfileGroupedListView extends StatefulWidget {
   final List<String> Function(List<String> uuids)? arrange;
   final bool searching;
   final bool Function(ProfileGroup folder)? folderMatches;
-  final bool favoriteFoldersFirst;
+  final int Function(ProfileGroup a, ProfileGroup b)? compareFolders;
 
-  /// False when [arrange] shows another order than the manual one.
+  /// False while sorted by name or searching.
   final bool reorderable;
+
+  /// Connections can still be dragged into another folder when not
+  /// [reorderable]; the order they are shown in is kept.
+  final bool movable;
 
   const ProfileGroupedListView({
     required this.profiles,
     this.arrange,
     this.searching = false,
     this.folderMatches,
-    this.favoriteFoldersFirst = false,
-
+    this.compareFolders,
     this.reorderable = true,
+    this.movable = false,
     super.key,
   });
 
@@ -100,7 +104,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
               arrange: widget.arrange,
               searching: widget.searching,
               folderMatches: widget.folderMatches,
-              favoriteFoldersFirst: widget.favoriteFoldersFirst,
+              compareFolders: widget.compareFolders,
             );
         return _buildReorderable(layout);
       },
@@ -185,14 +189,14 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
           return ProfileListRow(
             key: entry.key,
             uuid: uuid,
-            reorderIndex: widget.reorderable ? index : null,
+            reorderIndex: widget.reorderable || widget.movable ? index : null,
             dimmed: dimRows,
             dragEnabled: dragEnabled,
           );
       }
     }
 
-    if (!widget.reorderable) {
+    if (!widget.reorderable && !widget.movable) {
       // A plain list, so screen readers aren't offered moves that do nothing.
       return ListView.builder(
         itemCount: layout.entries.length,
@@ -292,24 +296,54 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     if (event == null || state is! ProfileGroupsLoaded) return;
 
     final ProfileGroupData current = _pending ?? state.data;
-    final ProfileGroupData next = switch (event) {
+    final ProfileGroupEvent? applied = widget.reorderable
+        ? event
+        : _intoFolder(event, current);
+    if (applied == null) return;
+    final ProfileGroupData next = switch (applied) {
       ProfileGroupPlaceProfilesEvent() => current.placeProfiles(
-        profileIds: event.profileIds,
-        groupId: event.groupId,
-        sectionOrder: event.sectionOrder,
+        profileIds: applied.profileIds,
+        groupId: applied.groupId,
+        sectionOrder: applied.sectionOrder,
       ),
       ProfileGroupReorderFoldersEvent() => current.withFoldersOrdered(
-        event.groupIds,
+        applied.groupIds,
       ),
       _ => current,
     };
     if (next == current) return;
 
     setState(() => _pending = next);
-    bloc.add(event);
+    bloc.add(applied);
     if ((session?.movedIds.length ?? 0) > 1) {
       context.read<ProfilesSelectedCubit>().deselectAll();
     }
+  }
+
+  /// While the list is sorted, a drop only moves connections into another
+  /// folder, at the end of its manual order. A drop in its own section, or of
+  /// a folder, changes nothing.
+  ProfileGroupEvent? _intoFolder(
+    ProfileGroupEvent event,
+    ProfileGroupData data,
+  ) {
+    if (event is! ProfileGroupPlaceProfilesEvent) return null;
+    final String? groupId = event.groupId;
+    final List<String> moved = event.profileIds
+        .where((String id) => data.groupForProfile(id)?.uuid != groupId)
+        .toList();
+    if (moved.isEmpty) return null;
+    final List<String> manual = groupId == null
+        ? data.resolveUngrouped(widget.profiles)
+        : data.groupById(groupId)?.profileIds ?? const <String>[];
+    return ProfileGroupPlaceProfilesEvent(
+      profileIds: moved,
+      groupId: groupId,
+      sectionOrder: <String>[
+        ...manual.where((String id) => !moved.contains(id)),
+        ...moved,
+      ],
+    );
   }
 
   void _moveFolder(List<String> folderIds, int index, int delta) {

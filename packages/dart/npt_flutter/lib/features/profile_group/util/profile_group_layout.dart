@@ -73,8 +73,8 @@ class ProfileGroupLayout {
 
   /// [arrange] filters and sorts each section's connections. While
   /// [searching], folders without a match are left out unless
-  /// [folderMatches], and none is collapsed. With [favoriteFoldersFirst],
-  /// starred folders come before the others.
+  /// [folderMatches], and none is collapsed. [compareFolders] sorts the
+  /// folders, keeping the manual order between equal ones.
   factory ProfileGroupLayout.build({
     required ProfileGroupData data,
     required List<String> loaded,
@@ -83,18 +83,24 @@ class ProfileGroupLayout {
     List<String> Function(List<String> uuids)? arrange,
     bool searching = false,
     bool Function(ProfileGroup folder)? folderMatches,
-    bool favoriteFoldersFirst = false,
+    int Function(ProfileGroup a, ProfileGroup b)? compareFolders,
   }) {
     final Set<String> loadedSet = loaded.toSet();
     final Set<String> claimed = <String>{};
     final List<ProfileGroupSection> sections = <ProfileGroupSection>[];
 
-    final Iterable<ProfileGroup> folders = favoriteFoldersFirst
-        ? <ProfileGroup>[
-            ...data.groups.where((ProfileGroup g) => g.favorite),
-            ...data.groups.where((ProfileGroup g) => !g.favorite),
-          ]
-        : data.groups;
+    final List<ProfileGroup> folders = List<ProfileGroup>.of(data.groups);
+    if (compareFolders != null) {
+      final Map<String, int> position = <String, int>{
+        for (int i = 0; i < folders.length; i++) folders[i].uuid: i,
+      };
+      folders.sort((ProfileGroup a, ProfileGroup b) {
+        final int byOrder = compareFolders(a, b);
+        return byOrder != 0
+            ? byOrder
+            : position[a.uuid]!.compareTo(position[b.uuid]!);
+      });
+    }
     for (final ProfileGroup group in folders) {
       sections.add(
         ProfileGroupSection(

@@ -29,8 +29,12 @@ final class ProfileListFilterState extends Loggable {
 
   bool get isDefault => !searching && !reordered;
 
-  /// The shown order differs from the manual one, so it can't be dragged.
+  /// The shown order differs from the manual one.
   bool get reordered => sortMode != ProfileSortMode.manual || favoritesFirst;
+
+  /// Drags reorder the list. With favorites first, what is shown becomes the
+  /// manual order, and starred items stay pinned on top.
+  bool get manualOrder => !searching && sortMode == ProfileSortMode.manual;
 
   bool settled(String uuid) =>
       profiles.containsKey(uuid) || failed.contains(uuid);
@@ -60,6 +64,22 @@ final class ProfileListFilterState extends Loggable {
   }
 
   String get _needle => query.trim().toLowerCase();
+
+  /// How folders are sorted, or null to keep their manual order.
+  int Function(ProfileGroup a, ProfileGroup b)? get folderOrder {
+    if (!reordered) return null;
+    return (ProfileGroup a, ProfileGroup b) {
+      if (favoritesFirst && a.favorite != b.favorite)
+        return a.favorite ? -1 : 1;
+      final String nameA = a.name.toLowerCase();
+      final String nameB = b.name.toLowerCase();
+      return switch (sortMode) {
+        ProfileSortMode.manual => 0,
+        ProfileSortMode.nameAscending => nameA.compareTo(nameB),
+        ProfileSortMode.nameDescending => nameB.compareTo(nameA),
+      };
+    };
+  }
 
   /// Filters [uuids] by the query and sorts them, keeping the given order
   /// between equal entries.
