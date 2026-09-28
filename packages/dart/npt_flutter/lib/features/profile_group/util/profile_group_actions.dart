@@ -33,6 +33,20 @@ class ProfileGroupActions {
         case ProfileFailedSave _:
         case ProfileFailedStart _:
           bloc.add(const ProfileStartEvent());
+        case ProfileInitial _:
+        case ProfileLoading _:
+          // Only rows that were shown have loaded, e.g. not the ones of a
+          // collapsed folder or when started from the tray.
+          if (bloc.state is ProfileInitial) {
+            bloc.add(const ProfileLoadEvent());
+          }
+          bloc.stream
+              .firstWhere((ProfileState state) => state is! ProfileLoading)
+              .then((ProfileState state) {
+                if (state is ProfileLoaded) {
+                  bloc.add(const ProfileStartEvent());
+                }
+              }, onError: (_) {});
         default:
           break;
       }
