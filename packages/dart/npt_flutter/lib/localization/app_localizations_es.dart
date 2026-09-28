@@ -854,6 +854,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ninguna conexión coincide con tu búsqueda';
 
   @override
+  String get profileSortByNameMessage =>
+      'La lista está ordenada por nombre, así que los elementos se colocan por su nombre';
+
+  @override
   String get profileSortFavoritesFirst => 'Favoritos primero';
 
   @override
@@ -864,6 +868,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => 'Nombre, de la Z a la A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Los favoritos se quedan arriba mientras Favoritos primero está activado';
+
+  @override
+  String get profileSortReset => 'Volver al orden manual';
 
   @override
   String get profileSortTooltip => 'Ordenar';

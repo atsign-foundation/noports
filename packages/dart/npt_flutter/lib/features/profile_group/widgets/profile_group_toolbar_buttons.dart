@@ -7,7 +7,8 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Retry button shown only when folders failed to load.
+/// Retry button shown only when folders failed to load. Flexible, so it must
+/// sit in a Row.
 class ProfileGroupLoadRetryButton extends StatelessWidget {
   const ProfileGroupLoadRetryButton({super.key});
 
@@ -17,14 +18,18 @@ class ProfileGroupLoadRetryButton extends StatelessWidget {
     return BlocBuilder<ProfileGroupBloc, ProfileGroupState>(
       builder: (BuildContext context, ProfileGroupState state) {
         if (state is! ProfileGroupsFailedLoad) return gap0;
-        return TextButton.icon(
-          onPressed: () {
-            context.read<ProfileGroupBloc>().add(const ProfileGroupLoadEvent());
-          },
-          icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
-          label: Text(
-            strings.groupLoadFailedRetry,
-            overflow: TextOverflow.ellipsis,
+        return Flexible(
+          child: TextButton.icon(
+            onPressed: () {
+              context.read<ProfileGroupBloc>().add(
+                const ProfileGroupLoadEvent(),
+              );
+            },
+            icon: PhosphorIcon(PhosphorIcons.arrowClockwise()),
+            label: Text(
+              strings.groupLoadFailedRetry,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         );
       },

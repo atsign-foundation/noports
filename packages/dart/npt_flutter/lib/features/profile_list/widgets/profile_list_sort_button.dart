@@ -4,6 +4,7 @@ import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileListSortButton extends StatelessWidget {
@@ -26,9 +27,9 @@ class ProfileListSortButton extends StatelessWidget {
           onSelected: (Object value) {
             switch (value) {
               case ProfileSortMode sortMode:
-                _save(context, sortMode: sortMode);
+                save(context, sortMode: sortMode);
               case bool favoritesFirst:
-                _save(context, favoritesFirst: favoritesFirst);
+                save(context, favoritesFirst: favoritesFirst);
             }
           },
           itemBuilder: (BuildContext _) => <PopupMenuEntry<Object>>[
@@ -56,7 +57,7 @@ class ProfileListSortButton extends StatelessWidget {
     );
   }
 
-  void _save(
+  static void save(
     BuildContext context, {
     ProfileSortMode? sortMode,
     bool? favoritesFirst,
@@ -80,6 +81,52 @@ class ProfileListSortButton extends StatelessWidget {
         ),
         save: true,
       ),
+    );
+  }
+}
+
+/// Names the sort in use, so an order other than the manual one doesn't look
+/// like a bug. Removing it goes back to the manual order. Flexible, so it
+/// must sit in a Row.
+class ProfileListSortChip extends StatelessWidget {
+  const ProfileListSortChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context)!;
+    return BlocBuilder<ProfileListFilterCubit, ProfileListFilterState>(
+      buildWhen: (ProfileListFilterState a, ProfileListFilterState b) =>
+          a.sortMode != b.sortMode || a.favoritesFirst != b.favoritesFirst,
+      builder: (BuildContext context, ProfileListFilterState filter) {
+        if (!filter.reordered) return gap0;
+        final String label = <String>[
+          if (filter.sortMode == ProfileSortMode.nameAscending)
+            strings.profileSortNameAscending,
+          if (filter.sortMode == ProfileSortMode.nameDescending)
+            strings.profileSortNameDescending,
+          if (filter.favoritesFirst) strings.profileSortFavoritesFirst,
+        ].join(' · ');
+        final Color primary = Theme.of(context).colorScheme.primary;
+        return Flexible(
+          child: InputChip(
+            key: const Key('ProfileListSortChip'),
+            label: Text(label, overflow: TextOverflow.ellipsis),
+            labelStyle: TextStyle(color: primary, fontWeight: FontWeight.w600),
+            backgroundColor: primary.withValues(alpha: 0.1),
+            side: BorderSide.none,
+            shape: const StadiumBorder(),
+            visualDensity: VisualDensity.compact,
+            deleteIcon: PhosphorIcon(PhosphorIcons.x(), size: Sizes.p16),
+            deleteIconColor: primary,
+            deleteButtonTooltipMessage: strings.profileSortReset,
+            onDeleted: () => ProfileListSortButton.save(
+              context,
+              sortMode: ProfileSortMode.manual,
+              favoritesFirst: false,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -799,6 +799,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileSearchNoResults => '没有与搜索匹配的连接';
 
   @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
   String get profileSortFavoritesFirst => '收藏优先';
 
   @override
@@ -809,6 +812,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortPinnedMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
 
   @override
   String get profileSortTooltip => '排序';
@@ -1922,6 +1931,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileSearchNoResults => '没有与搜索匹配的连接';
 
   @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
   String get profileSortFavoritesFirst => '收藏优先';
 
   @override
@@ -1932,6 +1944,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortPinnedMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
 
   @override
   String get profileSortTooltip => '排序';
@@ -3044,6 +3062,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileSearchNoResults => '沒有符合搜尋的連線';
 
   @override
+  String get profileSortByNameMessage => '清單按名稱排序，項目會按名稱排列';
+
+  @override
   String get profileSortFavoritesFirst => '最愛優先';
 
   @override
@@ -3054,6 +3075,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileSortNameDescending => '名稱（Z 至 A）';
+
+  @override
+  String get profileSortPinnedMessage => '開啟最愛優先時，最愛項目會保持在頂部';
+
+  @override
+  String get profileSortReset => '恢復手動排序';
 
   @override
   String get profileSortTooltip => '排序';

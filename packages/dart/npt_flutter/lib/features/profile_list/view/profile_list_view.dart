@@ -144,16 +144,14 @@ class _ProfileListViewState extends State<ProfileListView> {
                                       child: Row(
                                         children: [
                                           Flexible(
-                                            flex: 2,
                                             child: ProfileListSearchField(),
                                           ),
                                           gapW4,
                                           ProfileListSortButton(),
+                                          gapW4,
+                                          ProfileListSortChip(),
                                           gapW10,
-                                          Flexible(
-                                            child:
-                                                ProfileGroupLoadRetryButton(),
-                                          ),
+                                          ProfileGroupLoadRetryButton(),
                                         ],
                                       ),
                                     ),
@@ -260,6 +258,11 @@ class _FilteredList extends StatelessWidget {
                     compareFolders: filter.folderOrder,
                     reorderable: filter.manualOrder,
                     movable: !filter.searching,
+                    sortedDropMessage: filter.sortMode != ProfileSortMode.manual
+                        ? strings.profileSortByNameMessage
+                        : filter.favoritesFirst
+                        ? strings.profileSortPinnedMessage
+                        : null,
                   ),
                 ),
                 if (noResults)

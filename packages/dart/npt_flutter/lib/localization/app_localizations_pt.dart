@@ -854,6 +854,10 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhuma conexão corresponde à sua pesquisa';
 
   @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
   String get profileSortFavoritesFirst => 'Favoritos primeiro';
 
   @override
@@ -864,6 +868,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
 
   @override
   String get profileSortTooltip => 'Ordenar';
@@ -2052,6 +2063,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Nenhuma conexão corresponde à sua pesquisa';
 
   @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
   String get profileSortFavoritesFirst => 'Favoritos primeiro';
 
   @override
@@ -2062,6 +2077,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
 
   @override
   String get profileSortTooltip => 'Ordenar';

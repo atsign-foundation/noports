@@ -1625,6 +1625,12 @@ abstract class AppLocalizations {
   /// **'No connections match your search'**
   String get profileSearchNoResults;
 
+  /// No description provided for @profileSortByNameMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The list is sorted by name, so items are placed by name'**
+  String get profileSortByNameMessage;
+
   /// No description provided for @profileSortFavoritesFirst.
   ///
   /// In en, this message translates to:
@@ -1648,6 +1654,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name, Z to A'**
   String get profileSortNameDescending;
+
+  /// No description provided for @profileSortPinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred items stay on top while Favorites first is on'**
+  String get profileSortPinnedMessage;
+
+  /// No description provided for @profileSortReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to manual order'**
+  String get profileSortReset;
 
   /// No description provided for @profileSortTooltip.
   ///

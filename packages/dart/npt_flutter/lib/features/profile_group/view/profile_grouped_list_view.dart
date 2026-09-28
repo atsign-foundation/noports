@@ -1,5 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:npt_flutter/features/profile_list/widgets/profile_list_row.dart'
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 
 /// Renders the loaded profile uuids as a flat list, or as custom folders
 /// followed by an ungrouped section once any folder exists.
@@ -31,6 +33,10 @@ class ProfileGroupedListView extends StatefulWidget {
   /// [reorderable]; the order they are shown in is kept.
   final bool movable;
 
+  /// Shown when the sort puts a drop somewhere else than where it was
+  /// released, which would otherwise look like a bug.
+  final String? sortedDropMessage;
+
   const ProfileGroupedListView({
     required this.profiles,
     this.arrange,
@@ -39,6 +45,7 @@ class ProfileGroupedListView extends StatefulWidget {
     this.compareFolders,
     this.reorderable = true,
     this.movable = false,
+    this.sortedDropMessage,
     super.key,
   });
 
@@ -95,19 +102,22 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
           );
         }
         final ProfileGroupLayout layout =
-            _drag?.layout ??
-            ProfileGroupLayout.build(
-              data: _pending ?? groupState.data,
-              loaded: widget.profiles,
-              collapsed: _collapsed,
-              ungroupedTitle: AppLocalizations.of(context)!.groupNoFolder,
-              arrange: widget.arrange,
-              searching: widget.searching,
-              folderMatches: widget.folderMatches,
-              compareFolders: widget.compareFolders,
-            );
+            _drag?.layout ?? _layoutFor(_pending ?? groupState.data);
         return _buildReorderable(layout);
       },
+    );
+  }
+
+  ProfileGroupLayout _layoutFor(ProfileGroupData data) {
+    return ProfileGroupLayout.build(
+      data: data,
+      loaded: widget.profiles,
+      collapsed: _collapsed,
+      ungroupedTitle: AppLocalizations.of(context)!.groupNoFolder,
+      arrange: widget.arrange,
+      searching: widget.searching,
+      folderMatches: widget.folderMatches,
+      compareFolders: widget.compareFolders,
     );
   }
 
@@ -299,7 +309,10 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     final ProfileGroupEvent? applied = widget.reorderable
         ? event
         : _intoFolder(event, current);
-    if (applied == null) return;
+    if (applied == null) {
+      _explainIfMoved(event, _layoutFor(current));
+      return;
+    }
     final ProfileGroupData next = switch (applied) {
       ProfileGroupPlaceProfilesEvent() => current.placeProfiles(
         profileIds: applied.profileIds,
@@ -315,9 +328,40 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
 
     setState(() => _pending = next);
     bloc.add(applied);
+    _explainIfMoved(event, _layoutFor(next));
     if ((session?.movedIds.length ?? 0) > 1) {
       context.read<ProfilesSelectedCubit>().deselectAll();
     }
+  }
+
+  void _explainIfMoved(ProfileGroupEvent intended, ProfileGroupLayout shown) {
+    final String? message = widget.sortedDropMessage;
+    if (message == null) return;
+    final bool moved = switch (intended) {
+      ProfileGroupPlaceProfilesEvent() => _orderDiffers(intended, shown),
+      ProfileGroupReorderFoldersEvent() => !listEquals(
+        intended.groupIds,
+        shown.folderIds,
+      ),
+      _ => false,
+    };
+    if (moved) CustomSnackBar.notification(content: message);
+  }
+
+  bool _orderDiffers(
+    ProfileGroupPlaceProfilesEvent intended,
+    ProfileGroupLayout shown,
+  ) {
+    final String id = intended.groupId ?? ProfileGroupLayout.ungroupedSectionId;
+    final ProfileGroupSection? section = shown.sections
+        .where((ProfileGroupSection s) => s.id == id)
+        .firstOrNull;
+    if (section == null) return false;
+    final Set<String> inSection = section.uuids.toSet();
+    return !listEquals(
+      intended.sectionOrder.where(inSection.contains).toList(),
+      section.uuids,
+    );
   }
 
   /// While the list is sorted, a drop only moves connections into another
