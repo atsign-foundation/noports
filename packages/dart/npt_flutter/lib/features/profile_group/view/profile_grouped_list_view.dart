@@ -324,7 +324,12 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
       ),
       _ => current,
     };
-    if (next == current) return;
+    // Starring lifts an item without changing the manual order, so a drop
+    // above it can match what is already saved and still be put back.
+    if (next == current) {
+      _explainIfMoved(event, _layoutFor(current));
+      return;
+    }
 
     setState(() => _pending = next);
     bloc.add(applied);
