@@ -1,0 +1,8 @@
+# NoPorts PoE — 16MB flash partition table (M5Stack Unit PoE ESP32-P4)
+# 6MB app + ~9.8MB LittleFS (holds atkeys.json and future assets)
+# Name,   Type, SubType, Offset,   Size,     Flags
+nvs,      data, nvs,     0x9000,   0x5000,
+otadata,  data, ota,     0xe000,   0x2000,
+app0,     app,  ota_0,   0x10000,  0x600000,
+spiffs,   data, spiffs,  0x610000, 0x9E0000,
+coredump, data, coredump,0xFF0000, 0x10000,

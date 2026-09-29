@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+  <!-- PCB body -->
+  <rect x="1" y="1" width="158" height="118" rx="6" fill="#1a3a5c" stroke="#2a5a8c" stroke-width="1.5"/>
+  <!-- Ethernet port (right side) -->
+  <rect x="130" y="30" width="28" height="40" rx="2" fill="#444" stroke="#666" stroke-width="1"/>
+  <rect x="134" y="35" width="20" height="30" rx="1" fill="#222"/>
+  <!-- Ethernet port pins -->
+  <line x1="136" y1="38" x2="136" y2="62" stroke="#888" stroke-width="1.5"/>
+  <line x1="139" y1="38" x2="139" y2="62" stroke="#888" stroke-width="1.5"/>
+  <line x1="142" y1="38" x2="142" y2="62" stroke="#888" stroke-width="1.5"/>
+  <line x1="145" y1="38" x2="145" y2="62" stroke="#888" stroke-width="1.5"/>
+  <line x1="148" y1="38" x2="148" y2="62" stroke="#888" stroke-width="1.5"/>
+  <line x1="151" y1="38" x2="151" y2="62" stroke="#888" stroke-width="1.5"/>
+  <!-- USB-C port (bottom) -->
+  <rect x="65" y="108" width="30" height="10" rx="3" fill="#555" stroke="#777" stroke-width="1"/>
+  <rect x="70" y="110" width="20" height="6" rx="2" fill="#333"/>
+  <!-- PoE indicator label -->
+  <rect x="118" y="74" width="30" height="12" rx="2" fill="#1e5c2b"/>
+  <text x="133" y="83" font-family="monospace" font-size="6" fill="#4ade80" text-anchor="middle">PoE</text>
+  <!-- SoC / chip -->
+  <rect x="50" y="30" width="55" height="55" rx="3" fill="#0f2040" stroke="#2a5a8c" stroke-width="1"/>
+  <text x="77" y="60" font-family="monospace" font-size="7" fill="#64a0d0" text-anchor="middle">ESP32</text>
+  <text x="77" y="70" font-family="monospace" font-size="7" fill="#64a0d0" text-anchor="middle">-P4</text>
+  <!-- RGB LED (small dot) -->
+  <circle cx="20" cy="20" r="4" fill="#22c55e" opacity="0.9"/>
+  <text x="28" y="24" font-family="monospace" font-size="6" fill="#94a3b8">RGB</text>
+  <!-- M5Stack label -->
+  <text x="78" y="108" font-family="monospace" font-size="6" fill="#94a3b8" text-anchor="middle">M5Stack Unit PoE-P4</text>
+  <!-- Corner mounting holes -->
+  <circle cx="10" cy="10" r="3" fill="none" stroke="#2a5a8c" stroke-width="1"/>
+  <circle cx="150" cy="10" r="3" fill="none" stroke="#2a5a8c" stroke-width="1"/>
+  <circle cx="10" cy="110" r="3" fill="none" stroke="#2a5a8c" stroke-width="1"/>
+</svg>

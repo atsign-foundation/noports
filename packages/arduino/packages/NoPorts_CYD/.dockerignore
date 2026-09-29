@@ -1,0 +1,24 @@
+# Don't send build artefacts or IDE files to the Docker daemon —
+# keeps the context small and avoids cache-busting on irrelevant changes.
+
+# PlatformIO build output (large; rebuilt inside the container)
+packages/NoPorts_CYD/.pio/
+
+# VS Code / editor files
+**/.vscode/
+**/.idea/
+
+# macOS artefacts
+**/.DS_Store
+**/._*
+
+# Git metadata
+**/.git/
+**/.gitmodules
+
+# Node / npm (not used here but harmless to exclude)
+**/node_modules/
+
+# Any previously merged firmware binaries in the package dir
+packages/NoPorts_CYD/merged-*.bin
+packages/NoPorts_CYD/firmware-*.bin
