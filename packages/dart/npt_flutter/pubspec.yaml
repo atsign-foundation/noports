@@ -58,7 +58,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
-  meta: ^1.19.0
+  meta: ^1.16.0
   noports_core:
     path: ../noports_core
   package_info_plus: ^9.0.1
