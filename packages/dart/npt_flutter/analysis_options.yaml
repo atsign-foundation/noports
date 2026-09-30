@@ -16,6 +16,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - "**/*.mocks.dart"
 include: package:flutter_lints/flutter.yaml
 
 linter:
