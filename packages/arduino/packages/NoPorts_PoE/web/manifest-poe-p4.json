@@ -1,0 +1,16 @@
+{
+  "name": "NoPorts PoE (ESP32-P4)",
+  "version": "1.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-P4",
+      "parts": [
+        { "path": "bootloader-poe-p4.bin",  "offset": 8192  },
+        { "path": "partitions-poe-p4.bin",  "offset": 32768 },
+        { "path": "boot_app0.bin",           "offset": 57344 },
+        { "path": "firmware-poe-p4.bin",     "offset": 65536 }
+      ]
+    }
+  ]
+}

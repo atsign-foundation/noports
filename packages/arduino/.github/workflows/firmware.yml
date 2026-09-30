@@ -1,0 +1,151 @@
+name: Firmware
+
+# Builds every firmware target on pull requests (build verification — this
+# repo has no other build CI), and on version tags additionally assembles
+# single-file factory images and attaches them to the GitHub release.
+
+on:
+  pull_request:
+    branches: ["trunk"]
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The pioarduino platform used by esp32p4 produces a merged
+          # firmware.factory.bin itself; the CYD targets use the older
+          # espressif32 platform, so their images are merged with esptool.
+          - name: NoPorts_PoE-esp32p4
+            project: packages/NoPorts_PoE
+            pio_env: esp32p4
+            factory: platform # firmware.factory.bin comes from the platform
+          - name: NoPorts_CYD-cyd
+            project: packages/NoPorts_CYD
+            pio_env: cyd
+            chip: esp32
+            flash_size: 4MB
+            flash_freq: 40m
+            bootloader_offset: "0x1000"
+          - name: NoPorts_CYD-cyd2usb
+            project: packages/NoPorts_CYD
+            pio_env: cyd2usb
+            chip: esp32
+            flash_size: 4MB
+            flash_freq: 40m
+            bootloader_offset: "0x1000"
+          - name: NoPorts_CYD-cyd2usb_s3
+            project: packages/NoPorts_CYD
+            pio_env: cyd2usb_s3
+            chip: esp32s3
+            flash_size: 16MB
+            flash_freq: 80m
+            bootloader_offset: "0x0"
+          - name: NoPorts_CYD-crowpanel_adv7
+            project: packages/NoPorts_CYD
+            pio_env: crowpanel_adv7
+            chip: esp32s3
+            flash_size: 16MB
+            flash_freq: 80m
+            bootloader_offset: "0x0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+
+      # esptool pinned to 4.x: v5 renamed merge_bin and changed CLI flags
+      - name: Install PlatformIO + esptool
+        run: pip install platformio "esptool==4.8.1"
+
+      - name: Cache PlatformIO packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-pio-${{ matrix.name }}-${{ hashFiles(format('{0}/platformio.ini', matrix.project)) }}
+          restore-keys: |
+            ${{ runner.os }}-pio-${{ matrix.name }}-
+
+      - name: Build
+        working-directory: ${{ matrix.project }}
+        run: pio run -e ${{ matrix.pio_env }}
+
+      - name: Assemble factory image
+        working-directory: ${{ matrix.project }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="$GITHUB_REF_NAME"
+          else
+            VERSION="${GITHUB_SHA::7}"
+          fi
+          OUT="$RUNNER_TEMP/assets"
+          mkdir -p "$OUT"
+          BUILD=".pio/build/${{ matrix.pio_env }}"
+          if [[ "${{ matrix.factory }}" == "platform" ]]; then
+            cp "$BUILD/firmware.factory.bin" "$OUT/${{ matrix.name }}-$VERSION.factory.bin"
+          else
+            # boot_app0.bin ships inside the Arduino framework package
+            BOOT0=$(ls "$HOME"/.platformio/packages/framework-arduinoespressif32*/tools/partitions/boot_app0.bin | head -1)
+            python -m esptool --chip ${{ matrix.chip }} merge_bin \
+              -o "$OUT/${{ matrix.name }}-$VERSION.factory.bin" \
+              --flash_mode dio --flash_freq ${{ matrix.flash_freq }} --flash_size ${{ matrix.flash_size }} \
+              ${{ matrix.bootloader_offset }} "$BUILD/bootloader.bin" \
+              0x8000 "$BUILD/partitions.bin" \
+              0xe000 "$BOOT0" \
+              0x10000 "$BUILD/firmware.bin"
+          fi
+          ls -la "$OUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ runner.temp }}/assets/*.factory.bin
+          if-no-files-found: error
+
+  release:
+    name: Attach release assets
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: assets
+        run: sha256sum *.factory.bin > SHA256SUMS
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
+          fi
+          gh release upload "$TAG" assets/*.factory.bin assets/SHA256SUMS --clobber
