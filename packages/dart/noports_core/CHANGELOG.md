@@ -13,6 +13,10 @@
   `AtOnboardingService`, and `noports activate` activates and enrols through
   at_client's `Atsign.activate` and `Atsign.enroll`
 - refactor: `SshnpParams.sessionKP` is now an `RsaKeyPair`
+- refactor: `verifyEnvelopeSignature` and the relay verifiers accept only
+  rsa2048 signatures made with 2048-bit keys, which every NoPorts release
+  sends. `verifyEnvelopeSignature` used to verify whatever algorithm the
+  envelope named, and the relay verifiers any RSA key size
 - refactor: `signAndWrapAndJsonEncode` is now async, and reads the atSign's
   encryption keypair from `AtClient.atKeysIo`, once per client, rather than
   from `AtClient.atChops`

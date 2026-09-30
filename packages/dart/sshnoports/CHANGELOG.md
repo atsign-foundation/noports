@@ -6,18 +6,20 @@
 
 * feat: `npt --debug` sets logging to finest
 * feat: `at_activate` gains `decrypt` and `version` commands, `--posture`,
-  and `--key-exchange` for `enroll`; `--hashingAlgoType` is gone
+  and `--key-exchange` for `enroll`; `--hashingAlgoType` is hidden, and
+  accepted but ignored
 * chore: `at_activate` with no command still runs `onboard`, but now warns
   that the form is deprecated: name the command, as in
   `at_activate onboard -a <atSign>`
-* feat: `at_activate` writes keyfiles owner-only (0600), in a typed format
-  that keeps the flat fields older readers use. It keeps the previous
-  keyfile as `.bak` when it rewrites one, and a flat keyfile as `.pre-v1`
-  the first time it upgrades it
+* feat: `at_activate` writes keyfiles in a typed format that keeps the flat
+  fields older readers use, and makes the keyfile `onboard` or `enroll`
+  creates owner-only (0600). A later rewrite keeps the previous keyfile as
+  `.bak`, and a flat one as `.pre-v1` the first time, but the rewritten
+  keyfile gets the default file mode
 * build: `noports_core` 6.16.0, on the at_client_sdk release candidates.
-  With them, a daemon whose atSign the atServer refuses at startup exits at
-  once with the atServer's reason, rather than retrying for about 20
-  seconds, and one that cannot reach its atServer gives up after 15 seconds
+  With them, a daemon started before its atSign is activated exits at once
+  with the atServer's reason, where it used to wait about 20 seconds for
+  the activation
 
 ## v5.17.0
 
