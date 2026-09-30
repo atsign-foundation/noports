@@ -18,13 +18,12 @@ String generateIvBase64() => base64Encode(generateIv().ivBytes);
 /// [privateKey] is the base64 PKCS#8 form that `.atKeys` files and
 /// [RsaKeyPair] hold. Throws [AtSigningException] for any key that is not a
 /// 2048-bit RSA key, and [FormatException] if [privateKey] is not base64.
-String rsaSignString(String data, {required String privateKey}) =>
-    base64Encode(
-      RsaSignatureAlgo.rsa2048().signBytesSync(
-        utf8.encode(data),
-        secretKey: base64Decode(privateKey),
-      ),
-    );
+String rsaSignString(String data, {required String privateKey}) => base64Encode(
+  RsaSignatureAlgo.rsa2048().signBytesSync(
+    utf8.encode(data),
+    secretKey: base64Decode(privateKey),
+  ),
+);
 
 /// Whether [signature] (base64) is an RSA-2048 PKCS#1 v1.5 signature over the
 /// UTF-8 bytes of [data], made with the private half of [publicKey] (base64
@@ -57,7 +56,8 @@ Future<bool> rsaVerifyString(
 /// Encrypts the UTF-8 bytes of [plaintext] to the RSA [publicKey] (base64
 /// X.509), returning the ciphertext base64 encoded.
 String rsaEncryptString(String plaintext, {required String publicKey}) {
-  final algo = RsaEncryptionAlgo()..atPublicKey = AtPublicKey.fromString(publicKey);
+  final algo = RsaEncryptionAlgo()
+    ..atPublicKey = AtPublicKey.fromString(publicKey);
   return base64Encode(algo.encrypt(utf8.encode(plaintext)));
 }
 
@@ -85,5 +85,7 @@ Future<String> aesDecryptString(
   required String key,
   required InitialisationVector iv,
 }) async => utf8.decode(
-  await AESEncryptionAlgo(AESKey(key)).decrypt(base64Decode(ciphertext), iv: iv),
+  await AESEncryptionAlgo(
+    AESKey(key),
+  ).decrypt(base64Decode(ciphertext), iv: iv),
 );
