@@ -8,9 +8,10 @@ import 'package:path/path.dart' as path;
 /// the manager's current client.
 ///
 /// Throws [UnAuthenticatedException] carrying the atServer's reason when it
-/// refuses the atSign, and [SecondaryServerConnectivityException] when the
-/// client is still offline after [maxConnectAttempts] tries, three seconds
-/// apart.
+/// refuses the atSign, whether on this device's first open or on a later
+/// one, and [SecondaryServerConnectivityException] when the client is still
+/// offline [onlineBudget] after its first attempt, retrying every three
+/// seconds.
 Future<AtClient> createAtClientCli({
   required String atsign,
   required String atKeysFilePath,
@@ -19,7 +20,7 @@ Future<AtClient> createAtClientCli({
   required String storagePath,
   required String namespace,
   String rootDomain = DefaultArgs.rootDomain,
-  int maxConnectAttempts = 5,
+  Duration onlineBudget = const Duration(seconds: 15),
 }) async {
   atsign = AtUtils.fixAtSign(atsign);
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
@@ -42,33 +43,49 @@ Future<AtClient> createAtClientCli({
   final AtClient client;
   try {
     client = await Atsign(atsign).open(
-      keys: FileAtKeysIo(
-        filePath: (_) => atKeysFilePath,
-        passPhrase: passPhrase,
-      ),
+      keys:
+          FileAtKeysIo(filePath: (_) => atKeysFilePath, passPhrase: passPhrase),
       preference: atOnboardingConfig,
       storage: atOnboardingConfig.storageFor(atsign),
       serviceFactory: atServiceFactory,
       lookUps: atOnboardingConfig.lookUps,
     );
   } on AtOpenRefusedException catch (e) {
-    throw UnAuthenticatedException('Unable to authenticate $atsign: ${e.message}');
-  }
-
-  const retryInterval = Duration(seconds: 3);
-  final state = await client.connection.awaitOnline(
-    budget: retryInterval * maxConnectAttempts,
-    retryInterval: retryInterval,
-  );
-  if (!state.isOnline) {
-    await client.stop();
-    throw SecondaryServerConnectivityException(
-      '$atsign could not connect to its atServer within $maxConnectAttempts'
-      ' attempts: ${state.outcome.name}'
-      '${state.cause == null ? '' : ' (${state.cause!.name})'}',
+    throw UnAuthenticatedException(
+      'Unable to authenticate $atsign: ${e.message}',
     );
   }
 
+  await onlineOrThrow(client, atsign, onlineBudget);
   AtClientManager.getInstance().use(client);
   return client;
+}
+
+/// Waits up to [onlineBudget] for [client] to come online, retrying every
+/// three seconds. Stops the client and throws [UnAuthenticatedException]
+/// with the atServer's reason when it is refused, or
+/// [SecondaryServerConnectivityException] when it is still offline.
+Future<void> onlineOrThrow(
+  AtClient client,
+  String atsign,
+  Duration onlineBudget,
+) async {
+  final state = await client.connection.awaitOnline(
+    budget: onlineBudget,
+    retryInterval: const Duration(seconds: 3),
+  );
+  if (state.isOnline) return;
+
+  await client.stop();
+  final reason = '${state.cause == null ? '' : ' (${state.cause!.name})'}'
+      '${state.error == null ? '' : ': ${state.error}'}';
+  if (state.isRefused) {
+    throw UnAuthenticatedException(
+      'Unable to authenticate $atsign: the atServer refused it$reason',
+    );
+  }
+  throw SecondaryServerConnectivityException(
+    '$atsign could not connect to its atServer within'
+    ' ${onlineBudget.inSeconds} seconds: ${state.outcome.name}$reason',
+  );
 }
