@@ -5,7 +5,6 @@
 - REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
 - FIX: The policy log's summary shows why a request was denied.
 - FIX: A failed demo profile download no longer leaves the progress indicator up for good.
-- FIX: Onboarding, activation, enrollment and atSign-switching actions that finish after their screen has closed no longer use that screen's context.
 
 ## 1.9.4+31
 
