@@ -204,7 +204,7 @@ class SshnpdImpl
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('Unable to find .atKeys file: ${p.atKeysFilePath}');
       }
 
       AtSignLogger.root_level = 'SEVERE';
@@ -260,7 +260,7 @@ class SshnpdImpl
         );
       }
       return sshnpd;
-    } catch (e, s) {
+    } on ArgumentError catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
     }
