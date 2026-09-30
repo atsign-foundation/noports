@@ -368,8 +368,7 @@ class NoPortsOnboardingUtil {
         if (state.isRefused) {
           await client.stop();
           revokedByServer = state.cause == AtConnectionCause.revoked;
-          authFailure =
-              state.error ?? strings.errorAuthenticatinFailed;
+          authFailure = state.error ?? strings.errorAuthenticatinFailed;
         } else {
           onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
         }
