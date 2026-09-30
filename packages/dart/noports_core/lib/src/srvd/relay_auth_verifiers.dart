@@ -281,23 +281,27 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+    final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
+    final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
+    if (signingAlgo != SigningAlgoType.rsa2048) {
+      throw RAVE(
+        'Unsupported signing algorithm ${signingAlgo.name}',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+
     String publicSigningKey = await helper.lookup(
       sessionId!,
       publicSigningKeyUri,
     );
 
     /// Verify the signature of the payload
-    final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
-    final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
-
-    bool verified =
-        signingAlgo == SigningAlgoType.rsa2048 &&
-        await rsaVerifyString(
-          jsonEncode(signedPayload),
-          signature: envelope['s'],
-          publicKey: publicSigningKey,
-          hashing: hashingAlgo,
-        );
+    bool verified = await rsaVerifyString(
+      jsonEncode(signedPayload),
+      signature: envelope['s'],
+      publicKey: publicSigningKey,
+      hashing: hashingAlgo,
+    );
     if (!verified) {
       throw RAVE(
         'Signatures did not match.',

@@ -119,8 +119,18 @@ Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async {
   });
 }
 
+/// Each client's encryption keypair, with the atSign it was read for. An
+/// atSign's encryption keypair does not rotate, and a file-backed key source
+/// may run a passphrase KDF on every read.
+final Expando<({String atSign, RsaKeyPair keyPair})> _encryptionKeyPairs =
+    Expando('encryptionKeyPairs');
+
 Future<RsaKeyPair> _encryptionKeyPair(AtClient atClient) async {
   final atSign = atClient.getCurrentAtSign();
+  final cached = _encryptionKeyPairs[atClient];
+  if (cached != null && cached.atSign == atSign) {
+    return cached.keyPair;
+  }
   final io = atClient.atKeysIo;
   if (atSign == null || io == null) {
     throw AtClientException.message(
@@ -133,6 +143,7 @@ Future<RsaKeyPair> _encryptionKeyPair(AtClient atClient) async {
       'Cannot sign: the keys for $atSign hold no RSA encryption keypair',
     );
   }
+  _encryptionKeyPairs[atClient] = (atSign: atSign, keyPair: keyPair);
   return keyPair;
 }
 
@@ -145,13 +156,13 @@ Future<void> verifyEnvelopeSignature(
   Map payload = envelope['payload'];
   final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
-  final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
   if (signingAlgo != SigningAlgoType.rsa2048) {
     throw AtSigningVerificationException(
       'Unsupported signingAlgo ${signingAlgo.name} from $requestingAtsign',
     );
   }
+  // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
+  final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
   final verified = await rsaVerifyString(
     jsonEncode(payload),
     signature: signature,
