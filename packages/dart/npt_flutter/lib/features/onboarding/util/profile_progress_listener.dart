@@ -25,9 +25,10 @@ class ProfileProgressListener extends SyncProgressListener {
       log(
         'ProfileProgressListener: ProfileListLoadEvent triggered to reload profiles',
       );
+      final backupKeyCubit = context.read<BackupKeyCubit>();
       unawaited(
         context.read<SyncCubit>().checkSync().whenComplete(
-          () => context.read<BackupKeyCubit>().getBackupKeyStatus(),
+          () => backupKeyCubit.getBackupKeyStatus(),
         ),
       );
     }
