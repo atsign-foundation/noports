@@ -93,7 +93,7 @@ Future<({String publicKey, String privateKey})> escrSigningKeyPair(
 ///   - the actual payload is
 ///     ```
 ///     {
-///       'p':{'sid':'session-id','c':'challenge'},
+///       'p':{'sid':'session-id','c':'challenge','side':'<a|b>'},
 ///       's':'signature of json string encoding of p
 ///       'ha':'hashingAlgo',
 ///       'sa':'signingAlgo',
@@ -101,7 +101,7 @@ Future<({String publicKey, String privateKey})> escrSigningKeyPair(
 ///     }
 ///     ```
 ///     where `s` is signed by some private signing key, and `sk` is the
-///     atProtocol URI of the corresponding public key.
+///     Atsign Protocol URI of the corresponding public key.
 /// - sends challenge response `${sessionId}:${auth-payload-as-base64}\n`
 /// - waits for confirmation from relay
 ///   - `ok` is good
