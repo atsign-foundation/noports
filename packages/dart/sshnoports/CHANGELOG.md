@@ -5,7 +5,16 @@
 ## v5.18.0
 
 * feat: `npt --debug` sets logging to finest
-* build: `noports_core` 6.16.0, on the at_client_sdk release candidates
+* feat: `at_activate` gains `decrypt` and `version` commands, `--posture`,
+  and `--key-exchange` for `enroll`; `--hashingAlgoType` is gone
+* feat: `at_activate` writes keyfiles owner-only (0600), in a typed format
+  that keeps the flat fields older readers use. It keeps the previous
+  keyfile as `.bak` when it rewrites one, and a flat keyfile as `.pre-v1`
+  the first time it upgrades it
+* build: `noports_core` 6.16.0, on the at_client_sdk release candidates.
+  With them, a daemon whose atSign the atServer refuses at startup exits at
+  once with the atServer's reason, rather than retrying for about 20
+  seconds, and one that cannot reach its atServer gives up after 15 seconds
 
 ## v5.17.0
 
