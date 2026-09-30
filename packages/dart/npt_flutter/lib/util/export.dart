@@ -193,8 +193,8 @@ class Export {
     const fileId = '15ASX-4ricK1Ulpq49RaY8RAavlmyMwlq';
     const url = 'https://drive.google.com/uc?export=download&id=$fileId';
 
+    final client = HttpClient();
     try {
-      final client = HttpClient();
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
       if (response.statusCode != 200) {
@@ -207,6 +207,8 @@ class Export {
       return content;
     } catch (e) {
       throw Exception('Failed to fetch demo profile: $e');
+    } finally {
+      client.close();
     }
   }
 }
