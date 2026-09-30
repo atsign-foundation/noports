@@ -161,3 +161,42 @@ final class ProfileGroupSetFavoriteEvent extends ProfileGroupEvent {
         'favorite: $favorite)';
   }
 }
+
+/// Collapses or expands folder [groupId], or the "No folder" section when
+/// [groupId] is null.
+final class ProfileGroupSetCollapsedEvent extends ProfileGroupEvent {
+  final String? groupId;
+  final bool collapsed;
+  const ProfileGroupSetCollapsedEvent({
+    required this.groupId,
+    required this.collapsed,
+  });
+
+  @override
+  List<Object?> get props => [groupId, collapsed];
+
+  @override
+  String toString() {
+    return 'ProfileGroupSetCollapsedEvent(groupId: $groupId, '
+        'collapsed: $collapsed)';
+  }
+}
+
+/// Sets which members of folder [groupId] Start all leaves out.
+final class ProfileGroupSetSkippedByStartAllEvent extends ProfileGroupEvent {
+  final String groupId;
+  final List<String> skipped;
+  const ProfileGroupSetSkippedByStartAllEvent({
+    required this.groupId,
+    required this.skipped,
+  });
+
+  @override
+  List<Object?> get props => [groupId, skipped];
+
+  @override
+  String toString() {
+    return 'ProfileGroupSetSkippedByStartAllEvent(groupId: $groupId, '
+        'skipped: $skipped)';
+  }
+}

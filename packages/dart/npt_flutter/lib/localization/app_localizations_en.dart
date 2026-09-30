@@ -518,6 +518,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupAddConnection => 'Add connection';
 
   @override
+  String get groupChooseStartAll => 'Choose connections to start';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Start all starts the checked connections, one after another.';
+
+  @override
   String get groupCollapse => 'Collapse';
 
   @override
@@ -568,6 +575,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get groupStartAll => 'Start all';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Start $count of $total';
+  }
 
   @override
   String get groupStopAll => 'Stop all';
@@ -792,6 +804,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileFailedUnknownMessage => 'No reason provided';
 
   @override
+  String get profileFolder => 'Folder';
+
+  @override
+  String get profileFolderDescription =>
+      'The folder this connection is listed in.';
+
+  @override
   String get profileImportDialogTitle => 'Choose Import Method';
 
   @override
@@ -882,6 +901,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Loading';
+
+  @override
+  String get profileStatusQueued => 'Waiting to start';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Waits for the connections before it to start. Click to start it now.';
 
   @override
   String get profileStatusStarted => 'Connected';

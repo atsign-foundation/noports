@@ -77,7 +77,6 @@ class _DragSession {
 }
 
 class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
-  final Set<String> _collapsed = <String>{};
   _DragSession? _drag;
 
   /// Shown until the bloc emits it, so a dropped row doesn't jump back.
@@ -112,7 +111,12 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     return ProfileGroupLayout.build(
       data: data,
       loaded: widget.profiles,
-      collapsed: _collapsed,
+      // Saved with the folders, so it survives signing out.
+      collapsed: <String>{
+        for (final ProfileGroup group in data.groups)
+          if (group.collapsed) group.uuid,
+        if (data.ungroupedCollapsed) ProfileGroupLayout.ungroupedSectionId,
+      },
       ungroupedTitle: AppLocalizations.of(context)!.groupNoFolder,
       arrange: widget.arrange,
       searching: widget.searching,
@@ -166,11 +170,12 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
             // collapsing and moving are off.
             onToggleCollapsed: widget.searching
                 ? null
-                : () => setState(() {
-                    if (!_collapsed.remove(section.id)) {
-                      _collapsed.add(section.id);
-                    }
-                  }),
+                : () => context.read<ProfileGroupBloc>().add(
+                    ProfileGroupSetCollapsedEvent(
+                      groupId: group?.uuid,
+                      collapsed: !layout.collapsed.contains(section.id),
+                    ),
+                  ),
             reorderIndex: group != null && widget.reorderable ? index : null,
             dragEnabled: dragEnabled,
             onMoveUp: widget.reorderable && folderIndex > 0

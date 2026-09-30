@@ -8,32 +8,51 @@ final class ProfileGroup extends Loggable {
   /// Starred: listed in the tray menu, where it starts or stops the folder.
   final bool favorite;
 
+  final bool collapsed;
+
+  /// Connections Start all leaves out. Stored as exclusions so that a
+  /// connection added to the folder is started by default.
+  final List<String> skippedByStartAll;
+
   const ProfileGroup({
     required this.uuid,
     required this.name,
     this.profileIds = const <String>[],
     this.favorite = false,
+    this.collapsed = false,
+    this.skippedByStartAll = const <String>[],
   });
 
   ProfileGroup copyWith({
     String? name,
     List<String>? profileIds,
     bool? favorite,
+    bool? collapsed,
+    List<String>? skippedByStartAll,
   }) {
     return ProfileGroup(
       uuid: uuid,
       name: name ?? this.name,
       profileIds: profileIds ?? this.profileIds,
       favorite: favorite ?? this.favorite,
+      collapsed: collapsed ?? this.collapsed,
+      skippedByStartAll: skippedByStartAll ?? this.skippedByStartAll,
     );
   }
 
   bool containsProfile(String profileId) => profileIds.contains(profileId);
 
+  /// Whether Start all starts [profileId], a member of this folder.
+  bool startsWithAll(String profileId) =>
+      !skippedByStartAll.contains(profileId);
+
   ProfileGroup withoutProfiles(Iterable<String> toRemove) {
     final Set<String> removeSet = toRemove.toSet();
     return copyWith(
       profileIds: profileIds
+          .where((String id) => !removeSet.contains(id))
+          .toList(),
+      skippedByStartAll: skippedByStartAll
           .where((String id) => !removeSet.contains(id))
           .toList(),
     );
@@ -51,18 +70,30 @@ final class ProfileGroup extends Loggable {
   static const String _nameKey = 'name';
   static const String _profileIdsKey = 'profileIds';
   static const String _favoriteKey = 'favorite';
+  static const String _collapsedKey = 'collapsed';
+  static const String _skippedByStartAllKey = 'skippedByStartAll';
 
   factory ProfileGroup.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawIds = json[_profileIdsKey] is List
         ? json[_profileIdsKey] as List<dynamic>
         : const <dynamic>[];
+    final List<dynamic> rawSkipped = json[_skippedByStartAllKey] is List
+        ? json[_skippedByStartAllKey] as List<dynamic>
+        : const <dynamic>[];
     final dynamic uuid = json[_uuidKey];
     final dynamic name = json[_nameKey];
+    final List<String> profileIds = rawIds.whereType<String>().toList();
     return ProfileGroup(
       uuid: uuid is String ? uuid : '',
       name: name is String ? name : '',
-      profileIds: rawIds.whereType<String>().toList(),
+      profileIds: profileIds,
       favorite: json[_favoriteKey] == true,
+      collapsed: json[_collapsedKey] == true,
+      skippedByStartAll: rawSkipped
+          .whereType<String>()
+          .where(profileIds.contains)
+          .toSet()
+          .toList(),
     );
   }
 
@@ -71,15 +102,25 @@ final class ProfileGroup extends Loggable {
     _nameKey: name,
     _profileIdsKey: profileIds,
     if (favorite) _favoriteKey: true,
+    if (collapsed) _collapsedKey: true,
+    if (skippedByStartAll.isNotEmpty) _skippedByStartAllKey: skippedByStartAll,
   };
 
   @override
-  List<Object?> get props => [uuid, name, profileIds, favorite];
+  List<Object?> get props => [
+    uuid,
+    name,
+    profileIds,
+    favorite,
+    collapsed,
+    skippedByStartAll,
+  ];
 
   @override
   String toString() {
     return 'ProfileGroup(uuid: $uuid, name: $name, profileIds: $profileIds, '
-        'favorite: $favorite)';
+        'favorite: $favorite, collapsed: $collapsed, '
+        'skippedByStartAll: $skippedByStartAll)';
   }
 }
 
@@ -88,18 +129,24 @@ final class ProfileGroupData extends Loggable {
   final List<ProfileGroup> groups;
   final List<String> ungrouped;
 
+  /// The "No folder" section is collapsed.
+  final bool ungroupedCollapsed;
+
   const ProfileGroupData({
     this.groups = const <ProfileGroup>[],
     this.ungrouped = const <String>[],
+    this.ungroupedCollapsed = false,
   });
 
   ProfileGroupData copyWith({
     List<ProfileGroup>? groups,
     List<String>? ungrouped,
+    bool? ungroupedCollapsed,
   }) {
     return ProfileGroupData(
       groups: groups ?? this.groups,
       ungrouped: ungrouped ?? this.ungrouped,
+      ungroupedCollapsed: ungroupedCollapsed ?? this.ungroupedCollapsed,
     );
   }
 
@@ -224,8 +271,15 @@ final class ProfileGroupData extends Loggable {
     return stripped.copyWith(
       groups: stripped.groups
           .map(
-            (ProfileGroup g) =>
-                g.uuid == groupId ? g.copyWith(profileIds: newTarget) : g,
+            (ProfileGroup g) => g.uuid == groupId
+                ? g.copyWith(
+                    profileIds: newTarget,
+                    // Reordering within the folder keeps what Start all skips.
+                    skippedByStartAll: target!.skippedByStartAll
+                        .where(newTarget.contains)
+                        .toList(),
+                  )
+                : g,
           )
           .toList(),
     );
@@ -275,6 +329,7 @@ final class ProfileGroupData extends Loggable {
 
   static const String _groupsKey = 'groups';
   static const String _ungroupedKey = 'ungrouped';
+  static const String _ungroupedCollapsedKey = 'ungroupedCollapsed';
 
   /// Tolerates malformed blobs: groups without a uuid are dropped, and the
   /// legacy `sortByType` field is ignored.
@@ -301,24 +356,34 @@ final class ProfileGroupData extends Loggable {
         continue;
       }
       groupIndex[group.uuid] = groups.length;
-      groups.add(group.copyWith(profileIds: ids));
+      groups.add(
+        group.copyWith(
+          profileIds: ids,
+          skippedByStartAll: group.skippedByStartAll
+              .where(ids.contains)
+              .toList(),
+        ),
+      );
     }
     return ProfileGroupData(
       groups: groups,
       ungrouped: rawUngrouped.whereType<String>().where(seenIds.add).toList(),
+      ungroupedCollapsed: json[_ungroupedCollapsedKey] == true,
     );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     _groupsKey: groups.map((ProfileGroup group) => group.toJson()).toList(),
     _ungroupedKey: ungrouped,
+    if (ungroupedCollapsed) _ungroupedCollapsedKey: true,
   };
 
   @override
-  List<Object?> get props => [groups, ungrouped];
+  List<Object?> get props => [groups, ungrouped, ungroupedCollapsed];
 
   @override
   String toString() {
-    return 'ProfileGroupData(groups: $groups, ungrouped: $ungrouped)';
+    return 'ProfileGroupData(groups: $groups, ungrouped: $ungrouped, '
+        'ungroupedCollapsed: $ungroupedCollapsed)';
   }
 }

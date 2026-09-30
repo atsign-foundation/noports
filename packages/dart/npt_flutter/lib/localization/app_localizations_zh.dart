@@ -491,6 +491,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get groupAddConnection => '添加连接';
 
   @override
+  String get groupChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get groupChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
   String get groupCollapse => '折叠';
 
   @override
@@ -540,6 +546,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get groupStartAll => '全部启动';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
 
   @override
   String get groupStopAll => '全部停止';
@@ -755,6 +766,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -839,6 +856,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -1623,6 +1646,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get groupAddConnection => '添加连接';
 
   @override
+  String get groupChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get groupChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
   String get groupCollapse => '折叠';
 
   @override
@@ -1672,6 +1701,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get groupStartAll => '全部启动';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
 
   @override
   String get groupStopAll => '全部停止';
@@ -1887,6 +1921,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -1971,6 +2011,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -2755,6 +2801,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get groupAddConnection => '新增連線';
 
   @override
+  String get groupChooseStartAll => '選擇要啟動的連線';
+
+  @override
+  String get groupChooseStartAllDescription => '「全部啟動」會依次啟動已勾選的連線。';
+
+  @override
   String get groupCollapse => '收合';
 
   @override
@@ -2804,6 +2856,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get groupStartAll => '全部啟動';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return '啟動 $count/$total 個';
+  }
 
   @override
   String get groupStopAll => '全部停止';
@@ -3018,6 +3075,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '資料夾';
+
+  @override
+  String get profileFolderDescription => '此連線所在的資料夾。';
+
+  @override
   String get profileImportDialogTitle => '選擇匯入方法';
 
   @override
@@ -3102,6 +3165,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '載入中';
+
+  @override
+  String get profileStatusQueued => '等待啟動';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的連線啟動。按一下即可立即啟動。';
 
   @override
   String get profileStatusStarted => '已連線';

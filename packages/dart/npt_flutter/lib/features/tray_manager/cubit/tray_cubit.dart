@@ -135,16 +135,17 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var folderMenuItems = starredFolders.map((folder) {
       var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
       var runningCount = uuids.where(running.containsKey).length;
+      var waiting = uuids.any(ProfileStartQueue.isWaiting);
       var statusIcon = runningCount > 0 ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
       return MenuItem(
         label: '$statusIcon ${folder.name} ($runningCount/${uuids.length})',
         onClick: (_) {
           var context = App.navState.currentContext;
           if (context == null) return;
-          if (runningCount > 0) {
+          if (runningCount > 0 || waiting) {
             ProfileGroupActions.stopAll(context, uuids);
           } else {
-            ProfileGroupActions.startAll(context, uuids);
+            ProfileGroupActions.startAll(context, uuids.where(folder.startsWithAll));
             // Show the main window on Windows only when initiating a connection
             if (Platform.isWindows) windowManager.show();
           }

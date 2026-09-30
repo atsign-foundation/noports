@@ -5,6 +5,7 @@ import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart'
 import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
 import 'package:npt_flutter/features/profile_group/widgets/profile_group_name_dialog.dart';
 import 'package:npt_flutter/features/profile_group/widgets/profile_group_picker_dialog.dart';
+import 'package:npt_flutter/features/profile_group/widgets/profile_group_start_all_dialog.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -24,36 +25,14 @@ class ProfileGroupActions {
     return groups.data.resolveUngrouped(profiles.profiles);
   }
 
+  /// Starts one connection at a time: started together, several of them can
+  /// time out waiting for their device to answer.
   static void startAll(BuildContext context, Iterable<String> uuids) {
-    final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
-    for (final String uuid in uuids) {
-      final ProfileBloc bloc = cache.getProfileBloc(uuid);
-      switch (bloc.state) {
-        case ProfileLoaded _:
-        case ProfileFailedSave _:
-        case ProfileFailedStart _:
-          bloc.add(const ProfileStartEvent());
-        case ProfileInitial _:
-        case ProfileLoading _:
-          // Only rows that were shown have loaded, e.g. not the ones of a
-          // collapsed folder or when started from the tray.
-          if (bloc.state is ProfileInitial) {
-            bloc.add(const ProfileLoadEvent());
-          }
-          bloc.stream
-              .firstWhere((ProfileState state) => state is! ProfileLoading)
-              .then((ProfileState state) {
-                if (state is ProfileLoaded) {
-                  bloc.add(const ProfileStartEvent());
-                }
-              }, onError: (_) {});
-        default:
-          break;
-      }
-    }
+    ProfileStartQueue.add(context.read<ProfileCacheCubit>(), uuids);
   }
 
   static void stopAll(BuildContext context, Iterable<String> uuids) {
+    ProfileStartQueue.remove(uuids);
     final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
     for (final String uuid in uuids) {
       final ProfileBloc bloc = cache.getProfileBloc(uuid);
@@ -61,6 +40,56 @@ class ProfileGroupActions {
         bloc.add(const ProfileStopEvent());
       }
     }
+  }
+
+  /// Asks which connections of [group] Start all starts, and saves it.
+  static Future<void> chooseStartAll(
+    BuildContext context,
+    ProfileGroup group,
+  ) async {
+    final ProfileGroupBloc bloc = context.read<ProfileGroupBloc>();
+    final ProfileListState profiles = context.read<ProfileListBloc>().state;
+    if (bloc.state is! ProfileGroupsLoaded || profiles is! ProfileListLoaded) {
+      return;
+    }
+    final Set<String> loaded = profiles.profiles.toSet();
+    final List<String> shown = group.profileIds.where(loaded.contains).toList();
+    if (shown.isEmpty) return;
+    final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
+    for (final String uuid in shown) {
+      final ProfileBloc profile = cache.getProfileBloc(uuid);
+      if (profile.state is ProfileInitial) {
+        profile.add(const ProfileLoadEvent());
+      }
+    }
+
+    final Set<String>? skipped = await showDialog<Set<String>>(
+      context: context,
+      builder: (BuildContext _) => ProfileGroupStartAllDialog(
+        uuids: shown,
+        skipped: group.skippedByStartAll.toSet(),
+      ),
+    );
+    if (skipped == null) return;
+    // Unchecked while waiting for an earlier Start all: not started either.
+    ProfileStartQueue.remove(skipped.where(ProfileStartQueue.isWaiting));
+    // Re-read here, not before the dialog, in case a sync changed it.
+    final ProfileGroupState state = bloc.state;
+    if (state is! ProfileGroupsLoaded) return;
+    final ProfileGroup? current = state.data.groupById(group.uuid);
+    if (current == null) return;
+    bloc.add(
+      ProfileGroupSetSkippedByStartAllEvent(
+        groupId: group.uuid,
+        skipped: <String>[
+          // Members not listed keep what they had.
+          ...current.skippedByStartAll.where(
+            (String uuid) => !shown.contains(uuid),
+          ),
+          ...skipped,
+        ],
+      ),
+    );
   }
 
   static Future<void> createFolder(BuildContext context) async {

@@ -1019,6 +1019,18 @@ abstract class AppLocalizations {
   /// **'Add connection'**
   String get groupAddConnection;
 
+  /// No description provided for @groupChooseStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose connections to start'**
+  String get groupChooseStartAll;
+
+  /// No description provided for @groupChooseStartAllDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all starts the checked connections, one after another.'**
+  String get groupChooseStartAllDescription;
+
   /// No description provided for @groupCollapse.
   ///
   /// In en, this message translates to:
@@ -1120,6 +1132,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start all'**
   String get groupStartAll;
+
+  /// No description provided for @groupStartSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {count} of {total}'**
+  String groupStartSome(Object count, Object total);
 
   /// No description provided for @groupStopAll.
   ///
@@ -1541,6 +1559,18 @@ abstract class AppLocalizations {
   /// **'No reason provided'**
   String get profileFailedUnknownMessage;
 
+  /// No description provided for @profileFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get profileFolder;
+
+  /// No description provided for @profileFolderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder this connection is listed in.'**
+  String get profileFolderDescription;
+
   /// No description provided for @profileImportDialogTitle.
   ///
   /// In en, this message translates to:
@@ -1708,6 +1738,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading'**
   String get profileStatusLoading;
+
+  /// No description provided for @profileStatusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to start'**
+  String get profileStatusQueued;
+
+  /// No description provided for @profileStatusQueuedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waits for the connections before it to start. Click to start it now.'**
+  String get profileStatusQueuedMessage;
 
   /// No description provided for @profileStatusStarted.
   ///

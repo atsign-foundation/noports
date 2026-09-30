@@ -35,6 +35,8 @@ class ProfileGroupBloc
     on<ProfileGroupPlaceProfilesEvent>(_onPlaceProfiles);
     on<ProfileGroupReorderFoldersEvent>(_onReorderFolders);
     on<ProfileGroupSetFavoriteEvent>(_onSetFavorite);
+    on<ProfileGroupSetCollapsedEvent>(_onSetCollapsed);
+    on<ProfileGroupSetSkippedByStartAllEvent>(_onSetSkippedByStartAll);
   }
 
   void clearAll() {
@@ -278,6 +280,57 @@ class ProfileGroupBloc
             .map(
               (ProfileGroup g) => g.uuid == event.groupId
                   ? g.copyWith(favorite: event.favorite)
+                  : g,
+            )
+            .toList(),
+      ),
+      emit,
+    );
+  }
+
+  Future<void> _onSetCollapsed(
+    ProfileGroupSetCollapsedEvent event,
+    Emitter<ProfileGroupState> emit,
+  ) async {
+    if (state is! ProfileGroupsLoaded) return;
+    final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
+
+    if (event.groupId == null) {
+      await _save(data.copyWith(ungroupedCollapsed: event.collapsed), emit);
+      return;
+    }
+    await _save(
+      data.copyWith(
+        groups: data.groups
+            .map(
+              (ProfileGroup g) => g.uuid == event.groupId
+                  ? g.copyWith(collapsed: event.collapsed)
+                  : g,
+            )
+            .toList(),
+      ),
+      emit,
+    );
+  }
+
+  Future<void> _onSetSkippedByStartAll(
+    ProfileGroupSetSkippedByStartAllEvent event,
+    Emitter<ProfileGroupState> emit,
+  ) async {
+    if (state is! ProfileGroupsLoaded) return;
+    final ProfileGroupData data = (state as ProfileGroupsLoaded).data;
+
+    await _save(
+      data.copyWith(
+        groups: data.groups
+            .map(
+              (ProfileGroup g) => g.uuid == event.groupId
+                  ? g.copyWith(
+                      skippedByStartAll: event.skipped
+                          .where(g.profileIds.contains)
+                          .toSet()
+                          .toList(),
+                    )
                   : g,
             )
             .toList(),

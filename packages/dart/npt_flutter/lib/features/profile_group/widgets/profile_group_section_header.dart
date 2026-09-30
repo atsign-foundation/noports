@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/profile/util/profile_start_queue.dart';
 import 'package:npt_flutter/features/profile_group/bloc/profile_group_bloc.dart';
 import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
 import 'package:npt_flutter/features/profile_group/util/profile_group_actions.dart';
@@ -92,44 +93,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
               ],
             ),
           ),
-          BlocSelector<ProfilesRunningCubit, ProfilesRunningState, int>(
-            selector: (ProfilesRunningState state) => uuids
-                .where(
-                  (String uuid) => state.socketConnectors.containsKey(uuid),
-                )
-                .length,
-            builder: (BuildContext context, int running) {
-              final bool canStart = uuids.isNotEmpty && running < uuids.length;
-              final bool canStop = running > 0;
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  IconButton(
-                    tooltip: strings.groupStartAll,
-                    onPressed: canStart
-                        ? () => ProfileGroupActions.startAll(context, uuids)
-                        : null,
-                    icon: PhosphorIcon(
-                      PhosphorIcons.play(PhosphorIconsStyle.fill),
-                      size: Sizes.p20,
-                      color: canStart ? AppColor.successColor : null,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: strings.groupStopAll,
-                    onPressed: canStop
-                        ? () => ProfileGroupActions.stopAll(context, uuids)
-                        : null,
-                    icon: PhosphorIcon(
-                      PhosphorIcons.stop(PhosphorIconsStyle.fill),
-                      size: Sizes.p20,
-                      color: canStop ? AppColor.errorColor : null,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+          _StartStopButtons(uuids: uuids, group: group),
           SizedBox(
             width: _slotWidth,
             child: group == null
@@ -168,6 +132,73 @@ class ProfileGroupSectionHeader extends StatelessWidget {
   }
 }
 
+/// Start all starts the connections the folder doesn't skip, one at a time;
+/// Stop all also cancels the ones still waiting.
+class _StartStopButtons extends StatelessWidget {
+  final List<String> uuids;
+  final ProfileGroup? group;
+  const _StartStopButtons({required this.uuids, required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context)!;
+    final List<String> startable = uuids
+        .where((String uuid) => group?.startsWithAll(uuid) ?? true)
+        .toList();
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: ProfileStartQueue.waiting,
+      builder: (BuildContext context, List<String> waiting, Widget? _) {
+        final bool anyWaiting = uuids.any(waiting.contains);
+        return BlocBuilder<ProfilesRunningCubit, ProfilesRunningState>(
+          buildWhen: (ProfilesRunningState a, ProfilesRunningState b) =>
+              uuids.any(
+                (String uuid) =>
+                    a.socketConnectors.containsKey(uuid) !=
+                    b.socketConnectors.containsKey(uuid),
+              ),
+          builder: (BuildContext context, ProfilesRunningState running) {
+            bool isRunning(String uuid) =>
+                running.socketConnectors.containsKey(uuid);
+            final bool canStart = startable.any(
+              (String uuid) => !isRunning(uuid) && !waiting.contains(uuid),
+            );
+            final bool canStop = uuids.any(isRunning) || anyWaiting;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                IconButton(
+                  tooltip: startable.length < uuids.length
+                      ? strings.groupStartSome(startable.length, uuids.length)
+                      : strings.groupStartAll,
+                  onPressed: canStart
+                      ? () => ProfileGroupActions.startAll(context, startable)
+                      : null,
+                  icon: PhosphorIcon(
+                    PhosphorIcons.play(PhosphorIconsStyle.fill),
+                    size: Sizes.p20,
+                    color: canStart ? AppColor.successColor : null,
+                  ),
+                ),
+                IconButton(
+                  tooltip: strings.groupStopAll,
+                  onPressed: canStop
+                      ? () => ProfileGroupActions.stopAll(context, uuids)
+                      : null,
+                  icon: PhosphorIcon(
+                    PhosphorIcons.stop(PhosphorIconsStyle.fill),
+                    size: Sizes.p20,
+                    color: canStop ? AppColor.errorColor : null,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
 class _ProfileGroupMenuButton extends StatelessWidget {
   final ProfileGroup group;
   final VoidCallback? onMoveUp;
@@ -194,6 +225,21 @@ class _ProfileGroupMenuButton extends StatelessWidget {
               ],
             ),
             onTap: () => ProfileGroupActions.addConnectionToFolder(group.uuid),
+          ),
+          PopupMenuItem(
+            child: Row(
+              children: <Widget>[
+                PhosphorIcon(PhosphorIcons.listChecks()),
+                gapW10,
+                Flexible(
+                  child: Text(
+                    strings.groupChooseStartAll,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            onTap: () => ProfileGroupActions.chooseStartAll(context, group),
           ),
           PopupMenuItem(
             child: Row(

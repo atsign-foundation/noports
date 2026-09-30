@@ -525,6 +525,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get groupAddConnection => 'Adicionar conexão';
 
   @override
+  String get groupChooseStartAll => 'Escolher ligações a iniciar';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Iniciar todos inicia as ligações marcadas, uma após a outra.';
+
+  @override
   String get groupCollapse => 'Recolher';
 
   @override
@@ -576,6 +583,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
 
   @override
   String get groupStopAll => 'Parar todos';
@@ -805,6 +817,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta ligação aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -896,6 +914,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Em espera';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda que as ligações anteriores iniciem. Clique para a iniciar agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';
@@ -1734,6 +1759,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get groupAddConnection => 'Adicionar conexão';
 
   @override
+  String get groupChooseStartAll => 'Escolher conexões a iniciar';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
+
+  @override
   String get groupCollapse => 'Recolher';
 
   @override
@@ -1785,6 +1817,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
 
   @override
   String get groupStopAll => 'Parar todos';
@@ -2014,6 +2051,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta conexão aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -2105,6 +2148,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Aguardando';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda as conexões anteriores iniciarem. Clique para iniciá-la agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';

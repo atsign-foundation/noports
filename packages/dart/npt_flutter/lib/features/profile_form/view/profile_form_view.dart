@@ -19,16 +19,51 @@ class ProfileFormView extends StatelessWidget {
     this.groupId,
   });
 
+  /// Moves the profile to the folder chosen in the form, if it changed.
+  void _applyFolder(BuildContext context) {
+    final String? chosen = context.read<ProfileFormFolderCubit>().state;
+    final ProfileGroupBloc groupBloc = context.read<ProfileGroupBloc>();
+    final ProfileGroupState groups = groupBloc.state;
+    if (groups is! ProfileGroupsLoaded) return;
+    if (groups.data.groupForProfile(uuid)?.uuid == chosen) return;
+    groupBloc.add(
+      ProfileGroupMoveProfilesEvent(
+        profileIds: [uuid],
+        groupId: chosen,
+        visibleUngrouped: chosen == null
+            ? ProfileGroupActions.visibleUngrouped(context)
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final GlobalKey<FormState> formkey = GlobalKey<FormState>();
     final deviceSize = MediaQuery.of(context).size;
-    return BlocProvider<ProfileBloc>(
-      create: (BuildContext context) =>
-          /// Local copy of the profile which is used by the form
-          ProfileBloc(context.read<ProfileRepository>(), uuid)
-            ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ProfileBloc>(
+          create: (BuildContext context) =>
+              /// Local copy of the profile which is used by the form
+              ProfileBloc(context.read<ProfileRepository>(), uuid)
+                ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+        ),
+        BlocProvider<ProfileFormFolderCubit>(
+          create: (BuildContext context) {
+            final ProfileGroupState groups = context
+                .read<ProfileGroupBloc>()
+                .state;
+            return ProfileFormFolderCubit(
+              groupId ??
+                  (groups is ProfileGroupsLoaded
+                      ? groups.data.groupForProfile(uuid)?.uuid
+                      : null),
+            );
+          },
+        ),
+      ],
       child: Padding(
         padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100),
         child: Stack(
@@ -48,6 +83,7 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
+                            const ProfileFolderSelector(),
                             gapH10,
                             const Padding(
                               padding: EdgeInsets.symmetric(
@@ -145,14 +181,7 @@ class ProfileFormView extends StatelessWidget {
                                                       .profile,
                                             ),
                                           );
-                                      if (groupId != null) {
-                                        context.read<ProfileGroupBloc>().add(
-                                          ProfileGroupMoveProfilesEvent(
-                                            profileIds: [uuid],
-                                            groupId: groupId,
-                                          ),
-                                        );
-                                      }
+                                      _applyFolder(context);
                                     },
                                     child: Text(strings.submit),
                                   ),
