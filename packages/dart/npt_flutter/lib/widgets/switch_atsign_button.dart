@@ -91,8 +91,7 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
 
   // Step 3: Handle the selection
   if (selection == strings.signout) {
-    if (!context.mounted) return;
-    await _handleSignout(context);
+    await _handleSignout();
   } else if (selection == strings.addAtsign) {
     await _handleAddAtsign();
   } else {
@@ -168,10 +167,12 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
 }
 
 /// Handles the signout flow
-Future<void> _handleSignout(BuildContext context) async {
+Future<void> _handleSignout() async {
   // A full signout starts over on the Connections tab, unlike an atsign
   // switch which keeps the currently selected tab.
-  context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
+  App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
+    HomeRoutes.dashboard,
+  );
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
     (route) => false,
@@ -179,12 +180,9 @@ Future<void> _handleSignout(BuildContext context) async {
 
   await preSignout();
 
-  if (context.mounted) {
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
-  }
+  Navigator.of(
+    App.navState.currentContext!,
+  ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
 }
 
 /// Handles adding a new atsign
