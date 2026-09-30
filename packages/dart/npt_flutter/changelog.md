@@ -2,7 +2,7 @@
 
 - FEAT: A dot beside the atSign shows whether its atServer connection is online, offline or refused, with the reason in its tooltip.
 - FEAT: Onboarding errors say what went wrong, rather than reporting a generic authentication failure.
-- REFACTOR: Sign-in, activation and enrollment run through at_client, on the at_client_sdk release candidates. The app no longer expires a pending enrollment request itself after 48 hours; the atServer's answer decides.
+- REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
 
 ## 1.9.4+31
 

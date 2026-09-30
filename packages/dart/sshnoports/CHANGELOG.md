@@ -4,24 +4,22 @@
 
 ## v5.18.0
 
-* feat: `npt --debug` sets logging to finest
-* feat: run again after an interruption, `noports activate` waits on the
-  enrollment request it already submitted, rather than submitting another
-* feat: `at_activate` gains `decrypt` and `version` commands, `--posture`,
-  and `--key-exchange` for `enroll`; `--hashingAlgoType` is hidden, and
-  accepted but ignored
-* chore: `at_activate` with no command still runs `onboard`, but now warns
-  that the form is deprecated: name the command, as in
-  `at_activate onboard -a <atSign>`
-* feat: `at_activate` writes keyfiles in a typed format that keeps the flat
-  fields older readers use, and makes the keyfile `onboard` or `enroll`
-  creates owner-only (0600). A later rewrite keeps the previous keyfile as
-  `.bak`, and a flat one as `.pre-v1` the first time, but the rewritten
+* feat: `npt --debug` logs everything at FINEST
+* feat: `noports activate`, run again after an interruption, waits on the
+  enrollment request it already submitted rather than submitting another
+* feat: `at_activate` has new `decrypt` and `version` commands, a
+  `--posture` option for `onboard` and `enroll`, and `--key-exchange` for
+  `enroll`; `--hashingAlgoType` is accepted but ignored
+* chore: `at_activate` with no command still runs `onboard`, but warns
+  that the form is deprecated, so write `at_activate onboard -a <atSign>`
+* feat: the keyfile `at_activate onboard` or `enroll` creates is owner-only
+  (0600), so a daemon running as a different user can't read it until you
+  change its permissions. Released versions can still read the keyfiles it
+  writes by default. When it rewrites a keyfile it keeps the old one as
+  `.bak` (or `.pre-v1` if it was in the old format), and the rewritten
   keyfile gets the default file mode
-* build: `noports_core` 6.16.0, on the at_client_sdk release candidates.
-  With them, a daemon started before its atSign is activated exits at once
-  with the atServer's reason, where it used to wait about 20 seconds for
-  the activation
+* feat: a daemon started before its atSign is activated exits at once with
+  the atServer's reason, rather than waiting about 20 seconds
 
 ## v5.17.0
 

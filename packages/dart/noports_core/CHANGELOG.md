@@ -1,30 +1,19 @@
 # 6.16.0
 
-- build: depend on the at_client_sdk release candidates - at_client
+- build: depends on the at_client_sdk release candidates: at_client
   3.15.0-rc1, at_auth 4.0.0-rc2, at_lookup 3.7.0-rc2, at_cli_commons
   3.1.2-rc1 and at_onboarding_cli 2.0.0-rc2
-- refactor: move off at_chops's deprecated compatibility API (`AtChops`,
-  `AtChopsUtil`, `AtEncryptionKeyPair`, `AtSigningInput`) onto its algorithm
-  classes. Nothing changes on the wire: signed envelopes, ESCR relay auth and
-  AES-encrypted payloads are byte-for-byte what they were, and the session
-  key exchange uses the same RSA scheme, readable in both directions by
-  released versions
-- refactor: `Activate` takes an `ActivateFlows` rather than an
-  `AtOnboardingService`, and `noports activate` activates and enrols through
-  at_client's `Atsign.activate`, `Atsign.enroll` and
-  `Atsign.resumeEnrollment`
-- refactor: `SshnpParams.sessionKP` is now an `RsaKeyPair`
+- **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
+  `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
+  `ActivateFlows` rather than an `AtOnboardingService`
+- feat: `escrSigningKeyPair`, the keypair ESCR relay auth signs with, and
+  `loadEnvelopeSigningKey`, which reads the envelope signing key up front
 - refactor: `verifyEnvelopeSignature` and the relay verifiers accept only
-  rsa2048 signatures made with 2048-bit keys, which every NoPorts release
-  sends. `verifyEnvelopeSignature` used to verify whatever algorithm the
-  envelope named, and the relay verifiers any RSA key size
-- refactor: `signAndWrapAndJsonEncode` is now async, and reads the atSign's
-  encryption keypair from `AtClient.atKeysIo`, once per client, rather than
-  from `AtClient.atChops`
-- feat: `escrSigningKeyPair`, which ESCR relay auth now signs with. It reads
-  the same APKAM keypair as before through at_client's
-  `authenticationSigningKey`, rather than the deprecated
-  `publicSigningKey`/`privateSigningKey`
+  rsa2048 signatures from 2048-bit keys, which is what every NoPorts
+  release sends
+- refactor: moved off at_chops's deprecated compatibility API. Nothing
+  changes on the wire, and released versions can still exchange session
+  keys with this one
 
 # 6.15.0
 
