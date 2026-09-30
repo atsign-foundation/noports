@@ -545,8 +545,6 @@ void main(List<String> args) async {
         only443: parsedArgs['443'],
       );
 
-      logProgress(
-          'fetchOfflineNotifications is ${cliBase.atClient.getPreferences()!.fetchOfflineNotifications}');
       while (true) {
         final npt = Npt.create(
           params: params,
