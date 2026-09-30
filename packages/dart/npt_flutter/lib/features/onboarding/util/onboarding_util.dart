@@ -102,6 +102,9 @@ class NoPortsOnboardingUtil {
     NoPortsOnboardingResult? result;
 
     switch (initialState) {
+      // NOTE: a newly registered atsign has no atDirectory entry until it is
+      // provisioned, so a miss goes on to activation, which waits for it.
+      case AtSignServerState.notInDirectory:
       case AtSignServerState.directoryUnreachable:
         await Future.delayed(const Duration(seconds: 2));
         if (!context.mounted) return null;
@@ -139,11 +142,6 @@ class NoPortsOnboardingUtil {
           strings: strings,
         );
 
-      case AtSignServerState.notInDirectory:
-        result = NoPortsOnboardingResult.error(
-          message: strings.errorAtsignNotExist,
-        );
-
       case AtSignServerState.atServerUnreachable:
         result = NoPortsOnboardingResult.error(
           message: strings.errorAtServerUnavailable,
@@ -153,8 +151,8 @@ class NoPortsOnboardingUtil {
     return result;
   }
 
-  /// Handles activation flow for atsigns that are not yet activated, or whose
-  /// atDirectory could not be reached
+  /// Handles activation flow for atsigns that are not yet activated, not yet
+  /// in the atDirectory, or whose atDirectory could not be reached
   Future<NoPortsOnboardingResult?> _handleActivation({
     required BuildContext context,
     required Atsign atsign,
