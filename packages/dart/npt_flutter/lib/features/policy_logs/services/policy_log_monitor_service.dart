@@ -67,8 +67,10 @@ class PolicyLogEntry {
                 final message = responsePayload['message'];
                 final permitOpen = responsePayload['permitOpen'];
                 String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
-                if (!authorized && message is String && message.isNotEmpty) {
-                  authStatus = '$authStatus: $message';
+                if (!authorized &&
+                    message is String &&
+                    message.trim().isNotEmpty) {
+                  authStatus = '$authStatus: ${message.trim()}';
                 }
                 String permits = '';
                 if (permitOpen is List && permitOpen.isNotEmpty) {

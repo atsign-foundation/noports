@@ -35,6 +35,33 @@ void main() {
       );
     });
 
+    final noReason = <String, Map<String, dynamic>>{
+      'absent': {'authorized': false},
+      'null': {'authorized': false, 'message': null},
+      'empty': {'authorized': false, 'message': ''},
+      'whitespace': {'authorized': false, 'message': '   '},
+      'not a string': {'authorized': false, 'message': 42},
+    };
+    noReason.forEach((shape, payload) {
+      test('a denial whose message is $shape shows no reason', () {
+        expect(
+          PolicyLogEntry.fromNotification(
+            _policyRequest(payload),
+          ).allowedServices,
+          'Request: @alice → @lab (DENIED)',
+        );
+      });
+    });
+
+    test('a denial reason is shown trimmed', () {
+      expect(
+        PolicyLogEntry.fromNotification(
+          _policyRequest({'authorized': false, 'message': '  outside hours\n'}),
+        ).allowedServices,
+        'Request: @alice → @lab (DENIED: outside hours)',
+      );
+    });
+
     test('an authorized request lists what it permits', () {
       final entry = PolicyLogEntry.fromNotification(
         _policyRequest({
