@@ -90,8 +90,14 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
   if (!await _checkAndHandleConnectedProfiles(context)) return;
 
   // Step 3: Handle the selection
-  if (!context.mounted) return;
-  await _handleSelection(context, selection, strings);
+  if (selection == strings.signout) {
+    if (!context.mounted) return;
+    await _handleSignout(context);
+  } else if (selection == strings.addAtsign) {
+    await _handleAddAtsign();
+  } else {
+    await _handleSwitchToAtsign(selection.toAtsign());
+  }
 }
 
 /// Shows the atsign menu and returns the selected option
@@ -161,21 +167,6 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
       true; // Invert because dialog returns true when profiles are connected
 }
 
-/// Handles the menu selection (signout, add atsign, or switch)
-Future<void> _handleSelection(
-  BuildContext context,
-  String selection,
-  AppLocalizations strings,
-) async {
-  if (selection == strings.signout) {
-    await _handleSignout(context);
-  } else if (selection == strings.addAtsign) {
-    await _handleAddAtsign(context);
-  } else {
-    await _handleSwitchToAtsign(context, selection.toAtsign());
-  }
-}
-
 /// Handles the signout flow
 Future<void> _handleSignout(BuildContext context) async {
   // A full signout starts over on the Connections tab, unlike an atsign
@@ -197,7 +188,7 @@ Future<void> _handleSignout(BuildContext context) async {
 }
 
 /// Handles adding a new atsign
-Future<void> _handleAddAtsign(BuildContext context) async {
+Future<void> _handleAddAtsign() async {
   // Store the current atsign before showing the dialog
 
   final originalAtsign = App.navState.currentContext!
@@ -328,10 +319,7 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 }
 
 /// Handles switching to an existing atsign
-Future<void> _handleSwitchToAtsign(
-  BuildContext context,
-  Atsign targetAtsign,
-) async {
+Future<void> _handleSwitchToAtsign(Atsign targetAtsign) async {
   await preSignout();
 
   log('switching to atsign: $targetAtsign');
