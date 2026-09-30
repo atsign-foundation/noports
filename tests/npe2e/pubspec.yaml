@@ -9,18 +9,22 @@ environment:
 # Add regular dependencies here.
 dependencies:
   args: ^2.7.0
-  at_client: ^3.11.0
+  at_client: ^3.15.0-rc1
   at_utils: ^3.4.0
   path: ^1.9.0
   pool: ^1.5.2
-  at_cli_commons: ^3.0.1
-  at_onboarding_cli: ^1.14.2
+  at_cli_commons: ^3.1.2-rc1
+  at_onboarding_cli: ^2.0.0-rc1
   noports_core:
     path: ../../packages/dart/noports_core
   version: ^3.0.2
 
 dependency_overrides:
   pointycastle: ^4.0.0
+  alfred:
+    git:
+      ref: cc-directory-4-windows
+      url: https://github.com/atsign-foundation/alfred
 
 dev_dependencies:
   lints: ^6.0.0
