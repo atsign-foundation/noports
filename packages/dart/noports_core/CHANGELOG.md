@@ -6,10 +6,13 @@
 - refactor: move off at_chops's deprecated compatibility API (`AtChops`,
   `AtChopsUtil`, `AtEncryptionKeyPair`, `AtSigningInput`) onto its algorithm
   classes. Nothing changes on the wire: signed envelopes, ESCR relay auth and
-  the session key exchange are byte-for-byte what they were
+  AES-encrypted payloads are byte-for-byte what they were, and the session
+  key exchange uses the same RSA scheme, readable in both directions by
+  released versions
 - refactor: `SshnpParams.sessionKP` is now an `RsaKeyPair`
 - refactor: `signAndWrapAndJsonEncode` is now async, and reads the atSign's
-  encryption keypair from `AtClient.atKeysIo` rather than `AtClient.atChops`
+  encryption keypair from `AtClient.atKeysIo`, once per client, rather than
+  from `AtClient.atChops`
 - feat: `escrSigningKeyPair`, which ESCR relay auth now signs with. It reads
   the same APKAM keypair as before through at_client's
   `authenticationSigningKey`, rather than the deprecated

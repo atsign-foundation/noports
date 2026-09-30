@@ -55,6 +55,31 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   }
 }
 
+/// The keypair a [RelayAuthenticatorESCR] signs with: [signer]'s APKAM
+/// authentication keypair, which is what its `_apsk` record advertises while
+/// the enrollment holds no signing keys of its own.
+///
+/// Throws unless that keypair is labelled rsa2048, the only kind srvd
+/// verifies.
+Future<({String publicKey, String privateKey})> escrSigningKeyPair(
+  ApkamSigning signer,
+) async {
+  final key = await signer.authenticationSigningKey;
+  if (key == null) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} holds no APKAM keypair to sign'
+      ' relay authentication with',
+    );
+  }
+  if (key.algorithm != SigningAlgoType.rsa2048) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} authenticates with'
+      ' ${key.algorithm.name}; relay authentication needs rsa2048',
+    );
+  }
+  return (publicKey: key.publicKey, privateKey: key.privateKey);
+}
+
 /// Authenticate to relay with Encrypted Signed Challenge response
 ///
 /// - listens to socket
@@ -82,30 +107,6 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
 ///   - `ok` is good
 ///   - anything else is bad
 ///
-/// The keypair a [RelayAuthenticatorESCR] signs with: [signer]'s APKAM
-/// authentication keypair, which is what its `_apsk` record advertises while
-/// the enrollment holds no signing keys of its own.
-///
-/// Throws unless that keypair is RSA-2048, the only kind srvd verifies.
-Future<({String publicKey, String privateKey})> escrSigningKeyPair(
-  ApkamSigning signer,
-) async {
-  final key = await signer.authenticationSigningKey;
-  if (key == null) {
-    throw AtClientException.message(
-      'Enrollment ${signer.enrollmentId} holds no APKAM keypair to sign'
-      ' relay authentication with',
-    );
-  }
-  if (key.algorithm != SigningAlgoType.rsa2048) {
-    throw AtClientException.message(
-      'Enrollment ${signer.enrollmentId} authenticates with'
-      ' ${key.algorithm.name}; relay authentication needs rsa2048',
-    );
-  }
-  return (publicKey: key.publicKey, privateKey: key.privateKey);
-}
-
 class RelayAuthenticatorESCR implements RelayAuthenticator {
   final String sessionId;
   final String relayAuthAesKey;

@@ -17,7 +17,7 @@ String generateIvBase64() => base64Encode(generateIv().ivBytes);
 ///
 /// [privateKey] is the base64 PKCS#8 form that `.atKeys` files and
 /// [RsaKeyPair] hold. Throws [AtSigningException] for any key that is not a
-/// 2048-bit RSA key.
+/// 2048-bit RSA key, and [FormatException] if [privateKey] is not base64.
 String rsaSignString(String data, {required String privateKey}) =>
     base64Encode(
       RsaSignatureAlgo.rsa2048().signBytesSync(
