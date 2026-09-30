@@ -86,7 +86,8 @@ jobs:
       - name: Zip /tmp/e2e_all
         if: ${{ always() }}
         run: |
-          zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all
+          # NOTE keyfiles hold live APKAM private keys: keep them out of the artifact
+          zip -r tmp_e2e_all_artifacts.zip /tmp/e2e_all -x '*.atKeys' '*.atKeys.bak' '*.atKeys.pre-v1' '*.atKeys.tmp'
 
       - name: Upload /tmp/e2e_all as artifact
         if: ${{ always() }}
@@ -154,7 +155,8 @@ jobs:
         if: always()
         run: |
           if [ -d "$LOGS_DIR" ]; then
-            zip -r npe2e_core_tests_artifacts.zip "$LOGS_DIR"
+            # NOTE keyfiles hold live APKAM private keys: keep them out of the artifact
+            zip -r npe2e_core_tests_artifacts.zip "$LOGS_DIR" -x '*.atKeys' '*.atKeys.bak' '*.atKeys.pre-v1' '*.atKeys.tmp'
             echo "Zipped $LOGS_DIR directory contents into npe2e_core_tests_artifacts.zip"
           else
             echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
@@ -244,7 +246,8 @@ jobs:
         if: always()
         run: |
           if [ -d "$LOGS_DIR" ]; then
-            zip -r npe2e_policy_tests_artifacts.zip "$LOGS_DIR"
+            # NOTE keyfiles hold live APKAM private keys: keep them out of the artifact
+            zip -r npe2e_policy_tests_artifacts.zip "$LOGS_DIR" -x '*.atKeys' '*.atKeys.bak' '*.atKeys.pre-v1' '*.atKeys.tmp'
             echo "Zipped $LOGS_DIR directory contents into npe2e_policy_tests_artifacts.zip"
           else
             echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
@@ -328,7 +331,8 @@ jobs:
         if: always()
         run: |
           if [ -d "$LOGS_DIR" ]; then
-            zip -r npe2e_relay_tests_artifacts.zip "$LOGS_DIR"
+            # NOTE keyfiles hold live APKAM private keys: keep them out of the artifact
+            zip -r npe2e_relay_tests_artifacts.zip "$LOGS_DIR" -x '*.atKeys' '*.atKeys.bak' '*.atKeys.pre-v1' '*.atKeys.tmp'
             echo "Zipped $LOGS_DIR directory contents into npe2e_relay_tests_artifacts.zip"
           else
             echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
