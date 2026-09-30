@@ -9,7 +9,8 @@ import 'package:path/path.dart' as path;
 ///
 /// Throws [UnAuthenticatedException] carrying the atServer's reason when it
 /// refuses the atSign, whether on this device's first open or on a later
-/// one, and [SecondaryServerConnectivityException] when the client is still
+/// one; [SecondaryNotFoundException] when the atDirectory has no atServer for
+/// it; and [SecondaryServerConnectivityException] when the client is still
 /// offline [onlineBudget] after its first attempt, retrying every three
 /// seconds.
 Future<AtClient> createAtClientCli({
@@ -51,6 +52,12 @@ Future<AtClient> createAtClientCli({
       lookUps: atOnboardingConfig.lookUps,
     );
   } on AtOpenRefusedException catch (e) {
+    if (e.state.cause == AtConnectionCause.noAtServer) {
+      throw SecondaryNotFoundException(
+        '$atsign is not in the atDirectory at $rootDomain: check the atSign,'
+        ' and that it has been activated',
+      );
+    }
     throw UnAuthenticatedException(
       'Unable to authenticate $atsign: ${e.message}',
     );
