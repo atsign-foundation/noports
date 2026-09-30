@@ -234,6 +234,17 @@ void main() {
       );
     });
 
+    test('a keypair loaded at startup signs after the key source goes',
+        () async {
+      final client = MockAtClient();
+      when(() => client.getCurrentAtSign()).thenReturn('@alice');
+      stubEncryptionKeys(client, keyPair);
+      await loadEnvelopeSigningKey(client);
+
+      when(() => client.atKeysIo).thenReturn(null);
+      expect(await signAndWrapAndJsonEncode(client, _payload), _envelope);
+    });
+
     test('the keypair is read once per client and atSign', () async {
       final client = MockAtClient();
       when(() => client.getCurrentAtSign()).thenReturn('@alice');

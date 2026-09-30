@@ -273,8 +273,17 @@ class SshnpdImpl
     }
 
     await publishPublicSigningKey();
+    await _loadEnvelopeSigningKey();
 
     initialized = true;
+  }
+
+  Future<void> _loadEnvelopeSigningKey() async {
+    try {
+      await loadEnvelopeSigningKey(atClient);
+    } catch (e) {
+      logger.warning('Could not load the envelope signing key: $e');
+    }
   }
 
   @override

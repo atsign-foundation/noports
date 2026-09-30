@@ -178,6 +178,12 @@ class _NptImpl extends NptBase
 
     logger.info('Initializing $runtimeType');
 
+    try {
+      await loadEnvelopeSigningKey(atClient);
+    } catch (e) {
+      logger.warning('Could not load the envelope signing key: $e');
+    }
+
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 

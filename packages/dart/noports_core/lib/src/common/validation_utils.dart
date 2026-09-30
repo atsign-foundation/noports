@@ -119,6 +119,12 @@ Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async {
   });
 }
 
+/// Reads [atClient]'s envelope signing keypair now, so that later signatures
+/// do not depend on its key source still being readable then.
+Future<void> loadEnvelopeSigningKey(AtClient atClient) async {
+  await _encryptionKeyPair(atClient);
+}
+
 /// Each client's encryption keypair, with the atSign it was read for. An
 /// atSign's encryption keypair does not rotate, and a file-backed key source
 /// may run a passphrase KDF on every read.
