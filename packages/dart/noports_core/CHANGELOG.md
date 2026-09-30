@@ -1,3 +1,20 @@
+# 6.16.0
+
+- build: depend on the at_client_sdk release candidates - at_client
+  3.15.0-rc1, at_auth 4.0.0-rc2, at_lookup 3.7.0-rc2, at_cli_commons
+  3.1.2-rc1 and at_onboarding_cli 2.0.0-rc1
+- refactor: move off at_chops's deprecated compatibility API (`AtChops`,
+  `AtChopsUtil`, `AtEncryptionKeyPair`, `AtSigningInput`) onto its algorithm
+  classes. Nothing changes on the wire: signed envelopes, ESCR relay auth and
+  the session key exchange are byte-for-byte what they were
+- refactor: `SshnpParams.sessionKP` is now an `RsaKeyPair`
+- refactor: `signAndWrapAndJsonEncode` is now async, and reads the atSign's
+  encryption keypair from `AtClient.atKeysIo` rather than `AtClient.atChops`
+- feat: `escrSigningKeyPair`, which ESCR relay auth now signs with. It reads
+  the same APKAM keypair as before through at_client's
+  `authenticationSigningKey`, rather than the deprecated
+  `publicSigningKey`/`privateSigningKey`
+
 # 6.15.0
 
 - feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed

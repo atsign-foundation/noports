@@ -2,6 +2,11 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.0
+
+* feat: `npt --debug` sets logging to finest
+* build: `noports_core` 6.16.0, on the at_client_sdk release candidates
+
 ## v5.17.0
 
 * feat: `srv`/`srvd` tunnel traffic now runs through `at_chops`'s
