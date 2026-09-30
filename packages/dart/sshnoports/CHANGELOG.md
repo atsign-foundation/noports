@@ -7,6 +7,9 @@
 * feat: `npt --debug` sets logging to finest
 * feat: `at_activate` gains `decrypt` and `version` commands, `--posture`,
   and `--key-exchange` for `enroll`; `--hashingAlgoType` is gone
+* chore: `at_activate` with no command still runs `onboard`, but now warns
+  that the form is deprecated: name the command, as in
+  `at_activate onboard -a <atSign>`
 * feat: `at_activate` writes keyfiles owner-only (0600), in a typed format
   that keeps the flat fields older readers use. It keeps the previous
   keyfile as `.bak` when it rewrites one, and a flat keyfile as `.pre-v1`

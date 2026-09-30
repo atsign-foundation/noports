@@ -2,7 +2,7 @@
 
 - build: depend on the at_client_sdk release candidates - at_client
   3.15.0-rc1, at_auth 4.0.0-rc2, at_lookup 3.7.0-rc2, at_cli_commons
-  3.1.2-rc1 and at_onboarding_cli 2.0.0-rc1
+  3.1.2-rc1 and at_onboarding_cli 2.0.0-rc2
 - refactor: move off at_chops's deprecated compatibility API (`AtChops`,
   `AtChopsUtil`, `AtEncryptionKeyPair`, `AtSigningInput`) onto its algorithm
   classes. Nothing changes on the wire: signed envelopes, ESCR relay auth and
