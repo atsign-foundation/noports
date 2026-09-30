@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "2.13.1"
   at_auth:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: at_auth
       sha256: "602243f5ba4b5ada77d15d3d771f6fe7aac29cc08437f8fecacf9b349fc572b5"
@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: at_chops
       sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
