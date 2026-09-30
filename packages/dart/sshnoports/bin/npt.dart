@@ -66,6 +66,7 @@ void main(List<String> args) async {
 
   // After parsing, this gets set to whatever the command-line specifies
   bool verbose = true;
+  bool debug = false;
 
   await runZonedGuarded(() async {
     try {
@@ -178,6 +179,12 @@ void main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'More logging',
+      );
+      parser.addFlag(
+        'debug',
+        defaultsTo: false,
+        negatable: false,
+        help: 'All the logging',
       );
       parser.addFlag(
         quietFlag,
@@ -310,6 +317,7 @@ void main(List<String> args) async {
       }
 
       verbose = parsedArgs['verbose'];
+      debug = parsedArgs['debug'];
       String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
       String srvdAtSign = parsedArgs['srvd'] ?? '';
@@ -403,6 +411,10 @@ void main(List<String> args) async {
           verbose: parsedArgs['verbose'],
           syncDisabled: true,
           passPhrase: parsedArgs['passPhrase']);
+
+      if (debug) {
+        AtSignLogger.root_level = 'finest';
+      }
 
       await cliBase.init();
 
@@ -533,6 +545,8 @@ void main(List<String> args) async {
         only443: parsedArgs['443'],
       );
 
+      logProgress(
+          'fetchOfflineNotifications is ${cliBase.atClient.getPreferences()!.fetchOfflineNotifications}');
       while (true) {
         final npt = Npt.create(
           params: params,
