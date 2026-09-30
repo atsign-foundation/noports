@@ -15,6 +15,7 @@ import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv.dart';
@@ -901,7 +902,7 @@ class SshnpdImpl
       switch (req.relayAuthMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
-            signAndWrapAndJsonEncode(atClient, {
+            await signAndWrapAndJsonEncode(atClient, {
               'sessionId': req.sessionId,
               'clientNonce': req.clientNonce,
               'rvdNonce': req.rvdNonce,
@@ -909,12 +910,13 @@ class SshnpdImpl
           );
           break;
         case RelayAuthMode.escr:
+          final signingKeyPair = await escrSigningKeyPair(this);
           relayAuthenticator = RelayAuthenticatorESCR(
             sessionId: req.sessionId,
             relayAuthAesKey: req.relayAuthAesKey!,
             publicSigningKeyUri: publicSigningKeyUri,
-            publicSigningKey: publicSigningKey,
-            privateSigningKey: privateSigningKey,
+            publicSigningKey: signingKeyPair.publicKey,
+            privateSigningKey: signingKeyPair.privateKey,
             isSideA: false,
           );
           break;
@@ -990,7 +992,7 @@ class SshnpdImpl
         requestingAtsign: requestingAtsign,
         sessionId: req.sessionId,
       ),
-      value: signAndWrapAndJsonEncode(atClient, {
+      value: await signAndWrapAndJsonEncode(atClient, {
         'status': 'connected',
         'sessionId': req.sessionId,
         aesKeyC2DName: c2dBundle?.aesKeyEncrypted,
@@ -1259,7 +1261,7 @@ class SshnpdImpl
       switch (req.relayAuthMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
-            signAndWrapAndJsonEncode(atClient, {
+            await signAndWrapAndJsonEncode(atClient, {
               'sessionId': req.sessionId,
               'clientNonce': req.clientNonce,
               'rvdNonce': req.rvdNonce,
@@ -1267,12 +1269,13 @@ class SshnpdImpl
           );
           break;
         case RelayAuthMode.escr:
+          final signingKeyPair = await escrSigningKeyPair(this);
           relayAuthenticator = RelayAuthenticatorESCR(
             sessionId: req.sessionId,
             relayAuthAesKey: req.relayAuthAesKey!,
             publicSigningKeyUri: publicSigningKeyUri,
-            publicSigningKey: publicSigningKey,
-            privateSigningKey: privateSigningKey,
+            publicSigningKey: signingKeyPair.publicKey,
+            privateSigningKey: signingKeyPair.privateKey,
             isSideA: false,
           );
           break;
@@ -1358,7 +1361,7 @@ class SshnpdImpl
         requestingAtsign: requestingAtsign,
         sessionId: req.sessionId,
       ),
-      value: signAndWrapAndJsonEncode(atClient, {
+      value: await signAndWrapAndJsonEncode(atClient, {
         'status': 'connected',
         'sessionId': req.sessionId,
         'ephemeralPrivateKey': tunnelKeyPair.privateKeyContents,
@@ -2140,19 +2143,13 @@ Future<AesKeyBundle> genBundle(
 ) async {
   String aesKey, aesKeyEncrypted, iv, ivEncrypted;
 
-  aesKey = AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-  iv = base64Encode(AtChopsUtil.generateRandomIV(16).ivBytes);
+  aesKey = generateAes256Key();
+  iv = generateIvBase64();
 
   switch (encKeyType) {
     case EncryptionKeyType.rsa2048:
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(AtEncryptionKeyPair.create(encPubKey, 'n/a'), null),
-      );
-      aesKeyEncrypted = (await atChops.encryptString(
-        aesKey,
-        encKeyType,
-      )).result;
-      ivEncrypted = (await atChops.encryptString(iv, encKeyType)).result;
+      aesKeyEncrypted = rsaEncryptString(aesKey, publicKey: encPubKey);
+      ivEncrypted = rsaEncryptString(iv, publicKey: encPubKey);
       break;
     default:
       throw Exception('No handling for ephemeralPKType $encKeyType');

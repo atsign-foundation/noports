@@ -11,14 +11,11 @@ import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
-  late AtChops atChops;
+  late RsaKeyPair encryptionKeyPair;
 
   group('Tests of RelayAuthenticatorLegacy and RelayAuthVerifierLegacy', () {
     setUpAll(() {
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-
-      atChops = AtChopsImpl(AtChopsKeys.create(encryptionKeyPair, null));
+      encryptionKeyPair = RsaKeyPair.generate(keySize: 2048);
     });
 
     test('too much data', () async {
@@ -29,7 +26,7 @@ void main() {
       };
 
       RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        encryptionKeyPair.atPublicKey.publicKey,
         'some other payload',
         rvdSessionNonce,
         'legacy_test_overflow',
@@ -57,7 +54,8 @@ void main() {
       ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
-        socketOnDataFn(data);
+        // A socket delivers data after listen returns, never during it
+        scheduleMicrotask(() => socketOnDataFn(data));
 
         return MockStreamSubscription<Uint8List>();
       });
@@ -79,9 +77,9 @@ void main() {
       late Function(Uint8List data) socketOnDataFn;
       MockSocket mockSocket = MockSocket();
 
-      String signedEnvelope = signPayload(atChops, payload);
+      String signedEnvelope = signPayload(encryptionKeyPair, payload);
       RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        encryptionKeyPair.atPublicKey.publicKey,
         jsonEncode(payload), // We'll verify the signature against this
         rvdSessionNonce,
         'test_for_success',
@@ -101,7 +99,8 @@ void main() {
       ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
-        socketOnDataFn(data);
+        // A socket delivers data after listen returns, never during it
+        scheduleMicrotask(() => socketOnDataFn(data));
 
         return MockStreamSubscription<Uint8List>();
       });
@@ -121,9 +120,9 @@ void main() {
         'rvdNonce': rvdSessionNonce,
       };
 
-      String signedEnvelope = signPayload(atChops, payload);
+      String signedEnvelope = signPayload(encryptionKeyPair, payload);
       RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        encryptionKeyPair.atPublicKey.publicKey,
         // using a different payload; signature verification will fail
         'some other payload',
         rvdSessionNonce,
@@ -147,7 +146,8 @@ void main() {
       ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
-        socketOnDataFn(data);
+        // A socket delivers data after listen returns, never during it
+        scheduleMicrotask(() => socketOnDataFn(data));
 
         return MockStreamSubscription<Uint8List>();
       });
@@ -166,9 +166,9 @@ void main() {
       String rvdSessionNonce = DateTime.now().toIso8601String();
       Map payload = {'sessionId': uuidString, 'rvdNonce': rvdSessionNonce};
 
-      String signedEnvelope = signPayload(atChops, payload);
+      String signedEnvelope = signPayload(encryptionKeyPair, payload);
       RelayAuthVerifierLegacy sa = RelayAuthVerifierLegacy(
-        atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey,
+        encryptionKeyPair.atPublicKey.publicKey,
         jsonEncode(payload),
         rvdSessionNonce,
         'test_for_mismatch',
@@ -193,7 +193,8 @@ void main() {
       ).thenAnswer((Invocation invocation) {
         socketOnDataFn = invocation.positionalArguments[0];
 
-        socketOnDataFn(data);
+        // A socket delivers data after listen returns, never during it
+        scheduleMicrotask(() => socketOnDataFn(data));
 
         return MockStreamSubscription<Uint8List>();
       });
@@ -209,38 +210,17 @@ void main() {
   });
 }
 
-String signPayload(AtChops atChops, Map payload) {
-  Map envelope = {'payload': payload};
-
-  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))
-    ..signingMode = AtSigningMode.data;
-  final AtSigningResult sr = atChops.sign(signingInput);
-
-  final String signature = sr.result.toString();
-  envelope['signature'] = signature;
-  envelope['hashingAlgo'] = sr.atSigningMetaData.hashingAlgoType!.name;
-  envelope['signingAlgo'] = sr.atSigningMetaData.signingAlgoType!.name;
-  return jsonEncode(envelope);
-}
-
-bool verifySignature(AtChops atChops, String requestingAtsign, Map envelope) {
-  final String signature = envelope['signature'];
-  Map payload = envelope['payload'];
-  final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
-  final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  final pk = atChops.atChopsKeys.atEncryptionKeyPair!.atPublicKey.publicKey;
-  AtSigningVerificationInput input =
-      AtSigningVerificationInput(
-          jsonEncode(payload),
-          base64Decode(signature),
-          pk,
-        )
-        ..signingMode = AtSigningMode.data
-        ..signingAlgoType = signingAlgo
-        ..hashingAlgoType = hashingAlgo;
-
-  AtSigningResult svr = atChops.verify(input);
-  return svr.result;
+String signPayload(RsaKeyPair keyPair, Map payload) {
+  final signature = RsaSignatureAlgo.rsa2048().signBytesSync(
+    utf8.encode(jsonEncode(payload)),
+    secretKey: base64Decode(keyPair.atPrivateKey.privateKey),
+  );
+  return jsonEncode({
+    'payload': payload,
+    'signature': base64Encode(signature),
+    'hashingAlgo': HashingAlgoType.sha256.name,
+    'signingAlgo': SigningAlgoType.rsa2048.name,
+  });
 }
 
 class MockSocket extends Mock implements Socket {}

@@ -6,6 +6,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:path/path.dart' as path;
 
 const String sshnpDeviceNameRegex = r'[a-z0-9_][a-z0-9_\-]{1,35}';
@@ -102,18 +103,37 @@ void assertNullOrValidMapValue(Map m, String k, Type t) {
   }
 }
 
-String signAndWrapAndJsonEncode(AtClient atClient, Map payload) {
-  Map envelope = {'payload': payload};
+/// Wraps [payload] in an envelope signed with [atClient]'s atSign encryption
+/// key, which [verifyEnvelopeSignature] checks against that atSign's
+/// `public:publickey`.
+Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async {
+  final keyPair = await _encryptionKeyPair(atClient);
+  return jsonEncode({
+    'payload': payload,
+    'signature': rsaSignString(
+      jsonEncode(payload),
+      privateKey: keyPair.atPrivateKey.privateKey,
+    ),
+    'hashingAlgo': HashingAlgoType.sha256.name,
+    'signingAlgo': SigningAlgoType.rsa2048.name,
+  });
+}
 
-  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))
-    ..signingMode = AtSigningMode.data;
-  final AtSigningResult sr = atClient.atChops!.sign(signingInput);
-
-  final String signature = sr.result.toString();
-  envelope['signature'] = signature;
-  envelope['hashingAlgo'] = sr.atSigningMetaData.hashingAlgoType!.name;
-  envelope['signingAlgo'] = sr.atSigningMetaData.signingAlgoType!.name;
-  return jsonEncode(envelope);
+Future<RsaKeyPair> _encryptionKeyPair(AtClient atClient) async {
+  final atSign = atClient.getCurrentAtSign();
+  final io = atClient.atKeysIo;
+  if (atSign == null || io == null) {
+    throw AtClientException.message(
+      'Cannot sign: the AtClient for $atSign has no key source',
+    );
+  }
+  final keyPair = (await io.read(atSign)).encryptionKeyPair;
+  if (keyPair == null) {
+    throw AtClientException.message(
+      'Cannot sign: the keys for $atSign hold no RSA encryption keypair',
+    );
+  }
+  return keyPair;
 }
 
 Future<void> verifyEnvelopeSignature(
@@ -127,20 +147,19 @@ Future<void> verifyEnvelopeSignature(
   final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
   // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
   final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
-  AtSigningVerificationInput input = AtSigningVerificationInput(
+  if (signingAlgo != SigningAlgoType.rsa2048) {
+    throw AtSigningVerificationException(
+      'Unsupported signingAlgo ${signingAlgo.name} from $requestingAtsign',
+    );
+  }
+  final verified = await rsaVerifyString(
     jsonEncode(payload),
-    base64Decode(signature),
-    pk,
-  )
-    ..signingMode = AtSigningMode.data
-    ..signingAlgoType = signingAlgo
-    ..hashingAlgoType = hashingAlgo;
-
-  AtSigningResult svr = atClient.atChops!.verify(input);
-  logger.info('Signing Verification Result: $svr');
-  logger.info('svr.result is a ${svr.result.runtimeType}');
-  logger.info('svr.result is ${svr.result}');
-  if (svr.result != true) {
+    signature: signature,
+    publicKey: pk,
+    hashing: hashingAlgo,
+  );
+  logger.info('Signature verification result: $verified');
+  if (!verified) {
     throw AtSigningVerificationException(
       'signature verification returned false using cached public key for $requestingAtsign $pk',
     );

@@ -21,24 +21,18 @@ void main() {
     late String wrongAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
-    late AtEncryptionKeyPair wrongKP;
+    late RsaKeyPair signingKP;
+    late RsaKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late String wrongChallenge = AtChopsUtil.generateSymmetricKey(
-      EncryptionKeyType.aes256,
-    ).key;
+    late String wrongChallenge = AESKey.generate(32).key;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-      wrongKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+      wrongKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
-      wrongAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
+      wrongAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
@@ -248,15 +242,13 @@ void main() {
     late String relayAuthAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
+    late RsaKeyPair signingKP;
     late RelayAuthVerifyHelper helper;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();

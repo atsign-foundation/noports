@@ -38,7 +38,7 @@ abstract interface class ClientParams {
   /// used by daemons to encrypt symmetric encryption keys intended for
   /// one-time use in a NoPorts session, and share the encrypted details
   /// as part of the daemon's response
-  AtEncryptionKeyPair get sessionKP;
+  RsaKeyPair get sessionKP;
 
   EncryptionKeyType get sessionKPType;
 
@@ -92,13 +92,13 @@ abstract class ClientParamsBase implements ClientParams {
   int localPort;
 
   @override
-  AtEncryptionKeyPair get sessionKP {
-    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+  RsaKeyPair get sessionKP {
+    _sessionKP ??= RsaKeyPair.generate(keySize: 2048);
     return _sessionKP!;
   }
 
   /// Generate the ephemeralKeyPair only on demand
-  AtEncryptionKeyPair? _sessionKP;
+  RsaKeyPair? _sessionKP;
   @override
   final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
 

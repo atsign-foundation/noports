@@ -10,6 +10,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:mutex/mutex.dart';
 
 import '../../utils.dart';
+import '../common/session_crypto.dart';
 
 enum RAVEReason {
   jsonDecodeFailed,
@@ -94,13 +95,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   @override
   final String tag;
 
-  final AtChops atChops = AtChopsImpl(AtChopsKeys());
-
   final RelayAuthVerifyHelper helper;
 
-  final String challenge = AtChopsUtil.generateSymmetricKey(
-    EncryptionKeyType.aes256,
-  ).key;
+  final String challenge = generateAes256Key();
 
   /// If [randomlyFail] > 0 && random.nextInt([randomlyFail]) == 0
   /// then fail the verification
@@ -206,17 +203,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     // Fetch the session's AES Key
     String aesKey64 = await helper.getRelayAuthAesKey(sessionId!);
 
-    var encryptionAlgo = AESEncryptionAlgo(AESKey(aesKey64));
     String envelope64;
     try {
-      envelope64 = (await atChops
-          .decryptString(
-            envelopeEncrypted64,
-            EncryptionKeyType.aes256,
-            encryptionAlgorithm: encryptionAlgo,
-            iv: InitialisationVector(base64Decode(iv)),
-          ))
-          .result;
+      envelope64 = await aesDecryptString(
+        envelopeEncrypted64,
+        key: aesKey64,
+        iv: InitialisationVector(base64Decode(iv)),
+      );
     } catch (err) {
       throw RAVE(
         'Could not decrypt auth envelope: $err',
@@ -297,19 +290,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
 
-    AtSigningVerificationInput input =
-        AtSigningVerificationInput(
-            jsonEncode(signedPayload),
-            base64Decode(envelope['s']),
-            publicSigningKey,
-          )
-          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-          ..signingMode = AtSigningMode.data
-          ..signingAlgoType = signingAlgo
-          ..hashingAlgoType = hashingAlgo;
-
-    AtSigningResult atSigningResult = atChops.verify(input);
-    bool verified = atSigningResult.result == true;
+    bool verified =
+        signingAlgo == SigningAlgoType.rsa2048 &&
+        await rsaVerifyString(
+          jsonEncode(signedPayload),
+          signature: envelope['s'],
+          publicKey: publicSigningKey,
+          hashing: hashingAlgo,
+        );
     if (!verified) {
       throw RAVE(
         'Signatures did not match.',
@@ -562,7 +550,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
     subscription = socket.listen(
-      (Uint8List data) {
+      (Uint8List data) async {
         if (authenticated) {
           if (!sc.isClosed) {
             try {
@@ -572,6 +560,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             }
           }
         } else {
+          // NOTE: verification awaits, so later chunks must wait for this one
+          subscription.pause();
           try {
             if (buffer.length + data.length >
                 RelayAuthVerifier.maxAuthBufferLength) {
@@ -631,28 +621,17 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                 return;
               }
 
-              AtSigningVerificationInput input =
-                  AtSigningVerificationInput(
-                      dataToVerify,
-                      base64Decode(envelope['signature']),
-                      publicKey,
-                    )
-                    ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-                    ..signingMode = AtSigningMode.data
-                    ..signingAlgoType = signingAlgo
-                    ..hashingAlgoType = hashingAlgo;
-
-              AtChopsKeys atChopsKeys = AtChopsKeys();
-              AtChops atChops = AtChopsImpl(atChopsKeys);
-              AtSigningResult atSigningResult = atChops.verify(input);
-              bool result = atSigningResult.result;
+              bool result =
+                  signingAlgo == SigningAlgoType.rsa2048 &&
+                  await rsaVerifyString(
+                    dataToVerify,
+                    signature: envelope['signature'],
+                    publicKey: publicKey,
+                    hashing: hashingAlgo,
+                  );
 
               if (result == false) {
-                logger.shout(
-                  '$tag :'
-                  ' verification FAILURE :'
-                  ' ${atSigningResult.result}',
-                );
+                logger.shout('$tag : verification FAILURE');
                 if (!completer.isCompleted) {
                   completer.completeError(
                     'Signature verification failed. Signatures did not match.',
@@ -661,11 +640,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                 return;
               }
 
-              logger.info(
-                '$tag :'
-                ' verification SUCCESS :'
-                ' ${atSigningResult.result}',
-              );
+              logger.info('$tag : verification SUCCESS');
               authenticated = true;
               if (!completer.isCompleted) {
                 completer.complete((true, sc.stream));
@@ -698,6 +673,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             if (!completer.isCompleted) {
               completer.completeError('Error during socket authentication: $e');
             }
+          } finally {
+            subscription.resume();
           }
         }
       },

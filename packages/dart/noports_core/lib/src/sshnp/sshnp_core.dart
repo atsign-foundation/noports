@@ -83,18 +83,10 @@ abstract class SshnpCore
     _progressStreamController.add(message);
   }
 
-  /// the uri (e.g. public:foo.bar.baz@atsign) of the [publicSigningKey]
+  /// the uri (e.g. public:foo.bar.baz@atsign) of this enrollment's public
+  /// signing key
   @override
   String get publicSigningKeyUri;
-
-  /// the public key which can be used to verify signatures made using
-  /// [privateSigningKey]
-  @override
-  String get publicSigningKey;
-
-  /// the private key used to sign things this program sends
-  @override
-  String get privateSigningKey;
 
   SshnpCore({required this.atClient, required this.params, this.logStream})
     : sessionId = Uuid().v4(),

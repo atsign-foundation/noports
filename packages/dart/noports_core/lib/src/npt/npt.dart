@@ -275,7 +275,7 @@ class _NptImpl extends NptBase
           ? params.srvdAtSign.toAtsign()
           : null,
     );
-    final notifyPayload = signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapAndJsonEncode(
       atClient,
       sessionRequest.toJson(),
     );

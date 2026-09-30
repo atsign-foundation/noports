@@ -1,3 +1,4 @@
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
@@ -33,6 +34,24 @@ class SubscribeStub extends Mock implements SubscribeCaller {}
 /// The basic mocks that are repeated countless times throughout the test suite
 
 class MockAtClient extends Mock implements AtClient {}
+
+/// Gives [atClient] a key source holding [encryptionKeyPair] as [atSign]'s
+/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with.
+void stubEncryptionKeys(
+  MockAtClient atClient,
+  RsaKeyPair encryptionKeyPair, {
+  String atSign = '@alice',
+}) {
+  when(() => atClient.atKeysIo).thenReturn(
+    InMemoryAtKeysIo.holding(
+      atSign,
+      AtKeys.legacy(
+        encryptionPublicKey: encryptionKeyPair.atPublicKey.publicKey,
+        encryptionPrivateKey: encryptionKeyPair.atPrivateKey.privateKey,
+      ),
+    ),
+  );
+}
 
 /// What publishing the client's APKAM signing key touches on [atClient]:
 /// its atSign, and the `put` that writes the `_apsk` record. A channel's

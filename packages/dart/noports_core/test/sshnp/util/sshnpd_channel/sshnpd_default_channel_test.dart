@@ -102,15 +102,8 @@ void main() {
     }); // test Initialization completes
 
     test('handleSshnpdPayload - fetches public key from remote', () async {
-      // Create an AtChops instance for testing
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
-
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(encryptionKeyPair, null),
-      );
-
-      when(() => mockAtClient.atChops).thenReturn(atChops);
+      RsaKeyPair encryptionKeyPair = RsaKeyPair.generate();
+      stubEncryptionKeys(mockAtClient, encryptionKeyPair, atSign: '@client');
       when(() => mockAtClient.getCurrentAtSign()).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
 
@@ -119,7 +112,7 @@ void main() {
         'ephemeralPrivateKey': TestingKeyPair.private,
       };
 
-      String signedPayload = signAndWrapAndJsonEncode(mockAtClient, payload);
+      String signedPayload = await signAndWrapAndJsonEncode(mockAtClient, payload);
 
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
@@ -148,15 +141,8 @@ void main() {
     }); // test handleSshnpdPayload - fetches public key from remote
 
     test('handleSshnpdPayload - successful payload handling', () async {
-      // Create an AtChops instance for testing
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
-
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(encryptionKeyPair, null),
-      );
-
-      when(() => mockAtClient.atChops).thenReturn(atChops);
+      RsaKeyPair encryptionKeyPair = RsaKeyPair.generate();
+      stubEncryptionKeys(mockAtClient, encryptionKeyPair, atSign: '@client');
       when(() => mockAtClient.getCurrentAtSign()).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
 
@@ -165,7 +151,7 @@ void main() {
         'ephemeralPrivateKey': TestingKeyPair.private,
       };
 
-      String signedPayload = signAndWrapAndJsonEncode(mockAtClient, payload);
+      String signedPayload = await signAndWrapAndJsonEncode(mockAtClient, payload);
 
       AtNotification notification = AtNotification.empty()
         ..value = signedPayload;
@@ -194,15 +180,8 @@ void main() {
     }); // test handleSshnpdPayload - successful payload handling
 
     test('handleSshnpdPayload - rejects invalid signature', () async {
-      // Create an AtChops instance for testing
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
-
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(encryptionKeyPair, null),
-      );
-
-      when(() => mockAtClient.atChops).thenReturn(atChops);
+      RsaKeyPair encryptionKeyPair = RsaKeyPair.generate();
+      stubEncryptionKeys(mockAtClient, encryptionKeyPair, atSign: '@client');
       when(() => mockAtClient.getCurrentAtSign()).thenReturn('@client');
       when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
 
@@ -211,7 +190,7 @@ void main() {
         'ephemeralPrivateKey': TestingKeyPair.private,
       };
 
-      String signedPayload = signAndWrapAndJsonEncode(mockAtClient, payload);
+      String signedPayload = await signAndWrapAndJsonEncode(mockAtClient, payload);
 
       Map<String, dynamic> workingPayload = jsonDecode(signedPayload);
       workingPayload['signature'] = 'askdlfjsdklfjsldkfj';
