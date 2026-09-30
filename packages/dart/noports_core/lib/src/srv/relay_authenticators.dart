@@ -59,11 +59,19 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
 /// authentication keypair, which is what its `_apsk` record advertises while
 /// the enrollment holds no signing keys of its own.
 ///
-/// Throws unless that keypair is labelled rsa2048, the only kind srvd
-/// verifies.
+/// Throws unless that keypair is a 2048-bit RSA key, the only kind srvd
+/// verifies, and while the enrollment holds signing keys of its own, since
+/// its `_apsk` record then no longer advertises the authentication key.
 Future<({String publicKey, String privateKey})> escrSigningKeyPair(
   ApkamSigning signer,
 ) async {
+  if ((await signer.heldSigningKeys).isNotEmpty) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} holds signing keys of its own, so'
+      ' its _apsk record no longer advertises the authentication key that'
+      ' relay authentication signs with',
+    );
+  }
   final key = await signer.authenticationSigningKey;
   if (key == null) {
     throw AtClientException.message(
@@ -75,6 +83,14 @@ Future<({String publicKey, String privateKey})> escrSigningKeyPair(
     throw AtClientException.message(
       'Enrollment ${signer.enrollmentId} authenticates with'
       ' ${key.algorithm.name}; relay authentication needs rsa2048',
+    );
+  }
+  try {
+    rsaSignString('', privateKey: key.privateKey);
+  } on AtSigningException catch (e) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} authenticates with a key relay'
+      ' authentication cannot sign with: ${e.message}',
     );
   }
   return (publicKey: key.publicKey, privateKey: key.privateKey);

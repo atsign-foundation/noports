@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:at_auth/at_auth.dart' show CryptographicMaterialAlgorithm;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
@@ -268,6 +269,63 @@ void main() {
       final pair = await escrSigningKeyPair(_Signer(client));
       expect(pair.publicKey, _publicKey);
       expect(pair.privateKey, _privateKey);
+    });
+
+    test('throws when the APKAM keypair is not 2048-bit RSA', () async {
+      final small = RsaKeyPair.generate(keySize: 1024);
+      final client = MockAtClient();
+      when(() => client.getCurrentAtSign()).thenReturn('@alice');
+      when(() => client.enrollmentId).thenReturn(null);
+      when(() => client.getPreferences()).thenReturn(null);
+      when(() => client.atKeysIo).thenReturn(
+        InMemoryAtKeysIo.holding(
+          '@alice',
+          AtKeys.legacy(
+            apkamPublicKey: small.atPublicKey.publicKey,
+            apkamPrivateKey: small.atPrivateKey.privateKey,
+          ),
+        ),
+      );
+      await expectLater(
+        escrSigningKeyPair(_Signer(client)),
+        throwsA(
+          isA<AtClientException>().having(
+            (e) => e.message,
+            'message',
+            contains('cannot sign with'),
+          ),
+        ),
+      );
+    });
+
+    test('throws while the enrollment holds signing keys of its own',
+        () async {
+      final keys = AtKeys.legacy(
+        apkamPublicKey: _publicKey,
+        apkamPrivateKey: _privateKey,
+        enrollmentId: 'e1',
+      )..fileSigningMaterial(
+          enrollmentId: 'e1',
+          algorithm: CryptographicMaterialAlgorithm.rsa2048,
+          publicKey: _publicKey,
+          privateKey: _privateKey,
+        );
+      final client = MockAtClient();
+      when(() => client.getCurrentAtSign()).thenReturn('@alice');
+      when(() => client.enrollmentId).thenReturn('e1');
+      when(() => client.getPreferences()).thenReturn(null);
+      when(() => client.atKeysIo)
+          .thenReturn(InMemoryAtKeysIo.holding('@alice', keys));
+      await expectLater(
+        escrSigningKeyPair(_Signer(client)),
+        throwsA(
+          isA<AtClientException>().having(
+            (e) => e.message,
+            'message',
+            contains('holds signing keys of its own'),
+          ),
+        ),
+      );
     });
 
     test('throws when the client holds no APKAM keypair', () async {
