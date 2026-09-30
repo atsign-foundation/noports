@@ -156,6 +156,18 @@ Future<File> setUpApkamKeyForAtsign({
     );
   }
 
+  // NOTE at_activate writes keyfiles owner-only, and the containers that mount
+  // this one run as a different user.
+  final ProcessResult chmodProcess = await runCommand('chmod', [
+    '644',
+    apkamKeysPath,
+  ]);
+  if (chmodProcess.exitCode != 0) {
+    throw Exception(
+      'Error making $apkamKeysPath readable: ${chmodProcess.stderr}',
+    );
+  }
+
   return apkamKeysFile;
 }
 
