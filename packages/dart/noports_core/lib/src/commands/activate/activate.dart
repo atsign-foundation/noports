@@ -9,9 +9,9 @@ import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:path/path.dart' as path;
 
-/// The two lifecycle verbs [Activate] runs, as one object a test can stand
-/// in for: the verbs themselves are extension methods on `Atsign`, which no
-/// mock can intercept. Each hands back the client it opened.
+/// The lifecycle verbs [Activate] runs, as one object a test can stand in
+/// for: the verbs themselves are extension methods on `Atsign`, which no
+/// mock can intercept.
 class ActivateFlows {
   const ActivateFlows();
 
@@ -28,9 +28,22 @@ class ActivateFlows {
           preference: preference,
           storage: storage);
 
-  /// Submits the enrollment and waits for its approval; a denial throws
-  /// `AtEnrollmentException`.
-  Future<AtClient> enroll(
+  /// The enrollment submitted earlier from [keys] for [app] on [device] and
+  /// not yet decided, or null when there is none.
+  Future<PendingEnrollment?> resumeEnrollment(
+    Atsign atsign, {
+    required String app,
+    required String device,
+    required WrittenAtKeysIo keys,
+    required AtClientPreference preference,
+  }) =>
+      atsign.resumeEnrollment(
+          app: app, device: device, keys: keys, preference: preference);
+
+  /// Submits the enrollment, filing its keys in [keys] as pending; the
+  /// request's `client` waits for the decision. A store that refuses a new
+  /// enrollment throws `AtEnrollmentException`.
+  Future<PendingEnrollment> enroll(
     Atsign atsign, {
     required String otp,
     required String app,
@@ -38,17 +51,14 @@ class ActivateFlows {
     required Map<String, String> namespaces,
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
-    AtClientStorage? storage,
-  }) async {
-    final pending = await atsign.enroll(
-        otp: otp,
-        app: app,
-        device: device,
-        namespaces: namespaces,
-        keys: keys,
-        preference: preference);
-    return pending.client(preference, storage: storage);
-  }
+  }) =>
+      atsign.enroll(
+          otp: otp,
+          app: app,
+          device: device,
+          namespaces: namespaces,
+          keys: keys,
+          preference: preference);
 }
 
 class Activate {
@@ -132,32 +142,51 @@ class Activate {
   }
 
   /// Enrolls a new device using APKAM enrollment, writing its keys to the
-  /// keyfile once the atSign's owner approves. The client the approval
-  /// opens is stopped at once.
+  /// keyfile once the atSign's owner approves. An enrollment an earlier run
+  /// submitted from the same keyfile for this app and device is waited on
+  /// again rather than repeated. The client the approval opens is stopped at
+  /// once.
   ///
   /// Requires [_params.otp] and [_params.device] to be set.
   /// Optionally uses [_params.atKeysFilePath] if provided.
   ///
-  /// Returns: 0 once the enrollment is approved, 1 if it is denied or fails
+  /// Returns: 0 once the enrollment is approved, 1 if it cannot be submitted
+  /// or is not approved
   /// Throws: [ArgumentError] if otp is missing
   Future<int> enroll() async {
     if (_params.otp == null) {
       throw ArgumentError('Cannot create enrollment without otp');
     }
-    logger.info(
-      'Creating new enrollment with deviceName: ${_params.deviceName}',
-    );
-
-    _validateAndPrepareKeysFile();
     final preference = _preference();
+    var pending = await _flows.resumeEnrollment(_params.atsign,
+        app: _params.appName,
+        device: _params.deviceName!,
+        keys: _keys(),
+        preference: preference);
+    if (pending != null) {
+      logger.info('Resuming enrollment ${pending.enrollmentId}, submitted '
+          'earlier from this keyfile');
+    } else {
+      logger.info(
+        'Creating new enrollment with deviceName: ${_params.deviceName}',
+      );
+      _validateAndPrepareKeysFile();
+      try {
+        pending = await _flows.enroll(_params.atsign,
+            otp: _params.otp!,
+            app: _params.appName,
+            device: _params.deviceName!,
+            namespaces: _params.namespaces,
+            keys: _keys(),
+            preference: preference);
+      } on AtEnrollmentException catch (e) {
+        logger.shout('Enrollment not submitted: ${e.message}');
+        return 1;
+      }
+    }
+    logger.info('Waiting for approval of enrollment ${pending.enrollmentId}');
     try {
-      final client = await _flows.enroll(_params.atsign,
-          otp: _params.otp!,
-          app: _params.appName,
-          device: _params.deviceName!,
-          namespaces: _params.namespaces,
-          keys: _keys(),
-          preference: preference,
+      final client = await pending.client(preference,
           storage: preference.storageFor(_params.atsign));
       await client.stop();
     } on AtEnrollmentException catch (e) {

@@ -5,6 +5,8 @@
 ## v5.18.0
 
 * feat: `npt --debug` sets logging to finest
+* feat: run again after an interruption, `noports activate` waits on the
+  enrollment request it already submitted, rather than submitting another
 * feat: `at_activate` gains `decrypt` and `version` commands, `--posture`,
   and `--key-exchange` for `enroll`; `--hashingAlgoType` is hidden, and
   accepted but ignored

@@ -15,6 +15,36 @@ class MockAtOnboardingPreference extends Mock
 
 class MockAtClient extends Mock implements AtClient {}
 
+class MockPendingEnrollment extends Mock implements PendingEnrollment {}
+
+class _CapturedStdout implements Stdout {
+  final written = <Object?>[];
+
+  @override
+  void write(Object? object) => written.add(object);
+
+  @override
+  void writeln([Object? object = '']) => written.add('$object\n');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class _SilentStdin implements Stdin {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+/// Runs [body] with stderr captured and every prompt answered with nothing,
+/// returning what [body] wrote to stderr. The [Activate] under test must be
+/// built inside [body], since its logger writes where it was created.
+Future<String> captureStderr(Future<void> Function() body) async {
+  final err = _CapturedStdout();
+  await IOOverrides.runZoned(body,
+      stderr: () => err, stdin: () => _SilentStdin());
+  return err.written.join();
+}
+
 void main() {
   late MockActivateFlows flows;
   late MockAtClient client;
@@ -141,53 +171,113 @@ void main() {
       expect(() => activate.enroll(), throwsA(isA<ArgumentError>()));
     });
 
-    test('enroll created and approved successfully', () async {
-      params = ActivateParams(
-        atsign: testAtsign,
-        type: ActivateType.enroll,
-        otp: testOtp,
-        deviceName: testDeviceName,
-        atKeysFilePath: 'dummy_keys_file',
-        rootDomain: 'root.test.com',
-      );
-      activate = Activate(flows, params);
+    ActivateParams enrollParams({String atKeysFilePath = 'dummy_keys_file'}) =>
+        ActivateParams(
+          atsign: testAtsign,
+          type: ActivateType.enroll,
+          otp: testOtp,
+          deviceName: testDeviceName,
+          atKeysFilePath: atKeysFilePath,
+          rootDomain: 'root.test.com',
+        );
 
-      when(() => flows.enroll(any(),
-          otp: params.otp!,
-          app: params.appName,
-          device: params.deviceName!,
-          namespaces: params.namespaces,
-          keys: any(named: 'keys'),
-          preference: any(named: 'preference'),
-          storage: any(named: 'storage'))).thenAnswer((_) async => client);
+    void stubResume(PendingEnrollment? found) =>
+        when(() => flows.resumeEnrollment(any(),
+                app: any(named: 'app'),
+                device: any(named: 'device'),
+                keys: any(named: 'keys'),
+                preference: any(named: 'preference')))
+            .thenAnswer((_) async => found);
 
-      final result = await activate.enroll();
-      expect(result, equals(0));
+    When<Future<PendingEnrollment>> whenSubmitted() =>
+        when(() => flows.enroll(any(),
+            otp: testOtp,
+            app: any(named: 'app'),
+            device: testDeviceName,
+            namespaces: any(named: 'namespaces'),
+            keys: any(named: 'keys'),
+            preference: any(named: 'preference')));
+
+    When<Future<AtClient>> whenDecided(MockPendingEnrollment pending) =>
+        when(() => pending.client(any(), storage: any(named: 'storage')));
+
+    late MockPendingEnrollment pending;
+
+    setUp(() {
+      pending = MockPendingEnrollment();
+      when(() => pending.enrollmentId).thenReturn('e1');
     });
 
-    test('enroll not approved', () async {
-      params = ActivateParams(
-        atsign: testAtsign,
-        type: ActivateType.enroll,
-        otp: testOtp,
-        deviceName: testDeviceName,
-        atKeysFilePath: 'dummy_keys_file',
-        rootDomain: 'root.test.com',
-      );
-      activate = Activate(flows, params);
+    test('a fresh enrollment is submitted and waited on', () async {
+      stubResume(null);
+      whenSubmitted().thenAnswer((_) async => pending);
+      whenDecided(pending).thenAnswer((_) async => client);
 
-      when(() => flows.enroll(any(),
-              otp: params.otp!,
-              app: params.appName,
-              device: params.deviceName!,
-              namespaces: params.namespaces,
-              keys: any(named: 'keys'),
-              preference: any(named: 'preference'),
-              storage: any(named: 'storage')))
-          .thenThrow(AtEnrollmentException('enrollment denied'));
+      final result = await Activate(flows, enrollParams()).enroll();
 
-      final result = await activate.enroll();
+      expect(result, equals(0));
+      verify(() => client.stop()).called(1);
+    });
+
+    test(
+        'an enrollment an earlier run left in the keyfile is resumed, '
+        'not resubmitted', () async {
+      final dir = Directory.systemTemp.createTempSync('activate_resume');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final keyfile = File('${dir.path}/test_key.atKeys')
+        ..writeAsStringSync('{}');
+      stubResume(pending);
+      whenSubmitted().thenAnswer(
+          (_) async => fail('the pending enrollment was submitted again'));
+      whenDecided(pending).thenAnswer((_) async => client);
+
+      late int result;
+      final err = await captureStderr(() async {
+        result =
+            await Activate(flows, enrollParams(atKeysFilePath: keyfile.path))
+                .enroll();
+      });
+
+      expect(result, equals(0));
+      expect(err, contains('Resuming enrollment e1'));
+      expect(err, isNot(contains('alternate location')),
+          reason: 'the keyfile holding the request is the one to resume, '
+              'not a collision to prompt about');
+    });
+
+    test('a keyfile that refuses a new enrollment is reported as not submitted',
+        () async {
+      stubResume(null);
+      whenSubmitted().thenThrow(
+          AtEnrollmentException('@test already holds live keys in this store'));
+
+      late int result;
+      final err = await captureStderr(() async {
+        result = await Activate(flows, enrollParams()).enroll();
+      });
+
       expect(result, equals(1));
+      expect(err,
+          contains('Enrollment not submitted: @test already holds live keys'));
+      expect(err, isNot(contains('not approved')),
+          reason: 'nothing reached an approver');
+      verifyNever(() => pending.client(any(), storage: any(named: 'storage')));
+    });
+
+    test('a denial is reported as not approved', () async {
+      stubResume(null);
+      whenSubmitted().thenAnswer((_) async => pending);
+      whenDecided(pending)
+          .thenThrow(AtEnrollmentException('The enrollment: e1 is denied'));
+
+      late int result;
+      final err = await captureStderr(() async {
+        result = await Activate(flows, enrollParams()).enroll();
+      });
+
+      expect(result, equals(1));
+      expect(err,
+          contains('Enrollment not approved: The enrollment: e1 is denied'));
     });
   });
 

@@ -11,7 +11,8 @@
   released versions
 - refactor: `Activate` takes an `ActivateFlows` rather than an
   `AtOnboardingService`, and `noports activate` activates and enrols through
-  at_client's `Atsign.activate` and `Atsign.enroll`
+  at_client's `Atsign.activate`, `Atsign.enroll` and
+  `Atsign.resumeEnrollment`
 - refactor: `SshnpParams.sessionKP` is now an `RsaKeyPair`
 - refactor: `verifyEnvelopeSignature` and the relay verifiers accept only
   rsa2048 signatures made with 2048-bit keys, which every NoPorts release
