@@ -148,7 +148,7 @@ chmod u+x universal.sh
 This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atsign.
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_device
+~/.local/bin/at_activate onboard -a @<REPLACE>_device
 ```
 
 **Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders**
@@ -244,7 +244,7 @@ chmod u+x universal.sh
 This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atsign.
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_device
+~/.local/bin/at_activate onboard -a @<REPLACE>_device
 ```
 
 **Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders**
