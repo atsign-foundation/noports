@@ -9,6 +9,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/utils.dart';
@@ -184,7 +185,7 @@ void main(List<String> args) async {
         'debug',
         defaultsTo: false,
         negatable: false,
-        help: 'All the logging',
+        help: 'Log everything this process does, at FINEST',
       );
       parser.addFlag(
         quietFlag,
@@ -414,6 +415,7 @@ void main(List<String> args) async {
 
       if (debug) {
         AtSignLogger.root_level = 'finest';
+        cliBase.logger.logger.level = Level.FINEST;
       }
 
       await cliBase.init();
