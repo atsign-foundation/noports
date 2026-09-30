@@ -48,6 +48,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   late final TextEditingController pinController;
 
   String? _enrollmentError;
+  bool _requestExpired = false;
 
   @override
   void initState() {
@@ -149,10 +150,21 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     }
   }
 
+  /// Asks for a new OTP, saying the request this device waited on has
+  /// expired.
+  void onExpired() {
+    if (!mounted) return;
+    setState(() {
+      _requestExpired = true;
+      pinController.clear();
+      onboardingStatus = OnboardingStatus.otpRequired;
+    });
+  }
+
   /// Waits for [pending] to be approved, then opens the app's client on the
-  /// keys the approval completed. On any failure (denial, timeout, error)
-  /// what the enrollment left in the keychain is dropped, so the app doesn't
-  /// keep resuming a dead enrollment.
+  /// keys the approval completed. On any failure (denial, expiry, timeout,
+  /// error) what the enrollment left in the keychain is dropped, so the app
+  /// doesn't keep resuming a dead enrollment.
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
@@ -170,7 +182,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       await _discard(pending);
-      await onDenied();
+      if (isEnrollmentExpired(e)) {
+        onExpired();
+      } else {
+        await onDenied();
+      }
     }
   }
 
@@ -197,6 +213,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     setState(() {
       onboardingStatus = OnboardingStatus.validatingOtp;
       _enrollmentError = null;
+      _requestExpired = false;
     });
 
     final deviceName = await _enrollmentDeviceName();
@@ -270,6 +287,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 strings.findOtp,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              if (_requestExpired) ...[
+                gapH4,
+                Text(
+                  strings.requestExpired,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
               if (_enrollmentError != null) ...[
                 gapH4,
                 Text(

@@ -55,6 +55,12 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
   return strings.errorOnboardingWithDetails(detail);
 }
 
+/// Whether [error] ended an enrollment wait because the atServer no longer
+/// holds the request (AT0028: expired, or never there), so the way on is a
+/// new request rather than a report of denial.
+bool isEnrollmentExpired(Object error) =>
+    error is AtEnrollmentException && error.message.contains('AT0028');
+
 /// The human-readable part of [error], without the `Exception: ` noise that
 /// [AtException.toString] prepends.
 String onboardingErrorDetail(Object error) {
