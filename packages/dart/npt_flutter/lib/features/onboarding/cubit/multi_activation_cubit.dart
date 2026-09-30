@@ -178,6 +178,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         );
 
     if (selectedDirectory == null) {
+      if (!context.mounted) return;
       Navigator.of(context).pop();
       showDialog(
         context: context,

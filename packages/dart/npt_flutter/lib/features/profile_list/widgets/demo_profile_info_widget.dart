@@ -50,6 +50,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
+              final navigator = Navigator.of(context, rootNavigator: true);
               // Show a progress indicator before fetching the demo profile
               showDialog(
                 context: context,
@@ -58,10 +59,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
                     const Center(child: CircularProgressIndicator()),
               );
               final content = await Export.getDemoProfile();
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pop(); // Dismiss the progress indicator
+              navigator.pop(); // Dismiss the progress indicator
               Export.convertExternalDataSourceToProfile(
                 fileType: ExportableProfileFiletype.json,
                 contents: content,

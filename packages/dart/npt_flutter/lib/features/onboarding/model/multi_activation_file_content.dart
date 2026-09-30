@@ -31,7 +31,10 @@ class MultiActivationFileContent {
     return entries.map((e) => e.toJson()).toList();
   }
 
-  copyWith({List<ActivationKeyPair>? entries, String? fileName}) {
+  MultiActivationFileContent copyWith({
+    List<ActivationKeyPair>? entries,
+    String? fileName,
+  }) {
     return MultiActivationFileContent(
       entries: entries ?? this.entries,
       fileName: fileName ?? this.fileName,

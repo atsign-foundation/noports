@@ -126,7 +126,7 @@ class _ApprovedEnrollmentsSectionState
                     final String? error = await controller.revokeRequest(
                       request,
                     );
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     if (error != null) {
                       ScaffoldMessenger.of(
                         context,

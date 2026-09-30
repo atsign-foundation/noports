@@ -86,9 +86,11 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
   if (selection == null) return; // User cancelled;
 
   // Step 2: Check for connected profiles
+  if (!context.mounted) return;
   if (!await _checkAndHandleConnectedProfiles(context)) return;
 
   // Step 3: Handle the selection
+  if (!context.mounted) return;
   await _handleSelection(context, selection, strings);
 }
 
@@ -96,6 +98,7 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
   final atsignList = await KeychainStorage().getAllAtsigns();
+  if (!context.mounted) return null;
 
   final result = await showMenu<String?>(
     context: context,
@@ -195,8 +198,6 @@ Future<void> _handleSignout(BuildContext context) async {
 
 /// Handles adding a new atsign
 Future<void> _handleAddAtsign(BuildContext context) async {
-  final options = await getAtsignEntries();
-
   // Store the current atsign before showing the dialog
 
   final originalAtsign = App.navState.currentContext!
@@ -336,6 +337,7 @@ Future<void> _handleSwitchToAtsign(
   log('switching to atsign: $targetAtsign');
 
   final currentContext = App.navState.currentContext!;
+  if (!currentContext.mounted) return;
   await _performOnboarding(currentContext, targetAtsign);
 }
 
