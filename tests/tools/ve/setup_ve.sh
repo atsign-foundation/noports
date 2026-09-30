@@ -65,7 +65,7 @@ docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
 # before its atSign's keys land does not retry, so wait for every atSign.
 echo "Waiting for pkamLoad to install PKAM keys..."
 
-elapsed=0
+start=$SECONDS
 while :; do
   missing=()
   for atsign in "${VE_ATSIGNS[@]}"; do
@@ -74,6 +74,7 @@ while :; do
       missing+=("@${atsign}")
     fi
   done
+  elapsed=$((SECONDS - start))
   if [ "${#missing[@]}" -eq 0 ]; then
     echo "pkamLoad installed keys for all ${#VE_ATSIGNS[@]} atSigns (${elapsed}s)"
     break
@@ -83,7 +84,6 @@ while :; do
     exit 1
   fi
   sleep 2
-  elapsed=$((elapsed + 2))
 done
 
 mkdir -p "$ATKEYS_DIR"
