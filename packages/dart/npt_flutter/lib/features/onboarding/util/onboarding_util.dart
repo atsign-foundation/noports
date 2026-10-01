@@ -14,7 +14,6 @@ import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
-import 'package:npt_flutter/features/onboarding/util/profile_progress_listener.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activate_atsign_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/apkam_choice_dialog.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
@@ -419,10 +418,6 @@ class NoPortsOnboardingUtil {
     if (!context.mounted) return;
     switch (onboardingResult?.status ?? NoPortsOnboardingResultStatus.cancel) {
       case NoPortsOnboardingResultStatus.success:
-        AtClientManager.getInstance().atClient.syncService.addProgressListener(
-          ProfileProgressListener(),
-        );
-        AtClientManager.getInstance().atClient.syncService.sync();
         postOnboard(onboardingResult!.atsign!.toAtsign(), rootDomain);
         final result = await saveAtsignInformation(
           AtsignInformation(

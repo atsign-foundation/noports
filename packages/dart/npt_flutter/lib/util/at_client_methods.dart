@@ -8,13 +8,14 @@ class AtClientMethods {
   static Future<AtClientPreference> loadAtClientPreference(
     String rootDomain,
   ) async {
-    var dir = await getApplicationSupportDirectory();
+    final dir = await getApplicationSupportDirectory();
     return AtClientPreference()
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
       ..hiveStoragePath = dir.path
       ..commitLogPath = dir.path
-      ..isLocalStoreRequired = true;
+      ..isLocalStoreRequired = true
+      ..remoteLocalPref = RemoteLocalPref.remoteOnly;
   }
 
   static Future<void> activateFromAuthResponse(
@@ -26,9 +27,44 @@ class AtClientMethods {
       response.atSign,
       Constants.namespace,
       acp,
+      serviceFactory: _NoSyncAtServiceFactory(),
       enrollmentId: response.enrollmentId,
       atChops: response.atChops,
       atLookUp: response.atLookUp,
     );
   }
+}
+
+class _NoSyncAtServiceFactory extends DefaultAtServiceFactory {
+  @override
+  Future<SyncService> syncService(
+    AtClient atClient,
+    AtClientManager atClientManager,
+    NotificationService notificationService,
+  ) async {
+    return _NoOpSyncService();
+  }
+}
+
+class _NoOpSyncService implements SyncService {
+  @override
+  void sync({Function? onDone, Function? onError}) {}
+
+  @override
+  void setOnDone(Function onDone) {}
+
+  @override
+  Future<bool> isInSync() async => true;
+
+  @override
+  bool get isSyncInProgress => false;
+
+  @override
+  void addProgressListener(SyncProgressListener listener) {}
+
+  @override
+  void removeProgressListener(SyncProgressListener listener) {}
+
+  @override
+  void removeAllProgressListeners() {}
 }

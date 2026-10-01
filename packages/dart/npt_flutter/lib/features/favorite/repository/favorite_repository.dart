@@ -24,14 +24,18 @@ class FavoriteRepository {
 
   Future<Map<String, Favorite>?> getFavorites({bool useCache = true}) async {
     if (useCache && _favoriteCache != null) return _favoriteCache;
-    _favoriteCache ??= {};
+    _favoriteCache = null;
+    final Map<String, Favorite> loadedFavorites = {};
 
     Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     AtKey key = getFavoriteAtKey(sharedBy: atsign);
 
     try {
       var value = await _client.get(key);
-      if (value.value == null) return _favoriteCache;
+      if (value.value == null) {
+        _favoriteCache = loadedFavorites;
+        return _favoriteCache;
+      }
       var json = jsonDecode(value.value);
       if (json is! Map) {
         throw 'favorites from the atServer is not a Map';
@@ -41,12 +45,13 @@ class FavoriteRepository {
         if (json[key] is! Map) continue;
         final fav = Favorite.fromJson(json[key]);
         if (fav == null) continue;
-        _favoriteCache?[fav.uuid] = fav;
+        loadedFavorites[fav.uuid] = fav;
       }
+      _favoriteCache = loadedFavorites;
     } catch (e) {
       App.log('[ERROR] getFavorites: $e'.loggable);
     }
-    return _favoriteCache;
+    return _favoriteCache ?? loadedFavorites;
   }
 
   Future<bool> _putFavorites() async {
@@ -61,16 +66,21 @@ class FavoriteRepository {
   }
 
   Future<bool> addFavorite(Favorite favorite) async {
-    _favoriteCache ??= {};
-    _favoriteCache?[favorite.uuid] = favorite;
+    if (!await _initializeCache()) return false;
+    _favoriteCache![favorite.uuid] = favorite;
     return _putFavorites();
   }
 
   Future<bool> removeFavorites(Iterable<String> uuids) async {
-    _favoriteCache ??= {};
+    if (!await _initializeCache()) return false;
     for (final uuid in uuids) {
-      _favoriteCache?.remove(uuid);
+      _favoriteCache!.remove(uuid);
     }
     return _putFavorites();
+  }
+
+  Future<bool> _initializeCache() async {
+    if (_favoriteCache == null) await getFavorites();
+    return _favoriteCache != null;
   }
 }
