@@ -244,6 +244,79 @@ void main() {
       feed(Uint8List.fromList(utf8.encode('not json\n')));
 
       await expectLater(resultFuture, throwsA(anything));
+      expect(written, isEmpty, reason: 'an unchallenged peer reads nothing');
+      verify(() => mockSocket.destroy()).called(1);
+    });
+
+    test('a failed LEGACY envelope is refused without writing to the peer',
+        () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+      final otherKey = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048)
+          .atPublicKey
+          .publicKey;
+
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: written,
+        onData: (fn) => feed = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        MockRelayAuthVerifyHelper(),
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+        publicKey: otherKey,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      feed(Uint8List.fromList(utf8.encode('$envelope\n')));
+
+      await expectLater(resultFuture, throwsA(anything));
+      expect(
+        written,
+        isEmpty,
+        reason: 'a legacy peer forwards anything written to its local app',
+      );
+      verify(() => mockSocket.destroy()).called(1);
+    });
+
+    test('a failed ESCR response is told so before the socket is destroyed',
+        () async {
+      final fx = escrFixture();
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: written,
+        onData: (fn) => feed = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: fx.sessionId,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(written, hasLength(1));
+      feed(Uint8List.fromList(utf8.encode('${fx.sessionId}:bogus\n')));
+
+      await expectLater(resultFuture, throwsA(anything));
+      expect(written, [written.first, 'Socket auth failed']);
+      verify(() => mockSocket.destroy()).called(1);
     });
 
     test('known-ESCR side is challenged immediately, not after the window',

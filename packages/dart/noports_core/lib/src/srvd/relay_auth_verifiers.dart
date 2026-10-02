@@ -889,8 +889,12 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       logger.shout('auto verification FAILED with exception : $e');
       if (!completer.isCompleted) {
         try {
-          socket.writeln('Socket auth failed');
-          await socket.flush();
+          // NOTE: only a challenged peer reads from the relay; a legacy peer
+          // forwards anything written here to its local app.
+          if (mode == 'escr') {
+            socket.writeln('Socket auth failed');
+            await socket.flush();
+          }
           socket.destroy();
         } catch (_) {
         } finally {
