@@ -1,8 +1,8 @@
 # 6.16.0
 
-- feat: srvd detects each side's relay-auth mode (ESCR or legacy) per
-  connection, so the client and the daemon can each use the strongest one
-  they support. New `srvd --relay-auth-detect-window-ms` option (default 500).
+- feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
+  itself, so the client and the daemon can each use the strongest one they
+  support. New `srvd --relay-auth-detect-window-ms` option (default 500).
 - feat: `relayAuthMode` now defaults to ESCR, used wherever the relay and the
   daemon support it. Against an older relay both sides stay on legacy, so
   daemons that predate ESCR keep working. An explicit `--relay-auth-mode escr`
