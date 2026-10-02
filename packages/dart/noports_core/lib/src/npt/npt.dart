@@ -54,6 +54,11 @@ abstract interface class Npt {
 
   Future<void> close();
 
+  /// Completes when the session has ended, or when it failed to start.
+  ///
+  /// [run] and [runInline] guarantee this by closing on their way out when
+  /// startup throws, so callers may always await [done] without first having
+  /// to call [close] themselves.
   Future get done;
 
   factory Npt.create({
@@ -332,65 +337,81 @@ class _NptImpl extends NptBase
 
   @override
   Future<int> run() async {
-    int localRvPort = await _preRun();
+    try {
+      int localRvPort = await _preRun();
 
-    /// Start srv
-    if (params.inline) {
-      // not detached
-      await runInline(localRvPort: localRvPort);
-    } else {
+      /// Start srv
+      if (params.inline) {
+        // not detached
+        await runInline(localRvPort: localRvPort);
+      } else {
+        sendProgress('Creating connection to socket rendezvous');
+
+        await _srvdChannel.runSrv(
+          localRvPort: localRvPort,
+          aesC2D: sshnpdChannel.aesC2D,
+          ivC2D: sshnpdChannel.ivC2D,
+          aesD2C: sshnpdChannel.aesD2C,
+          ivD2C: sshnpdChannel.ivD2C,
+          multi: true,
+          detached: true,
+          timeout: params.timeout,
+          controlChannelHeartbeat: sendControlHeartbeats
+              ? params.controlChannelHeartbeat
+              : null,
+        );
+        await close();
+      }
+
+      return localRvPort;
+    } catch (_) {
+      // Startup failed, so the session will never end of its own accord -
+      // close so that anyone awaiting [done] is released.
+      await close();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SocketConnector> runInline({int? localRvPort}) async {
+    try {
+      localRvPort ??= await _preRun();
       sendProgress('Creating connection to socket rendezvous');
+      if (!params.inline) {
+        logger.warning(
+          "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+        );
+      }
 
-      await _srvdChannel.runSrv(
+      SocketConnector sc = await _srvdChannel.runSrv(
         localRvPort: localRvPort,
         aesC2D: sshnpdChannel.aesC2D,
         ivC2D: sshnpdChannel.ivC2D,
         aesD2C: sshnpdChannel.aesD2C,
         ivD2C: sshnpdChannel.ivD2C,
         multi: true,
-        detached: true,
+        detached: false,
         timeout: params.timeout,
         controlChannelHeartbeat: sendControlHeartbeats
             ? params.controlChannelHeartbeat
             : null,
       );
-      _completer.complete();
-    }
 
-    return localRvPort;
-  }
-
-  @override
-  Future<SocketConnector> runInline({int? localRvPort}) async {
-    localRvPort ??= await _preRun();
-    sendProgress('Creating connection to socket rendezvous');
-    if (!params.inline) {
-      logger.warning(
-        "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+      unawaited(
+        sc.done.then((_) async {
+          logger.info('SocketConnector done');
+          // Via close() rather than the completer directly: the caller may
+          // already have closed us to tear the session down.
+          await close();
+        }),
       );
+
+      return sc;
+    } catch (_) {
+      // Startup failed, so the session will never end of its own accord -
+      // close so that anyone awaiting [done] is released.
+      await close();
+      rethrow;
     }
-
-    SocketConnector sc = await _srvdChannel.runSrv(
-      localRvPort: localRvPort,
-      aesC2D: sshnpdChannel.aesC2D,
-      ivC2D: sshnpdChannel.ivC2D,
-      aesD2C: sshnpdChannel.aesD2C,
-      ivD2C: sshnpdChannel.ivD2C,
-      multi: true,
-      detached: false,
-      timeout: params.timeout,
-      controlChannelHeartbeat: sendControlHeartbeats
-          ? params.controlChannelHeartbeat
-          : null,
-    );
-
-    unawaited(
-      sc.done.then((_) {
-        logger.info('SocketConnector done');
-        _completer.complete();
-      }),
-    );
-
-    return sc;
   }
 }

@@ -1,3 +1,8 @@
+## 1.9.5+32
+
+- FIX: Tunnels reconnect automatically after the daemon's device reboots, instead of leaving the profile stuck on "starting" until the app is relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a successful connection.
+
 ## 1.9.4+31
 
 - FIX: Merged run/stop action into status indicator for resize-friendly profile rows.
