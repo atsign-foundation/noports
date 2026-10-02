@@ -941,7 +941,6 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       // side, so (unlike ESCR) we must not write to the socket here.
       legacy.verifyEnvelope(message);
       logger.info('Auto-detected LEGACY; verification success');
-      completeSuccess();
     }
 
     Future<void> handleEscrLine(String response) async {
@@ -963,7 +962,6 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       logger.info('Auto-detected ESCR; verification success');
       socket.writeln('ok');
       await socket.flush();
-      completeSuccess();
     }
 
     // Resolve this side to a concrete mode, skipping detection. The caller of
@@ -1003,9 +1001,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
 
     subscription = socket.listen(
       (Uint8List data) async {
-        // NOTE: skipping the mutex is safe only while no `await` separates
-        // `authenticated = true` from the residual flush in completeSuccess.
-        if (authenticated) {
+        // NOTE: skip the mutex only when no chunk holds or awaits it, or this
+        // chunk would overtake the bytes queued ahead of it.
+        if (authenticated && !mutex.isLocked) {
           if (!sc.isClosed) {
             try {
               sc.add(data);
@@ -1064,6 +1062,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
             } else {
               await handleEscrLine(line.trim());
             }
+            completeSuccess();
           }
         } catch (e) {
           await failAuth(e);

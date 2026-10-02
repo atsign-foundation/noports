@@ -534,12 +534,7 @@ void main() {
       final (authenticated, stream) = await resultFuture;
       expect(authenticated, true);
 
-      final received = <int>[];
-      final sub = stream!.listen(received.addAll);
-      await Future<void>.delayed(Duration.zero);
-      await sub.cancel();
-
-      expect(received, [1, 2, 3, 4, 5, 6]);
+      expect(await collect(stream!, 6), [1, 2, 3, 4, 5, 6]);
     });
 
     test('ESCR: residual bytes bundled with the response arrive before a '
@@ -574,16 +569,58 @@ void main() {
       final (authenticated, stream) = await resultFuture;
       expect(authenticated, true);
 
-      final received = <int>[];
-      final sub = stream!.listen(received.addAll);
-      await Future<void>.delayed(Duration.zero);
-      await sub.cancel();
-
-      expect(received, [7, 8, 9, 10, 11, 12]);
+      expect(await collect(stream!, 6), [7, 8, 9, 10, 11, 12]);
     });
 
-    // The race the mutex-free fast path depends on can't be hit
-    // deterministically from outside, so pin its precondition directly.
+    test('a post-auth chunk never overtakes one still queued on the mutex',
+        () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+
+      final lookup = Completer<String>();
+      final helper = MockRelayAuthVerifyHelper();
+      when(
+        () => helper.lookup(sessionId, 'public:publickey@alice'),
+      ).thenAnswer((_) => lookup.future);
+
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: <String>[],
+        onData: (fn) => feed = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        helper,
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      feed(Uint8List.fromList([...utf8.encode('$envelope\n'), 1, 2, 3]));
+      feed(Uint8List.fromList([4, 5, 6]));
+      lookup.complete(legacyPublicKey);
+      // One chunk per microtask turn, so some arrive after authentication
+      // completes but while [4, 5, 6] is still queued on the mutex.
+      final trailing = List<int>.generate(20, (i) => 100 + i);
+      for (final b in trailing) {
+        feed(Uint8List.fromList([b]));
+        await Future<void>.value();
+      }
+
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+      expect(
+        await collect(stream!, 26),
+        [1, 2, 3, 4, 5, 6, ...trailing],
+      );
+    });
+
     test('structural: no await between authenticated=true and the residual '
         'flush', () {
       final source = File(
@@ -637,4 +674,18 @@ escrFixture() {
   );
 
   return (helper: helper, authenticator: authenticator, sessionId: sessionId);
+}
+
+/// Collects bytes from [stream] until [count] have arrived or a second has
+/// passed, so a late chunk shows up as a reorder rather than a missing tail.
+Future<List<int>> collect(Stream<Uint8List> stream, int count) async {
+  final received = <int>[];
+  final enough = Completer<void>();
+  final sub = stream.listen((data) {
+    received.addAll(data);
+    if (received.length >= count && !enough.isCompleted) enough.complete();
+  });
+  await enough.future.timeout(const Duration(seconds: 1), onTimeout: () {});
+  await sub.cancel();
+  return received;
 }
