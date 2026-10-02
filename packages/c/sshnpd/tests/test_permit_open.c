@@ -1,11 +1,15 @@
 #include "sshnpd/permitopen.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int star_star_test();
 int localhost_star_test();
 int star_port_test();
 int localhost_port_test();
 int list_test();
+int parse_valid_test();
+int parse_invalid_test();
 
 int main() {
   int ret = 0;
@@ -31,9 +35,91 @@ int main() {
     printf("localhost:22,foo.bar.com:3389 test failed\n");
     ret++;
   }
+  if (parse_valid_test()) {
+    printf("parse_permitopen valid input test failed\n");
+    ret++;
+  }
+  if (parse_invalid_test()) {
+    printf("parse_permitopen invalid input test failed\n");
+    ret++;
+  }
 
   printf("Tests failed: %d\n", ret);
   return ret;
+}
+
+int parse_valid_test() {
+  char **hosts = NULL;
+  uint16_t *ports = NULL;
+  size_t len = 0;
+
+  char input1[] = "localhost:22,foo.bar.com:3389";
+  if (parse_permitopen(input1, &hosts, &ports, &len, false) != 0 || len != 2 || strcmp(hosts[0], "localhost") != 0 ||
+      ports[0] != 22 || strcmp(hosts[1], "foo.bar.com") != 0 || ports[1] != 3389) {
+    return 1;
+  }
+  free(hosts);
+  free(ports);
+
+  char input2[] = "\"localhost:*\"";
+  if (parse_permitopen(input2, &hosts, &ports, &len, false) != 0 || len != 1 || strcmp(hosts[0], "localhost") != 0 ||
+      ports[0] != 0) {
+    return 1;
+  }
+  free(hosts);
+  free(ports);
+
+  char input3[] = "'*:65535'";
+  if (parse_permitopen(input3, &hosts, &ports, &len, false) != 0 || len != 1 || strcmp(hosts[0], "*") != 0 ||
+      ports[0] != 65535) {
+    return 1;
+  }
+  free(hosts);
+  free(ports);
+
+  return 0;
+}
+
+int parse_invalid_test() {
+  char **hosts = NULL;
+  uint16_t *ports = NULL;
+  size_t len = 0;
+
+  // empty and quote-only inputs previously read out of bounds
+  char input1[] = "";
+  if (parse_permitopen(input1, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  char input2[] = "\"\"";
+  if (parse_permitopen(input2, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  // extra colons previously desynchronized the token walk
+  char input3[] = "localhost:22:33";
+  if (parse_permitopen(input3, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  // port 0 is the internal wildcard encoding and must not be accepted
+  char input4[] = "localhost:0";
+  if (parse_permitopen(input4, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  // out-of-range ports previously wrapped to a different port
+  char input5[] = "localhost:65536";
+  if (parse_permitopen(input5, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  char input6[] = "localhost:-1";
+  if (parse_permitopen(input6, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+  // non-numeric port
+  char input7[] = "localhost:ssh";
+  if (parse_permitopen(input7, &hosts, &ports, &len, false) == 0) {
+    return 1;
+  }
+
+  return 0;
 }
 
 int star_star_test() {

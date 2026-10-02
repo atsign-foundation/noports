@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NoPorts Firmware Installer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #2196f3;
+      --bg:     #0f1117;
+      --card:   #1a1d27;
+      --border: #2a2d3a;
+      --text:   #e2e8f0;
+      --muted:  #94a3b8;
+      --radius: 10px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1rem 4rem;
+    }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p { color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    a.card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 2rem 1.5rem;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    a.card:hover {
+      border-color: var(--accent);
+      background: rgba(33,150,243,0.07);
+    }
+    .board-photo {
+      width: 140px;
+      height: 105px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: white;
+    }
+    a.card .name { font-size: 1rem; font-weight: 700; text-align: center; }
+    a.card .chip { font-size: 0.78rem; color: var(--muted); text-align: center; }
+    a.card .desc { font-size: 0.82rem; color: var(--muted); text-align: center; line-height: 1.5; }
+
+    footer {
+      margin-top: 2.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>NoPorts Firmware Installer</h1>
+  <p>Select your device to flash or upgrade its firmware.</p>
+</header>
+
+<div class="grid">
+
+  <a class="card" href="/cyd/">
+    <img class="board-photo" src="/cyd.jpg" alt="NoPorts CYD board">
+    <span class="name">NoPorts CYD</span>
+    <span class="chip">ESP32 / ESP32-S3</span>
+    <span class="desc">Display-based device with touch UI. WiFi connectivity.</span>
+  </a>
+
+  <a class="card" href="/poe/">
+    <img class="board-photo" src="/poe.jpg" alt="NoPorts PoE board">
+    <span class="name">NoPorts PoE</span>
+    <span class="chip">ESP32-P4</span>
+    <span class="desc">Headless device with web UI. Fast Ethernet &amp; PoE.</span>
+  </a>
+
+</div>
+
+<footer>
+  <a href="https://noports.com" target="_blank" rel="noopener">noports.com</a>
+</footer>
+
+</body>
+</html>

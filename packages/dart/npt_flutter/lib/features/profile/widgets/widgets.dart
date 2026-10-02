@@ -10,7 +10,6 @@ export 'profile_display_name.dart';
 export 'profile_favorite_button.dart';
 export 'profile_popup_menu_button.dart';
 export 'profile_refresh_button.dart';
-export 'profile_run_button.dart';
 export 'profile_select_box.dart';
 export 'profile_service_view.dart';
 export 'profile_status_indicator.dart';

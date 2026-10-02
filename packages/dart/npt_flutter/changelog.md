@@ -1,8 +1,36 @@
 ## 1.9.4+31
 
--REFACTOR: replaced the use of `String` atsign with the `Atsign` class.
--REFACTOR: where a String atsign is hardcoded or retrieved for packages `.toAtsign()` method is applied to convert it to the `Atsign` class.
--REFACTOR: rename all use of the old 'atSign, AtSign' spelling with new 'atsign, Atsign' spelling.
+- FIX: Merged run/stop action into status indicator for resize-friendly profile rows.
+- FIX: Connections screen uses full available space instead of fixed-size card overlay.
+- FIX: Profile columns use flexible layout so device name and service mapping no longer truncate.
+- FEAT: APKAM enrollment dialog with approval wait and revocation error handling.
+- FEAT: Disable sign-in button while atsign activation is in progress.
+- FEAT: Revoked enrollment error messaging.
+- FEAT: Onboarding error dialog with improved error descriptions.
+- FEAT: Authorization features restored (pending enrollment requests).
+- FIX: Remove Atsign dialog now scrolls when the atsign list exceeds dialog height.
+- FIX: Switching atsigns preserves the current nav bar tab selection.
+- FIX: macOS sandbox error when writing .tmp backup key files.
+- FIX: File picker and directory picker use correct default paths.
+- FIX: OTP error messages surface faster during atsign activation.
+- FIX: Enrollment pending requests count bug resolved.
+- FIX: Better error messaging in activate_util.dart.
+- FIX: profile_repository.dart error handling.
+- FIX: settings_action_button layout wrap issue.
+- FIX: custom_container.dart layout.
+- FIX: file_picker breaking API change adapted.
+- FIX: switch_atsign_button.dart uses AuthService directly instead of removed AtOnboarding.
+- REFACTOR: Replaced the use of `String` atsign with the `Atsign` class.
+- REFACTOR: Where a String atsign is hardcoded or retrieved, `.toAtsign()` is applied.
+- REFACTOR: Rename all use of the old 'atSign, AtSign' spelling with new 'atsign, Atsign' spelling.
+- REFACTOR: AtOnboardingConfig replaced with direct AuthService calls.
+- REFACTOR: PendingRequestsCountCubit uses FlutterEnrollmentService with explicit lifecycle.
+- CHORE: Migrate dependencies to at_client_flutter.
+- CHORE: Remove at_client_mobile, at_onboarding_flutter, at_contacts, at_contacts_flutter.
+- CHORE: Slim down pubspec.yaml dependencies and dev dependencies.
+- CHORE: Remove win32 dev dependency (unused).
+- CHORE: Override phosphor_flutter with Flutter 3.x compatibility fork.
+- CHORE: Updated localization strings.
 
 ## 1.9.3+30
 

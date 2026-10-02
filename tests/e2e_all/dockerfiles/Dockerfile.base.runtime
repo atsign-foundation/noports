@@ -1,5 +1,5 @@
 # Dockerfile.base-runtime
-FROM debian:stable-20260623-slim@sha256:ee12ffb55625b99d62837a72f037d9b2f18fd0c787a89c2b9a4f09666c48776c
+FROM debian:stable-20260918-slim@sha256:5bc3287b25407c965a30f38e32603dc253a3869e1b12a21ac09bfc27fd8b13ce
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
@@ -8,7 +8,7 @@ ENV GROUP_ID=1024
 
 RUN set -eux ; \
     apt-get update ; \
-    apt-get install -y openssh-server sudo; \
+    apt-get install -y ca-certificates openssh-server sudo; \
     groupadd --gid ${GROUP_ID} ${USER} ; \
     useradd --system --shell /bin/bash --home ${HOMEDIR} --uid ${USER_ID} --gid ${GROUP_ID} ${USER} ; \
     usermod -aG sudo ${USER} ; \

@@ -68,59 +68,64 @@ void *srv_side_handle(void *side) {
 
   const char *const tag = s->is_side_a ? TAG_A : TAG_B;
 
-  unsigned char *buffer = malloc(BUFFER_LEN * sizeof(unsigned char));
-  memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
-
-  unsigned char *output = NULL;
+  // Stack buffers, deliberately: socket_to_socket terminates this thread with
+  // pthread_cancel when the other side finishes, so anything heap-allocated
+  // here would leak on every connection teardown (the cancel lands in
+  // mbedtls_net_recv, before any free could run)
+  unsigned char buffer[BUFFER_LEN];
+  unsigned char output[BUFFER_LEN];
+  memset(buffer, 0, BUFFER_LEN);
 
   if (s->is_server == 0) {
     size_t len;
     int res;
     while ((res = mbedtls_net_recv(&s->socket, buffer, READ_LEN)) > 0) {
-      if (res < 0) {
-        atlogger_log(tag, ERROR, "Error reading data: %zu", len);
-        break;
-      } else {
-        len = res;
-      }
-      fflush(stdout);
+      len = res;
+
+      unsigned char *to_send = buffer;
       if (s->transformer != NULL) {
-        output = malloc(BUFFER_LEN * sizeof(unsigned char));
-        if (output == NULL) {
-          atlogger_log(tag, ERROR, "Error allocating memory for output: %zu", len);
-          break;
-        }
-        memset(output, 0, BUFFER_LEN * sizeof(unsigned char));
+        memset(output, 0, BUFFER_LEN);
         res = (int)s->transformer->transform(s->transformer, len, buffer, output);
         if (res != 0) {
-          atlogger_log(tag, ERROR, "Error decrypting buffer and storing in output: %zu", len);
-          free(output);
+          atlogger_log(tag, ERROR, "Error transforming buffer of len: %zu", len);
           break;
         }
-        free(buffer);
-        buffer = output;
-        output = NULL;
+        to_send = output;
       }
 
       if (s->other->is_server == 0) {
-        while (len > 0) {
-          res = mbedtls_net_send(&s->other->socket, buffer, len);
-          if (res < 0) {
-            atlogger_log(tag, ERROR, "Error sending data: %d", res);
-            break;
-          } else {
-            len -= res;
+        bool send_failed = false;
+        size_t sent = 0;
+        while (sent < len) {
+          res = mbedtls_net_send(&s->other->socket, to_send + sent, len - sent);
+          if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
+            continue; // interrupted (EINTR) - retry the send
           }
+          if (res < 0) {
+            atlogger_log(tag, ERROR, "Error sending data: %d\n", res);
+            send_failed = true;
+            break;
+          }
+          sent += res;
+        }
+        if (send_failed) {
+          // The peer socket is dead; silently continuing would keep consuming
+          // from our own socket and drop every subsequent chunk. Exit the
+          // relay loop so teardown runs.
+          break;
         }
       } else {
         halt_if_cant_bind_local_port();
       }
-      memset(buffer, 0, BUFFER_LEN * sizeof(unsigned char));
+      memset(buffer, 0, BUFFER_LEN);
     }
-    if (output)
-      free(output);
-    free(buffer);
-    mbedtls_net_close(&s->socket);
+    // Deliberately do NOT close s->socket here: the peer thread may be
+    // concurrently writing to it (s->other->socket from its point of view),
+    // and in multi mode a close here lets the kernel reuse the fd number for
+    // another session's socket - the peer's next write would then inject this
+    // session's data into an unrelated session. socket_to_socket's teardown
+    // closes both sockets via srv_side_free only after both threads have been
+    // joined, which is the only safe point.
   } else {
   }
 

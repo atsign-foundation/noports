@@ -72,15 +72,15 @@ class CustomCard extends StatelessWidget {
     required this.child,
     this.height = Sizes.p500,
     this.width = Sizes.p941,
+    this.leftPadding = Sizes.p44,
+    this.rightPadding = Sizes.p44,
+    this.topPadding = Sizes.p16,
     super.key,
   }) : color = AppColor.cardColorDark,
        radiusTopLeft = const Radius.circular(Sizes.p20),
        radiusTopRight = const Radius.circular(Sizes.p20),
        radiusBottomLeft = const Radius.circular(Sizes.p20),
        radiusBottomRight = const Radius.circular(Sizes.p20),
-       leftPadding = Sizes.p44,
-       rightPadding = Sizes.p44,
-       topPadding = Sizes.p16,
        bottomPadding = 0,
        bottomBorderSide = BorderSide.none;
   const CustomCard.dashboardContentEmpty({

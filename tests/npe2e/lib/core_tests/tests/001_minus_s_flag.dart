@@ -40,6 +40,24 @@ List<Future<CoreTestResult> Function()> run001MinusSFlagTests({
     testName: testName,
   );
 
+  // Match e2e_all: 001_minus_s_flag validates the CURRENT client's `-s`
+  // add-key flow against every daemon version (the test is only "applicable"
+  // for the current client in e2e_all). Pick the Dart current sshnp client
+  // explicitly - clientBinaries is ordered by version, so an unconstrained
+  // firstWhere(sshnp) would otherwise return the oldest released client. Fall
+  // back to the first available sshnp only if no current client is present.
+  final NoPortsVersion clientVersion = context.clientBinaries
+      .firstWhere(
+        (cb) =>
+            cb.binaryType == ClientBinaryType.sshnp &&
+            cb.noPortsVersion.language == Language.dart &&
+            cb.noPortsVersion.version == 'current',
+        orElse: () => context.clientBinaries.firstWhere(
+          (cb) => cb.binaryType == ClientBinaryType.sshnp,
+        ),
+      )
+      .noPortsVersion;
+
   final List<Future<CoreTestResult> Function()> testFactories = [];
   for (final NoPortsVersion daemonVersion in daemonVersions) {
     // Create a factory function that will create the future when called
@@ -48,9 +66,7 @@ List<Future<CoreTestResult> Function()> run001MinusSFlagTests({
         context: context,
         coreTestLogger: coreTestLogger,
         daemonVersion: daemonVersion,
-        clientVersion: context.clientBinaries
-            .firstWhere((cb) => cb.binaryType == ClientBinaryType.sshnp)
-            .noPortsVersion,
+        clientVersion: clientVersion,
       ),
     );
   }
@@ -232,15 +248,19 @@ Future<CoreTestResult> _run001MinusSFlagTest({
   );
   final int exitCode3 = await capture3.exitCode;
   logFragment3.stop();
+  // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
+  // must actually have run (its output contains the 'TEST PASSED' marker).
+  final bool sshPassed =
+      exitCode3 == 0 && capture3.stdout.contains('TEST PASSED');
   final CoreTestResult coreTestResult = CoreTestResult(
     testName: testName,
     clientVersion: clientVersion,
     daemonVersion: daemonVersion,
-    status: exitCode3 == 0 ? TestStatus.passed : TestStatus.failed,
+    status: sshPassed ? TestStatus.passed : TestStatus.failed,
     exitCode: exitCode3,
   );
   printTestResult(testResult: coreTestResult, extra: extra);
-  if (exitCode3 != 0) {
+  if (!sshPassed) {
     // it failed, not expected.
     printAllLogs(clientCapture: capture3, daemonLogFragment: logFragment3);
   }

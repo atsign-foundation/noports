@@ -12,7 +12,7 @@ import 'package:noports_core/utils.dart';
 
 final AtSignLogger _logger = AtSignLogger('NPAImpl');
 
-class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
+class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements NPA {
   @override
   final AtSignLogger logger = _logger;
 
@@ -29,6 +29,8 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
   final Atsign? eventLoggingAtsign;
 
   AtEventConfig? elc;
+
+  final Set<String> _sharedElcWith = {};
 
   @override
   final NPARequestHandler handler;
@@ -102,31 +104,25 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
 
     _startPolicyInfoRpcServer();
 
-    /// When we get a ping from a daemon we will send back our config
     subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
       (AtNotification n) async {
-        final v = jsonDecode(n.value!);
-        final e = {};
-        e['timestamp'] = n.epochMillis;
-        e['daemon'] = n.from;
-        e['payload'] = v;
-        String strippedKey = n.key
-            .replaceAll('${n.to}:', '')
-            .replaceAll(n.from, '')
-            .toLowerCase();
+        if (n.value == null) return;
 
-        final configKey = AtKey.fromString(
-          '${n.from}:config.$strippedKey${n.to}',
-        );
-        final configValue = jsonEncode({'eventLoggingConfig': elc?.toJson()});
-        logger.shout('Sending config notification $configKey : $configValue');
-        await notify(
-          configKey,
-          configValue,
-          checkForFinalDeliveryStatus: false,
-          waitForFinalDeliveryStatus: false,
-          ttln: Duration(hours: 1),
-        );
+        if (elc != null && !_sharedElcWith.contains(n.from)) {
+          try {
+            logger.info('Sharing event logging config with ${n.from}');
+            await shareEventLoggingConfigWithAtsigns(
+              config: elc!,
+              atSigns: [n.from.toAtsign()],
+              namespace: DefaultArgs.eventLoggingNamespace,
+            );
+            _sharedElcWith.add(n.from);
+          } catch (e) {
+            logger.warning(
+              'Failed to share event logging config with ${n.from}: $e',
+            );
+          }
+        }
       },
     );
   }
@@ -143,7 +139,6 @@ class NPAImpl with AtClientBindings, AtEventLogger implements NPA {
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
-        elc: elc,
       ),
       allowList: {},
       allowAll: true,
@@ -172,7 +167,6 @@ class PolicyInfoRpcRequestHandler
   final AtSignLogger logger = AtSignLogger('PolicyInfoRpcRequestHandler');
 
   final Atsign policyAtsign;
-  final AtEventConfig? elc;
   final String namespace;
   final NPARequestHandler handler;
 
@@ -181,7 +175,6 @@ class PolicyInfoRpcRequestHandler
     required this.namespace,
     required this.handler,
     required this.atClient,
-    required this.elc,
   });
 
   @override

@@ -12,7 +12,9 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      GIT_TAG 6bc03f3b9ece254706f8fd75776b06ee389d95e5
+      # at_c v0.4.1 (this is the tag commit): atauth and onboarding
+      # code-review fixes (at_c#715) on top of v0.4.0
+      GIT_TAG 60ba6ec38c5cfa78929f709291dcd9f2ad9ddbac
     )
   endif()
   FetchContent_MakeAvailable(atsdk)

@@ -59,16 +59,18 @@ strict-docker +ARGS='':
 
 memcheck +ARGS='': build-dev
   #!/usr/bin/env bash
-  file="valgrind-sshnpd-$(date +%s).log"
-  # child-silient-after-fork=yes: ignore session forks, we don't care
-  valgrind --log-file="logs/$file" \
+  mkdir -p logs
+  # Session forks (the srv processes) run most of the session encryption
+  # code, so trace them too: each process writes its own logs/vg-<pid>.log.
+  # After a run: grep -A4 "LEAK SUMMARY" logs/vg-*.log
+  valgrind --log-file="logs/vg-%p.log" \
   --tool=memcheck \
   --leak-check=full \
   --show-leak-kinds=all \
-  --child-silent-after-fork=yes \
+  --suppressions=valgrind.supp \
   {{dev_dir}}/sshnpd/sshnpd -a $TO_ATSIGN -m $FROM_ATSIGN -d $DEVICE_NAME \
   --permit-open "*:*" -v {{ARGS}}
-  echo "memcheck log saved to: $file"
+  echo "memcheck logs saved to: logs/vg-<pid>.log (one per process)"
 
 # CONTAINER COMMANDS
 

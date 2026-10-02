@@ -37,12 +37,16 @@ class NoPortsVersion {
     return '$languageInitial:$cleanVersionString';
   }
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     if (other is NoPortsVersion) {
       return language == other.language && version == other.version;
     }
     return false;
   }
+
+  @override
+  int get hashCode => Object.hash(language, version);
 }
 
 bool versionIsAtLeast(

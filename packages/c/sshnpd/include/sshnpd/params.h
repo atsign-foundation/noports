@@ -20,6 +20,7 @@ typedef struct {
 
   size_t manager_list_len;
   char **manager_list;
+  char *normalized_manager_buf;
 
   char *policy;
 

@@ -31,9 +31,13 @@ List<Future<CoreTestResult> Function()> runMinusUFlagTests({
 
   for (final NoPortsVersion clientVersion in clientVersions) {
     for (final NoPortsVersion daemonVersion in daemonVersions) {
-      if (clientVersion.version != 'current' ||
+      // for now, only run this test with current versions since 
+      // it's testing a current feature.
+      if (clientVersion.language != Language.dart ||
+          clientVersion.version != 'current' ||
+          daemonVersion.language != Language.dart ||
           daemonVersion.version != 'current') {
-        continue; // for now, only run this test with current versions since it's testing a current feature
+        continue;
       }
       testFactories.add(
         () => _runMinusUFlagTest(
@@ -107,7 +111,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
       testMetadata: _metadataNoFlags,
     ),
   );
-  final int exitCode1 = await capture1.process.exitCode;
+  final int exitCode1 = await capture1.exitCode;
   logFragment1.stop();
   if (exitCode1 == 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
@@ -162,7 +166,7 @@ Future<CoreTestResult> _runMinusUFlagTest({
       testMetadata: _metadataNoFlags,
     ),
   );
-  final int exitCode2 = await capture2.process.exitCode;
+  final int exitCode2 = await capture2.exitCode;
   logFragment2.stop();
   if (exitCode2 != 0) {
     final CoreTestResult coreTestResult = CoreTestResult(
@@ -204,8 +208,10 @@ Future<CoreTestResult> _runMinusUFlagTest({
       testMetadata: '${_metadataNoFlags}_sshCommand',
     ),
   );
-  final int exitCode3 = await capture3.process.exitCode;
-  if (exitCode3 != 0) {
+  final int exitCode3 = await capture3.exitCode;
+  // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
+  // must actually have run (its output contains the 'TEST PASSED' marker).
+  if (exitCode3 != 0 || !capture3.stdout.contains('TEST PASSED')) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,

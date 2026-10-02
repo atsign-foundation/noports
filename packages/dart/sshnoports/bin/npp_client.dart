@@ -4,6 +4,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/utils.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
@@ -13,6 +14,10 @@ import 'package:noports_core/npa.dart';
 
 late AtSignLogger logger;
 
+const String _description =
+    'NoPorts policy CLI: manage the policy data used by NoPorts'
+    ' policy services.';
+
 Future<void> main(List<String> args) async {
   logger = AtSignLogger('  policy_cli  ');
 
@@ -20,7 +25,9 @@ Future<void> main(List<String> args) async {
   try {
     final argResults = NPPCLIParams.argParser.parse(args);
     if (argResults['help']) {
-      print(NPPCLIParams.argParser.usage);
+      stdout.write(formatCliHelp(
+          description: _description,
+          optionsUsage: NPPCLIParams.argParser.usage));
       exit(0);
     }
     if (argResults['version']) {
@@ -29,8 +36,9 @@ Future<void> main(List<String> args) async {
     }
   } on FormatException catch (e) {
     stderr.writeln('Error: ${e.message}');
-    stderr.writeln('\nUsage:');
-    stderr.writeln(NPPCLIParams.argParser.usage);
+    stderr.write(formatCliHelp(
+        description: _description,
+        optionsUsage: NPPCLIParams.argParser.usage));
     exit(1);
   } catch (e) {
     // Continue to fromArgs which will handle other errors
@@ -41,8 +49,9 @@ Future<void> main(List<String> args) async {
     nppCLIParams = NPPCLIParams.fromArgs(args);
   } catch (e) {
     stderr.writeln('Error: $e');
-    stderr.writeln('\nUsage:');
-    stderr.writeln(NPPCLIParams.argParser.usage);
+    stderr.write(formatCliHelp(
+        description: _description,
+        optionsUsage: NPPCLIParams.argParser.usage));
     exit(1);
   }
   AtSignLogger.root_level = 'severe';

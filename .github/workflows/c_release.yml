@@ -21,7 +21,7 @@ jobs:
       contents: write # Needed to create workflow branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create action branch
         run: |
           git config --global user.name 'Atsign Robot'
@@ -67,7 +67,7 @@ jobs:
             compiler: "clang"
             flags: "-Wno-error -pthread"
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: c_release-${{github.run_number}}
 
@@ -132,11 +132,11 @@ jobs:
     ## 20240806: Clang and CMake that we use aren't packaged for
     ## armv7 or riscv64 (also no Debian 11 for RISC-V)
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: c_release-${{github.run_number}}
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
       - name: Build tarballs in Docker
         run: |
           docker buildx build -t atsigncompany/sshnpdc \
@@ -157,7 +157,7 @@ jobs:
     name: Generate source tarball
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: c_release-${{github.run_number}}
         # Pin cmake to <4.0.0
@@ -188,7 +188,7 @@ jobs:
       attestations: write
     steps:
       - name: Get lockfile
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             packages/c/conan.lock
@@ -202,14 +202,16 @@ jobs:
           cd tarballs
           echo "Before:"
           ls -latrR *
-          mv */*.tgz .
-          mv */*.tar.gz .
-          mv */*.zip .
+          shopt -s nullglob
+          packages=( */*.tgz */*.tar.gz */*.zip )
+          if ((${#packages[@]})); then
+            mv "${packages[@]}" .
+          fi
           rm -Rf -- */
           echo "After:"
           ls -latrR *
       - name: Generate SBOM
-        uses: sbomify/github-action@ac8b0d423c90447f3011ef8ab5f9ff2e854c6931 # v26.2.0
+        uses: sbomify/github-action@fc7f05256cca65c26c8010da5faf3203e9477e5c # v26.9.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'Y6pppn8rC4'
@@ -235,7 +237,7 @@ jobs:
         run: |
           echo "hashes=$(cat checksums.txt | base64 -w0)" >> "$GITHUB_OUTPUT"
       - name: GitHub attestation
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: "tarballs/**"
 

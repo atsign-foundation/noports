@@ -75,7 +75,9 @@ mixin AtEventListener on AtClientBindings {
   }) async {
     for (final theirAtsign in atSigns) {
       logger.info('Sharing EventLoggingConfig $config with $theirAtsign');
-      AtKey key = AtKey.fromString('$theirAtsign:config.$namespace$myAtsign');
+      AtKey key = AtKey.fromString('$theirAtsign:config.$namespace$myAtsign')
+        ..metadata.ttr = -1
+        ..metadata.ccd = true;
       await atClient.put(
         key,
         jsonEncode(config.toJson()),

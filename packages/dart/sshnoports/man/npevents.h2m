@@ -1,0 +1,8 @@
+[NAME]
+npevents \- NoPorts session events listener
+[SEE ALSO]
+sshnp(1), sshnpd(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>

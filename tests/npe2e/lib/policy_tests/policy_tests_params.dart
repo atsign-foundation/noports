@@ -98,7 +98,7 @@ class PolicyTestsParams {
     parser.addOption(
       'base-directory',
       abbr: 'b',
-      defaultsTo: './npe2e_policy',
+      defaultsTo: './npe2e_policy_tests',
       help: 'Base directory for test results',
     );
     parser.addOption(

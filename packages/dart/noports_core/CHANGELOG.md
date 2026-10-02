@@ -1,3 +1,52 @@
+# 6.15.0
+
+- feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
+  AES-CTR cipher via FFI, using hardware acceleration (AES-NI on x86,
+  ARMv8 Crypto Extensions on arm64) when libcrypto is available, falling
+  back to the pure-Dart cipher otherwise
+
+# 6.14.2
+
+- fix: `WrappedSSHSocket.close()`/`destroy()` now tears down the
+  `StreamController` feeding its AES-CTR encrypter, instead of only closing
+  the underlying socket. The FFI-backed cipher only disposes on that
+  controller's `onDone`/`onCancel`/`onError`, so the native
+  `EVP_CIPHER_CTX` previously leaked until GC on a teardown that went
+  through `close()`/`destroy()` rather than `sink.close()`.
+- fix: srvd's daemon-multi control-channel path now disposes its AES-CTR
+  cipher on connection close too, instead of leaking an `EVP_CIPHER_CTX`
+  and its native buffers per connection
+
+# 6.14.1
+
+- fix: the relay auth stream wrappers (the srv-side relay authenticator and
+  both srvd-side relay auth verifiers) now forward pause/resume from their
+  `StreamController` to the socket subscription, so backpressure applied by
+  the consumer of the wrapped stream reaches the socket and closes the TCP
+  window instead of buffering without bound in the wrapper
+- build: socket_connector bumped to ^2.6.0, which bounds in-process relay
+  buffering with flush-gated backpressure (4 MiB high-water mark per
+  direction), enables TCP keep-alive on relayed sockets, and fixes a race in
+  2.5.0 where the backpressure flush could collide with a write and close a
+  relay side mid-stream, or stall one direction for good
+
+# 6.14.0
+
+- fix: share event logging config once as cached key instead of on every
+  heartbeat
+- fix: daemon policy config logs downgraded from SHOUT to INFO to stop
+  flooding Windows Event Viewer
+
+# 6.13.0
+
+- feat: added `binaryName` and `formatCliHelp` to utils, for generating
+  help2man-friendly `--help` output (#2650)
+- feat: added a `--version` flag to `NPAParams.parser`
+
+# 6.12.2
+
+- fix: close stdin in srv process, fixes fd leak
+
 # 6.12.1
 
 - fix: `RelaySelector.selectBestRelay` no longer hangs or throws when the
@@ -49,15 +98,15 @@
 
 # 6.10.3
 
-- fix: In the RelayAuthVerifiers, catch in the same place all the exceptions 
+- fix: In the RelayAuthVerifiers, catch in the same place all the exceptions
   which can be thrown during parsing and processing
 
 # 6.10.2
 
-- fix: Require authenticated connection when sshnpd is sending its periodic 
-  "am I alive" heartbeat. This forces issuing of a `from:` request, which in 
-  turn means that a connection via a proxy service is made successfully. 
-  Also, reduce frequency of this heartbeat from every 15 seconds to every 90 
+- fix: Require authenticated connection when sshnpd is sending its periodic
+  "am I alive" heartbeat. This forces issuing of a `from:` request, which in
+  turn means that a connection via a proxy service is made successfully.
+  Also, reduce frequency of this heartbeat from every 15 seconds to every 90
   seconds.
 
 # 6.10.1
@@ -81,8 +130,8 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 
 # 6.8.0
 
-- feat: Enable npt clients to choose which local IP address to bind to, 
-  supporting both ipv4 and ipv6, and defaulting to `localhost` on ipv4/ipv6 
+- feat: Enable npt clients to choose which local IP address to bind to,
+  supporting both ipv4 and ipv6, and defaulting to `localhost` on ipv4/ipv6
   as per the host's preference
 
 # 6.7.0
@@ -98,9 +147,9 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 - fix: enable daemons and policy service to use the same atSign
 
 # 6.5.0
-- feat: New ESCR (Encrypted Signed Challenge-Response) relay socket 
+- feat: New ESCR (Encrypted Signed Challenge-Response) relay socket
   authentication
-- feat: Ability to have relay sessions where both sides are connecting to 
+- feat: Ability to have relay sessions where both sides are connecting to
   port 443
 - feat: Ability to send heartbeats over the npt control socket to let network
   intermediaries know that it is active.
@@ -125,7 +174,7 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 - feat: sshnpd: add more type validation for session requests (#1063)
 - fix: sshnp: various arg parsing issues (#1047)
 - feat: sshnpd: add '--sshpublickey-permissions' option (#1004)
-- fix: sshnpd,sshnp,npt: better error message if srv binary can't be 
+- fix: sshnpd,sshnp,npt: better error message if srv binary can't be
   located (#988)
 
 # 6.0.7
@@ -134,7 +183,7 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 - feat: allow --list-devices to work without requiring -t or -r
 
 # 6.0.6
-- feat: SrvImplDart: supply a logger to SocketConnector so that the Srv can 
+- feat: SrvImplDart: supply a logger to SocketConnector so that the Srv can
   control what happens with any log messages that SocketConnector emits
 
 # 6.0.5
@@ -160,18 +209,18 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 - ci: add srv.exe to the release on Windows
 
 # 6.0.0
-- Added ability to authenticate to the socket rendezvous, and made this the 
+- Added ability to authenticate to the socket rendezvous, and made this the
   default behaviour.
 - Added ability to end-to-end encrypt all traffic via the socket rendezvous (
   SR), and made this the default behaviour. This provides a good general defense
   against compromise by man-in-the-middle attacks if the two ends are
-  communicating via the SR. The encryption is implemented by exchanging a 
-  symmetric key via an ephemeral encryption keypair generated by the client 
+  communicating via the SR. The encryption is implemented by exchanging a
+  symmetric key via an ephemeral encryption keypair generated by the client
   for every session.
-- Added ability to "ping" a daemon for info about it, including which 
+- Added ability to "ping" a daemon for info about it, including which
   features the daemon supports.
 - By default, sshnp now immediately drops into a prompt for clients that don't
-  support sshnp.canRunShell(). `-x` flag allows the ssh command to be output 
+  support sshnp.canRunShell(). `-x` flag allows the ssh command to be output
   instead of executing ssh immediately.
 - Renamed everything sshrvd and sshrv to srvd and srv respectively
 
@@ -181,7 +230,7 @@ fix: remove late from `AtEventConfig? elc` in NPAImpl
 - fix: call `callFindLocalPortIfRequired` during the initialization of the unsigned sshnp client
 
 # 5.0.3
-- feat: Add `--storage-path` option to sshnpd to allow users to specify where 
+- feat: Add `--storage-path` option to sshnpd to allow users to specify where
   it keeps any locally stored data
 
 # 5.0.2

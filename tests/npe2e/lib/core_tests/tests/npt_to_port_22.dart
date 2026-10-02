@@ -127,6 +127,22 @@ Future<CoreTestResult> _runNptToPort22Test({
     printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment1);
     return coreTestResult;
   }
+  // npt prints the local port it is listening on to stdout. Use tryParse so
+  // that unexpected output fails this one test (with logs) rather than
+  // throwing an uncaught exception out of the test future.
+  final int? localPort = int.tryParse(nptOutput.stdout.trim());
+  if (localPort == null) {
+    final CoreTestResult coreTestResult = CoreTestResult(
+      testName: testName,
+      clientVersion: clientVersion,
+      daemonVersion: daemonVersion,
+      status: TestStatus.failed,
+      exitCode: exitCode1,
+    );
+    printTestResult(testResult: coreTestResult, extra: extra);
+    printAllLogs(clientCapture: nptOutput, daemonLogFragment: logFragment1);
+    return coreTestResult;
+  }
   final LogFragment logFragment2 = await dockerInstance.createLogFragment(
     stdoutFile: testLogger.getDaemonStdoutLogFile(
       daemonVersion: daemonVersion,
@@ -139,8 +155,6 @@ Future<CoreTestResult> _runNptToPort22Test({
       testMetadata: _metadataSshExecution,
     ),
   );
-  final String nptStdout = nptOutput.stdout;
-  final int localPort = int.parse(nptStdout.trim());
   const String executable = 'ssh';
   final List<String> sshArgs = [
     '-p',
@@ -149,9 +163,9 @@ Future<CoreTestResult> _runNptToPort22Test({
     'StrictHostKeyChecking=accept-new',
     '-o',
     'IdentitiesOnly=yes',
-    '${context.remoteUsername}@localhost',
     '-i',
     context.identityFilePath,
+    '${context.remoteUsername}@localhost',
     'echo',
     '`whoami`',
     '`date`',
@@ -175,7 +189,9 @@ Future<CoreTestResult> _runNptToPort22Test({
   );
   final int exitCode2 = await sshOutput.exitCode;
   logFragment2.stop();
-  if (exitCode2 != 0) {
+  // Match e2e_all's pass criterion: the ssh must exit 0 AND the remote command
+  // must actually have run (its output contains the 'TEST PASSED' marker).
+  if (exitCode2 != 0 || !sshOutput.stdout.contains('TEST PASSED')) {
     final CoreTestResult coreTestResult = CoreTestResult(
       testName: testName,
       clientVersion: clientVersion,

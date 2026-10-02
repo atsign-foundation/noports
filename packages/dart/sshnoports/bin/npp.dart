@@ -5,6 +5,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/version.dart' as binaries_version;
@@ -12,11 +13,16 @@ import 'package:path/path.dart' as path;
 
 late AtSignLogger logger;
 
+const String _description =
+    'NoPorts policy service: makes authorization decisions for NoPorts'
+    ' daemons which delegate access control to a policy atSign.';
+
 Future<void> main(List<String> args) async {
   // 1. Parse if --help or --version was called
   try {
     if(NPPParams.argParser.parse(args)['help']) {
-      print(NPPParams.argParser.usage);
+      stdout.write(formatCliHelp(
+          description: _description, optionsUsage: NPPParams.argParser.usage));
       exit(0);
     }
     if(NPPParams.argParser.parse(args)['version']) {
@@ -24,15 +30,18 @@ Future<void> main(List<String> args) async {
       exit(0);
     }
   } on ArgumentError catch (e) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPPParams.argParser.usage));
     stderr.writeln(e.message);
     exit(1);
   } on FormatException catch (e) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPPParams.argParser.usage));
     stderr.writeln(e.message);
     exit(1);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPPParams.argParser.usage));
     stderr.writeln(err);
     exit(1);
   }
@@ -42,7 +51,8 @@ Future<void> main(List<String> args) async {
   try {
     nppParams = NPPParams.fromArgs(args);
   } catch (err) {
-    stderr.writeln('Usage: \n${NPPParams.argParser.usage}\n');
+    stderr.write(formatCliHelp(
+        description: _description, optionsUsage: NPPParams.argParser.usage));
     stderr.writeln(err);
     exit(1);
   }

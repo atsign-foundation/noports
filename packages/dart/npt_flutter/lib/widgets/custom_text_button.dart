@@ -1,15 +1,12 @@
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:at_onboarding_flutter/at_onboarding_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/back_up_key/cubit/backup_key_cubit.dart';
-import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
+import 'package:npt_flutter/features/onboarding/widgets/reset_atsign_dialog.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/pages/loading_page.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
-import 'package:npt_flutter/util/at_client_methods.dart';
-import 'package:npt_flutter/util/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../localization/app_localizations.dart';
@@ -72,7 +69,7 @@ class CustomTextButton extends StatelessWidget {
     // final bodyMedium = Theme.of(context).textTheme.bodyMedium!;
     // final bodySmall = Theme.of(context).textTheme.bodySmall!;
     final strings = AppLocalizations.of(context)!;
-    Future<void> onTap({String? rootDomain}) async {
+    Future<void> onTap() async {
       switch (type) {
         case CustomListTileType.email:
           Uri emailUri = Uri(scheme: 'mailto', path: 'info@noports.com');
@@ -110,30 +107,13 @@ class CustomTextButton extends StatelessWidget {
           }
           break;
         case CustomListTileType.removeAtsign:
-          final futurePreference = await AtClientMethods.loadAtClientPreference(
-            rootDomain!,
-          );
-          final apiKey = await Constants.appAPIKey;
-          if (context.mounted) {
-            final result = await AtOnboarding.reset(
-              context: context,
-              config: AtOnboardingConfig(
-                atClientPreference: futurePreference,
-                rootEnvironment: RootEnvironment.Testing,
-                domain: rootDomain,
-                appAPIKey: apiKey,
-              ),
-            );
-            final OnboardingService onboardingService =
-                OnboardingService.getInstance();
-
-            if (context.mounted && result == AtOnboardingResetResult.success) {
-              onboardingService.setAtsign = null;
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
-            }
+          final result = await ResetAtsignDialog.show(context);
+          if (context.mounted && result == true) {
+            context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
           }
           break;
 
@@ -152,6 +132,9 @@ class CustomTextButton extends StatelessWidget {
           break;
 
         case CustomListTileType.signOut:
+          // A full signout starts over on the Connections tab, unlike an
+          // atsign switch which keeps the currently selected tab.
+          context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
           wrapperNav.currentState!.pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoadingPage()),
             (route) => false,
@@ -190,26 +173,6 @@ class CustomTextButton extends StatelessWidget {
       }
     }
 
-    if (type == CustomListTileType.removeAtsign) {
-      return BlocBuilder<OnboardingCubit, OnboardingState>(
-        builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.only(
-              left: Sizes.p30,
-              right: Sizes.p30,
-              bottom: Sizes.p10,
-            ),
-            child: TextButton.icon(
-              label: Text(getTitle(strings)),
-              onPressed: () {
-                onTap(rootDomain: state.rootDomain);
-              },
-              icon: Icon(iconData),
-            ),
-          );
-        },
-      );
-    }
     return Padding(
       padding: const EdgeInsets.only(
         left: Sizes.p30,

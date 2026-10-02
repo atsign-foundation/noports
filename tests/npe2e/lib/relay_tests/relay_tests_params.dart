@@ -92,7 +92,7 @@ class RelayTestsParams {
     parser.addOption(
       'base-directory',
       abbr: 'b',
-      defaultsTo: './npe2e_relay',
+      defaultsTo: './npe2e_relay_tests',
       help: 'Base directory for test results',
     );
     parser.addOption(

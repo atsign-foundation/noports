@@ -7,7 +7,7 @@ foreach(file ${files})
   add_executable(${filename} ${file})
   target_link_libraries(
     ${filename}
-    PRIVATE sshnpd-lib argparse::argparse-static atlogger
+    PRIVATE sshnpd-lib srv-lib argparse::argparse-static atlogger atclient
   )
   add_test(NAME ${filename} COMMAND $<TARGET_FILE:${filename}>)
 endforeach()

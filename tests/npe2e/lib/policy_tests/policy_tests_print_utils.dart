@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:npe2e/log_fragment.dart';
 import 'package:npe2e/noports_version.dart';
+import 'package:npe2e/policy_tests/policy_tests_test_result.dart';
 import 'package:npe2e/process_utils.dart';
 
 /// Generates a string describing the client, daemon, and policy versions for
@@ -23,6 +24,67 @@ String generatePolicyExtraString(
       : policyVersion.language.name;
 
   return '(client: $clientLanguage:${clientVersion.version}, daemon: $daemonLanguage:${daemonVersion.version}, policy: $policyLanguage:${policyVersion.version})';
+}
+
+void printPolicyFailureReport(
+  PolicyTestResult testResult, {
+  required File transcriptLogFile,
+}) {
+  const String red = '\x1B[31m';
+  const String reset = '\x1B[0m';
+  final String extra = generatePolicyExtraString(
+    testResult.clientVersion,
+    testResult.daemonVersion,
+    testResult.policyVersion,
+    useShortLanguageName: true,
+  );
+  print('  $red✗$reset ${testResult.testName} $extra');
+
+  if (testResult.tag != null) {
+    _printFailureField('tag', testResult.tag!);
+  }
+
+  final PolicyTestFailure? failure = testResult.failure;
+  if (failure == null) {
+    // Nothing recorded: the failure predates this reporting, or came from a
+    // construction site that has not been taught to fill it in.
+    _printFailureField(
+      'reason',
+      'not recorded (exit code ${testResult.exitCode})',
+    );
+  } else {
+    _printFailureField('stage', failure.stage);
+    _printFailureField('reason', failure.reason);
+    if (failure.detail != null) {
+      _printFailureField('detail', failure.detail!);
+    }
+    if (failure.error != null) {
+      _printFailureField('error', failure.error.toString());
+    }
+    if (failure.reproduceCommand != null) {
+      _printFailureField('reproduce', failure.reproduceCommand!);
+    }
+    if (failure.logFiles.isNotEmpty) {
+      _printFailureField(
+        'logs',
+        failure.logFiles.map((file) => file.path).join('\n'),
+      );
+    }
+  }
+  _printFailureField('transcript', transcriptLogFile.path);
+}
+
+/// Prints `      <label>:    <value>`, aligning continuation lines of a
+/// multi-line value under the first one.
+void _printFailureField(final String label, final String value) {
+  const String indent = '      ';
+  const int labelWidth = 11; // widest label is 'transcript:'
+  final String head = '$label:'.padRight(labelWidth);
+  final List<String> lines = value.split('\n');
+  print('$indent$head ${lines.first}');
+  for (final String line in lines.skip(1)) {
+    print('$indent${' ' * labelWidth} $line');
+  }
 }
 
 void printClientStdout(String stdout, {String? label}) {

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_cubit.dart';
@@ -10,6 +9,7 @@ import 'package:npt_flutter/features/features.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_theme.dart';
 import 'package:npt_flutter/util/language.dart';
@@ -38,9 +38,6 @@ class App extends StatelessWidget {
         RepositoryProvider<FavoriteRepository>(
           create: (_) => FavoriteRepository(),
         ),
-        RepositoryProvider<AuthorisationService>(
-          create: (_) => AuthorisationService(),
-        ),
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
         ),
@@ -58,6 +55,11 @@ class App extends StatelessWidget {
 
           // A bloc which manages the atDirectory state
           BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
+
+          /// Tracks which top level tab of the home navigator is selected.
+          /// Lives above [HomeWrapperWidget] so the selected tab survives the
+          /// wrapper being rebuilt (e.g. when adding / switching atsign).
+          BlocProvider<SubNavCubit>(create: (_) => SubNavCubit()),
 
           /// Settings provider, not much else to say
           /// - If settings are not found, we automatically load some defaults
@@ -99,8 +101,7 @@ class App extends StatelessWidget {
             create: (ctx) => FavoriteBloc(ctx.read<FavoriteRepository>()),
           ),
           BlocProvider<PendingRequestsCountCubit>(
-            create: (ctx) =>
-                PendingRequestsCountCubit(ctx.read<AuthorisationService>()),
+            create: (ctx) => PendingRequestsCountCubit(),
           ),
 
           /// A cubit which tracks the sync status of the profiles
@@ -136,7 +137,6 @@ class App extends StatelessWidget {
                 key: const Key("MaterialApp"),
                 theme: AppTheme.light(),
                 localizationsDelegates: const [
-                  AtClientMobileLocalizations.delegate,
                   ...AppLocalizations.localizationsDelegates,
                 ],
                 supportedLocales: AppLocalizations.supportedLocales,

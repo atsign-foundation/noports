@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,7 +14,13 @@ class PolicyStatusLight extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PolicyStatusLightCubit, PolicyStatusLightState>(
       builder: (context, state) {
-        final _StatusIndicatorData data = _resolveStateData(state);
+        String? atSign;
+        try {
+          atSign = AtClientManager.getInstance().atClient.getCurrentAtSign();
+        } catch (_) {
+          atSign = null;
+        }
+        final _StatusIndicatorData data = _resolveStateData(state, atSign);
 
         return MouseRegion(
           onEnter: (_) {
@@ -34,13 +41,21 @@ class PolicyStatusLight extends StatelessWidget {
     );
   }
 
-  _StatusIndicatorData _resolveStateData(PolicyStatusLightState state) {
+  _StatusIndicatorData _resolveStateData(
+      PolicyStatusLightState state, String? atSign) {
     if (state is PolicyStatusLightLoaded) {
+      final Color color = switch (state.lightState) {
+        LightState.green => AppColor.successColor,
+        LightState.yellow => AppColor.warningColor,
+        LightState.red => AppColor.errorColor,
+        LightState.clear => AppColor.greyColor,
+      };
       return _StatusIndicatorData(
-        color: state.lightState == LightState.green
-            ? AppColor.successColor
-            : AppColor.errorColor,
-        tooltip: state.message ?? _defaultMessage(state.lightState),
+        color: color,
+        tooltip: _formatTooltip(
+          atSign,
+          state.message ?? _defaultMessage(state.lightState),
+        ),
       );
     }
 
@@ -50,11 +65,17 @@ class PolicyStatusLight extends StatelessWidget {
     );
   }
 
+  String _formatTooltip(String? atSign, String message) {
+    if (atSign == null || atSign.isEmpty) return message;
+    return '$atSign · $message';
+  }
+
   String _defaultMessage(LightState lightState) {
     return switch (lightState) {
       LightState.green => 'Heartbeat healthy',
+      LightState.yellow => 'Server version outdated',
       LightState.red => 'Heartbeat unavailable',
-      LightState.clear => 'Heartbeat unknown'
+      LightState.clear => 'Heartbeat unknown',
     };
   }
 }

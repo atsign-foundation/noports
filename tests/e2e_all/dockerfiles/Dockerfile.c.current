@@ -9,23 +9,21 @@ COPY . ${REPO_DIR}
 
 RUN set -eux ; \
     mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
-    apt-get update ; \
-    apt-get install -y gcc ; \
     cd ${REPO_DIR}/packages/c/sshnpd ; \
     rm -rf build ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv ./build/at_activate ${OUTPUT_DIR}/at_activate ; \
     mv ./build/sshnpd ${OUTPUT_DIR}/sshnpd ; \
     mv ./build/libsshnpd-lib.a ${OUTPUT_DIR}/libsshnpd-lib.a ; \
     cd ${REPO_DIR}/packages/c/srv ; \
     rm -rf build ; \
-    cmake -S . -B build -DCMAKE_C_COMPILER=gcc -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
+    cmake -S . -B build -DCMAKE_C_COMPILER=clang-19 -DATAUTH_BUILD_EXECUTABLES=OFF -DBUILD_SHARED_LIBS=off -DCMAKE_C_FLAGS="-Wno-error -pthread" ; \
     cmake --build build ; \
     mv build/srv ${OUTPUT_DIR}/srv
 
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:dedba9fdcca1c96c8dd9d0d3495b3c56fa0c49f68b2852ae745a1346c4e64ee2 AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:7f080bd057666a6ef7b3c60fea0e6a6c4ccf538f1538833a6d6fa1df93e57487 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}

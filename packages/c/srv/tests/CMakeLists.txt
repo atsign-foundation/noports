@@ -8,8 +8,10 @@ foreach(file ${files})
 
   add_executable(${filename} ${file})
   target_link_libraries(${filename} PRIVATE
-    srv_lib
-    atchops::atchops
+    srv-lib
+    argparse::argparse-static
+    atchops
+    atlogger
   )
   add_test(NAME ${filename} COMMAND $<TARGET_FILE:${filename}>)
 endforeach()

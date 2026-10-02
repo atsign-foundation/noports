@@ -1,0 +1,18 @@
+# Valgrind suppressions for known-benign allocations outside our control.
+# Used by the `just memcheck` target; pass to ad-hoc runs with
+#   valgrind --suppressions=valgrind.supp ...
+
+# glibc caches a parsed copy of /etc/resolv.conf the first time a process
+# calls getaddrinfo. There is no application-level API to release it and it
+# is reported as "definitely lost" on some glibc versions (one ~100 byte
+# block per process, does not grow with usage).
+{
+   glibc_resolv_conf_cache
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__libc_alloc_buffer_allocate
+   ...
+   fun:__resolv_conf_allocate
+   ...
+}

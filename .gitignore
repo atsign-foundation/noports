@@ -62,3 +62,7 @@ CLAUDE.md
 # Windows MSI stuff
 .wix
 
+# Test run-times
+npe2e_core_tests/
+npe2e_relay_tests/
+npe2e_policy_tests/
