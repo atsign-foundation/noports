@@ -864,7 +864,13 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     final RelayAuthVerifierESCR escr = RelayAuthVerifierESCR(tag, helper);
 
     final completer = Completer<(bool, Stream<Uint8List>?)>();
-    final sc = StreamController<Uint8List>();
+    // NOTE: pause/resume must reach the socket subscription, or a slow
+    // consumer leaves the post-auth bytes buffering here without bound.
+    late final StreamSubscription<Uint8List> subscription;
+    final sc = StreamController<Uint8List>(
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+    );
     final buffer = <int>[];
     bool authenticated = false;
 
@@ -995,7 +1001,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     // notification arrives) steer this in-flight detection.
     _resolveKnownMode = resolve;
 
-    socket.listen(
+    subscription = socket.listen(
       (Uint8List data) async {
         await mutex.acquire();
         try {

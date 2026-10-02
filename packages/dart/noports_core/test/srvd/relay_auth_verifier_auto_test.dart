@@ -37,6 +37,7 @@ String signLegacyPayload(AtChops atChops, Map payload) {
 MockSocket makeMockSocket({
   required List<String> written,
   required void Function(void Function(Uint8List) fn) onData,
+  StreamSubscription<Uint8List>? subscription,
 }) {
   final mockSocket = MockSocket();
   when(() => mockSocket.writeln(any())).thenAnswer((invocation) {
@@ -53,7 +54,7 @@ MockSocket makeMockSocket({
     ),
   ).thenAnswer((invocation) {
     onData(invocation.positionalArguments[0] as void Function(Uint8List));
-    return MockStreamSubscription<Uint8List>();
+    return subscription ?? MockStreamSubscription<Uint8List>();
   });
   return mockSocket;
 }
@@ -459,6 +460,45 @@ void main() {
         ),
       );
       expect((await f2).$1, true);
+    });
+
+    test('forwards pause and resume of the verified stream to the socket',
+        () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+
+      final socketSubscription = MockStreamSubscription<Uint8List>();
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: <String>[],
+        onData: (fn) => feed = fn,
+        subscription: socketSubscription,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        MockRelayAuthVerifyHelper(),
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+        publicKey: legacyPublicKey,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      feed(Uint8List.fromList(utf8.encode('$envelope\n')));
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+
+      final consumer = stream!.listen((_) {});
+      consumer.pause();
+      verify(() => socketSubscription.pause()).called(1);
+      consumer.resume();
+      verify(() => socketSubscription.resume()).called(1);
+      await consumer.cancel();
     });
   });
 }
