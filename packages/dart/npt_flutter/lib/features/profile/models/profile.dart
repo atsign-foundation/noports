@@ -171,8 +171,6 @@ final class Profile extends Loggable with Favoritable {
       localHost: localHost,
       rootDomain: rootDomain,
       only443: only443,
-      // When using 443, we must use ESCR relay auth mode
-      relayAuthMode: only443 ? RelayAuthMode.escr : RelayAuthMode.payload,
 
       // hardcoded for now, because it makes the app simpler
       // and there's very few use-cases where you wouldn't want these settings

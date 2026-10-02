@@ -43,6 +43,8 @@ mixin SrvdUtilMixin {
       switch (messageType) {
         case 'request_ports':
           return topic.split('.').length == 1;
+        case 'auth_modes':
+          return topic.split('.').length == 1;
         case 'sessions':
           final parts = topic.split('.');
           if (parts.length != 2) {
@@ -161,6 +163,9 @@ mixin SrvdUtilMixin {
           portB: portB,
           rvdNonce: sessionParams.rvdNonce,
           supportsEventLogging: true,
+          // This srvd auto-detects each socket's relay-auth mode per side, so
+          // clients may safely use their strongest mode independently.
+          autoDetectsRelayAuth: true,
         ),
       );
     } else {

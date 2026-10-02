@@ -27,6 +27,13 @@ abstract interface class ClientParams {
 
   RelayAuthMode get relayAuthMode;
 
+  /// Whether [relayAuthMode] was explicitly chosen by the caller (CLI flag,
+  /// config file, or API) rather than left at the default. When true the caller
+  /// is being prescriptive: the mode is forced on BOTH sides of the session and
+  /// the daemon is required to support it (an ESCR-incapable daemon is a
+  /// hard error) instead of the mode being softly negotiated per socket.
+  bool get relayAuthModeExplicit;
+
   bool get encryptRvdTraffic;
 
   String? get atKeysFilePath;
@@ -80,6 +87,9 @@ abstract class ClientParamsBase implements ClientParams {
   final RelayAuthMode relayAuthMode;
 
   @override
+  final bool relayAuthModeExplicit;
+
+  @override
   final bool encryptRvdTraffic;
 
   @override
@@ -121,6 +131,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
     required this.relayAuthMode,
+    this.relayAuthModeExplicit = false,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
     required this.only443,
@@ -135,12 +146,15 @@ abstract class ClientParamsBase implements ClientParams {
         ' when using the "${SshnpArg.only443Arg.name}" flag',
       );
     }
-    if (relayAuthMode == RelayAuthMode.escr &&
-        (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+    // The 443 single-port relay multiplexes both sides onto one port and
+    // identifies each from its authenticated payload, so both sides must
+    // authenticate. General ESCR sessions do NOT require this: the relay
+    // auto-detects and verifies each socket independently, so one side may
+    // authenticate with ESCR while the other does not authenticate at all.
+    if (only443 && (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
       throw ArgumentError(
-        'Both client and device need to authenticate to the'
-        ' relay when using'
-        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"',
+        'Both client and device must authenticate to the relay'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
       );
     }
   }
@@ -190,7 +204,8 @@ class NptParams extends ClientParamsBase
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = RelayAuthMode.payload,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
@@ -276,7 +291,8 @@ class SshnpParams extends ClientParamsBase
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
-    super.relayAuthMode = RelayAuthMode.payload,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
     super.only443 = false,
@@ -327,6 +343,10 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
       relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
+      // An explicitly-set mode in the incoming partial makes it prescriptive;
+      // otherwise inherit whatever the base params already resolved.
+      relayAuthModeExplicit:
+          params2.relayAuthMode != null || params1.relayAuthModeExplicit,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
@@ -385,7 +405,10 @@ class SshnpParams extends ClientParamsBase
       authenticateDeviceToRvd:
           partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
-      relayAuthMode: partial.relayAuthMode ?? RelayAuthMode.payload,
+      relayAuthMode: partial.relayAuthMode ?? DefaultArgs.relayAuthMode,
+      // A mode present in the partial came from a CLI flag or config file, so
+      // the caller chose it deliberately — treat it as prescriptive.
+      relayAuthModeExplicit: partial.relayAuthMode != null,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
@@ -441,6 +464,14 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
+      // Persist the relay-auth mode ONLY when it was explicitly chosen: the
+      // key's presence is what marks it prescriptive on reload (fromPartial
+      // derives relayAuthModeExplicit from it being non-null). Writing it
+      // unconditionally would silently make every saved config prescriptive;
+      // null is dropped by toConfigLines/round-trips as absent.
+      SshnpArg.relayAuthModeArg.name: relayAuthModeExplicit
+          ? relayAuthMode.name
+          : null,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),

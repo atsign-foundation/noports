@@ -242,6 +242,98 @@ void main() {
         );
       });
     }); // group Initialization
+
+    group('explicit-escr unreconcilable rejection', () {
+      // Runs the real SshnpCore.initialize() (via StubbedSshnp). The default
+      // mocks report the unreconcilable environment for explicit escr: a
+      // NON-auto-detecting relay (MockSrvdChannel.autoDetectsRelayAuth == false)
+      // and a NON-escr daemon (MockSshnpdChannel.daemonSupportsRelayAuthEscr ==
+      // false).
+      Future<void> runInit(SshnpParams params) {
+        when(() => mockAtClient.getPreferences()).thenReturn(null);
+        when(() => mockAtClient.setPreferences(any())).thenReturn(null);
+        final sshnpCore = StubbedSshnp(
+          atClient: mockAtClient,
+          params: params,
+          sshnpdChannel: mockSshnpdChannel,
+          srvdChannel: mockSrvdChannel,
+        );
+        sshnpCore.stubAsyncInitialization(
+          stubbedCallInitialization: stubbedCallInitialization,
+          stubbedInitialize: stubbedInitialize,
+          stubbedCompleteInitialization: stubbedCompleteInitialization,
+        );
+        whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
+        return sshnpCore.callInitialization();
+      }
+
+      SshnpParams paramsWith({
+        required RelayAuthMode relayAuthMode,
+        required bool relayAuthModeExplicit,
+        required bool authenticateDeviceToRvd,
+      }) => SshnpParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@srvd',
+        relayAuthMode: relayAuthMode,
+        relayAuthModeExplicit: relayAuthModeExplicit,
+        authenticateDeviceToRvd: authenticateDeviceToRvd,
+      );
+
+      test('aborts: explicit escr + non-auto-detecting relay + non-escr daemon '
+          '+ device authenticates', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          throwsA(isA<SshnpError>()),
+        );
+      });
+
+      test('does not abort: escr not explicit (graceful default)', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: false,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          completes,
+        );
+      });
+
+      test('does not abort: device does not authenticate to the relay',
+          () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: false,
+            ),
+          ),
+          completes,
+        );
+      });
+
+      test('does not abort: explicit payload', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.payload,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          completes,
+        );
+      });
+    }); // group explicit-escr unreconcilable rejection
   }); // group SshnpCore
 
   group('A group of tests related to sshnp', () {

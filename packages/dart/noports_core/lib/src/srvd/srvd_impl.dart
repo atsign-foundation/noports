@@ -46,6 +46,11 @@ class SrvdImpl
   final bool bind443;
   @override
   final int localBindPort443;
+
+  /// Window (ms) the auto-detecting relay auth verifiers wait for a connecting
+  /// side to speak (legacy) before assuming ESCR and issuing a challenge.
+  final int relayAuthDetectWindowMs;
+
   @override
   bool verbose = false;
 
@@ -70,6 +75,7 @@ class SrvdImpl
     required this.verbose,
     required this.bind443,
     required this.localBindPort443,
+    required this.relayAuthDetectWindowMs,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -118,6 +124,7 @@ class SrvdImpl
         verbose: p.verbose,
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
+        relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
       );
 
       if (p.verbose) {
@@ -197,6 +204,8 @@ class SrvdImpl
       switch (messageType) {
         case 'request_ports':
           return await handleRequestPorts(n);
+        case 'auth_modes':
+          return await handleAuthModes(n);
         case 'sessions':
           return await handleSessionMessages(topic, n);
         case 'discover_request':
@@ -399,6 +408,7 @@ class SrvdImpl
     sessions[sessionParams.sessionId] = SessionInfo(
       params: sessionParams,
       connector: null,
+      toWorker: ppiSendToSpawned,
     );
 
     var (portA, portB) = ports;
@@ -461,6 +471,79 @@ class SrvdImpl
       Future.delayed(
         Duration(seconds: 30),
       ).whenComplete(() => preFetched.remove(sessionParams.sessionId)),
+    );
+  }
+
+  /// A requesting client, having learnt (via the daemon ping) which relay-auth
+  /// mode each side of its session will use, sends this so the relay can skip
+  /// the auto-detect window (see [Srvd] / RelayAuthVerifierAuto). Best-effort:
+  /// if it arrives after a socket has already connected, that socket falls back
+  /// to auto-detect. Only the session's requester (side A) may send it.
+  ///
+  /// Several relay instances share this atSign and all receive this
+  /// notification, but only one is actually handling the session — the one
+  /// whose response the client accepted. We match on that response's [rvdNonce]
+  /// (unique per relay instance's response) so the others ignore it. (When the
+  /// client cannot handle multiple acks, only the mutex-winning relay records
+  /// the session at all, so this is a belt-and-braces check there.)
+  Future<void> handleAuthModes(AtNotification n) async {
+    if (n.value == null) {
+      logger.warning('Received auth_modes with empty value from ${n.from}');
+      return;
+    }
+    final Map decoded;
+    try {
+      decoded = jsonDecode(n.value!);
+    } catch (e) {
+      logger.warning('Malformed auth_modes request from ${n.from}: $e');
+      return;
+    }
+
+    final String? sessionId = decoded['sessionId'];
+    if (sessionId == null) {
+      logger.warning('auth_modes request from ${n.from} has no sessionId');
+      return;
+    }
+
+    final SessionInfo? si = sessions[sessionId];
+    if (si == null) {
+      logger.info('auth_modes: this relay does not know session $sessionId');
+      return;
+    }
+    if (n.from != si.params.atSignA) {
+      logger.shout(
+        'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
+        ' of session $sessionId',
+      );
+      return;
+    }
+    if (decoded['rvdNonce'] != si.params.rvdNonce) {
+      logger.info(
+        'auth_modes: rvdNonce (${decoded['rvdNonce']}) is not this relay\'s'
+        ' rvdNonce (${si.params.rvdNonce}) for $sessionId'
+        ' — another instance is handling it; ignoring',
+      );
+      return;
+    }
+
+    final SendPort? toWorker = si.toWorker;
+    if (toWorker == null) {
+      logger.info(
+        'auth_modes: no worker isolate for session $sessionId'
+        ' (only443 sessions do not auto-detect)',
+      );
+      return;
+    }
+
+    toWorker.send(
+      IIRequest.create('auth_modes', {
+        'sideA': decoded['sideA'],
+        'sideB': decoded['sideB'],
+      }),
+    );
+    logger.info(
+      'Forwarded definitive auth modes for $sessionId to worker:'
+      ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
     );
   }
 
@@ -615,6 +698,7 @@ class SrvdImpl
       BuildEnv.enableSnoop && logTraffic,
       verbose,
       sessionParams.sessionId,
+      relayAuthDetectWindowMs,
     );
 
     logger.info(
@@ -633,6 +717,7 @@ class SrvdImpl
         logTraffic: connectorParams.$2,
         verbose: connectorParams.$3,
         loggingTag: connectorParams.$4,
+        relayAuthDetectWindowMs: connectorParams.$5,
       );
 
       await worker.run();

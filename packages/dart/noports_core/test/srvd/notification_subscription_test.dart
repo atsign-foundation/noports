@@ -5,6 +5,8 @@ import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
+    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
@@ -73,6 +75,7 @@ void main() {
         verbose: false,
         bind443: false,
         localBindPort443: 443,
+        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       );
 
       // Create a stream controller to simulate the notification received from the sshnp
@@ -202,6 +205,7 @@ void main() {
           verbose: false,
           bind443: bind443,
           localBindPort443: localBindPort443,
+          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         );
       }
 

@@ -1,6 +1,7 @@
 import 'package:at_client/at_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/favorite/models/favoritable.dart';
+import 'package:noports_core/utils.dart' show DefaultArgs;
 import 'package:npt_flutter/features/profile/models/profile.dart';
 
 void main() {
@@ -307,6 +308,17 @@ void main() {
         );
 
         expect(nptParams.srvdAtSign, equals(fallbackRelayAtsign));
+      });
+
+      test('should leave the relay auth mode to the noports_core default', () {
+        final nptParams = testProfile.toNptParams(
+          clientAtsign: '@client'.toAtsign(),
+          rootDomain: 'test.domain.com',
+          fallbackRelayAtsign: '@fallback_relay'.toAtsign(),
+        );
+
+        expect(nptParams.relayAuthMode, equals(DefaultArgs.relayAuthMode));
+        expect(nptParams.relayAuthModeExplicit, isFalse);
       });
     });
 

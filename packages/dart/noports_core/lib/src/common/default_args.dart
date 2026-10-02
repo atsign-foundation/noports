@@ -23,7 +23,12 @@ class DefaultArgs {
   static const bool authenticateClientToRvd = true;
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
-  static const RelayAuthMode relayAuthMode = RelayAuthMode.payload;
+
+  /// Default relay auth mode. ESCR (the strongest) is the default: the relay
+  /// auto-detects each side's mode, so a client can use its best without
+  /// knowing the daemon's capabilities in advance. Legacy remains available as
+  /// an explicit override (`--relay-auth-mode payload`).
+  static const RelayAuthMode relayAuthMode = RelayAuthMode.escr;
 
   /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
