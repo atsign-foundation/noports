@@ -1,3 +1,7 @@
+## 1.9.5+32
+
+- FEAT: Connections use the stronger ESCR relay authentication wherever the relay and the device support it.
+
 ## 1.9.4+31
 
 - FIX: Merged run/stop action into status indicator for resize-friendly profile rows.
