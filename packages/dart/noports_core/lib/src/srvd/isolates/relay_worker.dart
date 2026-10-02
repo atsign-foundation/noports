@@ -99,11 +99,11 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   /// definitive auth-modes notification, which the worker feeds to each verifier
   /// via [setKnownMode] to skip the detection window.
   ///
-  /// A legacy socket needs the connecting atSign's public key. It is passed
-  /// through here if the request handler already fetched it (`publicKeyA/B`,
-  /// which only happens for an explicit legacy request); otherwise the auto
-  /// verifier looks it up lazily, and only if the socket does turn out to be
-  /// legacy — so ESCR sessions pay no public-key lookup.
+  /// A legacy socket needs the connecting atSign's public key. The request
+  /// handler fetches it up front (`publicKeyA/B`) whenever the request
+  /// declares the legacy mode, as clients do by default; when the request
+  /// declares ESCR, the auto verifier looks it up only if the socket turns out
+  /// to be legacy.
   Future<(RelayAuthVerifierAuto?, RelayAuthVerifierAuto?)> createAuthVerifiers(
     SrvdSessionParams params,
   ) async {

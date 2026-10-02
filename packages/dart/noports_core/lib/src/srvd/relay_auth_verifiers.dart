@@ -1070,15 +1070,27 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           mutex.release();
         }
       },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!sc.isClosed) {
-          sc.addError(error);
-          sc.close();
+      // NOTE: close through the mutex, behind any chunks still queued on it,
+      // or their bytes are dropped.
+      onError: (Object error, StackTrace stackTrace) async {
+        await mutex.acquire();
+        try {
+          if (!sc.isClosed) {
+            sc.addError(error);
+            unawaited(sc.close());
+          }
+        } finally {
+          mutex.release();
         }
       },
-      onDone: () {
-        if (!sc.isClosed) {
-          sc.close();
+      onDone: () async {
+        await mutex.acquire();
+        try {
+          if (!sc.isClosed) {
+            unawaited(sc.close());
+          }
+        } finally {
+          mutex.release();
         }
       },
     );

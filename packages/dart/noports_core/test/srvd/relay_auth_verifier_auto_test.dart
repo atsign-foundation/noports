@@ -32,11 +32,13 @@ String signLegacyPayload(AtChops atChops, Map payload) {
 }
 
 /// Wires up a [MockSocket] whose `writeln` calls are captured into [written],
-/// and whose `listen` handler is exposed via [onData] so the test can feed
-/// inbound bytes on demand.
+/// and whose `listen` handlers are exposed via [onData], [onDone] and
+/// [onError] so the test can feed inbound bytes, EOF and errors on demand.
 MockSocket makeMockSocket({
   required List<String> written,
   required void Function(void Function(Uint8List) fn) onData,
+  void Function(void Function() fn)? onDone,
+  void Function(void Function(Object, StackTrace) fn)? onError,
   StreamSubscription<Uint8List>? subscription,
 }) {
   final mockSocket = MockSocket();
@@ -54,6 +56,10 @@ MockSocket makeMockSocket({
     ),
   ).thenAnswer((invocation) {
     onData(invocation.positionalArguments[0] as void Function(Uint8List));
+    onDone?.call(invocation.namedArguments[#onDone] as void Function());
+    onError?.call(
+      invocation.namedArguments[#onError] as void Function(Object, StackTrace),
+    );
     return subscription ?? MockStreamSubscription<Uint8List>();
   });
   return mockSocket;
@@ -619,6 +625,104 @@ void main() {
         await collect(stream!, 26),
         [1, 2, 3, 4, 5, 6, ...trailing],
       );
+    });
+
+    test('EOF while the legacy key lookup is pending keeps the bytes before it',
+        () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+
+      final lookup = Completer<String>();
+      final helper = MockRelayAuthVerifyHelper();
+      when(
+        () => helper.lookup(sessionId, 'public:publickey@alice'),
+      ).thenAnswer((_) => lookup.future);
+
+      late void Function(Uint8List) feed;
+      late void Function() eof;
+      final mockSocket = makeMockSocket(
+        written: <String>[],
+        onData: (fn) => feed = fn,
+        onDone: (fn) => eof = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        helper,
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      feed(Uint8List.fromList([...utf8.encode('$envelope\n'), 1, 2, 3]));
+      feed(Uint8List.fromList([4, 5, 6]));
+      eof();
+      lookup.complete(legacyPublicKey);
+
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+      expect(
+        await stream!
+            .expand((chunk) => chunk)
+            .toList()
+            .timeout(const Duration(seconds: 1)),
+        [1, 2, 3, 4, 5, 6],
+      );
+    });
+
+    test('a socket error while the legacy key lookup is pending follows the '
+        'bytes before it', () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+
+      final lookup = Completer<String>();
+      final helper = MockRelayAuthVerifyHelper();
+      when(
+        () => helper.lookup(sessionId, 'public:publickey@alice'),
+      ).thenAnswer((_) => lookup.future);
+
+      late void Function(Uint8List) feed;
+      late void Function(Object, StackTrace) fail;
+      final mockSocket = makeMockSocket(
+        written: <String>[],
+        onData: (fn) => feed = fn,
+        onError: (fn) => fail = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        helper,
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      feed(Uint8List.fromList([...utf8.encode('$envelope\n'), 1, 2, 3]));
+      feed(Uint8List.fromList([4, 5, 6]));
+      fail(const SocketException('reset'), StackTrace.current);
+      lookup.complete(legacyPublicKey);
+
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+      final events = <Object>[];
+      final done = Completer<void>();
+      stream!.listen(
+        events.addAll,
+        onError: (Object e) => events.add('error'),
+        onDone: done.complete,
+      );
+      await done.future.timeout(const Duration(seconds: 1));
+      expect(events, [1, 2, 3, 4, 5, 6, 'error']);
     });
 
     test('structural: no await between authenticated=true and the residual '
