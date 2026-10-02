@@ -500,6 +500,107 @@ void main() {
       verify(() => socketSubscription.resume()).called(1);
       await consumer.cancel();
     });
+
+    test('LEGACY: residual bytes bundled with the envelope arrive before a '
+        'later chunk, in order', () async {
+      final rvdNonce = DateTime.now().toIso8601String();
+      final sessionId = Uuid().v4();
+      final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
+      final envelope = signLegacyPayload(atChops, payload);
+
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: <String>[],
+        onData: (fn) => feed = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        MockRelayAuthVerifyHelper(),
+        atSign: '@alice',
+        sessionId: sessionId,
+        dataToVerify: jsonEncode(payload),
+        rvdNonce: rvdNonce,
+        detectWindow: const Duration(seconds: 5),
+        publicKey: legacyPublicKey,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      // No `await` between the two chunks, so the second arrives while the
+      // first is still authenticating, as a legacy peer's data does.
+      feed(Uint8List.fromList([...utf8.encode('$envelope\n'), 1, 2, 3]));
+      feed(Uint8List.fromList([4, 5, 6]));
+
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+
+      final received = <int>[];
+      final sub = stream!.listen(received.addAll);
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+
+      expect(received, [1, 2, 3, 4, 5, 6]);
+    });
+
+    test('ESCR: residual bytes bundled with the response arrive before a '
+        'later chunk, in order', () async {
+      final fx = escrFixture();
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: written,
+        onData: (fn) => feed = fn,
+      );
+
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: fx.sessionId,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(written, hasLength(1));
+
+      final response = await fx.authenticator.responseToChallenge(written.first);
+      feed(Uint8List.fromList([...utf8.encode('$response\n'), 7, 8, 9]));
+      feed(Uint8List.fromList([10, 11, 12]));
+
+      final (authenticated, stream) = await resultFuture;
+      expect(authenticated, true);
+
+      final received = <int>[];
+      final sub = stream!.listen(received.addAll);
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+
+      expect(received, [7, 8, 9, 10, 11, 12]);
+    });
+
+    // The race the mutex-free fast path depends on can't be hit
+    // deterministically from outside, so pin its precondition directly.
+    test('structural: no await between authenticated=true and the residual '
+        'flush', () {
+      final source = File(
+        'lib/src/srvd/relay_auth_verifiers.dart',
+      ).readAsStringSync();
+      final autoSection = source.substring(
+        source.indexOf('class RelayAuthVerifierAuto'),
+      );
+      final flipIdx = autoSection.indexOf('authenticated = true;');
+      final flushIdx = autoSection.indexOf('if (buffer.isNotEmpty) {', flipIdx);
+      expect(flipIdx, greaterThan(-1));
+      expect(flushIdx, greaterThan(flipIdx));
+      expect(
+        autoSection.substring(flipIdx, flushIdx).contains('await'),
+        isFalse,
+      );
+    });
   });
 }
 

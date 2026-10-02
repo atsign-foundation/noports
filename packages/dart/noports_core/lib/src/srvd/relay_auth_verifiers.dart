@@ -1003,6 +1003,18 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
 
     subscription = socket.listen(
       (Uint8List data) async {
+        // NOTE: skipping the mutex is safe only while no `await` separates
+        // `authenticated = true` from the residual flush in completeSuccess.
+        if (authenticated) {
+          if (!sc.isClosed) {
+            try {
+              sc.add(data);
+            } catch (err) {
+              logger.shout('post-verify sc.add failed with $err');
+            }
+          }
+          return;
+        }
         await mutex.acquire();
         try {
           if (authenticated) {
