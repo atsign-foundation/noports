@@ -1,3 +1,20 @@
+# 6.16.0
+
+- feat: srvd detects each side's relay-auth mode (ESCR or legacy) per
+  connection, so the client and the daemon can each use the strongest one
+  they support. New `srvd --relay-auth-detect-window-ms` option (default 500).
+- feat: `relayAuthMode` now defaults to ESCR, used wherever the relay and the
+  daemon support it. Against an older relay both sides stay on legacy, so
+  daemons that predate ESCR keep working. An explicit `--relay-auth-mode escr`
+  forces ESCR wherever it can, and is refused up front when it can't (an
+  older relay with a daemon that predates ESCR). The full matrix is in
+  `docs/reference/relay-auth-modes.md`.
+- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
+  and `ClientParams` implementations must add `relayAuthModeExplicit`
+- fix: the two-port relay path issues a fresh ESCR challenge for every
+  connection, so a captured response can't be replayed onto a later
+  connection in the same session.
+
 # 6.15.0
 
 - feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed
@@ -58,35 +75,6 @@
 # 6.12.0
 
 - feat: npp policy next iteration
-- feat: the relay (srvd) now auto-detects each connecting side's relay-auth
-  mode (ESCR vs legacy) per socket, instead of being told a single mode for
-  the whole session. Against such a relay the client and daemon each use their
-  strongest relay auth independently. Adds the `srvd
-  --relay-auth-detect-window-ms` option (default 500). The relay skips the
-  detection window when a side's mode is declared up front via a definitive
-  auth-modes notification the client sends once it has the daemon ping response;
-  a side's mode is also memoised after its first connection authenticates, so
-  only the first connection of a session ever detects and every later connection
-  pair skips straight to the known mode. Auto-detect remains the fallback.
-  Rollout is progressive and safe: the relay advertises auto-detection in its
-  response (`autoDetectsRelayAuth`), and a client uses ESCR only against a relay
-  that advertises it — against an older relay (which applies one session-wide
-  mode to both sockets) both sides stay on legacy, so interoperability with
-  daemons that predate ESCR is preserved. Explicitly passing
-  `--relay-auth-mode escr` (CLI/config/API) forces ESCR wherever the path
-  supports it, including against an older relay when the daemon is ESCR-capable;
-  a daemon that cannot do ESCR degrades to legacy on its own side (which an
-  auto-detecting relay reconciles per socket). The one genuinely unreconcilable
-  case — explicit ESCR through a non-auto-detecting relay to a non-ESCR daemon —
-  is rejected up front with a clear error rather than failing mid-connect.
-- reference: `docs/reference/relay-auth-modes.md` documents the full matrix of
-  client request × relay × daemon and the resulting per-side modes.
-- fix: the two-port relay path issued one ESCR challenge per session and reused
-  it for every connection, so a captured challenge-response could be replayed
-  onto later connections of the same session. It now issues a fresh challenge
-  per connection (as the 443 single-port path already did), and
-  RelayAuthVerifierESCR is single-use so an instance cannot be reused across
-  connections.
 
 # 6.11.0
 
