@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_params.dart';
 import 'package:test/test.dart';
@@ -73,6 +75,24 @@ void main() {
       List<String> args = '-a @daemon -m @manager --strict'.split(' ');
       final p = await SshnpdParams.fromArgs(args);
       expect(p.strict, true);
+    });
+    test('legacy root-domain config key is still supported', () async {
+      final tempDir = await Directory.systemTemp.createTemp('sshnpd_params_test');
+      final configFile = File('${tempDir.path}/sshnpd.yaml');
+      await configFile.writeAsString('''
+atsign:
+  atsign: @daemon
+  root-domain: custom.root.test:64
+access:
+  managers:
+    - @manager
+''');
+      try {
+        final p = await SshnpdParams.fromArgs(['--config', configFile.path]);
+        expect(p.rootDomain, 'custom.root.test:64');
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
     });
     // TODO add unit tests for other mildly complicated options
     // device
