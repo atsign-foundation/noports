@@ -81,6 +81,22 @@ void assertNullOrValidValue(String name, dynamic v, Type t) {
   }
 }
 
+final RegExp _uuidPattern = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
+/// Returns true if [v] is a session id: a String holding a UUID in its
+/// 8-4-4-4-12 hexadecimal form, which is how clients generate them.
+bool isValidSessionId(dynamic v) => v is String && _uuidPattern.hasMatch(v);
+
+/// Throws an [ArgumentError] unless [v] is a session id as defined by
+/// [isValidSessionId].
+void assertValidSessionId(dynamic v) {
+  if (!isValidSessionId(v)) {
+    throw ArgumentError.value(v, 'sessionId', 'must be a UUID');
+  }
+}
+
 /// Assert that the value for key k in Map m is non-null and is of Type t.
 /// Throws an ArgumentError if the value is null, or is not of Type t.
 void assertValidMapValue(Map m, String k, Type t) {

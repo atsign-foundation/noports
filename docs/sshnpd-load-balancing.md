@@ -29,6 +29,7 @@ For each session-based request, a mutex key is generated using the pattern:
 ### Session ID Extraction
 - **ssh_request/npt_request**: Session ID is extracted from the JSON payload
 - **Legacy sshd**: Session ID is extracted from the space-separated payload (5th parameter for sshnp >=2.0.0 clients) or generated using notification ID for older clients
+- A session ID the client supplies must be a UUID. A request whose session ID is missing or isn't a UUID is refused before the mutex is attempted; a legacy `sshd` request from a client too old to send one is the only request without one that proceeds
 
 ### Supported Request Types
 - `ssh_request` - Modern SSH connection requests
@@ -45,20 +46,21 @@ Requests that don't have sessions (like `ping`, `sshpublickey`, `privatekey`) ar
 - `extractSessionId()`: Extracts session ID from different notification formats
 
 ### Error Handling
-- If session ID extraction fails, the request proceeds without mutex for backward compatibility
+- If the session ID can't be extracted, or isn't a UUID, the request is refused and logged at warning, before the mutex is attempted
 - If mutex acquisition fails due to non-immutable errors, the request proceeds to maintain functionality
 - Only immutable key errors trigger request rejection
 
 ### Logging
 - Successful mutex acquisition: `😎 Will handle {type} request from {client}; acquired mutex {key}`
 - Failed mutex acquisition: `🤷‍♂️ Will not handle {type} request from {client}; did not acquire session mutex (another sshnpd instance will handle this)`
+- Refused request: `Refusing {type} request {notification id} from {client}: its sessionId is missing or not a UUID`
 
 ## Benefits
 
 1. **Load Balancing**: Multiple sshnpd instances can share the load automatically
 2. **Redundancy**: If one instance fails, others can take over new sessions
 3. **No Configuration Changes**: Existing clients work without modification
-4. **Backward Compatibility**: Graceful degradation for older clients or parsing errors
+4. **Backward Compatibility**: Graceful degradation for older clients
 
 ## Testing
 
@@ -66,6 +68,7 @@ Unit tests verify:
 - Session ID extraction from various notification formats
 - Mutex acquisition success and failure scenarios
 - Graceful handling of malformed notifications
+- Refusal, before the mutex, of a session ID which is missing or isn't a UUID
 - Backward compatibility behavior
 
 ## Usage

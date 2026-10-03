@@ -204,6 +204,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     }
   }
 
+  /// Removes the key [authorizePublicKey] added for [sessionId]: every
+  /// `authorized_keys` line ending in exactly ` sshnp_ephemeral_<sessionId>`.
   Future<void> deauthorizePublicKey(String sessionId) async {
     try {
       final File file = fs.file(
@@ -212,7 +214,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       // read into List of strings
       final List<String> lines = await file.readAsLines();
       // find the line we want to remove
-      lines.removeWhere((element) => element.contains(sessionId));
+      lines.removeWhere(
+        (element) => element.endsWith(' sshnp_ephemeral_$sessionId'),
+      );
       // Write back the file and add a \n
       await file.writeAsString(lines.join('\n'));
       await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
