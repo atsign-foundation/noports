@@ -1,8 +1,9 @@
 # 6.16.0
 
 - build: depends on the at_client_sdk release candidates: at_client
-  3.15.0-rc1, at_auth 4.0.0-rc2, at_lookup 3.7.0-rc2, at_cli_commons
-  3.1.2-rc1 and at_onboarding_cli 2.0.0-rc2
+  3.15.0-rc3, at_auth 4.0.0-rc3, at_lookup 3.7.0-rc3, at_cli_commons
+  3.1.2-rc2 and at_onboarding_cli 2.0.0-rc3, plus at_commons 5.18.0 and
+  at_utils 3.4.1
 - **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`
