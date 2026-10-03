@@ -1,6 +1,5 @@
 import 'dart:io';
 
-
 class ServiceExitInfo {
   final int exitCode;
   final String result;
@@ -16,7 +15,6 @@ class ServiceExitInfo {
 
   bool get hasFailed => exitCode > 0 || activeState == 'failed';
 }
-
 
 /// Abstract class defining platform-specific operations
 abstract class PlatformUtils {
@@ -46,7 +44,6 @@ abstract class PlatformUtils {
   /// User Home Directory
   String get homeDirectory;
 
-
   /// Check if a command is available (e.g. 'curl', 'ssh')
   Future<bool> isCommandAvailable(String command);
 
@@ -55,7 +52,7 @@ abstract class PlatformUtils {
 
   /// Get list of potential config file paths
   List<String> getPotentialConfigPaths();
-  
+
   /// Check if the service is installed/registered
   Future<bool> isServiceInstalled(String serviceName);
 
@@ -73,6 +70,14 @@ abstract class PlatformUtils {
   /// Get structured exit info for the service (exit code, result, states).
   /// Returns defaults if not applicable on this platform.
   Future<ServiceExitInfo> getServiceExitInfo(String serviceName);
+
+  /// Detects if a package was installed via a system package manager.
+  /// Returns the recommended update command, or null if not package-managed.
+  Future<String?> detectPackageManagerInstall(String packageName);
+
+  /// Returns platform-specific advice for installing/updating the package
+  /// when it was NOT installed via a detected package manager.
+  Future<String> getRecommendedInstallAdvice(String packageName);
 }
 
 /// MacOS Implementation
@@ -91,16 +96,13 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    
     final result = await Process.run('pgrep', ['-f', processName]);
     return result.exitCode == 0;
   }
 
   @override
   List<String> getPotentialConfigPaths() {
-    return [
-        '$homeDirectory/Library/LaunchAgents/com.atsign.sshnpd.plist'
-    ];
+    return ['$homeDirectory/Library/LaunchAgents/com.atsign.sshnpd.plist'];
   }
 
   @override
@@ -131,13 +133,15 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    
     try {
       final result = await Process.run('log', [
-        'show', 
-        '--predicate', 'process CONTAINS "$serviceName"', 
-        '--last', '10m',
-        '--style', 'syslog'
+        'show',
+        '--predicate',
+        'process CONTAINS "$serviceName"',
+        '--last',
+        '10m',
+        '--style',
+        'syslog',
       ]);
       if (result.exitCode != 0) {
         return 'Error fetching logs: ${result.stderr}';
@@ -160,10 +164,10 @@ class MacOSUtils implements PlatformUtils {
   @override
   Future<String> getAtKeys(String content) async {
     var atkeys = content
-              .split('\n')
-              .where((line) => line.contains('@'))
-              .map((l) => l.trim())
-              .join(', ');
+        .split('\n')
+        .where((line) => line.contains('@'))
+        .map((l) => l.trim())
+        .join(', ');
     atkeys = atkeys.replaceAll('<string>', '').replaceAll('</string>', '');
     return atkeys;
   }
@@ -174,7 +178,7 @@ class MacOSUtils implements PlatformUtils {
       final listResult = await Process.run('launchctl', ['list']);
       final lines = listResult.stdout.toString().split('\n');
       String? actualLabel;
-      
+
       for (var line in lines) {
         if (line.contains(serviceName)) {
           final parts = line.trim().split(RegExp(r'\s+'));
@@ -189,8 +193,10 @@ class MacOSUtils implements PlatformUtils {
 
       final result = await Process.run('launchctl', ['list', actualLabel]);
       final output = result.stdout.toString();
-      
-      final exitMatch = RegExp(r'"LastExitStatus"\s*=\s*(\d+);').firstMatch(output);
+
+      final exitMatch = RegExp(
+        r'"LastExitStatus"\s*=\s*(\d+);',
+      ).firstMatch(output);
       int exitCode = -1;
       if (exitMatch != null) {
         exitCode = int.tryParse(exitMatch.group(1)!) ?? -1;
@@ -219,6 +225,30 @@ class MacOSUtils implements PlatformUtils {
       return ServiceExitInfo();
     }
   }
+
+  @override
+  Future<String?> detectPackageManagerInstall(String packageName) async {
+    // Check Homebrew
+    try {
+      final brew = await Process.run('brew', ['list', packageName]);
+      if (brew.exitCode == 0) {
+        return 'brew upgrade $packageName';
+      }
+    } catch (_) {
+      // brew not available
+    }
+
+    return null;
+  }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
+    return 'Install or update via Homebrew:\n'
+        'brew tap atsign-foundation/homebrew-tap\n'
+        'brew install $packageName\n'
+        '\n'
+        ' If already tapped: brew upgrade $packageName';
+  }
 }
 
 /// Linux Implementation (Very similar to MacOS)
@@ -244,15 +274,16 @@ class LinuxUtils implements PlatformUtils {
 
   @override
   List<String> getPotentialConfigPaths() {
-    return [
-      '/etc/systemd/system/sshnpd.service.d/override.conf'
-    ];
+    return ['/etc/systemd/system/sshnpd.service.d/override.conf'];
   }
 
   @override
   Future<bool> isServiceInstalled(String serviceName) async {
     // systemctl list-unit-files | grep serviceName
-    final result = await Process.run('systemctl', ['list-unit-files', '$serviceName.service']);
+    final result = await Process.run('systemctl', [
+      'list-unit-files',
+      '$serviceName.service',
+    ]);
     return result.stdout.toString().contains('$serviceName.service');
   }
 
@@ -272,7 +303,7 @@ class LinuxUtils implements PlatformUtils {
         '$serviceName.service',
         '-n',
         '$lines',
-        '--no-pager'
+        '--no-pager',
       ]);
       if (result.exitCode != 0) {
         return 'Error fetching logs: ${result.stderr}';
@@ -292,6 +323,7 @@ class LinuxUtils implements PlatformUtils {
     if (arch.startsWith('arm')) return 'arm';
     return arch;
   }
+
   @override
   Future<String> getAtKeys(String content) async {
     final quoteRegex = RegExp(r'"([^"]*)"');
@@ -331,6 +363,103 @@ class LinuxUtils implements PlatformUtils {
       return ServiceExitInfo();
     }
   }
+
+  @override
+  Future<String?> detectPackageManagerInstall(String packageName) async {
+    // Check dpkg (Debian/Ubuntu)
+    try {
+      final dpkg = await Process.run('dpkg', ['-s', packageName]);
+      if (dpkg.exitCode == 0 &&
+          dpkg.stdout.toString().contains('Status: install ok installed')) {
+        return 'sudo apt update && sudo apt upgrade $packageName';
+      }
+    } catch (_) {
+      // dpkg not available — not a Debian-based system
+    }
+
+    // Check rpm (RHEL/Fedora/SUSE)
+    try {
+      final rpm = await Process.run('rpm', ['-q', packageName]);
+      if (rpm.exitCode == 0) {
+        // Determine whether to use dnf or yum
+        final dnfCheck = await Process.run('which', ['dnf']);
+        if (dnfCheck.exitCode == 0) {
+          return 'sudo dnf upgrade $packageName';
+        }
+        return 'sudo yum update $packageName';
+      }
+    } catch (_) {
+      // rpm not available — not an RPM-based system
+    }
+
+    // Check apk (OpenWrt 25.12+ / Alpine)
+    // On OpenWrt the C implementation is packaged as 'csshnpd'
+    final apkNames = [packageName, 'csshnpd'];
+    try {
+      for (final name in apkNames) {
+        final apk = await Process.run('apk', ['info', '-e', name]);
+        if (apk.exitCode == 0 && apk.stdout.toString().trim().isNotEmpty) {
+          return 'apk update && apk upgrade $name';
+        }
+      }
+    } catch (_) {
+      // apk not available
+    }
+
+    // Check opkg (OpenWrt 24.10 and older) — same candidate names as apk
+    try {
+      for (final name in apkNames) {
+        final opkg = await Process.run('opkg', ['status', name]);
+        if (opkg.exitCode == 0 &&
+            opkg.stdout.toString().contains('Status: install')) {
+          return 'opkg update && opkg upgrade $name';
+        }
+      }
+    } catch (_) {
+      // opkg not available
+    }
+
+    return null;
+  }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
+    // Detect which package manager is available on the system
+    try {
+      final aptCheck = await Process.run('which', ['apt']);
+      if (aptCheck.exitCode == 0) {
+        return 'Install via apt (requires repo setup):\n'
+            'sudo apt update && sudo apt install -y $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#apt-package';
+      }
+    } catch (_) {}
+
+    try {
+      final dnfCheck = await Process.run('which', ['dnf']);
+      if (dnfCheck.exitCode == 0) {
+        return 'Install via dnf (requires repo setup):\n'
+            'sudo dnf install $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#rpm-package';
+      }
+    } catch (_) {}
+
+    try {
+      final yumCheck = await Process.run('which', ['yum']);
+      if (yumCheck.exitCode == 0) {
+        return 'Install via yum (requires repo setup):\n'
+            'sudo yum install $packageName\n'
+            '\n'
+            ' If the noports repo is not yet configured, see:\n'
+            ' https://docs.noports.com/installation/advanced-installation-guides#rpm-package';
+      }
+    } catch (_) {}
+
+    return 'Please visit https://docs.noports.com/installation/advanced-installation-guides for installation instructions.';
+  }
 }
 
 /// Windows Implementation
@@ -352,18 +481,21 @@ class WindowsUtils implements PlatformUtils {
   Future<bool> isProcessRunning(String processName) async {
     // tasklist /FI "IMAGENAME eq sshnpd.exe"
     // Note: Windows processes usually have .exe extension
-    String actualName = processName.endsWith('.exe') ? processName : '$processName.exe';
-    
-    final result = await Process.run('tasklist', ['/FI', 'IMAGENAME eq $actualName']);
+    String actualName = processName.endsWith('.exe')
+        ? processName
+        : '$processName.exe';
+
+    final result = await Process.run('tasklist', [
+      '/FI',
+      'IMAGENAME eq $actualName',
+    ]);
     // tasklist always returns 0 even if not found, so we check stdout
     return result.stdout.toString().contains(actualName);
   }
 
   @override
   List<String> getPotentialConfigPaths() {
-    return [
-      r'C:\ProgramData\NoPorts\sshnpd.yaml',
-    ];
+    return [r'C:\ProgramData\NoPorts\sshnpd.yaml'];
   }
 
   @override
@@ -414,6 +546,7 @@ class WindowsUtils implements PlatformUtils {
     if (arch == 'ARM64') return 'arm64';
     return arch;
   }
+
   @override
   Future<String> getAtKeys(String content) async {
     final quoteRegex = RegExp(r"'([^']*)'");
@@ -435,14 +568,18 @@ class WindowsUtils implements PlatformUtils {
       final output = result.stdout.toString();
 
       int exitCode = -1;
-      
-      final win32Match = RegExp(r'WIN32_EXIT_CODE\s*:\s*(\d+)').firstMatch(output);
-      final serviceMatch = RegExp(r'SERVICE_EXIT_CODE\s*:\s*(\d+)').firstMatch(output);
-      
+
+      final win32Match = RegExp(
+        r'WIN32_EXIT_CODE\s*:\s*(\d+)',
+      ).firstMatch(output);
+      final serviceMatch = RegExp(
+        r'SERVICE_EXIT_CODE\s*:\s*(\d+)',
+      ).firstMatch(output);
+
       if (win32Match != null) {
         exitCode = int.tryParse(win32Match.group(1)!) ?? -1;
       }
-      if (exitCode == 1066 && serviceMatch != null) { 
+      if (exitCode == 1066 && serviceMatch != null) {
         exitCode = int.tryParse(serviceMatch.group(1)!) ?? exitCode;
       }
 
@@ -463,5 +600,15 @@ class WindowsUtils implements PlatformUtils {
       return ServiceExitInfo();
     }
   }
-}
 
+  @override
+  Future<String?> detectPackageManagerInstall(String packageName) async {
+    return null;
+  }
+
+  @override
+  Future<String> getRecommendedInstallAdvice(String packageName) async {
+    return 'Please download and run the MSI installer from:\n'
+        '   https://github.com/atsign-foundation/noports/releases/latest\n';
+  }
+}
