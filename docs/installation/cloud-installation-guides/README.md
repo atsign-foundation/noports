@@ -1,6 +1,24 @@
 ---
 description: How to install NoPorts as part of creating a new VM
 icon: cloud
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Cloud Installation Guides
@@ -33,7 +51,7 @@ chown -R ${USER}:${USER} /home/${USER}/.atsign
 
 Some clouds, such as Azure and Oracle Cloud will take the script pretty much as presented above. Other clouds, including AWS and GCP need alternate formatting or additional customisation.
 
-In all cases the variables in the first section of the script should be changed to match the atSigns being used, the desired device name, the Linux username and the one time password (OTP) or semi-permanent passcode (SPP) being used. e.g.:
+In all cases the variables in the first section of the script should be changed to match the Atsigns being used, the desired device name, the Linux username and the one time password (OTP) or semi-permanent passcode (SPP) being used. e.g.:
 
 ```bash
 #!/bin/bash

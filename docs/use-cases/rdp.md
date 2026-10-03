@@ -7,6 +7,15 @@ icon: desktop
 
 # RDP
 
+### Prerequisites
+
+Before continuing, make sure that the following steps have been completed:
+
+* NoPorts has been installed on both machines.
+* Your NoPorts Atsigns are activated, and the associated keys are saved locally.
+
+If you haven’t completed these steps, follow the appropriate installation guide on the [Installation Instructions](../installation/) page, then return here once finished.
+
 ### Command Line
 
 The command should look like:
@@ -36,9 +45,10 @@ When using the NoPorts desktop application, your connection profile should look 
 |                   |                   |
 | ----------------- | ----------------- |
 | **Profile Name**  | My RDP Connection |
-| **Device atSign** | @alice\_device    |
+| **Device Atsign** | @alice\_device    |
 | **Device Name**   | my\_server        |
 | **Relay**         | @rv\_am           |
 | **Local Port**    | 33389             |
-| **Remote Host**   | localhost         |
+| **Local Host**    | localhost         |
+| **Remote Host**   |                   |
 | **Remote Port**   | 3389              |

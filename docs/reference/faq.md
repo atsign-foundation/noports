@@ -1,6 +1,24 @@
 ---
 description: Common questions about NoPorts
 icon: comments-question-check
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Frequently Asked Questions
@@ -140,8 +158,7 @@ These warnings occur because each time you SSH into a machine, you’re connecti
 You can address this issue with one of two approaches:
 
 1. Assign a Fixed Local Port – By default, each session is assigned a random local port. To prevent mismatches, you can manually specify a static local port for each machine using the -l \<port number> option.
-
-2) Trust NoPorts for Keys and Adjust SSH Config – You can update your SSH configuration (\~/.ssh/config) to disable strict host key checking for localhost sessions:
+2. Trust NoPorts for Keys and Adjust SSH Config – You can update your SSH configuration (\~/.ssh/config) to disable strict host key checking for localhost sessions:
 
 ```
 Host 127.0.0.1
@@ -207,7 +224,7 @@ SELinux does not affect them, as these components operate in user space. That sa
 
 <details>
 
-<summary>During the Startup Phase, the relay and npt handshake with their respective atSign services. Does npt on the client also handshake with its atSign service once at boot, or on each SSH initiation?</summary>
+<summary>During the Startup Phase, the relay and npt handshake with their respective Atsign services. Does npt on the client also handshake with its Atsign service once at boot, or on each SSH initiation?</summary>
 
 The sshnpd maintains a persistent connection to its atServer. Other interactions are event-driven.
 
@@ -248,40 +265,6 @@ For this method to work, you need a clean login, meaning SSH keys must be proper
 <summary>So, you can SSH without any open ports... what about RDP?</summary>
 
 You can use NoPorts Tunnel for RDP. [This guide](../use-cases/rdp.md) demonstrates how.&#x20;
-
-</details>
-
-### The NoPorts Desktop Application
-
-<details>
-
-<summary>What should I enter when creating a profile in the NoPorts desktop application?</summary>
-
-A profile in NoPorts is a collection of saved settings that lets you quickly connect to your remote device. When setting one up, you’ll need to provide a few details—here are some examples of what you might enter:
-
-### **RDP Example**
-
-|                   |                   |
-| ----------------- | ----------------- |
-| **Profile Name**  | My RDP Connection |
-| **Device atSign** | @alice\_device    |
-| **Device Name**   | my\_server        |
-| **Relay**         | @rv\_am           |
-| **Local Port**    | 33389             |
-| **Remote Host**   | localhost         |
-| **Remote Port**   | 3389              |
-
-### **SFTP Example**
-
-|                   |                    |
-| ----------------- | ------------------ |
-| **Profile Name**  | My SFTP Connection |
-| **Device atSign** | @alice\_device     |
-| **Device Name**   | my\_server         |
-| **Relay**         | @rv\_am            |
-| **Local Port**    | 2222               |
-| **Remote Host**   | localhost          |
-| **Remote Port**   | 22                 |
 
 </details>
 

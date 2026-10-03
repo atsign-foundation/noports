@@ -1,6 +1,24 @@
 ---
 description: How to deploy NoPorts on Google Cloud Platform using a cloud-init script
 icon: google
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Automated Installation on Google Cloud Platform (GCP)

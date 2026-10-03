@@ -1,6 +1,24 @@
 ---
 description: NoPorts client `sshnp` additional configuration
 icon: gear-complex-code
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: true
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: false
+  metadata:
+    visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Client Additional Configuration
@@ -9,7 +27,7 @@ icon: gear-complex-code
 
 ### -k, --key-file
 
-Specify the `.atKeys` file for the `-f, --from` atSign if it's not stored in \~/.atsign/keys
+Specify the `.atKeys` file for the `-f, --from` Atsign if it's not stored in \~/.atsign/keys
 
 ### -v, --verbose
 
