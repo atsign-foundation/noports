@@ -1,6 +1,9 @@
 import 'package:noports_core/utils.dart';
 import 'package:at_commons/atsign.dart';
 
+/// The payload of a client's `ssh_request` notification to a daemon.
+/// Construction throws an [ArgumentError] if a field is invalid, including a
+/// [sessionId] which is not a UUID.
 class SshnpSessionRequest {
   final bool direct;
   final String sessionId;
@@ -41,9 +44,8 @@ class SshnpSessionRequest {
     required this.twinKeys,
     required this.relayAtsign,
   }) {
-    // Assertions originally from Sshnpd
     // sessionId, host (of the rvd) and port (of the rvd) are required.
-    assertValidValue('sessionId', sessionId, String);
+    assertValidSessionId(sessionId);
     assertValidValue('host', host, String);
     assertValidValue('port', port, int);
 
@@ -110,6 +112,8 @@ class SshnpSessionRequest {
   };
 }
 
+/// The payload of a client's `npt_request` notification to a daemon.
+/// Construction throws an [ArgumentError] if [sessionId] is not a UUID.
 class NptSessionRequest {
   static const int defaultTimeout = 1000 * 60;
   final String sessionId;
@@ -146,7 +150,9 @@ class NptSessionRequest {
     required this.timeout,
     required this.twinKeys,
     required this.relayAtsign,
-  });
+  }) {
+    assertValidSessionId(sessionId);
+  }
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
     return NptSessionRequest(
