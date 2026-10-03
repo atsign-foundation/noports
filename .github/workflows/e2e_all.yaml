@@ -23,6 +23,7 @@ jobs:
       ${{ github.event.pull_request.head.repo.fork == false &&
       github.actor != 'dependabot[bot]'}}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -102,6 +103,7 @@ jobs:
       'dependabot[bot]'}}
     name: npe2e (core_tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -176,6 +178,7 @@ jobs:
       'dependabot[bot]'}}
     name: npe2e (policy_tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -267,6 +270,7 @@ jobs:
       'dependabot[bot]'}}
     name: npe2e (relay_tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     concurrency:
       group: npe2e-relay-atsigns
       cancel-in-progress: false
