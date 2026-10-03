@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "2.13.1"
   at_auth:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: at_auth
       sha256: "5813a8ace3d15102db3eb9ae733c419bc47638d550e2ee2140b82de5f55c947b"
@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: at_chops
       sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
@@ -563,6 +563,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.14.4"
+  flutter_lints:
+    dependency: "direct dev"
+    description:
+      name: flutter_lints
+      sha256: "3105dc8492f6183fb076ccf1f351ac3d60564bff92e20bfc4af9cc1651f4e7e1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   flutter_localizations:
     dependency: "direct main"
     description: flutter
@@ -780,6 +788,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  lints:
+    dependency: transitive
+    description:
+      name: lints
+      sha256: "12f842a479589fea194fe5c5a3095abc7be0c1f2ddfa9a0e76aed1dbd26a87df"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   logging:
     dependency: transitive
     description:
@@ -813,7 +829,7 @@ packages:
     source: hosted
     version: "0.1.1"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
@@ -1482,7 +1498,7 @@ packages:
     source: hosted
     version: "2.4.2"
   version:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: version
       sha256: "3d4140128e6ea10d83da32fef2fa4003fccbf6852217bb854845802f04191f94"

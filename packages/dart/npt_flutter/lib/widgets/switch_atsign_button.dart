@@ -86,16 +86,24 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
   if (selection == null) return; // User cancelled;
 
   // Step 2: Check for connected profiles
+  if (!context.mounted) return;
   if (!await _checkAndHandleConnectedProfiles(context)) return;
 
   // Step 3: Handle the selection
-  await _handleSelection(context, selection, strings);
+  if (selection == strings.signout) {
+    await _handleSignout();
+  } else if (selection == strings.addAtsign) {
+    await _handleAddAtsign();
+  } else {
+    await _handleSwitchToAtsign(selection.toAtsign());
+  }
 }
 
 /// Shows the atsign menu and returns the selected option
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
   final atsignList = await KeychainStorage().getAllAtsigns();
+  if (!context.mounted) return null;
 
   final result = await showMenu<String?>(
     context: context,
@@ -158,26 +166,13 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
       true; // Invert because dialog returns true when profiles are connected
 }
 
-/// Handles the menu selection (signout, add atsign, or switch)
-Future<void> _handleSelection(
-  BuildContext context,
-  String selection,
-  AppLocalizations strings,
-) async {
-  if (selection == strings.signout) {
-    await _handleSignout(context);
-  } else if (selection == strings.addAtsign) {
-    await _handleAddAtsign(context);
-  } else {
-    await _handleSwitchToAtsign(context, selection.toAtsign());
-  }
-}
-
 /// Handles the signout flow
-Future<void> _handleSignout(BuildContext context) async {
+Future<void> _handleSignout() async {
   // A full signout starts over on the Connections tab, unlike an atsign
   // switch which keeps the currently selected tab.
-  context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
+  App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
+    HomeRoutes.dashboard,
+  );
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
     (route) => false,
@@ -185,18 +180,13 @@ Future<void> _handleSignout(BuildContext context) async {
 
   await preSignout();
 
-  if (context.mounted) {
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
-  }
+  Navigator.of(
+    App.navState.currentContext!,
+  ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
 }
 
 /// Handles adding a new atsign
-Future<void> _handleAddAtsign(BuildContext context) async {
-  final options = await getAtsignEntries();
-
+Future<void> _handleAddAtsign() async {
   // Store the current atsign before showing the dialog
 
   final originalAtsign = App.navState.currentContext!
@@ -327,15 +317,13 @@ Future<void> _handleAddAtsign(BuildContext context) async {
 }
 
 /// Handles switching to an existing atsign
-Future<void> _handleSwitchToAtsign(
-  BuildContext context,
-  Atsign targetAtsign,
-) async {
+Future<void> _handleSwitchToAtsign(Atsign targetAtsign) async {
   await preSignout();
 
   log('switching to atsign: $targetAtsign');
 
   final currentContext = App.navState.currentContext!;
+  if (!currentContext.mounted) return;
   await _performOnboarding(currentContext, targetAtsign);
 }
 

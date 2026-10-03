@@ -117,14 +117,16 @@ class ProfileFormView extends StatelessWidget {
                                   width: Sizes.p743,
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      if (!formkey.currentState!.validate())
+                                      if (!formkey.currentState!.validate()) {
                                         return;
+                                      }
 
                                       var localBloc = context
                                           .read<ProfileBloc>();
                                       if (localBloc.state
-                                          is! ProfileLoadedState)
+                                          is! ProfileLoadedState) {
                                         return;
+                                      }
 
                                       /// Now take the localBloc and upload it back to the global bloc
                                       context

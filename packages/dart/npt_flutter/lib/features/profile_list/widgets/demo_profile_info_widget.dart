@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
@@ -50,6 +51,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
+              final navigator = Navigator.of(context, rootNavigator: true);
               // Show a progress indicator before fetching the demo profile
               showDialog(
                 context: context,
@@ -57,11 +59,15 @@ class DemoProfileInfoWidget extends StatelessWidget {
                 builder: (context) =>
                     const Center(child: CircularProgressIndicator()),
               );
-              final content = await Export.getDemoProfile();
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pop(); // Dismiss the progress indicator
+              final String content;
+              try {
+                content = await Export.getDemoProfile();
+              } catch (e) {
+                App.log('Could not load the demo profile: $e'.loggable);
+                return;
+              } finally {
+                navigator.pop(); // Dismiss the progress indicator
+              }
               Export.convertExternalDataSourceToProfile(
                 fileType: ExportableProfileFiletype.json,
                 contents: content,

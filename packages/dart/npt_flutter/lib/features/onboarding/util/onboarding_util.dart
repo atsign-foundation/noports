@@ -110,6 +110,7 @@ class NoPortsOnboardingUtil {
         if (!context.mounted) return null;
         try {
           final retry = await checkAtServer(atsign);
+          if (!context.mounted) return null;
           if (retry.state == AtSignServerState.activated) {
             result = await _handleActivatedAtsign(
               context: context,
@@ -320,8 +321,9 @@ class NoPortsOnboardingUtil {
 
     if (options.isEmpty) {
       atsign = null;
-    } else
+    } else {
       atsign ??= options.keys.first.toAtsign();
+    }
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
@@ -351,6 +353,7 @@ class NoPortsOnboardingUtil {
     NoPortsOnboardingResult? onboardingResult;
 
     if (!context.mounted) return;
+    final strings = AppLocalizations.of(context)!;
 
     if (atsigns.contains(atsign)) {
       Object? authFailure;
@@ -365,9 +368,7 @@ class NoPortsOnboardingUtil {
         if (state.isRefused) {
           await client.stop();
           revokedByServer = state.cause == AtConnectionCause.revoked;
-          authFailure =
-              state.error ??
-              AppLocalizations.of(context)!.errorAuthenticatinFailed;
+          authFailure = state.error ?? strings.errorAuthenticatinFailed;
         } else {
           onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
         }
@@ -420,10 +421,7 @@ class NoPortsOnboardingUtil {
             onboardingResult = NoPortsOnboardingResult.error(
               message: authFailure is String
                   ? authFailure
-                  : describeOnboardingError(
-                      authFailure,
-                      AppLocalizations.of(context)!,
-                    ),
+                  : describeOnboardingError(authFailure, strings),
             );
           }
         }
