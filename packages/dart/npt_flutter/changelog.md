@@ -2,6 +2,7 @@
 
 - FEAT: A dot beside the atSign shows whether its atServer connection is online, offline or refused, with the reason in its tooltip.
 - FEAT: Onboarding errors say what went wrong, rather than reporting a generic authentication failure.
+- FEAT: Connections use the stronger ESCR relay authentication wherever the relay and the device support it.
 - REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
 - FIX: The policy log's summary shows why a request was denied.
 - FIX: A failed demo profile download no longer leaves the progress indicator up for good.

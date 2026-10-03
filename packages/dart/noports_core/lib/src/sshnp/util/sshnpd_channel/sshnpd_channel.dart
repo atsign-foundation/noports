@@ -66,6 +66,15 @@ abstract class SshnpdChannel
   /// [featureCheck] function.
   late final bool twinKeys;
 
+  /// Whether the daemon advertised support for the ESCR relay-auth mode (reads
+  /// the live ping response). Used to decide, progressively, whether the daemon
+  /// side of a session may use ESCR; false for daemons that predate it.
+  bool get daemonSupportsRelayAuthEscr {
+    final features = pingResponse?['supportedFeatures'];
+    return features is Map &&
+        features[DaemonFeature.supportsRamEscr.name] == true;
+  }
+
   SshnpdChannel({
     required this.atClient,
     required this.params,
