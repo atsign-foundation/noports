@@ -4,6 +4,7 @@ packages:
   - packages/dart/noports_core
   - packages/dart/sshnoports
   - packages/dart/npt_flutter
+  - packages/dart/noports_config
   - apps/admin/admin_api
 
 command:
