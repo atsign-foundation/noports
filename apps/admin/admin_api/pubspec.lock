@@ -62,10 +62,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "602243f5ba4b5ada77d15d3d771f6fe7aac29cc08437f8fecacf9b349fc572b5"
+      sha256: "5813a8ace3d15102db3eb9ae733c419bc47638d550e2ee2140b82de5f55c947b"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0-rc2"
+    version: "4.0.0-rc3"
   at_base2e15:
     dependency: transitive
     description:
@@ -86,18 +86,18 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: "1ffaa089af68cbddc64ffedb136c2e7d0c2c96b1cc17eb1e55e8878265099c9c"
+      sha256: "7ee0263e1f39e81a2978531c74c1001c08827c50f96fa08b2d468551d76f05be"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.2-rc1"
+    version: "3.1.2-rc2"
   at_client:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "44d44e6b00e97a1dee9fd90aa56b9df9180923a030d20fe412b839a553f0d197"
+      sha256: "44f28a3323479f6326290feb9da17ffbedcf60c3e5998b2388e849f1d8d67d73"
       url: "https://pub.dev"
     source: hosted
-    version: "3.15.0-rc1"
+    version: "3.15.0-rc3"
   at_commons:
     dependency: transitive
     description:
@@ -110,18 +110,18 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: "01afe5b105c74b81e9d479a9c1f2234bb48cafc510d5317a725c198d01b19a04"
+      sha256: cbeaa08500a2dbeaa3b5a5e66d6fdd62a1654bac66d46ac3ac976f04c6d5ecee
       url: "https://pub.dev"
     source: hosted
-    version: "3.7.0-rc2"
+    version: "3.7.0-rc3"
   at_onboarding_cli:
     dependency: transitive
     description:
       name: at_onboarding_cli
-      sha256: "5fb33d947dc9e70f6a1ae0c91905e2fa0befa6bb9411caab898cbf2b706a1408"
+      sha256: a9788de0c37108a487b99d6e166d0cfe2a5da1233c2ce9dfe86ca688b2cd8ae8
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0-rc2"
+    version: "2.0.0-rc3"
   at_persistence_secondary_server:
     dependency: transitive
     description:

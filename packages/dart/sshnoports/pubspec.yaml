@@ -9,10 +9,10 @@ environment:
 dependencies:
   noports_core:
     path: "../noports_core"
-  at_onboarding_cli: ^2.0.0-rc2
-  at_commons: ^5.7.0
-  at_cli_commons: ^3.1.2-rc1
-  at_client: ^3.15.0-rc1
+  at_onboarding_cli: ^2.0.0-rc3
+  at_commons: ^5.18.0
+  at_cli_commons: ^3.1.2-rc2
+  at_client: ^3.15.0-rc3
   args: 2.7.0
   socket_connector: 2.6.0
   # Pinned: dartssh2 added SSHSocket.flush in the 2.22.2 minor release (a semver
