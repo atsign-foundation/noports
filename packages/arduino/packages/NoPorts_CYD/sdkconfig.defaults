@@ -1,0 +1,28 @@
+# ESP32 (CYD / CYD2USB) sdkconfig overrides for NoPorts_CYD
+#
+# lwIP TCP buffer sizing: balance throughput vs heap consumption.
+# Each socket reserves 2x this for send+receive pbufs.
+# With up to 7 relay sockets (ctrl+3x2): 7 x 2 x 2x1460 = ~41KB peak.
+# 2x1460 caused heap exhaustion under 3 concurrent sessions: lwIP pbuf
+# allocation drove heap to 10764, triggering ECONNABORTED on the control
+# channel and dropping all relay traffic.  1xMSS per connection reduces the
+# lwIP pbuf budget by ~19 KB across 7 PCBs, keeping steady-state heap well
+# above HEAP_CRITICAL_LOW (12000) even under full-load three-session transfers.
+CONFIG_LWIP_TCP_WND_DEFAULT=1460
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=1460
+CONFIG_LWIP_TCP_RECVMBOX_SIZE=12
+# TIME_WAIT duration: default 60 s, cut to 5 s so closed PCB slots are
+# recycled quickly.  TIME_WAIT exists to absorb delayed duplicates;
+# 5 s is safe on a LAN/relay topology where RTT <1 s.
+CONFIG_LWIP_TCP_MSL=5000
+# mbedTLS: dynamic buffers + reduced TLS record size to prevent AES DMA
+# allocation failures under high-throughput sessions (SCP, large file transfers).
+# Hardware AES needs a contiguous SRAM block; fragmentation causes
+# "Failed to allocate memory for end alignment buffer" and drops the session.
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=8192
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=8192
+# Full Mozilla CA bundle (~130 roots) stored in flash — zero heap cost.
+# Covers all current and future CAs without manual cert maintenance.
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y

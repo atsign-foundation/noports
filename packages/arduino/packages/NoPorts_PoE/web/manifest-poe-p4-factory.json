@@ -1,0 +1,13 @@
+{
+  "name": "NoPorts PoE (ESP32-P4) – Factory Reset",
+  "version": "1.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32-P4",
+      "erase_before_install": true,
+      "parts": [
+        { "path": "merged-poe-p4.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

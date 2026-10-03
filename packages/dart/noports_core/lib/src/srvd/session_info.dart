@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:noports_core/events.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -17,5 +19,9 @@ class SessionInfo {
 
   AtEventConfig? eventLoggingConfig;
 
-  SessionInfo({required this.params, required this.connector});
+  /// SendPort to this session's port-pair worker isolate, used to forward
+  /// later per-session messages (e.g. a definitive auth-modes notification).
+  final SendPort? toWorker;
+
+  SessionInfo({required this.params, required this.connector, this.toWorker});
 }

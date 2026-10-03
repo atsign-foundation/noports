@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
+    show defaultRelayAuthDetectWindowMs;
 
 class SrvdParams {
   final String atSign;
@@ -24,6 +26,10 @@ class SrvdParams {
   /// to forward port 443 on the host to some local port in the container
   final int localBindPort443;
 
+  /// How long (ms) the auto-detecting relay auth verifiers wait for a
+  /// connecting side to speak (legacy) before assuming ESCR and challenging it.
+  final int relayAuthDetectWindowMs;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -40,6 +46,7 @@ class SrvdParams {
     required this.perSessionStorage,
     required this.bind443,
     required this.localBindPort443,
+    required this.relayAuthDetectWindowMs,
     required this.debug,
   });
 
@@ -71,6 +78,7 @@ class SrvdParams {
       localBindPort443: r['443-bind-port'] == null
           ? 443
           : int.parse(r['443-bind-port']),
+      relayAuthDetectWindowMs: int.parse(r['relay-auth-detect-window-ms']),
       debug: r['debug'],
     );
   }
@@ -172,6 +180,17 @@ class SrvdParams {
           'The actual port to bind to - for example in a docker env you may'
           ' wish to forward port 443 on the host to a different port in the'
           ' container',
+    );
+    parser.addOption(
+      'relay-auth-detect-window-ms',
+      mandatory: false,
+      defaultsTo: '$defaultRelayAuthDetectWindowMs',
+      help:
+          'How long (ms) to wait for a connecting side to send its legacy auth'
+          ' before assuming it is using ESCR and issuing a challenge. Must'
+          ' exceed a legacy peer\'s first-packet arrival (~one RTT after'
+          ' connect); larger is safer for legacy peers, smaller speeds up ESCR'
+          ' handshakes.',
     );
     parser.addFlag(
       'help',
