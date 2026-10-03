@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:at_commons/at_commons.dart' as at_commons;
 
@@ -854,22 +855,14 @@ class SrvImplDart implements Srv<SocketConnector> {
               sideB.stream = authenticatedStream;
             }
           }
-          String socketAESKeyC2D = AtChopsUtil.generateSymmetricKey(
-            EncryptionKeyType.aes256,
-          ).key;
-          String socketIVC2D = base64Encode(
-            AtChopsUtil.generateRandomIV(16).ivBytes,
-          );
+          String socketAESKeyC2D = generateAes256Key();
+          String socketIVC2D = generateIvBase64();
 
           String socketAESKeyD2C, socketIVD2C;
 
           if (twinKeys) {
-            socketAESKeyD2C = AtChopsUtil.generateSymmetricKey(
-              EncryptionKeyType.aes256,
-            ).key;
-            socketIVD2C = base64Encode(
-              AtChopsUtil.generateRandomIV(16).ivBytes,
-            );
+            socketAESKeyD2C = generateAes256Key();
+            socketIVD2C = generateIvBase64();
           } else {
             // Backwards compatibility
             socketAESKeyD2C = socketAESKeyC2D;

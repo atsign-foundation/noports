@@ -61,21 +61,30 @@ done
 echo "Starting pkamLoad..."
 docker exec "$CONTAINER_NAME" supervisorctl start pkamLoad 2>/dev/null || true
 
-echo "Waiting for pkamLoad to complete..."
+# NOTE pkamLoad stays RUNNING while it installs keys, and a client refused
+# before its atSign's keys land does not retry, so wait for every atSign.
+echo "Waiting for pkamLoad to install PKAM keys..."
 
-elapsed=0
-while [ "$elapsed" -lt "$PKAM_LOAD_TIMEOUT" ]; do
-  status=$(docker exec "$CONTAINER_NAME" supervisorctl status pkamLoad 2>/dev/null | awk '{print $2}')
-  if [ "$status" = "EXITED" ] || [ "$status" = "RUNNING" ]; then
-    echo "pkamLoad status: $status (${elapsed}s)"
+start=$SECONDS
+while :; do
+  missing=()
+  for atsign in "${VE_ATSIGNS[@]}"; do
+    if ! docker exec "$CONTAINER_NAME" grep -qE \
+      "cramAndPkamAuth successful for @${atsign}( |\$)" /apps/logs/pkam.log; then
+      missing+=("@${atsign}")
+    fi
+  done
+  elapsed=$((SECONDS - start))
+  if [ "${#missing[@]}" -eq 0 ]; then
+    echo "pkamLoad installed keys for all ${#VE_ATSIGNS[@]} atSigns (${elapsed}s)"
     break
   fi
+  if [ "$elapsed" -ge "$PKAM_LOAD_TIMEOUT" ]; then
+    echo "ERROR: after ${PKAM_LOAD_TIMEOUT}s pkamLoad has not installed keys for: ${missing[*]}"
+    exit 1
+  fi
   sleep 2
-  elapsed=$((elapsed + 2))
 done
-if [ "$elapsed" -ge "$PKAM_LOAD_TIMEOUT" ]; then
-  echo "WARNING: pkamLoad did not complete within ${PKAM_LOAD_TIMEOUT}s"
-fi
 
 mkdir -p "$ATKEYS_DIR"
 echo "Downloading VE atKeys to $ATKEYS_DIR..."

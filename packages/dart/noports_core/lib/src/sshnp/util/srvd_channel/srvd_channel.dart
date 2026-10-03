@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
@@ -172,9 +172,7 @@ abstract class SrvdChannel<T>
       case RelayAuthMode.payload:
         return null;
       case RelayAuthMode.escr:
-        _relayAuthAesKey ??= AtChopsUtil.generateSymmetricKey(
-          EncryptionKeyType.aes256,
-        ).key;
+        _relayAuthAesKey ??= generateAes256Key();
         return _relayAuthAesKey;
     }
   }
@@ -237,7 +235,7 @@ abstract class SrvdChannel<T>
       switch (sideAMode) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
-            signAndWrapAndJsonEncode(atClient, {
+            await signAndWrapAndJsonEncode(atClient, {
               'sessionId': sessionId,
               'clientNonce': clientNonce,
               'rvdNonce': rvdNonce,
@@ -245,12 +243,13 @@ abstract class SrvdChannel<T>
           );
           break;
         case RelayAuthMode.escr:
+          final signingKeyPair = await escrSigningKeyPair(this);
           relayAuthenticator = RelayAuthenticatorESCR(
             sessionId: sessionId,
             relayAuthAesKey: relayAuthAesKey!,
             publicSigningKeyUri: publicSigningKeyUri,
-            publicSigningKey: publicSigningKey,
-            privateSigningKey: privateSigningKey,
+            publicSigningKey: signingKeyPair.publicKey,
+            privateSigningKey: signingKeyPair.privateKey,
             isSideA: true,
           );
           break;

@@ -3,18 +3,31 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
-import 'dart:io' as _i9;
+import 'dart:async' as _i12;
+import 'dart:io' as _i20;
 
-import 'package:at_chops/at_chops.dart' as _i7;
-import 'package:at_client/at_client.dart' as _i2;
-import 'package:at_client/src/listener/at_sign_change_listener.dart' as _i11;
-import 'package:at_client/src/response/response.dart' as _i3;
-import 'package:at_client/src/stream/at_stream_response.dart' as _i4;
-import 'package:at_client/src/stream/file_transfer_object.dart' as _i8;
-import 'package:at_lookup/at_lookup.dart' as _i10;
+import 'package:at_auth/at_auth.dart' as _i22;
+import 'package:at_chops/at_chops.dart' as _i15;
+import 'package:at_client/src/client/at_client_spec.dart' as _i10;
+import 'package:at_client/src/client/at_reachability.dart' as _i5;
+import 'package:at_client/src/client/data_event.dart' as _i13;
+import 'package:at_client/src/client/request_options.dart' as _i18;
+import 'package:at_client/src/collections/collections.dart' as _i9;
+import 'package:at_client/src/lifecycle/at_connection.dart' as _i4;
+import 'package:at_client/src/listener/at_sign_change_listener.dart' as _i24;
+import 'package:at_client/src/manager/at_client_manager.dart' as _i11;
+import 'package:at_client/src/preference/at_client_preference.dart' as _i17;
+import 'package:at_client/src/response/response.dart' as _i6;
+import 'package:at_client/src/service/enrollment_service.dart' as _i16;
+import 'package:at_client/src/service/notification_service.dart' as _i3;
+import 'package:at_client/src/service/sync_service.dart' as _i2;
+import 'package:at_client/src/storage/at_client_storage.dart' as _i23;
+import 'package:at_client/src/stream/at_stream_response.dart' as _i8;
+import 'package:at_client/src/stream/file_transfer_object.dart' as _i19;
+import 'package:at_commons/at_commons.dart' as _i7;
+import 'package:at_lookup/at_lookup.dart' as _i21;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:mockito/src/dummies.dart' as _i14;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -37,72 +50,83 @@ class _FakeSyncService_0 extends _i1.SmartFake implements _i2.SyncService {
 }
 
 class _FakeNotificationService_1 extends _i1.SmartFake
-    implements _i2.NotificationService {
+    implements _i3.NotificationService {
   _FakeNotificationService_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtResponse_2 extends _i1.SmartFake implements _i3.AtResponse {
-  _FakeAtResponse_2(Object parent, Invocation parentInvocation)
+class _FakeAtConnection_2 extends _i1.SmartFake implements _i4.AtConnection {
+  _FakeAtConnection_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtValue_3 extends _i1.SmartFake implements _i2.AtValue {
-  _FakeAtValue_3(Object parent, Invocation parentInvocation)
+class _FakeAtReachabilityResult_3 extends _i1.SmartFake
+    implements _i5.AtReachabilityResult {
+  _FakeAtReachabilityResult_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtStreamResponse_4 extends _i1.SmartFake
-    implements _i4.AtStreamResponse {
-  _FakeAtStreamResponse_4(Object parent, Invocation parentInvocation)
+class _FakeAtResponse_4 extends _i1.SmartFake implements _i6.AtResponse {
+  _FakeAtResponse_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtCollection_5<T1> extends _i1.SmartFake
-    implements _i2.AtCollection<T1> {
-  _FakeAtCollection_5(Object parent, Invocation parentInvocation)
+class _FakeAtValue_5 extends _i1.SmartFake implements _i7.AtValue {
+  _FakeAtValue_5(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtClient_6 extends _i1.SmartFake implements _i2.AtClient {
-  _FakeAtClient_6(Object parent, Invocation parentInvocation)
+class _FakeAtStreamResponse_6 extends _i1.SmartFake
+    implements _i8.AtStreamResponse {
+  _FakeAtStreamResponse_6(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeAtClientManager_7 extends _i1.SmartFake
-    implements _i2.AtClientManager {
-  _FakeAtClientManager_7(Object parent, Invocation parentInvocation)
+class _FakeAtCollection_7<T1> extends _i1.SmartFake
+    implements _i9.AtCollection<T1> {
+  _FakeAtCollection_7(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeIterator_8<E> extends _i1.SmartFake implements Iterator<E> {
-  _FakeIterator_8(Object parent, Invocation parentInvocation)
+class _FakeAtClient_8 extends _i1.SmartFake implements _i10.AtClient {
+  _FakeAtClient_8(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeAtClientManager_9 extends _i1.SmartFake
+    implements _i11.AtClientManager {
+  _FakeAtClientManager_9(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeIterator_10<E> extends _i1.SmartFake implements Iterator<E> {
+  _FakeIterator_10(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [AtClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAtClient extends _i1.Mock implements _i2.AtClient {
+class MockAtClient extends _i1.Mock implements _i10.AtClient {
   MockAtClient() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Stream<_i2.DataEvent> get dataEvents =>
+  _i12.Stream<_i13.DataEvent> get dataEvents =>
       (super.noSuchMethod(
             Invocation.getter(#dataEvents),
-            returnValue: _i5.Stream<_i2.DataEvent>.empty(),
+            returnValue: _i12.Stream<_i13.DataEvent>.empty(),
           )
-          as _i5.Stream<_i2.DataEvent>);
+          as _i12.Stream<_i13.DataEvent>);
 
   @override
-  _i5.Future<void> get pendingEmissions =>
+  _i12.Future<void> get pendingEmissions =>
       (super.noSuchMethod(
             Invocation.getter(#pendingEmissions),
-            returnValue: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
   _i2.SyncService get syncService =>
@@ -116,7 +140,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
           as _i2.SyncService);
 
   @override
-  _i2.NotificationService get notificationService =>
+  _i3.NotificationService get notificationService =>
       (super.noSuchMethod(
             Invocation.getter(#notificationService),
             returnValue: _FakeNotificationService_1(
@@ -124,7 +148,7 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               Invocation.getter(#notificationService),
             ),
           )
-          as _i2.NotificationService);
+          as _i3.NotificationService);
 
   @override
   bool get isStopped =>
@@ -132,24 +156,35 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
           as bool);
 
   @override
-  _i2.Atsign get atSign =>
+  _i4.AtConnection get connection =>
+      (super.noSuchMethod(
+            Invocation.getter(#connection),
+            returnValue: _FakeAtConnection_2(
+              this,
+              Invocation.getter(#connection),
+            ),
+          )
+          as _i4.AtConnection);
+
+  @override
+  _i7.Atsign get atSign =>
       (super.noSuchMethod(
             Invocation.getter(#atSign),
-            returnValue: _i6.dummyValue<String>(
+            returnValue: _i14.dummyValue<String>(
               this,
               Invocation.getter(#atSign),
             ),
           )
-          as _i2.Atsign);
+          as _i7.Atsign);
 
   @override
-  set telemetry(_i2.AtTelemetryService? telemetryService) => super.noSuchMethod(
+  set telemetry(_i7.AtTelemetryService? telemetryService) => super.noSuchMethod(
     Invocation.setter(#telemetry, telemetryService),
     returnValueForMissingStub: null,
   );
 
   @override
-  set atChops(_i7.AtChops? atChops) => super.noSuchMethod(
+  set atChops(_i15.AtChops? atChops) => super.noSuchMethod(
     Invocation.setter(#atChops, atChops),
     returnValueForMissingStub: null,
   );
@@ -167,40 +202,65 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
   );
 
   @override
-  set notificationService(_i2.NotificationService? notificationService) =>
+  set notificationService(_i3.NotificationService? notificationService) =>
       super.noSuchMethod(
         Invocation.setter(#notificationService, notificationService),
         returnValueForMissingStub: null,
       );
 
   @override
-  set enrollmentService(_i2.EnrollmentService? enrollmentService) =>
+  set enrollmentService(_i16.EnrollmentService? enrollmentService) =>
       super.noSuchMethod(
         Invocation.setter(#enrollmentService, enrollmentService),
         returnValueForMissingStub: null,
       );
 
   @override
-  void setPreferences(_i2.AtClientPreference? preference) => super.noSuchMethod(
-    Invocation.method(#setPreferences, [preference]),
-    returnValueForMissingStub: null,
-  );
+  _i12.Future<_i5.AtReachabilityResult> ensureReachable(
+    String? namespace, {
+    Duration? timeout = const Duration(seconds: 30),
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #ensureReachable,
+              [namespace],
+              {#timeout: timeout},
+            ),
+            returnValue: _i12.Future<_i5.AtReachabilityResult>.value(
+              _FakeAtReachabilityResult_3(
+                this,
+                Invocation.method(
+                  #ensureReachable,
+                  [namespace],
+                  {#timeout: timeout},
+                ),
+              ),
+            ),
+          )
+          as _i12.Future<_i5.AtReachabilityResult>);
 
   @override
-  _i5.Future<void> stop() =>
+  void setPreferences(_i17.AtClientPreference? preference) =>
+      super.noSuchMethod(
+        Invocation.method(#setPreferences, [preference]),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i12.Future<void> stop() =>
       (super.noSuchMethod(
             Invocation.method(#stop, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i5.Future<bool> put(
-    _i2.AtKey? key,
+  _i12.Future<bool> put(
+    _i7.AtKey? key,
     dynamic value, {
     bool? isDedicated = false,
-    _i2.PutRequestOptions? putRequestOptions,
+    _i18.PutRequestOptions? putRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -211,15 +271,15 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
                 #putRequestOptions: putRequestOptions,
               },
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i5.Future<_i3.AtResponse> putText(
-    _i2.AtKey? atKey,
+  _i12.Future<_i6.AtResponse> putText(
+    _i7.AtKey? atKey,
     String? value, {
-    _i2.PutRequestOptions? putRequestOptions,
+    _i18.PutRequestOptions? putRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -227,8 +287,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [atKey, value],
               {#putRequestOptions: putRequestOptions},
             ),
-            returnValue: _i5.Future<_i3.AtResponse>.value(
-              _FakeAtResponse_2(
+            returnValue: _i12.Future<_i6.AtResponse>.value(
+              _FakeAtResponse_4(
                 this,
                 Invocation.method(
                   #putText,
@@ -238,13 +298,13 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<_i3.AtResponse>);
+          as _i12.Future<_i6.AtResponse>);
 
   @override
-  _i5.Future<_i3.AtResponse> putBinary(
-    _i2.AtKey? atKey,
+  _i12.Future<_i6.AtResponse> putBinary(
+    _i7.AtKey? atKey,
     List<int>? value, {
-    _i2.PutRequestOptions? putRequestOptions,
+    _i18.PutRequestOptions? putRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -252,8 +312,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [atKey, value],
               {#putRequestOptions: putRequestOptions},
             ),
-            returnValue: _i5.Future<_i3.AtResponse>.value(
-              _FakeAtResponse_2(
+            returnValue: _i12.Future<_i6.AtResponse>.value(
+              _FakeAtResponse_4(
                 this,
                 Invocation.method(
                   #putBinary,
@@ -263,12 +323,12 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<_i3.AtResponse>);
+          as _i12.Future<_i6.AtResponse>);
 
   @override
-  _i5.Future<bool> putMeta(
-    _i2.AtKey? key, {
-    _i2.PutRequestOptions? putRequestOptions,
+  _i12.Future<bool> putMeta(
+    _i7.AtKey? key, {
+    _i18.PutRequestOptions? putRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -276,15 +336,15 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [key],
               {#putRequestOptions: putRequestOptions},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i5.Future<_i2.AtValue> get(
-    _i2.AtKey? key, {
+  _i12.Future<_i7.AtValue> get(
+    _i7.AtKey? key, {
     bool? isDedicated = false,
-    _i2.GetRequestOptions? getRequestOptions,
+    _i18.GetRequestOptions? getRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -295,8 +355,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
                 #getRequestOptions: getRequestOptions,
               },
             ),
-            returnValue: _i5.Future<_i2.AtValue>.value(
-              _FakeAtValue_3(
+            returnValue: _i12.Future<_i7.AtValue>.value(
+              _FakeAtValue_5(
                 this,
                 Invocation.method(
                   #get,
@@ -309,21 +369,21 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<_i2.AtValue>);
+          as _i12.Future<_i7.AtValue>);
 
   @override
-  _i5.Future<_i2.Metadata?> getMeta(_i2.AtKey? key) =>
+  _i12.Future<_i7.Metadata?> getMeta(_i7.AtKey? key) =>
       (super.noSuchMethod(
             Invocation.method(#getMeta, [key]),
-            returnValue: _i5.Future<_i2.Metadata?>.value(),
+            returnValue: _i12.Future<_i7.Metadata?>.value(),
           )
-          as _i5.Future<_i2.Metadata?>);
+          as _i12.Future<_i7.Metadata?>);
 
   @override
-  _i5.Future<bool> delete(
-    _i2.AtKey? key, {
+  _i12.Future<bool> delete(
+    _i7.AtKey? key, {
     bool? isDedicated = false,
-    _i2.DeleteRequestOptions? deleteRequestOptions,
+    _i18.DeleteRequestOptions? deleteRequestOptions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -334,20 +394,20 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
                 #deleteRequestOptions: deleteRequestOptions,
               },
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i5.Future<bool> keyExists(_i2.AtKey? key, bool? useRemoteAtServer) =>
+  _i12.Future<bool> keyExists(_i7.AtKey? key, bool? useRemoteAtServer) =>
       (super.noSuchMethod(
             Invocation.method(#keyExists, [key, useRemoteAtServer]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i5.Future<List<_i2.AtKey>> getAtKeys({
+  _i12.Future<List<_i7.AtKey>> getAtKeys({
     String? regex,
     String? sharedBy,
     String? sharedWith,
@@ -362,12 +422,12 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               #showHiddenKeys: showHiddenKeys,
               #useRemoteAtServer: useRemoteAtServer,
             }),
-            returnValue: _i5.Future<List<_i2.AtKey>>.value(<_i2.AtKey>[]),
+            returnValue: _i12.Future<List<_i7.AtKey>>.value(<_i7.AtKey>[]),
           )
-          as _i5.Future<List<_i2.AtKey>>);
+          as _i12.Future<List<_i7.AtKey>>);
 
   @override
-  _i5.Future<List<String>> getKeys({
+  _i12.Future<List<String>> getKeys({
     String? regex,
     String? sharedBy,
     String? sharedWith,
@@ -382,18 +442,18 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               #showHiddenKeys: showHiddenKeys,
               #useRemoteAtServer: useRemoteAtServer,
             }),
-            returnValue: _i5.Future<List<String>>.value(<String>[]),
+            returnValue: _i12.Future<List<String>>.value(<String>[]),
           )
-          as _i5.Future<List<String>>);
+          as _i12.Future<List<String>>);
 
   @override
-  _i5.Future<bool> notify(
-    _i2.AtKey? key,
+  _i12.Future<bool> notify(
+    _i7.AtKey? key,
     String? value,
-    _i2.OperationEnum? operation, {
-    _i2.MessageTypeEnum? messageType,
-    _i2.PriorityEnum? priority,
-    _i2.StrategyEnum? strategy,
+    _i7.OperationEnum? operation, {
+    _i7.MessageTypeEnum? messageType,
+    _i7.PriorityEnum? priority,
+    _i7.StrategyEnum? strategy,
     int? latestN,
     String? notifier,
     bool? isDedicated = false,
@@ -411,52 +471,52 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
                 #isDedicated: isDedicated,
               },
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i12.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i12.Future<bool>);
 
   @override
-  _i5.Future<String?> notifyChange(
-    _i2.NotificationParams? notificationParams,
+  _i12.Future<String?> notifyChange(
+    _i3.NotificationParams? notificationParams,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#notifyChange, [notificationParams]),
-            returnValue: _i5.Future<String?>.value(),
+            returnValue: _i12.Future<String?>.value(),
           )
-          as _i5.Future<String?>);
+          as _i12.Future<String?>);
 
   @override
-  _i5.Future<String> notifyAll(
-    _i2.AtKey? atKey,
+  _i12.Future<String> notifyAll(
+    _i7.AtKey? atKey,
     String? value,
-    _i2.OperationEnum? operation,
+    _i7.OperationEnum? operation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#notifyAll, [atKey, value, operation]),
-            returnValue: _i5.Future<String>.value(
-              _i6.dummyValue<String>(
+            returnValue: _i12.Future<String>.value(
+              _i14.dummyValue<String>(
                 this,
                 Invocation.method(#notifyAll, [atKey, value, operation]),
               ),
             ),
           )
-          as _i5.Future<String>);
+          as _i12.Future<String>);
 
   @override
-  _i5.Future<String> notifyStatus(String? notificationId) =>
+  _i12.Future<String> notifyStatus(String? notificationId) =>
       (super.noSuchMethod(
             Invocation.method(#notifyStatus, [notificationId]),
-            returnValue: _i5.Future<String>.value(
-              _i6.dummyValue<String>(
+            returnValue: _i12.Future<String>.value(
+              _i14.dummyValue<String>(
                 this,
                 Invocation.method(#notifyStatus, [notificationId]),
               ),
             ),
           )
-          as _i5.Future<String>);
+          as _i12.Future<String>);
 
   @override
-  _i5.Future<String> notifyList({
+  _i12.Future<String> notifyList({
     String? fromDate,
     String? toDate,
     String? regex,
@@ -467,8 +527,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               #toDate: toDate,
               #regex: regex,
             }),
-            returnValue: _i5.Future<String>.value(
-              _i6.dummyValue<String>(
+            returnValue: _i12.Future<String>.value(
+              _i14.dummyValue<String>(
                 this,
                 Invocation.method(#notifyList, [], {
                   #fromDate: fromDate,
@@ -478,10 +538,10 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<String>);
+          as _i12.Future<String>);
 
   @override
-  _i5.Future<void> startMonitor(
+  _i12.Future<void> startMonitor(
     String? privateKey,
     Function? acceptStream, {
     String? regex,
@@ -492,13 +552,13 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [privateKey, acceptStream],
               {#regex: regex},
             ),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i5.Future<_i4.AtStreamResponse> stream(
+  _i12.Future<_i8.AtStreamResponse> stream(
     String? sharedWith,
     String? filePath, {
     String? namespace,
@@ -509,8 +569,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [sharedWith, filePath],
               {#namespace: namespace},
             ),
-            returnValue: _i5.Future<_i4.AtStreamResponse>.value(
-              _FakeAtStreamResponse_4(
+            returnValue: _i12.Future<_i8.AtStreamResponse>.value(
+              _FakeAtStreamResponse_6(
                 this,
                 Invocation.method(
                   #stream,
@@ -520,10 +580,10 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<_i4.AtStreamResponse>);
+          as _i12.Future<_i8.AtStreamResponse>);
 
   @override
-  _i5.Future<void> sendStreamAck(
+  _i12.Future<void> sendStreamAck(
     String? streamId,
     String? fileName,
     int? fileLength,
@@ -540,71 +600,72 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               streamCompletionCallBack,
               streamReceiveCallBack,
             ]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i5.Future<_i3.AtResponse> setSPP(String? otp, {Duration? expiry}) =>
+  _i12.Future<_i6.AtResponse> setSPP(String? otp, {Duration? expiry}) =>
       (super.noSuchMethod(
             Invocation.method(#setSPP, [otp], {#expiry: expiry}),
-            returnValue: _i5.Future<_i3.AtResponse>.value(
-              _FakeAtResponse_2(
+            returnValue: _i12.Future<_i6.AtResponse>.value(
+              _FakeAtResponse_4(
                 this,
                 Invocation.method(#setSPP, [otp], {#expiry: expiry}),
               ),
             ),
           )
-          as _i5.Future<_i3.AtResponse>);
+          as _i12.Future<_i6.AtResponse>);
 
   @override
-  _i5.Future<_i3.AtResponse> getOTP() =>
+  _i12.Future<_i6.AtResponse> getOTP() =>
       (super.noSuchMethod(
             Invocation.method(#getOTP, []),
-            returnValue: _i5.Future<_i3.AtResponse>.value(
-              _FakeAtResponse_2(this, Invocation.method(#getOTP, [])),
+            returnValue: _i12.Future<_i6.AtResponse>.value(
+              _FakeAtResponse_4(this, Invocation.method(#getOTP, [])),
             ),
           )
-          as _i5.Future<_i3.AtResponse>);
+          as _i12.Future<_i6.AtResponse>);
 
   @override
-  _i5.Future<void> startCompactionJob({
+  _i12.Future<void> startCompactionJob({
     Duration? commitLogCompactionDuration,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#startCompactionJob, [], {
               #commitLogCompactionDuration: commitLogCompactionDuration,
             }),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i5.Future<void> stopCompactionJob() =>
+  _i12.Future<void> stopCompactionJob() =>
       (super.noSuchMethod(
             Invocation.method(#stopCompactionJob, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i12.Future<void>.value(),
+            returnValueForMissingStub: _i12.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i12.Future<void>);
 
   @override
-  _i5.Future<Map<String, _i8.FileTransferObject>> uploadFile(
-    List<_i9.File>? files,
+  _i12.Future<Map<String, _i19.FileTransferObject>> uploadFile(
+    List<_i20.File>? files,
     List<String>? sharedWithAtSigns,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#uploadFile, [files, sharedWithAtSigns]),
-            returnValue: _i5.Future<Map<String, _i8.FileTransferObject>>.value(
-              <String, _i8.FileTransferObject>{},
-            ),
+            returnValue:
+                _i12.Future<Map<String, _i19.FileTransferObject>>.value(
+                  <String, _i19.FileTransferObject>{},
+                ),
           )
-          as _i5.Future<Map<String, _i8.FileTransferObject>>);
+          as _i12.Future<Map<String, _i19.FileTransferObject>>);
 
   @override
-  _i5.Future<List<_i9.File>> downloadFile(
+  _i12.Future<List<_i20.File>> downloadFile(
     String? transferId,
     String? sharedByAtSign, {
     String? downloadPath,
@@ -615,30 +676,30 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [transferId, sharedByAtSign],
               {#downloadPath: downloadPath},
             ),
-            returnValue: _i5.Future<List<_i9.File>>.value(<_i9.File>[]),
+            returnValue: _i12.Future<List<_i20.File>>.value(<_i20.File>[]),
           )
-          as _i5.Future<List<_i9.File>>);
+          as _i12.Future<List<_i20.File>>);
 
   @override
-  _i5.Future<List<_i8.FileStatus>> reuploadFiles(
-    List<_i9.File>? files,
-    _i8.FileTransferObject? fileTransferObject,
+  _i12.Future<List<_i19.FileStatus>> reuploadFiles(
+    List<_i20.File>? files,
+    _i19.FileTransferObject? fileTransferObject,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#reuploadFiles, [files, fileTransferObject]),
-            returnValue: _i5.Future<List<_i8.FileStatus>>.value(
-              <_i8.FileStatus>[],
+            returnValue: _i12.Future<List<_i19.FileStatus>>.value(
+              <_i19.FileStatus>[],
             ),
           )
-          as _i5.Future<List<_i8.FileStatus>>);
+          as _i12.Future<List<_i19.FileStatus>>);
 
   @override
-  _i5.Future<Map<String, _i8.FileTransferObject>> shareFiles(
+  _i12.Future<Map<String, _i19.FileTransferObject>> shareFiles(
     List<String>? sharedWithAtSigns,
     String? key,
     String? fileUrl,
     String? encryptionKey,
-    List<_i8.FileStatus>? fileStatus, {
+    List<_i19.FileStatus>? fileStatus, {
     DateTime? date,
   }) =>
       (super.noSuchMethod(
@@ -647,17 +708,18 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               [sharedWithAtSigns, key, fileUrl, encryptionKey, fileStatus],
               {#date: date},
             ),
-            returnValue: _i5.Future<Map<String, _i8.FileTransferObject>>.value(
-              <String, _i8.FileTransferObject>{},
-            ),
+            returnValue:
+                _i12.Future<Map<String, _i19.FileTransferObject>>.value(
+                  <String, _i19.FileTransferObject>{},
+                ),
           )
-          as _i5.Future<Map<String, _i8.FileTransferObject>>);
+          as _i12.Future<Map<String, _i19.FileTransferObject>>);
 
   @override
-  _i5.Future<_i2.AtCollection<T>> collection<T>(
+  _i12.Future<_i9.AtCollection<T>> collection<T>(
     String? namespace,
     Duration? defaultExpiration, {
-    _i2.EventSource? eventSource = _i2.EventSource.both,
+    _i9.EventSource? eventSource = _i9.EventSource.both,
     T Function(Map<String, dynamic>)? fromJson,
     String? typeTag,
     bool? cleanupOrphansOnCreation = false,
@@ -673,8 +735,8 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
                 #cleanupOrphansOnCreation: cleanupOrphansOnCreation,
               },
             ),
-            returnValue: _i5.Future<_i2.AtCollection<T>>.value(
-              _FakeAtCollection_5<T>(
+            returnValue: _i12.Future<_i9.AtCollection<T>>.value(
+              _FakeAtCollection_7<T>(
                 this,
                 Invocation.method(
                   #collection,
@@ -689,24 +751,24 @@ class MockAtClient extends _i1.Mock implements _i2.AtClient {
               ),
             ),
           )
-          as _i5.Future<_i2.AtCollection<T>>);
+          as _i12.Future<_i9.AtCollection<T>>);
 }
 
 /// A class which mocks [AtClientManager].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
+class MockAtClientManager extends _i1.Mock implements _i11.AtClientManager {
   MockAtClientManager() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i2.AtClient get atClient =>
+  _i10.AtClient get atClient =>
       (super.noSuchMethod(
             Invocation.getter(#atClient),
-            returnValue: _FakeAtClient_6(this, Invocation.getter(#atClient)),
+            returnValue: _FakeAtClient_8(this, Invocation.getter(#atClient)),
           )
-          as _i2.AtClient);
+          as _i10.AtClient);
 
   @override
   _i2.SyncService get syncService =>
@@ -720,7 +782,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
           as _i2.SyncService);
 
   @override
-  _i2.NotificationService get notificationService =>
+  _i3.NotificationService get notificationService =>
       (super.noSuchMethod(
             Invocation.getter(#notificationService),
             returnValue: _FakeNotificationService_1(
@@ -728,10 +790,10 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
               Invocation.getter(#notificationService),
             ),
           )
-          as _i2.NotificationService);
+          as _i3.NotificationService);
 
   @override
-  set secondaryAddressFinder(_i10.SecondaryAddressFinder? value) =>
+  set secondaryAddressFinder(_i21.SecondaryAddressFinder? value) =>
       super.noSuchMethod(
         Invocation.setter(#secondaryAddressFinder, value),
         returnValueForMissingStub: null,
@@ -739,7 +801,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
 
   @override
   void setSecondaryAddressFinder({
-    _i10.SecondaryAddressFinder? secondaryAddressFinder,
+    _i21.SecondaryAddressFinder? secondaryAddressFinder,
   }) => super.noSuchMethod(
     Invocation.method(#setSecondaryAddressFinder, [], {
       #secondaryAddressFinder: secondaryAddressFinder,
@@ -748,14 +810,17 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
   );
 
   @override
-  _i5.Future<_i2.AtClientManager> setCurrentAtSign(
+  _i12.Future<_i11.AtClientManager> setCurrentAtSign(
     String? atSign,
     String? namespace,
-    _i2.AtClientPreference? preference, {
-    _i2.AtServiceFactory? serviceFactory,
-    _i7.AtChops? atChops,
-    _i10.AtLookUp? atLookUp,
+    _i17.AtClientPreference? preference, {
+    _i11.AtServiceFactory? serviceFactory,
+    _i15.AtChops? atChops,
+    _i22.AtKeysIo? atKeysIo,
+    _i21.AtLookUp? atLookUp,
     String? enrollmentId,
+    _i23.AtClientStorage? storage,
+    bool? principalChange = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -764,12 +829,15 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
               {
                 #serviceFactory: serviceFactory,
                 #atChops: atChops,
+                #atKeysIo: atKeysIo,
                 #atLookUp: atLookUp,
                 #enrollmentId: enrollmentId,
+                #storage: storage,
+                #principalChange: principalChange,
               },
             ),
-            returnValue: _i5.Future<_i2.AtClientManager>.value(
-              _FakeAtClientManager_7(
+            returnValue: _i12.Future<_i11.AtClientManager>.value(
+              _FakeAtClientManager_9(
                 this,
                 Invocation.method(
                   #setCurrentAtSign,
@@ -777,24 +845,68 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
                   {
                     #serviceFactory: serviceFactory,
                     #atChops: atChops,
+                    #atKeysIo: atKeysIo,
                     #atLookUp: atLookUp,
                     #enrollmentId: enrollmentId,
+                    #storage: storage,
+                    #principalChange: principalChange,
                   },
                 ),
               ),
             ),
           )
-          as _i5.Future<_i2.AtClientManager>);
+          as _i12.Future<_i11.AtClientManager>);
 
   @override
-  void listenToAtSignChange(_i11.AtSignChangeListener? listener) =>
+  void use(_i10.AtClient? client) => super.noSuchMethod(
+    Invocation.method(#use, [client]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i12.Future<_i11.AtClientManager> fromAuthSession(
+    _i22.AtAuthSession? session,
+    _i17.AtClientPreference? preference, {
+    _i11.AtServiceFactory? serviceFactory,
+    _i23.AtClientStorage? storage,
+    bool? principalChange = false,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #fromAuthSession,
+              [session, preference],
+              {
+                #serviceFactory: serviceFactory,
+                #storage: storage,
+                #principalChange: principalChange,
+              },
+            ),
+            returnValue: _i12.Future<_i11.AtClientManager>.value(
+              _FakeAtClientManager_9(
+                this,
+                Invocation.method(
+                  #fromAuthSession,
+                  [session, preference],
+                  {
+                    #serviceFactory: serviceFactory,
+                    #storage: storage,
+                    #principalChange: principalChange,
+                  },
+                ),
+              ),
+            ),
+          )
+          as _i12.Future<_i11.AtClientManager>);
+
+  @override
+  void listenToAtSignChange(_i24.AtSignChangeListener? listener) =>
       super.noSuchMethod(
         Invocation.method(#listenToAtSignChange, [listener]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void removeChangeListeners(_i11.AtSignChangeListener? atSignChangeListener) =>
+  void removeChangeListeners(_i24.AtSignChangeListener? atSignChangeListener) =>
       super.noSuchMethod(
         Invocation.method(#removeChangeListeners, [atSignChangeListener]),
         returnValueForMissingStub: null,
@@ -812,7 +924,7 @@ class MockAtClientManager extends _i1.Mock implements _i2.AtClientManager {
   Iterator<dynamic> getItemsInChangeListeners() =>
       (super.noSuchMethod(
             Invocation.method(#getItemsInChangeListeners, []),
-            returnValue: _FakeIterator_8<dynamic>(
+            returnValue: _FakeIterator_10<dynamic>(
               this,
               Invocation.method(#getItemsInChangeListeners, []),
             ),

@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
@@ -83,18 +84,10 @@ abstract class SshnpCore
     _progressStreamController.add(message);
   }
 
-  /// the uri (e.g. public:foo.bar.baz@atsign) of the [publicSigningKey]
+  /// the uri (e.g. public:foo.bar.baz@atsign) of this enrollment's public
+  /// signing key
   @override
   String get publicSigningKeyUri;
-
-  /// the public key which can be used to verify signatures made using
-  /// [privateSigningKey]
-  @override
-  String get publicSigningKey;
-
-  /// the private key used to sign things this program sends
-  @override
-  String get privateSigningKey;
 
   SshnpCore({required this.atClient, required this.params, this.logStream})
     : sessionId = Uuid().v4(),
@@ -115,6 +108,12 @@ abstract class SshnpCore
     if (!isSafeToInitialize) return;
 
     logger.info('Initializing SshnpCore');
+
+    try {
+      await loadEnvelopeSigningKey(atClient);
+    } catch (e) {
+      logger.warning('Could not load the envelope signing key: $e');
+    }
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();

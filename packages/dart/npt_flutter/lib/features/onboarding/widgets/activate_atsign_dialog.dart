@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
-import 'package:at_server_status/at_server_status.dart';
+import 'package:at_lookup/at_lookup.dart' show AtSignServerState;
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
@@ -248,13 +248,13 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             if (widget.waitForTeapot) {
               int round = 1;
               getStatus() async {
-                return (await widget.onboardingUtil.atServerStatus(
+                return (await widget.onboardingUtil.checkAtServer(
                   widget.atsign,
-                )).status();
+                )).state;
               }
 
-              AtSignStatus? atsignStatus = await getStatus();
-              while (atsignStatus != AtSignStatus.teapot) {
+              AtSignServerState atsignStatus = await getStatus();
+              while (atsignStatus != AtSignServerState.notActivated) {
                 // 6 * 5 = 30 seconds
                 // 12 * 5 = 60 seconds
                 if (!mounted || round > 12) {
@@ -267,7 +267,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
 
               // If the Atsign is still not in teapot after the waiting period
               // Then return an error
-              if (atsignStatus != AtSignStatus.teapot) {
+              if (atsignStatus != AtSignServerState.notActivated) {
                 if (mounted) {
                   Navigator.of(context).pop(
                     NoPortsOnboardingResult.error(

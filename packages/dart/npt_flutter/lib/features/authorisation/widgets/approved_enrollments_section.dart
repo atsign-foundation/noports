@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:at_auth/at_auth.dart'
-    show NamespacePermission, ServerEnrollmentRequest;
 import 'package:at_client_flutter/at_client_flutter.dart'
     show
         AuthorisationFeedbackOverlay,
         AuthorisationSectionHeader,
+        Enrollment,
         EnrollmentRequestCard,
         EnrollmentStatus;
 import 'package:flutter/material.dart';
@@ -26,7 +25,7 @@ class _ApprovedEnrollmentsSectionState
   OverlayEntry? _overlayEntry;
   Timer? _overlayTimer;
 
-  void _showRevokedOverlay(ServerEnrollmentRequest request) {
+  void _showRevokedOverlay(Enrollment request) {
     _removeOverlay();
     final OverlayEntry entry = OverlayEntry(
       builder: (BuildContext overlayContext) {
@@ -68,13 +67,10 @@ class _ApprovedEnrollmentsSectionState
   @override
   Widget build(BuildContext context) {
     final AuthorisationHubController controller = widget.controller;
-    final List<ServerEnrollmentRequest> requests = controller.approved
+    final List<Enrollment> requests = controller.approved
         .where(
-          (ServerEnrollmentRequest request) =>
-              !request.namespacePermissions.any(
-                (NamespacePermission permission) =>
-                    permission.namespace == '__manage',
-              ),
+          (Enrollment request) =>
+              !(request.namespace?.containsKey('__manage') ?? false),
         )
         .toList();
 
@@ -121,7 +117,7 @@ class _ApprovedEnrollmentsSectionState
               child: Text('No approved enrollments'),
             ),
           if (!controller.approvedLoading)
-            ...requests.map((ServerEnrollmentRequest request) {
+            ...requests.map((Enrollment request) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: EnrollmentRequestCard(

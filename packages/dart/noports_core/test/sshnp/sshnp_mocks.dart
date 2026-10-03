@@ -1,8 +1,10 @@
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
+import 'package:test/test.dart' show isA, startsWith;
 
 /// A  [void Function()] stub
 abstract class FunctionCaller<T> {
@@ -33,6 +35,53 @@ class SubscribeStub extends Mock implements SubscribeCaller {}
 /// The basic mocks that are repeated countless times throughout the test suite
 
 class MockAtClient extends Mock implements AtClient {}
+
+/// Gives [atClient] a key source holding [encryptionKeyPair] as [atSign]'s
+/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with.
+void stubEncryptionKeys(
+  MockAtClient atClient,
+  RsaKeyPair encryptionKeyPair, {
+  String atSign = '@alice',
+}) {
+  when(() => atClient.atKeysIo).thenReturn(
+    InMemoryAtKeysIo.holding(
+      atSign,
+      AtKeys.legacy(
+        encryptionPublicKey: encryptionKeyPair.atPublicKey.publicKey,
+        encryptionPrivateKey: encryptionKeyPair.atPrivateKey.privateKey,
+      ),
+    ),
+  );
+}
+
+/// What publishing the client's APKAM signing key touches on [atClient]:
+/// its atSign, and the `put` that writes the `_apsk` record. A channel's
+/// `initialize` publishes before anything a test is about, so a mock that
+/// answers neither fails there with a null where a `Future<bool>` was
+/// expected. Any other `put` throws naming its key; a test that cares what
+/// is published re-stubs `put`.
+void stubSigningKeyPublish(MockAtClient atClient, {String atSign = '@alice'}) {
+  registerFallbackValue(AtKey());
+  registerFallbackValue(PutRequestOptions());
+  when(() => atClient.getCurrentAtSign()).thenReturn(atSign);
+  when(
+    () => atClient.put(
+      any(),
+      any(),
+      putRequestOptions: any(named: 'putRequestOptions'),
+    ),
+  ).thenAnswer((invocation) async => throw StateError(
+      'unstubbed put of ${invocation.positionalArguments.first}'));
+  when(
+    () => atClient.put(
+      any(
+          that: isA<AtKey>().having(
+              (key) => key.toString(), 'key', startsWith('public:_apsk.'))),
+      any(),
+      putRequestOptions: any(named: 'putRequestOptions'),
+    ),
+  ).thenAnswer((_) async => true);
+}
 
 class MockNotificationService extends Mock implements NotificationService {}
 

@@ -10,6 +10,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:mutex/mutex.dart';
 
 import '../../utils.dart';
+import '../common/session_crypto.dart';
 
 enum RAVEReason {
   jsonDecodeFailed,
@@ -94,8 +95,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   @override
   final String tag;
 
-  final AtChops atChops = AtChopsImpl(AtChopsKeys());
-
   final RelayAuthVerifyHelper helper;
 
   /// A fresh, unguessable challenge for this one authentication. It is the sole
@@ -104,9 +103,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   /// challenge) is required for every connection. Reusing one instance across a
   /// session's connections would reissue the same challenge and let a captured
   /// response be replayed onto further connections.
-  final String challenge = AtChopsUtil.generateSymmetricKey(
-    EncryptionKeyType.aes256,
-  ).key;
+  final String challenge = generateAes256Key();
 
   /// Set once this verifier has issued its challenge and verified (or attempted
   /// to verify) a response. Guards against instance reuse — see [challenge].
@@ -222,17 +219,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     // Fetch the session's AES Key
     String aesKey64 = await helper.getRelayAuthAesKey(sessionId!);
 
-    var encryptionAlgo = AESEncryptionAlgo(AESKey(aesKey64));
     String envelope64;
     try {
-      envelope64 = (await atChops
-          .decryptString(
-            envelopeEncrypted64,
-            EncryptionKeyType.aes256,
-            encryptionAlgorithm: encryptionAlgo,
-            iv: InitialisationVector(base64Decode(iv)),
-          ))
-          .result;
+      envelope64 = await aesDecryptString(
+        envelopeEncrypted64,
+        key: aesKey64,
+        iv: InitialisationVector(base64Decode(iv)),
+      );
     } catch (err) {
       throw RAVE(
         'Could not decrypt auth envelope: $err',
@@ -304,28 +297,27 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+    final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
+    final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
+    if (signingAlgo != SigningAlgoType.rsa2048) {
+      throw RAVE(
+        'Unsupported signing algorithm ${signingAlgo.name}',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+
     String publicSigningKey = await helper.lookup(
       sessionId!,
       publicSigningKeyUri,
     );
 
     /// Verify the signature of the payload
-    final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
-    final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
-
-    AtSigningVerificationInput input =
-        AtSigningVerificationInput(
-            jsonEncode(signedPayload),
-            base64Decode(envelope['s']),
-            publicSigningKey,
-          )
-          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-          ..signingMode = AtSigningMode.data
-          ..signingAlgoType = signingAlgo
-          ..hashingAlgoType = hashingAlgo;
-
-    AtSigningResult atSigningResult = atChops.verify(input);
-    bool verified = atSigningResult.result == true;
+    bool verified = await rsaVerifyString(
+      jsonEncode(signedPayload),
+      signature: envelope['s'],
+      publicKey: publicSigningKey,
+      hashing: hashingAlgo,
+    );
     if (!verified) {
       throw RAVE(
         'Signatures did not match.',
@@ -572,17 +564,12 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   /// ```
   /// The signature is verified against [dataToVerify] and, although not
   /// strictly necessary, the rvdNonce is also checked in what the client
-  /// sent in the payload. Throws a [RAVE] on any failure; returns normally
-  /// on success.
+  /// sent in the payload. Only rsa2048 signatures are accepted. Throws a
+  /// [RAVE] on any failure; completes normally on success.
   ///
-  /// Extracted from [verifySocketAuth] so that [RelayAuthVerifierAuto] can
-  /// reuse the exact same legacy verification once it has detected, at the
-  /// socket level, that a connecting side is using legacy auth.
-  ///
-  /// Synchronous: nothing here needs to await, and keeping it sync lets the
-  /// legacy [verifySocketAuth] `onData` callback stay synchronous (so a second
-  /// data chunk cannot re-enter it mid-verification).
-  void verifyEnvelope(String message) {
+  /// [RelayAuthVerifierAuto] calls this once it has detected that a
+  /// connecting side is using legacy auth.
+  Future<void> verifyEnvelope(String message) async {
     logger.finer('$tag received data: $message');
     final envelope = jsonDecode(message);
     logger.finer('$tag decoded JSON message OK');
@@ -604,28 +591,22 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
       );
     }
 
-    final AtSigningVerificationInput input =
-        AtSigningVerificationInput(
-            dataToVerify,
-            base64Decode(envelope['signature']),
-            publicKey,
-          )
-          ..signingAlgorithm = DefaultSigningAlgo(null, hashingAlgo)
-          ..signingMode = AtSigningMode.data
-          ..signingAlgoType = signingAlgo
-          ..hashingAlgoType = hashingAlgo;
-
-    final AtSigningResult atSigningResult = AtChopsImpl(
-      AtChopsKeys(),
-    ).verify(input);
-    if (atSigningResult.result != true) {
-      logger.shout('$tag : verification FAILURE : ${atSigningResult.result}');
+    final bool verified =
+        signingAlgo == SigningAlgoType.rsa2048 &&
+        await rsaVerifyString(
+          dataToVerify,
+          signature: envelope['signature'],
+          publicKey: publicKey,
+          hashing: hashingAlgo,
+        );
+    if (!verified) {
+      logger.shout('$tag : verification FAILURE');
       throw RAVE(
         'Signature verification failed. Signatures did not match.',
         RAVEReason.signatureVerificationFailed,
       );
     }
-    logger.info('$tag : verification SUCCESS : ${atSigningResult.result}');
+    logger.info('$tag : verification SUCCESS');
   }
 
   @override
@@ -643,7 +624,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
     subscription = socket.listen(
-      (Uint8List data) {
+      (Uint8List data) async {
         if (authenticated) {
           if (!sc.isClosed) {
             try {
@@ -653,6 +634,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             }
           }
         } else {
+          // NOTE: verification awaits, so later chunks must wait for this one
+          subscription.pause();
           try {
             if (buffer.length + data.length >
                 RelayAuthVerifier.maxAuthBufferLength) {
@@ -678,7 +661,7 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
                 );
               }
 
-              verifyEnvelope(message);
+              await verifyEnvelope(message);
 
               authenticated = true;
               if (!completer.isCompleted) {
@@ -712,6 +695,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             if (!completer.isCompleted) {
               completer.completeError('Error during socket authentication: $e');
             }
+          } finally {
+            subscription.resume();
           }
         }
       },
@@ -943,7 +928,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       );
       // Throws on failure. Note: legacy sends nothing back to the connecting
       // side, so (unlike ESCR) we must not write to the socket here.
-      legacy.verifyEnvelope(message);
+      await legacy.verifyEnvelope(message);
       logger.info('Auto-detected LEGACY; verification success');
     }
 

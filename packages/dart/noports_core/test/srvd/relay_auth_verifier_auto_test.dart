@@ -20,15 +20,17 @@ class MockStreamSubscription<T> extends Mock implements StreamSubscription<T> {}
 
 /// Builds a legacy signature envelope, exactly as the legacy connecting side
 /// would send it: `{"payload":..,"signature":..,"hashingAlgo":..,"signingAlgo":..}`.
-String signLegacyPayload(AtChops atChops, Map payload) {
-  final Map envelope = {'payload': payload};
-  final AtSigningInput signingInput = AtSigningInput(jsonEncode(payload))
-    ..signingMode = AtSigningMode.data;
-  final AtSigningResult sr = atChops.sign(signingInput);
-  envelope['signature'] = sr.result.toString();
-  envelope['hashingAlgo'] = sr.atSigningMetaData.hashingAlgoType!.name;
-  envelope['signingAlgo'] = sr.atSigningMetaData.signingAlgoType!.name;
-  return jsonEncode(envelope);
+String signLegacyPayload(RsaKeyPair keyPair, Map payload) {
+  final signature = RsaSignatureAlgo.rsa2048().signBytesSync(
+    utf8.encode(jsonEncode(payload)),
+    secretKey: base64Decode(keyPair.atPrivateKey.privateKey),
+  );
+  return jsonEncode({
+    'payload': payload,
+    'signature': base64Encode(signature),
+    'hashingAlgo': HashingAlgoType.sha256.name,
+    'signingAlgo': SigningAlgoType.rsa2048.name,
+  });
 }
 
 /// Wires up a [MockSocket] whose `writeln` calls are captured into [written],
@@ -67,20 +69,19 @@ MockSocket makeMockSocket({
 
 void main() {
   group('RelayAuthVerifierAuto', () {
-    late AtChops atChops;
+    late RsaKeyPair legacyKP;
     late String legacyPublicKey;
 
     setUpAll(() {
-      final kp = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-      atChops = AtChopsImpl(AtChopsKeys.create(kp, null));
-      legacyPublicKey = kp.atPublicKey.publicKey;
+      legacyKP = RsaKeyPair.generate(keySize: 2048);
+      legacyPublicKey = legacyKP.atPublicKey.publicKey;
     });
 
     test('auto-detects LEGACY from a leading "{" (pre-supplied key)', () async {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final helper = MockRelayAuthVerifyHelper();
       final written = <String>[];
@@ -118,7 +119,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final helper = MockRelayAuthVerifyHelper();
       when(
@@ -154,9 +155,8 @@ void main() {
 
     test('auto-detects ESCR after silence, then challenges & verifies', () async {
       final sessionId = Uuid().v4();
-      final relayAuthAesKey =
-          AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-      final signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      final relayAuthAesKey = AESKey.generate(32).key;
+      final signingKP = RsaKeyPair.generate(keySize: 2048);
       const publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
       final helper = MockRelayAuthVerifyHelper();
@@ -253,10 +253,8 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
-      final otherKey = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048)
-          .atPublicKey
-          .publicKey;
+      final envelope = signLegacyPayload(legacyKP, payload);
+      final otherKey = RsaKeyPair.generate(keySize: 2048).atPublicKey.publicKey;
 
       final written = <String>[];
       late void Function(Uint8List) feed;
@@ -362,7 +360,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final helper = MockRelayAuthVerifyHelper();
       final written = <String>[];
@@ -442,7 +440,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final helper = MockRelayAuthVerifyHelper();
       final written = <String>[];
@@ -546,7 +544,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final socketSubscription = MockStreamSubscription<Uint8List>();
       late void Function(Uint8List) feed;
@@ -585,7 +583,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       late void Function(Uint8List) feed;
       final mockSocket = makeMockSocket(
@@ -656,7 +654,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final lookup = Completer<String>();
       final helper = MockRelayAuthVerifyHelper();
@@ -705,7 +703,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final lookup = Completer<String>();
       final helper = MockRelayAuthVerifyHelper();
@@ -753,7 +751,7 @@ void main() {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
       final payload = {'sessionId': sessionId, 'rvdNonce': rvdNonce};
-      final envelope = signLegacyPayload(atChops, payload);
+      final envelope = signLegacyPayload(legacyKP, payload);
 
       final lookup = Completer<String>();
       final helper = MockRelayAuthVerifyHelper();
@@ -827,9 +825,8 @@ void main() {
 })
 escrFixture() {
   final sessionId = Uuid().v4();
-  final relayAuthAesKey =
-      AtChopsUtil.generateSymmetricKey(EncryptionKeyType.aes256).key;
-  final signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+  final relayAuthAesKey = AESKey.generate(32).key;
+  final signingKP = RsaKeyPair.generate(keySize: 2048);
   const publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
   final helper = MockRelayAuthVerifyHelper();

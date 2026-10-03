@@ -75,7 +75,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
           : null,
     );
 
-    final notifyPayload = signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapAndJsonEncode(
       atClient,
       sessionRequest.toJson(),
     );
