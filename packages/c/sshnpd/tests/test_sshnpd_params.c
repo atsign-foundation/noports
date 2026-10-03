@@ -228,27 +228,33 @@ int manager_list_test() {
   apply_default_values_to_sshnpd_params(params);
   int ret = parse_sshnpd_params(params, 7, argv);
   if (ret != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
 
   if (params->manager_list_len != 3) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[0], "@foo") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[1], "@bar") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[2], "@baz") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
 
+  free(manager_str);
   free(params);
   return 0;
 }
@@ -361,6 +367,7 @@ int device_lower_test() {
   size_t device_name_literal_len = strlen(device_name_literal);
   char *device_name = malloc(sizeof(char) * (device_name_literal_len + 1));
   if (device_name == NULL) {
+    free(params);
     return 1;
   }
   memcpy(device_name, device_name_literal, device_name_literal_len);
