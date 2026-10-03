@@ -27,6 +27,9 @@ void main() {
 
     setUp(() {
       mockAtClient = MockAtClient();
+      // The constructor composes the daemon's device info, which names the
+      // `_apsk` record of the atSign the client runs as.
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@device');
 
       // Create SshnpdImpl instance with minimal required parameters
       sshnpd = SshnpdImpl(

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
@@ -21,24 +23,18 @@ void main() {
     late String wrongAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
-    late AtEncryptionKeyPair wrongKP;
+    late RsaKeyPair signingKP;
+    late RsaKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late String wrongChallenge = AtChopsUtil.generateSymmetricKey(
-      EncryptionKeyType.aes256,
-    ).key;
+    late String wrongChallenge = AESKey.generate(32).key;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-      wrongKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+      wrongKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
-      wrongAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
+      wrongAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
@@ -123,6 +119,65 @@ void main() {
       expect(verifier.sessionId, relaySessionId);
       expect(verifier.isSideA, true);
     });
+
+    for (final label in ['rsa2048', 'rsa4096', 'ecc_secp256r1']) {
+      test('signing algorithm $label', () async {
+        final checkedHelper = MockRelayAuthVerifyHelper();
+        when(
+          () => checkedHelper.isSessionActive(relaySessionId),
+        ).thenAnswer((_) async => true);
+        when(
+          () => checkedHelper.getRelayAuthAesKey(relaySessionId),
+        ).thenAnswer((_) async => relayAuthAesKey);
+        when(
+          () => checkedHelper.lookup(relaySessionId, publicSigningKeyUri),
+        ).thenAnswer((_) async => signingKP.atPublicKey.publicKey);
+        final verifier = RelayAuthVerifierESCR(
+          'test signing algorithm $label',
+          checkedHelper,
+        );
+
+        final p = {
+          'sid': relaySessionId,
+          'c': verifier.challenge,
+          'side': 'a',
+        };
+        final envelope = {
+          'p': p,
+          's': rsaSignString(
+            jsonEncode(p),
+            privateKey: signingKP.atPrivateKey.privateKey,
+          ),
+          'ha': 'sha256',
+          'sa': label,
+          'sk': publicSigningKeyUri,
+        };
+        final iv = generateIv();
+        final encrypted = await aesEncryptString(
+          base64Encode(jsonEncode(envelope).codeUnits),
+          key: relayAuthAesKey,
+          iv: iv,
+        );
+        final response = '$relaySessionId:'
+            '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
+
+        if (label == 'rsa2048') {
+          expect(await verifier.verifyChallengeResponse(response), true);
+          return;
+        }
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          throwsA(
+            isA<RAVE>().having(
+              (e) => e.reason,
+              'reason',
+              RAVEReason.signatureVerificationFailed,
+            ),
+          ),
+        );
+        verifyNever(() => checkedHelper.lookup(any(), any()));
+      });
+    }
 
     test('wrong AES key', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
@@ -278,15 +333,13 @@ void main() {
     late String relayAuthAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
+    late RsaKeyPair signingKP;
     late RelayAuthVerifyHelper helper;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();

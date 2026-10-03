@@ -47,7 +47,7 @@ Replace `@<REPLACE>_client` with your **client atSign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_client
+~/.local/bin/at_activate onboard -a @<REPLACE>_client
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -65,7 +65,7 @@ Replace `@<REPLACE>_device` with your **device atSign.**
 {% endhint %}
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_device
+~/.local/bin/at_activate onboard -a @<REPLACE>_device
 ```
 
 #### Enter the one-time password (OTP) & Check your SPAM/PROMOTIONS folders

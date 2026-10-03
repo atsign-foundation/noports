@@ -2,6 +2,25 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.0
+
+* feat: `npt --debug` logs everything at FINEST
+* feat: `noports activate`, run again after an interruption, waits on the
+  enrollment request it already submitted rather than submitting another
+* feat: `at_activate` has new `decrypt` and `version` commands, a
+  `--posture` option for `onboard` and `enroll`, and `--key-exchange` for
+  `enroll`; `--hashingAlgoType` is accepted but ignored
+* chore: `at_activate` with no command still runs `onboard`, but warns
+  that the form is deprecated, so write `at_activate onboard -a <atSign>`
+* feat: the keyfile `at_activate onboard` or `enroll` creates is owner-only
+  (0600), so a daemon running as a different user can't read it until you
+  change its permissions. Released versions can still read the keyfiles it
+  writes by default. When it rewrites a keyfile it keeps the old one as
+  `.bak` (or `.pre-v1` if it was in the old format), and the rewritten
+  keyfile gets the default file mode
+* feat: a daemon started before its atSign is activated exits at once with
+  the atServer's reason, rather than waiting about 20 seconds
+
 ## v5.17.0
 
 * feat: `srv`/`srvd` tunnel traffic now runs through `at_chops`'s

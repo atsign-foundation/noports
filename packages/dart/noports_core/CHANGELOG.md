@@ -1,5 +1,14 @@
 # 6.16.0
 
+- build: depends on the at_client_sdk release candidates: at_client
+  3.15.0-rc3, at_auth 4.0.0-rc3, at_lookup 3.7.0-rc3, at_cli_commons
+  3.1.2-rc2 and at_onboarding_cli 2.0.0-rc3, plus at_commons 5.18.0 and
+  at_utils 3.4.1
+- **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
+  `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
+  `ActivateFlows` rather than an `AtOnboardingService`
+- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
+  and `ClientParams` implementations must add `relayAuthModeExplicit`
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).
@@ -9,8 +18,14 @@
   forces ESCR wherever it can, and is refused up front when it can't (an
   older relay with a daemon that predates ESCR). The full matrix is in
   `docs/reference/relay-auth-modes.md`.
-- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
-  and `ClientParams` implementations must add `relayAuthModeExplicit`
+- feat: `escrSigningKeyPair`, the keypair ESCR relay auth signs with, and
+  `loadEnvelopeSigningKey`, which reads the envelope signing key up front
+- refactor: `verifyEnvelopeSignature` and the relay verifiers accept only
+  rsa2048 signatures from 2048-bit keys, which is what every NoPorts
+  release sends
+- refactor: moved off at_chops's deprecated compatibility API. Nothing
+  changes on the wire, and released versions can still exchange session
+  keys with this one
 - fix: the two-port relay path issues a fresh ESCR challenge for every
   connection, so a captured response can't be replayed onto a later
   connection in the same session.

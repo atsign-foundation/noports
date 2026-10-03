@@ -23,7 +23,20 @@ import 'package:npe2e/utils.dart';
 const String policyTestsApkamApp = 'npe2e_policy';
 const String policyTranscriptFileName = 'npe2e_policy_transcript.log';
 
+/// Runs the policy tests, revoking the run's APKAM enrollments however it ends.
 Future<void> policyTests(PolicyTestsParams params) async {
+  final ApkamRevocations revocations = ApkamRevocations();
+  try {
+    await _policyTests(params, revocations);
+  } finally {
+    await revocations.revokeAll();
+  }
+}
+
+Future<void> _policyTests(
+  PolicyTestsParams params,
+  ApkamRevocations revocations,
+) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
 
   // 1. Parse versions
@@ -126,14 +139,22 @@ Future<void> policyTests(PolicyTestsParams params) async {
     // 2. daemonAtsign: for the daemon to use in tests
     // 3. nppAtsign: for the NPP to use in tests
     // 4. nppAtServerAtsign: for the NPP atServer
+    final List<ApkamAtsign> apkamAtsigns = [
+      (which: 'client', atsign: params.clientAtsign),
+      (which: 'daemon', atsign: params.daemonAtsign),
+      (which: 'npp', atsign: params.nppAtsign),
+      (which: 'npp_atserver', atsign: params.nppAtServerAtsign),
+    ];
+    revocations.add(
+      atActivateClientBinary: atActivateClientBinary,
+      atsigns: apkamAtsigns,
+      rootDomain: params.rootDomain,
+      testRunId: testRunId,
+      apkamApp: policyTestsApkamApp,
+    );
     return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
-      atsigns: [
-        (which: 'client', atsign: params.clientAtsign),
-        (which: 'daemon', atsign: params.daemonAtsign),
-        (which: 'npp', atsign: params.nppAtsign),
-        (which: 'npp_atserver', atsign: params.nppAtServerAtsign),
-      ],
+      atsigns: apkamAtsigns,
       rootDomain: params.rootDomain,
       apkamKeysDirectory: apkamKeysDirectory,
       testRunId: testRunId,

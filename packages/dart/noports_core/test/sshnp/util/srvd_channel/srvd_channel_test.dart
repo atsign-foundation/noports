@@ -76,16 +76,8 @@ void main() {
       registerFallbackValue(Duration(minutes: 1));
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
 
-      // Create an AtChops instance for testing
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
-
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(encryptionKeyPair, null),
-      );
-
-      when(() => mockAtClient.atChops).thenReturn(atChops);
-      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
+      stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
           any(),
@@ -242,6 +234,7 @@ void main() {
         registerFallbackValue(FakeNotificationParams());
         String sessionId = 'dummy-session-id';
         MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
         MockNotificationService mockNotificationService =
             MockNotificationService();
 
@@ -324,6 +317,7 @@ void main() {
         registerFallbackValue(FakeNotificationParams());
         String sessionId = 'dummy-session-id';
         MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
         MockNotificationService mockNotificationService =
             MockNotificationService();
 
@@ -412,6 +406,7 @@ void main() {
       registerFallbackValue(FakeNotificationParams());
       String sessionId = 'dummy-session-id';
       MockAtClient mockAtClient = MockAtClient();
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
       MockNotificationService mockNotificationService =
           MockNotificationService();
 
@@ -532,6 +527,7 @@ void main() {
 
         String sessionId = 'dummy-session-id';
         MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
         MockNotificationService mockNotificationService =
             MockNotificationService();
 

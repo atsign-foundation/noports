@@ -451,23 +451,19 @@ void main() {
 
     test('A test to verify notifying ssh request to sshnpd', () async {
       registerFallbackValue(FakeNotificationParams());
-      AtEncryptionKeyPair atEncryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
 
       MockAtClient mockAtClient = MockAtClient();
       MockNotificationService mockNotificationService =
           MockNotificationService();
 
-      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@alice');
+      stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
           any(),
           getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
-      when(() => mockAtClient.atChops).thenAnswer(
-        (_) => AtChopsImpl(AtChopsKeys.create(atEncryptionKeyPair, null)),
-      );
+      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
 
       when(
         () => mockAtClient.notificationService,

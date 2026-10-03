@@ -5,7 +5,9 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:mutex/mutex.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 
 /// Clients which are authenticating to a relay may use a [RelayAuthenticator]
 /// to do so. Responsibility of a [RelayAuthenticator] is typically to
@@ -53,6 +55,47 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   }
 }
 
+/// The keypair a [RelayAuthenticatorESCR] signs with: [signer]'s APKAM
+/// authentication keypair, which is what its `_apsk` record advertises while
+/// the enrollment holds no signing keys of its own.
+///
+/// Throws unless that keypair is a 2048-bit RSA key, the only kind srvd
+/// verifies, and while the enrollment holds signing keys of its own, since
+/// its `_apsk` record then no longer advertises the authentication key.
+Future<({String publicKey, String privateKey})> escrSigningKeyPair(
+  ApkamSigning signer,
+) async {
+  if ((await signer.heldSigningKeys).isNotEmpty) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} holds signing keys of its own, so'
+      ' its _apsk record no longer advertises the authentication key that'
+      ' relay authentication signs with',
+    );
+  }
+  final key = await signer.authenticationSigningKey;
+  if (key == null) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} holds no APKAM keypair to sign'
+      ' relay authentication with',
+    );
+  }
+  if (key.algorithm != SigningAlgoType.rsa2048) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} authenticates with'
+      ' ${key.algorithm.name}; relay authentication needs rsa2048',
+    );
+  }
+  try {
+    rsaSignString('', privateKey: key.privateKey);
+  } on AtSigningException catch (e) {
+    throw AtClientException.message(
+      'Enrollment ${signer.enrollmentId} authenticates with a key relay'
+      ' authentication cannot sign with: ${e.message}',
+    );
+  }
+  return (publicKey: key.publicKey, privateKey: key.privateKey);
+}
+
 /// Authenticate to relay with Encrypted Signed Challenge response
 ///
 /// - listens to socket
@@ -66,7 +109,7 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
 ///   - the actual payload is
 ///     ```
 ///     {
-///       'p':{'sid':'session-id','c':'challenge'},
+///       'p':{'sid':'session-id','c':'challenge','side':'<a|b>'},
 ///       's':'signature of json string encoding of p
 ///       'ha':'hashingAlgo',
 ///       'sa':'signingAlgo',
@@ -74,7 +117,7 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
 ///     }
 ///     ```
 ///     where `s` is signed by some private signing key, and `sk` is the
-///     atProtocol URI of the corresponding public key.
+///     Atsign Protocol URI of the corresponding public key.
 /// - sends challenge response `${sessionId}:${auth-payload-as-base64}\n`
 /// - waits for confirmation from relay
 ///   - `ok` is good
@@ -91,8 +134,6 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   /// `false` for daemon connections
   final bool isSideA;
 
-  late final AtChops _atChops;
-
   RelayAuthenticatorESCR({
     required this.sessionId,
     required this.relayAuthAesKey,
@@ -100,15 +141,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     required this.publicSigningKey,
     required this.privateSigningKey,
     required this.isSideA,
-  }) {
-    _atChops = AtChopsImpl(
-      AtChopsKeys()
-        ..atEncryptionKeyPair = AtEncryptionKeyPair.create(
-          publicSigningKey,
-          privateSigningKey,
-        ),
-    );
-  }
+  });
 
   /// Map of things to place in the environment when executing the srv
   /// in a separate process
@@ -236,27 +269,23 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     Map envelope = {
       'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')},
     };
-    final AtSigningInput signingInput = AtSigningInput(
+    envelope['s'] = rsaSignString(
       jsonEncode(envelope['p']),
-    )..signingMode = AtSigningMode.data;
-    final AtSigningResult sr = _atChops.sign(signingInput);
-    final String signature = sr.result.toString();
-    envelope['s'] = signature;
-    envelope['ha'] = sr.atSigningMetaData.hashingAlgoType!.name;
-    envelope['sa'] = sr.atSigningMetaData.signingAlgoType!.name;
+      privateKey: privateSigningKey,
+    );
+    envelope['ha'] = HashingAlgoType.sha256.name;
+    envelope['sa'] = SigningAlgoType.rsa2048.name;
     envelope['sk'] = publicSigningKeyUri;
 
     String envelope64 = base64Encode(jsonEncode(envelope).codeUnits);
 
     /// Encrypt the response payload
-    final InitialisationVector iv = AtChopsUtil.generateRandomIV(16);
-    final ea = AESEncryptionAlgo(AESKey(relayAuthAesKey));
-    final String envelopeEncrypted64 = (await _atChops.encryptString(
+    final InitialisationVector iv = generateIv();
+    final String envelopeEncrypted64 = await aesEncryptString(
       envelope64,
-      EncryptionKeyType.aes256,
-      encryptionAlgorithm: ea,
+      key: relayAuthAesKey,
       iv: iv,
-    )).result;
+    );
 
     String authPayload64 = base64Encode(
       jsonEncode({
