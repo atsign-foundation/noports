@@ -396,6 +396,13 @@ class SshnpdImpl
 
       // For session-based requests, try to acquire mutex before processing
       if (['ssh_request', 'npt_request', 'sshd'].contains(messageType)) {
+        if (!hasValidSessionId(notification, messageType)) {
+          logger.warning(
+            'Refusing $messageType request ${notification.id}'
+            ' from ${notification.from}: its sessionId is missing or not a UUID',
+          );
+          return;
+        }
         bool mutexAcquired = await tryAcquireSessionMutex(
           notification,
           messageType,
@@ -571,6 +578,28 @@ class SshnpdImpl
         logger.info('Unexpected error acquiring session mutex: $err');
         return true; // Proceed anyway to maintain functionality
       }
+    }
+  }
+
+  /// Returns false if session request [notification], of type [messageType],
+  /// lacks a client-supplied sessionId or carries one which is not a UUID. A
+  /// legacy `sshd` request without one passes, since the daemon generates it.
+  @visibleForTesting
+  bool hasValidSessionId(AtNotification notification, String messageType) {
+    try {
+      switch (messageType) {
+        case 'ssh_request':
+        case 'npt_request':
+          final envelope = jsonDecode(notification.value!);
+          return isValidSessionId(envelope['payload']['sessionId']);
+        case 'sshd':
+          List<String> sshList = notification.value!.split(' ');
+          return sshList.length < 5 || isValidSessionId(sshList[4]);
+        default:
+          return true;
+      }
+    } catch (_) {
+      return false;
     }
   }
 

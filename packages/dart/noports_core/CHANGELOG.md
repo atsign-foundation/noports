@@ -29,6 +29,11 @@
 - fix: the two-port relay path issues a fresh ESCR challenge for every
   connection, so a captured response can't be replayed onto a later
   connection in the same session.
+- fix: sshnpd refuses a session request whose session id isn't a UUID, and
+  `SshnpSessionRequest` and `NptSessionRequest` throw an `ArgumentError` for
+  one. New `isValidSessionId` makes the same check
+- fix: `LocalSshKeyUtil.deauthorizePublicKey` no longer removes other
+  `authorized_keys` lines that happen to contain the session id
 
 # 6.15.0
 

@@ -20,6 +20,9 @@
   keyfile gets the default file mode
 * feat: a daemon started before its atSign is activated exits at once with
   the atServer's reason, rather than waiting about 20 seconds
+* fix: sshnpd refuses a session request whose session id isn't a UUID, and
+  removing a session's ephemeral key no longer removes other
+  `authorized_keys` lines
 
 ## v5.17.0
 
