@@ -305,6 +305,14 @@ class SrvdImpl
     try {
       sessionParams = await srvdSessionParamsFromNotification(n.value!);
 
+      if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
+        logger.shout(
+          'Session ${sessionParams.sessionId}'
+          ' for ${sessionParams.atSignA}'
+          ' requested by ${n.from} is denied',
+        );
+        return;
+      }
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
