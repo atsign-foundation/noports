@@ -1022,7 +1022,8 @@ bool _supportsRelayCase(
   NoPortsVersion relayVersion,
   NptRelayCase relayCase,
 ) {
-  if (!relayCase.clientUses443) {
+  if (!relayCase.clientUses443 &&
+      relayCase.relayAuthMode != escrRelayAuthMode) {
     return true;
   }
   final NoPortsVersion earliestEscr = NoPortsVersion(
