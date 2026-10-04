@@ -34,6 +34,8 @@
   one. New `isValidSessionId` makes the same check
 - fix: `LocalSshKeyUtil.deauthorizePublicKey` no longer removes other
   `authorized_keys` lines that happen to contain the session id
+- fix: srvd accepts an ESCR-authenticated socket only when it is signed by
+  the atSign of the side it claims
 
 # 6.15.0
 

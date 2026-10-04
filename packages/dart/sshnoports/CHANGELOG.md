@@ -23,6 +23,8 @@
 * fix: sshnpd refuses a session request whose session id isn't a UUID, and
   removing a session's ephemeral key no longer removes other
   `authorized_keys` lines
+* fix: srvd accepts an ESCR-authenticated socket only when it is signed by
+  the atSign of the side it claims
 
 ## v5.17.0
 
