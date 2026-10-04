@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
+import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
@@ -34,7 +35,7 @@ void main() {
     });
   });
 
-  SrvdImpl srvd({bool bind443 = false}) => SrvdImpl(
+  SrvdImpl srvd({bool bind443 = false, int localBindPort443 = 0}) => SrvdImpl(
         atClient: atClient,
         atSign: '@relay'.toAtsign(),
         homeDirectory: Directory.current.path,
@@ -44,7 +45,7 @@ void main() {
         logTraffic: false,
         verbose: false,
         bind443: bind443,
-        localBindPort443: 0,
+        localBindPort443: localBindPort443,
         relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       );
 
@@ -58,6 +59,15 @@ void main() {
         preFetch: const [],
         sendJsonResponse: true,
       );
+
+  /// Waits up to 5 seconds for [relay] to have no running workers.
+  Future<int> untilNoWorkers(SrvdImpl relay) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (relay.runningWorkers > 0 && DateTime.now().isBefore(deadline)) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    return relay.runningWorkers;
+  }
 
   /// Completes when [isolate] exits.
   Future<void> exitOf(Isolate isolate) {
@@ -77,12 +87,17 @@ void main() {
     addTearDown(control.destroy);
     expect(subscriptions.where((c) => c.hasListener), hasLength(2));
     expect(relay.runningWorkers, 1);
+    relay.sessions['a session with no worker'] = SessionInfo(
+      params: session(),
+      connector: null,
+    );
 
     await relay.stop();
 
     await exited.timeout(const Duration(seconds: 5));
     expect(subscriptions.where((c) => c.hasListener), isEmpty);
     expect(relay.runningWorkers, 0);
+    expect(relay.sessions, isEmpty);
     await expectLater(
       Socket.connect(InternetAddress.loopbackIPv4, portA),
       throwsA(isA<SocketException>()),
@@ -104,13 +119,43 @@ void main() {
     expect(relay.runningWorkers, 0);
   });
 
-  test('stop() ends the 443 isolate', () async {
-    final relay = srvd(bind443: true);
+  test('stop() during a session spawn leaves no worker running', () async {
+    final relay = srvd();
+    await relay.init();
+    final spawning = relay.spawnNewPortPairIsolate(session());
+
+    await relay.stop();
+
+    await expectLater(spawning, throwsA(isA<StateError>()));
+    expect(await untilNoWorkers(relay), 0);
+  });
+
+  test('stop() ends the 443 isolate and closes its port', () async {
+    final probe = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final port = probe.port;
+    await probe.close();
+    final relay = srvd(bind443: true, localBindPort443: port);
     await relay.init();
     final exited = exitOf(relay.isolate443!);
+    // NOTE the worker binds its port after init() returns, so retry briefly.
+    Socket? control;
+    final deadline = DateTime.now().add(const Duration(seconds: 2));
+    while (control == null && DateTime.now().isBefore(deadline)) {
+      try {
+        control = await Socket.connect(InternetAddress.loopbackIPv4, port);
+      } on SocketException {
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+    }
+    expect(control, isNotNull, reason: 'the 443 worker never listened');
+    addTearDown(control!.destroy);
 
     await relay.stop();
 
     await exited.timeout(const Duration(seconds: 5));
+    await expectLater(
+      Socket.connect(InternetAddress.loopbackIPv4, port),
+      throwsA(isA<SocketException>()),
+    );
   });
 }
