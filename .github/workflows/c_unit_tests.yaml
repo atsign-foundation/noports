@@ -5,10 +5,13 @@ on:
   push:
     branches: [trunk]
   pull_request:
-    branches: [trunk]
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   unit-tests:

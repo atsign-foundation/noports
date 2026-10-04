@@ -49,6 +49,52 @@ void main() {
       ).thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
     });
 
+    /// A helper for [relaySessionId] that serves [signingKP]'s public key for
+    /// any key URI, so the only thing that can refuse is the check under test.
+    MockRelayAuthVerifyHelper sessionHelper({bool active = true}) {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(relaySessionId))
+          .thenAnswer((_) async => active);
+      when(() => h.getRelayAuthAesKey(relaySessionId))
+          .thenAnswer((_) async => relayAuthAesKey);
+      when(() => h.lookup(relaySessionId, any()))
+          .thenAnswer((_) async => signingKP.atPublicKey.publicKey);
+      return h;
+    }
+
+    /// Builds a response as [RelayAuthenticatorESCR] does, but from a signed
+    /// payload the test chooses, so one field can be wrong and the rest valid.
+    Future<String> escrResponse(
+      Object? payload, {
+      String signingAlgo = 'rsa2048',
+      String? signingKeyUri,
+    }) async {
+      final envelope = {
+        'p': payload,
+        's': rsaSignString(
+          jsonEncode(payload),
+          privateKey: signingKP.atPrivateKey.privateKey,
+        ),
+        'ha': 'sha256',
+        'sa': signingAlgo,
+        'sk': signingKeyUri ?? publicSigningKeyUri,
+      };
+      final iv = generateIv();
+      final encrypted = await aesEncryptString(
+        base64Encode(jsonEncode(envelope).codeUnits),
+        key: relayAuthAesKey,
+        iv: iv,
+      );
+      return '$relaySessionId:'
+          '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
+    }
+
+    Matcher refusedWith(RAVEReason reason, String message) => throwsA(
+          isA<RAVE>()
+              .having((e) => e.reason, 'reason', reason)
+              .having((e) => e.message, 'message', contains(message)),
+        );
+
     test('all is well', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
         sessionId: relaySessionId,
@@ -122,44 +168,15 @@ void main() {
 
     for (final label in ['rsa2048', 'rsa4096', 'ecc_secp256r1']) {
       test('signing algorithm $label', () async {
-        final checkedHelper = MockRelayAuthVerifyHelper();
-        when(
-          () => checkedHelper.isSessionActive(relaySessionId),
-        ).thenAnswer((_) async => true);
-        when(
-          () => checkedHelper.getRelayAuthAesKey(relaySessionId),
-        ).thenAnswer((_) async => relayAuthAesKey);
-        when(
-          () => checkedHelper.lookup(relaySessionId, publicSigningKeyUri),
-        ).thenAnswer((_) async => signingKP.atPublicKey.publicKey);
+        final checkedHelper = sessionHelper();
         final verifier = RelayAuthVerifierESCR(
           'test signing algorithm $label',
           checkedHelper,
         );
-
-        final p = {
-          'sid': relaySessionId,
-          'c': verifier.challenge,
-          'side': 'a',
-        };
-        final envelope = {
-          'p': p,
-          's': rsaSignString(
-            jsonEncode(p),
-            privateKey: signingKP.atPrivateKey.privateKey,
-          ),
-          'ha': 'sha256',
-          'sa': label,
-          'sk': publicSigningKeyUri,
-        };
-        final iv = generateIv();
-        final encrypted = await aesEncryptString(
-          base64Encode(jsonEncode(envelope).codeUnits),
-          key: relayAuthAesKey,
-          iv: iv,
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingAlgo: label,
         );
-        final response = '$relaySessionId:'
-            '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
 
         if (label == 'rsa2048') {
           expect(await verifier.verifyChallengeResponse(response), true);
@@ -322,6 +339,157 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('a signature over another session id is refused', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test other session', h);
+      final response = await escrResponse({
+        'sid': Uuid().v4(),
+        'c': verifier.challenge,
+        'side': 'a',
+      });
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(
+          RAVEReason.dataMismatch,
+          'does not match expected sessionId',
+        ),
+      );
+      verifyNever(() => h.lookup(any(), any()));
+    });
+
+    for (final uri in [
+      'public:signing_publickey@alice',
+      '_apsk.my_enrollment_id.a.__e.evil@alice',
+    ]) {
+      test('a signing key outside the per-enrollment namespace is refused'
+          ' ($uri)', () async {
+        final h = sessionHelper();
+        final verifier = RelayAuthVerifierESCR('test namespace', h);
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingKeyUri: uri,
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.signatureVerificationFailed,
+            'is not in the per-enrollment data namespace',
+          ),
+        );
+        verifyNever(() => h.lookup(any(), any()));
+      });
+    }
+
+    test('a response for a session that is not active is refused', () async {
+      final h = sessionHelper(active: false);
+      final verifier = RelayAuthVerifierESCR('test inactive session', h);
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(RAVEReason.sessionNotActive, 'is not active'),
+      );
+      verifyNever(() => h.getRelayAuthAesKey(any()));
+    });
+
+    for (final side in ['c', null]) {
+      test('a side other than "a" or "b" is refused (${side ?? 'absent'})',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test side', sessionHelper());
+        final response = await escrResponse({
+          'sid': relaySessionId,
+          'c': verifier.challenge,
+          if (side != null) 'side': side,
+        });
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'must be either "a" or "b"',
+          ),
+        );
+        expect(verifier.isSideA, isNull);
+      });
+    }
+
+    for (final payload in [null, 'not a map']) {
+      test('a signed payload that is not a map is refused ($payload)',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test payload', sessionHelper());
+
+        await expectLater(
+          verifier.verifyChallengeResponse(await escrResponse(payload)),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'does not contain signedPayload',
+          ),
+        );
+      });
+    }
+
+    for (final (label, reshape) in [
+      ('a trailing field', (String r) => '$r:extra'),
+      ('no separator', (String r) => r.replaceFirst(':', '')),
+    ]) {
+      test('a response that is not <sid>:<payload> is refused ($label)',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test shape', sessionHelper());
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(reshape(response)),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'Expected <sid>:<payload>',
+          ),
+        );
+      });
+    }
+
+    String b64(String s) => base64Encode(utf8.encode(s));
+    for (final (label, authPayload64, reason, message) in [
+      (
+        'not base64',
+        '!!!',
+        RAVEReason.malformedChallengeResponse,
+        'base64Decode',
+      ),
+      (
+        'not JSON',
+        b64('not json'),
+        RAVEReason.jsonDecodeFailed,
+        'Unable to decode',
+      ),
+      (
+        'no iv',
+        b64('{"e":"x"}'),
+        RAVEReason.malformedChallengeResponse,
+        'No iv',
+      ),
+      (
+        'no e',
+        b64('{"iv":"x"}'),
+        RAVEReason.malformedChallengeResponse,
+        'No envelopeEncrypted',
+      ),
+    ]) {
+      test('a malformed encrypted envelope is refused ($label)', () async {
+        final verifier = RelayAuthVerifierESCR('test envelope', sessionHelper());
+
+        await expectLater(
+          verifier.verifyChallengeResponse('$relaySessionId:$authPayload64'),
+          refusedWith(reason, message),
+        );
+      });
+    }
   });
 
   group('post-auth fast-path ordering', () {
