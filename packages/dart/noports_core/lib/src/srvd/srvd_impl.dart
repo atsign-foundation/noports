@@ -64,6 +64,15 @@ class SrvdImpl
   SendPort? toIsolate443;
   PortPair portPair443 = (443, 443);
 
+  final List<StreamSubscription> _subscriptions = [];
+
+  /// The relay isolates still running: where to send them requests, and when
+  /// they exit.
+  final Map<Isolate, ({SendPort toWorker, Future<void> exited})> _workers = {};
+
+  @visibleForTesting
+  int get runningWorkers => _workers.length;
+
   SrvdImpl({
     required this.atClient,
     required this.atSign,
@@ -164,13 +173,43 @@ class SrvdImpl
     }
     NotificationService notificationService = atClient.notificationService;
 
-    handlePublicKeyChangedEvent(atClient, atSign);
+    _subscriptions.add(handlePublicKeyChangedEvent(atClient, atSign));
 
     const String subscriptionRegex = '\\.${Srvd.namespace}@';
 
-    notificationService
-        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
-        .listen(notificationHandler);
+    _subscriptions.add(
+      notificationService
+          .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
+          .listen(notificationHandler),
+    );
+  }
+
+  @override
+  Future<void> stop() async {
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    for (final MapEntry(key: worker, value: (:toWorker, :exited))
+        in _workers.entries.toList()) {
+      toWorker.send(IIRequest.create('stop', null));
+      await exited.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => worker.kill(priority: Isolate.immediate),
+      );
+    }
+    sessions.clear();
+  }
+
+  /// Closes [fromWorker] and forgets [worker] once [worker] exits.
+  Future<void> _whenExited(Isolate worker, ReceivePort fromWorker) {
+    final exitPort = ReceivePort();
+    worker.addOnExitListener(exitPort.sendPort);
+    return exitPort.first.then((_) {
+      exitPort.close();
+      fromWorker.close();
+      _workers.remove(worker);
+    });
   }
 
   Future<void> notificationHandler(AtNotification n) async {
@@ -727,6 +766,7 @@ class SrvdImpl
       portPairIsolateEntryPoint,
       parameters,
     );
+    final exited = _whenExited(spawned, fromSpawned);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -809,6 +849,7 @@ class SrvdImpl
       ' for session ${sessionParams.sessionId}',
     );
 
+    _workers[spawned] = (toWorker: toSpawned, exited: exited);
     return (ports, spawned, toSpawned);
   }
 
@@ -862,6 +903,7 @@ class SrvdImpl
       singlePortIsolateEntryPoint,
       parameters,
     );
+    final exited = _whenExited(spawned, fromSpawned);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -924,6 +966,7 @@ class SrvdImpl
       );
     }
 
+    _workers[spawned] = (toWorker: toSpawned, exited: exited);
     return (portPair443, spawned, toSpawned);
   }
 
