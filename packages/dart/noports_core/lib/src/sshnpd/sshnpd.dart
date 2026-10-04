@@ -140,4 +140,11 @@ abstract class Sshnpd {
   /// - If an 'sshpublickey' notification is received, Checks if the SSH public key is valid, Appends the SSH public key to the authorized_keys file in the user's SSH directory if it is not already present
   /// - If an 'sshd' notification is received, it triggers the sshCallback function to handle the SSH callback request.
   Future<void> run();
+
+  /// Stops what [run] started: cancels its timers and notification
+  /// subscriptions, and removes any ephemeral keys still awaiting removal.
+  /// Sessions already running carry on, and the [atClient] stays open for
+  /// whoever owns it. With a policy manager, the auth-check RPC listener ends
+  /// only when the [atClient]'s notification service stops.
+  Future<void> stop();
 }
