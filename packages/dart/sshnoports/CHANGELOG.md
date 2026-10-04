@@ -25,6 +25,9 @@
   `authorized_keys` lines
 * fix: a long-running srvd no longer keeps a receive port open for every
   session it has relayed
+* fix: sshnpd no longer leaves a session's ephemeral key in
+  `authorized_keys`, or drops a new session's key, when sessions start and
+  end at the same moment
 
 ## v5.17.0
 
