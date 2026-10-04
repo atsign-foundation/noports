@@ -389,6 +389,7 @@ void main() {
       '_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
       'public:_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
       'cached:public:_apsk.my_enrollment_id.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@alice:x',
     ]) {
       test('a signing key not shaped like an enrollment key is refused ($uri)',
           () async {

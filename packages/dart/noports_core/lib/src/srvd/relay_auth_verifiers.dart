@@ -101,7 +101,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   /// it and the key the helper looks up from it name the same atSign.
   static final _signingKeyUriShape = RegExp(
     '^(public:)?_apsk\\.[A-Za-z0-9_-]+\\.'
-    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@\\s]+\$',
+    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@:\\s]+\$',
   );
 
   /// A fresh, unguessable challenge for this one authentication. It is the sole
@@ -290,10 +290,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    atSign = publicSigningKeyUri
-        .substring(publicSigningKeyUri.lastIndexOf('@'))
-        .toAtsign();
-
     if (!publicSigningKeyUri
         .substring(0, publicSigningKeyUri.lastIndexOf('@'))
         .endsWith(EnrollmentConstants.perEnrollmentApproved)) {
@@ -312,6 +308,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+    atSign = publicSigningKeyUri
+        .substring(publicSigningKeyUri.lastIndexOf('@'))
+        .toAtsign();
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
     if (signingAlgo != SigningAlgoType.rsa2048) {
