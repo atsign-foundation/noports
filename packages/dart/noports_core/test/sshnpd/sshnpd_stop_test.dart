@@ -18,12 +18,13 @@ void main() {
   });
 
   late MockAtClient atClient;
+  late MockNotificationService notificationService;
   late List<(String?, StreamController<AtNotification>)> subscriptions;
   late StreamController<NotificationListenerState> listenerStates;
 
   setUp(() {
     atClient = MockAtClient();
-    final notificationService = MockNotificationService();
+    notificationService = MockNotificationService();
     subscriptions = [];
     listenerStates = StreamController<NotificationListenerState>.broadcast();
     when(() => atClient.notificationService).thenReturn(notificationService);
@@ -115,6 +116,7 @@ void main() {
     test('stop() ends every timer and subscription run() started ($label)',
         () async {
       final d = daemon(makeDeviceInfoVisible: deviceInfo, policy: policy);
+      addTearDown(d.stop);
       final timers = await runRecordingTimers(d);
 
       expect(timers, hasLength(timerCount));
@@ -130,6 +132,38 @@ void main() {
       expect(listenerStates.hasListener, isFalse);
     });
   }
+
+  test('stop() during run() leaves nothing running', () async {
+    final stalled = Completer<void>();
+    final release = Completer<void>();
+    when(
+      () => notificationService.notify(
+        any(),
+        waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+        checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+        onSuccess: any(named: 'onSuccess'),
+        onError: any(named: 'onError'),
+      ),
+    ).thenAnswer((_) async {
+      if (!stalled.isCompleted) stalled.complete();
+      await release.future;
+      return NotificationResult();
+    });
+    final d = daemon(makeDeviceInfoVisible: true);
+    final running = runRecordingTimers(d);
+    await stalled.future;
+    expect(subscriptions, isEmpty);
+
+    await d.stop();
+    release.complete();
+    final timers = await running;
+
+    expect(timers, hasLength(3));
+    expect(subscriptions, hasLength(2));
+    expect(timers.where((t) => t.isActive), isEmpty);
+    expect(listening(), isEmpty);
+    expect(listenerStates.hasListener, isFalse);
+  });
 
   group('pending ephemeral keys', () {
     const userKey = 'ssh-ed25519 AAAAexistingUserKey user@laptop';
@@ -154,6 +188,16 @@ void main() {
 
     tearDown(() => home.deleteSync(recursive: true));
 
+    /// Waits up to a second for authorized_keys to hold only the user's key.
+    Future<List<String>> untilOnlyUserKey() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 1));
+      while (authKeys.readAsLinesSync().length > 1 &&
+          DateTime.now().isBefore(deadline)) {
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+      return authKeys.readAsLinesSync();
+    }
+
     test('stop() removes a key still waiting for its timer', () async {
       final d = daemon()
         ..deauthorizeAfter(const Duration(hours: 1), sessionId, keyUtil);
@@ -166,7 +210,38 @@ void main() {
 
     test('a key is removed when its timer fires', () async {
       daemon().deauthorizeAfter(Duration.zero, sessionId, keyUtil);
-      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(await untilOnlyUserKey(), [userKey]);
+    });
+
+    test('a key scheduled after stop() is removed at once', () async {
+      final d = daemon();
+      await d.stop();
+
+      d.deauthorizeAfter(const Duration(hours: 1), sessionId, keyUtil);
+
+      expect(await untilOnlyUserKey(), [userKey]);
+    });
+
+    test('stop() waits for a removal already under way', () async {
+      final d = daemon()
+        ..deauthorizeAfter(Duration.zero, sessionId, keyUtil);
+      await Future.delayed(Duration.zero);
+
+      await d.stop();
+
+      expect(authKeys.readAsLinesSync(), [userKey]);
+    });
+
+    test('stop() carries on past a removal that fails', () async {
+      final gone = Directory.systemTemp.createTempSync('sshnpd_stop_gone');
+      final failing = LocalSshKeyUtil(homeDirectory: gone.path);
+      gone.deleteSync(recursive: true);
+      final d = daemon()
+        ..deauthorizeAfter(const Duration(hours: 1), Uuid().v4(), failing)
+        ..deauthorizeAfter(const Duration(hours: 1), sessionId, keyUtil);
+
+      await d.stop();
 
       expect(authKeys.readAsLinesSync(), [userKey]);
     });

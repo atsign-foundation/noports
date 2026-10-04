@@ -123,6 +123,27 @@ class SshnpdImpl
   final Map<String, ({Timer timer, Future<void> Function() deauthorize})>
   _pendingDeauthorizations = {};
 
+  final Set<Future<void>> _deauthorizing = {};
+
+  bool _stopped = false;
+
+  void _addTimer(Timer timer) =>
+      _stopped ? timer.cancel() : _timers.add(timer);
+
+  void _addSubscription(StreamSubscription subscription) => _stopped
+      ? unawaited(subscription.cancel())
+      : _subscriptions.add(subscription);
+
+  void _trackDeauthorization(Future<void> deauthorization) {
+    late final Future<void> tracked;
+    tracked = deauthorization
+        .catchError(
+          (e) => logger.warning('Failed to remove an ephemeral key: $e'),
+        )
+        .whenComplete(() => _deauthorizing.remove(tracked));
+    _deauthorizing.add(tracked);
+  }
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -304,11 +325,11 @@ class SshnpdImpl
     logger.info('Starting heartbeat');
     startHeartbeats();
 
-    _subscriptions.add(handlePublicKeyChangedEvent(atClient, deviceAtsign));
+    _addSubscription(handlePublicKeyChangedEvent(atClient, deviceAtsign));
 
     String regex = '(^$device|\\.$device)\\.${DefaultArgs.namespace}@';
     logger.info('Subscribing to $regex');
-    _subscriptions.add(
+    _addSubscription(
       atClient.notificationService
           .subscribe(regex: regex, shouldDecrypt: true)
           .listen(
@@ -321,7 +342,7 @@ class SshnpdImpl
     // Refresh the device entry now, and every hour
     await _refreshDeviceEntry();
     if (makeDeviceInfoVisible) {
-      _timers.add(
+      _addTimer(
         Timer.periodic(
           const Duration(hours: 1),
           (_) async => await _refreshDeviceEntry(),
@@ -332,7 +353,7 @@ class SshnpdImpl
     await subscribeToPolicyUpdates();
 
     await _policyCycle();
-    _timers.add(
+    _addTimer(
       Timer.periodic(
         DefaultSshnpdArgs.policyHeartbeatFrequency,
         (_) async => await _policyCycle(),
@@ -344,6 +365,7 @@ class SshnpdImpl
 
   @override
   Future<void> stop() async {
+    _stopped = true;
     for (final timer in _timers) {
       timer.cancel();
     }
@@ -354,12 +376,13 @@ class SshnpdImpl
     _subscriptions.clear();
     for (final pending in [..._pendingDeauthorizations.values]) {
       pending.timer.cancel();
-      await pending.deauthorize();
+      _trackDeauthorization(pending.deauthorize());
     }
+    await Future.wait([..._deauthorizing]);
   }
 
   /// Removes [sessionId]'s ephemeral key from `authorized_keys` after [delay],
-  /// or straight away if [stop] is called first.
+  /// or straight away once [stop] has been called.
   @visibleForTesting
   void deauthorizeAfter(
     Duration delay,
@@ -373,7 +396,10 @@ class SshnpdImpl
     }
 
     _pendingDeauthorizations[sessionId] = (
-      timer: Timer(delay, deauthorize),
+      timer: Timer(
+        _stopped ? Duration.zero : delay,
+        () => _trackDeauthorization(deauthorize()),
+      ),
       deauthorize: deauthorize,
     );
   }
@@ -384,7 +410,7 @@ class SshnpdImpl
   /// message when it changes
   void startHeartbeats() {
     // 1. keep-alive on the main atLookUp connection
-    _timers.add(
+    _addTimer(
       Timer.periodic(Duration(seconds: 90), (timer) async {
         try {
           await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
@@ -397,7 +423,7 @@ class SshnpdImpl
 
     // 2. Log a message when notification listener state changes
     NotificationListenerState? lastState;
-    _subscriptions.add(
+    _addSubscription(
       atClient.notificationService.currentListenerStateStream.listen((nls) {
         if (nls != lastState) {
           logger.shout('Notification listener state changed to $nls');
@@ -1949,7 +1975,7 @@ class SshnpdImpl
     String regex =
         '\\.$device\\.devices\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign';
     logger.shout('Subscribing to $regex');
-    _subscriptions.add(
+    _addSubscription(
       subscribe(
         regex: regex,
         shouldDecrypt: true,

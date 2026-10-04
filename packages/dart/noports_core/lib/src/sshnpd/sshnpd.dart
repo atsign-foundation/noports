@@ -145,6 +145,7 @@ abstract class Sshnpd {
   /// subscriptions, and removes any ephemeral keys still awaiting removal.
   /// Sessions already running carry on, and the [atClient] stays open for
   /// whoever owns it. With a policy manager, the auth-check RPC listener ends
-  /// only when the [atClient]'s notification service stops.
+  /// only when the [atClient]'s notification service stops. Anything [run] is
+  /// still starting when this is called is stopped as it starts.
   Future<void> stop();
 }
