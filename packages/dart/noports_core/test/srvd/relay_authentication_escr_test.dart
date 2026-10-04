@@ -383,6 +383,49 @@ void main() {
       });
     }
 
+    // NOTE the signer is taken from after the key's last '@', but the lookup
+    // parses the whole key, so any other shape could make them disagree.
+    for (final uri in [
+      '_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@eve:z.a.__e@alice',
+      'cached:public:_apsk.my_enrollment_id.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@alice:x',
+    ]) {
+      test('a signing key not shaped like an enrollment key is refused ($uri)',
+          () async {
+        final h = sessionHelper();
+        final verifier = RelayAuthVerifierESCR('test key shape', h);
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingKeyUri: uri,
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.signatureVerificationFailed,
+            'is not of the form',
+          ),
+        );
+        verifyNever(() => h.lookup(any(), any()));
+      });
+    }
+
+    test('a public signing key URI, as clients send it, is accepted', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test public uri', h);
+      final uri = 'public:_apsk.${Uuid().v4()}.a.__e@alice';
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        signingKeyUri: uri,
+      );
+
+      expect(await verifier.verifyChallengeResponse(response), true);
+      expect(verifier.atSign, '@alice');
+      verify(() => h.lookup(relaySessionId, uri)).called(1);
+    });
+
     test('a response for a session that is not active is refused', () async {
       final h = sessionHelper(active: false);
       final verifier = RelayAuthVerifierESCR('test inactive session', h);

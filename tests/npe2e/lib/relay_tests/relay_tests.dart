@@ -14,6 +14,7 @@ import 'package:npe2e/relay_tests/relay_tests_params.dart';
 import 'package:npe2e/relay_tests/relay_tests_test_result.dart';
 import 'package:npe2e/relay_tests/relay_test_flow_shared.dart';
 import 'package:npe2e/relay_tests/tests/normal_to_443_test.dart';
+import 'package:npe2e/relay_tests/tests/escr_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/normal_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_443_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_normal_test.dart';
@@ -242,6 +243,11 @@ Future<void> _relayTests(
 
       final List<Future<RelayTestResult> Function()> testFactories = [
         ...runNormalToNormalTests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+        ...runEscrToNormalTests(
           context: context,
           environment: environment,
           clientVersions: clientVersions,
