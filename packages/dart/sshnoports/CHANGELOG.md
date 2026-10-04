@@ -25,6 +25,8 @@
   `authorized_keys` lines
 * fix: srvd accepts an ESCR-authenticated socket only when it is signed by
   the atSign of the side it claims
+* fix: `srvd --manager` accepts session requests only from the manager
+  itself
 
 ## v5.17.0
 
