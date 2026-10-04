@@ -388,6 +388,7 @@ void main() {
     for (final uri in [
       '_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
       'public:_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@eve:z.a.__e@alice',
       'cached:public:_apsk.my_enrollment_id.a.__e@alice',
       'public:_apsk.my_enrollment_id.a.__e@alice:x',
     ]) {
