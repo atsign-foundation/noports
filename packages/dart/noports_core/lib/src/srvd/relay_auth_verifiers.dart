@@ -97,6 +97,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   final RelayAuthVerifyHelper helper;
 
+  /// The only shape a signing key URI may take, so that the signer read from
+  /// it and the key the helper looks up from it name the same atSign.
+  static final _signingKeyUriShape = RegExp(
+    '^(public:)?_apsk\\.[A-Za-z0-9_-]+\\.'
+    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@\\s]+\$',
+  );
+
   /// A fresh, unguessable challenge for this one authentication. It is the sole
   /// replay protection, so it MUST be fresh per connection — which is why this
   /// verifier is single-use ([_consumed]): a new instance (hence a new
@@ -294,6 +301,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         'Signing key ($publicSigningKeyUri)'
         ' is not in the per-enrollment data namespace'
         ' (${EnrollmentConstants.perEnrollmentApproved})',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    if (!_signingKeyUriShape.hasMatch(publicSigningKeyUri)) {
+      throw RAVE(
+        'Signing key ($publicSigningKeyUri) is not of the form'
+        ' public:_apsk.<enrollmentId>'
+        '.${EnrollmentConstants.perEnrollmentApproved}@<atSign>',
         RAVEReason.signatureVerificationFailed,
       );
     }
