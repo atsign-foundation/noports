@@ -96,6 +96,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5), // must not fire in this test
@@ -138,6 +139,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -192,6 +194,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(milliseconds: 50),
@@ -235,6 +238,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: Uuid().v4(),
+        isSideA: true,
         dataToVerify: 'x',
         rvdNonce: 'x',
         detectWindow: const Duration(seconds: 5),
@@ -268,6 +272,7 @@ void main() {
         MockRelayAuthVerifyHelper(),
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -301,6 +306,7 @@ void main() {
         fx.helper,
         atSign: '@alice',
         sessionId: fx.sessionId,
+        isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
@@ -315,6 +321,126 @@ void main() {
       await expectLater(resultFuture, throwsA(anything));
       expect(written, [written.first, 'Socket auth failed']);
       verify(() => mockSocket.destroy()).called(1);
+    });
+
+    /// Challenges [verifier]'s socket, answers with [authenticator] and expects
+    /// the response to be refused with [message].
+    Future<void> expectEscrRefused(
+      RelayAuthVerifierAuto verifier,
+      RelayAuthenticatorESCR authenticator,
+      String message,
+    ) async {
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: written,
+        onData: (fn) => feed = fn,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(written, hasLength(1));
+      final response = await authenticator.responseToChallenge(written.first);
+      feed(Uint8List.fromList(utf8.encode('$response\n')));
+
+      await expectLater(resultFuture, throwsA(contains(message)));
+      expect(written, [written.first, 'Socket auth failed']);
+      verify(() => mockSocket.destroy()).called(1);
+    }
+
+    test('an ESCR response signed by another atSign is refused', () async {
+      final fx = escrFixture();
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        fx.helper,
+        atSign: '@bob',
+        sessionId: fx.sessionId,
+        isSideA: true,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      await expectEscrRefused(
+        verifier,
+        fx.authenticator,
+        'dataMismatch : ESCR response signed by @alice on the socket for @bob',
+      );
+    });
+
+    test('an ESCR response claiming the other side is refused', () async {
+      final fx = escrFixture();
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: fx.sessionId,
+        isSideA: false,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      await expectEscrRefused(
+        verifier,
+        fx.authenticator,
+        'dataMismatch : ESCR response for side A on the socket for side B',
+      );
+    });
+
+    test('an ESCR response for another session is refused', () async {
+      final fx = escrFixture();
+      final otherSessionId = Uuid().v4();
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: otherSessionId,
+        isSideA: true,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      await expectEscrRefused(
+        verifier,
+        fx.authenticator,
+        'dataMismatch : ESCR response for session ${fx.sessionId}'
+            ' on the socket for session $otherSessionId',
+      );
+    });
+
+    test('the signer is compared with the normalised expected atSign', () async {
+      final fx = escrFixture();
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      final mockSocket = makeMockSocket(
+        written: written,
+        onData: (fn) => feed = fn,
+      );
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideA',
+        fx.helper,
+        atSign: '@Alice',
+        sessionId: fx.sessionId,
+        isSideA: true,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
+        detectWindow: const Duration(seconds: 5),
+        knownMode: RelayAuthMode.escr,
+      );
+
+      final resultFuture = verifier.verifySocketAuth(mockSocket);
+      await Future.delayed(const Duration(milliseconds: 100));
+      final response = await fx.authenticator.responseToChallenge(written.first);
+      feed(Uint8List.fromList(utf8.encode('$response\n')));
+
+      final (authenticated, _) = await resultFuture;
+      expect(authenticated, true);
+      expect(written, [written.first, 'ok']);
     });
 
     test('known-ESCR side is challenged immediately, not after the window',
@@ -332,6 +458,7 @@ void main() {
         fx.helper,
         atSign: '@alice',
         sessionId: fx.sessionId,
+        isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5), // must NOT be waited out
@@ -375,6 +502,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(milliseconds: 50), // short on purpose
@@ -396,7 +524,7 @@ void main() {
 
     test('setKnownMode(escr) resolves an in-flight detection immediately',
         () async {
-      final fx = escrFixture();
+      final fx = escrFixture(isSideA: false);
       final written = <String>[];
       late void Function(Uint8List) feed;
       final mockSocket = makeMockSocket(
@@ -409,6 +537,7 @@ void main() {
         fx.helper,
         atSign: '@alice',
         sessionId: fx.sessionId,
+        isSideA: false,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
@@ -455,6 +584,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -479,12 +609,13 @@ void main() {
 
     test('memoises the mode: a later connection on the same side skips the window',
         () async {
-      final fx = escrFixture();
+      final fx = escrFixture(isSideA: false);
       final verifier = RelayAuthVerifierAuto(
         'auto sideB',
         fx.helper,
         atSign: '@alice',
         sessionId: fx.sessionId,
+        isSideA: false,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(milliseconds: 300),
@@ -559,6 +690,7 @@ void main() {
         MockRelayAuthVerifyHelper(),
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -596,6 +728,7 @@ void main() {
         MockRelayAuthVerifyHelper(),
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -629,6 +762,7 @@ void main() {
         fx.helper,
         atSign: '@alice',
         sessionId: fx.sessionId,
+        isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
@@ -673,6 +807,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -724,6 +859,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -772,6 +908,7 @@ void main() {
         helper,
         atSign: '@alice',
         sessionId: sessionId,
+        isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
         detectWindow: const Duration(seconds: 5),
@@ -816,14 +953,15 @@ void main() {
   });
 }
 
-/// Sets up the helper stubs and a client-side [RelayAuthenticatorESCR] for an
-/// ESCR exchange, sharing one session id / key material.
+/// Sets up the helper stubs and an @alice [RelayAuthenticatorESCR] for an ESCR
+/// exchange, sharing one session id / key material; it signs as side A unless
+/// [isSideA] is false.
 ({
   RelayAuthVerifyHelper helper,
   RelayAuthenticatorESCR authenticator,
   String sessionId,
 })
-escrFixture() {
+escrFixture({bool isSideA = true}) {
   final sessionId = Uuid().v4();
   final relayAuthAesKey = AESKey.generate(32).key;
   final signingKP = RsaKeyPair.generate(keySize: 2048);
@@ -844,7 +982,7 @@ escrFixture() {
     publicSigningKeyUri: publicSigningKeyUri,
     publicSigningKey: signingKP.atPublicKey.publicKey,
     privateSigningKey: signingKP.atPrivateKey.privateKey,
-    isSideA: true,
+    isSideA: isSideA,
   );
 
   return (helper: helper, authenticator: authenticator, sessionId: sessionId);

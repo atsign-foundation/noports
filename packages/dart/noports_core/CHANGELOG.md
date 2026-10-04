@@ -36,6 +36,10 @@
   one. New `isValidSessionId` makes the same check
 - fix: `LocalSshKeyUtil.deauthorizePublicKey` no longer removes other
   `authorized_keys` lines that happen to contain the session id
+- fix: srvd accepts an ESCR-authenticated socket only when it is signed by
+  the atSign of the side it claims
+- fix: `srvd --manager` accepts session requests only from the manager
+  itself
 - fix: a long-running srvd no longer keeps a receive port open for every
   session it has relayed
 - fix: sshnpd no longer leaves a session's ephemeral key in

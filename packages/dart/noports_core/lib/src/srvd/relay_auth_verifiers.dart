@@ -97,6 +97,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   final RelayAuthVerifyHelper helper;
 
+  /// The only shape a signing key URI may take, so that the signer read from
+  /// it and the key the helper looks up from it name the same atSign.
+  static final _signingKeyUriShape = RegExp(
+    '^(public:)?_apsk\\.[A-Za-z0-9_-]+\\.'
+    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@:\\s]+\$',
+  );
+
   /// A fresh, unguessable challenge for this one authentication. It is the sole
   /// replay protection, so it MUST be fresh per connection — which is why this
   /// verifier is single-use ([_consumed]): a new instance (hence a new
@@ -283,10 +290,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    atSign = publicSigningKeyUri
-        .substring(publicSigningKeyUri.lastIndexOf('@'))
-        .toAtsign();
-
     if (!publicSigningKeyUri
         .substring(0, publicSigningKeyUri.lastIndexOf('@'))
         .endsWith(EnrollmentConstants.perEnrollmentApproved)) {
@@ -297,6 +300,17 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+    if (!_signingKeyUriShape.hasMatch(publicSigningKeyUri)) {
+      throw RAVE(
+        'Signing key ($publicSigningKeyUri) is not of the form'
+        ' public:_apsk.<enrollmentId>'
+        '.${EnrollmentConstants.perEnrollmentApproved}@<atSign>',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    atSign = publicSigningKeyUri
+        .substring(publicSigningKeyUri.lastIndexOf('@'))
+        .toAtsign();
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
     if (signingAlgo != SigningAlgoType.rsa2048) {
@@ -764,6 +778,9 @@ const int defaultRelayAuthDetectWindowMs = 500;
 /// verified it is remembered and every later connection skips detection too:
 /// only the very first connection on a side — and only if its mode was not
 /// already known — ever pays the window.
+///
+/// An ESCR response is accepted only when it is for this verifier's session
+/// and side, and is signed by [expectedAtSign].
 class RelayAuthVerifierAuto implements RelayAuthVerifier {
   @override
   final String tag;
@@ -776,6 +793,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   final String expectedAtSign;
 
   final String _sessionId;
+
+  /// Whether this verifier guards side A (the client's side) of the session.
+  final bool isSideA;
 
   /// Legacy branch: the data whose signature is verified — the JSON encoding of
   /// `{sessionId, clientNonce, rvdNonce}`.
@@ -808,6 +828,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     this.helper, {
     required String atSign,
     required String sessionId,
+    required this.isSideA,
     required this.dataToVerify,
     required this.rvdNonce,
     required this.detectWindow,
@@ -946,6 +967,26 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         throw RAVE(
           '(but verifyChallengeResponse did not throw an exception)',
           RAVEReason.signatureVerificationFailed,
+        );
+      }
+      if (escr.sessionId != _sessionId) {
+        throw RAVE(
+          'ESCR response for session ${escr.sessionId}'
+          ' on the socket for session $_sessionId',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.isSideA != isSideA) {
+        throw RAVE(
+          'ESCR response for side ${escr.isSideA! ? 'A' : 'B'}'
+          ' on the socket for side ${isSideA ? 'A' : 'B'}',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.atSign != atSign) {
+        throw RAVE(
+          'ESCR response signed by ${escr.atSign} on the socket for $atSign',
+          RAVEReason.dataMismatch,
         );
       }
       logger.info('Auto-detected ESCR; verification success');
