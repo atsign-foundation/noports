@@ -23,6 +23,8 @@
 * fix: sshnpd refuses a session request whose session id isn't a UUID, and
   removing a session's ephemeral key no longer removes other
   `authorized_keys` lines
+* fix: a long-running srvd no longer keeps a receive port open for every
+  session it has relayed
 
 ## v5.17.0
 

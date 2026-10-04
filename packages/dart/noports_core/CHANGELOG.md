@@ -9,6 +9,8 @@
   `ActivateFlows` rather than an `AtOnboardingService`
 - **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
   and `ClientParams` implementations must add `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
+  what `run()` started, so implementations must add `stop()`
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).
@@ -34,6 +36,8 @@
   one. New `isValidSessionId` makes the same check
 - fix: `LocalSshKeyUtil.deauthorizePublicKey` no longer removes other
   `authorized_keys` lines that happen to contain the session id
+- fix: a long-running srvd no longer keeps a receive port open for every
+  session it has relayed
 
 # 6.15.0
 
