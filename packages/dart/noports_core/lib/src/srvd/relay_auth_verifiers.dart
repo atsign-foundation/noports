@@ -764,6 +764,9 @@ const int defaultRelayAuthDetectWindowMs = 500;
 /// verified it is remembered and every later connection skips detection too:
 /// only the very first connection on a side — and only if its mode was not
 /// already known — ever pays the window.
+///
+/// An ESCR response is accepted only when it is for this verifier's session
+/// and side, and is signed by [expectedAtSign].
 class RelayAuthVerifierAuto implements RelayAuthVerifier {
   @override
   final String tag;
@@ -776,6 +779,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   final String expectedAtSign;
 
   final String _sessionId;
+
+  /// Whether this verifier guards side A (the client's side) of the session.
+  final bool isSideA;
 
   /// Legacy branch: the data whose signature is verified — the JSON encoding of
   /// `{sessionId, clientNonce, rvdNonce}`.
@@ -808,6 +814,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     this.helper, {
     required String atSign,
     required String sessionId,
+    required this.isSideA,
     required this.dataToVerify,
     required this.rvdNonce,
     required this.detectWindow,
@@ -946,6 +953,26 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         throw RAVE(
           '(but verifyChallengeResponse did not throw an exception)',
           RAVEReason.signatureVerificationFailed,
+        );
+      }
+      if (escr.sessionId != _sessionId) {
+        throw RAVE(
+          'ESCR response for session ${escr.sessionId}'
+          ' on the socket for session $_sessionId',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.isSideA != isSideA) {
+        throw RAVE(
+          'ESCR response for side ${escr.isSideA! ? 'A' : 'B'}'
+          ' on the socket for side ${isSideA ? 'A' : 'B'}',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.atSign != atSign) {
+        throw RAVE(
+          'ESCR response signed by ${escr.atSign} on the socket for $atSign',
+          RAVEReason.dataMismatch,
         );
       }
       logger.info('Auto-detected ESCR; verification success');
