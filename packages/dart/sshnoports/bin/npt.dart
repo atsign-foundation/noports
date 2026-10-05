@@ -569,7 +569,6 @@ void main(List<String> args) async {
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
         localHost: resolvedLocalHost,
         only443: parsedArgs['443'],
-        postQuantum: parsedArgs['pq'],
       );
 
       while (true) {

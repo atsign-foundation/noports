@@ -179,7 +179,9 @@ void main(List<String> args) async {
           storagePath: storageDir!.path,
           namespace: DefaultArgs.namespace,
           atServiceFactory: ServiceFactoryWithNoOpSyncService(),
-          posture: params.postQuantum ? PqPosture.pqReady : null,
+          posture: argResults[SshnpArg.postQuantumArg.name] == true
+              ? PqPosture.pqReady
+              : null,
         ),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),
