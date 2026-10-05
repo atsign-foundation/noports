@@ -19,6 +19,7 @@ void main() {
     RelayAuthMode relayAuthMode = RelayAuthMode.escr,
     Duration daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
     PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final npt = Npt.create(
       params: NptParams(
@@ -39,6 +40,7 @@ void main() {
         NoPortsHarness.clientAtSign,
         namespace: DefaultArgs.namespace,
         posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
       ),
     );
     addTearDown(npt.close);
@@ -166,6 +168,37 @@ void main() {
       ['legacy'],
       reason: 'pings stay legacy',
     );
+    expect(
+      escrVerifiedSides(harness),
+      {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test('atSigns that sign with ML-DSA authenticate to the relay with ESCR',
+      () async {
+    const mlDsa = {SigningAlgoType.mldsa65};
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay(
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+    await harness.startDaemon(
+      permitOpen: ['127.0.0.1:${echo.port}'],
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+    final npt = await nptTo(
+      harness,
+      echo.port,
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+
+    final localPort = await npt.run();
+
+    expect(await roundTrip(localPort, 'ml-dsa'), 'ml-dsa');
     expect(
       escrVerifiedSides(harness),
       {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},

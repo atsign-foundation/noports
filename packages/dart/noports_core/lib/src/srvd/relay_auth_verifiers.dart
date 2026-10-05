@@ -44,7 +44,10 @@ abstract interface class RelayAuthVerifyHelper {
 }
 
 abstract interface class RelayAuthVerifier {
-  static final maxAuthBufferLength = 4096;
+  /// The most a client may send before it has authenticated: room for an
+  /// ESCR response signed with ML-DSA-65, the largest a relay verifies, which
+  /// is 11,270 bytes for an atSign of the protocol's maximum 55 characters.
+  static final maxAuthBufferLength = 16384;
 
   /// The auth verification which is expected
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket);
@@ -76,13 +79,17 @@ abstract interface class RelayAuthVerifier {
 ///     's':'signature of p encoded as string',
 ///     'ha':'hashingAlgo',
 ///     'sa':'signingAlgo',
-///     'sk':'public:some_key.some.namespace@atSign'
+///     'sk':'public:_apsk.<enrollmentId>.a.__e@atSign',
+///     'kid':'id of the signing key within sk'
 ///   }
 ///   ```
 /// 7. Verify that the contents of the payload are as expected (session id, challenge)
-/// 8. Fetch the public signing key
-/// 9. Verify the signature of the payload using the public signing key,
-///   hashingAlgo and signingAlgo
+/// 8. Fetch the `_apsk` record at `sk`: a bare RSA key, or a JSON
+///   advertisement of keys
+/// 9. Require `sa` to be the strongest algorithm among the keys it offers for
+///   new signatures, take the key `kid` names (or the only one, when there is
+///   no `kid`), and verify the signature with it: RSA-2048 over `ha`, or
+///   ML-DSA-65
 /// 10. If all successful
 ///   - `socket.writeln('ok');`
 ///   - complete successfully
@@ -249,7 +256,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     ///     's':'signature of p encoded as string',
     ///     'ha':'hashingAlgo',
     ///     'sa':'signingAlgo',
-    ///     'sk':'public:some_key.some.namespace@atSign'
+    ///     'sk':'public:_apsk.<enrollmentId>.a.__e@atSign',
+    ///     'kid':'id of the signing key within sk'
     ///   }
     ///   ```
     Map envelope = jsonDecode(envelopeJson);
@@ -330,7 +338,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     if (signingAlgo != required) {
       throw RAVE(
         'Signed with ${signingAlgo.name}, but $publicSigningKeyUri advertises'
-        ' ${required.name}, the strongest algorithm its signer holds',
+        ' ${required.name}, the strongest algorithm it offers',
         RAVEReason.signatureVerificationFailed,
       );
     }
@@ -384,8 +392,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   }
 
   /// The keys [apsk], the value at [uri], offers for new signatures under an
-  /// algorithm relay authentication verifies. A bare value is one RSA key;
-  /// anything else is the JSON advertisement at_auth defines.
+  /// algorithm relay authentication verifies. A value starting with `{` is
+  /// the JSON advertisement at_auth defines; anything else is one bare RSA
+  /// key.
   static List<ApskSigningKey> _activeKeysRelayVerifies(
     String uri,
     String apsk,
@@ -410,9 +419,16 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
       }
       advertised = apskSigningKeys(decoded);
     } else {
-      advertised = [
-        ApskSigningKey.forPublicKey(alg: SigningAlgoType.rsa2048, pub: value),
-      ];
+      try {
+        advertised = [
+          ApskSigningKey.forPublicKey(alg: SigningAlgoType.rsa2048, pub: value),
+        ];
+      } on FormatException catch (e) {
+        throw RAVE(
+          '$uri holds a key that is not base64: ${e.message}',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
     }
     final keys = [
       for (final k in advertised)
