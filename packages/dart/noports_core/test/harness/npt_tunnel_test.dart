@@ -16,6 +16,7 @@ void main() {
     NoPortsHarness harness,
     int remotePort, {
     RelayAuthMode relayAuthMode = RelayAuthMode.escr,
+    Duration daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
   }) async {
     final npt = Npt.create(
       params: NptParams(
@@ -30,6 +31,7 @@ void main() {
         inline: true,
         timeout: const Duration(seconds: 30),
         relayAuthMode: relayAuthMode,
+        daemonPingTimeout: daemonPingTimeout,
       ),
       atClient: await harness.openClient(
         NoPortsHarness.clientAtSign,
@@ -183,6 +185,35 @@ void main() {
     final localPort = await npt.run();
 
     expect(await roundTrip(localPort, 'unsigned'), 'unsigned');
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test("a daemon whose enrollment is revoked can't serve a session, and the"
+      ' relay never hears from it', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay();
+    await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(
+      harness,
+      echo.port,
+      daemonPingTimeout: const Duration(seconds: 2),
+    );
+    harness.server[NoPortsHarness.daemonAtSign].firstEnrollment.revoke();
+
+    await expectLater(
+      npt.run(),
+      throwsA(isA<TimeoutException>().having(
+        (e) => e.message,
+        'message',
+        'Daemon feature check timed out',
+      )),
+    );
+    expect(
+      escrVerifiedSides(harness),
+      isNot(contains(NoPortsHarness.daemonAtSign)),
+      reason: "the atServer, not the relay, keeps a revoked daemon out",
+    );
     expect(harness.server.unhandled, isEmpty);
   });
 

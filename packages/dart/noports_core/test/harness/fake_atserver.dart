@@ -219,9 +219,16 @@ class FakeEnrollment {
     // ignore: deprecated_member_use
     ..enrollmentId = id;
 
-  /// Revokes this enrollment, closing its live connections at once.
+  /// Revokes this enrollment: its live connections close at once, and its
+  /// `<id>.a.__e` records move to `<id>.r.__e`, so its published signing key
+  /// is no longer found.
   void revoke() {
     status = 'revoked';
+    final approved = RegExp('(^|[.:])${RegExp.escape(id)}\\.a\\.__e@');
+    final store = atSign._keyStore;
+    for (final key in store.keys.where(approved.hasMatch).toList()) {
+      store[key.replaceFirst('.a.__e@', '.r.__e@')] = store.remove(key)!;
+    }
     for (final c in atSign.server.connections) {
       if (c.enrollment == this) c._close();
     }
