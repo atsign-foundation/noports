@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
@@ -49,6 +50,14 @@ void main() {
                   case final m?)
                 m.group(1)!,
       };
+
+  /// Replaces the signing key [atSign] publishes for its first enrollment
+  /// with one it doesn't hold.
+  void forgeSigningKey(NoPortsHarness harness, String atSign) {
+    final fake = harness.server[atSign];
+    fake.recordAt('public:_apsk.${fake.firstEnrollment.id}.a.__e$atSign')!
+        .value = RsaKeyPair.generate().atPublicKey.publicKey;
+  }
 
   /// Sends [message] into the tunnel at [localPort] and returns what comes
   /// back, failing if it hasn't all come back within 10 seconds.
@@ -124,6 +133,56 @@ void main() {
 
     expect(await roundTrip(localPort, 'mixed modes'), 'mixed modes');
     expect(escrVerifiedSides(harness), {NoPortsHarness.clientAtSign});
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test("the relay refuses a daemon whose signing key doesn't verify, and the"
+      ' client reports why its session failed', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay();
+    await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(harness, echo.port);
+    forgeSigningKey(harness, NoPortsHarness.daemonAtSign);
+    final started = DateTime.now();
+
+    await expectLater(
+      npt.run(),
+      throwsA(isA<SshnpError>().having(
+        (e) => '$e',
+        'message',
+        allOf(
+          contains('Error response from device daemon'),
+          contains('Failed to start up the daemon side of the relay socket'
+              ' tunnel'),
+          contains('Socket auth failed'),
+        ),
+      )),
+    );
+    expect(
+      DateTime.now().difference(started),
+      lessThan(const Duration(seconds: 5)),
+      reason: "the daemon's failure arrives, rather than a timeout",
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test("a daemon signing key that doesn't verify leaves payload relay auth"
+      ' working', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay();
+    await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(
+      harness,
+      echo.port,
+      relayAuthMode: RelayAuthMode.payload,
+    );
+    forgeSigningKey(harness, NoPortsHarness.daemonAtSign);
+
+    final localPort = await npt.run();
+
+    expect(await roundTrip(localPort, 'unsigned'), 'unsigned');
     expect(harness.server.unhandled, isEmpty);
   });
 
