@@ -123,12 +123,15 @@ class FakeAtSign {
     required String deviceName,
     required Map<String, String> namespaces,
   }) {
+    final keyPair = RsaKeyPair.generate();
     final enrollment = FakeEnrollment._(
       this,
       Uuid().v4(),
       appName: appName,
       deviceName: deviceName,
       namespaces: namespaces,
+      apkamPublicKey: keyPair.atPublicKey.publicKey,
+      apkamKeyPair: keyPair,
     );
     return enrollments[enrollment.id] = enrollment;
   }
@@ -184,7 +187,8 @@ class FakeAtSign {
   }
 }
 
-/// An APKAM enrollment of a [FakeAtSign], with its own keypair.
+/// An APKAM enrollment of a [FakeAtSign]: the public key it authenticates
+/// with, and that key's algorithm.
 class FakeEnrollment {
   FakeEnrollment._(
     this.atSign,
@@ -192,18 +196,42 @@ class FakeEnrollment {
     required this.appName,
     required this.deviceName,
     required this.namespaces,
-  });
+    required this.apkamPublicKey,
+    this.signingAlgo = 'rsa2048',
+    this.retrofitPredecessor,
+    this.metadata,
+    RsaKeyPair? apkamKeyPair,
+  }) : _apkamKeyPair = apkamKeyPair;
 
   final FakeAtSign atSign;
   final String id;
   final String appName;
   final String deviceName;
   final Map<String, String> namespaces;
-  final RsaKeyPair apkamKeyPair = RsaKeyPair.generate();
+
+  /// Base64, as the client sent it in `enroll:request`.
+  final String apkamPublicKey;
+  final String signingAlgo;
+
+  /// The enrollment this one replaced with a stronger key, if any.
+  final FakeEnrollment? retrofitPredecessor;
+
+  Map<String, dynamic>? metadata;
   String status = 'approved';
+  DateTime? revokedAt;
+  DateTime? predecessorSettledAt;
+
+  /// The private half, held only for an enrollment this fake minted.
+  final RsaKeyPair? _apkamKeyPair;
+
+  bool get _isRoot =>
+      namespaces['*'] == 'rw' && namespaces['__manage'] == 'rw';
 
   /// The keys a client authenticating as this enrollment holds.
-  AtKeys get keys => AtKeys()
+  AtKeys get keys => _keysFor(
+      _apkamKeyPair ?? (throw StateError('$id has no private half here')));
+
+  AtKeys _keysFor(RsaKeyPair apkamKeyPair) => AtKeys()
     // ignore: deprecated_member_use
     ..apkamPublicKey = AtBytes.fromString(apkamKeyPair.atPublicKey.publicKey)
     // ignore: deprecated_member_use
@@ -224,6 +252,7 @@ class FakeEnrollment {
   /// is no longer found.
   void revoke() {
     status = 'revoked';
+    revokedAt = DateTime.now().toUtc();
     final approved = RegExp('(^|[.:])${RegExp.escape(id)}\\.a\\.__e@');
     final store = atSign._keyStore;
     for (final key in store.keys.where(approved.hasMatch).toList()) {
@@ -233,6 +262,32 @@ class FakeEnrollment {
       if (c.enrollment == this) c._close();
     }
   }
+}
+
+extension on FakeEnrollment {
+  String get _recordKey => '$id.new.enrollments.__manage${atSign.atSign}';
+
+  Map<String, dynamic> _roster() => {
+        'appName': appName,
+        'deviceName': deviceName,
+        'namespaces': namespaces,
+        'namespace': namespaces,
+        'approval': {'state': status},
+        'status': status,
+        if (signingAlgo != 'rsa2048') 'signingAlgo': signingAlgo,
+        if (retrofitPredecessor != null)
+          'retrofitPredecessorEnrollmentId': retrofitPredecessor!.id,
+        if (predecessorSettledAt != null)
+          'predecessorSettledAt': predecessorSettledAt!.toIso8601String(),
+        'expiresAt': null,
+      };
+
+  Map<String, dynamic> _record() => {
+        ..._roster(),
+        'apkamPublicKey': apkamPublicKey,
+        'encryptedAPKAMSymmetricKey': null,
+        if (metadata != null) 'metadata': metadata,
+      };
 }
 
 /// A value an atSign stores, with the metadata it was stored with.
@@ -370,7 +425,10 @@ class FakeConnection {
     }
     if (_match(VerbSyntax.notify, command) case final p?) return _notify(p);
     if (_match(VerbSyntax.monitor, command) case final p?) return _monitor(p);
-    if (_match(VerbSyntax.enroll, command) case final p?) return _enroll(p);
+    if (_match(VerbSyntax.scan, command) case final p?) return _scan(command, p);
+    if (_match(VerbSyntax.enroll, command) case final p?) {
+      return _enroll(command, p);
+    }
     atSign.server.unhandled.add(command);
     throw _VerbError('AT0003', 'fake atServer has no handler for: $command');
   }
@@ -411,17 +469,47 @@ class FakeConnection {
         ? HashingAlgoType.sha512
         : HashingAlgoType.sha256;
     final verified = challenge != null &&
-        await RsaSignatureAlgo.rsa2048(hashing: hashing).verifyBytes(
+        await _verifies(
+          enrollment,
           utf8.encode(challenge),
-          signature: base64Decode(params['signature']!),
-          publicKey:
-              base64Decode(enrollment.apkamKeyPair.atPublicKey.publicKey),
+          base64Decode(params['signature']!),
+          hashing,
         );
     if (!verified) {
       throw _VerbError('AT0401', 'Exception: pkam authentication failed');
     }
+    _settlePredecessor(enrollment);
     this.enrollment = enrollment;
     _data('success');
+  }
+
+  Future<bool> _verifies(
+    FakeEnrollment enrollment,
+    Uint8List message,
+    Uint8List signature,
+    HashingAlgoType hashing,
+  ) async {
+    final publicKey = base64Decode(enrollment.apkamPublicKey);
+    return switch (enrollment.signingAlgo) {
+      'mldsa65' => MlDsa65PureDartAlgo.verifyBytesSync(
+          message,
+          signature: signature,
+          publicKey: publicKey,
+        ),
+      _ => await RsaSignatureAlgo.rsa2048(hashing: hashing)
+          .verifyBytes(message, signature: signature, publicKey: publicKey),
+    };
+  }
+
+  void _settlePredecessor(FakeEnrollment enrollment) {
+    final predecessor = enrollment.retrofitPredecessor;
+    if (predecessor == null || enrollment.predecessorSettledAt != null) return;
+    if (!predecessor._isRoot) {
+      atSign.server.unhandled.add('superseding ${predecessor.id}');
+      throw _VerbError('AT0003',
+          'fake atServer does not model superseding a non-root predecessor');
+    }
+    enrollment.predecessorSettledAt = DateTime.now().toUtc();
   }
 
   Future<void> _noop(Map<String, String?> params) async {
@@ -794,16 +882,47 @@ class FakeConnection {
     _socket.serverSends('notification: ${notification.toJson()}\n');
   }
 
-  void _enroll(Map<String, String?> params) {
-    if (params['operation'] != 'fetch') {
-      atSign.server.unhandled.add('enroll:${params['operation']}');
-      throw _VerbError('AT0003',
-          'fake atServer has no handler for enroll:${params['operation']}');
+  void _enroll(String command, Map<String, String?> params) {
+    final Map<String, dynamic> body =
+        jsonDecode(params['enrollParams'] ?? '{}');
+    final namespace = params['listNamespace'] ?? '';
+    switch (params['operation']) {
+      case 'fetch':
+        return _enrollFetch(body);
+      case 'request':
+        return _enrollRequest(body);
+      case 'update':
+        return _enrollUpdate(command, body);
+      case 'list':
+        return _enrollList(body);
+      case 'listns':
+        _requireNamespaceAccess(namespace, 'listns');
+        return _data(jsonEncode([
+          for (final e in atSign.enrollments.values)
+            if (e.status == 'approved' && _accessFor(e, namespace) != null)
+              {
+                'enrollmentId': e.id,
+                'access': _accessFor(e, namespace),
+                'apkamPubKey': e.apkamPublicKey,
+                'metadata': e.metadata,
+              },
+        ]));
+      case 'infons':
+        _requireNamespaceAccess(namespace, 'infons');
+        final revoked = [
+          for (final e in atSign.enrollments.values)
+            if (e.revokedAt != null && _accessFor(e, namespace) != null)
+              e.revokedAt!,
+        ]..sort();
+        return _data(jsonEncode(
+            {'lastRevokedAt': revoked.lastOrNull?.toIso8601String()}));
     }
-    final id = (jsonDecode(params['enrollParams'] ?? '{}')['enrollmentId']
-            as String?)
-        ?.trim()
-        .toLowerCase();
+    atSign.server.unhandled.add(command);
+    throw _VerbError('AT0003', 'fake atServer has no handler for: $command');
+  }
+
+  void _enrollFetch(Map<String, dynamic> body) {
+    final id = (body['enrollmentId'] as String?)?.trim().toLowerCase();
     final target = atSign.enrollments[id];
     if (target == null) {
       throw _VerbError(
@@ -826,9 +945,189 @@ class FakeConnection {
       'encryptedAPKAMSymmetricKey': null,
       'status': target.status,
       'expiresAt': null,
-      'metadata': null,
+      'metadata': target.metadata,
     }));
   }
+
+  /// A connection's own enrollment asking to be replaced by one with a
+  /// stronger key, which the atServer approves at once.
+  void _enrollRequest(Map<String, dynamic> body) {
+    final predecessor = enrollment!;
+    final apkamPublicKey = body['apkamPublicKey'] as String?;
+    if (body['appName'] == null ||
+        body['deviceName'] == null ||
+        apkamPublicKey == null) {
+      throw _VerbError('AT0022',
+          'appName, deviceName and apkamPublicKey are mandatory');
+    }
+    if (body['apsk'] != null && body['apskLegacy'] != null) {
+      throw _VerbError('AT0022', 'apsk and apskLegacy are exclusive');
+    }
+    if (atSign.enrollments.values
+        .any((e) => e.apkamPublicKey == apkamPublicKey)) {
+      throw _VerbError(
+          'AT0032', 'apkamPublicKey is held by another enrollment');
+    }
+    final requested = body['namespaces'] as Map<String, dynamic>?;
+    final String? refusal = switch (predecessor) {
+      _ when predecessor.status != 'approved' => 'is not approved',
+      _ when predecessor.namespaces.isEmpty => 'has no namespaces',
+      _ when predecessor.retrofitPredecessor != null =>
+        'is itself a replacement',
+      _ when !predecessor._isRoot &&
+              atSign.enrollments.values.any((e) =>
+                  e.retrofitPredecessor == predecessor &&
+                  e.predecessorSettledAt != null) =>
+        'has already been replaced',
+      _ when requested != null &&
+              !(requested.length == predecessor.namespaces.length &&
+                  requested.entries.every(
+                      (r) => predecessor.namespaces[r.key] == r.value)) =>
+        'grants differ from those requested',
+      _ => null,
+    };
+    if (refusal != null) {
+      throw _VerbError(
+          'AT0009', 'Enrollment ${predecessor.id} $refusal');
+    }
+    final successor = FakeEnrollment._(
+      atSign,
+      Uuid().v4(),
+      appName: body['appName'],
+      deviceName: body['deviceName'],
+      namespaces: Map.of(predecessor.namespaces),
+      apkamPublicKey: apkamPublicKey,
+      signingAlgo: body['signingAlgo'] ?? 'rsa2048',
+      retrofitPredecessor: predecessor,
+      metadata: body['metadata'],
+    );
+    atSign.enrollments[successor.id] = successor;
+    _publishApsk(successor, body);
+    _data(jsonEncode({'enrollmentId': successor.id, 'status': 'approved'}));
+  }
+
+  void _publishApsk(FakeEnrollment e, Map<String, dynamic> body) {
+    final value = body['apskLegacy'] ??
+        (body['apsk'] == null ? null : jsonEncode(body['apsk']));
+    if (value == null) return;
+    atSign._store('public:_apsk.${e.id}.a.__e${atSign.atSign}',
+        FakeRecord(value, atSign._newMetadata()));
+  }
+
+  void _enrollUpdate(String command, Map<String, dynamic> body) {
+    final id = (body['enrollmentId'] as String?)?.trim().toLowerCase();
+    final self = enrollment!;
+    if (id != self.id) {
+      throw _VerbError(
+          'AT0011', 'enroll:update may change only the caller\'s enrollment');
+    }
+    if (self.status != 'approved') {
+      throw _VerbError('AT0011', 'Enrollment $id is not approved');
+    }
+    if (body['namespaces'] != null) {
+      throw _VerbError('AT0022', 'enroll:update cannot change namespaces');
+    }
+    if (body['apkamPublicKey'] != null || body['signingAlgo'] != null) {
+      atSign.server.unhandled.add(command);
+      throw _VerbError('AT0003',
+          'fake atServer does not model changing an enrollment\'s key');
+    }
+    final metadata = body['metadata'] as Map<String, dynamic>?;
+    if (metadata == null &&
+        body['apsk'] == null &&
+        body['apskLegacy'] == null) {
+      throw _VerbError('AT0022', 'enroll:update has nothing to update');
+    }
+    if (metadata != null) self.metadata = {...?self.metadata, ...metadata};
+    _publishApsk(self, body);
+    _data(jsonEncode({'enrollmentId': self.id, 'status': 'approved'}));
+  }
+
+  void _enrollList(Map<String, dynamic> body) {
+    final caller = enrollment!;
+    final manages = caller.namespaces.containsKey('__manage');
+    final statuses =
+        (body['enrollmentStatusFilter'] as List?)?.cast<String>();
+    final listed = manages
+        ? atSign.enrollments.values
+            .where((e) => statuses == null || statuses.contains(e.status))
+        : [caller];
+    final full = !manages || caller.namespaces['__manage']!.contains('w');
+    _data(jsonEncode({
+      for (final e in listed) e._recordKey: full ? e._record() : e._roster(),
+    }));
+  }
+
+  void _requireNamespaceAccess(String namespace, String operation) {
+    final caller = enrollment!;
+    if (namespace.isEmpty) {
+      throw _VerbError(
+          'AT0022', 'namespace is required for enroll:$operation');
+    }
+    if (caller.status != 'approved') {
+      throw _VerbError('AT0009', 'Caller enrollment is not in approved state');
+    }
+    if (_accessFor(caller, namespace) == null ||
+        (namespace == '__manage' &&
+            !caller.namespaces.containsKey('__manage'))) {
+      throw _VerbError('AT0009',
+          'Caller enrollment is not authorised for namespace "$namespace"');
+    }
+  }
+
+  /// The access [e] holds over [namespace]: an exact or parent-segment grant,
+  /// else its `*` grant.
+  String? _accessFor(FakeEnrollment e, String namespace) {
+    for (final MapEntry(key: ns, value: access) in e.namespaces.entries) {
+      if (ns == '*') continue;
+      if (ns == namespace || namespace.endsWith('.$ns')) return access;
+    }
+    return e.namespaces['*'];
+  }
+
+  void _scan(String command, Map<String, String?> params) {
+    final forAtSign = params['forAtSign'];
+    if (params['commitLog'] != null ||
+        params['page'] != null ||
+        (forAtSign != null && forAtSign.toAtsign() != atSign.atSign)) {
+      atSign.server.unhandled.add(command);
+      throw _VerbError('AT0003', 'fake atServer has no handler for: $command');
+    }
+    final regex = params['regex'] == null ? null : RegExp(params['regex']!);
+    final showHidden = params['showhidden'] == 'true';
+    final caller = enrollment!;
+    bool hidden(String key) =>
+        !(showHidden && (key.startsWith('public:__') || key.startsWith('_'))) &&
+        (key.startsWith('private:') ||
+            key.startsWith('privatekey:') ||
+            key.startsWith('public:_') ||
+            key.startsWith('_'));
+    bool visible(String key) {
+      if (key.startsWith('public:')) return true;
+      if (caller.namespaces.isEmpty || caller.status != 'approved') {
+        return false;
+      }
+      if (caller.namespaces.containsKey('*')) {
+        return !_isForeignReserved(key, caller);
+      }
+      return key.contains('.') && _authorized(key, write: false);
+    }
+
+    _data(jsonEncode([
+      for (final MapEntry(:key, value: record) in atSign._keyStore.entries)
+        if (record.isActive &&
+            (regex == null || regex.hasMatch(key)) &&
+            !hidden(key) &&
+            visible(key))
+          key,
+    ]));
+  }
+
+  bool _isForeignReserved(String key, FakeEnrollment caller) {
+    final m = RegExp(r'(?:^|[.:])([^.:]+)\.[ard]\.__e@').firstMatch(key);
+    return m != null && m.group(1) != caller.id;
+  }
+
 
   /// Whether this connection's enrollment may read or write [key].
   bool _authorized(String key, {required bool write}) {
