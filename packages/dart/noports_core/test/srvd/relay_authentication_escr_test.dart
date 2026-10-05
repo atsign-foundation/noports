@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:at_auth/at_auth.dart'
+    show ApskSigningKey, KeyEntryStatus, apskAdvertisement;
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
@@ -102,6 +104,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: false,
       );
       RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
@@ -140,6 +143,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: wrongKP.atPublicKey.publicKey,
         privateSigningKey: wrongKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       );
 
@@ -196,6 +200,28 @@ void main() {
       });
     }
 
+    test('an envelope naming no key is refused when two keys could have'
+        ' signed it', () async {
+      final checkedHelper = sessionHelper();
+      when(() => checkedHelper.lookup(relaySessionId, any())).thenAnswer(
+        (_) async => jsonEncode(apskAdvertisement(keys: [
+          for (final kp in [signingKP, wrongKP])
+            ApskSigningKey.forPublicKey(
+              alg: SigningAlgoType.rsa2048,
+              pub: kp.atPublicKey.publicKey,
+            ),
+        ])),
+      );
+      final verifier = RelayAuthVerifierESCR('two keys', checkedHelper);
+
+      await expectLater(
+        verifier.verifyChallengeResponse(await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        )),
+        refusedWith(RAVEReason.signatureVerificationFailed, 'names no key'),
+      );
+    });
+
     test('wrong AES key', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
         sessionId: relaySessionId,
@@ -203,6 +229,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       );
 
@@ -236,6 +263,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: false,
       );
 
@@ -317,6 +345,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: false,
       );
       RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
@@ -596,6 +625,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
 
@@ -640,6 +670,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
         final verifier = RelayAuthVerifierESCR(
@@ -687,6 +718,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
         final verifier = RelayAuthVerifierESCR(
@@ -774,5 +806,154 @@ void main() {
         );
       },
     );
+  });
+
+  group('Relay authentication signed with a post-quantum key', () {
+    const uri = '_apsk.my_enrollment_id.a.__e@alice';
+    final sessionId = Uuid().v4();
+    final aesKey = AESKey.generate(32).key;
+    final rsa = RsaKeyPair.generate();
+    late MlDsa65KeyPair mlDsa;
+    late MlDsa65KeyPair otherMlDsa;
+
+    setUpAll(() async {
+      mlDsa = await MlDsa65KeyPair.generate();
+      otherMlDsa = await MlDsa65KeyPair.generate();
+    });
+
+    /// An `_apsk` advertisement of [keys], each active unless [retired].
+    String advertising(
+      Map<SigningAlgoType, List<String>> keys, {
+      Set<String> retired = const {},
+    }) =>
+        jsonEncode(apskAdvertisement(keys: [
+          for (final MapEntry(key: alg, value: pubs) in keys.entries)
+            for (final pub in pubs)
+              ApskSigningKey.forPublicKey(
+                alg: alg,
+                pub: pub,
+                status: retired.contains(pub)
+                    ? KeyEntryStatus.retired
+                    : KeyEntryStatus.active,
+              ),
+        ]));
+
+    /// Verifies a response signed with [privateKey] under [algo], naming
+    /// [publicKey]'s kid, by a relay that fetches [apsk].
+    Future<bool> verify(
+      String apsk, {
+      required SigningAlgoType algo,
+      required String publicKey,
+      required String privateKey,
+    }) async {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(sessionId)).thenAnswer((_) async => true);
+      when(() => h.getRelayAuthAesKey(sessionId)).thenAnswer((_) async => aesKey);
+      when(() => h.lookup(sessionId, uri)).thenAnswer((_) async => apsk);
+      final verifier = RelayAuthVerifierESCR('post-quantum', h);
+      return verifier.verifyChallengeResponse(await RelayAuthenticatorESCR(
+        sessionId: sessionId,
+        relayAuthAesKey: aesKey,
+        publicSigningKeyUri: uri,
+        publicSigningKey: publicKey,
+        privateSigningKey: privateKey,
+        signingAlgo: algo,
+        isSideA: true,
+      ).responseToChallenge(verifier.challenge));
+    }
+
+    Matcher refused(String message) => throwsA(isA<RAVE>()
+        .having((e) => e.reason, 'reason',
+            RAVEReason.signatureVerificationFailed)
+        .having((e) => e.message, 'message', contains(message)));
+
+    test('an ML-DSA signature verifies against its advertised key', () async {
+      expect(
+        await verify(
+          advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        true,
+      );
+    });
+
+    test('an RSA signature is refused while an ML-DSA key is offered',
+        () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.rsa2048: [rsa.atPublicKey.publicKey],
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        refused('advertises mldsa65'),
+      );
+    });
+
+    test('an RSA signature verifies once the ML-DSA key is retired', () async {
+      expect(
+        await verify(
+          advertising(
+            {
+              SigningAlgoType.rsa2048: [rsa.atPublicKey.publicKey],
+              SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+            },
+            retired: {mlDsa.atPublicKey.publicKey},
+          ),
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        true,
+      );
+    });
+
+    test('an ML-DSA signature is refused against a bare RSA key', () async {
+      await expectLater(
+        verify(
+          rsa.atPublicKey.publicKey,
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        refused('advertises rsa2048'),
+      );
+    });
+
+    test('a signature naming a key the advertisement lacks is refused',
+        () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.mldsa65: [otherMlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        refused('does not advertise'),
+      );
+    });
+
+    test('an ML-DSA signature by another key is refused', () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: otherMlDsa.atPrivateKey.privateKey,
+        ),
+        refused('Signatures did not match'),
+      );
+    });
   });
 }

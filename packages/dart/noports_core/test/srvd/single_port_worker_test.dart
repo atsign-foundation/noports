@@ -98,6 +98,7 @@ void main() {
         publicSigningKeyUri: '_apsk.e.a.__e$signer',
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: isSideA,
       ).authenticate(socket);
 

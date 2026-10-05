@@ -250,6 +250,7 @@ abstract class SrvdChannel<T>
             publicSigningKeyUri: publicSigningKeyUri,
             publicSigningKey: signingKeyPair.publicKey,
             privateSigningKey: signingKeyPair.privateKey,
+            signingAlgo: signingKeyPair.algorithm,
             isSideA: true,
           );
           break;

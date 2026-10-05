@@ -25,6 +25,9 @@
   `authorized_keys` lines
 * fix: srvd accepts an ESCR-authenticated socket only when it is signed by
   the atSign of the side it claims
+* feat: srvd accepts ESCR relay authentication signed with ML-DSA-65 as
+  well as RSA, and a client or daemon whose enrollment holds signing keys of
+  its own can now use ESCR
 * fix: `srvd --manager` accepts session requests only from the manager
   itself
 * fix: a long-running srvd no longer keeps a receive port open for every

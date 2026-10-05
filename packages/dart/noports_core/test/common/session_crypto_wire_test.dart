@@ -83,13 +83,15 @@ void main() {
       );
     });
 
-    test('the ESCR response carries the released inner envelope', () async {
+    test('the ESCR response carries the released inner envelope, and the'
+        " signing key's kid", () async {
       final response = await RelayAuthenticatorESCR(
         sessionId: 'escr-session',
         relayAuthAesKey: _aesKey,
         publicSigningKeyUri: _escrKeyUri,
         publicSigningKey: _publicKey,
         privateSigningKey: _privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       ).responseToChallenge('the-challenge');
 
@@ -110,7 +112,10 @@ void main() {
           'ha': 'sha256',
           'sa': 'rsa2048',
           'sk': _escrKeyUri,
+          'kid': '33fa0f81292dbbdc',
         }),
+        reason: 'a released relay reads only p, s, ha, sa and sk, and the kid'
+            " is the first 8 bytes of the SHA-256 of the key's raw bytes",
       );
     });
 
@@ -309,34 +314,64 @@ void main() {
       );
     });
 
-    test('throws while the enrollment holds signing keys of its own',
-        () async {
-      final keys = AtKeys.legacy(
-        apkamPublicKey: _publicKey,
-        apkamPrivateKey: _privateKey,
-        enrollmentId: 'e1',
-      )..fileSigningMaterial(
-          enrollmentId: 'e1',
-          algorithm: CryptographicMaterialAlgorithm.rsa2048,
-          publicKey: _publicKey,
-          privateKey: _privateKey,
-        );
+    AtClient holding(AtKeys keys) {
       final client = MockAtClient();
       when(() => client.getCurrentAtSign()).thenReturn('@alice');
       when(() => client.enrollmentId).thenReturn('e1');
       when(() => client.getPreferences()).thenReturn(null);
       when(() => client.atKeysIo)
           .thenReturn(InMemoryAtKeysIo.holding('@alice', keys));
-      await expectLater(
-        escrSigningKeyPair(_Signer(client)),
-        throwsA(
-          isA<AtClientException>().having(
-            (e) => e.message,
-            'message',
-            contains('holds signing keys of its own'),
-          ),
-        ),
+      return client;
+    }
+
+    AtKeys enrolled() => AtKeys.legacy(
+          apkamPublicKey: _publicKey,
+          apkamPrivateKey: _privateKey,
+          enrollmentId: 'e1',
+        );
+
+    test("is the enrollment's own signing key once it holds one", () async {
+      final own = RsaKeyPair.generate();
+      final keys = enrolled()
+        ..fileSigningMaterial(
+          enrollmentId: 'e1',
+          algorithm: CryptographicMaterialAlgorithm.rsa2048,
+          publicKey: own.atPublicKey.publicKey,
+          privateKey: own.atPrivateKey.privateKey,
+        );
+
+      final pair = await escrSigningKeyPair(_Signer(holding(keys)));
+
+      expect(pair.algorithm, SigningAlgoType.rsa2048);
+      expect(
+        pair.publicKey,
+        own.atPublicKey.publicKey,
+        reason: "_apsk then advertises the enrollment's own key, not its"
+            ' authentication key',
       );
+    });
+
+    test("is the strongest of the enrollment's signing keys", () async {
+      final rsa = RsaKeyPair.generate();
+      final mlDsa = await MlDsa65KeyPair.generate();
+      final keys = enrolled()
+        ..fileSigningMaterial(
+          enrollmentId: 'e1',
+          algorithm: CryptographicMaterialAlgorithm.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        )
+        ..fileSigningMaterial(
+          enrollmentId: 'e1',
+          algorithm: CryptographicMaterialAlgorithm.mlDsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        );
+
+      final pair = await escrSigningKeyPair(_Signer(holding(keys)));
+
+      expect(pair.algorithm, SigningAlgoType.mldsa65);
+      expect(pair.publicKey, mlDsa.atPublicKey.publicKey);
     });
 
     test('throws when the client holds no APKAM keypair', () async {

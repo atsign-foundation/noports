@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:at_auth/at_auth.dart' show ApskSigningKey, apskSigningKeys;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
@@ -313,25 +314,65 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         .toAtsign();
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
-    if (signingAlgo != SigningAlgoType.rsa2048) {
+    if (!escrSigningAlgorithms.contains(signingAlgo)) {
       throw RAVE(
         'Unsupported signing algorithm ${signingAlgo.name}',
         RAVEReason.signatureVerificationFailed,
       );
     }
 
-    String publicSigningKey = await helper.lookup(
-      sessionId!,
+    final advertised = _activeKeysRelayVerifies(
       publicSigningKeyUri,
+      await helper.lookup(sessionId!, publicSigningKeyUri),
     );
+    final required =
+        SigningAlgoType.strongestOf(advertised.map((k) => k.alg))!;
+    if (signingAlgo != required) {
+      throw RAVE(
+        'Signed with ${signingAlgo.name}, but $publicSigningKeyUri advertises'
+        ' ${required.name}, the strongest algorithm its signer holds',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    final candidates = advertised.where((k) => k.alg == required).toList();
+    final kid = envelope['kid'];
+    final key = kid == null
+        ? (candidates.length == 1
+            ? candidates.single
+            : throw RAVE(
+                'The signature names no key, and $publicSigningKeyUri'
+                ' advertises ${candidates.length} ${required.name} keys',
+                RAVEReason.signatureVerificationFailed,
+              ))
+        : candidates.where((k) => k.kid == kid).firstOrNull ??
+            (throw RAVE(
+              'The signature names key $kid, which $publicSigningKeyUri'
+              ' does not advertise',
+              RAVEReason.signatureVerificationFailed,
+            ));
 
-    /// Verify the signature of the payload
-    bool verified = await rsaVerifyString(
-      jsonEncode(signedPayload),
-      signature: envelope['s'],
-      publicKey: publicSigningKey,
-      hashing: hashingAlgo,
-    );
+    final signed = jsonEncode(signedPayload);
+    final bool verified;
+    try {
+      verified = switch (required) {
+        SigningAlgoType.mldsa65 => MlDsa65PureDartAlgo.verifyBytesSync(
+            utf8.encode(signed),
+            signature: base64Decode(envelope['s']),
+            publicKey: base64Decode(key.pub),
+          ),
+        _ => await rsaVerifyString(
+            signed,
+            signature: envelope['s'],
+            publicKey: key.pub,
+            hashing: hashingAlgo,
+          ),
+      };
+    } on FormatException catch (e) {
+      throw RAVE(
+        'The signature is not base64: ${e.message}',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
     if (!verified) {
       throw RAVE(
         'Signatures did not match.',
@@ -340,6 +381,51 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     return verified;
+  }
+
+  /// The keys [apsk], the value at [uri], offers for new signatures under an
+  /// algorithm relay authentication verifies. A bare value is one RSA key;
+  /// anything else is the JSON advertisement at_auth defines.
+  static List<ApskSigningKey> _activeKeysRelayVerifies(
+    String uri,
+    String apsk,
+  ) {
+    final value = apsk.trim();
+    final List<ApskSigningKey> advertised;
+    if (value.startsWith('{')) {
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(value);
+      } on FormatException catch (e) {
+        throw RAVE(
+          '$uri holds an advertisement that is not JSON: ${e.message}',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+      if (decoded is! Map<String, dynamic>) {
+        throw RAVE(
+          '$uri holds an advertisement that is not a JSON object',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+      advertised = apskSigningKeys(decoded);
+    } else {
+      advertised = [
+        ApskSigningKey.forPublicKey(alg: SigningAlgoType.rsa2048, pub: value),
+      ];
+    }
+    final keys = [
+      for (final k in advertised)
+        if (k.offeredForNewOperations && escrSigningAlgorithms.contains(k.alg))
+          k,
+    ];
+    if (keys.isEmpty) {
+      throw RAVE(
+        '$uri advertises no key relay authentication can verify',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    return keys;
   }
 
   @override
