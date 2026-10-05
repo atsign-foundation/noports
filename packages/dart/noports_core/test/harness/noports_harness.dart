@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/sqlite.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
@@ -89,8 +90,12 @@ class NoPortsHarness {
   }
 
   /// Starts sshnpd on the daemon atSign, managed by the client atSign and
-  /// permitted to open [permitOpen].
-  Future<SshnpdImpl> startDaemon({required List<String> permitOpen}) async {
+  /// permitted to open [permitOpen]. With [advertisesEscr] false it tells
+  /// clients it predates ESCR relay authentication, as an old daemon does.
+  Future<SshnpdImpl> startDaemon({
+    required List<String> permitOpen,
+    bool advertisesEscr = true,
+  }) async {
     final daemon = this.daemon = SshnpdImpl(
       atClient: await openClient(daemonAtSign, namespace: DefaultArgs.namespace),
       username: 'harness',
@@ -111,6 +116,8 @@ class NoPortsHarness {
       strict: false,
       inline: true,
     );
+    (daemon.pingResponse['supportedFeatures'] as Map)[
+        DaemonFeature.supportsRamEscr.name] = advertisesEscr;
     await daemon.init();
     await daemon.run();
     return daemon;
