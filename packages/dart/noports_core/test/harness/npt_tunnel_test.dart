@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_client/at_client.dart' show PqPosture;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
@@ -17,6 +18,8 @@ void main() {
     int remotePort, {
     RelayAuthMode relayAuthMode = RelayAuthMode.escr,
     Duration daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final npt = Npt.create(
       params: NptParams(
@@ -36,6 +39,8 @@ void main() {
       atClient: await harness.openClient(
         NoPortsHarness.clientAtSign,
         namespace: DefaultArgs.namespace,
+        posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
       ),
     );
     addTearDown(npt.close);
@@ -97,6 +102,57 @@ void main() {
       escrVerifiedSides(harness),
       {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
       reason: 'the relay verifies an ESCR side with its signing key',
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test('post-quantum atSigns authenticate to the relay with ESCR', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay(posture: PqPosture.pqReady);
+    await harness.startDaemon(
+      permitOpen: ['127.0.0.1:${echo.port}'],
+      posture: PqPosture.pqReady,
+    );
+    final npt = await nptTo(harness, echo.port, posture: PqPosture.pqReady);
+
+    final localPort = await npt.run();
+
+    expect(await roundTrip(localPort, 'post-quantum'), 'post-quantum');
+    expect(
+      escrVerifiedSides(harness),
+      {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test('atSigns that sign with ML-DSA authenticate to the relay with ESCR',
+      () async {
+    const mlDsa = {SigningAlgoType.mldsa65};
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay(
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+    await harness.startDaemon(
+      permitOpen: ['127.0.0.1:${echo.port}'],
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+    final npt = await nptTo(
+      harness,
+      echo.port,
+      posture: PqPosture.pqReady,
+      dataSigningKeyAlgorithms: mlDsa,
+    );
+
+    final localPort = await npt.run();
+
+    expect(await roundTrip(localPort, 'ml-dsa'), 'ml-dsa');
+    expect(
+      escrVerifiedSides(harness),
+      {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
     );
     expect(harness.server.unhandled, isEmpty);
   });
