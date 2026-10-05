@@ -127,6 +127,25 @@ void main() {
     expect(harness.server.unhandled, isEmpty);
   });
 
+  test('npt.close() ends its inline tunnel', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay();
+    await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(harness, echo.port);
+    final localPort = await npt.run();
+    expect(await roundTrip(localPort, 'before close'), 'before close');
+
+    await npt.close();
+
+    await expectLater(
+      Socket.connect(InternetAddress.loopbackIPv4, localPort),
+      throwsA(isA<SocketException>()),
+      reason: 'the tunnel no longer accepts connections',
+    );
+    await expectLater(npt.done, completes);
+  });
+
   test("a destination outside the daemon's permitOpen is refused with the"
       " daemon's reason", () async {
     final harness = NoPortsHarness.create();

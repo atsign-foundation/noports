@@ -45,6 +45,8 @@
 - fix: sshnpd no longer leaves a session's ephemeral key in
   `authorized_keys`, or drops a new session's key, when sessions start and
   end at the same moment
+- fix: `Npt.close()` closes the tunnel an inline npt opened, which used to
+  keep accepting connections and then threw a `StateError` when it ended
 
 # 6.15.0
 
