@@ -10,7 +10,9 @@ String deviceNamespace(String device) => '$device.${DefaultArgs.namespace}';
 /// How long an answer from [schemeFor] is used before it is asked again.
 const Duration _remembered = Duration(minutes: 10);
 
-final Map<String, ({String scheme, DateTime at})> _schemes = {};
+/// What [schemeFor] has found out, per client, so that one enrollment's
+/// answer, which says whether it holds its own private, is never another's.
+final Expando<Map<String, ({String scheme, DateTime at})>> _schemes = Expando();
 
 /// The provider to send to [receiver] under, or null for this client's
 /// default when its posture is not post-quantum.
@@ -19,7 +21,7 @@ final Map<String, ({String scheme, DateTime at})> _schemes = {};
 /// this client holds the private of its own key at [own], which opens the
 /// reply and covers the copy of the content key a sender keeps; legacy
 /// otherwise, so a receiver that publishes no key is still reached. An answer
-/// is reused for ten minutes; a failure to find out is not.
+/// is reused by [atClient] for ten minutes; a failure to find out is not.
 Future<String?> schemeFor(
   AtClient atClient, {
   required String receiver,
@@ -30,9 +32,10 @@ Future<String?> schemeFor(
   if (atClient.getPreferences()?.posture.configuresPqProviders != true) {
     return null;
   }
-  final key = '${atClient.getCurrentAtSign()} $receiver $sealTo $own';
+  final key = '$receiver $sealTo $own';
   final now = DateTime.now();
-  final remembered = _schemes[key];
+  final answers = _schemes[atClient] ??= {};
+  final remembered = answers[key];
   if (remembered != null && now.difference(remembered.at) < _remembered) {
     return remembered.scheme;
   }
@@ -54,7 +57,7 @@ Future<String?> schemeFor(
       );
       scheme = legacyCryptoProviderId;
     }
-    _schemes[key] = (scheme: scheme, at: now);
+    answers[key] = (scheme: scheme, at: now);
     return scheme;
   } catch (e) {
     logger.warning(
