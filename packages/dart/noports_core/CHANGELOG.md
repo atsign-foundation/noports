@@ -4,6 +4,8 @@
   3.15.0-rc3, at_auth 4.0.0-rc3, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc2 and at_onboarding_cli 2.0.0-rc3, plus at_commons 5.18.0 and
   at_utils 3.4.1
+- build: requires socket_connector 2.6.1, so `Srvd.stop()` and `Npt.close()`
+  also end the connections already open through their tunnels
 - **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`

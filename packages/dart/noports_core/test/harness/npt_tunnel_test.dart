@@ -66,6 +66,30 @@ void main() {
         .value = RsaKeyPair.generate().atPublicKey.publicKey;
   }
 
+  /// Opens a connection through the tunnel at [localPort] and waits until it
+  /// has carried bytes both ways; its `ended` completes when the connection
+  /// ends.
+  Future<({Future<void> ended})> liveConnection(int localPort) async {
+    final socket = await Socket.connect(InternetAddress.loopbackIPv4, localPort);
+    addTearDown(socket.destroy);
+    final echoed = Completer<void>();
+    final ended = Completer<void>();
+    void end([_]) {
+      if (!ended.isCompleted) ended.complete();
+    }
+
+    socket.listen(
+      (_) {
+        if (!echoed.isCompleted) echoed.complete();
+      },
+      onDone: end,
+      onError: end,
+    );
+    socket.write('live');
+    await echoed.future.timeout(const Duration(seconds: 10));
+    return (ended: ended.future);
+  }
+
   /// Sends [message] into the tunnel at [localPort] and returns what comes
   /// back, failing if it hasn't all come back within 10 seconds.
   Future<String> roundTrip(int localPort, String message) async {
@@ -329,7 +353,7 @@ void main() {
     await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
     final npt = await nptTo(harness, echo.port);
     final localPort = await npt.run();
-    expect(await roundTrip(localPort, 'before close'), 'before close');
+    final live = await liveConnection(localPort);
 
     await npt.close();
 
@@ -338,7 +362,35 @@ void main() {
       throwsA(isA<SocketException>()),
       reason: 'the tunnel no longer accepts connections',
     );
+    await expectLater(
+      live.ended.timeout(const Duration(seconds: 5)),
+      completes,
+      reason: 'a connection already open through the tunnel ends with it',
+    );
     await expectLater(npt.done, completes);
+  });
+
+  test('relay.stop() ends the tunnels it relays', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    final relay = await harness.startRelay();
+    await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(harness, echo.port);
+    final localPort = await npt.run();
+    final live = await liveConnection(localPort);
+
+    await relay.stop();
+
+    await expectLater(
+      live.ended.timeout(const Duration(seconds: 5)),
+      completes,
+      reason: 'a connection through the relay ends when the relay stops',
+    );
+    await expectLater(
+      npt.done.timeout(const Duration(seconds: 5)),
+      completes,
+      reason: "the client's tunnel ends with its relay",
+    );
   });
 
   test("a destination outside the daemon's permitOpen is refused with the"
