@@ -8,7 +8,7 @@ on:
     branches:
       - trunk
     paths:
-      - tests/end2end_tests/image/Dockerfile
+      - tests/npe2e/tools/dockerfiles/Dockerfile.base.runtime
     
 jobs:
   check-riscv64-image:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - dockerfile_path: tests/end2end_tests/image/Dockerfile
+          - dockerfile_path: tests/npe2e/tools/dockerfiles/Dockerfile.base.runtime
             name: Debian slim base image
     steps:
       - name: Checkout Code
