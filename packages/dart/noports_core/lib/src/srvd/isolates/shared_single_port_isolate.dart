@@ -190,6 +190,10 @@ class SinglePortWorker extends RelayWorker {
     } catch (e) {
       logger.shout('Error $e while closing server socket');
     }
+    // NOTE killing this isolate leaves its sockets open, so close them first.
+    for (final si in sessions.values) {
+      si.connector?.close();
+    }
     stopped.complete();
   }
 

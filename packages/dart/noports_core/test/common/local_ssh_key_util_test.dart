@@ -98,5 +98,36 @@ void main() {
         }
       },
     );
+
+    test('concurrent removals each take effect', () async {
+      await authorize('ssh-ed25519 AAAAkeyA', idA);
+      await authorize('ssh-ed25519 AAAAkeyB', idB);
+
+      await Future.wait([
+        keyUtil.deauthorizePublicKey(idA),
+        LocalSshKeyUtil(homeDirectory: home.path).deauthorizePublicKey(idB),
+      ]);
+
+      expect(authKeys.readAsLinesSync(), [_userKey]);
+    });
+
+    test('a removal concurrent with an authorization keeps the new key',
+        () async {
+      await authorize('ssh-ed25519 AAAAkeyA', idA);
+
+      await Future.wait([
+        keyUtil.deauthorizePublicKey(idA),
+        LocalSshKeyUtil(homeDirectory: home.path).authorizePublicKey(
+          sshPublicKey: 'ssh-ed25519 AAAAkeyB',
+          localSshdPort: 22,
+          sessionId: idB,
+        ),
+      ]);
+
+      expect(authKeys.readAsLinesSync(), [
+        _userKey,
+        ephemeralLine('ssh-ed25519 AAAAkeyB', idB),
+      ]);
+    });
   });
 }

@@ -116,6 +116,34 @@ class SshnpdImpl
 
   bool _loggedElcMiss = false;
 
+  final List<Timer> _timers = [];
+
+  final List<StreamSubscription> _subscriptions = [];
+
+  final Map<String, ({Timer timer, Future<void> Function() deauthorize})>
+  _pendingDeauthorizations = {};
+
+  final Set<Future<void>> _deauthorizing = {};
+
+  bool _stopped = false;
+
+  void _addTimer(Timer timer) =>
+      _stopped ? timer.cancel() : _timers.add(timer);
+
+  void _addSubscription(StreamSubscription subscription) => _stopped
+      ? unawaited(subscription.cancel())
+      : _subscriptions.add(subscription);
+
+  void _trackDeauthorization(Future<void> deauthorization) {
+    late final Future<void> tracked;
+    tracked = deauthorization
+        .catchError(
+          (e) => logger.warning('Failed to remove an ephemeral key: $e'),
+        )
+        .whenComplete(() => _deauthorizing.remove(tracked));
+    _deauthorizing.add(tracked);
+  }
+
   SshnpdImpl({
     // final fields
     required this.atClient,
@@ -297,36 +325,83 @@ class SshnpdImpl
     logger.info('Starting heartbeat');
     startHeartbeats();
 
-    handlePublicKeyChangedEvent(atClient, deviceAtsign);
+    _addSubscription(handlePublicKeyChangedEvent(atClient, deviceAtsign));
 
     String regex = '(^$device|\\.$device)\\.${DefaultArgs.namespace}@';
     logger.info('Subscribing to $regex');
-    atClient.notificationService
-        .subscribe(regex: regex, shouldDecrypt: true)
-        .listen(
-          clientRequestNotificationHandler,
-          onError: (e) => logger.severe('Notification Failed:$e'),
-          onDone: () => logger.info('Notification listener stopped'),
-        );
+    _addSubscription(
+      atClient.notificationService
+          .subscribe(regex: regex, shouldDecrypt: true)
+          .listen(
+            clientRequestNotificationHandler,
+            onError: (e) => logger.severe('Notification Failed:$e'),
+            onDone: () => logger.info('Notification listener stopped'),
+          ),
+    );
 
     // Refresh the device entry now, and every hour
     await _refreshDeviceEntry();
     if (makeDeviceInfoVisible) {
-      Timer.periodic(
-        const Duration(hours: 1),
-        (_) async => await _refreshDeviceEntry(),
+      _addTimer(
+        Timer.periodic(
+          const Duration(hours: 1),
+          (_) async => await _refreshDeviceEntry(),
+        ),
       );
     }
 
     await subscribeToPolicyUpdates();
 
     await _policyCycle();
-    Timer.periodic(
-      DefaultSshnpdArgs.policyHeartbeatFrequency,
-      (_) async => await _policyCycle(),
+    _addTimer(
+      Timer.periodic(
+        DefaultSshnpdArgs.policyHeartbeatFrequency,
+        (_) async => await _policyCycle(),
+      ),
     );
 
     logger.info('Daemon is running');
+  }
+
+  @override
+  Future<void> stop() async {
+    _stopped = true;
+    for (final timer in _timers) {
+      timer.cancel();
+    }
+    _timers.clear();
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    for (final pending in [..._pendingDeauthorizations.values]) {
+      pending.timer.cancel();
+      _trackDeauthorization(pending.deauthorize());
+    }
+    await Future.wait([..._deauthorizing]);
+  }
+
+  /// Removes [sessionId]'s ephemeral key from `authorized_keys` after [delay],
+  /// or straight away once [stop] has been called.
+  @visibleForTesting
+  void deauthorizeAfter(
+    Duration delay,
+    String sessionId,
+    LocalSshKeyUtil keyUtil,
+  ) {
+    Future<void> deauthorize() async {
+      if (_pendingDeauthorizations.remove(sessionId) != null) {
+        await keyUtil.deauthorizePublicKey(sessionId);
+      }
+    }
+
+    _pendingDeauthorizations[sessionId] = (
+      timer: Timer(
+        _stopped ? Duration.zero : delay,
+        () => _trackDeauthorization(deauthorize()),
+      ),
+      deauthorize: deauthorize,
+    );
   }
 
   /// 1. Periodically send a 'noop' on the main atLookUp connection, so that
@@ -335,23 +410,27 @@ class SshnpdImpl
   /// message when it changes
   void startHeartbeats() {
     // 1. keep-alive on the main atLookUp connection
-    Timer.periodic(Duration(seconds: 90), (timer) async {
-      try {
-        await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
-          'noop:0\n',
-          auth: true,
-        );
-      } catch (_) {}
-    });
+    _addTimer(
+      Timer.periodic(Duration(seconds: 90), (timer) async {
+        try {
+          await atClient.getRemoteSecondary()?.atLookUp.executeCommand(
+            'noop:0\n',
+            auth: true,
+          );
+        } catch (_) {}
+      }),
+    );
 
     // 2. Log a message when notification listener state changes
     NotificationListenerState? lastState;
-    atClient.notificationService.currentListenerStateStream.listen((nls) {
-      if (nls != lastState) {
-        logger.shout('Notification listener state changed to $nls');
-        lastState = nls;
-      }
-    });
+    _addSubscription(
+      atClient.notificationService.currentListenerStateStream.listen((nls) {
+        if (nls != lastState) {
+          logger.shout('Notification listener state changed to $nls');
+          lastState = nls;
+        }
+      }),
+    );
   }
 
   /// Notification handler for requests from clients
@@ -1424,10 +1503,7 @@ class SshnpdImpl
 
     /// - start a timer to remove the ephemeral key from `authorized_keys`
     ///   after 15 seconds
-    Timer(
-      const Duration(seconds: 15),
-      () => keyUtil.deauthorizePublicKey(req.sessionId),
-    );
+    deauthorizeAfter(const Duration(seconds: 15), req.sessionId, keyUtil);
   }
 
   Future<void> startReverseSsh({
@@ -1899,10 +1975,12 @@ class SshnpdImpl
     String regex =
         '\\.$device\\.devices\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign';
     logger.shout('Subscribing to $regex');
-    subscribe(
-      regex: regex,
-      shouldDecrypt: true,
-    ).listen(policyNotificationHandler);
+    _addSubscription(
+      subscribe(
+        regex: regex,
+        shouldDecrypt: true,
+      ).listen(policyNotificationHandler),
+    );
   }
 
   void policyNotificationHandler(AtNotification notification) async {

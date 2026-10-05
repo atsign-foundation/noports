@@ -9,6 +9,8 @@
   `ActivateFlows` rather than an `AtOnboardingService`
 - **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
   and `ClientParams` implementations must add `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
+  what `init()` and `run()` started, so implementations must add `stop()`
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).
@@ -38,6 +40,11 @@
   the atSign of the side it claims
 - fix: `srvd --manager` accepts session requests only from the manager
   itself
+- fix: a long-running srvd no longer keeps a receive port open for every
+  session it has relayed
+- fix: sshnpd no longer leaves a session's ephemeral key in
+  `authorized_keys`, or drops a new session's key, when sessions start and
+  end at the same moment
 
 # 6.15.0
 

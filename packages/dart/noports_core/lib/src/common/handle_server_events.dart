@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
@@ -5,10 +6,15 @@ import 'package:at_utils/at_logger.dart';
 
 AtSignLogger logger = AtSignLogger(' handle_server_events ');
 
-handlePublicKeyChangedEvent(AtClient atClient, Atsign atSign) {
+/// Removes cached keys for an atSign whose public key has changed, until the
+/// returned subscription is cancelled.
+StreamSubscription<AtNotification> handlePublicKeyChangedEvent(
+  AtClient atClient,
+  Atsign atSign,
+) {
   String topic = '.*\\.events\\.__atserver$atSign';
 
-  atClient.notificationService
+  return atClient.notificationService
       .subscribe(regex: topic, shouldDecrypt: true)
       .listen((AtNotification n) async {
     final dynamic ej;
