@@ -27,6 +27,7 @@ class NPPCLIParams {
   late String _rootServer; // will always be non-null; it has a resolvable default
   late String _baseNamespace; // e.g. 'sshnp'
   late String _domainNamespace; // e.g. 'npp'
+  late bool _postQuantum;
 
   // Case 2b: run-time default
   late String _atKeysFilePath; // resolves to ~/.atsign/keys/<atsign>-key.atKeys
@@ -52,6 +53,10 @@ class NPPCLIParams {
   String get policyAtSign => _policyAtSign;
   String get baseNamespace => _baseNamespace;
 
+  /// Whether to send each request post-quantum to a service that publishes its
+  /// namespace key.
+  bool get postQuantum => _postQuantum;
+
   String? get storagePath => _storagePath;
   String? get domainNamespace => _domainNamespace;
 
@@ -72,6 +77,7 @@ class NPPCLIParams {
     p._rootServer = argResults['root-domain'];
     p._baseNamespace = argResults['base-namespace'];
     p._domainNamespace = argResults['domain-namespace'];
+    p._postQuantum = argResults['pq'];
 
     // Case 2b: resolve to our own default 
     //(default cannot be obtained from ArgParser)
@@ -124,6 +130,15 @@ class NPPCLIParams {
       abbr: 'v',
       defaultsTo: NPPCLIParamsDefaults.verbose,
       help: 'Extra logging',
+    );
+
+    argParser.addFlag(
+      'pq',
+      defaultsTo: false,
+      negatable: false,
+      hide: true,
+      help: 'Send each request post-quantum to a service that publishes its'
+        ' namespace key.',
     );
 
     argParser.addOption(

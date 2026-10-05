@@ -2,6 +2,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 
 
 class NppClient {
@@ -31,7 +32,16 @@ class NppClient {
 
 
   Future<dynamic> executeNppDataOperation(final NppDataOperation nppDataOperation) async {
-    final Map<String, dynamic> response = await atRpcClient.call(nppDataOperation.atRpcPayload);
+    final Map<String, dynamic> response = await atRpcClient.call(
+      nppDataOperation.atRpcPayload,
+      cryptoProviderId: await schemeFor(
+        atClient,
+        receiver: serverAtSign,
+        sealTo: baseNameSpace,
+        own: baseNameSpace,
+        logger: logger,
+      ),
+    );
     return response;
   }
 

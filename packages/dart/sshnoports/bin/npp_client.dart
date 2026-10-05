@@ -762,7 +762,9 @@ String showMenuAndGetSelection() {
 AtOnboardingPreference generateAtOnboardingPreference(
   NPPCLIParams nppCLIParams
 ) {
-  final AtOnboardingPreference atOnboardingPreference = AtOnboardingPreference()
+  final AtOnboardingPreference atOnboardingPreference = (nppCLIParams.postQuantum
+      ? AtOnboardingPreference(posture: PqPosture.pqReady)
+      : AtOnboardingPreference())
   ..rootDomain = nppCLIParams.rootServer.split(':')[0]
   ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1])
   ..atKeysFilePath = nppCLIParams.atKeysFilePath;
