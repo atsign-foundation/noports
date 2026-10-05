@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:at_auth/at_auth.dart' show publicKeyKidOfBase64;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
@@ -55,45 +56,46 @@ class RelayAuthenticatorLegacy implements RelayAuthenticator {
   }
 }
 
-/// The keypair a [RelayAuthenticatorESCR] signs with: [signer]'s APKAM
-/// authentication keypair, which is what its `_apsk` record advertises while
-/// the enrollment holds no signing keys of its own.
+/// The key a [RelayAuthenticatorESCR] signs with: the first of [signer]'s
+/// signing keys under an algorithm relay authentication verifies. They are
+/// what its `_apsk` record advertises, strongest algorithm first, so the
+/// relay finds this key there and verifies under the strongest it offers.
 ///
-/// Throws unless that keypair is a 2048-bit RSA key, the only kind srvd
-/// verifies, and while the enrollment holds signing keys of its own, since
-/// its `_apsk` record then no longer advertises the authentication key.
-Future<({String publicKey, String privateKey})> escrSigningKeyPair(
-  ApkamSigning signer,
-) async {
-  if ((await signer.heldSigningKeys).isNotEmpty) {
-    throw AtClientException.message(
-      'Enrollment ${signer.enrollmentId} holds signing keys of its own, so'
-      ' its _apsk record no longer advertises the authentication key that'
-      ' relay authentication signs with',
-    );
-  }
-  final key = await signer.authenticationSigningKey;
-  if (key == null) {
+/// Throws when [signer] holds no such key, or when the RSA one is not a key
+/// srvd verifies.
+Future<({SigningAlgoType algorithm, String publicKey, String privateKey})>
+    escrSigningKeyPair(ApkamSigning signer) async {
+  if ((await signer.heldSigningKeys).isEmpty &&
+      await signer.authenticationSigningKey == null) {
     throw AtClientException.message(
       'Enrollment ${signer.enrollmentId} holds no APKAM keypair to sign'
       ' relay authentication with',
     );
   }
-  if (key.algorithm != SigningAlgoType.rsa2048) {
+  final key = (await signer.signingKeys)
+      .where((k) => escrSigningAlgorithms.contains(k.algorithm))
+      .firstOrNull;
+  if (key == null) {
     throw AtClientException.message(
-      'Enrollment ${signer.enrollmentId} authenticates with'
-      ' ${key.algorithm.name}; relay authentication needs rsa2048',
+      'Enrollment ${signer.enrollmentId} holds no key to sign relay'
+      ' authentication with',
     );
   }
-  try {
-    rsaSignString('', privateKey: key.privateKey);
-  } on AtSigningException catch (e) {
-    throw AtClientException.message(
-      'Enrollment ${signer.enrollmentId} authenticates with a key relay'
-      ' authentication cannot sign with: ${e.message}',
-    );
+  if (key.algorithm == SigningAlgoType.rsa2048) {
+    try {
+      rsaSignString('', privateKey: key.privateKey);
+    } on AtSigningException catch (e) {
+      throw AtClientException.message(
+        'Enrollment ${signer.enrollmentId} signs with a key relay'
+        ' authentication cannot sign with: ${e.message}',
+      );
+    }
   }
-  return (publicKey: key.publicKey, privateKey: key.privateKey);
+  return (
+    algorithm: key.algorithm,
+    publicKey: key.publicKey,
+    privateKey: key.privateKey,
+  );
 }
 
 /// Authenticate to relay with Encrypted Signed Challenge response
@@ -113,11 +115,13 @@ Future<({String publicKey, String privateKey})> escrSigningKeyPair(
 ///       's':'signature of json string encoding of p
 ///       'ha':'hashingAlgo',
 ///       'sa':'signingAlgo',
-///       'sk':'public:some_key.some.namespace@atSign'
+///       'sk':'public:some_key.some.namespace@atSign',
+///       'kid':'id of the signing key within sk'
 ///     }
 ///     ```
-///     where `s` is signed by some private signing key, and `sk` is the
-///     Atsign Protocol URI of the corresponding public key.
+///     where `s` is signed by some private signing key under `sa`
+///     (`rsa2048` or `mldsa65`), `sk` is the Atsign Protocol URI of the
+///     record advertising the public key, and `kid` names that key within it.
 /// - sends challenge response `${sessionId}:${auth-payload-as-base64}\n`
 /// - waits for confirmation from relay
 ///   - `ok` is good
@@ -130,6 +134,9 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
   final String publicSigningKey;
   final String privateSigningKey;
 
+  /// The algorithm [privateSigningKey] signs under.
+  final SigningAlgoType signingAlgo;
+
   /// `true` for client (npt, sshnp, ...) connections
   /// `false` for daemon connections
   final bool isSideA;
@@ -140,6 +147,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     required this.publicSigningKeyUri,
     required this.publicSigningKey,
     required this.privateSigningKey,
+    required this.signingAlgo,
     required this.isSideA,
   });
 
@@ -158,6 +166,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     'REMOTE_AUTH_ESCR_PUB_KEY_URI': publicSigningKeyUri,
     'REMOTE_AUTH_ESCR_SIGNING_PUBKEY': publicSigningKey,
     'REMOTE_AUTH_ESCR_SIGNING_PRIVKEY': privateSigningKey,
+    'REMOTE_AUTH_ESCR_SIGNING_ALGO': signingAlgo.name,
     'REMOTE_AUTH_ESCR_IS_SIDE_A': isSideA.toString(),
   };
 
@@ -269,13 +278,28 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     Map envelope = {
       'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')},
     };
-    envelope['s'] = rsaSignString(
-      jsonEncode(envelope['p']),
-      privateKey: privateSigningKey,
-    );
+    final signed = jsonEncode(envelope['p']);
+    envelope['s'] = switch (signingAlgo) {
+      SigningAlgoType.mldsa65 => base64Encode(
+          MlDsa65PureDartAlgo.signBytesSync(
+            utf8.encode(signed),
+            secretKey: base64Decode(privateSigningKey),
+          ),
+        ),
+      SigningAlgoType.rsa2048 => rsaSignString(
+          signed,
+          privateKey: privateSigningKey,
+        ),
+      _ => throw ArgumentError.value(
+          signingAlgo,
+          'signingAlgo',
+          'relay authentication signs with ${escrSigningAlgorithms.map((a) => a.name).join(' or ')}',
+        ),
+    };
     envelope['ha'] = HashingAlgoType.sha256.name;
-    envelope['sa'] = SigningAlgoType.rsa2048.name;
+    envelope['sa'] = signingAlgo.name;
     envelope['sk'] = publicSigningKeyUri;
+    envelope['kid'] = publicKeyKidOfBase64(publicSigningKey);
 
     String envelope64 = base64Encode(jsonEncode(envelope).codeUnits);
 

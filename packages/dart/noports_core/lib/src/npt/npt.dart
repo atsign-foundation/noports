@@ -53,6 +53,8 @@ abstract interface class Npt {
   /// - Return the SocketConnector created by Npt
   Future<SocketConnector> runInline({int? localRvPort});
 
+  /// Ends this session, closing the tunnel [runInline] started, if any, and
+  /// completing [done].
   Future<void> close();
 
   Future get done;
@@ -135,6 +137,8 @@ class _NptImpl extends NptBase
 
   final Completer _completer = Completer();
 
+  SocketConnector? _inlineConnector;
+
   @override
   Future get done => _completer.future;
 
@@ -167,6 +171,7 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
+    _inlineConnector?.close();
     if (!_completer.isCompleted) {
       _completer.complete();
     }
@@ -424,10 +429,13 @@ class _NptImpl extends NptBase
           : null,
     );
 
+    _inlineConnector = sc;
     unawaited(
       sc.done.then((_) {
         logger.info('SocketConnector done');
-        _completer.complete();
+        if (!_completer.isCompleted) {
+          _completer.complete();
+        }
       }),
     );
 
