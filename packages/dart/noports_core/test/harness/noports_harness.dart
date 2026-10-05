@@ -52,12 +52,21 @@ class NoPortsHarness {
   SshnpdImpl? daemon;
   SrvdImpl? relay;
 
-  /// A client for [atSign], authenticated as its first enrollment.
-  Future<AtClient> openClient(String atSign, {required String namespace}) async {
+  /// A client for [atSign], authenticated as its first enrollment, under
+  /// [posture].
+  Future<AtClient> openClient(
+    String atSign, {
+    required String namespace,
+    PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
+  }) async {
     final fake = server[atSign];
     final client = await Atsign(atSign).open(
       keys: InMemoryAtKeysIo.holding(atSign, fake.firstEnrollment.keys),
-      preference: AtClientPreference()
+      preference: AtClientPreference(
+        posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+      )
         ..namespace = namespace
         ..rootDomain = 'fake.atserver.test'
         ..fetchOfflineNotifications = false,
@@ -70,9 +79,17 @@ class NoPortsHarness {
   }
 
   /// Starts srvd on the relay atSign.
-  Future<SrvdImpl> startRelay() async {
+  Future<SrvdImpl> startRelay({
+    PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
+  }) async {
     final relay = this.relay = SrvdImpl(
-      atClient: await openClient(relayAtSign, namespace: Srvd.namespace),
+      atClient: await openClient(
+        relayAtSign,
+        namespace: Srvd.namespace,
+        posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+      ),
       atSign: relayAtSign.toAtsign(),
       homeDirectory: home.path,
       atKeysFilePath: home.path,
@@ -95,9 +112,16 @@ class NoPortsHarness {
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
     bool advertisesEscr = true,
+    PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final daemon = this.daemon = SshnpdImpl(
-      atClient: await openClient(daemonAtSign, namespace: DefaultArgs.namespace),
+      atClient: await openClient(
+        daemonAtSign,
+        namespace: DefaultArgs.namespace,
+        posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+      ),
       username: 'harness',
       homeDirectory: home.path,
       device: device,
