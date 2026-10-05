@@ -58,11 +58,15 @@ class NoPortsHarness {
     String atSign, {
     required String namespace,
     PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final fake = server[atSign];
     final client = await Atsign(atSign).open(
       keys: InMemoryAtKeysIo.holding(atSign, fake.firstEnrollment.keys),
-      preference: AtClientPreference(posture: posture)
+      preference: AtClientPreference(
+        posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+      )
         ..namespace = namespace
         ..rootDomain = 'fake.atserver.test'
         ..fetchOfflineNotifications = false,
@@ -75,12 +79,16 @@ class NoPortsHarness {
   }
 
   /// Starts srvd on the relay atSign.
-  Future<SrvdImpl> startRelay({PqPosture posture = PqPosture.legacy}) async {
+  Future<SrvdImpl> startRelay({
+    PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
+  }) async {
     final relay = this.relay = SrvdImpl(
       atClient: await openClient(
         relayAtSign,
         namespace: Srvd.namespace,
         posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
       ),
       atSign: relayAtSign.toAtsign(),
       homeDirectory: home.path,
@@ -105,12 +113,14 @@ class NoPortsHarness {
     required List<String> permitOpen,
     bool advertisesEscr = true,
     PqPosture posture = PqPosture.legacy,
+    Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final daemon = this.daemon = SshnpdImpl(
       atClient: await openClient(
         daemonAtSign,
         namespace: DefaultArgs.namespace,
         posture: posture,
+        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
       ),
       username: 'harness',
       homeDirectory: home.path,

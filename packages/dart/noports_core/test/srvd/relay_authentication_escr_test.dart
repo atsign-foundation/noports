@@ -326,7 +326,7 @@ void main() {
       } catch (e, st) {
         expect(e.toString(), contains('Error during socket authentication:'
             ' RelayAuthVerifierException: malformedChallengeResponse :'
-            ' Too much data from client (more than 4096 bytes)'));
+            ' Too much data from client (more than 16384 bytes)'));
         print('Caught $e as expected\n$st');
         somethingThrown = true;
       }
@@ -939,6 +939,56 @@ void main() {
           privateKey: mlDsa.atPrivateKey.privateKey,
         ),
         refused('does not advertise'),
+      );
+    });
+
+    test('an ML-DSA response fits what the single-port relay reads from a'
+        ' socket before it authenticates', () async {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(sessionId)).thenAnswer((_) async => true);
+      when(() => h.getRelayAuthAesKey(sessionId)).thenAnswer((_) async => aesKey);
+      when(() => h.lookup(sessionId, uri)).thenAnswer((_) async => advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }));
+      final verifier = RelayAuthVerifierESCR('single-port', h);
+      final response = await RelayAuthenticatorESCR(
+        sessionId: sessionId,
+        relayAuthAesKey: aesKey,
+        publicSigningKeyUri: uri,
+        publicSigningKey: mlDsa.atPublicKey.publicKey,
+        privateSigningKey: mlDsa.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.mldsa65,
+        isSideA: true,
+      ).responseToChallenge(verifier.challenge);
+      final socket = MockSocket();
+      when(() => socket.flush()).thenAnswer((_) async {});
+      when(() => socket.listen(
+            any(),
+            onError: any(named: 'onError'),
+            onDone: any(named: 'onDone'),
+          )).thenAnswer((invocation) {
+        final void Function(Uint8List) onData =
+            invocation.positionalArguments[0];
+        onData(Uint8List.fromList(utf8.encode('$response\n')));
+        return MockStreamSubscription<Uint8List>();
+      });
+
+      final (authenticated, _) = await verifier.verifySocketAuth(socket);
+
+      expect(response.length, greaterThan(4096),
+          reason: 'larger than the limit a relay used to read');
+      expect(authenticated, true);
+    });
+
+    test('a bare _apsk that is not base64 is refused', () async {
+      await expectLater(
+        verify(
+          'not base64!',
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        refused('not base64'),
       );
     });
 
