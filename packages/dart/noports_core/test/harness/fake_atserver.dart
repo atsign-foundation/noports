@@ -362,6 +362,7 @@ class FakeConnection {
       return _llookup(command, p);
     }
     if (_match(VerbSyntax.plookup, command) case final p?) return _plookup(p);
+    if (_match(VerbSyntax.lookup, command) case final p?) return _lookup(p);
     if (_match(VerbSyntax.update, command) case final p?) return _update(p);
     if (_match(VerbSyntax.delete, command) case final p?) return _delete(p);
     if (_match(VerbSyntax.notifyStatus, command) case final p?) {
@@ -457,6 +458,23 @@ class FakeConnection {
     final key = 'public:${params['atKey']}@${params['atSign']}'.toLowerCase();
     _answerLookup(params['operation'], key, owner?.recordAt(key),
         missing: 'key not found : Exception: $key does not exist in keystore');
+  }
+
+  void _lookup(Map<String, String?> params) {
+    final ownerAtSign = '@${params['atSign']}'.toAtsign();
+    var key = '${params['atKey']}$ownerAtSign';
+    if (!key.contains(':')) key = '${atSign.atSign}:$key';
+    key = key.toLowerCase();
+    if (!_authorized(key, write: false)) {
+      throw _VerbError(
+        'AT0009',
+        'Connection with enrollment ID ${enrollment!.id} is not authorized to'
+            ' lookup key: $key',
+      );
+    }
+    final record = atSign.server._find(ownerAtSign)?.recordAt(key);
+    if (ownerAtSign != atSign.atSign && record == null) return _data('null');
+    _answerLookup(params['operation'], key, record);
   }
 
   void _answerLookup(
