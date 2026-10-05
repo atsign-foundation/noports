@@ -85,8 +85,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/at_client"
-      ref: abb27e57cb525d94f13a5413d22aac3387eac150
-      resolved-ref: abb27e57cb525d94f13a5413d22aac3387eac150
+      ref: "984e8feadf6ef923c361f5bb6c4a87cf1e1f7188"
+      resolved-ref: "984e8feadf6ef923c361f5bb6c4a87cf1e1f7188"
       url: "https://github.com/atsign-foundation/at_client_sdk"
     source: git
     version: "3.15.0-rc4"
@@ -94,10 +94,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_commons
-      sha256: "30d95e35bd5e4563b9a8c75e67257edc116fd572946bbdc8facbf920a203b506"
+      sha256: b392e16b9d03d7e6be27f7c9bdebd6675039391013399acd81e583bcb5c339b5
       url: "https://pub.dev"
     source: hosted
-    version: "5.18.0"
+    version: "5.19.0"
   at_lookup:
     dependency: transitive
     description:

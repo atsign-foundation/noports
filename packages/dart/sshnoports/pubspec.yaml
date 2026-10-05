@@ -32,7 +32,7 @@ dependency_overrides:
   at_client:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk
-      ref: abb27e57cb525d94f13a5413d22aac3387eac150
+      ref: 984e8feadf6ef923c361f5bb6c4a87cf1e1f7188
       path: packages/at_client
   pointycastle: ^4.0.0
 
