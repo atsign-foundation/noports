@@ -31,6 +31,10 @@ class SshnpdParams {
   final bool clearCachedPKs;
   final bool strict;
 
+  /// Whether this daemon accepts post-quantum requests; see
+  /// [SshnpdOption.postQuantum].
+  final bool postQuantum;
+
   SshnpdParams({
     required this.device,
     required this.username,
@@ -55,6 +59,7 @@ class SshnpdParams {
     required this.permitOpen,
     required this.clearCachedPKs,
     required this.strict,
+    this.postQuantum = false,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -175,6 +180,7 @@ class SshnpdParams {
       clearCachedPKs: c.value(SshnpdOption.clearCachedPks),
       strict:
           c.optionalValue(SshnpdOption.strict) ?? policyManagerAtsign != null,
+      postQuantum: c.value(SshnpdOption.postQuantum),
     );
   }
 }

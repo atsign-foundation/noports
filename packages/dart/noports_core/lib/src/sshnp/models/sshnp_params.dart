@@ -56,6 +56,10 @@ abstract interface class ClientParams {
   Duration get daemonPingTimeout;
 
   bool get only443;
+
+  /// Whether to send a request post-quantum to a daemon that publishes its
+  /// device's namespace key. Every other message stays legacy.
+  bool get postQuantum;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -118,6 +122,9 @@ abstract class ClientParamsBase implements ClientParams {
   @override
   final bool only443;
 
+  @override
+  final bool postQuantum;
+
   ClientParamsBase({
     required this.clientAtSign,
     required this.sshnpdAtSign,
@@ -135,6 +142,7 @@ abstract class ClientParamsBase implements ClientParams {
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
     required this.only443,
+    this.postQuantum = false,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -213,6 +221,7 @@ class NptParams extends ClientParamsBase
     this.controlChannelHeartbeat,
     this.localHost,
     super.only443 = false,
+    super.postQuantum = false,
   }) {
     try {
       AtUtils.fixAtSign(clientAtSign);
@@ -296,6 +305,7 @@ class SshnpParams extends ClientParamsBase
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
     super.only443 = false,
+    super.postQuantum = false,
   });
 
   factory SshnpParams.empty() {
@@ -350,6 +360,7 @@ class SshnpParams extends ClientParamsBase
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
+      postQuantum: params2.postQuantum ?? params1.postQuantum,
     );
   }
 
@@ -414,6 +425,7 @@ class SshnpParams extends ClientParamsBase
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
       only443: partial.only443 ?? false,
+      postQuantum: partial.postQuantum ?? false,
     );
   }
 
@@ -515,6 +527,7 @@ class SshnpPartialParams {
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
   final bool? only443;
+  final bool? postQuantum;
 
   /// Operation flags
   final bool? listDevices;
@@ -547,6 +560,7 @@ class SshnpPartialParams {
     this.encryptRvdTraffic,
     this.daemonPingTimeout,
     this.only443,
+    this.postQuantum,
   });
 
   factory SshnpPartialParams.empty() {
@@ -592,6 +606,7 @@ class SshnpPartialParams {
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
       only443: params2.only443 ?? params1.only443,
+      postQuantum: params2.postQuantum ?? params1.postQuantum,
     );
   }
 
@@ -661,6 +676,7 @@ class SshnpPartialParams {
             DefaultArgs.daemonPingTimeoutSeconds,
       ),
       only443: args[SshnpArg.only443Arg.name],
+      postQuantum: args[SshnpArg.postQuantumArg.name],
     );
   }
 

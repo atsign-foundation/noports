@@ -28,6 +28,12 @@ dependencies:
   config: ^0.8.4
 
 dependency_overrides:
+  # NOTE holdsPrivate and receivedUnder are not in a published at_client yet.
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk
+      ref: abb27e57cb525d94f13a5413d22aac3387eac150
+      path: packages/at_client
   pointycastle: ^4.0.0
 
 dev_dependencies:

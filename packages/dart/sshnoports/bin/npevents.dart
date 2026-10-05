@@ -8,6 +8,8 @@ import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_onboarding_cli/at_onboarding_cli.dart'
+    show AtOnboardingPreference;
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -30,6 +32,11 @@ void main(List<String> args) async {
       namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);
   parser.addFlag('version', negatable: false, help: 'Print version');
   parser.addFlag('debug', help: 'maximum debug verbosity ');
+  parser.addFlag('pq',
+      negatable: false,
+      hide: true,
+      help: 'Publish this service\'s namespace key, so events may be sent to'
+          ' it post-quantum.');
   parser.addOption('logging-atsigns',
       abbr: 'A',
       help: 'Comma-separated list of atSigns with whom to share logging config',
@@ -93,7 +100,11 @@ void main(List<String> args) async {
           .split(',')
           .map((s) => s.toAtsign())
           .toList();
-      CLIBase cliBase = await CLIBase.fromCommandLineArgs(args, parser: parser);
+      CLIBase cliBase = await CLIBase.fromCommandLineArgs(args,
+          parser: parser,
+          preference: parsedArgs['pq'] == true
+              ? AtOnboardingPreference(posture: PqPosture.pqReady)
+              : null);
 
       AtEventListenerService svc =
           AtEventListenerService(atClient: cliBase.atClient);

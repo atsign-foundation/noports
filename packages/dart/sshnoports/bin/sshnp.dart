@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 // other packages
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client/at_client.dart' show PqPosture;
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
 
@@ -178,6 +179,7 @@ void main(List<String> args) async {
           storagePath: storageDir!.path,
           namespace: DefaultArgs.namespace,
           atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+          posture: params.postQuantum ? PqPosture.pqReady : null,
         ),
         sshClient:
             SupportedSshClient.fromString(argResults['ssh-client'] as String),

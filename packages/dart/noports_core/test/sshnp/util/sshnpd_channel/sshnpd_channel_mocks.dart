@@ -63,6 +63,7 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required bool waitForFinalDeliveryStatus,
     required Duration ttln,
     int maxTries = 3,
+    String? cryptoProviderId,
   }) async {
     return _notify.call(
       atKey,

@@ -30,6 +30,11 @@ class SrvdParams {
   /// connecting side to speak (legacy) before assuming ESCR and challenging it.
   final int relayAuthDetectWindowMs;
 
+  /// Whether this relay is post-quantum: it publishes its namespace key, so
+  /// clients and daemons may send to it post-quantum, and answers each message
+  /// in the scheme it arrived in.
+  final bool postQuantum;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -48,6 +53,7 @@ class SrvdParams {
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
     required this.debug,
+    this.postQuantum = false,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -80,6 +86,7 @@ class SrvdParams {
           : int.parse(r['443-bind-port']),
       relayAuthDetectWindowMs: int.parse(r['relay-auth-detect-window-ms']),
       debug: r['debug'],
+      postQuantum: r['pq'],
     );
   }
 
@@ -191,6 +198,14 @@ class SrvdParams {
           ' exceed a legacy peer\'s first-packet arrival (~one RTT after'
           ' connect); larger is safer for legacy peers, smaller speeds up ESCR'
           ' handshakes.',
+    );
+    parser.addFlag(
+      'pq',
+      defaultsTo: false,
+      negatable: false,
+      hide: true,
+      help: 'Publish this relay\'s namespace key and answer each message in'
+          ' the scheme it arrived in.',
     );
     parser.addFlag(
       'help',

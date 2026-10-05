@@ -8,6 +8,7 @@ import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/common/default_args.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
 
 class RelaySelector with AtClientBindings {
@@ -195,9 +196,9 @@ class RelaySelector with AtClientBindings {
     });
 
     final atKey = AtKey()
-      // embed namespace in key
       // namespaceAware=false prevents the client's own namespace being appended
-      ..key = 'discover_request.${Srvd.namespace}'
+      ..key = 'discover_request'
+      ..namespace = Srvd.namespace
       ..sharedBy = atClient.getCurrentAtSign()
       ..sharedWith = rvAtSign
       ..metadata = (Metadata()
@@ -214,6 +215,13 @@ class RelaySelector with AtClientBindings {
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(seconds: 10),
+      cryptoProviderId: await schemeFor(
+        atClient,
+        receiver: '$rvAtSign',
+        sealTo: Srvd.namespace,
+        own: Srvd.namespace,
+        logger: logger,
+      ),
     );
 
     return completer.future.timeout(

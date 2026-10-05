@@ -6,6 +6,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/srv.dart';
@@ -39,6 +40,17 @@ abstract class SrvdChannel<T>
   final String clientNonce = DateTime.now().toIso8601String();
 
   String? cachedDaemonPublicSigningKeyUri;
+
+  /// The provider this session's messages to the relay go under; see
+  /// [schemeFor].
+  @protected
+  Future<String?> relayScheme() => schemeFor(
+    atClient,
+    receiver: params.srvdAtSign,
+    sealTo: Srvd.namespace,
+    own: Srvd.namespace,
+    logger: logger,
+  );
 
   Completer acked = Completer();
 
@@ -318,7 +330,8 @@ abstract class SrvdChannel<T>
     );
 
     final AtKey authModesKey = AtKey()
-      ..key = '${params.device}.auth_modes.${Srvd.namespace}'
+      ..key = '${params.device}.auth_modes'
+      ..namespace = Srvd.namespace
       ..sharedBy = params.clientAtSign
       ..sharedWith = params.srvdAtSign
       ..metadata = (Metadata()
@@ -340,6 +353,7 @@ abstract class SrvdChannel<T>
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         ttln: Duration(minutes: 1),
+        cryptoProviderId: await relayScheme(),
       );
     } catch (e) {
       logger.warning('Failed to send definitive auth modes to srvd: $e');
@@ -406,7 +420,8 @@ abstract class SrvdChannel<T>
     late String rvdRequestValue;
 
     rvdRequestKey = AtKey()
-      ..key = '${params.device}.request_ports.${Srvd.namespace}'
+      ..key = '${params.device}.request_ports'
+      ..namespace = Srvd.namespace
       ..sharedBy = params
           .clientAtSign // shared by us
       ..sharedWith = params
@@ -465,6 +480,7 @@ abstract class SrvdChannel<T>
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
+      cryptoProviderId: await relayScheme(),
     );
 
     logger.info(

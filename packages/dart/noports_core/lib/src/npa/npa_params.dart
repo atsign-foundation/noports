@@ -13,6 +13,10 @@ class NPAParams {
   final String? eventLoggingAtsign;
   final String? storagePath;
 
+  /// Whether this policy service is post-quantum: it publishes its namespace
+  /// key, and answers each request in the scheme it arrived in.
+  final bool postQuantum;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -24,6 +28,7 @@ class NPAParams {
     required this.homeDirectory,
     required this.eventLoggingAtsign,
     this.storagePath,
+    this.postQuantum = false,
   });
 
   static Future<NPAParams> fromArgs(List<String> args) async {
@@ -43,6 +48,7 @@ class NPAParams {
       homeDirectory: homeDirectory,
       eventLoggingAtsign: r['event-logging-atsign'],
       storagePath: r['storage-path'],
+      postQuantum: r['pq'],
     );
   }
 
@@ -88,6 +94,14 @@ class NPAParams {
     );
 
     parser.addFlag('verbose', abbr: 'v', help: 'More logging');
+
+    parser.addFlag(
+      'pq',
+      negatable: false,
+      hide: true,
+      help: 'Publish this service\'s namespace key and answer each request in'
+          ' the scheme it arrived in.',
+    );
 
     parser.addOption(
       'root-server',

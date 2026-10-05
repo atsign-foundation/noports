@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -182,6 +183,7 @@ class SshnpDartPureImpl extends SshnpCore
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
+      cryptoProviderId: await requestProviderId(atClient, params, logger),
     );
   }
 

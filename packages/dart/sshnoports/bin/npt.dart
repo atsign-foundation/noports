@@ -6,6 +6,9 @@ import 'dart:io';
 import 'package:args/args.dart';
 // atPlatform packages
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client/at_client.dart' show PqPosture;
+import 'package:at_onboarding_cli/at_onboarding_cli.dart'
+    show AtOnboardingPreference;
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
@@ -309,6 +312,15 @@ void main(List<String> args) async {
         defaultsTo: false,
       );
 
+      parser.addFlag(
+        'pq',
+        help: 'Send the request post-quantum to a daemon that publishes its'
+            ' device\'s namespace key, and legacy to any other.',
+        defaultsTo: false,
+        negatable: false,
+        hide: true,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
@@ -417,7 +429,10 @@ void main(List<String> args) async {
           storageDir: storageDir?.path,
           verbose: parsedArgs['verbose'],
           syncDisabled: true,
-          passPhrase: parsedArgs['passPhrase']);
+          passPhrase: parsedArgs['passPhrase'],
+          preference: parsedArgs['pq'] == true
+              ? AtOnboardingPreference(posture: PqPosture.pqReady)
+              : null);
 
       if (debug) {
         AtSignLogger.root_level = 'finest';
@@ -554,6 +569,7 @@ void main(List<String> args) async {
         controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
         localHost: resolvedLocalHost,
         only443: parsedArgs['443'],
+        postQuantum: parsedArgs['pq'],
       );
 
       while (true) {

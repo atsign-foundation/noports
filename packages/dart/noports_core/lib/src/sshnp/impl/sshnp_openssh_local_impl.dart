@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -92,6 +93,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
+      cryptoProviderId: await requestProviderId(atClient, params, logger),
     );
 
     /// Wait for a response from sshnpd

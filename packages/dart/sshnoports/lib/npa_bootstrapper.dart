@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client/at_client.dart' show PqPosture;
 import 'package:at_commons/at_commons.dart' show AtException;
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
@@ -25,6 +26,7 @@ Future<void> run(
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
+        posture: p.postQuantum ? PqPosture.pqReady : null,
         storagePath: standardAtClientStoragePath(
             baseDir: p.homeDirectory,
             atSign: p.policyAtsign,

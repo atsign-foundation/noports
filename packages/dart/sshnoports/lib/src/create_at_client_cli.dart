@@ -13,6 +13,9 @@ import 'package:path/path.dart' as path;
 /// it; and [SecondaryServerConnectivityException] when the client is still
 /// offline [onlineBudget] after its first attempt, retrying every three
 /// seconds.
+///
+/// [posture] is how far into the post-quantum rollout the client runs; null
+/// means whatever the at_client this was built against defaults to.
 Future<AtClient> createAtClientCli({
   required String atsign,
   required String atKeysFilePath,
@@ -22,11 +25,14 @@ Future<AtClient> createAtClientCli({
   required String namespace,
   String rootDomain = DefaultArgs.rootDomain,
   Duration onlineBudget = const Duration(seconds: 15),
+  PqPosture? posture,
 }) async {
   atsign = AtUtils.fixAtSign(atsign);
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
 
-  final AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
+  final AtOnboardingPreference atOnboardingConfig = (posture == null
+      ? AtOnboardingPreference()
+      : AtOnboardingPreference(posture: posture))
     ..storagePath = storagePath
     ..namespace = namespace
     ..downloadPath = path.normalize('$storagePath/downloads')

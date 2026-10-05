@@ -74,6 +74,7 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
 
     /// maxTries must be a non-zero positive integer
     int maxTries = 3,
+    String? cryptoProviderId,
   }) async {
     return _notify.call(
       atKey,

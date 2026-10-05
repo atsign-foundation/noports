@@ -120,6 +120,7 @@ class SshnpArg {
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
     only443Arg,
+    postQuantumArg,
   ];
 
   @override
@@ -425,5 +426,16 @@ class SshnpArg {
     defaultsTo: false,
     format: ArgFormat.flag,
     mandatory: false,
+  );
+  static const postQuantumArg = SshnpArg(
+    name: 'pq',
+    help:
+        'Send the request post-quantum to a daemon that publishes its'
+        ' device\'s namespace key, and legacy to any other.',
+    defaultsTo: false,
+    format: ArgFormat.flag,
+    mandatory: false,
+    negatable: false,
+    hide: true,
   );
 }

@@ -84,11 +84,12 @@ packages:
   at_client:
     dependency: "direct main"
     description:
-      name: at_client
-      sha256: "44f28a3323479f6326290feb9da17ffbedcf60c3e5998b2388e849f1d8d67d73"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.15.0-rc3"
+      path: "packages/at_client"
+      ref: abb27e57cb525d94f13a5413d22aac3387eac150
+      resolved-ref: abb27e57cb525d94f13a5413d22aac3387eac150
+      url: "https://github.com/atsign-foundation/at_client_sdk"
+    source: git
+    version: "3.15.0-rc4"
   at_commons:
     dependency: "direct main"
     description:

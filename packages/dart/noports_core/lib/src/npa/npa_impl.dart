@@ -120,6 +120,7 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
               config: elc!,
               atSigns: [n.from.toAtsign()],
               namespace: DefaultArgs.eventLoggingNamespace,
+              cryptoProviderId: n.receivedUnder,
             );
             _sharedElcWith.add(n.from);
           } catch (e) {

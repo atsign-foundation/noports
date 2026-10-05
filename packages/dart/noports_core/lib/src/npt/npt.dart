@@ -15,6 +15,7 @@ import 'package:uuid/uuid.dart';
 import '../common/features.dart';
 import '../common/mixins/async_completion.dart';
 import '../common/mixins/async_initialization.dart';
+import '../common/pq_scheme.dart';
 import '../common/streaming_logging_handler.dart';
 import '../sshnp/impl/notification_request_message.dart';
 import '../sshnp/util/srvd_channel/srvd_channel.dart';
@@ -330,6 +331,7 @@ class _NptImpl extends NptBase
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
+      cryptoProviderId: await requestProviderId(atClient, params, logger),
     );
 
     /// Wait for a response from sshnpd

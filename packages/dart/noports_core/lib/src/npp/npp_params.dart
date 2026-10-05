@@ -27,6 +27,10 @@ class NPPParams {
   late String domainNamespace;
   late String persistenceMethod; // {'atserver', 'file', 'none'}
 
+  /// Whether this service is post-quantum: it publishes its namespace key, and
+  /// answers each request in the scheme it arrived in.
+  late bool postQuantum;
+
   // -----------
   // Case 2b: Non-mandatory options with run-time defaults
   // -----------
@@ -69,6 +73,7 @@ class NPPParams {
     nppParams.baseNamespace = argResults['base-namespace'];
     nppParams.domainNamespace = argResults['domain-namespace'];
     nppParams.persistenceMethod = argResults['persistence-method'];
+    nppParams.postQuantum = argResults['pq'];
     // -------------------
 
     // -------------------
@@ -118,6 +123,15 @@ class NPPParams {
       defaultsTo: false,
       negatable: true,
       help: 'Enable verbose logging'
+    );
+
+    argParser.addFlag(
+      'pq',
+      defaultsTo: false,
+      negatable: false,
+      hide: true,
+      help: 'Publish this service\'s namespace key and answer each request in'
+          ' the scheme it arrived in.',
     );
 
     argParser.addOption(

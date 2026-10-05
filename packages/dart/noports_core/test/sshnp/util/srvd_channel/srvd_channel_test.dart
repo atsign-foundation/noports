@@ -170,7 +170,10 @@ void main() {
             that: predicate(
               // Predicate matching specifically the srvdIdKey format
               (AtKey key) =>
-                  key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
+                  key.key == 'mydevice.request_ports' &&
+                  key.namespace == Srvd.namespace &&
+                  key.toString() ==
+                      '@srvd:mydevice.request_ports.${Srvd.namespace}@client' &&
                   key.sharedBy == '@client' &&
                   key.sharedWith == '@srvd' &&
                   key.metadata.namespaceAware == false &&

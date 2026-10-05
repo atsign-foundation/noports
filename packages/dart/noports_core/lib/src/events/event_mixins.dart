@@ -6,6 +6,7 @@ import 'package:at_base2e15/at_base2e15.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:archive/archive.dart';
 
 final GetRequestOptions _gro = GetRequestOptions()..useRemoteAtServer = true;
@@ -68,10 +69,14 @@ mixin AtEventListener on AtClientBindings {
 
   /// namespace like `events.logging.sshnp` will result in the config being
   /// shared as `@bob:config.events.logging.sshnp@alice` etc
+  ///
+  /// Each copy goes under [cryptoProviderId] when one is given, and under the
+  /// scheme [schemeFor] picks for that atSign otherwise.
   Future<void> shareEventLoggingConfigWithAtsigns({
     required AtEventConfig config,
     required List<Atsign> atSigns,
     required String namespace,
+    String? cryptoProviderId,
   }) async {
     for (final theirAtsign in atSigns) {
       logger.info('Sharing EventLoggingConfig $config with $theirAtsign');
@@ -81,7 +86,17 @@ mixin AtEventListener on AtClientBindings {
       await atClient.put(
         key,
         jsonEncode(config.toJson()),
-        putRequestOptions: _pro,
+        putRequestOptions: PutRequestOptions()
+          ..useRemoteAtServer = true
+          ..cryptoProviderId =
+              cryptoProviderId ??
+              await schemeFor(
+                atClient,
+                receiver: '$theirAtsign',
+                sealTo: key.namespace!,
+                own: key.namespace!,
+                logger: logger,
+              ),
       );
     }
   }
@@ -158,14 +173,24 @@ mixin AtEventLogger on AtClientBindings {
           'bytes: json: ${envelope.payload.length},'
           ' compressed and encoded: ${envelope.encodedCompressed.length}',
         );
+        final key = AtKey.fromString(
+          '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
+        )..metadata.namespaceAware = false;
         await notify(
-          AtKey.fromString(
-            '${config.atSign}:${config.topic}${atClient.getCurrentAtSign()!}',
-          )..metadata.namespaceAware = false,
+          key,
           jsonEncode(envelope.toJson()),
           ttln: Duration(milliseconds: config.ttln),
           waitForFinalDeliveryStatus: false,
           checkForFinalDeliveryStatus: false,
+          cryptoProviderId: key.namespace == null
+              ? null
+              : await schemeFor(
+                  atClient,
+                  receiver: '${config.atSign}',
+                  sealTo: key.namespace!,
+                  own: key.namespace!,
+                  logger: logger,
+                ),
         );
       } catch (e) {
         logger.severe('Error while sending ${envelope.payload} to $config');

@@ -319,6 +319,20 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
 
+  postQuantum(
+    FlagOption(
+      argName: 'pq',
+      configKey: '/runtime/pq',
+      helpText:
+          'Accept post-quantum requests: publish this device\'s namespace key,'
+          ' which tells clients this daemon is post-quantum capable, and answer'
+          ' each request in the scheme it arrived in.',
+      hide: true,
+      defaultsTo: false,
+      group: runtimeGroup,
+    ),
+  ),
+
   verbose(
     FlagOption(
       argName: 'verbose',

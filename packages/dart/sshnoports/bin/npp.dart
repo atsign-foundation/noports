@@ -105,6 +105,7 @@ Future<void> main(List<String> args) async {
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: nppParams.baseNamespace,
       storagePath: nppParams.storagePath,
+      posture: nppParams.postQuantum ? PqPosture.pqReady : null,
     );
   } catch (err) {
     stderr.writeln(err);

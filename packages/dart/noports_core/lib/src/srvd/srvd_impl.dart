@@ -475,6 +475,7 @@ class SrvdImpl
               sessionId: sessionParams.sessionId,
               requestingAtsign: n.from,
               message: message,
+              cryptoProviderId: n.receivedUnder,
             );
           } catch (e) {
             logger.shout('Error while sending NACK: $e');
@@ -531,6 +532,7 @@ class SrvdImpl
           atKey,
           value: responseVal,
           notificationExpiry: Duration(minutes: 1),
+          cryptoProviderId: n.receivedUnder,
         ),
         waitForFinalDeliveryStatus: false,
         checkForFinalDeliveryStatus: false,
@@ -672,6 +674,7 @@ class SrvdImpl
       atKey,
       value: jsonEncode(response),
       notificationExpiry: Duration(minutes: 1),
+      cryptoProviderId: n.receivedUnder,
     );
 
     await atClient.notificationService.notify(
@@ -1034,10 +1037,13 @@ class SrvdImpl
     return (portPair443, spawned, toSpawned);
   }
 
+  /// Tells [requestingAtsign] its request for [sessionId] was refused, under
+  /// [cryptoProviderId], the scheme that request arrived in.
   Future<void> sendNack({
     required String sessionId,
     required String requestingAtsign,
     required String message,
+    String? cryptoProviderId,
   }) async {
     var metaData = Metadata()
       ..isPublic = false
@@ -1056,6 +1062,7 @@ class SrvdImpl
         atKey,
         value: message,
         notificationExpiry: Duration(minutes: 1),
+        cryptoProviderId: cryptoProviderId,
       ),
       waitForFinalDeliveryStatus: false,
       checkForFinalDeliveryStatus: false,

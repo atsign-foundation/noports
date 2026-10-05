@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client/at_client.dart' show PqPosture;
 import 'package:at_commons/at_commons.dart' show AtException;
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
@@ -119,6 +120,7 @@ void main(List<String> args) async {
         namespace: Srvd.namespace,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+        posture: p.postQuantum ? PqPosture.pqReady : null,
       ),
       usageCallback: (e, s) {
         stderr.write(formatCliHelp(

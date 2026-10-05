@@ -14,6 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
+import 'package:noports_core/src/common/pq_scheme.dart';
 import 'package:noports_core/src/common/relay_latency_checker.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
@@ -100,6 +101,13 @@ class SshnpdImpl
   @override
   late final bool strict;
 
+  /// Whether this daemon accepts post-quantum requests: it publishes its
+  /// device's namespace key and answers each request in that request's scheme.
+  final bool postQuantum;
+
+  /// The scheme each session's request arrived in, and when, by session id.
+  final Map<String, ({String scheme, DateTime at})> _replySchemes = {};
+
   /// State variables used by [clientRequestNotificationHandler]
   String _privateKey = '';
 
@@ -166,6 +174,7 @@ class SshnpdImpl
     bool? inline,
     this.notifPreProcessor,
     required this.strict,
+    this.postQuantum = false,
   }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
@@ -267,6 +276,7 @@ class SshnpdImpl
         permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
         strict: p.strict,
         notifPreProcessor: notifPreProcessor,
+        postQuantum: p.postQuantum,
       );
 
       if (p.debug) {
@@ -302,8 +312,42 @@ class SshnpdImpl
 
     await publishPublicSigningKey();
     await _loadEnvelopeSigningKey();
+    if (postQuantum) await _publishDeviceKey();
 
     initialized = true;
+  }
+
+  /// Publishes this device's namespace key, which tells a client this daemon
+  /// is post-quantum capable.
+  Future<void> _publishDeviceKey() async {
+    final namespace = deviceNamespace(device);
+    final result = await atClient.ensureReachable(namespace);
+    if (!result.isReachable) {
+      logger.warning(
+        'Not post-quantum reachable at $namespace ($result), so clients send'
+        ' this daemon legacy requests',
+      );
+    } else if (!result.holdsPrivate) {
+      logger.shout(
+        '$namespace is published but this daemon does not hold its private'
+        ' ($result), so clients will seal requests it cannot open. A device'
+        ' name taken over by a new enrollment does this: give the device a new'
+        ' name.',
+      );
+    } else {
+      logger.info('Post-quantum reachable at $namespace ($result)');
+    }
+  }
+
+  /// Records the scheme [request] arrived in, for the replies to its session.
+  void _rememberReplyScheme(AtNotification request) {
+    final sessionId = sessionIdFromNotification(request);
+    if (sessionId == null) return;
+    final now = DateTime.now();
+    _replySchemes.removeWhere(
+      (_, recorded) => now.difference(recorded.at) > const Duration(hours: 1),
+    );
+    _replySchemes[sessionId] = (scheme: request.receivedUnder, at: now);
   }
 
   Future<void> _loadEnvelopeSigningKey() async {
@@ -489,6 +533,7 @@ class SshnpdImpl
         if (!mutexAcquired) {
           return; // Another sshnpd instance will handle this request
         }
+        if (postQuantum) _rememberReplyScheme(notification);
       }
 
       switch (messageType) {
@@ -978,6 +1023,13 @@ class SshnpdImpl
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         ttln: Duration(minutes: 1),
+        cryptoProviderId: await schemeFor(
+          atClient,
+          receiver: '${req.relayAtsign}',
+          sealTo: Srvd.namespace,
+          own: Srvd.namespace,
+          logger: logger,
+        ),
       );
     }
   }
@@ -1282,6 +1334,13 @@ class SshnpdImpl
         checkForFinalDeliveryStatus: false,
         waitForFinalDeliveryStatus: false,
         ttln: Duration(minutes: 1),
+        cryptoProviderId: await schemeFor(
+          atClient,
+          receiver: '${req.relayAtsign}',
+          sealTo: Srvd.namespace,
+          own: Srvd.namespace,
+          logger: logger,
+        ),
       );
     }
   }
@@ -1835,7 +1894,9 @@ class SshnpdImpl
     }
   }
 
-  /// This function sends a notification given an atKey and value
+  /// This function sends a notification given an atKey and value, under
+  /// [cryptoProviderId] when one is given and otherwise in the scheme the
+  /// request for [sessionId] arrived in.
   Future<void> _notify({
     required AtKey atKey,
     required String value,
@@ -1843,12 +1904,15 @@ class SshnpdImpl
     bool waitForFinalDeliveryStatus = false,
     Duration ttln = const Duration(minutes: 1),
     String sessionId = '',
+    String? cryptoProviderId,
   }) async {
     await atClient.notificationService.notify(
       NotificationParams.forUpdate(
         atKey,
         value: value,
         notificationExpiry: ttln,
+        cryptoProviderId:
+            cryptoProviderId ?? _replySchemes[sessionId]?.scheme,
       ),
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
@@ -2076,6 +2140,13 @@ class SshnpdImpl
       atKey: atKey,
       value: jsonEncode(heartbeatPayload),
       ttln: DefaultSshnpdArgs.policyHeartbeatFrequency,
+      cryptoProviderId: await schemeFor(
+        atClient,
+        receiver: policyManagerAtsign!,
+        sealTo: DefaultArgs.namespace,
+        own: DefaultArgs.namespace,
+        logger: logger,
+      ),
     );
   }
 
@@ -2174,6 +2245,13 @@ class _NPAAuthChecker implements AuthChecker, AtRpcCallbacks {
     await rpc.sendRequest(
       toAtSign: sshnpd.policyManagerAtsign!,
       request: request,
+      cryptoProviderId: await schemeFor(
+        sshnpd.atClient,
+        receiver: sshnpd.policyManagerAtsign!,
+        sealTo: DefaultArgs.namespace,
+        own: DefaultArgs.namespace,
+        logger: sshnpd.logger,
+      ),
     );
     return completerMap[request.reqId]!.future;
   }

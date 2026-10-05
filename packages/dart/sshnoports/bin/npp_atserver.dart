@@ -77,6 +77,7 @@ void main(List<String> args) async {
       rootDomain: p.rootDomain,
       atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       namespace: DefaultArgs.namespace,
+      posture: p.postQuantum ? PqPosture.pqReady : null,
       storagePath: p.storagePath ??
           standardAtClientStoragePath(
               baseDir: p.homeDirectory,
