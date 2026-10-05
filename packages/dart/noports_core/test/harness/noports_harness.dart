@@ -105,6 +105,7 @@ class NoPortsHarness {
     required List<String> permitOpen,
     bool advertisesEscr = true,
     PqPosture posture = PqPosture.legacy,
+    bool postQuantum = false,
   }) async {
     final daemon = this.daemon = SshnpdImpl(
       atClient: await openClient(
@@ -129,6 +130,7 @@ class NoPortsHarness {
       permitOpen: permitOpen,
       strict: false,
       inline: true,
+      postQuantum: postQuantum,
     );
     (daemon.pingResponse['supportedFeatures'] as Map)[
         DaemonFeature.supportsRamEscr.name] = advertisesEscr;

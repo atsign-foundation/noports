@@ -124,6 +124,55 @@ void main() {
     expect(harness.server.unhandled, isEmpty);
   });
 
+  test('a tunnel between --pq atSigns sends its session messages'
+      ' post-quantum', () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay(posture: PqPosture.pqReady);
+    await harness.startDaemon(
+      permitOpen: ['127.0.0.1:${echo.port}'],
+      posture: PqPosture.pqReady,
+      postQuantum: true,
+    );
+    final npt = await nptTo(harness, echo.port, posture: PqPosture.pqReady);
+
+    final localPort = await npt.run();
+
+    expect(await roundTrip(localPort, 'sealed'), 'sealed');
+    List<Object?> providers(String recipient, String keyPart) => [
+          for (final n in harness.server[recipient].received)
+            if (n.key.contains(keyPart))
+              (n.metadata?['appMetadata'] as Map?)?['providerId'],
+        ];
+    // NOTE a raw literal: the provider id is a wire value at_client stamps.
+    const postQuantum = ['at/symmetric/AES/GCM'];
+    expect(providers(NoPortsHarness.daemonAtSign, 'npt_request'), postQuantum);
+    expect(
+      providers(
+        NoPortsHarness.clientAtSign,
+        '${npt.sessionId}.${NoPortsHarness.device}.${DefaultArgs.namespace}@',
+      ),
+      postQuantum,
+      reason: "the daemon answers in the request's scheme",
+    );
+    expect(providers(NoPortsHarness.relayAtSign, 'request_ports'), postQuantum);
+    expect(
+      providers(NoPortsHarness.clientAtSign, '${npt.sessionId}.sshrvd@'),
+      postQuantum,
+      reason: "the relay answers in the request's scheme",
+    );
+    expect(
+      providers(NoPortsHarness.daemonAtSign, 'ping.'),
+      ['legacy'],
+      reason: 'pings stay legacy',
+    );
+    expect(
+      escrVerifiedSides(harness),
+      {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
   test('an npt tunnel with payload relay auth carries bytes both ways',
       () async {
     final harness = NoPortsHarness.create();
