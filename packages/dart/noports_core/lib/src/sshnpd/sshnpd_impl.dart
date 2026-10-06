@@ -1450,7 +1450,7 @@ class SshnpdImpl
     ).run();
     logger.info('Started rv - pid is ${rv.pid}');
 
-    LocalSshKeyUtil keyUtil = LocalSshKeyUtil();
+    LocalSshKeyUtil keyUtil = LocalSshKeyUtil(homeDirectory: homeDirectory);
 
     /// Generate the ephemeral key pair which the client will use for the
     /// initial tunnel ssh session
