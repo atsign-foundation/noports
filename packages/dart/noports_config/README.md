@@ -49,22 +49,30 @@ Desktop, never here.
   Application Event Log. The MSI installs the app under
   `Program Files\NoPorts\NoPortsConfig`, adds a Start Menu shortcut and
   offers to launch it from the installer's finish page.
-* **macOS.** Follows universal.sh: everything is per user and nothing
-  needs root. The daemon is the `com.atsign.sshnpd` LaunchAgent in
-  `~/Library/LaunchAgents`, binary in `~/.local/bin`, config in
-  `~/Library/Application Support/NoPorts/sshnpd.yaml`, log in
-  `~/.sshnpd/logs/sshnpd.log`. The app can install the LaunchAgent, or
+* **macOS.** Everything is per user and nothing needs root. NoPorts itself
+  comes from Homebrew (`brew tap atsign-foundation/homebrew-tap && brew
+  install noports`, binaries in the brew prefix) or universal.sh (binaries
+  in `~/.local/bin`); the app looks in both. Config is
+  `~/Library/Application Support/NoPorts/sshnpd.yaml`, the daemon is the
+  `com.atsign.sshnpd` LaunchAgent in `~/Library/LaunchAgents`, log in
+  `~/.sshnpd/logs/sshnpd.log`. multibuild.yaml builds, signs and notarises
+  the app as `noports-config-macos-universal.zip` on each release so it can
+  be offered as a cask in the same tap. The app can install the LaunchAgent, or
   rewrite a legacy one that passes settings as command line flags (those
   override the YAML), so the daemon runs with `--config <yaml>`. An
   existing system-wide `/Library/Application Support/NoPorts/sshnpd.yaml`
   is used to seed the per-user file. Not sandboxed.
-* **Linux.** `/etc/noports/sshnpd.yaml`, `systemctl`, `journalctl`. Privileged
-  steps use `pkexec`, which needs a polkit agent (any desktop session has
-  one). Flutter desktop builds for x64 and arm64 only, so there is no app
-  for the daemon's armv7 and riscv64 targets. The bundle links the system
-  GTK 3 rather than shipping it; at run time it needs `libgtk-3-0`,
-  `libglib2.0-0` and, for the file picker, `zenity` (or `qarma` / `kdialog`).
-  Packaging for Linux (deb / rpm alongside sshnpd) is not wired up yet.
+* **Linux.** Installed from the package manager, never as loose binaries:
+  `sudo apt install noports-config` or `sudo dnf install noports-config`
+  from apt.noports.com / rpm.noports.com. `nfpm.yaml` here builds the deb
+  and rpm in multibuild.yaml next to the `noports` package, which it
+  depends on; the Flutter bundle goes to `/usr/lib/noports-config` with a
+  `noports-config` launcher on PATH, a desktop entry and an icon. Runtime
+  dependencies (`libgtk-3-0`, `zenity` for the file picker, polkit for
+  `pkexec`) are declared in the package. Config is `/etc/noports/sshnpd.yaml`,
+  service control via `systemctl`, logs via `journalctl`. Flutter desktop
+  builds for x64 and arm64 only, so there is no app for the daemon's armv7
+  and riscv64 targets.
 
 ## Layout
 

@@ -126,11 +126,25 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path "${{ matrix.bundle }}\*" -DestinationPath "dist\$env:ARCHIVE_BASE.zip"
           Get-ChildItem dist
-      - name: Archive (Linux)
+      - name: Archive and package (Linux)
         if: ${{ matrix.target == 'linux' }}
+        env:
+          # Same nfpm pin as multibuild.yaml.
+          NFPM_REF: be6fd83eed6f241359ae3e7d340a13f197ae6463
+          VERSION: 0.0.1
+          ARCH: ${{ matrix.arch == 'x64' && 'amd64' || 'arm64' }}
+          FLUTTER_ARCH: ${{ matrix.arch }}
+          RPM_KEY_FILE: ""
         run: |
           mkdir -p dist
           tar -C "${{ matrix.bundle }}" -czf "dist/$ARCHIVE_BASE.tar.gz" .
+          # Unsigned deb and rpm for install testing; the release ones come
+          # from multibuild.yaml with the real version and signature.
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@$NFPM_REF
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          rm -rf build/pkg && mkdir -p build/pkg && cp -r "build/linux/${FLUTTER_ARCH}/release/bundle" build/pkg/bundle
+          nfpm pkg --packager deb -t dist
+          nfpm pkg --packager rpm -t dist
           ls -l dist
       - name: Archive (macOS)
         if: ${{ matrix.target == 'macos' }}

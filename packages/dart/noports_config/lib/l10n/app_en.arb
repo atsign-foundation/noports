@@ -47,7 +47,7 @@
   "notElevatedTitle": "Administrator rights needed",
   "notElevatedBody": "This app is not running with administrator rights, so it can read settings but cannot save them or control the service. Close it and launch it again as an administrator.",
   "privilegePromptNote": "Saving the configuration and starting or stopping the service need administrator rights. You will be asked to authenticate each time; everything else runs as you.",
-  "serviceNotInstalledBody": "No sshnpd service is registered on this machine. Reinstall NoPorts with the daemon service feature selected.",
+  "serviceNotInstalledBody": "No sshnpd service is registered on this machine. On Windows, reinstall NoPorts from the MSI with the daemon service feature selected. On Linux, install the noports package with apt or dnf (see apt.noports.com / rpm.noports.com); it provides the systemd unit.",
   "serviceNotInstalledInstallable": "No sshnpd service is registered for your account yet. Install it to run the daemon at login from sshnpd.yaml.",
   "installService": "Install service",
   "updateServiceDefinition": "Update service definition",

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
 import 'package:path/path.dart' as p;
 
@@ -195,7 +196,7 @@ class MacosServiceManager extends ServiceManager {
     final bin = paths.sshnpdBinary;
     if (!bin.existsSync()) {
       throw ServiceException(
-        '${bin.path} not found. Install NoPorts first (universal.sh puts it in ~/.local/bin).',
+        '${bin.path} not found. ${InstallHints.installNoPorts}',
       );
     }
     await logFile.parent.create(recursive: true);

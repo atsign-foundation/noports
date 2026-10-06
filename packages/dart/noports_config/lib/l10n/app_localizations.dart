@@ -361,7 +361,7 @@ abstract class AppLocalizations {
   /// No description provided for @serviceNotInstalledBody.
   ///
   /// In en, this message translates to:
-  /// **'No sshnpd service is registered on this machine. Reinstall NoPorts with the daemon service feature selected.'**
+  /// **'No sshnpd service is registered on this machine. On Windows, reinstall NoPorts from the MSI with the daemon service feature selected. On Linux, install the noports package with apt or dnf (see apt.noports.com / rpm.noports.com); it provides the systemd unit.'**
   String get serviceNotInstalledBody;
 
   /// No description provided for @serviceNotInstalledInstallable.

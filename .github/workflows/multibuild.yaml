@@ -224,6 +224,35 @@ jobs:
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > ./gpg.key
           nfpm pkg --packager deb -t tarball
           nfpm pkg --packager rpm -t tarball
+      # The configuration app ships as its own package, noports-config,
+      # depending on noports. Flutter desktop supports x64 and arm64 only.
+      - name: Install Flutter (Linux x64 only)
+        if: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: false
+      - name: Install Flutter from git (Linux arm64 only)
+        if: ${{ matrix.platform == 'linux' && matrix.arch == 'arm64' }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+      - name: Build and package NoPorts Configuration (Linux x64 and arm64 only)
+        if: ${{ matrix.platform == 'linux' && (matrix.arch == 'amd64' || matrix.arch == 'arm64') }}
+        working-directory: ./packages/dart/noports_config
+        env:
+          FLUTTER_ARCH: ${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }}
+          RPM_KEY_FILE: ../sshnoports/gpg.key
+        run: |
+          sudo apt-get install -y ninja-build libgtk-3-dev
+          flutter pub get
+          flutter build linux --release
+          rm -rf build/pkg && mkdir -p build/pkg && cp -r "build/linux/${FLUTTER_ARCH}/release/bundle" build/pkg/bundle
+          nfpm pkg --packager deb -t ../sshnoports/tarball
+          nfpm pkg --packager rpm -t ../sshnoports/tarball
+          ls -l ../sshnoports/tarball
       - name: Build Windows Services (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./packages/csharp/WindowsBinaryService
@@ -334,6 +363,42 @@ jobs:
               -v \
               sshnp/${BINARY};
           done
+      # The configuration app for macOS is a universal (arm64 + x86_64)
+      # Flutter build, so one job is enough. Signed with the keychain the
+      # previous step set up, notarised and stapled, then shipped as its own
+      # release asset for a Homebrew cask in atsign-foundation/homebrew-tap.
+      - name: Install Flutter (macOS arm64 only)
+        if: ${{ matrix.platform == 'macos' && matrix.arch == 'arm64' }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: false
+      - name: Build, sign and notarize NoPorts Configuration (macOS arm64 only)
+        if: ${{ matrix.platform == 'macos' && matrix.arch == 'arm64' }}
+        working-directory: ./packages/dart/noports_config
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          flutter pub get
+          flutter build macos --release
+          APP="build/macos/Build/Products/Release/NoPorts Configuration.app"
+          find "$APP/Contents/Frameworks" -maxdepth 1 -name "*.framework" -print0 | while IFS= read -r -d '' fw; do
+            /usr/bin/codesign --force --options runtime --timestamp -s "$MACOS_SIGNING_IDENTITY" "$fw"
+          done
+          /usr/bin/codesign --force --options runtime --timestamp \
+            --entitlements macos/Runner/Release.entitlements \
+            -s "$MACOS_SIGNING_IDENTITY" "$APP"
+          /usr/bin/codesign --verify --deep --strict --verbose=2 "$APP"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/noports-config-notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/noports-config-notarize.zip" \
+            --apple-id "$MACOS_APPLE_ID" --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" --wait
+          xcrun stapler staple "$APP"
+          spctl --assess --type execute --verbose=2 "$APP"
+          ditto -c -k --keepParent "$APP" ../sshnoports/tarball/noports-config-macos-universal.zip
       - name: Compress to zip (MacOS only)
         if: ${{ matrix.platform == 'macos' }}
         run:

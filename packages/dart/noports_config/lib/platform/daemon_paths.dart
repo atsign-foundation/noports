@@ -130,18 +130,19 @@ class DaemonPaths {
       );
     }
     if (Platform.isMacOS) {
-      // universal.sh installs sshnpd per user: binary in ~/.local/bin and a
-      // LaunchAgent in ~/Library/LaunchAgents, running as the user. So the
-      // config is per user too, and no root is involved anywhere.
+      // Both macOS installs are per user, so no root is involved anywhere:
+      // the Homebrew cask puts binaries in the brew prefix and the config in
+      // ~/Library/Application Support/NoPorts; universal.sh puts sshnpd in
+      // ~/.local/bin with a LaunchAgent in ~/Library/LaunchAgents.
       final home = _userHome();
       return DaemonPaths._(
         configDir: Directory(
           p.join(home.path, 'Library', 'Application Support', 'NoPorts'),
         ),
         binDir: _firstWithBinary([
-          p.join(home.path, '.local', 'bin'),
-          '/usr/local/bin',
-          '/opt/homebrew/bin',
+          '/opt/homebrew/bin', // Homebrew on Apple silicon
+          '/usr/local/bin', // Homebrew on Intel
+          p.join(home.path, '.local', 'bin'), // universal.sh
         ]),
         serviceHomeDir: home,
         userHomeDir: home,
@@ -152,7 +153,8 @@ class DaemonPaths {
     }
     return DaemonPaths._(
       configDir: Directory('/etc/noports'),
-      binDir: _firstWithBinary(['/usr/local/bin', '/usr/bin']),
+      // The noports deb / rpm installs to /usr/bin.
+      binDir: _firstWithBinary(['/usr/bin', '/usr/local/bin']),
       serviceHomeDir: Directory('/root'),
       userHomeDir: _userHome(),
       configNeedsPrivileges: true,

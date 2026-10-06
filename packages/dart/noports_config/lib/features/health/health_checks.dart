@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 enum CheckLevel { pass, warn, fail }
@@ -123,7 +124,7 @@ class BinaryCheck extends HealthCheck {
   Future<HealthResult> run(HealthContext ctx) async {
     final bin = ctx.paths.sshnpdBinary;
     if (!bin.existsSync()) {
-      return fail('${bin.path} not found. Reinstall NoPorts.');
+      return fail('${bin.path} not found. ${InstallHints.installNoPorts}');
     }
     try {
       final r = await Process.run(bin.path, ['--version']);
@@ -175,7 +176,10 @@ class ServiceCheck extends HealthCheck {
     final s = await ctx.services.status();
     switch (s.state) {
       case ServiceState.notInstalled:
-        return fail('Service ${ctx.services.serviceName} is not installed.');
+        return fail(
+          'Service ${ctx.services.serviceName} is not installed. '
+          '${InstallHints.installService}',
+        );
       case ServiceState.running:
         return pass(
           'Running${s.pid != null ? ' (pid ${s.pid})' : ''}, start mode ${s.startType ?? 'unknown'}',
