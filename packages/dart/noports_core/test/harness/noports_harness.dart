@@ -108,10 +108,12 @@ class NoPortsHarness {
 
   /// Starts sshnpd on the daemon atSign, managed by the client atSign and
   /// permitted to open [permitOpen]. With [advertisesEscr] false it tells
-  /// clients it predates ESCR relay authentication, as an old daemon does.
+  /// clients it predates ESCR relay authentication, as an old daemon does;
+  /// with [strict] it verifies each request's signature.
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
     bool advertisesEscr = true,
+    bool strict = false,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
@@ -137,7 +139,7 @@ class NoPortsHarness {
       deviceGroup: 'default',
       version: '1.0.0',
       permitOpen: permitOpen,
-      strict: false,
+      strict: strict,
       inline: true,
     );
     (daemon.pingResponse['supportedFeatures'] as Map)[
