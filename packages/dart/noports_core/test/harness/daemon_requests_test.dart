@@ -68,12 +68,29 @@ void main() {
         relayAtsign: null,
       ).toJson();
 
-  /// Sends [envelope] to the daemon as [client]'s npt request.
-  Future<void> sendNptRequest(AtClient client, String envelope) =>
+  /// A well-formed direct ssh request for [sessionId]. A daemon that accepts
+  /// it fails to start its side, since a test process has no srv binary.
+  Map<String, dynamic> sshPayload(String sessionId) => SshnpSessionRequest(
+        direct: true,
+        sessionId: sessionId,
+        host: '127.0.0.1',
+        port: 1,
+        authenticateToRvd: false,
+        relayAuthMode: RelayAuthMode.payload,
+        relayAuthAesKey: null,
+        clientNonce: 'client-nonce',
+        rvdNonce: 'rvd-nonce',
+        encryptRvdTraffic: false,
+        twinKeys: false,
+        relayAtsign: null,
+      ).toJson();
+
+  /// Sends [envelope] to the daemon as [client]'s request of type [type].
+  Future<void> sendRequest(AtClient client, String type, String envelope) =>
       client.notificationService.notify(
         NotificationParams.forUpdate(
           AtKey()
-            ..key = 'npt_request'
+            ..key = type
             ..namespace = '${NoPortsHarness.device}.${DefaultArgs.namespace}'
             ..sharedBy = client.getCurrentAtSign()
             ..sharedWith = NoPortsHarness.daemonAtSign
@@ -84,90 +101,109 @@ void main() {
         waitForFinalDeliveryStatus: false,
       );
 
-  /// The npt requests the daemon's atServer has received.
-  int requestsReceived(NoPortsHarness harness) => harness
+  /// The requests of type [type] the daemon's atServer has received.
+  int requestsReceived(NoPortsHarness harness, String type) => harness
       .server[NoPortsHarness.daemonAtSign].received
-      .where((n) => n.key.contains('npt_request'))
+      .where((n) => n.key.contains(type))
       .length;
 
   const startFailed = 'Failed to start up the daemon side';
+  const permitOpen = ['127.0.0.1:22', 'localhost:22'];
 
-  test('a request whose session id is not a UUID gets no reply, while a valid'
-      ' one beside it does', () async {
-    final harness = NoPortsHarness.create();
-    await harness.startDaemon(permitOpen: ['127.0.0.1:22']);
-    final alice = await harness.openClient(
-      NoPortsHarness.clientAtSign,
-      namespace: DefaultArgs.namespace,
-    );
-    final replies = _Replies(alice);
-    final valid = Uuid().v4();
+  for (final MapEntry(key: type, value: payload) in {
+    'npt_request': nptPayload,
+    'ssh_request': sshPayload,
+  }.entries) {
+    group(type, () {
+      test('a request whose session id is not a UUID gets no reply, while a'
+          ' valid one beside it does', () async {
+        final harness = NoPortsHarness.create();
+        await harness.startDaemon(permitOpen: permitOpen);
+        final alice = await harness.openClient(
+          NoPortsHarness.clientAtSign,
+          namespace: DefaultArgs.namespace,
+        );
+        final replies = _Replies(alice);
+        final valid = Uuid().v4();
 
-    await sendNptRequest(
-      alice,
-      await signAndWrapAndJsonEncode(
-        alice,
-        nptPayload(Uuid().v4())..['sessionId'] = 'not-a-uuid',
-      ),
-    );
-    await sendNptRequest(
-      alice,
-      await signAndWrapAndJsonEncode(alice, nptPayload(valid)),
-    );
+        await sendRequest(
+          alice,
+          type,
+          await signAndWrapAndJsonEncode(
+            alice,
+            payload(Uuid().v4())..['sessionId'] = 'not-a-uuid',
+          ),
+        );
+        await sendRequest(
+          alice,
+          type,
+          await signAndWrapAndJsonEncode(alice, payload(valid)),
+        );
 
-    expect(await replies.about(valid), contains(startFailed));
-    expect(requestsReceived(harness), 2);
-    expect(replies.anyAbout('not-a-uuid'), isFalse);
-  });
+        expect(await replies.about(valid), contains(startFailed));
+        expect(requestsReceived(harness, type), 2);
+        expect(replies.anyAbout('not-a-uuid'), isFalse);
+      });
 
-  test('a request missing its signature gets no reply, while a valid one'
-      ' beside it does', () async {
-    final harness = NoPortsHarness.create();
-    await harness.startDaemon(permitOpen: ['127.0.0.1:22']);
-    final alice = await harness.openClient(
-      NoPortsHarness.clientAtSign,
-      namespace: DefaultArgs.namespace,
-    );
-    final replies = _Replies(alice);
-    final unsigned = Uuid().v4();
-    final valid = Uuid().v4();
+      test('a request missing its signature gets no reply, while a valid one'
+          ' beside it does', () async {
+        final harness = NoPortsHarness.create();
+        await harness.startDaemon(permitOpen: permitOpen);
+        final alice = await harness.openClient(
+          NoPortsHarness.clientAtSign,
+          namespace: DefaultArgs.namespace,
+        );
+        final replies = _Replies(alice);
+        final unsigned = Uuid().v4();
+        final valid = Uuid().v4();
 
-    await sendNptRequest(alice, jsonEncode({'payload': nptPayload(unsigned)}));
-    await sendNptRequest(
-      alice,
-      await signAndWrapAndJsonEncode(alice, nptPayload(valid)),
-    );
+        await sendRequest(
+          alice,
+          type,
+          jsonEncode({'payload': payload(unsigned)}),
+        );
+        await sendRequest(
+          alice,
+          type,
+          await signAndWrapAndJsonEncode(alice, payload(valid)),
+        );
 
-    expect(await replies.about(valid), contains(startFailed));
-    expect(requestsReceived(harness), 2);
-    expect(replies.anyAbout(unsigned), isFalse);
-  });
+        expect(await replies.about(valid), contains(startFailed));
+        expect(requestsReceived(harness, type), 2);
+        expect(replies.anyAbout(unsigned), isFalse);
+      });
 
-  test('a strict daemon refuses a request changed after it was signed, and'
-      ' accepts one that was not', () async {
-    final harness = NoPortsHarness.create();
-    await harness.startDaemon(permitOpen: ['127.0.0.1:22'], strict: true);
-    final alice = await harness.openClient(
-      NoPortsHarness.clientAtSign,
-      namespace: DefaultArgs.namespace,
-    );
-    final replies = _Replies(alice);
-    final tampered = Uuid().v4();
-    final genuine = Uuid().v4();
-    final envelope = jsonDecode(
-      await signAndWrapAndJsonEncode(alice, nptPayload(tampered)),
-    );
-    envelope['payload']['clientNonce'] = 'another-nonce';
+      test('a strict daemon refuses a request changed after it was signed, and'
+          ' accepts one that was not', () async {
+        final harness = NoPortsHarness.create();
+        await harness.startDaemon(permitOpen: permitOpen, strict: true);
+        final alice = await harness.openClient(
+          NoPortsHarness.clientAtSign,
+          namespace: DefaultArgs.namespace,
+        );
+        final replies = _Replies(alice);
+        final tampered = Uuid().v4();
+        final genuine = Uuid().v4();
+        final envelope = jsonDecode(
+          await signAndWrapAndJsonEncode(alice, payload(tampered)),
+        );
+        envelope['payload']['clientNonce'] = 'another-nonce';
 
-    await sendNptRequest(alice, jsonEncode(envelope));
-    await sendNptRequest(
-      alice,
-      await signAndWrapAndJsonEncode(alice, nptPayload(genuine)),
-    );
+        await sendRequest(alice, type, jsonEncode(envelope));
+        await sendRequest(
+          alice,
+          type,
+          await signAndWrapAndJsonEncode(alice, payload(genuine)),
+        );
 
-    expect(await replies.about(tampered), contains('Signature not verified'));
-    expect(await replies.about(genuine), contains(startFailed));
-  });
+        expect(
+          await replies.about(tampered),
+          contains('Signature not verified'),
+        );
+        expect(await replies.about(genuine), contains(startFailed));
+      });
+    });
+  }
 
   test("a client the daemon doesn't list as a manager gets no answer at all",
       () async {
