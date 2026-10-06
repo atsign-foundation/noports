@@ -179,6 +179,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       );
 
@@ -982,6 +983,7 @@ escrFixture({bool isSideA = true}) {
     publicSigningKeyUri: publicSigningKeyUri,
     publicSigningKey: signingKP.atPublicKey.publicKey,
     privateSigningKey: signingKP.atPrivateKey.privateKey,
+    signingAlgo: SigningAlgoType.rsa2048,
     isSideA: isSideA,
   );
 

@@ -1038,6 +1038,7 @@ class SshnpdImpl
             publicSigningKeyUri: publicSigningKeyUri,
             publicSigningKey: signingKeyPair.publicKey,
             privateSigningKey: signingKeyPair.privateKey,
+            signingAlgo: signingKeyPair.algorithm,
             isSideA: false,
           );
           break;
@@ -1401,6 +1402,7 @@ class SshnpdImpl
             publicSigningKeyUri: publicSigningKeyUri,
             publicSigningKey: signingKeyPair.publicKey,
             privateSigningKey: signingKeyPair.privateKey,
+            signingAlgo: signingKeyPair.algorithm,
             isSideA: false,
           );
           break;

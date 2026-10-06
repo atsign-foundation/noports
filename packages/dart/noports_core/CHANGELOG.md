@@ -4,6 +4,8 @@
   3.15.0-rc3, at_auth 4.0.0-rc3, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc2 and at_onboarding_cli 2.0.0-rc3, plus at_commons 5.18.0 and
   at_utils 3.4.1
+- build: requires socket_connector 2.6.1, so `Srvd.stop()` and `Npt.close()`
+  also end the connections already open through their tunnels
 - **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`
@@ -11,6 +13,10 @@
   and `ClientParams` implementations must add `relayAuthModeExplicit`
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
+- **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
+- feat: ESCR relay authentication works for an enrollment that holds signing
+  keys of its own or authenticates with ML-DSA-65, which srvd now verifies
+  as well as RSA-2048
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).
@@ -20,11 +26,12 @@
   forces ESCR wherever it can, and is refused up front when it can't (an
   older relay with a daemon that predates ESCR). The full matrix is in
   `docs/reference/relay-auth-modes.md`.
-- feat: `escrSigningKeyPair`, the keypair ESCR relay auth signs with, and
-  `loadEnvelopeSigningKey`, which reads the envelope signing key up front
-- refactor: `verifyEnvelopeSignature` and the relay verifiers accept only
-  rsa2048 signatures from 2048-bit keys, which is what every NoPorts
-  release sends
+- feat: `escrSigningKeyPair`, the key and algorithm ESCR relay auth signs
+  with, and `loadEnvelopeSigningKey`, which reads the envelope signing key up
+  front
+- refactor: `verifyEnvelopeSignature` accepts only rsa2048 signatures from
+  2048-bit keys, which is what every NoPorts release sends, and so do the
+  relay verifiers when they verify RSA
 - refactor: moved off at_chops's deprecated compatibility API. Nothing
   changes on the wire, and released versions can still exchange session
   keys with this one
@@ -45,6 +52,8 @@
 - fix: sshnpd no longer leaves a session's ephemeral key in
   `authorized_keys`, or drops a new session's key, when sessions start and
   end at the same moment
+- fix: `Npt.close()` closes the tunnel an inline npt opened, which used to
+  keep accepting connections and then threw a `StateError` when it ended
 
 # 6.15.0
 
