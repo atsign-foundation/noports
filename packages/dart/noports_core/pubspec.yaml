@@ -38,6 +38,8 @@ dependency_overrides:
   pointycastle: ^4.0.0
 
 dev_dependencies:
+  # NOTE build_runner 2.16.1 does not compile against analyzer 14.5.0
+  analyzer: '>=13.3.0 <14.5.0'
   build_runner: ^2.4.12
   json_serializable: ^6.8.0
   build_version: ^2.1.1
