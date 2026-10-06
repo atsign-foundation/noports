@@ -54,6 +54,8 @@
   end at the same moment
 - fix: `Npt.close()` closes the tunnel an inline npt opened, which used to
   keep accepting connections and then threw a `StateError` when it ended
+- fix: sshnpd authorizes a direct ssh session's ephemeral key under the
+  `homeDirectory` it was given, rather than always under `$HOME`
 
 # 6.15.0
 
