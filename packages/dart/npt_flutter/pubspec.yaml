@@ -78,8 +78,6 @@ dependencies:
   yaml_writer: ^2.0.0
 
 dev_dependencies:
-  at_auth: ^4.0.0-rc3
-  at_chops: ^3.7.0
   bloc_test: ^9.1.7
   build_runner: ^2.10.4
   flutter_launcher_icons: "^0.14.1"
