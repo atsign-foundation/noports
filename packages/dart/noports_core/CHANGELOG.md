@@ -10,8 +10,8 @@
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`
 - **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`
-  and `signingKeyCheckSecs`, `SrvdImpl` requires `signingKeyCheckInterval`,
-  and `ClientParams` implementations must add `relayAuthModeExplicit`
+  and `signingKeyCheckSecs`, and `ClientParams` implementations must add
+  `relayAuthModeExplicit`
 - **BREAKING CHANGE** feat: `SshnpdParams` requires `clientKeyCheckSecs`
   and `requireEnrollmentSignature`, and `Sshnpd` implementations must add
   `clientKeyCheckInterval` and `requireEnrollmentSignature`
@@ -21,9 +21,9 @@
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
-- feat: srvd ends a session within 5 minutes (by default) of either side's
-  enrollment being revoked, superseded, deleted or expired, when that side
-  authenticated with ESCR
+- feat: srvd checks every 5 minutes (by default) whether either side's
+  enrollment has been revoked, superseded, deleted or expired, and ends the
+  session if so, for each side that authenticated with ESCR
 - feat: sshnp and npt sign each session request with the client's
   enrollment key, and sshnpd ends the session once that enrollment is
   revoked, superseded, deleted or expired, checking every 10 seconds by

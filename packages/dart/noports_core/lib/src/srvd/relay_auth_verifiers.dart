@@ -314,9 +314,18 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
-    atSign = publicSigningKeyUri
-        .substring(publicSigningKeyUri.lastIndexOf('@'))
-        .toAtsign();
+    final writtenAtSign = publicSigningKeyUri.substring(
+      publicSigningKeyUri.lastIndexOf('@'),
+    );
+    final signer = writtenAtSign.toAtsign();
+    if (writtenAtSign.toLowerCase() != signer) {
+      throw RAVE(
+        'Signing key ($publicSigningKeyUri) spells its atSign other than'
+        ' as $signer',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    atSign = signer;
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
     if (!escrSigningAlgorithms.contains(signingAlgo)) {
