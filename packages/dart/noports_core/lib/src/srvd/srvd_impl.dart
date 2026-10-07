@@ -394,6 +394,13 @@ class SrvdImpl
         );
         return;
       }
+      if (sessions.containsKey(sessionParams.sessionId)) {
+        logger.shout(
+          'Session ${sessionParams.sessionId} requested by ${n.from}'
+          ' is denied: a session with that id is already live',
+        );
+        return;
+      }
     } catch (e) {
       logger.shout('Unable to provide the socket pair due to: $e');
       return;

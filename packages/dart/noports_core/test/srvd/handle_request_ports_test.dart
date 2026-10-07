@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
+import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
@@ -105,6 +106,36 @@ void main() {
         await allocates(manager: 'open', from: '@alice', atSignA: '@Alice'),
         isTrue,
       );
+    });
+
+    test('refuses a session id that is already live', () async {
+      expect(
+        await allocates(manager: 'open', from: '@mallory', atSignA: '@mallory'),
+        isTrue,
+        reason: 'the same request is let through when no session is live',
+      );
+      final srvd = RecordingSrvd(managerAtsign: 'open');
+      final live = SessionInfo(
+        params: SrvdSessionParams(
+          sessionId: 'the session',
+          atSignA: '@alice',
+          atSignB: '@device',
+          rvdNonce: 'rvd nonce',
+          only443: false,
+          multipleAcksOk: true,
+          preFetch: const [],
+          sendJsonResponse: true,
+        ),
+        connector: null,
+      );
+      srvd.sessions['the session'] = live;
+
+      await srvd.handleRequestPorts(
+        requestPorts(from: '@mallory', atSignA: '@mallory'),
+      );
+
+      expect(srvd.allocated, isFalse);
+      expect(srvd.sessions['the session'], same(live));
     });
   });
 }
