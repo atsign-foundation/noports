@@ -1,3 +1,8 @@
+## 1.1.2
+
+- fix: refuse a session request whose session id isn't a UUID, as the Dart
+  daemon does
+
 ## 1.1.1
 
 - fix: srv segfault on connection teardown (pthread_join clobbered tid)
