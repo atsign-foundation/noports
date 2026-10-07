@@ -6,6 +6,7 @@
 - REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
 - FIX: The policy log's summary shows why a request was denied.
 - FIX: A demo profile download that fails, or stalls for 30 seconds, says the import failed instead of leaving the progress indicator up for good.
+- FIX: Exporting profiles says "File Saved" only once the file has been written, and says when it could not be saved.
 
 ## 1.9.4+31
 

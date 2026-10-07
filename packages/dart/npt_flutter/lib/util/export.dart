@@ -49,29 +49,38 @@ class Export {
     return f;
   }
 
+  /// Writes [exportableProfiles] to a file the user picks with [pickFile], and
+  /// tells the user whether it was saved once the write has finished.
   @visibleForTesting
   static Future<void> saveFile(
     ExportableProfileFiletype filetype,
-    FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles,
-  ) async {
-    var f = await pickAndCreateFile(filetype);
-    if (f == null) return;
+    FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles, {
+    Future<File?> Function(ExportableProfileFiletype) pickFile =
+        pickAndCreateFile,
+  }) async {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    try {
+      var f = await pickFile(filetype);
+      if (f == null) return;
 
-    /// Explicit type safety
-    List exportableProfileList = (await exportableProfiles).toList();
+      /// Explicit type safety
+      List exportableProfileList = (await exportableProfiles).toList();
 
-    /// Wrapping like this allows us the ability to expand the file type spec
-    /// if we need to in the future
-    Map<String, List> json = {profilesKey: exportableProfileList};
-    switch (filetype) {
-      case ExportableProfileFiletype.json:
-        f.writeAsString(jsonEncode(json));
-      case ExportableProfileFiletype.yaml:
-        f.writeAsString(YamlWriter().convert(json));
+      /// Wrapping like this allows us the ability to expand the file type spec
+      /// if we need to in the future
+      Map<String, List> json = {profilesKey: exportableProfileList};
+      switch (filetype) {
+        case ExportableProfileFiletype.json:
+          await f.writeAsString(jsonEncode(json));
+        case ExportableProfileFiletype.yaml:
+          await f.writeAsString(YamlWriter().convert(json));
+      }
+    } catch (e) {
+      App.log('Failed to export profiles: $e'.loggable);
+      CustomSnackBar.error(content: strings.fileSaveFailed);
+      return;
     }
-    CustomSnackBar.success(
-      content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
-    );
+    CustomSnackBar.success(content: strings.fileSaved);
   }
 
   /// A closure function which returns a void Function() that prompts the user
@@ -81,9 +90,7 @@ class Export {
     ExportableProfileFiletype filetype,
     FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles,
   ) {
-    return () {
-      saveFile(filetype, exportableProfiles);
-    };
+    return () => unawaited(saveFile(filetype, exportableProfiles));
   }
 
   static void convertExternalDataSourceToProfile({
