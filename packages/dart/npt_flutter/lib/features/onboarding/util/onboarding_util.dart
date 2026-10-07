@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_lookup/at_lookup.dart'
-    show AtSignServerCheck, AtSignServerState, checkAtSignServer;
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';

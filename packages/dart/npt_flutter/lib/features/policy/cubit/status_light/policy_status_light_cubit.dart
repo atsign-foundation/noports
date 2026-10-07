@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
-import 'package:at_utils/at_logger.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/features/logging/models/logging_bloc.dart';
 import 'package:npt_flutter/features/policy/cubit/status_light/policy_status_light_state.dart';
 import 'package:version/version.dart';

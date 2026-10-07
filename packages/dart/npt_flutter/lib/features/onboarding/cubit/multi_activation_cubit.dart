@@ -2,7 +2,6 @@
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_lookup/at_lookup.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
