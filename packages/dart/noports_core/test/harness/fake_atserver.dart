@@ -130,6 +130,10 @@ class FakeAtSign {
   /// as they do when its atServer is hung or hostile.
   bool silent = false;
 
+  /// Whether this atSign's atServer predates HTTP GET, answering an HTTP
+  /// request in atProtocol, while still answering lookups.
+  bool predatesHttp = false;
+
   /// The approved enrollment every atSign starts with, granted everything.
   late final FakeEnrollment firstEnrollment;
 
@@ -1359,6 +1363,13 @@ class FakeHttpSurface {
     }
     if (owner != null && owner.unreachable) {
       (await request.response.detachSocket()).destroy();
+      return;
+    }
+    if (owner != null && owner.predatesHttp) {
+      final socket = await request.response.detachSocket(writeHeaders: false);
+      socket.write('error:AT0003-Invalid syntax\n');
+      await socket.flush();
+      socket.destroy();
       return;
     }
     final record = owner?.recordAt('public:$key${owner.atSign}');
