@@ -8,6 +8,7 @@ import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
@@ -773,8 +774,7 @@ class SrvdImpl
   void recordSigningKey(String sessionId, String signingKeyUri) {
     final si = sessions[sessionId];
     if (si == null) return;
-    final key = 'public:'
-        '${signingKeyUri.toLowerCase().replaceFirst(RegExp('^public:'), '')}';
+    final key = canonicalSigningKeyUri(signingKeyUri);
     if (si.signingKeys.contains(key)) return;
     if (si.signingKeys.length >= maxSigningKeysPerSession) {
       logger.warning(
@@ -836,7 +836,7 @@ class SrvdImpl
       return null;
     }
     try {
-      final withdrawnTo = await _withdrawnTo(key);
+      final withdrawnTo = await signingKeyWithdrawnTo(atClient, key);
       if (withdrawnTo == null) {
         logger.warning(
           'Signing key $key is missing but has not been withdrawn, so the'
@@ -851,20 +851,6 @@ class SrvdImpl
       );
       return null;
     }
-  }
-
-  static final _canonicalSigningKey = RegExp(
-    '^public:_apsk\\.([a-z0-9_-]+)'
-    '\\.${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}'
-    '(@[^@:\\s]+)\$',
-  );
-
-  /// Where [key], a canonical `public:_apsk.<enrollmentId>.a.__e@<atSign>`,
-  /// was withdrawn to, or null when neither withdrawn location holds it.
-  Future<String?> _withdrawnTo(String key) async {
-    final match = _canonicalSigningKey.firstMatch(key);
-    if (match == null) return null;
-    return withdrawnApskLocation(atClient, match.group(2)!, match.group(1)!);
   }
 
   void _endSession(

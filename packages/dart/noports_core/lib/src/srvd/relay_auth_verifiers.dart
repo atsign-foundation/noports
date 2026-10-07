@@ -4,13 +4,13 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:at_auth/at_auth.dart' show ApskSigningKey, apskSigningKeys;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:mutex/mutex.dart';
 
 import '../../utils.dart';
+import '../common/enrollment_signature.dart';
 import '../common/session_crypto.dart';
 
 enum RAVEReason {
@@ -105,12 +105,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   final RelayAuthVerifyHelper helper;
 
-  /// The only shape a signing key URI may take, so that the signer read from
-  /// it and the key the helper looks up from it name the same atSign.
-  static final _signingKeyUriShape = RegExp(
-    '^(public:)?_apsk\\.[A-Za-z0-9_-]+\\.'
-    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@:\\s]+\$',
-  );
 
   /// A fresh, unguessable challenge for this one authentication. It is the sole
   /// replay protection, so it MUST be fresh per connection — which is why this
@@ -312,7 +306,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
-    if (!_signingKeyUriShape.hasMatch(publicSigningKeyUri)) {
+    if (!signingKeyUriShape.hasMatch(publicSigningKeyUri)) {
       throw RAVE(
         'Signing key ($publicSigningKeyUri) is not of the form'
         ' public:_apsk.<enrollmentId>'
@@ -332,120 +326,22 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
       );
     }
 
-    final advertised = _activeKeysRelayVerifies(
-      publicSigningKeyUri,
-      await helper.lookup(sessionId!, publicSigningKeyUri),
-    );
-    final required =
-        SigningAlgoType.strongestOf(advertised.map((k) => k.alg))!;
-    if (signingAlgo != required) {
-      throw RAVE(
-        'Signed with ${signingAlgo.name}, but $publicSigningKeyUri advertises'
-        ' ${required.name}, the strongest algorithm it offers',
-        RAVEReason.signatureVerificationFailed,
-      );
-    }
-    final candidates = advertised.where((k) => k.alg == required).toList();
-    final kid = envelope['kid'];
-    final key = kid == null
-        ? (candidates.length == 1
-            ? candidates.single
-            : throw RAVE(
-                'The signature names no key, and $publicSigningKeyUri'
-                ' advertises ${candidates.length} ${required.name} keys',
-                RAVEReason.signatureVerificationFailed,
-              ))
-        : candidates.where((k) => k.kid == kid).firstOrNull ??
-            (throw RAVE(
-              'The signature names key $kid, which $publicSigningKeyUri'
-              ' does not advertise',
-              RAVEReason.signatureVerificationFailed,
-            ));
-
-    final signed = jsonEncode(signedPayload);
-    final bool verified;
     try {
-      verified = switch (required) {
-        SigningAlgoType.mldsa65 => MlDsa65PureDartAlgo.verifyBytesSync(
-            utf8.encode(signed),
-            signature: base64Decode(envelope['s']),
-            publicKey: base64Decode(key.pub),
-          ),
-        _ => await rsaVerifyString(
-            signed,
-            signature: envelope['s'],
-            publicKey: key.pub,
-            hashing: hashingAlgo,
-          ),
-      };
-    } on FormatException catch (e) {
-      throw RAVE(
-        'The signature is not base64: ${e.message}',
-        RAVEReason.signatureVerificationFailed,
+      await verifyApskSignature(
+        uri: publicSigningKeyUri,
+        apsk: await helper.lookup(sessionId!, publicSigningKeyUri),
+        signed: jsonEncode(signedPayload),
+        signature: envelope['s'],
+        signingAlgo: signingAlgo,
+        hashingAlgo: hashingAlgo,
+        kid: envelope['kid'],
       );
-    }
-    if (!verified) {
-      throw RAVE(
-        'Signatures did not match.',
-        RAVEReason.signatureVerificationFailed,
-      );
+    } on ApskSignatureException catch (e) {
+      throw RAVE(e.message, RAVEReason.signatureVerificationFailed);
     }
 
     signingKeyUri = publicSigningKeyUri;
-    return verified;
-  }
-
-  /// The keys [apsk], the value at [uri], offers for new signatures under an
-  /// algorithm relay authentication verifies. A value starting with `{` is
-  /// the JSON advertisement at_auth defines; anything else is one bare RSA
-  /// key.
-  static List<ApskSigningKey> _activeKeysRelayVerifies(
-    String uri,
-    String apsk,
-  ) {
-    final value = apsk.trim();
-    final List<ApskSigningKey> advertised;
-    if (value.startsWith('{')) {
-      final Object? decoded;
-      try {
-        decoded = jsonDecode(value);
-      } on FormatException catch (e) {
-        throw RAVE(
-          '$uri holds an advertisement that is not JSON: ${e.message}',
-          RAVEReason.signatureVerificationFailed,
-        );
-      }
-      if (decoded is! Map<String, dynamic>) {
-        throw RAVE(
-          '$uri holds an advertisement that is not a JSON object',
-          RAVEReason.signatureVerificationFailed,
-        );
-      }
-      advertised = apskSigningKeys(decoded);
-    } else {
-      try {
-        advertised = [
-          ApskSigningKey.forPublicKey(alg: SigningAlgoType.rsa2048, pub: value),
-        ];
-      } on FormatException catch (e) {
-        throw RAVE(
-          '$uri holds a key that is not base64: ${e.message}',
-          RAVEReason.signatureVerificationFailed,
-        );
-      }
-    }
-    final keys = [
-      for (final k in advertised)
-        if (k.offeredForNewOperations && escrSigningAlgorithms.contains(k.alg))
-          k,
-    ];
-    if (keys.isEmpty) {
-      throw RAVE(
-        '$uri advertises no key relay authentication can verify',
-        RAVEReason.signatureVerificationFailed,
-      );
-    }
-    return keys;
+    return true;
   }
 
   @override
