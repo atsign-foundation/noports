@@ -10,17 +10,17 @@
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`
 - **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`
-  and `signingKeyCheckSecs`, `SrvdImpl` requires `signingKeyCheckInterval`,
-  and `ClientParams` implementations must add `relayAuthModeExplicit`
+  and `signingKeyCheckSecs`, and `ClientParams` implementations must add
+  `relayAuthModeExplicit`
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
-- feat: srvd ends a session within 5 minutes (by default) of either side's
-  enrollment being revoked, superseded, deleted or expired, when that side
-  authenticated with ESCR
+- feat: srvd checks every 5 minutes (by default) whether either side's
+  enrollment has been revoked, superseded, deleted or expired, and ends the
+  session if so, for each side that authenticated with ESCR
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).

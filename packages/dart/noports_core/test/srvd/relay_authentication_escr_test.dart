@@ -441,6 +441,24 @@ void main() {
       });
     }
 
+    test('a signing key spelling its atSign with dots is refused', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test dotted atSign', h);
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        signingKeyUri: 'public:_apsk.my_enrollment_id.a.__e@al.ice',
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(
+          RAVEReason.signatureVerificationFailed,
+          'spells its atSign other than as @alice',
+        ),
+      );
+      verifyNever(() => h.lookup(any(), any()));
+    });
+
     test('a public signing key URI, as clients send it, is accepted', () async {
       final h = sessionHelper();
       final verifier = RelayAuthVerifierESCR('test public uri', h);

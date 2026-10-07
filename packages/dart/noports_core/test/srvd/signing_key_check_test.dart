@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
@@ -330,12 +331,9 @@ void main() {
           reason: 'stop() ends the check');
     });
 
-    test('records the signing key a port 443 socket was accepted with',
-        () async {
-      final signingKP = RsaKeyPair.generate();
-      lookupOf(aliceKey, () async {
-        return AtValue()..value = signingKP.atPublicKey.publicKey;
-      });
+    /// A relay with a port 443 stand-in on a free port, running session `s`
+    /// there.
+    Future<(SrvdImpl, int)> relay443Running() async {
       final probe = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       final port = probe.port;
       await probe.close();
@@ -348,7 +346,17 @@ void main() {
       );
       relay443.toIsolate443!
           .send(IIRequest.create('start', params('s', only443: true)));
+      return (relay443, port);
+    }
 
+    /// Authenticates a new socket to [port] as one side of session `s`,
+    /// signing with [keyPair] under [uri], and returns the socket's stream.
+    Future<Stream<Uint8List>?> authenticate443(
+      int port, {
+      required String uri,
+      required RsaKeyPair keyPair,
+      required bool isSideA,
+    }) async {
       Socket? socket;
       final deadline = DateTime.now().add(const Duration(seconds: 5));
       while (socket == null) {
@@ -360,23 +368,81 @@ void main() {
         }
       }
       addTearDown(socket.destroy);
-      final (authenticated, _) = await RelayAuthenticatorESCR(
+      final (authenticated, stream) = await RelayAuthenticatorESCR(
         sessionId: 's',
         relayAuthAesKey: relayAuthAesKey,
-        publicSigningKeyUri: aliceKey,
-        publicSigningKey: signingKP.atPublicKey.publicKey,
-        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        publicSigningKeyUri: uri,
+        publicSigningKey: keyPair.atPublicKey.publicKey,
+        privateSigningKey: keyPair.atPrivateKey.privateKey,
         signingAlgo: SigningAlgoType.rsa2048,
-        isSideA: true,
+        isSideA: isSideA,
       ).authenticate(socket);
       expect(authenticated, isTrue);
+      return stream;
+    }
 
-      final recorded = DateTime.now().add(const Duration(seconds: 5));
-      while (relay443.sessions['s']!.signingKeys.isEmpty &&
-          DateTime.now().isBefore(recorded)) {
+    /// Waits up to 5 seconds for [relay] to record a signing key for `s`.
+    Future<void> anyKeyRecorded(SrvdImpl relay) async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (relay.sessions['s']!.signingKeys.isEmpty &&
+          DateTime.now().isBefore(deadline)) {
         await Future.delayed(const Duration(milliseconds: 20));
       }
+    }
+
+    test('records the signing key a port 443 socket was accepted with',
+        () async {
+      final signingKP = RsaKeyPair.generate();
+      lookupOf(aliceKey, () async {
+        return AtValue()..value = signingKP.atPublicKey.publicKey;
+      });
+      final (relay443, port) = await relay443Running();
+
+      await authenticate443(
+        port,
+        uri: aliceKey,
+        keyPair: signingKP,
+        isSideA: true,
+      );
+
+      await anyKeyRecorded(relay443);
       expect(relay443.sessions['s']!.signingKeys, {aliceKey});
+    });
+
+    test('records no signing key for a port 443 socket refused for its side',
+        () async {
+      const aliceOtherKey = 'public:_apsk.other-enrollment.a.__e@alice';
+      final alice = RsaKeyPair.generate();
+      final aliceOther = RsaKeyPair.generate();
+      lookupOf(aliceKey, () async {
+        return AtValue()..value = alice.atPublicKey.publicKey;
+      });
+      lookupOf(aliceOtherKey, () async {
+        return AtValue()..value = aliceOther.atPublicKey.publicKey;
+      });
+      final (relay443, port) = await relay443Running();
+
+      final refused = await authenticate443(
+        port,
+        uri: aliceOtherKey,
+        keyPair: aliceOther,
+        isSideA: false,
+      );
+      await refused!.drain<void>().timeout(const Duration(seconds: 5));
+      await authenticate443(
+        port,
+        uri: aliceKey,
+        keyPair: alice,
+        isSideA: true,
+      );
+
+      await anyKeyRecorded(relay443);
+      expect(
+        relay443.sessions['s']!.signingKeys,
+        {aliceKey},
+        reason: "alice's other key signed for bob's side, so it was refused"
+            ' before being recorded',
+      );
     });
   });
 

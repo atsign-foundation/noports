@@ -68,6 +68,8 @@ class SrvdImpl
 
   Map<String, SessionInfo> sessions = {};
 
+  final Set<String> _startingSessions = {};
+
   Isolate? isolate443;
   SendPort? toIsolate443;
   PortPair portPair443 = (443, 443);
@@ -412,7 +414,8 @@ class SrvdImpl
         );
         return;
       }
-      if (sessions.containsKey(sessionParams.sessionId)) {
+      if (sessions.containsKey(sessionParams.sessionId) ||
+          _startingSessions.contains(sessionParams.sessionId)) {
         logger.shout(
           'Session ${sessionParams.sessionId} requested by ${n.from}'
           ' is denied: a session with that id is already live',
@@ -424,6 +427,20 @@ class SrvdImpl
       return;
     }
 
+    _startingSessions.add(sessionParams.sessionId);
+    try {
+      await _startSession(n, sessionParams);
+    } finally {
+      _startingSessions.remove(sessionParams.sessionId);
+    }
+  }
+
+  /// Allocates ports for [sessionParams], which [n] requested, records the
+  /// session and sends the requester its ports.
+  Future<void> _startSession(
+    AtNotification n,
+    SrvdSessionParams sessionParams,
+  ) async {
     logger.info('New session request params: $sessionParams');
 
     PortPair ports;

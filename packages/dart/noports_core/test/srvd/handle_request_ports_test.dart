@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -14,9 +15,10 @@ import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
 
-/// Records whether a request got as far as allocating ports, then stops it.
+/// Records whether a request got as far as allocating ports, then stops it,
+/// once [gate] (when given) completes.
 class RecordingSrvd extends SrvdImpl {
-  RecordingSrvd({required super.managerAtsign})
+  RecordingSrvd({required super.managerAtsign, this.gate})
       : super(
           atClient: MockAtClient(),
           atSign: '@relay'.toAtsign(),
@@ -31,13 +33,18 @@ class RecordingSrvd extends SrvdImpl {
           signingKeyCheckInterval: Duration.zero,
         );
 
-  bool allocated = false;
+  final Future<void>? gate;
+
+  int allocations = 0;
+
+  bool get allocated => allocations > 0;
 
   @override
   Future<(PortPair, Isolate, SendPort)> spawnNewPortPairIsolate(
     SrvdSessionParams sessionParams,
   ) async {
-    allocated = true;
+    allocations++;
+    await gate;
     throw StateError('stopped after the gate');
   }
 }
@@ -137,6 +144,29 @@ void main() {
 
       expect(srvd.allocated, isFalse);
       expect(srvd.sessions['the session'], same(live));
+    });
+
+    test('refuses a session id that is still being started', () async {
+      final gate = Completer<void>();
+      final srvd = RecordingSrvd(managerAtsign: 'open', gate: gate.future);
+      final first = srvd.handleRequestPorts(
+        requestPorts(from: '@alice', atSignA: '@alice'),
+      );
+      await pumpEventQueue();
+      expect(srvd.allocations, 1, reason: 'the first request is mid-start');
+
+      final second = srvd.handleRequestPorts(
+        requestPorts(from: '@mallory', atSignA: '@mallory'),
+      );
+      await pumpEventQueue();
+      expect(srvd.allocations, 1);
+
+      gate.complete();
+      await Future.wait([first, second]);
+      await srvd.handleRequestPorts(
+        requestPorts(from: '@mallory', atSignA: '@mallory'),
+      );
+      expect(srvd.allocations, 2, reason: 'a start that failed frees its id');
     });
   });
 }
