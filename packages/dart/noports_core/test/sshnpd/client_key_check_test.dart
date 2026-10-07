@@ -47,6 +47,7 @@ void main() {
       strict: false,
       clientKeyCheckInterval: Duration.zero,
       requireEnrollmentSignature: false,
+      publicLookup: ClientPublicLookup(atClient),
     );
   });
 
@@ -194,13 +195,41 @@ void main() {
     withdraw(aliceKey);
 
     await daemon.checkClientKeys();
+    expect(lookups(), greaterThan(0));
     await daemon.checkClientKeys();
 
     expect(session.ends, ['s']);
-    expect(lookups(), 2, reason: 'the second pass looks nothing up');
+    verifyNever(
+      () => atClient.get(
+        any(),
+        getRequestOptions: any(named: 'getRequestOptions'),
+      ),
+    );
   });
 
-  test('skips a pass that starts while one is still running', () async {
+  test("a key whose atServer doesn't answer delays no other key's re-check,"
+      ' nor the next pass', () async {
+    const malloryKey = 'public:_apsk.mallory-enrollment.a.__e@mallory';
+    track('mallory', malloryKey);
+    final alices = track('alice', aliceKey);
+    final unanswered = Completer<AtValue>();
+    lookupOf(malloryKey, () => unanswered.future);
+    withdraw(aliceKey);
+
+    unawaited(daemon.checkClientKeys());
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(alices.ends, ['alice'],
+        reason: "alice's session ends while mallory's lookup hangs");
+    await daemon.checkClientKeys().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => fail('the next pass waited on mallory'),
+        );
+    unanswered.complete(await published());
+  });
+
+  test("doesn't re-check a key while its last re-check is running",
+      () async {
     track('s', aliceKey);
     final lookedUp = Completer<AtValue>();
     lookupOf(aliceKey, () => lookedUp.future);

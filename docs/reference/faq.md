@@ -75,6 +75,8 @@ In the unlikely event that a bad actor takes down an relay, the tool will indeed
 
 You do not need to open any inbound ports to connect out to the relay. However, the outbound traffic to the relay server does need to be open. Outbound access is, in most situations, automatically allowed so things just work. If you work in a location where outbound access is also controlled, then please contact us as we have options for for your IT team.
 
+The device daemon also connects out to the atServers of the clients it serves, to check that their enrollments haven't been revoked. If that traffic is blocked, sessions still start, but the daemon can't end a session when its client's enrollment is revoked.
+
 </details>
 
 <details>

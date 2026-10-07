@@ -129,13 +129,19 @@ void main() {
   /// check looks it up again.
   int clientKeyLookups(NoPortsHarness harness) {
     final client = harness.server[NoPortsHarness.clientAtSign];
-    final command = 'plookup:bypassCache:true:all:'
-        '_apsk.${client.firstEnrollment.id}.a.__e${NoPortsHarness.clientAtSign}';
-    return [
-      for (final c in harness.server.connections)
-        if (c.atSign.atSign == NoPortsHarness.daemonAtSign) ...c.commands,
-    ].where((c) => c == command).length;
+    final path = '/${NoPortsHarness.clientAtSign}'
+        '/_apsk.${client.firstEnrollment.id}.a.__e';
+    return harness.daemonHttp.asked.where((asked) => asked == path).length;
   }
+
+  /// The `_apsk` lookups the daemon sent through its own atServer.
+  List<String> apskPlookups(NoPortsHarness harness) => [
+        for (final c in harness.server.connections)
+          if (c.atSign.atSign == NoPortsHarness.daemonAtSign)
+            for (final command in c.commands)
+              if (command.startsWith('plookup:') && command.contains('_apsk.'))
+                command,
+      ];
 
   /// Waits until [condition] holds, failing after 10 seconds.
   Future<void> eventually(String what, bool Function() condition) async {
@@ -211,6 +217,8 @@ void main() {
 
     expect(ended, isFalse,
         reason: 'the daemon ended a tunnel because a lookup failed');
+    expect(apskPlookups(harness), isEmpty,
+        reason: "a re-check never asks the daemon's own atServer");
     expect(await roundTrips(localPort, 'kept'), isTrue);
   });
 
@@ -410,6 +418,24 @@ void main() {
         ),
         contains('requires session requests signed'),
       );
+    });
+
+    test('a daemon that requires an enrollment signature checks one from a'
+        ' client whose atServer predates HTTP GET, through its own atServer',
+        () async {
+      await start(require: true);
+      harness.server[NoPortsHarness.clientAtSign].predatesHttp = true;
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          await signAndWrapRequest(alice, _Signer(alice), payload(sessionId)),
+        ),
+        contains(startFailed),
+        reason: 'the signature was checked, so the session went ahead',
+      );
+      expect(apskPlookups(harness), isNotEmpty);
     });
 
     /// alice's signed request for [sessionId], with [fields] replacing those

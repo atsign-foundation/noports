@@ -5,6 +5,7 @@ import 'package:at_auth/at_auth.dart'
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/common/validation_utils.dart'
     show signAndWrap;
@@ -161,19 +162,6 @@ Future<void> verifyApskSignature({
   }
 }
 
-/// Where the `_apsk` record [uri] (canonical, as [canonicalSigningKeyUri]
-/// gives it) was withdrawn to: `r.__e` when its enrollment was revoked or
-/// superseded, `d.__e` when deleted or expired; null when neither holds it.
-Future<String?> signingKeyWithdrawnTo(AtClient atClient, String uri) async {
-  final match = RegExp(
-    '^public:_apsk\\.([a-z0-9_-]+)'
-    '\\.${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}'
-    '(@[^@:\\s]+)\$',
-  ).firstMatch(uri);
-  if (match == null) return null;
-  return withdrawnApskLocation(atClient, match.group(2)!, match.group(1)!);
-}
-
 /// [signer]'s enrollment signature over [payload]'s JSON, for
 /// [enrollmentSignatureField]: the `_apsk` record it can be checked against
 /// (`sk`), the key within it (`kid`), and the algorithms and signature.
@@ -230,14 +218,15 @@ Future<String> signAndWrapRequest(
 
 /// Verifies the [enrollmentSignatureField] of [envelope], a request from
 /// [requester], against the `_apsk` record it names, looked up with
-/// [atClient]. Returns that record's canonical URI, or null when [envelope]
-/// carries no such field.
+/// [publicLookup]. Returns that record's canonical URI, or null when
+/// [envelope] carries no such field.
 ///
 /// Throws [ApskSignatureException] when the field is malformed, names a
-/// record that isn't [requester]'s, or doesn't verify; a failed lookup of the
-/// record throws whatever the lookup threw.
+/// record that isn't [requester]'s, or doesn't verify. A record that can't be
+/// found throws [AtKeyNotFoundException], and a failed lookup throws whatever
+/// the lookup threw.
 Future<String?> verifyEnrollmentSignature(
-  AtClient atClient,
+  PublicLookup publicLookup,
   String requester,
   Map envelope,
 ) async {
@@ -287,14 +276,8 @@ Future<String?> verifyEnrollmentSignature(
       ),
   };
   final canonical = canonicalSigningKeyUri(uri);
-  final apsk = (await atClient.get(
-    AtKey.fromString(canonical),
-    getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-  ))
-      .value;
-  if (apsk is! String) {
-    throw ApskSignatureException('$canonical holds no signing key');
-  }
+  final apsk = await publicLookup.lookup(canonical) ??
+      (throw AtKeyNotFoundException('$canonical does not exist'));
   await verifyApskSignature(
     uri: canonical,
     apsk: apsk,

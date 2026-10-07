@@ -41,7 +41,8 @@
   default; `--client-key-check-secs` sets how often (0 turns it off), and
   `--require-enrollment-signature` refuses requests from clients that don't
   sign this way. A session that outlives a restart of sshnpd is no longer
-  checked
+  checked. sshnpd looks the key up straight from the client's atServer over
+  HTTPS, so it needs outbound access to that atServer for the check
 * fix: `srvd --manager` accepts session requests only from the manager
   itself
 * fix: a long-running srvd no longer keeps a receive port open for every

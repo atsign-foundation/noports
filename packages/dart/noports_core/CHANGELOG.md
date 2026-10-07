@@ -35,7 +35,9 @@
   revoked, superseded, deleted or expired, checking every 10 seconds by
   default. New sshnpd `--client-key-check-secs` (0 turns the check off) and
   `--require-enrollment-signature` (refuse requests that aren't signed)
-  options. A session that outlives a restart of sshnpd is no longer checked
+  options. A session that outlives a restart of sshnpd is no longer checked.
+  sshnpd looks the key up straight from the client's atServer over HTTPS,
+  so it needs outbound access to that atServer for the check
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).

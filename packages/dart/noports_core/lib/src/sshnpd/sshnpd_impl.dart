@@ -19,10 +19,8 @@ import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
-    show
-        ApskSignatureException,
-        signingKeyWithdrawnTo,
-        verifyEnrollmentSignature;
+    show ApskSignatureException, verifyEnrollmentSignature;
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/srv/srv_impl.dart' show SrvImplExec;
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
@@ -112,8 +110,11 @@ class SshnpdImpl
   @override
   final bool requireEnrollmentSignature;
 
+  /// How this daemon looks up the `_apsk` records clients sign requests with.
+  final PublicLookup publicLookup;
+
   final Map<String, _ClientSession> _clientSessions = {};
-  bool _checkingClientKeys = false;
+  final Set<String> _keysBeingChecked = {};
 
   /// State variables used by [clientRequestNotificationHandler]
   String _privateKey = '';
@@ -183,7 +184,9 @@ class SshnpdImpl
     required this.strict,
     required this.clientKeyCheckInterval,
     required this.requireEnrollmentSignature,
-  }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
+    PublicLookup? publicLookup,
+  })  : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " "),
+        publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -398,6 +401,7 @@ class SshnpdImpl
       timer.cancel();
     }
     _timers.clear();
+    publicLookup.close();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -2169,7 +2173,7 @@ class SshnpdImpl
     final String? signingKey;
     try {
       signingKey = await verifyEnrollmentSignature(
-        atClient,
+        publicLookup,
         requestingAtsign,
         envelope,
       );
@@ -2256,41 +2260,45 @@ class SshnpdImpl
   @visibleForTesting
   int get trackedClientSessions => _clientSessions.length;
 
-  /// Looks up afresh the `_apsk` record each tracked session's client signed
-  /// its request with, and ends each session whose record has been
-  /// withdrawn: moved by the client's atServer to `r.__e` (the enrollment was
-  /// revoked or superseded) or `d.__e` (deleted or expired). A record that is
-  /// merely missing, and a lookup that fails any other way, keep the session.
+  /// Looks up afresh, from the client's own atServer, the `_apsk` record each
+  /// tracked session's client signed its request with, and ends each session
+  /// whose record has been withdrawn: moved by the client's atServer to
+  /// `r.__e` (the enrollment was revoked or superseded) or `d.__e` (deleted or
+  /// expired). A record that is merely missing, and a lookup that fails any
+  /// other way, keep the session. A key whose last re-check hasn't finished
+  /// is left out, so a slow atServer delays only the re-checks of its own
+  /// keys.
   @visibleForTesting
   Future<void> checkClientKeys() async {
-    if (_checkingClientKeys) return;
-    _checkingClientKeys = true;
+    final keys = {
+      for (final session in _clientSessions.values)
+        if (!session.ending) session.signingKey,
+    }.difference(_keysBeingChecked);
+    await Future.wait([for (final key in keys) _recheck(key)]);
+  }
+
+  Future<void> _recheck(String key) async {
+    _keysBeingChecked.add(key);
     try {
-      final keys = {
-        for (final session in _clientSessions.values)
-          if (!session.ending) session.signingKey,
-      };
-      for (final key in keys) {
-        final withdrawnTo = await _whereWithdrawn(key);
-        if (withdrawnTo == null) continue;
-        for (final MapEntry(key: sessionId, value: session)
-            in _clientSessions.entries.toList()) {
-          if (!session.ending && session.signingKey == key) {
-            session.ending = true;
-            logger.warning(
-              'Ending session $sessionId: its client\'s signing key $key has'
-              ' been withdrawn to $withdrawnTo',
-            );
-            try {
-              session.end();
-            } catch (e) {
-              logger.warning('Could not end session $sessionId: $e');
-            }
+      final withdrawnTo = await _whereWithdrawn(key);
+      if (withdrawnTo == null) return;
+      for (final MapEntry(key: sessionId, value: session)
+          in _clientSessions.entries.toList()) {
+        if (!session.ending && session.signingKey == key) {
+          session.ending = true;
+          logger.warning(
+            'Ending session $sessionId: its client\'s signing key $key has'
+            ' been withdrawn to $withdrawnTo',
+          );
+          try {
+            session.end();
+          } catch (e) {
+            logger.warning('Could not end session $sessionId: $e');
           }
         }
       }
     } finally {
-      _checkingClientKeys = false;
+      _keysBeingChecked.remove(key);
     }
   }
 
@@ -2298,14 +2306,7 @@ class SshnpdImpl
   /// merely missing, or a lookup fails, all of which keep its sessions.
   Future<String?> _whereWithdrawn(String key) async {
     try {
-      await atClient.get(
-        AtKey.fromString(key),
-        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-      );
-      return null;
-    } on AtKeyNotFoundException {
-      // NOTE: a key gone from `a.__e` ends sessions only once the lookups
-      // below find where it went.
+      if (await publicLookup.lookupDirect(key) != null) return null;
     } catch (e) {
       logger.warning(
         'Could not re-check client signing key $key, so the sessions it'
@@ -2314,7 +2315,7 @@ class SshnpdImpl
       return null;
     }
     try {
-      final withdrawnTo = await signingKeyWithdrawnTo(atClient, key);
+      final withdrawnTo = await publicLookup.withdrawnTo(key);
       if (withdrawnTo == null) {
         logger.warning(
           'Client signing key $key is missing but has not been withdrawn, so'
