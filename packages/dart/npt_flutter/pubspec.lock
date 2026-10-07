@@ -93,10 +93,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_client_flutter
-      sha256: "5d85d66d0dfddf9399d7e70ff05da587a483903c0b5e54b3ce1eb0c95d9a53cd"
+      sha256: "0e1102d3473fa386ea16a0194e14882f003b54017aa9d8dd834d9a79e3670017"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0-rc3"
+    version: "2.0.0-rc4"
   at_commons:
     dependency: transitive
     description:
