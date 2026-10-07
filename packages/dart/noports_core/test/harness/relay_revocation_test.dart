@@ -15,12 +15,17 @@ void main() {
 
   /// A relay re-checking signing keys every [check], its lookups giving up
   /// after [lookupTimeout], a daemon, and an ESCR npt tunnel from the client
-  /// to a loopback echo server.
+  /// to a loopback echo server. The atServers of the atSigns in [withoutHttp]
+  /// predate HTTP GET.
   Future<({NoPortsHarness harness, SrvdImpl relay, int localPort})> tunnel({
     Duration check = checkEvery,
     Duration lookupTimeout = DirectPublicLookup.defaultTimeout,
+    Set<String> withoutHttp = const {},
   }) async {
     final harness = NoPortsHarness.create();
+    for (final atSign in withoutHttp) {
+      harness.server[atSign].predatesHttp = true;
+    }
     final echo = await startEchoServer();
     final relay = await harness.startRelay(
       signingKeyCheckInterval: check,
@@ -250,5 +255,18 @@ void main() {
         reason: "the relay looked the client's key up over HTTP");
     expect(apskPlookups(harness), isEmpty,
         reason: 'no lookup went through the relay\'s own atServer');
+  });
+
+  test('the relay authenticates a side whose atServer predates HTTP GET,'
+      ' through its own atServer', () async {
+    final (:harness, relay: _, :localPort) =
+        await tunnel(withoutHttp: {NoPortsHarness.daemonAtSign});
+
+    await liveConnection(localPort);
+    expect(
+      apskPlookups(harness),
+      contains(endsWith(signingKeyOf(harness, NoPortsHarness.daemonAtSign)
+          .replaceFirst('public:', ''))),
+    );
   });
 }
