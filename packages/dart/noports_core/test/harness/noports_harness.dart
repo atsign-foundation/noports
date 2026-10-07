@@ -5,6 +5,7 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/sqlite.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/common/features.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
@@ -49,8 +50,26 @@ class NoPortsHarness {
   }
 
   final List<AtClient> _clients = [];
+  final List<FakeHttpSurface> _surfaces = [];
   SshnpdImpl? daemon;
   SrvdImpl? relay;
+
+  /// The public records the relay has asked for over HTTP.
+  late final FakeHttpSurface relayHttp;
+
+  /// A [DirectPublicLookup] for [atClient] that finds every atSign on
+  /// [surface], with each lookup giving up after [timeout].
+  DirectPublicLookup lookupOn(
+    FakeHttpSurface surface,
+    AtClient atClient, {
+    Duration timeout = DirectPublicLookup.defaultTimeout,
+  }) =>
+      DirectPublicLookup(
+        atClient,
+        addressFinder: surface.addressFinder,
+        timeout: timeout,
+        scheme: 'http',
+      );
 
   /// A client for [atSign], authenticated as its first enrollment, under
   /// [posture].
@@ -79,19 +98,24 @@ class NoPortsHarness {
   }
 
   /// Starts srvd on the relay atSign, re-checking live sessions' signing keys
-  /// every [signingKeyCheckInterval].
+  /// every [signingKeyCheckInterval], and looking public records up over HTTP
+  /// on [relayHttp], each lookup giving up after [lookupTimeout].
   Future<SrvdImpl> startRelay({
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
     Duration signingKeyCheckInterval = defaultSigningKeyCheckInterval,
+    Duration lookupTimeout = DirectPublicLookup.defaultTimeout,
   }) async {
+    final atClient = await openClient(
+      relayAtSign,
+      namespace: Srvd.namespace,
+      posture: posture,
+      dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+    );
+    relayHttp = await server.serveHttp();
+    _surfaces.add(relayHttp);
     final relay = this.relay = SrvdImpl(
-      atClient: await openClient(
-        relayAtSign,
-        namespace: Srvd.namespace,
-        posture: posture,
-        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
-      ),
+      atClient: atClient,
       atSign: relayAtSign.toAtsign(),
       homeDirectory: home.path,
       atKeysFilePath: home.path,
@@ -103,6 +127,7 @@ class NoPortsHarness {
       localBindPort443: 443,
       relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       signingKeyCheckInterval: signingKeyCheckInterval,
+      publicLookup: lookupOn(relayHttp, atClient, timeout: lookupTimeout),
     );
     await relay.init();
     await relay.run();
@@ -155,6 +180,9 @@ class NoPortsHarness {
   Future<void> _tearDown() async {
     await daemon?.stop();
     await relay?.stop();
+    for (final surface in _surfaces) {
+      await surface.close();
+    }
     for (final client in _clients.reversed) {
       await client.stop();
     }

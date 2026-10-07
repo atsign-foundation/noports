@@ -21,6 +21,11 @@
 - feat: srvd checks every 5 minutes (by default) whether either side's
   enrollment has been revoked, superseded, deleted or expired, and ends the
   session if so, for each side that authenticated with ESCR
+- feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions. srvd now connects out to atServers itself, and asks its own
+  atServer instead when it can't reach one that way (or it predates HTTP
+  GET, c3.6.0), except when re-checking a key
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).

@@ -70,6 +70,7 @@ void main() {
         localBindPort443: localBindPort443,
         relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: interval,
+        publicLookup: ClientPublicLookup(atClient),
       );
 
   group('SrvdImpl signing-key check', () {
@@ -230,18 +231,46 @@ void main() {
 
       final messages = received(worker);
       await relay.checkSigningKeys();
-      await relay.checkSigningKeys();
-
-      expect(await messages, hasLength(1));
       verify(
         () => atClient.get(
           any(),
           getRequestOptions: any(named: 'getRequestOptions'),
         ),
-      ).called(2);
+      ).called(greaterThan(0));
+      await relay.checkSigningKeys();
+
+      expect(await messages, hasLength(1));
+      verifyNever(
+        () => atClient.get(
+          any(),
+          getRequestOptions: any(named: 'getRequestOptions'),
+        ),
+      );
     });
 
-    test('skips a pass that starts while one is still running', () async {
+    test("a key whose atServer doesn't answer delays no other key's"
+        ' re-check, nor the next pass', () async {
+      const malloryKey = 'public:_apsk.mallory-enrollment.a.__e@mallory';
+      twoPortSession('mallory', {malloryKey});
+      final alices = twoPortSession('alice', {aliceKey});
+      final unanswered = Completer<AtValue>();
+      lookupOf(malloryKey, () => unanswered.future);
+      withdraw(aliceKey);
+
+      final messages = received(alices);
+      unawaited(relay.checkSigningKeys());
+
+      expect(await messages, isNotEmpty,
+          reason: "alice's session ends while mallory's lookup hangs");
+      await relay.checkSigningKeys().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () => fail('the next pass waited on mallory'),
+          );
+      unanswered.complete(await published());
+    });
+
+    test("doesn't re-check a key while its last re-check is running",
+        () async {
       twoPortSession('s', {aliceKey});
       final lookedUp = Completer<AtValue>();
       lookupOf(aliceKey, () => lookedUp.future);

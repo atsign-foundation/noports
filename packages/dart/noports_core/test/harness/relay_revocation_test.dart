@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:noports_core/npt.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:test/test.dart';
@@ -12,14 +13,19 @@ import 'noports_harness.dart';
 void main() {
   const checkEvery = Duration(milliseconds: 200);
 
-  /// A relay re-checking signing keys every [check], a daemon, and an ESCR
-  /// npt tunnel from the client to a loopback echo server.
+  /// A relay re-checking signing keys every [check], its lookups giving up
+  /// after [lookupTimeout], a daemon, and an ESCR npt tunnel from the client
+  /// to a loopback echo server.
   Future<({NoPortsHarness harness, SrvdImpl relay, int localPort})> tunnel({
     Duration check = checkEvery,
+    Duration lookupTimeout = DirectPublicLookup.defaultTimeout,
   }) async {
     final harness = NoPortsHarness.create();
     final echo = await startEchoServer();
-    final relay = await harness.startRelay(signingKeyCheckInterval: check);
+    final relay = await harness.startRelay(
+      signingKeyCheckInterval: check,
+      lookupTimeout: lookupTimeout,
+    );
     await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
     final npt = Npt.create(
       params: NptParams(
@@ -101,19 +107,24 @@ void main() {
   String signingKeyOf(NoPortsHarness harness, String atSign) =>
       'public:_apsk.${harness.server[atSign].firstEnrollment.id}.a.__e$atSign';
 
-  /// How many times the relay has looked [signingKey] up, bypassing its
-  /// atServer's cache. Once a session's sockets have authenticated, only the
-  /// check looks a key up again, since the session's worker keeps what it
-  /// looked up.
-  int rechecks(NoPortsHarness harness, String signingKey) => [
+  /// How many times the relay has looked [signingKey] up from its atServer.
+  /// Once a session's sockets have authenticated, only the check looks a key
+  /// up again, since the session's worker keeps what it looked up.
+  int rechecks(NoPortsHarness harness, String signingKey) {
+    final key = signingKey.replaceFirst('public:', '');
+    final at = key.lastIndexOf('@');
+    final path = '/${key.substring(at)}/${key.substring(0, at)}';
+    return harness.relayHttp.asked.where((asked) => asked == path).length;
+  }
+
+  /// The `_apsk` lookups the relay sent through its own atServer.
+  List<String> apskPlookups(NoPortsHarness harness) => [
         for (final c in harness.server.connections)
-          if (c.atSign.atSign == NoPortsHarness.relayAtSign) ...c.commands,
-      ]
-          .where((command) =>
-              command ==
-              'plookup:bypassCache:true:all:'
-                  '${signingKey.replaceFirst('public:', '')}')
-          .length;
+          if (c.atSign.atSign == NoPortsHarness.relayAtSign)
+            for (final command in c.commands)
+              if (command.startsWith('plookup:') && command.contains('_apsk.'))
+                command,
+      ];
 
   /// Waits until [condition] holds, failing after 10 seconds.
   Future<void> eventually(String what, bool Function() condition) async {
@@ -211,7 +222,33 @@ void main() {
 
     expect(ended, isFalse,
         reason: 'the relay ended a tunnel because a lookup failed');
+    expect(apskPlookups(harness), isEmpty,
+        reason: "a re-check never asks the relay's own atServer");
     expect(await roundTrips(localPort, 'kept'), isTrue);
     expect(relay.sessions, hasLength(1));
+  });
+
+  test("the relay ends a revoked client's tunnel while the daemon's atServer"
+      ' leaves its re-checks unanswered', () async {
+    final (:harness, relay: _, :localPort) =
+        await tunnel(lookupTimeout: const Duration(seconds: 8));
+    final connection = await liveConnection(localPort);
+    final clientKey = signingKeyOf(harness, NoPortsHarness.clientAtSign);
+    final daemonKey = signingKeyOf(harness, NoPortsHarness.daemonAtSign);
+    final daemonRechecksBefore = rechecks(harness, daemonKey);
+
+    harness.server[NoPortsHarness.daemonAtSign].silent = true;
+    harness.server[NoPortsHarness.clientAtSign].firstEnrollment.revoke();
+
+    await connection.ended.timeout(
+      const Duration(seconds: 4),
+      onTimeout: () => fail('the tunnel outlived the revocation by 4 s'),
+    );
+    expect(rechecks(harness, daemonKey), greaterThan(daemonRechecksBefore),
+        reason: "a re-check of the daemon's key was left unanswered");
+    expect(rechecks(harness, clientKey), greaterThan(1),
+        reason: "the relay looked the client's key up over HTTP");
+    expect(apskPlookups(harness), isEmpty,
+        reason: 'no lookup went through the relay\'s own atServer');
   });
 }

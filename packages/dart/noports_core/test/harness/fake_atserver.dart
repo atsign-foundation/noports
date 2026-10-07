@@ -66,6 +66,14 @@ class FakeAtServer {
   /// The atDirectory: every atSign this server holds, on a port of its own.
   late final SecondaryAddressFinder addressFinder = _FakeAddressFinder(this);
 
+  /// Serves every atSign's public records over plain HTTP on a loopback port
+  /// of its own, as an atServer serves them at `GET /<atSign>/<key>`: from
+  /// its key store, 404 for a record it doesn't hold or that isn't active.
+  Future<FakeHttpSurface> serveHttp() async => FakeHttpSurface._(
+        this,
+        await HttpServer.bind(InternetAddress.loopbackIPv4, 0),
+      );
+
   /// Services for a client on this server: no sync, and a notification
   /// service that finds atServers here rather than in the real atDirectory.
   late final AtServiceFactory serviceFactory = _FakeServiceFactory(this);
@@ -117,6 +125,10 @@ class FakeAtSign {
   /// Whether other atSigns' lookups of this atSign's public keys fail, as
   /// they do when its atServer can't be reached.
   bool unreachable = false;
+
+  /// Whether HTTP requests for this atSign's public records go unanswered,
+  /// as they do when its atServer is hung or hostile.
+  bool silent = false;
 
   /// The approved enrollment every atSign starts with, granted everything.
   late final FakeEnrollment firstEnrollment;
@@ -1317,6 +1329,69 @@ class _FakeSocketFactory extends AtLookupSecureSocketFactory {
     Duration? timeout,
   }) async =>
       _server._connect(host, port)._socket;
+}
+
+/// A [FakeAtServer]'s public records served over HTTP, as one process sees
+/// them: [asked] is every path it was asked for, oldest first.
+class FakeHttpSurface {
+  FakeHttpSurface._(this._server, this._http) {
+    _http.listen(_handle);
+  }
+
+  final FakeAtServer _server;
+  final HttpServer _http;
+  final List<HttpRequest> _unanswered = [];
+
+  final List<String> asked = [];
+
+  /// Finds every atSign on this surface.
+  late final SecondaryAddressFinder addressFinder = _LoopbackFinder(_http.port);
+
+  void _handle(HttpRequest request) async {
+    asked.add(request.uri.path);
+    final [atSign, key] = request.uri.pathSegments.length == 2
+        ? request.uri.pathSegments
+        : const ['', ''];
+    final owner = _server._find(atSign);
+    if (owner != null && owner.silent) {
+      _unanswered.add(request);
+      return;
+    }
+    if (owner != null && owner.unreachable) {
+      (await request.response.detachSocket()).destroy();
+      return;
+    }
+    final record = owner?.recordAt('public:$key${owner.atSign}');
+    final response = request.response;
+    if (record == null || !record.isActive) {
+      response
+        ..statusCode = HttpStatus.notFound
+        ..write('404 Not Found');
+    } else {
+      response.write(record.value);
+    }
+    await response.close();
+  }
+
+  Future<void> close() async {
+    for (final request in _unanswered) {
+      (await request.response.detachSocket()).destroy();
+    }
+    await _http.close(force: true);
+  }
+}
+
+class _LoopbackFinder extends SecondaryAddressFinder {
+  _LoopbackFinder(this._port);
+
+  final int _port;
+
+  @override
+  Future<SecondaryAddress> findSecondary(
+    String atSign, {
+    Duration? timeout,
+  }) async =>
+      SecondaryAddress(InternetAddress.loopbackIPv4.address, _port);
 }
 
 class _FakeAddressFinder extends SecondaryAddressFinder {
