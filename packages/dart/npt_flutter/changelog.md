@@ -4,7 +4,7 @@
 - FEAT: Onboarding errors say what went wrong, rather than reporting a generic authentication failure.
 - FEAT: Connections use the stronger ESCR relay authentication wherever the relay and the device support it.
 - REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
-- FIX: The policy log's summary shows why a request was denied.
+- FIX: The policy log's summary shows why a request was denied, wrapping onto up to four lines rather than being cut off after one.
 - FIX: A demo profile download that fails, or stalls for 30 seconds, says the import failed instead of leaving the progress indicator up for good.
 - FIX: Exporting profiles says "File Saved" only once the file has been written, and says when it could not be saved.
 

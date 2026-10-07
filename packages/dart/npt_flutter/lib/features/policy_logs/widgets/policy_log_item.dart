@@ -153,6 +153,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     child: Text(
                       widget.allowedServices,
                       style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
