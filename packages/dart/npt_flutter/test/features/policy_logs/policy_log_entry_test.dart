@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noports_core/npa.dart'
     show NPAAuthCheckRequest, NPAAuthCheckResponse;
 import 'package:npt_flutter/features/policy_logs/services/policy_log_monitor_service.dart';
 
-/// A policy log notification as the policy service sends it: the RPC request
-/// it answered, and a response carrying [responsePayload].
+/// A policy log notification as the policy service sends it, to itself: the
+/// RPC request it answered, and a response carrying [responsePayload].
 AtNotification _policyRequest(Map<String, dynamic> responsePayload) {
   final request = AtRpcReq(
     reqId: 1,
@@ -25,8 +25,8 @@ AtNotification _policyRequest(Map<String, dynamic> responsePayload) {
   );
   return AtNotification.empty()
     ..from = '@policy'
-    ..to = '@admin'
-    ..key = '@admin:req1.logs.policy.sshnp@policy'
+    ..to = '@policy'
+    ..key = '@policy:1700000000000.logs.policy.sshnp@policy'
     ..value = jsonEncode({
       'daemon': '@lab',
       'timestamp': 0,
@@ -47,6 +47,9 @@ void main() {
         _policyRequest(_denial('outside hours')),
       );
       expect(entry.type, 'policy request');
+      expect(entry.fromAtsign, '@policy');
+      expect(entry.toAtsign, '@policy');
+      expect(entry.deviceName, 'lab01');
       expect(
         entry.allowedServices,
         'Request: @alice → @lab (DENIED: outside hours)',
