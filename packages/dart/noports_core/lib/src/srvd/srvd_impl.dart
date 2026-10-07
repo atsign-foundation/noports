@@ -51,6 +51,14 @@ class SrvdImpl
   /// side to speak (legacy) before assuming ESCR and issuing a challenge.
   final int relayAuthDetectWindowMs;
 
+  /// How often to re-check that the signing keys each live session's ESCR
+  /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
+  /// the check off.
+  final Duration signingKeyCheckInterval;
+
+  Timer? _signingKeyCheckTimer;
+  bool _checkingSigningKeys = false;
+
   @override
   bool verbose = false;
 
@@ -90,6 +98,7 @@ class SrvdImpl
     required this.bind443,
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
+    required this.signingKeyCheckInterval,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -139,6 +148,7 @@ class SrvdImpl
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
         relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
       );
 
       if (p.verbose) {
@@ -187,11 +197,19 @@ class SrvdImpl
           .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
           .listen(notificationHandler),
     );
+
+    if (signingKeyCheckInterval > Duration.zero) {
+      _signingKeyCheckTimer = Timer.periodic(
+        signingKeyCheckInterval,
+        (_) => unawaited(checkSigningKeys()),
+      );
+    }
   }
 
   @override
   Future<void> stop() async {
     _stopped = true;
+    _signingKeyCheckTimer?.cancel();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -744,6 +762,129 @@ class SrvdImpl
     sessions.remove(sessionId);
   }
 
+  /// The most distinct signing keys recorded for one session. Each side of a
+  /// session signs with one enrollment's key.
+  static const maxSigningKeysPerSession = 4;
+
+  /// Records that a socket of session [sessionId] was accepted with a
+  /// signature from the `_apsk` record [signingKeyUri], in the canonical form
+  /// an atServer stores it under, so spellings of one record count once.
+  @visibleForTesting
+  void recordSigningKey(String sessionId, String signingKeyUri) {
+    final si = sessions[sessionId];
+    if (si == null) return;
+    final key = 'public:'
+        '${signingKeyUri.toLowerCase().replaceFirst(RegExp('^public:'), '')}';
+    if (si.signingKeys.contains(key)) return;
+    if (si.signingKeys.length >= maxSigningKeysPerSession) {
+      logger.warning(
+        'Not recording signing key $key for session $sessionId, which already'
+        ' has ${si.signingKeys.length}',
+      );
+      return;
+    }
+    si.signingKeys.add(key);
+  }
+
+  /// Looks up afresh every `_apsk` record a live session's ESCR sockets were
+  /// accepted with, and ends each session one of them has been withdrawn
+  /// from: moved by its atServer to `r.__e` (the enrollment was revoked or
+  /// superseded) or `d.__e` (deleted or expired). A key that is merely
+  /// missing, and a lookup that fails any other way, keep the session, so an
+  /// atServer that is unreachable or being restored ends nothing.
+  @visibleForTesting
+  Future<void> checkSigningKeys() async {
+    if (_checkingSigningKeys) return;
+    _checkingSigningKeys = true;
+    try {
+      final keys = {
+        for (final si in sessions.values)
+          if (!si.ending) ...si.signingKeys,
+      };
+      for (final key in keys) {
+        final withdrawnTo = await _whereWithdrawn(key);
+        if (withdrawnTo == null) continue;
+        for (final MapEntry(key: sessionId, value: si)
+            in sessions.entries.toList()) {
+          if (!si.ending && si.signingKeys.contains(key)) {
+            _endSession(sessionId, si, key, withdrawnTo);
+          }
+        }
+      }
+    } finally {
+      _checkingSigningKeys = false;
+    }
+  }
+
+  /// Where [key] has been withdrawn to, or null when it is still published,
+  /// merely missing, or a lookup fails, all of which keep its sessions.
+  Future<String?> _whereWithdrawn(String key) async {
+    try {
+      await atClient.get(
+        AtKey.fromString(key),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      );
+      return null;
+    } on AtKeyNotFoundException {
+      // NOTE: a key gone from `a.__e` ends sessions only once the lookups
+      // below find where it went.
+    } catch (e) {
+      logger.warning(
+        'Could not re-check signing key $key, so the sessions it signed'
+        ' carry on: $e',
+      );
+      return null;
+    }
+    try {
+      final withdrawnTo = await _withdrawnTo(key);
+      if (withdrawnTo == null) {
+        logger.warning(
+          'Signing key $key is missing but has not been withdrawn, so the'
+          ' sessions it signed carry on',
+        );
+      }
+      return withdrawnTo;
+    } catch (e) {
+      logger.warning(
+        'Could not tell whether signing key $key was withdrawn, so the'
+        ' sessions it signed carry on: $e',
+      );
+      return null;
+    }
+  }
+
+  static final _canonicalSigningKey = RegExp(
+    '^public:_apsk\\.([a-z0-9_-]+)'
+    '\\.${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}'
+    '(@[^@:\\s]+)\$',
+  );
+
+  /// Where [key], a canonical `public:_apsk.<enrollmentId>.a.__e@<atSign>`,
+  /// was withdrawn to, or null when neither withdrawn location holds it.
+  Future<String?> _withdrawnTo(String key) async {
+    final match = _canonicalSigningKey.firstMatch(key);
+    if (match == null) return null;
+    return withdrawnApskLocation(atClient, match.group(2)!, match.group(1)!);
+  }
+
+  void _endSession(
+    String sessionId,
+    SessionInfo si,
+    String signingKey,
+    String withdrawnTo,
+  ) {
+    si.ending = true;
+    logger.warning(
+      'Ending session $sessionId (${si.atSignA} to ${si.atSignB}):'
+      ' signing key $signingKey has been withdrawn to $withdrawnTo',
+    );
+    if (si.toWorker != null) {
+      si.toWorker!.send(IIRequest.create('stop', null));
+    } else if (si.params.only443) {
+      toIsolate443?.send(IIRequest.create('endSession', sessionId));
+    }
+  }
+
   Future<void> _handleNewConnection(IIRequest msg) async {
     final sessionId = msg.payload['sessionId'];
     logger.info('_handleNewConnection $sessionId');
@@ -845,6 +986,9 @@ class SrvdImpl
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
           case 'newConnection':
             await _handleNewConnection(msg);
@@ -988,6 +1132,9 @@ class SrvdImpl
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
           case 'newConnection':
             await _handleNewConnection(msg);

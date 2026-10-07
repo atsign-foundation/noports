@@ -28,6 +28,7 @@ class RecordingSrvd extends SrvdImpl {
           bind443: false,
           localBindPort443: 443,
           relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+          signingKeyCheckInterval: Duration.zero,
         );
 
   bool allocated = false;

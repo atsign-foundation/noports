@@ -136,6 +136,9 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
   bool? isSideA;
 
+  /// The `_apsk` record the response was signed with, once it has verified.
+  String? signingKeyUri;
+
   Random random = Random();
 
   RelayAuthVerifierESCR(
@@ -388,6 +391,7 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
       );
     }
 
+    signingKeyUri = publicSigningKeyUri;
     return verified;
   }
 
@@ -914,6 +918,10 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   /// ESCR and sending a challenge.
   final Duration detectWindow;
 
+  /// Called with the `_apsk` record an ESCR socket on this side was signed
+  /// with, once the socket has been accepted.
+  final void Function(String signingKeyUri)? onEscrVerified;
+
   late final AtSignLogger logger;
 
   /// The mode this side will use, if known. Set from the constructor (side A),
@@ -935,6 +943,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     required this.rvdNonce,
     required this.detectWindow,
     this.publicKey,
+    this.onEscrVerified,
     RelayAuthMode? knownMode,
   }) : expectedAtSign = atSign,
        _sessionId = sessionId {
@@ -1091,6 +1100,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           RAVEReason.dataMismatch,
         );
       }
+      onEscrVerified?.call(escr.signingKeyUri!);
       logger.info('Auto-detected ESCR; verification success');
       socket.writeln('ok');
       await socket.flush();

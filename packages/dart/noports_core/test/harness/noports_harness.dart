@@ -78,10 +78,12 @@ class NoPortsHarness {
     return client;
   }
 
-  /// Starts srvd on the relay atSign.
+  /// Starts srvd on the relay atSign, re-checking live sessions' signing keys
+  /// every [signingKeyCheckInterval].
   Future<SrvdImpl> startRelay({
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
+    Duration signingKeyCheckInterval = defaultSigningKeyCheckInterval,
   }) async {
     final relay = this.relay = SrvdImpl(
       atClient: await openClient(
@@ -100,6 +102,7 @@ class NoPortsHarness {
       bind443: false,
       localBindPort443: 443,
       relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+      signingKeyCheckInterval: signingKeyCheckInterval,
     );
     await relay.init();
     await relay.run();
