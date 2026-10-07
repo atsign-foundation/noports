@@ -233,7 +233,8 @@ Future<String> signAndWrapRequest(
 /// carries no such field.
 ///
 /// Throws [ApskSignatureException] when the field is malformed, names a
-/// record that isn't [requester]'s, or doesn't verify.
+/// record that isn't [requester]'s, or doesn't verify; a failed lookup of the
+/// record throws whatever the lookup threw.
 Future<String?> verifyEnrollmentSignature(
   AtClient atClient,
   String requester,
@@ -256,8 +257,8 @@ Future<String?> verifyEnrollmentSignature(
       '.${EnrollmentConstants.perEnrollmentApproved}@<atSign>',
     );
   }
-  final signer = uri.substring(uri.lastIndexOf('@')).toAtsign();
-  if (signer != requester.toAtsign()) {
+  final signer = uri.substring(uri.lastIndexOf('@')).toLowerCase();
+  if (signer != requester.toLowerCase()) {
     throw ApskSignatureException(
       'Signing key $uri belongs to $signer, not the requester $requester',
     );
@@ -277,6 +278,13 @@ Future<String?> verifyEnrollmentSignature(
       'Unsupported signing algorithm ${signingAlgo.name}',
     );
   }
+  final kid = switch (field['kid']) {
+    null => null,
+    final String kid => kid,
+    _ => throw ApskSignatureException(
+        '$enrollmentSignatureField has a "kid" that is not a string',
+      ),
+  };
   final canonical = canonicalSigningKeyUri(uri);
   final apsk = (await atClient.get(
     AtKey.fromString(canonical),
@@ -293,7 +301,7 @@ Future<String?> verifyEnrollmentSignature(
     signature: text('s'),
     signingAlgo: signingAlgo,
     hashingAlgo: hashingAlgo,
-    kid: field['kid'] is String ? field['kid'] : null,
+    kid: kid,
   );
   return canonical;
 }

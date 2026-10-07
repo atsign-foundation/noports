@@ -19,7 +19,10 @@ import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
-    show signingKeyWithdrawnTo, verifyEnrollmentSignature;
+    show
+        ApskSignatureException,
+        signingKeyWithdrawnTo,
+        verifyEnrollmentSignature;
 import 'package:noports_core/src/srv/srv.dart';
 import 'package:noports_core/src/srv/srv_impl.dart' show SrvImplExec;
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
@@ -1366,6 +1369,10 @@ class SshnpdImpl
       // sshnp <2.0.0 clients do not send sessionId, it's generated here
       sessionId = Uuid().v4();
     }
+    if (requireEnrollmentSignature) {
+      await _refuse(requestingAtsign, sessionId, _unsignedRefused);
+      return;
+    }
     SshnpSessionRequest req = SshnpSessionRequest(
       direct: false,
       sessionId: sessionId,
@@ -2152,18 +2159,13 @@ class SshnpdImpl
     Map envelope,
   ) async {
     Future<({bool refused, String? signingKey})> refuse(String why) async {
-      logger.warning('Refusing session $sessionId from $requestingAtsign: $why');
-      await _notify(
-        atKey: _createResponseAtKey(
-          requestingAtsign: requestingAtsign,
-          sessionId: sessionId,
-        ),
-        value: why,
-        sessionId: sessionId,
-      );
+      await _refuse(requestingAtsign, sessionId, why);
       return (refused: true, signingKey: null);
     }
 
+    if (_clientSessions.containsKey(sessionId)) {
+      return refuse('A session with id $sessionId is already live');
+    }
     final String? signingKey;
     try {
       signingKey = await verifyEnrollmentSignature(
@@ -2171,16 +2173,43 @@ class SshnpdImpl
         requestingAtsign,
         envelope,
       );
-    } catch (e) {
+    } on ApskSignatureException catch (e) {
       return refuse('Enrollment signature not verified: $e');
+    } catch (e) {
+      if (requireEnrollmentSignature) {
+        return refuse('Could not check the enrollment signature: $e');
+      }
+      logger.warning(
+        'Could not check the enrollment signature on session $sessionId from'
+        ' $requestingAtsign, so it goes ahead unwatched, as an unsigned'
+        ' request would: $e',
+      );
+      return (refused: false, signingKey: null);
     }
     if (signingKey == null && requireEnrollmentSignature) {
-      return refuse(
-        'This daemon requires session requests signed with the client\'s'
-        ' enrollment key',
-      );
+      return refuse(_unsignedRefused);
     }
     return (refused: false, signingKey: signingKey);
+  }
+
+  static const _unsignedRefused = 'This daemon requires session requests'
+      ' signed with the client\'s enrollment key';
+
+  /// Tells [requestingAtsign] that this daemon refuses [sessionId], and [why].
+  Future<void> _refuse(
+    String requestingAtsign,
+    String sessionId,
+    String why,
+  ) async {
+    logger.warning('Refusing session $sessionId from $requestingAtsign: $why');
+    await _notify(
+      atKey: _createResponseAtKey(
+        requestingAtsign: requestingAtsign,
+        sessionId: sessionId,
+      ),
+      value: why,
+      sessionId: sessionId,
+    );
   }
 
   /// Tracks the srv process [srv] started for [sessionId], when its client
@@ -2250,7 +2279,11 @@ class SshnpdImpl
               'Ending session $sessionId: its client\'s signing key $key has'
               ' been withdrawn to $withdrawnTo',
             );
-            session.end();
+            try {
+              session.end();
+            } catch (e) {
+              logger.warning('Could not end session $sessionId: $e');
+            }
           }
         }
       }

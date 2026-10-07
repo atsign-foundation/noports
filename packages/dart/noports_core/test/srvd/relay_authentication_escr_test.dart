@@ -838,28 +838,59 @@ void main() {
               ),
         ]));
 
+    /// [response], `<sessionId>:<payload>`, with its envelope's fields
+    /// replaced by [fields].
+    Future<String> rewritten(
+      String response,
+      Map<String, Object?> fields,
+    ) async {
+      final colon = response.indexOf(':');
+      final outer = jsonDecode(
+        utf8.decode(base64Decode(response.substring(colon + 1))),
+      );
+      final iv = InitialisationVector(base64Decode(outer['iv']));
+      final envelope = jsonDecode(utf8.decode(base64Decode(
+        await aesDecryptString(outer['e'], key: aesKey, iv: iv),
+      )))
+        ..addAll(fields);
+      final payload = base64Encode(utf8.encode(jsonEncode({
+        'iv': outer['iv'],
+        'e': await aesEncryptString(
+          base64Encode(utf8.encode(jsonEncode(envelope))),
+          key: aesKey,
+          iv: iv,
+        ),
+      })));
+      return '${response.substring(0, colon)}:$payload';
+    }
+
     /// Verifies a response signed with [privateKey] under [algo], naming
-    /// [publicKey]'s kid, by a relay that fetches [apsk].
+    /// [publicKey]'s kid, by a relay that fetches [apsk]. Any [fields] replace
+    /// the response's own.
     Future<bool> verify(
       String apsk, {
       required SigningAlgoType algo,
       required String publicKey,
       required String privateKey,
+      Map<String, Object?> fields = const {},
     }) async {
       final h = MockRelayAuthVerifyHelper();
       when(() => h.isSessionActive(sessionId)).thenAnswer((_) async => true);
       when(() => h.getRelayAuthAesKey(sessionId)).thenAnswer((_) async => aesKey);
       when(() => h.lookup(sessionId, uri)).thenAnswer((_) async => apsk);
       final verifier = RelayAuthVerifierESCR('post-quantum', h);
-      return verifier.verifyChallengeResponse(await RelayAuthenticatorESCR(
-        sessionId: sessionId,
-        relayAuthAesKey: aesKey,
-        publicSigningKeyUri: uri,
-        publicSigningKey: publicKey,
-        privateSigningKey: privateKey,
-        signingAlgo: algo,
-        isSideA: true,
-      ).responseToChallenge(verifier.challenge));
+      return verifier.verifyChallengeResponse(await rewritten(
+        await RelayAuthenticatorESCR(
+          sessionId: sessionId,
+          relayAuthAesKey: aesKey,
+          publicSigningKeyUri: uri,
+          publicSigningKey: publicKey,
+          privateSigningKey: privateKey,
+          signingAlgo: algo,
+          isSideA: true,
+        ).responseToChallenge(verifier.challenge),
+        fields,
+      ));
     }
 
     Matcher refused(String message) => throwsA(isA<RAVE>()
@@ -939,6 +970,20 @@ void main() {
           privateKey: mlDsa.atPrivateKey.privateKey,
         ),
         refused('does not advertise'),
+      );
+    });
+
+    test('a signature naming its key with something other than a string is'
+        ' refused', () async {
+      await expectLater(
+        verify(
+          rsa.atPublicKey.publicKey,
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+          fields: {'kid': 7},
+        ),
+        refused('is not a string'),
       );
     });
 

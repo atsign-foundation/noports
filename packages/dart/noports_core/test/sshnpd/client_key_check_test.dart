@@ -210,6 +210,22 @@ void main() {
     );
   });
 
+  test('a session that fails to end does not stop the others ending',
+      () async {
+    daemon.trackClientSession(
+      'broken',
+      aliceKey,
+      ended: Completer<void>().future,
+      end: () => throw StateError('cannot end'),
+    );
+    final other = track('other', aliceKey);
+    withdraw(aliceKey);
+
+    await daemon.checkClientKeys();
+
+    expect(other.ends, ['other']);
+  });
+
   test('keeps tracking a session that took over the id of one that ended',
       () async {
     final first = track('s', aliceKey);

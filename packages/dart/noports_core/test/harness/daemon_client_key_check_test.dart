@@ -268,15 +268,19 @@ void main() {
       ).toJson();
 
   /// The daemon's reply about [sessionId] once alice has sent it [envelope]
-  /// as her npt request.
-  Future<String> replyTo(String sessionId, String envelope) async {
+  /// as a request of type [type].
+  Future<String> replyTo(
+    String sessionId,
+    String envelope, {
+    String type = 'npt_request',
+  }) async {
     final reply = replies.stream
         .firstWhere((r) => r.contains('$sessionId.'))
         .timeout(const Duration(seconds: 10));
     await alice.notificationService.notify(
       NotificationParams.forUpdate(
         AtKey()
-          ..key = 'npt_request'
+          ..key = type
           ..namespace = '${NoPortsHarness.device}.${DefaultArgs.namespace}'
           ..sharedBy = alice.getCurrentAtSign()
           ..sharedWith = NoPortsHarness.daemonAtSign
@@ -356,6 +360,106 @@ void main() {
         contains(startFailed),
       );
     });
+
+    test('a daemon that requires an enrollment signature refuses a legacy'
+        ' request, which has none', () async {
+      await start(require: true);
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          '1 1 harness 127.0.0.1 $sessionId',
+          type: 'sshd',
+        ),
+        contains('requires session requests signed'),
+      );
+    });
+
+    /// alice's signed request for [sessionId], with [fields] replacing those
+    /// of its enrollment signature.
+    Future<String> alteredRequest(
+      String sessionId,
+      Map<String, Object?> Function(Map<String, String>) fields,
+    ) async {
+      final body = payload(sessionId);
+      final envelope = await signAndWrap(alice, body);
+      final signature = (await enrollmentSignatureOf(_Signer(alice), body))!;
+      envelope[enrollmentSignatureField] = {
+        ...signature,
+        ...fields(signature),
+      };
+      return jsonEncode(envelope);
+    }
+
+    /// alice's signed request for [sessionId], naming an `_apsk` record her
+    /// atServer doesn't hold, so its signature can't be checked.
+    Future<String> missingKeyRequest(String sessionId) =>
+        alteredRequest(sessionId, (signature) => {
+              'sk': signature['sk']!.replaceFirst(
+                RegExp(r'_apsk\.[^.]+\.'),
+                '_apsk.no-such-enrollment.',
+              ),
+            });
+
+    test("a request whose enrollment signature can't be checked goes ahead"
+        ' unwatched', () async {
+      await start();
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(sessionId, await missingKeyRequest(sessionId)),
+        contains(startFailed),
+      );
+      expect(harness.daemon!.trackedClientSessions, 0);
+    });
+
+    test('a daemon that requires an enrollment signature refuses a request'
+        " whose signature it can't check", () async {
+      await start(require: true);
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(sessionId, await missingKeyRequest(sessionId)),
+        contains('Could not check the enrollment signature'),
+      );
+    });
+
+    test("a signing key spelled with a variant of the requester's atSign is"
+        ' refused', () async {
+      await start();
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          await alteredRequest(sessionId, (signature) => {
+                'sk': signature['sk']!.replaceFirst(
+                  NoPortsHarness.clientAtSign,
+                  '@al.ice',
+                ),
+              }),
+        ),
+        allOf(
+          contains('Enrollment signature not verified'),
+          contains('not the requester'),
+        ),
+      );
+    });
+
+    test('an enrollment signature naming its key with something other than a'
+        ' string is refused', () async {
+      await start();
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          await alteredRequest(sessionId, (_) => {'kid': 7}),
+        ),
+        contains('"kid" that is not a string'),
+      );
+    });
   });
 
   group('srv processes', () {
@@ -379,10 +483,10 @@ void main() {
       addTearDown(() => Srv.localBinaryPathOverride = null);
     });
 
-    /// Has alice ask for a signed session, returning the pid of the srv
-    /// process the daemon starts for it.
-    Future<int> session() async {
-      final sessionId = Uuid().v4();
+    /// Has alice ask for a signed session, [sessionId] or a fresh one,
+    /// returning the pid of the srv process the daemon starts for it.
+    Future<int> session([String? sessionId]) async {
+      sessionId ??= Uuid().v4();
       final reply = await replyTo(
         sessionId,
         await signAndWrapRequest(alice, _Signer(alice), payload(sessionId)),
@@ -409,6 +513,28 @@ void main() {
       await eventually('the srv process to end', () => !running(pid));
       await eventually('the daemon to stop tracking the session',
           () => harness.daemon!.trackedClientSessions == 0);
+    });
+
+    test('the daemon refuses a request for a session id it is watching',
+        () async {
+      await start(inline: false);
+      final sessionId = Uuid().v4();
+      final pid = await session(sessionId);
+      await harness.daemon!.atClient.delete(
+        AtKey.fromString('$sessionId.session_mutexes.${DefaultArgs.namespace}'
+            '${NoPortsHarness.daemonAtSign}'),
+        deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
+      );
+
+      expect(
+        await replyTo(
+          sessionId,
+          await signAndWrapRequest(alice, _Signer(alice), payload(sessionId)),
+        ),
+        contains('already live'),
+      );
+      expect(harness.daemon!.trackedClientSessions, 1);
+      expect(running(pid), isTrue);
     });
 
     test('the daemon stops tracking a session whose srv process ends by'

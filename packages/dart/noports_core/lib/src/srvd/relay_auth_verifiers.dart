@@ -334,7 +334,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         signature: envelope['s'],
         signingAlgo: signingAlgo,
         hashingAlgo: hashingAlgo,
-        kid: envelope['kid'],
+        kid: switch (envelope['kid']) {
+          null => null,
+          final String kid => kid,
+          final other => throw ApskSignatureException(
+              'The signature names key $other, which is not a string',
+            ),
+        },
       );
     } on ApskSignatureException catch (e) {
       throw RAVE(e.message, RAVEReason.signatureVerificationFailed);
