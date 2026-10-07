@@ -127,12 +127,31 @@ void main() {
           verify(mockAtClient.get(any)).called(1);
         });
 
+        test('should return default settings when none were ever saved', () async {
+          final atKey = repository.settingsAtKey..sharedBy = testAtsign;
+
+          // What AtClient.get throws for a key the local keystore lacks.
+          when(mockAtClient.get(atKey)).thenThrow(
+            AtKeyNotFoundException(
+              'settings.noports$testAtsign does not exist in keystore',
+            ),
+          );
+
+          final result = await repository.getSettings();
+
+          expect(result, isNotNull);
+          expect(result!.relayAtsign, equals('@rv_am'));
+          expect(result.viewLayout, equals(PreferredViewLayout.minimal));
+          expect(result.overrideRelay, isFalse);
+          verify(mockAtClient.get(any)).called(1);
+        });
+
         test('should return null when AtClient throws exception', () async {
           final atKey = repository.settingsAtKey..sharedBy = testAtsign;
 
           when(
             mockAtClient.get(atKey),
-          ).thenThrow(Exception('Settings not found'));
+          ).thenThrow(Exception('local storage unreadable'));
 
           final result = await repository.getSettings();
 
