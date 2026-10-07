@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/npa.dart'
+    show NPAAuthCheckRequest, NPAAuthCheckResponse;
 import 'package:npt_flutter/app.dart';
 
 class PolicyLogEntry {
@@ -43,43 +45,27 @@ class PolicyLogEntry {
       if (notification.value != null && notification.value!.isNotEmpty) {
         try {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
+          final payload = data['payload'] as Map<String, dynamic>;
+          final request = NPAAuthCheckRequest.fromJson(
+            AtRpcReq.fromJson(payload['request']).payload,
+          );
+          final response = NPAAuthCheckResponse.fromJson(
+            AtRpcResp.fromJson(payload['response']).payload,
+          );
 
-          final payload = data['payload'];
-          if (payload is Map<String, dynamic>) {
-            final request = payload['request'];
-            if (request is Map<String, dynamic>) {
-              final requestPayload = request['payload'];
-              if (requestPayload is Map<String, dynamic>) {
-                deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
-                deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
-                final clientAtsign =
-                    requestPayload['clientAtsign'] ?? 'unknown';
-                final daemonAtsign =
-                    requestPayload['daemonAtsign'] ?? 'unknown';
-                allowedServices = 'Request: $clientAtsign → $daemonAtsign';
-              }
-            }
-            final response = payload['response'];
-            if (response is Map<String, dynamic>) {
-              final responsePayload = response['payload'];
-              if (responsePayload is Map<String, dynamic>) {
-                final authorized = responsePayload['authorized'] ?? false;
-                final message = responsePayload['message'];
-                final permitOpen = responsePayload['permitOpen'];
-                String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
-                if (!authorized &&
-                    message is String &&
-                    message.trim().isNotEmpty) {
-                  authStatus = '$authStatus: ${message.trim()}';
-                }
-                String permits = '';
-                if (permitOpen is List && permitOpen.isNotEmpty) {
-                  permits = ' - Permit: ${permitOpen.join(', ')}';
-                }
-                allowedServices = '$allowedServices ($authStatus$permits)';
-              }
-            }
+          deviceName = request.daemonDeviceName;
+          deviceGroup = request.daemonDeviceGroupName;
+          var authStatus = response.authorized ? 'AUTHORIZED' : 'DENIED';
+          final reason = response.message?.trim() ?? '';
+          if (!response.authorized && reason.isNotEmpty) {
+            authStatus = '$authStatus: $reason';
           }
+          final permits = response.permitOpen.isEmpty
+              ? ''
+              : ' - Permit: ${response.permitOpen.join(', ')}';
+          allowedServices =
+              'Request: ${request.clientAtsign} → ${request.daemonAtsign} '
+              '($authStatus$permits)';
         } catch (e) {
           App.log(
             '[ERROR] PolicyLogEntry.fromNotification: Failed to parse policy log payload: $e'

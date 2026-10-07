@@ -14,7 +14,7 @@ AtNotification _policyRequest(Map<String, dynamic> responsePayload) {
     payload: NPAAuthCheckRequest(
       daemonAtsign: '@lab',
       daemonDeviceName: 'lab01',
-      daemonDeviceGroupName: '',
+      daemonDeviceGroupName: 'labs',
       clientAtsign: '@alice',
     ).toJson(),
   );
@@ -41,6 +41,8 @@ Map<String, dynamic> _denial(String? message) => NPAAuthCheckResponse(
 ).toJson();
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('PolicyLogEntry.fromNotification', () {
     test('a denial carries the policy service\'s reason', () {
       final entry = PolicyLogEntry.fromNotification(
@@ -50,6 +52,7 @@ void main() {
       expect(entry.fromAtsign, '@policy');
       expect(entry.toAtsign, '@policy');
       expect(entry.deviceName, 'lab01');
+      expect(entry.deviceGroup, 'labs');
       expect(
         entry.allowedServices,
         'Request: @alice → @lab (DENIED: outside hours)',
@@ -61,7 +64,6 @@ void main() {
       'null': _denial(null),
       'empty': _denial(''),
       'whitespace': _denial('   '),
-      'not a string': _denial(null)..['message'] = 42,
     };
     noReason.forEach((shape, payload) {
       test('a denial whose message is $shape shows no reason', () {
@@ -96,6 +98,15 @@ void main() {
       expect(
         entry.allowedServices,
         'Request: @alice → @lab (AUTHORIZED - Permit: localhost:22)',
+      );
+    });
+
+    test('a response that is not an NPAAuthCheckResponse is a parse error', () {
+      expect(
+        PolicyLogEntry.fromNotification(
+          _policyRequest(_denial(null)..['message'] = 42),
+        ).allowedServices,
+        startsWith('Parse error: '),
       );
     });
   });
