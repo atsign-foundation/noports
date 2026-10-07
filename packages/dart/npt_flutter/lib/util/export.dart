@@ -187,7 +187,12 @@ class Export {
     );
   }
 
+  /// How long [getDemoProfile] waits for the whole download before failing.
+  static const demoProfileTimeout = Duration(seconds: 30);
+
   /// Fetches the demo profile JSON from its Google Drive link, as a String.
+  ///
+  /// Throws if the download fails or takes longer than [demoProfileTimeout].
   static Future<String> getDemoProfile() async {
     // The Google Drive file's direct download URL
     const fileId = '15ASX-4ricK1Ulpq49RaY8RAavlmyMwlq';
@@ -195,20 +200,25 @@ class Export {
 
     final client = HttpClient();
     try {
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to download demo profile: HTTP ${response.statusCode}',
-        );
-      }
-      final content = await response.transform(utf8.decoder).join();
-
-      return content;
+      return await _download(client, Uri.parse(url)).timeout(
+        demoProfileTimeout,
+      );
     } catch (e) {
       throw Exception('Failed to fetch demo profile: $e');
     } finally {
-      client.close();
+      // NOTE: force, or a refused or timed-out download keeps its connection
+      client.close(force: true);
     }
+  }
+
+  static Future<String> _download(HttpClient client, Uri url) async {
+    final request = await client.getUrl(url);
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to download demo profile: HTTP ${response.statusCode}',
+      );
+    }
+    return response.transform(utf8.decoder).join();
   }
 }

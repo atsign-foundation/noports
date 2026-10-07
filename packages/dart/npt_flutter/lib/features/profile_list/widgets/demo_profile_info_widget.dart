@@ -3,6 +3,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../util/export.dart';
@@ -64,6 +65,7 @@ class DemoProfileInfoWidget extends StatelessWidget {
                 content = await Export.getDemoProfile();
               } catch (e) {
                 App.log('Could not load the demo profile: $e'.loggable);
+                CustomSnackBar.error(content: strings.profileImportFailed);
                 return;
               } finally {
                 navigator.pop(); // Dismiss the progress indicator
