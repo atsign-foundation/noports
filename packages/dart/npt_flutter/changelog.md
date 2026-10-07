@@ -7,6 +7,7 @@
 - FIX: The policy log's summary shows why a request was denied, wrapping onto up to four lines rather than being cut off after one.
 - FIX: A demo profile download that fails, or stalls for 30 seconds, says the import failed instead of leaving the progress indicator up for good.
 - FIX: Exporting profiles says "File Saved" only once the file has been written, and says when it could not be saved.
+- FIX: Switching to another atSign signs in the way the sign-in page does: a revoked or still-pending enrollment is picked up again, any other failure says what went wrong, and a switch that doesn't sign in ends on the sign-in page instead of silently leaving the app with no connection. It also uses that atSign's own root domain rather than the current one's.
 
 ## 1.9.4+31
 

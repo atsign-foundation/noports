@@ -10,7 +10,6 @@ import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
-import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
@@ -25,7 +24,6 @@ import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
-import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/widgets/connection_indicator.dart';
 import 'package:npt_flutter/widgets/progress_indicator_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -233,8 +231,7 @@ Future<void> _handleAddAtsign() async {
 
   await runWithProgressIndicator(App.navState.currentContext!, () async {
     if (atsignList.contains(newAtsign)) {
-      // Atsign exists in keychain - use existing flow
-      await _performOnboarding(App.navState.currentContext!, newAtsign);
+      await switchToKeychainAtsign(newAtsign, rootDomain);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
       final util = await NoPortsOnboardingUtil.create(
@@ -304,47 +301,45 @@ Future<void> _handleAddAtsign() async {
 
 /// Handles switching to an existing atsign
 Future<void> _handleSwitchToAtsign(Atsign targetAtsign) async {
-  await preSignout();
-
   log('switching to atsign: $targetAtsign');
-
-  final currentContext = App.navState.currentContext!;
-  if (!currentContext.mounted) return;
-  await _performOnboarding(currentContext, targetAtsign);
+  final rootDomain =
+      (await getAtsignEntries())[targetAtsign]?.rootDomain ??
+      App.navState.currentContext!.read<OnboardingCubit>().getRootDomain();
+  await switchToKeychainAtsign(targetAtsign, rootDomain);
 }
 
-/// Performs the onboarding process for the given atsign, which is already
-/// present in the local keychain.
-Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
-  final rootDomain = context.read<OnboardingCubit>().getRootDomain();
+/// Signs in to [atsign], whose keys are in the keychain, in place of the
+/// current atsign. A sign in that doesn't succeed has still signed the
+/// current atsign out, so it ends on the onboarding page.
+@visibleForTesting
+Future<void> switchToKeychainAtsign(
+  Atsign atsign,
+  String rootDomain, {
+  Future<bool> Function() signOut = preSignout,
+  Future<NoPortsOnboardingResult?> Function(Atsign, String) signIn = _onboard,
+}) async {
+  await signOut();
+  final result = await signIn(atsign, rootDomain);
+  if (result?.status == NoPortsOnboardingResultStatus.success) return;
 
-  NoPortsOnboardingResult onboardingResult;
-  try {
-    final client = await AtClientMethods.openAndAdopt(
-      atsign: atsign,
-      keys: KeychainAtKeysIo(),
-      rootDomain: rootDomain,
-    );
-    final state = client.connection.current;
-    if (state.isRefused) {
-      await client.stop();
-      onboardingResult = NoPortsOnboardingResult.error(
-        message: context.mounted
-            ? describeOnboardingError(state.error, AppLocalizations.of(context)!)
-            : '',
-      );
-    } else {
-      onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
-    }
-  } catch (e) {
-    onboardingResult = NoPortsOnboardingResult.error(message: e.toString());
-  }
+  App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
+    HomeRoutes.dashboard,
+  );
+  Navigator.of(
+    App.navState.currentContext!,
+  ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
+}
 
-  if (onboardingResult.status == NoPortsOnboardingResultStatus.success) {
-    await BackupKeyUtils().backupKeyStatusCheck();
-    log("postOnbarding called");
-    await postOnboard(atsign, rootDomain);
-  }
+Future<NoPortsOnboardingResult?> _onboard(
+  Atsign atsign,
+  String rootDomain,
+) async {
+  final util = await NoPortsOnboardingUtil.create(App.navState.currentContext!);
+  return util.onboard(
+    atsign: atsign,
+    rootDomain: rootDomain,
+    context: App.navState.currentContext!,
+  );
 }
 
 class _HoverableMenuItem extends StatefulWidget {
