@@ -114,6 +114,10 @@ class FakeAtSign {
   final List<FakeConnection> _monitors = [];
   int _commitId = 0;
 
+  /// Whether other atSigns' lookups of this atSign's public keys fail, as
+  /// they do when its atServer can't be reached.
+  bool unreachable = false;
+
   /// The approved enrollment every atSign starts with, granted everything.
   late final FakeEnrollment firstEnrollment;
 
@@ -543,6 +547,12 @@ class FakeConnection {
 
   void _plookup(Map<String, String?> params) {
     final owner = atSign.server._find('@${params['atSign']}');
+    if (owner != null && owner != atSign && owner.unreachable) {
+      throw _VerbError(
+        'AT0021',
+        'Unable to connect to secondary ${owner.atSign}',
+      );
+    }
     final key = 'public:${params['atKey']}@${params['atSign']}'.toLowerCase();
     _answerLookup(params['operation'], key, owner?.recordAt(key),
         missing: 'key not found : Exception: $key does not exist in keystore');
