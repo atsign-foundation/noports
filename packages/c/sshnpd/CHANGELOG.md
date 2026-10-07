@@ -2,6 +2,8 @@
 
 - fix: refuse a session request from a requester whose public key isn't
   RSA-2048, as the Dart daemon does
+- fix: republish the public signing key when it holds a key other than
+  the daemon's, as the Dart daemon does
 
 ## 1.1.1
 

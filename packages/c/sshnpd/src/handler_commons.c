@@ -107,6 +107,10 @@ char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign) 
   return uri;
 }
 
+bool public_signing_key_needs_publishing(const char *published, const char *pkam_public_key_base64) {
+  return published == NULL || strcmp(published, pkam_public_key_base64) != 0;
+}
+
 bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
   if (params == NULL || atsign == NULL || atsign[0] == '\0') {
     return false;
