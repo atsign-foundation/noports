@@ -319,6 +319,12 @@ Future<void> switchToKeychainAtsign(
   Future<NoPortsOnboardingResult?> Function(Atsign, String) signIn = _onboard,
 }) async {
   await signOut();
+  // NOTE: the onboarding util takes its root domain from the cubit, as the
+  // sign-in page's selectAtsign leaves it.
+  App.navState.currentContext!.read<OnboardingCubit>().setState(
+    atsign: atsign,
+    rootDomain: rootDomain,
+  );
   final result = await signIn(atsign, rootDomain);
   if (result?.status == NoPortsOnboardingResultStatus.success) return;
 

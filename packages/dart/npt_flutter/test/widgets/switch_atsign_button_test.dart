@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
@@ -10,21 +11,32 @@ import 'package:npt_flutter/widgets/switch_atsign_button.dart';
 
 void main() {
   late SubNavCubit subNav;
+  late OnboardingCubit onboarding;
   late List<String> calls;
+  String? cubitAtSignIn;
 
   setUp(() {
     subNav = SubNavCubit()..setSubRoute(HomeRoutes.settings);
+    onboarding = OnboardingCubit()
+      ..setState(atsign: '@bob'.toAtsign(), rootDomain: 'root.atsign.org');
     calls = [];
+    cubitAtSignIn = null;
   });
 
-  /// Switches to @alice with a sign in that ends in [result].
+  /// Switches from @bob to @alice, on another root, with a sign in that ends
+  /// in [result].
   Future<void> switchTo(
     WidgetTester tester,
     NoPortsOnboardingResult? result,
   ) async {
     await tester.pumpWidget(
-      BlocProvider.value(
-        value: subNav,
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => EnableLoggingCubit()),
+          BlocProvider(create: (_) => LogsCubit()),
+          BlocProvider.value(value: subNav),
+          BlocProvider.value(value: onboarding),
+        ],
         child: MaterialApp(
           navigatorKey: App.navState,
           home: const Text('home'),
@@ -35,13 +47,15 @@ void main() {
 
     await switchToKeychainAtsign(
       '@alice'.toAtsign(),
-      'root.atsign.org',
+      'vip.ve.atsign.zone',
       signOut: () async {
         calls.add('sign out');
         return true;
       },
       signIn: (atsign, rootDomain) async {
         calls.add('sign in $atsign at $rootDomain');
+        cubitAtSignIn =
+            '${onboarding.state.atsign} at ${onboarding.state.rootDomain}';
         return result;
       },
     );
@@ -56,9 +70,19 @@ void main() {
       NoPortsOnboardingResult.success(atsign: '@alice'.toAtsign()),
     );
 
-    expect(calls, ['sign out', 'sign in @alice at root.atsign.org']);
+    expect(calls, ['sign out', 'sign in @alice at vip.ve.atsign.zone']);
     expect(find.text('home'), findsOneWidget);
     expect(subNav.state, HomeRoutes.settings);
+  });
+
+  testWidgets('sign in sees the target atSign and its root in the onboarding '
+      'cubit, which the onboarding util reads', (tester) async {
+    await switchTo(
+      tester,
+      NoPortsOnboardingResult.success(atsign: '@alice'.toAtsign()),
+    );
+
+    expect(cubitAtSignIn, '@alice at vip.ve.atsign.zone');
   });
 
   final notSignedIn = <String, NoPortsOnboardingResult?>{
@@ -71,7 +95,7 @@ void main() {
         'onboarding page', (tester) async {
       await switchTo(tester, result);
 
-      expect(calls, ['sign out', 'sign in @alice at root.atsign.org']);
+      expect(calls, ['sign out', 'sign in @alice at vip.ve.atsign.zone']);
       expect(find.text('onboarding'), findsOneWidget);
       expect(find.text('home', skipOffstage: false), findsNothing);
       expect(subNav.state, HomeRoutes.dashboard);
