@@ -25,6 +25,11 @@
 - feat: srvd checks every 5 minutes (by default) whether either side's
   enrollment has been revoked, superseded, deleted or expired, and ends the
   session if so, for each side that authenticated with ESCR
+- feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions. srvd now connects out to atServers itself, and asks its own
+  atServer instead when it can't reach one that way (or it predates HTTP
+  GET, c3.6.0), except when re-checking a key
 - feat: sshnp and npt sign each session request with the client's
   enrollment key, and sshnpd ends a signed session once that enrollment is
   revoked, superseded, deleted or expired, checking every 10 seconds by
