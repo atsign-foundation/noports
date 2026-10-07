@@ -343,7 +343,7 @@ class NoPortsOnboardingUtil {
   /// Signs in to [atsign] on [rootDomain] - from the keychain when it holds
   /// keys for it, otherwise by activation or enrollment - and goes to the
   /// home page, or shows why it could not. Returns the outcome, or null if
-  /// [context] went away before there was one to act on.
+  /// [context] went away before it acted on one.
   Future<NoPortsOnboardingResult?> onboard({
     required Atsign atsign,
     required String rootDomain,

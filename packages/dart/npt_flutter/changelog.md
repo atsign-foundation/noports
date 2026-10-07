@@ -8,7 +8,7 @@
 - FIX: atSigns saved by 1.9.3 or earlier sign in.
 - FIX: Stopping a connection also ends the sessions already open through it.
 - FIX: The policy log's summary shows why a request was denied, wrapping onto up to four lines rather than being cut off after one.
-- FIX: A demo profile download that fails, or stalls for 30 seconds, says the import failed instead of leaving the progress indicator up for good.
+- FIX: A demo profile download that fails, or takes more than 30 seconds, says the import failed instead of leaving the progress indicator up for good.
 - FIX: Exporting profiles says "File Saved" only once the file has been written, and says when it could not be saved.
 - FIX: Switching to another atSign signs in the way the sign-in page does: a revoked or still-pending enrollment is picked up again, any other failure says what went wrong, and a switch that doesn't sign in ends on the sign-in page instead of silently leaving the app with no connection. It also uses that atSign's own root domain rather than the current one's.
 - FIX: An atSign that has never saved settings gets the default settings, instead of a "Profile failed to load" error on the Settings page. A settings load that does fail is logged with its stack trace.
