@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
@@ -23,7 +24,8 @@ import 'package:socket_connector/socket_connector.dart';
 ///   - creates a RelayAuthVerifier for the new socket
 ///   - verifies the socket's authentication
 ///   - checks that the socket is for a currently live session
-///   - double-checks the socket is from one of that session's atSigns
+///   - checks the socket is signed by that session's atSign for the side it
+///     claims
 ///   - Assigns verified sockets to that session's SocketConnector
 class SinglePortWorker extends RelayWorker {
   final String address;
@@ -156,11 +158,12 @@ class SinglePortWorker extends RelayWorker {
         throw Exception('Session not active: $sessionId');
       }
       SessionInfo si = sessions[sessionId]!;
-      if (atSign != si.atSignA && atSign != si.atSignB) {
+      final expected = (rav.isSideA! ? si.atSignA : si.atSignB).toAtsign();
+      if (atSign != expected) {
         throw Exception(
           'Connection from $atSign'
-          ' which is not one of the atSigns (${si.atSignA}, ${si.atSignB})'
-          ' for this session $sessionId',
+          ' for side ${rav.isSideA! ? 'A' : 'B'} of session $sessionId,'
+          ' which expects $expected',
         );
       }
       Side side = Side(socket, rav.isSideA!);
@@ -186,6 +189,10 @@ class SinglePortWorker extends RelayWorker {
       await _secureServerSocket?.close();
     } catch (e) {
       logger.shout('Error $e while closing server socket');
+    }
+    // NOTE killing this isolate leaves its sockets open, so close them first.
+    for (final si in sessions.values) {
+      si.connector?.close();
     }
     stopped.complete();
   }

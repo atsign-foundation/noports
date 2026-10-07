@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:at_auth/at_auth.dart' show ApskSigningKey, apskSigningKeys;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
@@ -43,7 +44,10 @@ abstract interface class RelayAuthVerifyHelper {
 }
 
 abstract interface class RelayAuthVerifier {
-  static final maxAuthBufferLength = 4096;
+  /// The most a client may send before it has authenticated: room for an
+  /// ESCR response signed with ML-DSA-65, the largest a relay verifies, which
+  /// is 11,270 bytes for an atSign of the protocol's maximum 55 characters.
+  static final maxAuthBufferLength = 16384;
 
   /// The auth verification which is expected
   Future<(bool, Stream<Uint8List>?)> verifySocketAuth(Socket socket);
@@ -75,13 +79,17 @@ abstract interface class RelayAuthVerifier {
 ///     's':'signature of p encoded as string',
 ///     'ha':'hashingAlgo',
 ///     'sa':'signingAlgo',
-///     'sk':'public:some_key.some.namespace@atSign'
+///     'sk':'public:_apsk.<enrollmentId>.a.__e@atSign',
+///     'kid':'id of the signing key within sk'
 ///   }
 ///   ```
 /// 7. Verify that the contents of the payload are as expected (session id, challenge)
-/// 8. Fetch the public signing key
-/// 9. Verify the signature of the payload using the public signing key,
-///   hashingAlgo and signingAlgo
+/// 8. Fetch the `_apsk` record at `sk`: a bare RSA key, or a JSON
+///   advertisement of keys
+/// 9. Require `sa` to be the strongest algorithm among the keys it offers for
+///   new signatures, take the key `kid` names (or the only one, when there is
+///   no `kid`), and verify the signature with it: RSA-2048 over `ha`, or
+///   ML-DSA-65
 /// 10. If all successful
 ///   - `socket.writeln('ok');`
 ///   - complete successfully
@@ -96,6 +104,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
   final String tag;
 
   final RelayAuthVerifyHelper helper;
+
+  /// The only shape a signing key URI may take, so that the signer read from
+  /// it and the key the helper looks up from it name the same atSign.
+  static final _signingKeyUriShape = RegExp(
+    '^(public:)?_apsk\\.[A-Za-z0-9_-]+\\.'
+    '${RegExp.escape(EnrollmentConstants.perEnrollmentApproved)}@[^@:\\s]+\$',
+  );
 
   /// A fresh, unguessable challenge for this one authentication. It is the sole
   /// replay protection, so it MUST be fresh per connection — which is why this
@@ -241,7 +256,8 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     ///     's':'signature of p encoded as string',
     ///     'ha':'hashingAlgo',
     ///     'sa':'signingAlgo',
-    ///     'sk':'public:some_key.some.namespace@atSign'
+    ///     'sk':'public:_apsk.<enrollmentId>.a.__e@atSign',
+    ///     'kid':'id of the signing key within sk'
     ///   }
     ///   ```
     Map envelope = jsonDecode(envelopeJson);
@@ -283,10 +299,6 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     /// Fetch the public signing key
     String publicSigningKeyUri = envelope['sk'];
-    atSign = publicSigningKeyUri
-        .substring(publicSigningKeyUri.lastIndexOf('@'))
-        .toAtsign();
-
     if (!publicSigningKeyUri
         .substring(0, publicSigningKeyUri.lastIndexOf('@'))
         .endsWith(EnrollmentConstants.perEnrollmentApproved)) {
@@ -297,27 +309,78 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.signatureVerificationFailed,
       );
     }
+    if (!_signingKeyUriShape.hasMatch(publicSigningKeyUri)) {
+      throw RAVE(
+        'Signing key ($publicSigningKeyUri) is not of the form'
+        ' public:_apsk.<enrollmentId>'
+        '.${EnrollmentConstants.perEnrollmentApproved}@<atSign>',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    atSign = publicSigningKeyUri
+        .substring(publicSigningKeyUri.lastIndexOf('@'))
+        .toAtsign();
     final hashingAlgo = HashingAlgoType.values.byName(envelope['ha']);
     final signingAlgo = SigningAlgoType.values.byName(envelope['sa']);
-    if (signingAlgo != SigningAlgoType.rsa2048) {
+    if (!escrSigningAlgorithms.contains(signingAlgo)) {
       throw RAVE(
         'Unsupported signing algorithm ${signingAlgo.name}',
         RAVEReason.signatureVerificationFailed,
       );
     }
 
-    String publicSigningKey = await helper.lookup(
-      sessionId!,
+    final advertised = _activeKeysRelayVerifies(
       publicSigningKeyUri,
+      await helper.lookup(sessionId!, publicSigningKeyUri),
     );
+    final required =
+        SigningAlgoType.strongestOf(advertised.map((k) => k.alg))!;
+    if (signingAlgo != required) {
+      throw RAVE(
+        'Signed with ${signingAlgo.name}, but $publicSigningKeyUri advertises'
+        ' ${required.name}, the strongest algorithm it offers',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    final candidates = advertised.where((k) => k.alg == required).toList();
+    final kid = envelope['kid'];
+    final key = kid == null
+        ? (candidates.length == 1
+            ? candidates.single
+            : throw RAVE(
+                'The signature names no key, and $publicSigningKeyUri'
+                ' advertises ${candidates.length} ${required.name} keys',
+                RAVEReason.signatureVerificationFailed,
+              ))
+        : candidates.where((k) => k.kid == kid).firstOrNull ??
+            (throw RAVE(
+              'The signature names key $kid, which $publicSigningKeyUri'
+              ' does not advertise',
+              RAVEReason.signatureVerificationFailed,
+            ));
 
-    /// Verify the signature of the payload
-    bool verified = await rsaVerifyString(
-      jsonEncode(signedPayload),
-      signature: envelope['s'],
-      publicKey: publicSigningKey,
-      hashing: hashingAlgo,
-    );
+    final signed = jsonEncode(signedPayload);
+    final bool verified;
+    try {
+      verified = switch (required) {
+        SigningAlgoType.mldsa65 => MlDsa65PureDartAlgo.verifyBytesSync(
+            utf8.encode(signed),
+            signature: base64Decode(envelope['s']),
+            publicKey: base64Decode(key.pub),
+          ),
+        _ => await rsaVerifyString(
+            signed,
+            signature: envelope['s'],
+            publicKey: key.pub,
+            hashing: hashingAlgo,
+          ),
+      };
+    } on FormatException catch (e) {
+      throw RAVE(
+        'The signature is not base64: ${e.message}',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
     if (!verified) {
       throw RAVE(
         'Signatures did not match.',
@@ -326,6 +389,59 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
     }
 
     return verified;
+  }
+
+  /// The keys [apsk], the value at [uri], offers for new signatures under an
+  /// algorithm relay authentication verifies. A value starting with `{` is
+  /// the JSON advertisement at_auth defines; anything else is one bare RSA
+  /// key.
+  static List<ApskSigningKey> _activeKeysRelayVerifies(
+    String uri,
+    String apsk,
+  ) {
+    final value = apsk.trim();
+    final List<ApskSigningKey> advertised;
+    if (value.startsWith('{')) {
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(value);
+      } on FormatException catch (e) {
+        throw RAVE(
+          '$uri holds an advertisement that is not JSON: ${e.message}',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+      if (decoded is! Map<String, dynamic>) {
+        throw RAVE(
+          '$uri holds an advertisement that is not a JSON object',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+      advertised = apskSigningKeys(decoded);
+    } else {
+      try {
+        advertised = [
+          ApskSigningKey.forPublicKey(alg: SigningAlgoType.rsa2048, pub: value),
+        ];
+      } on FormatException catch (e) {
+        throw RAVE(
+          '$uri holds a key that is not base64: ${e.message}',
+          RAVEReason.signatureVerificationFailed,
+        );
+      }
+    }
+    final keys = [
+      for (final k in advertised)
+        if (k.offeredForNewOperations && escrSigningAlgorithms.contains(k.alg))
+          k,
+    ];
+    if (keys.isEmpty) {
+      throw RAVE(
+        '$uri advertises no key relay authentication can verify',
+        RAVEReason.signatureVerificationFailed,
+      );
+    }
+    return keys;
   }
 
   @override
@@ -764,6 +880,9 @@ const int defaultRelayAuthDetectWindowMs = 500;
 /// verified it is remembered and every later connection skips detection too:
 /// only the very first connection on a side — and only if its mode was not
 /// already known — ever pays the window.
+///
+/// An ESCR response is accepted only when it is for this verifier's session
+/// and side, and is signed by [expectedAtSign].
 class RelayAuthVerifierAuto implements RelayAuthVerifier {
   @override
   final String tag;
@@ -776,6 +895,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   final String expectedAtSign;
 
   final String _sessionId;
+
+  /// Whether this verifier guards side A (the client's side) of the session.
+  final bool isSideA;
 
   /// Legacy branch: the data whose signature is verified — the JSON encoding of
   /// `{sessionId, clientNonce, rvdNonce}`.
@@ -808,6 +930,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     this.helper, {
     required String atSign,
     required String sessionId,
+    required this.isSideA,
     required this.dataToVerify,
     required this.rvdNonce,
     required this.detectWindow,
@@ -946,6 +1069,26 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         throw RAVE(
           '(but verifyChallengeResponse did not throw an exception)',
           RAVEReason.signatureVerificationFailed,
+        );
+      }
+      if (escr.sessionId != _sessionId) {
+        throw RAVE(
+          'ESCR response for session ${escr.sessionId}'
+          ' on the socket for session $_sessionId',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.isSideA != isSideA) {
+        throw RAVE(
+          'ESCR response for side ${escr.isSideA! ? 'A' : 'B'}'
+          ' on the socket for side ${isSideA ? 'A' : 'B'}',
+          RAVEReason.dataMismatch,
+        );
+      }
+      if (escr.atSign != atSign) {
+        throw RAVE(
+          'ESCR response signed by ${escr.atSign} on the socket for $atSign',
+          RAVEReason.dataMismatch,
         );
       }
       logger.info('Auto-detected ESCR; verification success');

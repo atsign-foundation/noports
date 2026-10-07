@@ -12,6 +12,13 @@ InitialisationVector generateIv() => InitialisationVector.random(16);
 /// A fresh 16-byte initialisation vector, base64 encoded.
 String generateIvBase64() => base64Encode(generateIv().ivBytes);
 
+/// The algorithms relay authentication signs and verifies an ESCR response
+/// with.
+const Set<SigningAlgoType> escrSigningAlgorithms = {
+  SigningAlgoType.rsa2048,
+  SigningAlgoType.mldsa65,
+};
+
 /// Signs the UTF-8 bytes of [data] with RSA-2048 PKCS#1 v1.5 over SHA-256,
 /// returning the signature base64 encoded.
 ///

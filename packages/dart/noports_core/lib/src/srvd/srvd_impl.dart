@@ -64,6 +64,20 @@ class SrvdImpl
   SendPort? toIsolate443;
   PortPair portPair443 = (443, 443);
 
+  final List<StreamSubscription> _subscriptions = [];
+
+  /// The relay isolates still running: where to send them requests, and when
+  /// they exit.
+  final Map<Isolate, ({Future<SendPort> toWorker, Future<void> exited})>
+  _workers = {};
+
+  bool _stopped = false;
+
+  static const _workerStopTimeout = Duration(seconds: 5);
+
+  @visibleForTesting
+  int get runningWorkers => _workers.length;
+
   SrvdImpl({
     required this.atClient,
     required this.atSign,
@@ -164,13 +178,72 @@ class SrvdImpl
     }
     NotificationService notificationService = atClient.notificationService;
 
-    handlePublicKeyChangedEvent(atClient, atSign);
+    _subscriptions.add(handlePublicKeyChangedEvent(atClient, atSign));
 
     const String subscriptionRegex = '\\.${Srvd.namespace}@';
 
-    notificationService
-        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
-        .listen(notificationHandler);
+    _subscriptions.add(
+      notificationService
+          .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
+          .listen(notificationHandler),
+    );
+  }
+
+  @override
+  Future<void> stop() async {
+    _stopped = true;
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    await Future.wait([
+      for (final MapEntry(key: worker, value: (:toWorker, :exited))
+          in _workers.entries.toList())
+        _stopWorker(worker, toWorker, exited),
+    ]);
+    sessions.clear();
+  }
+
+  /// Tracks [worker] until [exitPort] reports it has exited, then closes
+  /// [fromWorker]. A worker registered after [stop] is stopped at once.
+  void _register(
+    Isolate worker,
+    ReceivePort fromWorker,
+    ReceivePort exitPort,
+    Future<SendPort> toWorker,
+  ) {
+    final exited = exitPort.first.then((_) {
+      exitPort.close();
+      fromWorker.close();
+    });
+    _workers[worker] = (toWorker: toWorker, exited: exited);
+    if (_stopped) {
+      unawaited(_stopWorker(worker, toWorker, exited));
+    }
+  }
+
+  /// Asks [worker] to stop, so that it closes its own sockets, and kills it
+  /// only if it hasn't exited within [_workerStopTimeout].
+  Future<void> _stopWorker(
+    Isolate worker,
+    Future<SendPort> toWorker,
+    Future<void> exited,
+  ) async {
+    try {
+      await Future.any([
+        exited,
+        toWorker.then((port) {
+          port.send(IIRequest.create('stop', null));
+          return exited;
+        }),
+      ]).timeout(_workerStopTimeout);
+    } on TimeoutException {
+      logger.warning(
+        'A relay isolate did not stop within ${_workerStopTimeout.inSeconds}s,'
+        ' so it was killed; its sockets may stay open',
+      );
+      worker.kill(priority: Isolate.immediate);
+    }
   }
 
   Future<void> notificationHandler(AtNotification n) async {
@@ -305,6 +378,14 @@ class SrvdImpl
     try {
       sessionParams = await srvdSessionParamsFromNotification(n.value!);
 
+      if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
+        logger.shout(
+          'Session ${sessionParams.sessionId}'
+          ' for ${sessionParams.atSignA}'
+          ' requested by ${n.from} is denied',
+        );
+        return;
+      }
       if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
@@ -723,20 +804,28 @@ class SrvdImpl
       await worker.run();
     }
 
+    final exitPort = ReceivePort();
     Isolate spawned = await Isolate.spawn<PortPairIsolateParams>(
       portPairIsolateEntryPoint,
       parameters,
+      onExit: exitPort.sendPort,
     );
+    final toWorker = Completer<SendPort>();
+    _register(spawned, fromSpawned, exitPort, toWorker.future);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
     Completer receivedPortPair = Completer();
+    // NOTE the worker can exit with nothing awaiting this, so its error must
+    // not surface as uncaught.
+    receivedPortPair.future.ignore();
     late PortPair ports;
 
     logger.info('Waiting for isolate to send its port pair info');
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
       }
@@ -777,6 +866,13 @@ class SrvdImpl
         'Unknown message from isolate -'
         ' type: ${msg.runtimeType} message: $msg',
       );
+    }, onDone: () {
+      _workers.remove(spawned);
+      if (!receivedPortPair.isCompleted) {
+        receivedPortPair.completeError(
+          StateError('relay isolate exited before reporting its ports'),
+        );
+      }
     });
 
     // Wait to receive the SendPort from the spawned isolate
@@ -809,6 +905,9 @@ class SrvdImpl
       ' for session ${sessionParams.sessionId}',
     );
 
+    if (_stopped) {
+      throw StateError('srvd stopped while starting ${sessionParams.sessionId}');
+    }
     return (ports, spawned, toSpawned);
   }
 
@@ -858,10 +957,14 @@ class SrvdImpl
     logger.info("Spawning single-port isolate for port $bindPort");
 
     // Spawn the isolate
+    final exitPort = ReceivePort();
     Isolate spawned = await Isolate.spawn<SinglePortIsolateParams>(
       singlePortIsolateEntryPoint,
       parameters,
+      onExit: exitPort.sendPort,
     );
+    final toWorker = Completer<SendPort>();
+    _register(spawned, fromSpawned, exitPort, toWorker.future);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -870,6 +973,7 @@ class SrvdImpl
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
       }
@@ -910,7 +1014,7 @@ class SrvdImpl
         'Unknown message from isolate -'
         ' type: ${msg.runtimeType} message: $msg',
       );
-    });
+    }, onDone: () => _workers.remove(spawned));
 
     // Wait to receive the SendPort from the spawned isolate
     try {
@@ -924,6 +1028,9 @@ class SrvdImpl
       );
     }
 
+    if (_stopped) {
+      throw StateError('srvd stopped while starting the 443 listener');
+    }
     return (portPair443, spawned, toSpawned);
   }
 
