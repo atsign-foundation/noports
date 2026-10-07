@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/localization/app_localizations_en.dart';
 import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/widgets/switch_atsign_button.dart';
@@ -24,11 +27,12 @@ void main() {
   });
 
   /// Switches from @bob to @alice, on another root, with a sign in that ends
-  /// in [result].
+  /// in [result], or throws [throws].
   Future<void> switchTo(
     WidgetTester tester,
-    NoPortsOnboardingResult? result,
-  ) async {
+    NoPortsOnboardingResult? result, {
+    Object? throws,
+  }) async {
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -39,8 +43,12 @@ void main() {
         ],
         child: MaterialApp(
           navigatorKey: App.navState,
-          home: const Text('home'),
-          routes: {Routes.onboarding: (_) => const Text('onboarding')},
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: Text('home')),
+          routes: {
+            Routes.onboarding: (_) => const Scaffold(body: Text('onboarding')),
+          },
         ),
       ),
     );
@@ -56,6 +64,7 @@ void main() {
         calls.add('sign in $atsign at $rootDomain');
         cubitAtSignIn =
             '${onboarding.state.atsign} at ${onboarding.state.rootDomain}';
+        if (throws != null) throw throws;
         return result;
       },
     );
@@ -100,5 +109,23 @@ void main() {
       expect(find.text('home', skipOffstage: false), findsNothing);
       expect(subNav.state, HomeRoutes.dashboard);
     });
+  });
+
+  testWidgets('a switch whose sign in throws says why, and ends signed out on '
+      'the onboarding page', (tester) async {
+    final error = Exception('keychain locked');
+
+    await switchTo(tester, null, throws: error);
+
+    expect(calls, ['sign out', 'sign in @alice at vip.ve.atsign.zone']);
+    expect(find.text('onboarding'), findsOneWidget);
+    expect(subNav.state, HomeRoutes.dashboard);
+    expect(
+      find.textContaining(
+        describeOnboardingError(error, AppLocalizationsEn()),
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
   });
 }

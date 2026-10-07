@@ -10,6 +10,7 @@ import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/util/post_onboard.dart';
 import 'package:npt_flutter/features/onboarding/util/pre_offboard.dart';
@@ -25,6 +26,7 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/connection_indicator.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:npt_flutter/widgets/progress_indicator_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -325,7 +327,19 @@ Future<void> switchToKeychainAtsign(
     atsign: atsign,
     rootDomain: rootDomain,
   );
-  final result = await signIn(atsign, rootDomain);
+  NoPortsOnboardingResult? result;
+  try {
+    result = await signIn(atsign, rootDomain);
+  } catch (e, st) {
+    App.log('Switching to $atsign failed: $e'.loggable);
+    App.log(st.toString().loggable);
+    CustomSnackBar.error(
+      content: describeOnboardingError(
+        e,
+        AppLocalizations.of(App.navState.currentContext!)!,
+      ),
+    );
+  }
   if (result?.status == NoPortsOnboardingResultStatus.success) return;
 
   App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
