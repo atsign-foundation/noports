@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -87,6 +88,25 @@ void main() {
           getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).callCount;
+
+  test('a daemon built from command-line arguments takes both options',
+      () async {
+    final home = Directory.systemTemp.createTempSync('client_key_check');
+    addTearDown(() => home.deleteSync(recursive: true));
+    final keys = File('${home.path}/device_key.atKeys')..writeAsStringSync('{}');
+
+    final built = await SshnpdImpl.fromCommandLineArgs(
+      [
+        ...['-a', '@device', '-m', '@manager', '-k', keys.path],
+        ...['--client-key-check-secs', '3', '--require-enrollment-signature'],
+      ],
+      atClient: atClient,
+      version: '1.0.0',
+    );
+
+    expect(built.clientKeyCheckInterval, const Duration(seconds: 3));
+    expect(built.requireEnrollmentSignature, isTrue);
+  });
 
   test('ends a session whose client key was revoked', () async {
     final session = track('s', aliceKey);
@@ -226,14 +246,26 @@ void main() {
     expect(other.ends, ['other']);
   });
 
-  test('keeps tracking a session that took over the id of one that ended',
+  test('ends at once a session started under an id already being watched',
       () async {
     final first = track('s', aliceKey);
     final second = track('s', bobKey);
-    withdraw(bobKey);
 
+    expect(second.ends, ['s']);
+    expect(first.ends, isEmpty);
+    withdraw(aliceKey);
+    await daemon.checkClientKeys();
+    expect(first.ends, ['s'], reason: 'the first session is still watched');
+  });
+
+  test('watches a session started under the id of one that has ended',
+      () async {
+    final first = track('s', aliceKey);
     first.ended.complete();
     await Future<void>.delayed(Duration.zero);
+    final second = track('s', bobKey);
+    withdraw(bobKey);
+
     expect(daemon.trackedClientSessions, 1);
     await daemon.checkClientKeys();
 

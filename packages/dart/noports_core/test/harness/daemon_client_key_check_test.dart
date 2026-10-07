@@ -227,7 +227,7 @@ void main() {
   }) async {
     harness = NoPortsHarness.create();
     await harness.startDaemon(
-      permitOpen: ['127.0.0.1:22'],
+      permitOpen: ['127.0.0.1:22', 'localhost:22'],
       requireEnrollmentSignature: require,
       inline: inline,
       clientKeyCheckInterval: check,
@@ -293,6 +293,25 @@ void main() {
     return reply;
   }
 
+  /// A direct ssh request for a fresh session through the relay at
+  /// 127.0.0.1:1.
+  Map<String, dynamic> sshPayload(String sessionId) => SshnpSessionRequest(
+        direct: true,
+        sessionId: sessionId,
+        host: '127.0.0.1',
+        port: 1,
+        authenticateToRvd: false,
+        relayAuthMode: RelayAuthMode.payload,
+        relayAuthAesKey: null,
+        clientNonce: 'client-nonce',
+        rvdNonce: 'rvd-nonce',
+        encryptRvdTraffic: false,
+        clientEphemeralPK: RsaKeyPair.generate().atPublicKey.publicKey,
+        clientEphemeralPKType: EncryptionKeyType.rsa2048.name,
+        twinKeys: false,
+        relayAtsign: null,
+      ).toJson();
+
   const startFailed = 'Failed to start up the daemon side';
 
   group('requests', () {
@@ -316,6 +335,23 @@ void main() {
           await signAndWrapRequest(alice, _Signer(alice), payload(genuine)),
         ),
         contains(startFailed),
+      );
+    });
+
+    test('an ssh request changed after its enrollment signature is refused,'
+        ' even by a daemon that is not strict', () async {
+      await start();
+      final sessionId = Uuid().v4();
+      final envelope = jsonDecode(await signAndWrapRequest(
+        alice,
+        _Signer(alice),
+        sshPayload(sessionId),
+      ));
+      envelope['payload']['clientNonce'] = 'another-nonce';
+
+      expect(
+        await replyTo(sessionId, jsonEncode(envelope), type: 'ssh_request'),
+        contains('Enrollment signature not verified'),
       );
     });
 
@@ -425,6 +461,26 @@ void main() {
       );
     });
 
+    test('an enrollment signature naming a record that is not an enrollment'
+        ' key is refused', () async {
+      await start();
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          await alteredRequest(
+            sessionId,
+            (_) => {'sk': 'public:publickey${NoPortsHarness.clientAtSign}'},
+          ),
+        ),
+        allOf(
+          contains('Enrollment signature not verified'),
+          contains('is not of the form'),
+        ),
+      );
+    });
+
     test("a signing key spelled with a variant of the requester's atSign is"
         ' refused', () async {
       await start();
@@ -468,20 +524,38 @@ void main() {
     /// Whether process [pid] is still running.
     bool running(int pid) => Process.killPid(pid, ProcessSignal.sigcont);
 
-    setUp(() {
-      bin = Directory.systemTemp.createTempSync('srv_stand_in');
-      addTearDown(() => bin.deleteSync(recursive: true));
+    /// Stands srv in with a script that records its pid, prints
+    /// [announcement] as srv does on starting, and then runs on.
+    void standIn(String announcement) {
       final srv = File('${bin.path}/srv')
         ..writeAsStringSync(
           '#!/bin/sh\n'
           'echo \$\$ > "${bin.path}/pid"\n'
-          "echo '${Srv.startedString}'\n"
+          "echo '$announcement'\n"
           'exec sleep 300\n',
         );
       Process.runSync('chmod', ['+x', srv.path]);
       Srv.localBinaryPathOverride = srv.path;
+    }
+
+    setUp(() {
+      bin = Directory.systemTemp.createTempSync('srv_stand_in');
+      addTearDown(() => bin.deleteSync(recursive: true));
       addTearDown(() => Srv.localBinaryPathOverride = null);
+      standIn(Srv.startedString);
     });
+
+    /// The pid of the srv stand-in the daemon last started, which is killed
+    /// after the test if it is still running.
+    int standInPid() {
+      final pid = int.parse(File('${bin.path}/pid').readAsStringSync().trim());
+      addTearDown(() {
+        final command = Process.runSync('ps', ['-p', '$pid', '-o', 'command='])
+            .stdout as String;
+        if (command.contains('sleep 300')) Process.killPid(pid);
+      });
+      return pid;
+    }
 
     /// Has alice ask for a signed session, [sessionId] or a fresh one,
     /// returning the pid of the srv process the daemon starts for it.
@@ -492,14 +566,25 @@ void main() {
         await signAndWrapRequest(alice, _Signer(alice), payload(sessionId)),
       );
       expect(reply, isNot(contains(startFailed)));
-      final pid = int.parse(File('${bin.path}/pid').readAsStringSync().trim());
-      addTearDown(() {
-        final command = Process.runSync('ps', ['-p', '$pid', '-o', 'command='])
-            .stdout as String;
-        if (command.contains('sleep 300')) Process.killPid(pid);
-      });
-      return pid;
+      return standInPid();
     }
+
+    test('the daemon kills an srv process that fails to start', () async {
+      standIn(Srv.completedWithExceptionString);
+      await start(inline: false);
+      final sessionId = Uuid().v4();
+
+      expect(
+        await replyTo(
+          sessionId,
+          await signAndWrapRequest(alice, _Signer(alice), payload(sessionId)),
+        ),
+        contains(startFailed),
+      );
+      final pid = standInPid();
+      await eventually('the srv process to end', () => !running(pid));
+      expect(harness.daemon!.trackedClientSessions, 0);
+    });
 
     test("the daemon ends a session's srv process once the client's"
         ' enrollment is revoked', () async {
@@ -513,6 +598,23 @@ void main() {
       await eventually('the srv process to end', () => !running(pid));
       await eventually('the daemon to stop tracking the session',
           () => harness.daemon!.trackedClientSessions == 0);
+    });
+
+    test("the daemon ends a direct ssh session's srv process once the client's"
+        ' enrollment is revoked', () async {
+      await start(inline: false);
+      final sessionId = Uuid().v4();
+      final reply = await replyTo(
+        sessionId,
+        await signAndWrapRequest(alice, _Signer(alice), sshPayload(sessionId)),
+        type: 'ssh_request',
+      );
+      expect(harness.daemon!.trackedClientSessions, 1, reason: reply);
+      final pid = standInPid();
+
+      harness.server[NoPortsHarness.clientAtSign].firstEnrollment.revoke();
+
+      await eventually('the srv process to end', () => !running(pid));
     });
 
     test('the daemon refuses a request for a session id it is watching',

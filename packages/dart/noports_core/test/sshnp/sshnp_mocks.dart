@@ -37,11 +37,13 @@ class SubscribeStub extends Mock implements SubscribeCaller {}
 class MockAtClient extends Mock implements AtClient {}
 
 /// Gives [atClient] a key source holding [encryptionKeyPair] as [atSign]'s
-/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with.
+/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with,
+/// and [apkamKeyPair], when given, as its enrollment's signing keypair.
 void stubEncryptionKeys(
   MockAtClient atClient,
   RsaKeyPair encryptionKeyPair, {
   String atSign = '@alice',
+  RsaKeyPair? apkamKeyPair,
 }) {
   when(() => atClient.atKeysIo).thenReturn(
     InMemoryAtKeysIo.holding(
@@ -49,6 +51,8 @@ void stubEncryptionKeys(
       AtKeys.legacy(
         encryptionPublicKey: encryptionKeyPair.atPublicKey.publicKey,
         encryptionPrivateKey: encryptionKeyPair.atPrivateKey.privateKey,
+        apkamPublicKey: apkamKeyPair?.atPublicKey.publicKey,
+        apkamPrivateKey: apkamKeyPair?.atPrivateKey.privateKey,
       ),
     ),
   );

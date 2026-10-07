@@ -187,7 +187,8 @@ Future<Map<String, String>?> enrollmentSignatureOf(
   final ({SigningAlgoType algorithm, String publicKey, String privateKey}) key;
   try {
     key = await escrSigningKeyPair(signer);
-  } on AtClientException {
+  } on AtClientException catch (e) {
+    signer.logger.info('Not signing with an enrollment key: $e');
     return null;
   }
   try {

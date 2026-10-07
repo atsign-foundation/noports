@@ -2232,6 +2232,7 @@ class SshnpdImpl
 
   /// Ends [sessionId] by calling [end] if [signingKey], the `_apsk` record its
   /// client signed the request with, is withdrawn before [ended] completes.
+  /// A session started under an id already being watched is ended at once.
   @visibleForTesting
   void trackClientSession(
     String sessionId,
@@ -2239,15 +2240,16 @@ class SshnpdImpl
     required Future<void> ended,
     required void Function() end,
   }) {
-    final session = _ClientSession(signingKey, end);
-    _clientSessions[sessionId] = session;
-    unawaited(
-      ended.whenComplete(() {
-        if (_clientSessions[sessionId] == session) {
-          _clientSessions.remove(sessionId);
-        }
-      }),
-    );
+    if (_clientSessions.containsKey(sessionId)) {
+      logger.warning(
+        'Ending session $sessionId: a session with that id is already being'
+        ' watched',
+      );
+      end();
+      return;
+    }
+    _clientSessions[sessionId] = _ClientSession(signingKey, end);
+    unawaited(ended.whenComplete(() => _clientSessions.remove(sessionId)));
   }
 
   /// How many sessions [checkClientKeys] is watching.

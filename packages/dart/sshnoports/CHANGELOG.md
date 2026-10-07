@@ -33,11 +33,12 @@
   with ESCR, checking every 5 minutes by default; `--signing-key-check-secs`
   sets how often (0 turns it off)
 * feat: sshnp and npt sign each session request with the client's
-  enrollment key, and sshnpd ends the session once that enrollment is
+  enrollment key, and sshnpd ends a signed session once that enrollment is
   revoked, superseded, deleted or expired, checking every 10 seconds by
   default; `--client-key-check-secs` sets how often (0 turns it off), and
   `--require-enrollment-signature` refuses requests from clients that don't
-  sign this way
+  sign this way. A session that outlives a restart of sshnpd is no longer
+  checked
 * fix: `srvd --manager` accepts session requests only from the manager
   itself
 * fix: a long-running srvd no longer keeps a receive port open for every
