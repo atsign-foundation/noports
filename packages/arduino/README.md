@@ -3,7 +3,7 @@
 <!-- pyml disable-num-lines 4 md013,md033-->
 <a href="https://atsign.com#gh-light-mode-only"><img width=250px src="https://atsign.com/wp-content/uploads/2022/05/atsign-logo-horizontal-color2022.svg#gh-light-mode-only" alt="The Atsign Foundation"></a><a href="https://atsign.com#gh-dark-mode-only"><img width=250px src="https://atsign.com/wp-content/uploads/2023/08/atsign-logo-horizontal-reverse2022-Color.svg#gh-dark-mode-only" alt="The Atsign Foundation"></a>
 
-**An experimental repository bringing the [atProtocol](https://atsign.com) and [NoPorts](https://noports.com) to ESP32 microcontrollers.**
+**An experimental package bringing the [atProtocol](https://atsign.com) and [NoPorts](https://noports.com) to ESP32 microcontrollers.**
 
 > **Status: Experimental** — This project is under active development and
 > should be considered experimental. It *is* working on real hardware, but
@@ -13,7 +13,7 @@
 
 ## What Is This?
 
-at_Arduino_NoPorts is a collection of Arduino/PlatformIO libraries and
+A collection of Arduino/PlatformIO libraries and
 ready-to-flash packages that let ESP32 devices participate in the atProtocol
 network. The headline application is **NoPorts on ESP32** — an encrypted TCP
 relay daemon (`sshnpd`) that lets you SSH into machines on your local network
@@ -54,10 +54,10 @@ network. Designed for always-on, unattended deployment.
 
 ---
 
-## Repository Structure
+## Package Structure
 
 ```txt
-at_Arduino_NoPorts/
+noports/packages/arduino/
 ├── lib/                        # Reusable Arduino libraries
 │   └── NoPorts/                # NoPorts daemon library (sshnpd for ESP32)
 │
