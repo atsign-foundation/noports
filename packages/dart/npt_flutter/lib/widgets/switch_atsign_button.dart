@@ -27,6 +27,7 @@ import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/widgets/connection_indicator.dart';
+import 'package:npt_flutter/widgets/progress_indicator_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {
@@ -230,18 +231,7 @@ Future<void> _handleAddAtsign() async {
   // Check if atsign already exists in keychain
   final atsignList = await KeychainStorage().getAllAtsigns();
 
-  // Show loading dialog
-
-  showDialog(
-    context: App.navState.currentContext!,
-    barrierDismissible: false,
-    builder: (context) => const PopScope(
-      canPop: false,
-      child: Center(child: CircularProgressIndicator()),
-    ),
-  );
-
-  try {
+  await runWithProgressIndicator(App.navState.currentContext!, () async {
     if (atsignList.contains(newAtsign)) {
       // Atsign exists in keychain - use existing flow
       await _performOnboarding(App.navState.currentContext!, newAtsign);
@@ -309,11 +299,7 @@ Future<void> _handleAddAtsign() async {
           break;
       }
     }
-  } finally {
-    // Dismiss loading dialog
-
-    Navigator.of(App.navState.currentContext!).pop();
-  }
+  });
 }
 
 /// Handles switching to an existing atsign
