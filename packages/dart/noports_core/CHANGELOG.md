@@ -12,6 +12,9 @@
 - **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`
   and `signingKeyCheckSecs`, `SrvdImpl` requires `signingKeyCheckInterval`,
   and `ClientParams` implementations must add `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `SshnpdParams` requires `clientKeyCheckSecs`
+  and `requireEnrollmentSignature`, and `Sshnpd` implementations must add
+  `clientKeyCheckInterval` and `requireEnrollmentSignature`
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
@@ -21,6 +24,11 @@
 - feat: srvd ends a session within 5 minutes (by default) of either side's
   enrollment being revoked, superseded, deleted or expired, when that side
   authenticated with ESCR
+- feat: sshnp and npt sign each session request with the client's
+  enrollment key, and sshnpd ends the session once that enrollment is
+  revoked, superseded, deleted or expired, checking every 10 seconds by
+  default. New sshnpd `--client-key-check-secs` (0 turns the check off) and
+  `--require-enrollment-signature` options
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).

@@ -112,11 +112,19 @@ class NoPortsHarness {
   /// Starts sshnpd on the daemon atSign, managed by the client atSign and
   /// permitted to open [permitOpen]. With [advertisesEscr] false it tells
   /// clients it predates ESCR relay authentication, as an old daemon does;
-  /// with [strict] it verifies each request's signature.
+  /// with [strict] it verifies each request's signature. It checks clients'
+  /// enrollments every [clientKeyCheckInterval], and with
+  /// [requireEnrollmentSignature] refuses requests not signed with one. With
+  /// [inline] false it runs each session's srv as a process, as it does
+  /// unless `SRV_INLINE` is set.
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
     bool advertisesEscr = true,
     bool strict = false,
+    Duration clientKeyCheckInterval =
+        const Duration(seconds: DefaultSshnpdArgs.clientKeyCheckSecs),
+    bool requireEnrollmentSignature = false,
+    bool inline = true,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
@@ -143,7 +151,9 @@ class NoPortsHarness {
       version: '1.0.0',
       permitOpen: permitOpen,
       strict: strict,
-      inline: true,
+      clientKeyCheckInterval: clientKeyCheckInterval,
+      requireEnrollmentSignature: requireEnrollmentSignature,
+      inline: inline,
     );
     (daemon.pingResponse['supportedFeatures'] as Map)[
         DaemonFeature.supportsRamEscr.name] = advertisesEscr;

@@ -1,10 +1,19 @@
 import 'dart:convert';
 
-import 'package:at_auth/at_auth.dart' show ApskSigningKey, apskSigningKeys;
+import 'package:at_auth/at_auth.dart'
+    show ApskSigningKey, apskSigningKeys, publicKeyKidOfBase64;
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
+import 'package:noports_core/src/common/validation_utils.dart'
+    show signAndWrap;
+import 'package:noports_core/src/srv/relay_authenticators.dart'
+    show escrSigningKeyPair;
+
+/// The request envelope field holding the payload's signature by the
+/// sender's enrollment key, beside the atSign-wide `signature`.
+const String enrollmentSignatureField = 'enrollmentSignature';
 
 /// A signature that doesn't verify against the `_apsk` record it names.
 class ApskSignatureException implements Exception {
@@ -165,3 +174,126 @@ Future<String?> signingKeyWithdrawnTo(AtClient atClient, String uri) async {
   return withdrawnApskLocation(atClient, match.group(2)!, match.group(1)!);
 }
 
+/// [signer]'s enrollment signature over [payload]'s JSON, for
+/// [enrollmentSignatureField]: the `_apsk` record it can be checked against
+/// (`sk`), the key within it (`kid`), and the algorithms and signature.
+/// Publishes that record first, if it isn't already, so the signature can be
+/// verified. Null when [signer] holds no key it can sign with, or can't
+/// publish it.
+Future<Map<String, String>?> enrollmentSignatureOf(
+  ApkamSigning signer,
+  Map payload,
+) async {
+  final ({SigningAlgoType algorithm, String publicKey, String privateKey}) key;
+  try {
+    key = await escrSigningKeyPair(signer);
+  } on AtClientException {
+    return null;
+  }
+  try {
+    await signer.publishPublicSigningKey();
+  } on Exception catch (e) {
+    signer.logger.warning(
+      'Not signing with enrollment ${signer.enrollmentId}:'
+      ' could not publish its signing key: $e',
+    );
+    return null;
+  }
+  return {
+    'sk': signer.publicSigningKeyUri,
+    'kid': publicKeyKidOfBase64(key.publicKey),
+    'sa': key.algorithm.name,
+    'ha': HashingAlgoType.sha256.name,
+    's': signWithApskKey(
+      jsonEncode(payload),
+      algorithm: key.algorithm,
+      privateKey: key.privateKey,
+    ),
+  };
+}
+
+/// [payload] in the envelope [signAndWrap] makes, signed by [signer]'s
+/// enrollment key too when it holds one, as a request to a daemon.
+Future<String> signAndWrapRequest(
+  AtClient atClient,
+  ApkamSigning signer,
+  Map payload,
+) async {
+  final envelope = await signAndWrap(atClient, payload);
+  final enrollmentSignature = await enrollmentSignatureOf(signer, payload);
+  if (enrollmentSignature != null) {
+    envelope[enrollmentSignatureField] = enrollmentSignature;
+  }
+  return jsonEncode(envelope);
+}
+
+/// Verifies the [enrollmentSignatureField] of [envelope], a request from
+/// [requester], against the `_apsk` record it names, looked up with
+/// [atClient]. Returns that record's canonical URI, or null when [envelope]
+/// carries no such field.
+///
+/// Throws [ApskSignatureException] when the field is malformed, names a
+/// record that isn't [requester]'s, or doesn't verify.
+Future<String?> verifyEnrollmentSignature(
+  AtClient atClient,
+  String requester,
+  Map envelope,
+) async {
+  final Object? field = envelope[enrollmentSignatureField];
+  if (field == null) return null;
+  if (field is! Map) {
+    throw ApskSignatureException('$enrollmentSignatureField is not an object');
+  }
+  String text(String name) => field[name] is String
+      ? field[name]
+      : throw ApskSignatureException(
+          '$enrollmentSignatureField has no string "$name"',
+        );
+  final uri = text('sk');
+  if (!signingKeyUriShape.hasMatch(uri)) {
+    throw ApskSignatureException(
+      'Signing key ($uri) is not of the form public:_apsk.<enrollmentId>'
+      '.${EnrollmentConstants.perEnrollmentApproved}@<atSign>',
+    );
+  }
+  final signer = uri.substring(uri.lastIndexOf('@')).toAtsign();
+  if (signer != requester.toAtsign()) {
+    throw ApskSignatureException(
+      'Signing key $uri belongs to $signer, not the requester $requester',
+    );
+  }
+  final SigningAlgoType signingAlgo;
+  final HashingAlgoType hashingAlgo;
+  try {
+    signingAlgo = SigningAlgoType.values.byName(text('sa'));
+    hashingAlgo = HashingAlgoType.values.byName(text('ha'));
+  } on ArgumentError {
+    throw ApskSignatureException(
+      '$enrollmentSignatureField names an algorithm NoPorts does not know',
+    );
+  }
+  if (!escrSigningAlgorithms.contains(signingAlgo)) {
+    throw ApskSignatureException(
+      'Unsupported signing algorithm ${signingAlgo.name}',
+    );
+  }
+  final canonical = canonicalSigningKeyUri(uri);
+  final apsk = (await atClient.get(
+    AtKey.fromString(canonical),
+    getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+  ))
+      .value;
+  if (apsk is! String) {
+    throw ApskSignatureException('$canonical holds no signing key');
+  }
+  await verifyApskSignature(
+    uri: canonical,
+    apsk: apsk,
+    signed: jsonEncode(envelope['payload']),
+    signature: text('s'),
+    signingAlgo: signingAlgo,
+    hashingAlgo: hashingAlgo,
+    kid: field['kid'] is String ? field['kid'] : null,
+  );
+  return canonical;
+}

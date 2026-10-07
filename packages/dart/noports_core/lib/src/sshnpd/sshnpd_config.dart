@@ -303,6 +303,34 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     ),
   ),
 
+  clientKeyCheckSecs(
+    IntOption(
+      argName: 'client-key-check-secs',
+      configKey: '/runtime/client-key-check-secs',
+      mandatory: false,
+      defaultsTo: DefaultSshnpdArgs.clientKeyCheckSecs,
+      helpText: 'How often (seconds) to check that the enrollment each'
+          ' client signed its session request with is still valid. A session'
+          ' is ended once that enrollment is revoked, superseded, deleted or'
+          ' expires. 0 turns the check off.',
+      min: 0,
+      max: 86400,
+      group: runtimeGroup,
+    ),
+  ),
+
+  requireEnrollmentSignature(
+    FlagOption(
+      argName: 'require-enrollment-signature',
+      configKey: '/runtime/require-enrollment-signature',
+      helpText: 'Refuse session requests that aren\'t signed with the client\'s'
+          ' enrollment key. Older clients don\'t sign them.',
+      hide: false,
+      defaultsTo: false,
+      group: runtimeGroup,
+    ),
+  ),
+
   strict(
     FlagOption(
       argName: 'strict',
