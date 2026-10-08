@@ -28,7 +28,7 @@
 #define SRV_WORKER_FLAG "--__srv-worker"
 
 // Resolve the absolute path of the currently running executable into buf.
-static int resolve_own_exe(char *buf, size_t bufsize) {
+int sshnpd_own_exe_path(char *buf, size_t bufsize) {
 #ifdef __APPLE__
   uint32_t size = (uint32_t)bufsize;
   if (_NSGetExecutablePath(buf, &size) != 0) {
@@ -48,12 +48,12 @@ static int resolve_own_exe(char *buf, size_t bufsize) {
 // Close every descriptor above stderr so the exec'd srv cannot inherit the
 // daemon's open atServer TLS sockets (or any other fd). srv opens its own
 // sockets and only needs stdin/stdout/stderr.
-static void close_inherited_fds(void) {
+void sshnpd_close_inherited_fds(int from_fd) {
   long max_fd = sysconf(_SC_OPEN_MAX);
   if (max_fd < 0 || max_fd > 65536) {
     max_fd = 65536;
   }
-  for (int fd = 3; fd < (int)max_fd; fd++) {
+  for (int fd = from_fd; fd < (int)max_fd; fd++) {
     close(fd);
   }
 }
@@ -122,7 +122,7 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   }
 
   char exe_path[PATH_MAX];
-  if (resolve_own_exe(exe_path, sizeof(exe_path)) != 0) {
+  if (sshnpd_own_exe_path(exe_path, sizeof(exe_path)) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to resolve daemon executable path: %s\n",
                  strerror(errno));
     return -1;
@@ -133,7 +133,7 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "requested: %s:%s\n", local_host, local_port_str);
   fflush(stdout);
 
-  close_inherited_fds();
+  sshnpd_close_inherited_fds(3);
 
   // Self-exec only: re-run this exact (already-trusted) binary in srv worker
   // mode. There is deliberately no path to an external srv binary - that would

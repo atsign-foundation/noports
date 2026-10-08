@@ -4,6 +4,7 @@
 #include <atchops/rsa_key.h>
 #include <atclient/json.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 // Everything the srv needs to run ESCR (encrypted signed challenge response)
@@ -31,4 +32,12 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
                     bool authenticate_to_rvd, char *rvd_auth_string, const sshnpd_escr_context *escr,
                     bool encrypt_rvd_traffic, bool multi, int timeout_seconds, unsigned char *session_aes_key_c2d,
                     unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c);
+// Writes the path of this process's executable into buf, for re-executing
+// it as a worker. Returns non-zero when it can't be found.
+int sshnpd_own_exe_path(char *buf, size_t bufsize);
+
+// Closes every file descriptor from from_fd up, so a worker about to be
+// exec'd inherits none of the daemon's sockets
+void sshnpd_close_inherited_fds(int from_fd);
+
 #endif

@@ -10,6 +10,8 @@
 #include <atlogger/atlogger.h>
 #include <errno.h>
 #include <srv/params.h>
+#include <sshnpd/client_sessions.h>
+#include <sshnpd/client_signing_key.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
@@ -21,6 +23,10 @@
 #include <unistd.h>
 
 #define LOGGER_TAG "SSH_REQUEST"
+
+static void start_ssh_session(atclient *atclient, sshnpd_params *params, bool *is_child_process, cJSON *envelope,
+                              char *requesting_atsign, atchops_rsa_key_private_key signing_key,
+                              const sshnpd_policy_decision *policy, const char *client_signing_key);
 
 // TODO: refactor this to call the new common handlers
 void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_child_process,
@@ -56,6 +62,23 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     cJSON_Delete(envelope);
     return;
   }
+
+  char *client_signing_key = NULL;
+  if (check_client_signing_key(atclient, params, requesting_atsign, envelope, &client_signing_key) != 0) {
+    cJSON_Delete(envelope);
+    return;
+  }
+  start_ssh_session(atclient, params, is_child_process, envelope, requesting_atsign, signing_key, policy,
+                    client_signing_key);
+  free(client_signing_key);
+}
+
+// Starts the session envelope requests, watching it when its client signed
+// the request with client_signing_key, and deletes envelope
+static void start_ssh_session(atclient *atclient, sshnpd_params *params, bool *is_child_process, cJSON *envelope,
+                              char *requesting_atsign, atchops_rsa_key_private_key signing_key,
+                              const sshnpd_policy_decision *policy, const char *client_signing_key) {
+  int res = 0;
   cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
 
   // ssh sessions always bridge to localhost:<local-sshd-port>; both the
@@ -254,6 +277,10 @@ void handle_ssh_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     } else if (waitpid_return == -1) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to wait for srv process: %s\n", strerror(errno));
       goto cancel;
+    }
+
+    if (client_signing_key != NULL) {
+      client_sessions_track(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")), client_signing_key, pid);
     }
 
     res = send_success_payload(payload, atclient, params, session_aes_key_c2d_base64, session_iv_c2d_base64,

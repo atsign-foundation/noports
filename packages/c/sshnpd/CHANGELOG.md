@@ -6,6 +6,13 @@
   RSA-2048, as the Dart daemon does
 - fix: republish the public signing key when it holds a key other than
   the daemon's, as the Dart daemon does
+- feat: end a session once its client's enrollment is revoked, superseded,
+  deleted or expires (checked every `--client-key-check-secs`, default 10),
+  and refuse a request whose enrollment signature doesn't verify, as the
+  Dart daemon does; `--require-enrollment-signature` also refuses unsigned
+  requests. Requests signed with ML-DSA are refused for now
+- feat: the daemon connects out to clients' own atServers over HTTPS to
+  check their signing keys, and links libcurl to do it
 
 ## 1.1.1
 

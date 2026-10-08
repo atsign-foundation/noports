@@ -10,9 +10,12 @@ project(sshnpd VERSION 1.1.1 LANGUAGES C)
 set(
   SSHNPD_SRCS
   ${CMAKE_CURRENT_LIST_DIR}/src/authorization.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/client_sessions.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/client_signing_key.c
   ${CMAKE_CURRENT_LIST_DIR}/src/daemon.c
   ${CMAKE_CURRENT_LIST_DIR}/src/daemon_utils.c
   ${CMAKE_CURRENT_LIST_DIR}/src/device_info.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/enrollment_signature.c
   ${CMAKE_CURRENT_LIST_DIR}/src/file_utils.c
   ${CMAKE_CURRENT_LIST_DIR}/src/handle_npt_request.c
   ${CMAKE_CURRENT_LIST_DIR}/src/handle_ping.c
@@ -23,6 +26,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/permitopen.c
   ${CMAKE_CURRENT_LIST_DIR}/src/policy.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/public_lookup.c
   ${CMAKE_CURRENT_LIST_DIR}/src/run_srv_process.c
 )
 
