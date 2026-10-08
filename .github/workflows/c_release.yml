@@ -38,7 +38,7 @@ jobs:
       - name: Push changes to branch
         run: git push --set-upstream origin c_release-${{github.run_number}}
 
-  native_build:
+  zig_build:
     needs: [verify_tags]
     runs-on: ubuntu-latest
     defaults:
