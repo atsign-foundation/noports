@@ -49,29 +49,38 @@ class Export {
     return f;
   }
 
+  /// Writes [exportableProfiles] to a file the user picks with [pickFile], and
+  /// tells the user whether it was saved once the write has finished.
   @visibleForTesting
-  static saveFile(
+  static Future<void> saveFile(
     ExportableProfileFiletype filetype,
-    FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles,
-  ) async {
-    var f = await pickAndCreateFile(filetype);
-    if (f == null) return;
+    FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles, {
+    Future<File?> Function(ExportableProfileFiletype) pickFile =
+        pickAndCreateFile,
+  }) async {
+    final strings = AppLocalizations.of(App.navState.currentContext!)!;
+    try {
+      var f = await pickFile(filetype);
+      if (f == null) return;
 
-    /// Explicit type safety
-    List exportableProfileList = (await exportableProfiles).toList();
+      /// Explicit type safety
+      List exportableProfileList = (await exportableProfiles).toList();
 
-    /// Wrapping like this allows us the ability to expand the file type spec
-    /// if we need to in the future
-    Map<String, List> json = {profilesKey: exportableProfileList};
-    switch (filetype) {
-      case ExportableProfileFiletype.json:
-        f.writeAsString(jsonEncode(json));
-      case ExportableProfileFiletype.yaml:
-        f.writeAsString(YamlWriter().convert(json));
+      /// Wrapping like this allows us the ability to expand the file type spec
+      /// if we need to in the future
+      Map<String, List> json = {profilesKey: exportableProfileList};
+      switch (filetype) {
+        case ExportableProfileFiletype.json:
+          await f.writeAsString(jsonEncode(json));
+        case ExportableProfileFiletype.yaml:
+          await f.writeAsString(YamlWriter().convert(json));
+      }
+    } catch (e) {
+      App.log('Failed to export profiles: $e'.loggable);
+      CustomSnackBar.error(content: strings.fileSaveFailed);
+      return;
     }
-    CustomSnackBar.success(
-      content: AppLocalizations.of(App.navState.currentContext!)!.fileSaved,
-    );
+    CustomSnackBar.success(content: strings.fileSaved);
   }
 
   /// A closure function which returns a void Function() that prompts the user
@@ -81,9 +90,7 @@ class Export {
     ExportableProfileFiletype filetype,
     FutureOr<Iterable<Map<String, dynamic>>> exportableProfiles,
   ) {
-    return () {
-      saveFile(filetype, exportableProfiles);
-    };
+    return () => unawaited(saveFile(filetype, exportableProfiles));
   }
 
   static void convertExternalDataSourceToProfile({
@@ -187,27 +194,38 @@ class Export {
     );
   }
 
-  /// Fetches and returns the demo profile JSON from the provided Google Drive link.
-  /// Returns a Map<String, dynamic> containing the JSON content.
+  /// How long [getDemoProfile] waits for the whole download before failing.
+  static const demoProfileTimeout = Duration(seconds: 30);
+
+  /// Fetches the demo profile JSON from its Google Drive link, as a String.
+  ///
+  /// Throws if the download fails or takes longer than [demoProfileTimeout].
   static Future<String> getDemoProfile() async {
     // The Google Drive file's direct download URL
     const fileId = '15ASX-4ricK1Ulpq49RaY8RAavlmyMwlq';
     const url = 'https://drive.google.com/uc?export=download&id=$fileId';
 
+    final client = HttpClient();
     try {
-      final client = HttpClient();
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to download demo profile: HTTP ${response.statusCode}',
-        );
-      }
-      final content = await response.transform(utf8.decoder).join();
-
-      return content;
+      return await _download(client, Uri.parse(url)).timeout(
+        demoProfileTimeout,
+      );
     } catch (e) {
       throw Exception('Failed to fetch demo profile: $e');
+    } finally {
+      // NOTE: force, or a refused or timed-out download keeps its connection
+      client.close(force: true);
     }
+  }
+
+  static Future<String> _download(HttpClient client, Uri url) async {
+    final request = await client.getUrl(url);
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to download demo profile: HTTP ${response.statusCode}',
+      );
+    }
+    return response.transform(utf8.decoder).join();
   }
 }

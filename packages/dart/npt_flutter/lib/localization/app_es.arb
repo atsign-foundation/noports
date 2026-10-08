@@ -146,6 +146,7 @@
   "fileFormatInvalidDetails": "La sección de perfiles no se encuentra o tiene un formato incorrecto. Por favor, verifica el documento.",
   "fileImported": "Archivo Importado",
   "fileSaved": "Archivo Guardado",
+  "fileSaveFailed": "Error al guardar el archivo",
   "findOtp": "La solicitud se mostrará en el Authenticator en Solicitudes en cualquier aplicación conectada a tu Atsign con claves de administrador.",
   "getStarted": "Comenzar",
   "groupAdd": "Agregar Grupo",

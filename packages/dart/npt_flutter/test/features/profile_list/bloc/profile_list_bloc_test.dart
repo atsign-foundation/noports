@@ -1,26 +1,19 @@
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 
 // Import existing mocks
 import '../../profile/bloc/profile_bloc_test.mocks.dart' as profile_mocks;
-import 'profile_list_bloc_test.mocks.dart';
 
-@GenerateMocks([FavoriteBloc, BuildContext])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ProfileListBloc Tests', () {
     late ProfileListBloc profileListBloc;
     late profile_mocks.MockProfileRepository mockRepository;
-    late MockFavoriteBloc mockFavoriteBloc;
-    late MockBuildContext mockContext;
 
     const testUuid1 = 'test-uuid-1';
     const testUuid2 = 'test-uuid-2';
@@ -59,8 +52,6 @@ void main() {
 
     setUp(() {
       mockRepository = profile_mocks.MockProfileRepository();
-      mockFavoriteBloc = MockFavoriteBloc();
-      mockContext = MockBuildContext();
       profileListBloc = ProfileListBloc(mockRepository);
     });
 

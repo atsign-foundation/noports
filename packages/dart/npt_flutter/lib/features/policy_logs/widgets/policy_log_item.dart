@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -153,6 +153,7 @@ class _PolicyLogItemState extends State<PolicyLogItem> {
                     child: Text(
                       widget.allowedServices,
                       style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

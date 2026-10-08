@@ -68,7 +68,8 @@ abstract class PublicLookup {
 
 /// A [PublicLookup] that asks each record's own atServer, over the HTTPS GET
 /// (`/<atSign>/<key>`) that atServers serve public records on, at the address
-/// the atDirectory gives for it. Each lookup has its own connection and a
+/// the atDirectory gives for it, offering `http/1.1` by ALPN, without which an
+/// atServer answers in atProtocol. Each lookup has its own connection and a
 /// deadline, at most [maxPerAtSign] of them run at once for any one atSign,
 /// and at most [maxConcurrent] in all.
 ///
@@ -84,7 +85,9 @@ class DirectPublicLookup extends PublicLookup {
     this.maxConcurrent = defaultMaxConcurrent,
     this.maxPerAtSign = defaultMaxPerAtSign,
     @visibleForTesting this.scheme = 'https',
-  }) : _addressFinder = addressFinder;
+    @visibleForTesting SecurityContext? securityContext,
+  })  : _addressFinder = addressFinder,
+        _securityContext = securityContext;
 
   static const defaultTimeout = Duration(seconds: 10);
   static const defaultMaxConcurrent = 16;
@@ -103,6 +106,7 @@ class DirectPublicLookup extends PublicLookup {
   final AtSignLogger logger = AtSignLogger(' DirectPublicLookup ');
 
   final SecondaryAddressFinder? _addressFinder;
+  final SecurityContext? _securityContext;
 
   late final SecondaryAddressFinder _finder = _addressFinder ??
       CacheableSecondaryAddressFinder(
@@ -110,7 +114,12 @@ class DirectPublicLookup extends PublicLookup {
         atClient.getPreferences()!.rootPort,
       );
 
-  late final HttpClient _client = HttpClient()
+  // NOTE: an atServer answers a TLS connection over HTTP only when ALPN
+  // selects http/1.1, and HttpClient offers no ALPN of its own
+  late final HttpClient _client = HttpClient(
+    context: (_securityContext ?? SecurityContext(withTrustedRoots: true))
+      ..setAlpnProtocols(['http/1.1'], false),
+  )
     ..connectionTimeout = timeout ~/ 2
     ..idleTimeout = const Duration(seconds: 15);
 

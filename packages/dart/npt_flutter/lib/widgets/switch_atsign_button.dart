@@ -25,8 +25,9 @@ import 'package:npt_flutter/pages/sub_nav_cubit.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
-import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:npt_flutter/widgets/connection_indicator.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
+import 'package:npt_flutter/widgets/progress_indicator_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SwitchAtsignButton extends StatelessWidget {
@@ -86,16 +87,24 @@ Future<void> _handleSwitchAtsign(BuildContext context) async {
   if (selection == null) return; // User cancelled;
 
   // Step 2: Check for connected profiles
+  if (!context.mounted) return;
   if (!await _checkAndHandleConnectedProfiles(context)) return;
 
   // Step 3: Handle the selection
-  await _handleSelection(context, selection, strings);
+  if (selection == strings.signout) {
+    await _handleSignout();
+  } else if (selection == strings.addAtsign) {
+    await _handleAddAtsign();
+  } else {
+    await _handleSwitchToAtsign(selection.toAtsign());
+  }
 }
 
 /// Shows the atsign menu and returns the selected option
 Future<String?> _showAtsignMenu(BuildContext context) async {
   final strings = AppLocalizations.of(context)!;
   final atsignList = await KeychainStorage().getAllAtsigns();
+  if (!context.mounted) return null;
 
   final result = await showMenu<String?>(
     context: context,
@@ -158,26 +167,13 @@ Future<bool> _checkAndHandleConnectedProfiles(BuildContext context) async {
       true; // Invert because dialog returns true when profiles are connected
 }
 
-/// Handles the menu selection (signout, add atsign, or switch)
-Future<void> _handleSelection(
-  BuildContext context,
-  String selection,
-  AppLocalizations strings,
-) async {
-  if (selection == strings.signout) {
-    await _handleSignout(context);
-  } else if (selection == strings.addAtsign) {
-    await _handleAddAtsign(context);
-  } else {
-    await _handleSwitchToAtsign(context, selection.toAtsign());
-  }
-}
-
 /// Handles the signout flow
-Future<void> _handleSignout(BuildContext context) async {
+Future<void> _handleSignout() async {
   // A full signout starts over on the Connections tab, unlike an atsign
   // switch which keeps the currently selected tab.
-  context.read<SubNavCubit>().setSubRoute(HomeRoutes.dashboard);
+  App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
+    HomeRoutes.dashboard,
+  );
   wrapperNav.currentState!.pushAndRemoveUntil(
     MaterialPageRoute(builder: (context) => const LoadingPage()),
     (route) => false,
@@ -185,18 +181,13 @@ Future<void> _handleSignout(BuildContext context) async {
 
   await preSignout();
 
-  if (context.mounted) {
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
-  }
+  Navigator.of(
+    App.navState.currentContext!,
+  ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
 }
 
 /// Handles adding a new atsign
-Future<void> _handleAddAtsign(BuildContext context) async {
-  final options = await getAtsignEntries();
-
+Future<void> _handleAddAtsign() async {
   // Store the current atsign before showing the dialog
 
   final originalAtsign = App.navState.currentContext!
@@ -240,21 +231,9 @@ Future<void> _handleAddAtsign(BuildContext context) async {
   // Check if atsign already exists in keychain
   final atsignList = await KeychainStorage().getAllAtsigns();
 
-  // Show loading dialog
-
-  showDialog(
-    context: App.navState.currentContext!,
-    barrierDismissible: false,
-    builder: (context) => const PopScope(
-      canPop: false,
-      child: Center(child: CircularProgressIndicator()),
-    ),
-  );
-
-  try {
+  await runWithProgressIndicator(App.navState.currentContext!, () async {
     if (atsignList.contains(newAtsign)) {
-      // Atsign exists in keychain - use existing flow
-      await _performOnboarding(App.navState.currentContext!, newAtsign);
+      await switchToKeychainAtsign(newAtsign, rootDomain);
     } else {
       // New atsign - use shared util method for activation/APKAM flow
       final util = await NoPortsOnboardingUtil.create(
@@ -319,58 +298,68 @@ Future<void> _handleAddAtsign(BuildContext context) async {
           break;
       }
     }
-  } finally {
-    // Dismiss loading dialog
-
-    Navigator.of(App.navState.currentContext!).pop();
-  }
+  });
 }
 
 /// Handles switching to an existing atsign
-Future<void> _handleSwitchToAtsign(
-  BuildContext context,
-  Atsign targetAtsign,
-) async {
-  await preSignout();
-
+Future<void> _handleSwitchToAtsign(Atsign targetAtsign) async {
   log('switching to atsign: $targetAtsign');
-
-  final currentContext = App.navState.currentContext!;
-  await _performOnboarding(currentContext, targetAtsign);
+  final rootDomain =
+      (await getAtsignEntries())[targetAtsign]?.rootDomain ??
+      App.navState.currentContext!.read<OnboardingCubit>().getRootDomain();
+  await switchToKeychainAtsign(targetAtsign, rootDomain);
 }
 
-/// Performs the onboarding process for the given atsign, which is already
-/// present in the local keychain.
-Future<void> _performOnboarding(BuildContext context, Atsign atsign) async {
-  final rootDomain = context.read<OnboardingCubit>().getRootDomain();
-
-  NoPortsOnboardingResult onboardingResult;
+/// Signs in to [atsign], whose keys are in the keychain, in place of the
+/// current atsign. A sign in that doesn't succeed has still signed the
+/// current atsign out, so it ends on the onboarding page.
+@visibleForTesting
+Future<void> switchToKeychainAtsign(
+  Atsign atsign,
+  String rootDomain, {
+  Future<bool> Function() signOut = preSignout,
+  Future<NoPortsOnboardingResult?> Function(Atsign, String) signIn = _onboard,
+}) async {
+  await signOut();
+  // NOTE: the onboarding util takes its root domain from the cubit, as the
+  // sign-in page's selectAtsign leaves it.
+  App.navState.currentContext!.read<OnboardingCubit>().setState(
+    atsign: atsign,
+    rootDomain: rootDomain,
+  );
+  NoPortsOnboardingResult? result;
   try {
-    final client = await AtClientMethods.openAndAdopt(
-      atsign: atsign,
-      keys: KeychainAtKeysIo(),
-      rootDomain: rootDomain,
+    result = await signIn(atsign, rootDomain);
+  } catch (e, st) {
+    App.log('Switching to $atsign failed: $e'.loggable);
+    App.log(st.toString().loggable);
+    CustomSnackBar.error(
+      content: describeOnboardingError(
+        e,
+        AppLocalizations.of(App.navState.currentContext!)!,
+      ),
     );
-    final state = client.connection.current;
-    if (state.isRefused) {
-      await client.stop();
-      onboardingResult = NoPortsOnboardingResult.error(
-        message: context.mounted
-            ? describeOnboardingError(state.error, AppLocalizations.of(context)!)
-            : '',
-      );
-    } else {
-      onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
-    }
-  } catch (e) {
-    onboardingResult = NoPortsOnboardingResult.error(message: e.toString());
   }
+  if (result?.status == NoPortsOnboardingResultStatus.success) return;
 
-  if (onboardingResult.status == NoPortsOnboardingResultStatus.success) {
-    await BackupKeyUtils().backupKeyStatusCheck();
-    log("postOnbarding called");
-    await postOnboard(atsign, rootDomain);
-  }
+  App.navState.currentContext!.read<SubNavCubit>().setSubRoute(
+    HomeRoutes.dashboard,
+  );
+  Navigator.of(
+    App.navState.currentContext!,
+  ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
+}
+
+Future<NoPortsOnboardingResult?> _onboard(
+  Atsign atsign,
+  String rootDomain,
+) async {
+  final util = await NoPortsOnboardingUtil.create(App.navState.currentContext!);
+  return util.onboard(
+    atsign: atsign,
+    rootDomain: rootDomain,
+    context: App.navState.currentContext!,
+  );
 }
 
 class _HoverableMenuItem extends StatefulWidget {
