@@ -77,6 +77,7 @@ static void reap_children(void) {
   int status;
   pid_t pid;
   while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    srv_starts_reaped(pid);
     client_sessions_reaped(pid, status);
   }
 }
@@ -97,6 +98,7 @@ void main_loop() {
 
   while (should_run == 1) {
     reap_children();
+    srv_starts_poll(sshnpd_monotonic_ms());
     client_sessions_tick(time(NULL));
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending next device info\n");

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 // Everything the srv needs to run ESCR (encrypted signed challenge response)
 // relay authentication for one session. All pointers are borrowed.
@@ -29,7 +30,7 @@ typedef struct {
 // escr: non-NULL to authenticate to the relay with ESCR instead of the legacy
 // rvd_auth_string.
 // ready_fd: the write end of a pipe srv reports on once it has reached the
-// relay (see wait_for_srv_start), or -1.
+// relay (see srv_starts_watch), or -1.
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
                     bool authenticate_to_rvd, char *rvd_auth_string, const sshnpd_escr_context *escr,
                     bool encrypt_rvd_traffic, bool multi, int timeout_seconds, unsigned char *session_aes_key_c2d,
@@ -39,10 +40,25 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
 // How long srv may take to reach the relay, as the Dart daemon allows
 #define SRV_START_TIMEOUT_MS 15000
 
-// Waits up to timeout_ms for srv to report on ready_fd, the read end of the
-// pipe passed to run_srv_process, that it has reached the relay. Returns
-// non-zero, with why set, when it exits or times out first.
-int wait_for_srv_start(int ready_fd, int timeout_ms, char *why, size_t why_size);
+// The time by CLOCK_MONOTONIC, in milliseconds
+long sshnpd_monotonic_ms(void);
+
+// Watches srv process pid, started at now_ms, until it reports on ready_fd,
+// the read end of the pipe passed to run_srv_process, that it has reached
+// the relay; srv_starts_poll stops it if it doesn't within
+// SRV_START_TIMEOUT_MS. Takes ready_fd over.
+void srv_starts_watch(pid_t pid, int ready_fd, long now_ms);
+
+// Reads what each watched srv has reported, without waiting, and stops each
+// that hasn't reached the relay within SRV_START_TIMEOUT_MS of starting
+void srv_starts_poll(long now_ms);
+
+// Stops watching pid, which has exited and been reaped, so it is never
+// signalled again
+void srv_starts_reaped(pid_t pid);
+
+// How many srv processes are being watched
+size_t srv_starts_count(void);
 // Writes the path of this process's executable into buf, for re-executing
 // it as a worker. Returns non-zero when it can't be found.
 int sshnpd_own_exe_path(char *buf, size_t bufsize);

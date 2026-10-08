@@ -13,8 +13,8 @@
   requests. Requests signed with ML-DSA are refused for now
 - feat: the daemon connects out to clients' own atServers over HTTPS to
   check their signing keys, and links libcurl to do it
-- fix: when srv doesn't reach the relay within 15 seconds, stop it and tell
-  the client, rather than reporting the session started
+- fix: stop an srv that hasn't reached the relay within 15 seconds, rather
+  than leaving it running
 
 ## 1.1.1
 

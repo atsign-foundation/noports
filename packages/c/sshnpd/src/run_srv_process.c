@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <sshnpd/run_srv_process.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -163,47 +165,96 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   return -1;
 }
 
-int wait_for_srv_start(int ready_fd, int timeout_ms, char *why, size_t why_size) {
-  struct timespec start;
-  clock_gettime(CLOCK_MONOTONIC, &start);
-  char seen[sizeof(SRV_COMPLETION_STRING) + 1];
-  size_t len = 0;
-  for (;;) {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    long left = timeout_ms - ((long)(now.tv_sec - start.tv_sec) * 1000 + (now.tv_nsec - start.tv_nsec) / 1000000);
-    if (left <= 0) {
-      snprintf(why, why_size, "srv did not report starting within %d seconds", timeout_ms / 1000);
-      return 1;
+long sshnpd_monotonic_ms(void) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return (long)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+}
+
+typedef struct {
+  pid_t pid;
+  int ready_fd;
+  long started_ms;
+  char seen[2 * sizeof(SRV_COMPLETION_STRING)];
+  size_t seen_len;
+} srv_start;
+
+static srv_start *starts;
+static size_t start_count;
+static size_t start_capacity;
+
+static void forget_start(size_t i) {
+  close(starts[i].ready_fd);
+  starts[i] = starts[--start_count];
+}
+
+void srv_starts_watch(pid_t pid, int ready_fd, long now_ms) {
+  if (start_count == start_capacity) {
+    size_t capacity = start_capacity == 0 ? 8 : start_capacity * 2;
+    srv_start *grown = realloc(starts, capacity * sizeof(srv_start));
+    if (grown == NULL) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Can't watch srv %d start\n", (int)pid);
+      close(ready_fd);
+      return;
     }
-    struct pollfd p = {ready_fd, POLLIN, 0};
-    int ready = poll(&p, 1, (int)left);
+    starts = grown;
+    start_capacity = capacity;
+  }
+  starts[start_count++] = (srv_start){pid, ready_fd, now_ms, "", 0};
+}
+
+// Whether watched start i is over: srv reported, or its pipe closed
+static bool start_settled(srv_start *start) {
+  for (;;) {
+    struct pollfd p = {start->ready_fd, POLLIN, 0};
+    int ready = poll(&p, 1, 0);
     if (ready < 0 && errno == EINTR) {
       continue;
     }
-    if (ready < 0) {
-      snprintf(why, why_size, "could not wait for srv: %s", strerror(errno));
-      return 1;
+    if (ready <= 0) {
+      return false;
     }
-    if (ready == 0) {
-      continue;
-    }
-    ssize_t n = read(ready_fd, seen + len, sizeof(seen) - 1 - len);
+    ssize_t n = read(start->ready_fd, start->seen + start->seen_len, sizeof(start->seen) - 1 - start->seen_len);
     if (n < 0 && errno == EINTR) {
       continue;
     }
     if (n <= 0) {
-      snprintf(why, why_size, "srv exited before reporting that it had started");
-      return 1;
+      return true;
     }
-    len += (size_t)n;
-    seen[len] = '\0';
-    if (strstr(seen, SRV_COMPLETION_STRING) != NULL) {
-      return 0;
+    start->seen_len += (size_t)n;
+    start->seen[start->seen_len] = '\0';
+    if (strstr(start->seen, SRV_COMPLETION_STRING) != NULL) {
+      return true;
     }
-    if (len == sizeof(seen) - 1) {
-      snprintf(why, why_size, "srv reported something other than starting");
-      return 1;
+    if (start->seen_len == sizeof(start->seen) - 1) {
+      start->seen_len = 0;
     }
   }
 }
+
+void srv_starts_poll(long now_ms) {
+  for (size_t i = 0; i < start_count;) {
+    if (start_settled(&starts[i])) {
+      forget_start(i);
+    } else if (now_ms - starts[i].started_ms >= SRV_START_TIMEOUT_MS) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                   "srv %d did not reach the relay within %d seconds - stopping it\n", (int)starts[i].pid,
+                   SRV_START_TIMEOUT_MS / 1000);
+      kill(starts[i].pid, SIGTERM);
+      forget_start(i);
+    } else {
+      i++;
+    }
+  }
+}
+
+void srv_starts_reaped(pid_t pid) {
+  for (size_t i = 0; i < start_count; i++) {
+    if (starts[i].pid == pid) {
+      forget_start(i);
+      return;
+    }
+  }
+}
+
+size_t srv_starts_count(void) { return start_count; }

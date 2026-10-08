@@ -18,7 +18,6 @@
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -300,22 +299,6 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
       close(ready[1]);
       ready[1] = -1;
     }
-    if (ready[0] >= 0) {
-      char why[160];
-      int start_failed = wait_for_srv_start(ready[0], SRV_START_TIMEOUT_MS, why, sizeof(why));
-      close(ready[0]);
-      ready[0] = -1;
-      if (start_failed != 0) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv failed to start: %s\n", why);
-        kill(pid, SIGTERM);
-        char error_message[256];
-        snprintf(error_message, sizeof(error_message),
-                 "Failed to start up the daemon side of the relay socket tunnel : %s", why);
-        send_session_error(atclient, params, requesting_atsign,
-                           cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")), error_message);
-        goto cancel;
-      }
-    }
 
     // since we use WNOHANG,
     // waitpid will return -1, if an error occurred
@@ -336,6 +319,12 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
       goto cancel;
     }
 
+    // NOTE: the reply doesn't wait for srv to reach the relay, since the
+    // client chooses the relay and this loop serves every request
+    if (ready[0] >= 0) {
+      srv_starts_watch(pid, ready[0], sshnpd_monotonic_ms());
+      ready[0] = -1;
+    }
     if (client_signing_key != NULL) {
       client_sessions_track(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")), client_signing_key, pid);
     }
