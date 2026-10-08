@@ -18,9 +18,14 @@ import 'aes_ctr_transformer.dart';
 
 const newLineCodeUnit = 10;
 
-@visibleForTesting
 class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
+
+  final Completer<void> _exited = Completer<void>();
+
+  /// Completes once the srv process [run] started has exited, which a
+  /// detached process reports only by closing its stdout.
+  Future<void> get exited => _exited.future;
 
   @override
   final String streamingHost;
@@ -167,7 +172,9 @@ class SrvImplExec implements Srv<Process> {
           }
         }
       }
-    }, onError: (e) {});
+    }, onError: (e) {}, onDone: () {
+      if (!_exited.isCompleted) _exited.complete();
+    });
     p.stderr.listen(
       (List<int> l) {
         var allLines = utf8.decode(l).trim();
@@ -189,7 +196,12 @@ class SrvImplExec implements Srv<Process> {
       },
     );
 
-    await rvPortBound.future.timeout(Duration(seconds: 15));
+    try {
+      await rvPortBound.future.timeout(Duration(seconds: 15));
+    } catch (_) {
+      p.kill();
+      rethrow;
+    }
 
     await Future.delayed(Duration(milliseconds: 100));
 
