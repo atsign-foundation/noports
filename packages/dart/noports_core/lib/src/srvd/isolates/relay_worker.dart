@@ -81,6 +81,16 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     return completer.future;
   }
 
+  /// Tells the main isolate that a socket of session [sessionId] was accepted
+  /// with a signature from the `_apsk` record [signingKeyUri].
+  void reportSigningKey(String sessionId, String signingKeyUri) =>
+      toMain.send(
+        IIRequest.create('signingKey', {
+          'sessionId': sessionId,
+          'key': signingKeyUri,
+        }),
+      );
+
   Future<void> unhandledRequest(IIRequest req) async {
     logger.shout(
       'Received unhandled request $req from main isolate - terminating',
@@ -127,6 +137,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         rvdNonce: params.rvdNonce,
         publicKey: params.publicKeyA,
         detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
+        onEscrVerified: (key) => reportSigningKey(params.sessionId, key),
       );
     }
 
@@ -141,6 +152,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         rvdNonce: params.rvdNonce,
         publicKey: params.publicKeyB,
         detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
+        onEscrVerified: (key) => reportSigningKey(params.sessionId, key),
       );
     }
 

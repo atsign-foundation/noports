@@ -463,7 +463,11 @@ void main() {
           getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
-      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
+      stubEncryptionKeys(
+        mockAtClient,
+        RsaKeyPair.generate(),
+        apkamKeyPair: RsaKeyPair.generate(),
+      );
 
       when(
         () => mockAtClient.notificationService,
@@ -514,6 +518,14 @@ void main() {
             expect(sshRequestResponse['signature'].isNotEmpty, true);
             expect(sshRequestResponse['hashingAlgo'].isNotEmpty, true);
             expect(sshRequestResponse['signingAlgo'].isNotEmpty, true);
+            final Map? enrollmentSignature =
+                sshRequestResponse['enrollmentSignature'];
+            expect(
+              enrollmentSignature?['sk'],
+              startsWith('public:_apsk.'),
+              reason: 'sshnp signs its request with its enrollment key too',
+            );
+            expect(enrollmentSignature!['s'], isA<String>());
           }
 
           return Future.value(

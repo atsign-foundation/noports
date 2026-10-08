@@ -9,14 +9,35 @@
 - **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
   `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
   `ActivateFlows` rather than an `AtOnboardingService`
-- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`,
-  and `ClientParams` implementations must add `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`
+  and `signingKeyCheckSecs`, and `ClientParams` implementations must add
+  `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `SshnpdParams` requires `clientKeyCheckSecs`
+  and `requireEnrollmentSignature`, `SshnpdOption` has two new values, and
+  `Sshnpd` implementations must add `clientKeyCheckInterval` and
+  `requireEnrollmentSignature`
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
+- feat: srvd checks every 5 minutes (by default) whether either side's
+  enrollment has been revoked, superseded, deleted or expired, and ends the
+  session if so, for each side that authenticated with ESCR
+- feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions. srvd now connects out to atServers itself, and asks its own
+  atServer instead when it can't reach one that way (or it predates HTTP
+  GET, c3.6.0), except when re-checking a key
+- feat: sshnp and npt sign each session request with the client's
+  enrollment key, and sshnpd ends a signed session once that enrollment is
+  revoked, superseded, deleted or expired, checking every 10 seconds by
+  default. New sshnpd `--client-key-check-secs` (0 turns the check off) and
+  `--require-enrollment-signature` (refuse requests that aren't signed)
+  options. A session that outlives a restart of sshnpd is no longer checked.
+  sshnpd looks the key up straight from the client's atServer over HTTPS,
+  so it needs outbound access to that atServer for the check
 - feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
   itself, so the client and the daemon can each use the strongest one they
   support. New `srvd --relay-auth-detect-window-ms` option (default 500).

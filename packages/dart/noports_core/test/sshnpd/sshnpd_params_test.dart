@@ -69,6 +69,35 @@ void main() {
       final p = await SshnpdParams.fromArgs(args);
       expect(p.strict, false);
     });
+    test('checks client enrollments every 10 seconds by default, and does not'
+        ' require enrollment signatures', () async {
+      final p = await SshnpdParams.fromArgs('-a @daemon -m @bob'.split(' '));
+      expect(p.clientKeyCheckSecs, 10);
+      expect(p.requireEnrollmentSignature, isFalse);
+    });
+    test('takes --client-key-check-secs, with 0 turning the check off',
+        () async {
+      for (final secs in [0, 1, 30]) {
+        final p = await SshnpdParams.fromArgs(
+          '-a @daemon -m @bob --client-key-check-secs $secs'.split(' '),
+        );
+        expect(p.clientKeyCheckSecs, secs);
+      }
+    });
+    test('refuses a negative --client-key-check-secs', () async {
+      await expectLater(
+        () => SshnpdParams.fromArgs(
+          '-a @daemon -m @bob --client-key-check-secs -1'.split(' '),
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+    test('takes --require-enrollment-signature', () async {
+      final p = await SshnpdParams.fromArgs(
+        '-a @daemon -m @bob --require-enrollment-signature'.split(' '),
+      );
+      expect(p.requireEnrollmentSignature, isTrue);
+    });
     test('test strict mode explicitly true when would default to false', () async {
       List<String> args = '-a @daemon -m @manager --strict'.split(' ');
       final p = await SshnpdParams.fromArgs(args);
