@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_lookup/at_lookup.dart'
-    show AtSignServerCheck, AtSignServerState, checkAtSignServer;
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
@@ -110,6 +108,7 @@ class NoPortsOnboardingUtil {
         if (!context.mounted) return null;
         try {
           final retry = await checkAtServer(atsign);
+          if (!context.mounted) return null;
           if (retry.state == AtSignServerState.activated) {
             result = await _handleActivatedAtsign(
               context: context,
@@ -320,8 +319,9 @@ class NoPortsOnboardingUtil {
 
     if (options.isEmpty) {
       atsign = null;
-    } else
+    } else {
       atsign ??= options.keys.first.toAtsign();
+    }
     if (options.keys.contains(atsign)) {
       rootDomain = options[atsign]?.rootDomain;
     } else {
@@ -340,7 +340,11 @@ class NoPortsOnboardingUtil {
     return results ?? false;
   }
 
-  Future<void> onboard({
+  /// Signs in to [atsign] on [rootDomain] - from the keychain when it holds
+  /// keys for it, otherwise by activation or enrollment - and goes to the
+  /// home page, or shows why it could not. Returns the outcome, or null if
+  /// [context] went away before it acted on one.
+  Future<NoPortsOnboardingResult?> onboard({
     required Atsign atsign,
     required String rootDomain,
     required BuildContext context,
@@ -350,7 +354,8 @@ class NoPortsOnboardingUtil {
 
     NoPortsOnboardingResult? onboardingResult;
 
-    if (!context.mounted) return;
+    if (!context.mounted) return null;
+    final strings = AppLocalizations.of(context)!;
 
     if (atsigns.contains(atsign)) {
       Object? authFailure;
@@ -365,16 +370,14 @@ class NoPortsOnboardingUtil {
         if (state.isRefused) {
           await client.stop();
           revokedByServer = state.cause == AtConnectionCause.revoked;
-          authFailure =
-              state.error ??
-              AppLocalizations.of(context)!.errorAuthenticatinFailed;
+          authFailure = state.error ?? strings.errorAuthenticatinFailed;
         } else {
           onboardingResult = NoPortsOnboardingResult.success(atsign: atsign);
         }
       } on AtEnrollmentPendingException {
         // The keychain holds an enrollment this device submitted and never
         // completed; the APKAM flow picks it up where it left off.
-        if (!context.mounted) return;
+        if (!context.mounted) return null;
         onboardingResult = await handleAtsignByStatus(
           context: context,
           atsign: atsign,
@@ -396,7 +399,7 @@ class NoPortsOnboardingUtil {
 
         if (isRevoked) {
           await discardStaleKeys(atsign);
-          if (!context.mounted) return;
+          if (!context.mounted) return null;
           onboardingResult = await handleAtsignByStatus(
             context: context,
             atsign: atsign,
@@ -411,7 +414,7 @@ class NoPortsOnboardingUtil {
 
           if (state == AtSignServerState.notActivated) {
             await discardStaleKeys(atsign);
-            if (!context.mounted) return;
+            if (!context.mounted) return null;
             onboardingResult = await handleAtsignByStatus(
               context: context,
               atsign: atsign,
@@ -420,10 +423,7 @@ class NoPortsOnboardingUtil {
             onboardingResult = NoPortsOnboardingResult.error(
               message: authFailure is String
                   ? authFailure
-                  : describeOnboardingError(
-                      authFailure,
-                      AppLocalizations.of(context)!,
-                    ),
+                  : describeOnboardingError(authFailure, strings),
             );
           }
         }
@@ -436,7 +436,7 @@ class NoPortsOnboardingUtil {
       );
     }
 
-    if (!context.mounted) return;
+    if (!context.mounted) return null;
     switch (onboardingResult?.status ?? NoPortsOnboardingResultStatus.cancel) {
       case NoPortsOnboardingResultStatus.success:
         AtClientManager.getInstance().atClient.syncService.addProgressListener(
@@ -457,7 +457,7 @@ class NoPortsOnboardingUtil {
 
         App.log('atsign result is:$result'.loggable);
 
-        if (!context.mounted) return;
+        if (!context.mounted) return onboardingResult;
         // Replace the whole root stack: pushing a second [HomeWrapperWidget]
         // on top of an existing one duplicates the `wrapperNav` GlobalKey,
         // which reparents the old navigator (keeping the old page) under a
@@ -483,6 +483,7 @@ class NoPortsOnboardingUtil {
       case NoPortsOnboardingResultStatus.cancel:
         break;
     }
+    return onboardingResult;
   }
 
   static Future<String?> _defaultAtKeysDir() async {
