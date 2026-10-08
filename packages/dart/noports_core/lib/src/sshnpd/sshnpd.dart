@@ -103,6 +103,15 @@ abstract class Sshnpd {
   /// policy service is being used, and false otherwise.
   abstract final bool strict;
 
+  /// How often to check that the enrollment each session's client signed its
+  /// request with hasn't been withdrawn, ending the session once it has;
+  /// [Duration.zero] turns the check off.
+  abstract final Duration clientKeyCheckInterval;
+
+  /// Whether to refuse a session request that the client hasn't signed with
+  /// its enrollment key.
+  abstract final bool requireEnrollmentSignature;
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,

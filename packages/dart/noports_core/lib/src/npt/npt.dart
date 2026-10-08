@@ -6,6 +6,8 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -318,8 +320,9 @@ class _NptImpl extends NptBase
           ? params.srvdAtSign.toAtsign()
           : null,
     );
-    final notifyPayload = await signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapRequest(
       atClient,
+      _srvdChannel,
       sessionRequest.toJson(),
     );
     logger.info('Sending: $notifyPayload');

@@ -19,6 +19,11 @@ int verify_envelope_contents(cJSON *envelope, enum payload_type type);
 
 int verify_payload_contents(cJSON *payload, enum payload_type type);
 
+// Whether session_id is a UUID (8-4-4-4-12 hex digits), the only form the
+// daemon accepts: it names the atKey of every reply, so anything else could
+// carry characters that break the atProtocol command the reply is sent in.
+bool is_valid_session_id(const char *session_id);
+
 int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_key, char **rvd_auth_string);
 
 // Notify the requesting client that its session request was denied and why.
@@ -38,6 +43,12 @@ void format_string_list(char **items, size_t len, char *buf, size_t bufsize);
 // 'public:_apsk.<enrollmentId>.a.__e<atsign>', used for escr relay auth. The
 // enrollment id falls back to 'primary' when the atkeys carry none.
 char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign);
+
+// Whether the public signing key record must be (re)published: when it
+// doesn't exist (published is NULL) or holds anything other than
+// pkam_public_key_base64, as when an earlier keyfile for this enrollment
+// id published a key the daemon no longer holds.
+bool public_signing_key_needs_publishing(const char *published, const char *pkam_public_key_base64);
 
 // Generates a fresh session AES key and iv, returning the base64 encoded
 // plaintext values (session_aes_key / session_iv) alongside copies encrypted

@@ -9,6 +9,8 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/src/srvd/srvd_params.dart'
+    show defaultSigningKeyCheckInterval;
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
 
@@ -47,6 +49,7 @@ void main() {
         bind443: bind443,
         localBindPort443: localBindPort443,
         relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+        signingKeyCheckInterval: defaultSigningKeyCheckInterval,
       );
 
   SrvdSessionParams session() => SrvdSessionParams(

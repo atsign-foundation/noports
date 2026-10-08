@@ -48,6 +48,7 @@ class SinglePortWorker extends RelayWorker {
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
+    reqHandlers['endSession'] = endSession;
   }
 
   @override
@@ -166,6 +167,7 @@ class SinglePortWorker extends RelayWorker {
           ' which expects $expected',
         );
       }
+      reportSigningKey(sessionId, rav.signingKeyUri!);
       Side side = Side(socket, rav.isSideA!);
 
       side.stream = verifiedSocketStream!;
@@ -205,6 +207,12 @@ class SinglePortWorker extends RelayWorker {
       }
       await _stop();
     }
+  }
+
+  /// Ends the session whose id is the request's payload, closing its
+  /// connections.
+  Future<void> endSession(IIRequest req) async {
+    sessions[req.payload]?.connector?.close();
   }
 
   Future<void> startSession(IIRequest req) async {

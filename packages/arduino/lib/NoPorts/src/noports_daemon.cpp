@@ -21,6 +21,7 @@
 
 #include "noports/noports_daemon.h"
 #include "noports/noports_log.h"
+#include <ctype.h>
 #include <stdarg.h>
 #include <sys/time.h>     // gettimeofday() for the policy reqId seed
 #include <mbedtls/platform_util.h> // mbedtls_platform_zeroize
@@ -201,6 +202,13 @@ NoPortsDaemon::~NoPortsDaemon() {
 // valid RSA-2048 key normally arrives with n.len == 257 - compare significant
 // bytes, not raw length.
 static bool _is_rsa2048_private_key(const atchops_rsa_key_private_key *key) {
+  const unsigned char *n_bytes = key->n.value;
+  size_t n_sig = key->n.len;
+  while (n_sig > 0 && n_bytes[0] == 0x00) { n_bytes++; n_sig--; }
+  return n_sig == 256;
+}
+
+static bool _is_rsa2048_public_key(const atchops_rsa_key_public_key *key) {
   const unsigned char *n_bytes = key->n.value;
   size_t n_sig = key->n.len;
   while (n_sig > 0 && n_bytes[0] == 0x00) { n_bytes++; n_sig--; }
@@ -1099,6 +1107,21 @@ static int _parse_port_strict(const char *s) {
   return (int)v;
 }
 
+// Whether session_id is a UUID (8-4-4-4-12 hex digits), the only form the
+// daemon accepts: it names the atKey of every reply, so anything else could
+// carry characters that break the atProtocol command the reply is sent in.
+static bool _is_valid_session_id(const char *session_id) {
+  if (session_id == nullptr || strlen(session_id) != 36) return false;
+  for (size_t i = 0; i < 36; i++) {
+    const bool dash_expected = i == 8 || i == 13 || i == 18 || i == 23;
+    if (dash_expected ? session_id[i] != '-'
+                      : !isxdigit((unsigned char)session_id[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // RSA-encrypt a NUL-terminated base64 key/IV string with the client's
 // ephemeral public key and return the result base64-encoded (malloc'd).
 // Returns NULL on any failure so the caller can reject the whole request
@@ -1386,6 +1409,18 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
   cJSON *envelope = cJSON_Parse(message->notification->decrypted_value);
   if (envelope == NULL) {
     NOPORTS_LOGE(TAG, "NPT: failed to parse envelope JSON");
+    return;
+  }
+
+  // Every reply, an error included, is keyed by the sessionId, so refuse a
+  // request whose sessionId isn't a UUID before anything can reply to it.
+  if (!_is_valid_session_id(cJSON_GetStringValue(cJSON_GetObjectItem(
+          cJSON_GetObjectItem(envelope, "payload"), "sessionId")))) {
+    NOPORTS_LOGW(TAG, "NPT: refusing request from %s: its sessionId is missing"
+                 " or not a UUID",
+                 message->notification->from ? message->notification->from
+                                             : "null");
+    cJSON_Delete(envelope);
     return;
   }
 
@@ -2423,6 +2458,13 @@ bool NoPortsDaemon::_verifyEnvelopeSignature(void *env, const char *from_atsign)
   res = atchops_rsa_key_populate_public_key(&requester_pk, pk_buffer, strlen(pk_buffer));
   if (res != 0) {
     free(pk_buffer);
+    return false;
+  }
+  // The Dart daemon takes envelope signatures only from 2048-bit keys.
+  if (!_is_rsa2048_public_key(&requester_pk)) {
+    NOPORTS_LOGE(TAG, "Public key of %s is not RSA-2048", from_atsign);
+    free(pk_buffer);
+    atchops_rsa_key_public_key_free(&requester_pk);
     return false;
   }
 

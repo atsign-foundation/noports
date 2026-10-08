@@ -228,3 +228,8 @@ reconciles per socket.
   non-ESCR daemon).
 - **443 is ESCR-only** on every relay version.
 - **`payload`** always yields legacy on both sides.
+- **Only an ESCR side is re-checked for revocation.** srvd ends a session
+  once the enrollment an ESCR side signed with is revoked, superseded,
+  deleted or expires (`--signing-key-check-secs`, every 5 minutes by
+  default). A legacy side signs with its atSign's shared key, which names no
+  enrollment, so the relay can't tell when that side's enrollment goes.

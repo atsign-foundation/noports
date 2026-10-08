@@ -2,6 +2,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart' show isA, startsWith;
@@ -37,11 +38,13 @@ class SubscribeStub extends Mock implements SubscribeCaller {}
 class MockAtClient extends Mock implements AtClient {}
 
 /// Gives [atClient] a key source holding [encryptionKeyPair] as [atSign]'s
-/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with.
+/// encryption keypair, which is what [signAndWrapAndJsonEncode] signs with,
+/// and [apkamKeyPair], when given, as its enrollment's signing keypair.
 void stubEncryptionKeys(
   MockAtClient atClient,
   RsaKeyPair encryptionKeyPair, {
   String atSign = '@alice',
+  RsaKeyPair? apkamKeyPair,
 }) {
   when(() => atClient.atKeysIo).thenReturn(
     InMemoryAtKeysIo.holding(
@@ -49,6 +52,8 @@ void stubEncryptionKeys(
       AtKeys.legacy(
         encryptionPublicKey: encryptionKeyPair.atPublicKey.publicKey,
         encryptionPrivateKey: encryptionKeyPair.atPrivateKey.privateKey,
+        apkamPublicKey: apkamKeyPair?.atPublicKey.publicKey,
+        apkamPrivateKey: apkamKeyPair?.atPrivateKey.privateKey,
       ),
     ),
   );
@@ -132,3 +137,28 @@ abstract class StartProcessCaller {
 }
 
 class StartProcessStub extends Mock implements StartProcessCaller {}
+
+/// A [PublicLookup] that asks [atClient]'s own atServer for every record, so
+/// a test can answer lookups by stubbing [AtClient.get].
+class ClientPublicLookup extends PublicLookup {
+  ClientPublicLookup(this.atClient);
+
+  final AtClient atClient;
+
+  @override
+  Future<String?> lookup(String uri) => lookupDirect(uri);
+
+  @override
+  Future<String?> lookupDirect(String uri) async {
+    try {
+      final value = (await atClient.get(
+        AtKey.fromString(uri),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+      ))
+          .value;
+      return value is String ? value : null;
+    } on AtKeyNotFoundException {
+      return null;
+    }
+  }
+}
