@@ -19,9 +19,14 @@ extern "C" {
 static const char *TAG = "noports_keys";
 
 // How long a lookup may take when a request arrives, as the Dart daemon
-// allows, and when re-checking a key from loop(), which it holds up
-#define NOPORTS_LOOKUP_TIMEOUT_MS    10000
-#define NOPORTS_KEY_CHECK_TIMEOUT_MS 5000
+// allows, and all the lookups of one key check from loop(), which they hold
+// up
+#define NOPORTS_LOOKUP_TIMEOUT_MS   10000
+#define NOPORTS_KEY_CHECK_BUDGET_MS 5000
+
+// A key whose check can't tell is skipped for twice as many rounds each time,
+// up to this many, so a slow atServer can hold loop() up only now and then
+#define NOPORTS_KEY_CHECK_MAX_SKIP 30
 
 // The most a record's value may be, which no `_apsk` advertisement or public
 // key comes near
@@ -165,7 +170,8 @@ static noports_lookup_result _lookup_at(const char *host, uint16_t port, const c
 // host:port: *location is "r.__e" (revoked or superseded), "d.__e" (deleted
 // or expired) or NULL (neither holds it). Returns false when that can't be
 // told.
-static bool _withdrawn_to(const char *host, uint16_t port, const char *uri, const char **location) {
+static bool _withdrawn_to(const char *host, uint16_t port, const char *uri, uint32_t timeout_ms,
+                          const char **location) {
   static const char *const locations[] = {"r.__e", "d.__e"};
   *location = NULL;
   const char *suffix = strstr(uri, ".a.__e@");
@@ -179,7 +185,7 @@ static bool _withdrawn_to(const char *host, uint16_t port, const char *uri, cons
     if (withdrawn == NULL) return false;
     snprintf(withdrawn, size, "%.*s.%s%s", (int)(suffix - uri), uri, locations[i], suffix + 6);
     char *value = NULL;
-    noports_lookup_result result = _lookup_at(host, port, withdrawn, NOPORTS_KEY_CHECK_TIMEOUT_MS, &value);
+    noports_lookup_result result = _lookup_at(host, port, withdrawn, timeout_ms, &value);
     free(withdrawn);
     free(value);
     if (result == NOPORTS_LOOKUP_FOUND) {
@@ -306,26 +312,45 @@ void NoPortsDaemon::_forgetClientSigningKey(int slot) {
 // What a key check found for one key
 enum _KeyCheck { KEY_PUBLISHED, KEY_REVOKED, KEY_DELETED, KEY_MISSING, KEY_UNKNOWN };
 
+// What is left of a key check's budget, started at started_ms; 0 when too
+// little is left for a lookup to be worth starting
+static uint32_t _budget_left(uint32_t started_ms) {
+  uint32_t spent = millis() - started_ms;
+  return spent + 500 >= NOPORTS_KEY_CHECK_BUDGET_MS ? 0 : NOPORTS_KEY_CHECK_BUDGET_MS - spent;
+}
+
 int NoPortsDaemon::_checkKey(ClientSigningKey *key) {
+  uint32_t started_ms = millis();
   char *value = NULL;
   noports_lookup_result result = NOPORTS_LOOKUP_NOT_SERVED;
   if (key->atserver_host[0] != '\0') {
-    result = _lookup_at(key->atserver_host, key->atserver_port, key->signing_key, NOPORTS_KEY_CHECK_TIMEOUT_MS,
+    result = _lookup_at(key->atserver_host, key->atserver_port, key->signing_key, _budget_left(started_ms),
                         &value);
   }
   if (result == NOPORTS_LOOKUP_NOT_SERVED &&
       _findAtServer(strrchr(key->signing_key, '@'), key->atserver_host, sizeof(key->atserver_host),
-                    &key->atserver_port)) {
-    result = _lookup_at(key->atserver_host, key->atserver_port, key->signing_key, NOPORTS_KEY_CHECK_TIMEOUT_MS,
+                    &key->atserver_port) &&
+      _budget_left(started_ms) > 0) {
+    result = _lookup_at(key->atserver_host, key->atserver_port, key->signing_key, _budget_left(started_ms),
                         &value);
   }
   free(value);
   if (result == NOPORTS_LOOKUP_FOUND) return KEY_PUBLISHED;
   if (result != NOPORTS_LOOKUP_NOT_FOUND) return KEY_UNKNOWN;
+  // The two lookups of where it went share what is left of the budget
+  uint32_t each_ms = _budget_left(started_ms) / 2;
   const char *location = NULL;
-  if (!_withdrawn_to(key->atserver_host, key->atserver_port, key->signing_key, &location)) return KEY_UNKNOWN;
+  if (each_ms == 0 ||
+      !_withdrawn_to(key->atserver_host, key->atserver_port, key->signing_key, each_ms, &location)) {
+    return KEY_UNKNOWN;
+  }
   if (location == NULL) return KEY_MISSING;
   return strcmp(location, "r.__e") == 0 ? KEY_REVOKED : KEY_DELETED;
+}
+
+static uint8_t _next_backoff(uint8_t backoff) {
+  if (backoff == 0) return 1;
+  return backoff * 2 > NOPORTS_KEY_CHECK_MAX_SKIP ? NOPORTS_KEY_CHECK_MAX_SKIP : backoff * 2;
 }
 
 void NoPortsDaemon::_checkClientKeys() {
@@ -336,7 +361,9 @@ void NoPortsDaemon::_checkClientKeys() {
   if (now - _last_key_check_ms >= interval_ms) {
     _last_key_check_ms = now;
     for (int i = 0; i < NOPORTS_MAX_RELAYS; i++) {
-      _client_keys[i].due = _client_keys[i].signing_key != NULL && !_client_keys[i].ending;
+      ClientSigningKey *key = &_client_keys[i];
+      key->due = key->signing_key != NULL && !key->ending && key->skip_rounds == 0;
+      if (key->skip_rounds > 0) key->skip_rounds--;
     }
   }
   // NOTE: one key per pass, since each lookup holds up loop()
@@ -348,6 +375,8 @@ void NoPortsDaemon::_checkClientKeys() {
       ClientSigningKey *other = &_client_keys[j];
       if (other->signing_key == NULL || strcmp(other->signing_key, key->signing_key) != 0) continue;
       other->due = false;
+      other->backoff = found == KEY_UNKNOWN ? _next_backoff(other->backoff) : 0;
+      other->skip_rounds = other->backoff;
       if ((found == KEY_REVOKED || found == KEY_DELETED) && !other->ending) {
         other->ending = true;
         NOPORTS_LOGW(TAG, "Ending session %s: its client's signing key %s has been withdrawn to %s",

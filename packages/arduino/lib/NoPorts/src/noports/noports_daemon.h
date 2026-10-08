@@ -29,6 +29,8 @@ struct ClientSigningKey {
   uint16_t atserver_port;
   bool     due;                // to be checked this round
   bool     ending;             // found withdrawn, its relay told to stop
+  uint8_t  backoff;            // rounds skipped after its last check that couldn't tell
+  uint8_t  skip_rounds;        // rounds still to skip
 };
 
 // Maximum concurrent relays (limited by memory/sockets)
