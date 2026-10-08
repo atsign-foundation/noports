@@ -5,12 +5,6 @@ on:
     tags:
       - "c*.*.*"
   workflow_dispatch:
-    inputs:
-      native_build_only:
-        description: "Run non-dockerx builds only"
-        required: true
-        default: false
-        type: boolean
 
 permissions: # added using https://github.com/step-security/secure-repo
   contents: read
@@ -19,7 +13,7 @@ jobs:
   verify_tags:
     permissions:
       contents: write # Needed to create workflow branch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create action branch
@@ -46,7 +40,7 @@ jobs:
 
   native_build:
     needs: [verify_tags]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./packages/c/sshnpd
@@ -54,23 +48,71 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15-intel
-            output-name: sshnpd-macos-x64
-            ext: ""
-            bundle: "shell"
-            compiler: "clang"
-            flags: "-Wno-error -pthread"
-          - os: macos-latest
-            output-name: sshnpd-macos-arm64
-            ext: ""
-            bundle: "shell"
-            compiler: "clang"
-            flags: "-Wno-error -pthread"
+          - output-name: sshnpd-macos-x64
+            target: x86_64-macos
+            system_name: Darwin
+            system_processor: x86_64
+            c_flags: "-Wno-error"
+            exe_linker_flags: ""
+          - output-name: sshnpd-macos-arm64
+            target: aarch64-macos
+            system_name: Darwin
+            system_processor: arm64
+            c_flags: "-Wno-error"
+            exe_linker_flags: ""
+          - output-name: sshnpd-linux-x64
+            target: x86_64-linux-gnu.2.17
+            system_name: Linux
+            system_processor: x86_64
+            c_flags: "-Wno-error -pthread"
+            exe_linker_flags: "-pthread -lrt"
+          - output-name: sshnpd-linux-x64-musl
+            target: x86_64-linux-musl
+            system_name: Linux
+            system_processor: x86_64
+            c_flags: "-Wno-error"
+            exe_linker_flags: "-static"
+          - output-name: sshnpd-linux-arm64
+            target: aarch64-linux-gnu.2.17
+            system_name: Linux
+            system_processor: aarch64
+            c_flags: "-Wno-error -pthread"
+            exe_linker_flags: "-pthread -lrt"
+          - output-name: sshnpd-linux-arm64-musl
+            target: aarch64-linux-musl
+            system_name: Linux
+            system_processor: aarch64
+            c_flags: "-Wno-error"
+            exe_linker_flags: "-static"
+          - output-name: sshnpd-linux-arm
+            target: arm-linux-gnueabihf.2.17
+            system_name: Linux
+            system_processor: armv7l
+            c_flags: "-Wno-error -pthread"
+            exe_linker_flags: "-pthread -lrt"
+          - output-name: sshnpd-linux-armv-musl
+            target: arm-linux-musleabihf
+            system_name: Linux
+            system_processor: armv7l
+            c_flags: "-Wno-error"
+            exe_linker_flags: "-static"
+          - output-name: sshnpd-linux-riscv64
+            target: riscv64-linux-gnu.2.27
+            system_name: Linux
+            system_processor: riscv64
+            c_flags: "-Wno-error -pthread"
+            exe_linker_flags: "-pthread -lrt"
+          - output-name: lsshnpd-inux-riscv64-musl
+            target: riscv64-linux-musl
+            system_name: Linux
+            system_processor: riscv64
+            c_flags: "-Wno-error"
+            exe_linker_flags: "-static"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: c_release-${{github.run_number}}
-
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         # Pin cmake to <4.0.0
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@0d6a7d60b009d01c9e7523be22153ff8f19460d3 # v2.2.0
@@ -78,79 +120,33 @@ jobs:
           cmake-version: "3.31.11"
       - name: Compile binaries
         run: |
-          cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DCMAKE_C_FLAGS="${{matrix.flags}}"
+          CC="zig cc -target ${{ matrix.target }}" \
+          cmake \
+            -B build \
+            -DCMAKE_SYSTEM_NAME="${{ matrix.system_name }}" \
+            -DCMAKE_SYSTEM_PROCESSOR="${{ matrix.system_processor }}" \
+            -DCMAKE_C_FLAGS="${{ matrix.c_flags }}" \
+            -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.exe_linker_flags }}" \
+            -DCMAKE_C_CREATE_STATIC_LIBRARY="zig ar qc <TARGET> <LINK_FLAGS> <OBJECTS>; zig ranlib <TARGET>" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_TESTS=OFF
           cmake --build build
           mkdir tarball
           mv build/sshnpd .
           mv build/at_activate .
-      - name: Zip the build
+      - name: Zip the build (MacOS only)
+        if: ${{ matrix.system_name == 'Darwin' }}
         run: zip tarball/${{ matrix.output-name }}.zip sshnpd at_activate
+      - name: Archive to tgz (Linux only)
+        if: ${{ matrix.system_name == 'Linux' }}
+        run: tar -cvzf tarball/${{ matrix.output-name }}.tgz sshnpd at_activate
       - name: Upload archives
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ matrix.output-name }}_${{ matrix.compiler
-            }}-${{  github.ref_name
+          name: ${{ matrix.output-name }}_${{ github.ref_name
             }}-${{github.run_number}}-${{github.run_attempt}}
           path: ./packages/c/sshnpd/tarball
           if-no-files-found: error
-
-  docker_builds:
-    needs: [verify_tags]
-    if: ${{ ! inputs.native_build_only }}
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: ./packages/c
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux/amd64
-            output-name: sshnpd-linux-x64
-            dockerfile: Dockerfile.package
-          - os: ubuntu-latest
-            platform: linux/amd64
-            output-name: sshnpd-linux-x64-musl
-            dockerfile: Dockerfile.musl
-          - os: ubuntu-24.04-arm
-            platform: linux/arm64
-            output-name: sshnpd-linux-arm64
-            dockerfile: Dockerfile.package
-          - os: ubuntu-24.04-arm
-            platform: linux/arm64
-            output-name: sshnpd-linux-arm64-musl
-            dockerfile: Dockerfile.musl
-          - os: ubuntu-24.04-arm
-            platform: linux/arm/v7
-            output-name: sshnpd-linux-arm-musl
-            dockerfile: Dockerfile.musl
-          - os: ubuntu-24.04-arm
-            platform: linux/riscv64
-            output-name: sshnpd-linux-riscv64-musl
-            dockerfile: Dockerfile.musl
-    ## 20240806: Clang and CMake that we use aren't packaged for
-    ## armv7 or riscv64 (also no Debian 11 for RISC-V)
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: c_release-${{github.run_number}}
-      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
-      - name: Build tarballs in Docker
-        run: |
-          docker buildx build -t atsigncompany/sshnpdc \
-          -f sshnpd/tools/${{ matrix.dockerfile }} \
-          --platform ${{ matrix.platform }} -o type=tar,dest=bins.tar .
-          mkdir tarballs
-          tar -xvf bins.tar -C tarballs
-      - name: Upload tarballs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{
-            matrix.output-name  }}-${{  github.ref_name  }}-${{  github.run_number
-            }}-${{  github.run_attempt  }}
-          path: ./packages/c/tarballs/${{ matrix.output-name }}.tgz
 
   source_tarball:
     needs: [verify_tags]
