@@ -44,6 +44,12 @@ void format_string_list(char **items, size_t len, char *buf, size_t bufsize);
 // enrollment id falls back to 'primary' when the atkeys carry none.
 char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign);
 
+// Whether the public signing key record must be (re)published: when it
+// doesn't exist (published is NULL) or holds anything other than
+// pkam_public_key_base64, as when an earlier keyfile for this enrollment
+// id published a key the daemon no longer holds.
+bool public_signing_key_needs_publishing(const char *published, const char *pkam_public_key_base64);
+
 // Generates a fresh session AES key and iv, returning the base64 encoded
 // plaintext values (session_aes_key / session_iv) alongside copies encrypted
 // with the client's ephemeral public key (the *_base64 out params). Call once

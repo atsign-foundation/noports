@@ -208,6 +208,13 @@ static bool _is_rsa2048_private_key(const atchops_rsa_key_private_key *key) {
   return n_sig == 256;
 }
 
+static bool _is_rsa2048_public_key(const atchops_rsa_key_public_key *key) {
+  const unsigned char *n_bytes = key->n.value;
+  size_t n_sig = key->n.len;
+  while (n_sig > 0 && n_bytes[0] == 0x00) { n_bytes++; n_sig--; }
+  return n_sig == 256;
+}
+
 // Wipe a NUL-terminated key/IV string before freeing it: on a single-address-
 // space MCU freed heap holding live session keys can surface in later
 // allocations or crash dumps. mbedtls_platform_zeroize is never optimized away.
@@ -2451,6 +2458,13 @@ bool NoPortsDaemon::_verifyEnvelopeSignature(void *env, const char *from_atsign)
   res = atchops_rsa_key_populate_public_key(&requester_pk, pk_buffer, strlen(pk_buffer));
   if (res != 0) {
     free(pk_buffer);
+    return false;
+  }
+  // The Dart daemon takes envelope signatures only from 2048-bit keys.
+  if (!_is_rsa2048_public_key(&requester_pk)) {
+    NOPORTS_LOGE(TAG, "Public key of %s is not RSA-2048", from_atsign);
+    free(pk_buffer);
+    atchops_rsa_key_public_key_free(&requester_pk);
     return false;
   }
 
