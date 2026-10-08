@@ -22,8 +22,7 @@ jobs:
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -b c_release-${{github.run_number}}
       - name:
-          Ensure pubspec.yaml matches git ref (if current git ref is a version
-          tag)
+          Ensure version.h matches git ref (if current git ref is a version tag)
         shell: bash
         if: startsWith(github.ref, 'refs/tags/c')
         working-directory: ./packages/c/sshnpd/include/sshnpd/
@@ -168,7 +167,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: csshnpd-src-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
-          path: ./packages/c/build/release-static/csshnpd-${{ github.ref_name }}.tar.gz
+          path: ./packages/c/build/release-static/csshnpd-*.tar.gz
 
   github-release:
     if: startsWith(github.ref, 'refs/tags/c')
