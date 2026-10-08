@@ -102,7 +102,7 @@ jobs:
             system_processor: riscv64
             c_flags: "-Wno-error -pthread"
             exe_linker_flags: "-pthread -lrt"
-          - output-name: lsshnpd-inux-riscv64-musl
+          - output-name: sshnpd-linux-riscv64-musl
             target: riscv64-linux-musl
             system_name: Linux
             system_processor: riscv64
