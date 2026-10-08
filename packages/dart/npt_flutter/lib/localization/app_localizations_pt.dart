@@ -512,6 +512,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fileSaved => 'Arquivo Salvo';
 
   @override
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
+
+  @override
   String get findOtp =>
       'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
 
@@ -1627,6 +1630,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get fileSaved => 'Arquivo Salvo';
+
+  @override
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
   String get findOtp =>

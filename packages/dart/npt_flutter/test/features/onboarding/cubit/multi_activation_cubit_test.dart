@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/multi_activation_file_content.dart';

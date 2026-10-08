@@ -1,4 +1,4 @@
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
@@ -31,7 +31,10 @@ class MultiActivationFileContent {
     return entries.map((e) => e.toJson()).toList();
   }
 
-  copyWith({List<ActivationKeyPair>? entries, String? fileName}) {
+  MultiActivationFileContent copyWith({
+    List<ActivationKeyPair>? entries,
+    String? fileName,
+  }) {
     return MultiActivationFileContent(
       entries: entries ?? this.entries,
       fileName: fileName ?? this.fileName,

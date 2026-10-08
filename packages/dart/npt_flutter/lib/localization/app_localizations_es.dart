@@ -514,6 +514,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fileSaved => 'Archivo Guardado';
 
   @override
+  String get fileSaveFailed => 'Error al guardar el archivo';
+
+  @override
   String get findOtp =>
       'La solicitud se mostrará en el Authenticator en Solicitudes en cualquier aplicación conectada a tu Atsign con claves de administrador.';
 

@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "5813a8ace3d15102db3eb9ae733c419bc47638d550e2ee2140b82de5f55c947b"
+      sha256: "12475cde2d43913b6d99bd7216d98e972ec40103d4203d08dd3c155db8f8c242"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0-rc3"
+    version: "4.0.0-rc4"
   at_base2e15:
     dependency: transitive
     description:
@@ -82,31 +82,31 @@ packages:
     source: hosted
     version: "3.1.2-rc2"
   at_client:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_client
-      sha256: "44f28a3323479f6326290feb9da17ffbedcf60c3e5998b2388e849f1d8d67d73"
+      sha256: "737ae5a581407cbb8bf731716545b87dad3a7ac6b37175fd57c66df795c0a6b4"
       url: "https://pub.dev"
     source: hosted
-    version: "3.15.0-rc3"
+    version: "3.15.0-rc5"
   at_client_flutter:
     dependency: "direct main"
     description:
       name: at_client_flutter
-      sha256: "977baf44bea41af0bdc2ffb8694a23836d4024b7b4b5903cd506184e8b0619d7"
+      sha256: "0e1102d3473fa386ea16a0194e14882f003b54017aa9d8dd834d9a79e3670017"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0-rc2"
+    version: "2.0.0-rc4"
   at_commons:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_commons
-      sha256: "30d95e35bd5e4563b9a8c75e67257edc116fd572946bbdc8facbf920a203b506"
+      sha256: b392e16b9d03d7e6be27f7c9bdebd6675039391013399acd81e583bcb5c339b5
       url: "https://pub.dev"
     source: hosted
-    version: "5.18.0"
+    version: "5.19.0"
   at_lookup:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_lookup
       sha256: cbeaa08500a2dbeaa3b5a5e66d6fdd62a1654bac66d46ac3ac976f04c6d5ecee
@@ -138,7 +138,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_utils
       sha256: b737acf746b337beccf29c27e24d399c0c503c258d8b1b0bd521ca938229cccd
@@ -563,6 +563,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.14.4"
+  flutter_lints:
+    dependency: "direct dev"
+    description:
+      name: flutter_lints
+      sha256: "3105dc8492f6183fb076ccf1f351ac3d60564bff92e20bfc4af9cc1651f4e7e1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   flutter_localizations:
     dependency: "direct main"
     description: flutter
@@ -780,6 +788,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  lints:
+    dependency: transitive
+    description:
+      name: lints
+      sha256: "12f842a479589fea194fe5c5a3095abc7be0c1f2ddfa9a0e76aed1dbd26a87df"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   logging:
     dependency: transitive
     description:
@@ -813,7 +829,7 @@ packages:
     source: hosted
     version: "0.1.1"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
@@ -1221,10 +1237,10 @@ packages:
     dependency: "direct main"
     description:
       name: socket_connector
-      sha256: f4115e0a02d9f909b3ea4c43d5c2186092da9e167c61ba0e212164a4d8bcb2a2
+      sha256: c29616a23f237666ee8945d01efa1fe7049444c139d0a48fb71f71cf53448891
       url: "https://pub.dev"
     source: hosted
-    version: "2.6.0"
+    version: "2.6.1"
   source_gen:
     dependency: transitive
     description:
@@ -1482,7 +1498,7 @@ packages:
     source: hosted
     version: "2.4.2"
   version:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: version
       sha256: "3d4140128e6ea10d83da32fef2fa4003fccbf6852217bb854845802f04191f94"
