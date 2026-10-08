@@ -190,9 +190,11 @@ void main() {
         onData: (fn) => feed = fn,
       );
 
+      final reported = <String>[];
       final verifier = RelayAuthVerifierAuto(
         'auto sideA',
         helper,
+        onEscrVerified: reported.add,
         atSign: '@alice',
         sessionId: sessionId,
         isSideA: true,
@@ -223,6 +225,7 @@ void main() {
       expect(written, [challenge, 'ok']);
       expect(verifier.sessionId, sessionId);
       expect(verifier.atSign, '@alice');
+      expect(reported, [publicSigningKeyUri]);
     });
 
     test('rejects an unexpected first byte (neither "{" nor silence)', () async {
@@ -351,6 +354,7 @@ void main() {
 
     test('an ESCR response signed by another atSign is refused', () async {
       final fx = escrFixture();
+      final reported = <String>[];
       final verifier = RelayAuthVerifierAuto(
         'auto sideA',
         fx.helper,
@@ -361,6 +365,7 @@ void main() {
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
+        onEscrVerified: reported.add,
       );
 
       await expectEscrRefused(
@@ -368,10 +373,13 @@ void main() {
         fx.authenticator,
         'dataMismatch : ESCR response signed by @alice on the socket for @bob',
       );
+      expect(reported, isEmpty,
+          reason: 'a refused socket reports no signing key');
     });
 
     test('an ESCR response claiming the other side is refused', () async {
       final fx = escrFixture();
+      final reported = <String>[];
       final verifier = RelayAuthVerifierAuto(
         'auto sideB',
         fx.helper,
@@ -382,6 +390,7 @@ void main() {
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
+        onEscrVerified: reported.add,
       );
 
       await expectEscrRefused(
@@ -389,11 +398,14 @@ void main() {
         fx.authenticator,
         'dataMismatch : ESCR response for side A on the socket for side B',
       );
+      expect(reported, isEmpty,
+          reason: 'a refused socket reports no signing key');
     });
 
     test('an ESCR response for another session is refused', () async {
       final fx = escrFixture();
       final otherSessionId = Uuid().v4();
+      final reported = <String>[];
       final verifier = RelayAuthVerifierAuto(
         'auto sideA',
         fx.helper,
@@ -404,6 +416,7 @@ void main() {
         rvdNonce: 'unused for escr',
         detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
+        onEscrVerified: reported.add,
       );
 
       await expectEscrRefused(
@@ -412,6 +425,8 @@ void main() {
         'dataMismatch : ESCR response for session ${fx.sessionId}'
             ' on the socket for session $otherSessionId',
       );
+      expect(reported, isEmpty,
+          reason: 'a refused socket reports no signing key');
     });
 
     test('the signer is compared with the normalised expected atSign', () async {

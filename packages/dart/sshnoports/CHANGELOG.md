@@ -28,6 +28,13 @@
 * feat: srvd accepts ESCR relay authentication signed with ML-DSA-65 as
   well as RSA, and a client or daemon whose enrollment holds signing keys of
   its own can now use ESCR
+* feat: srvd ends a tunnel once the client's or daemon's enrollment is
+  revoked, superseded, deleted or expired, for each side that authenticated
+  with ESCR, checking every 5 minutes by default; `--signing-key-check-secs`
+  sets how often (0 turns it off)
+* feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions; srvd now connects out to atServers itself
 * fix: `srvd --manager` accepts session requests only from the manager
   itself
 * fix: a long-running srvd no longer keeps a receive port open for every

@@ -9,6 +9,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
@@ -51,6 +52,17 @@ class SrvdImpl
   /// side to speak (legacy) before assuming ESCR and issuing a challenge.
   final int relayAuthDetectWindowMs;
 
+  /// How often to re-check that the signing keys each live session's ESCR
+  /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
+  /// the check off.
+  final Duration signingKeyCheckInterval;
+
+  /// How this relay looks up the `_apsk` records sockets sign with.
+  final PublicLookup publicLookup;
+
+  Timer? _signingKeyCheckTimer;
+  final Set<String> _keysBeingChecked = {};
+
   @override
   bool verbose = false;
 
@@ -59,6 +71,8 @@ class SrvdImpl
   bool initialized = false;
 
   Map<String, SessionInfo> sessions = {};
+
+  final Set<String> _startingSessions = {};
 
   Isolate? isolate443;
   SendPort? toIsolate443;
@@ -90,7 +104,9 @@ class SrvdImpl
     required this.bind443,
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
-  }) {
+    required this.signingKeyCheckInterval,
+    PublicLookup? publicLookup,
+  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -139,6 +155,7 @@ class SrvdImpl
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
         relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
       );
 
       if (p.verbose) {
@@ -187,11 +204,20 @@ class SrvdImpl
           .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
           .listen(notificationHandler),
     );
+
+    if (signingKeyCheckInterval > Duration.zero) {
+      _signingKeyCheckTimer = Timer.periodic(
+        signingKeyCheckInterval,
+        (_) => unawaited(checkSigningKeys()),
+      );
+    }
   }
 
   @override
   Future<void> stop() async {
     _stopped = true;
+    _signingKeyCheckTimer?.cancel();
+    publicLookup.close();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -394,11 +420,33 @@ class SrvdImpl
         );
         return;
       }
+      if (sessions.containsKey(sessionParams.sessionId) ||
+          _startingSessions.contains(sessionParams.sessionId)) {
+        logger.shout(
+          'Session ${sessionParams.sessionId} requested by ${n.from}'
+          ' is denied: a session with that id is already live',
+        );
+        return;
+      }
     } catch (e) {
       logger.shout('Unable to provide the socket pair due to: $e');
       return;
     }
 
+    _startingSessions.add(sessionParams.sessionId);
+    try {
+      await _startSession(n, sessionParams);
+    } finally {
+      _startingSessions.remove(sessionParams.sessionId);
+    }
+  }
+
+  /// Allocates ports for [sessionParams], which [n] requested, records the
+  /// session and sends the requester its ports.
+  Future<void> _startSession(
+    AtNotification n,
+    SrvdSessionParams sessionParams,
+  ) async {
     logger.info('New session request params: $sessionParams');
 
     PortPair ports;
@@ -539,15 +587,17 @@ class SrvdImpl
       logger.shout("Error sending response to client");
     }
 
-    preFetched[sessionParams.sessionId] = {};
-    for (final s in sessionParams.preFetch) {
-      try {
-        final AtValue value = await _atClientLookup(AtKey.fromString(s));
-        preFetched[sessionParams.sessionId]![s] = value.value;
-      } catch (e) {
-        logger.shout('$e while preFetching $s');
-      }
-    }
+    final fetched = preFetched[sessionParams.sessionId] = {};
+    await Future.wait([
+      for (final s in sessionParams.preFetch)
+        () async {
+          try {
+            fetched[s] = await _lookupPublic(s);
+          } catch (e) {
+            logger.shout('$e while preFetching $s');
+          }
+        }(),
+    ]);
     unawaited(
       Future.delayed(
         Duration(seconds: 30),
@@ -683,12 +733,13 @@ class SrvdImpl
 
   Map<String, Map<String, dynamic>> preFetched = {};
 
-  Future<AtValue> _atClientLookup(AtKey atKey) async {
-    logger.info('Looking up $atKey on atServer');
-    return await atClient.get(
-      atKey,
-      getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-    );
+  /// The value of the public record [key], whether or not it is written with
+  /// its `public:` prefix. Throws when it can't be found.
+  Future<String> _lookupPublic(String key) async {
+    final uri = key.startsWith('public:') ? key : 'public:$key';
+    logger.info('Looking up $uri');
+    return await publicLookup.lookup(uri) ??
+        (throw AtKeyNotFoundException('$uri does not exist'));
   }
 
   @override
@@ -697,17 +748,17 @@ class SrvdImpl
       logger.info('request: "lookup" : ${msg.payload}');
       String sessionId = msg.payload['sessionId'];
       String key = msg.payload['key'];
-      AtValue value;
+      String value;
       String fromPreFetch = '';
       if (preFetched[sessionId]?[key] != null) {
-        value = AtValue()..value = preFetched[sessionId]?[key];
+        value = preFetched[sessionId]![key];
         fromPreFetch = ' (pre-fetched)';
       } else {
-        value = await _atClientLookup(AtKey.fromString(key));
+        value = await _lookupPublic(key);
       }
-      logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
+      logger.info('request: "lookup" : success$fromPreFetch: $value');
       toSpawned.send(
-        IIResponse(id: msg.id, isError: false, payload: value.value),
+        IIResponse(id: msg.id, isError: false, payload: value),
       );
     } catch (err) {
       logger.info('request: "lookup" : error $err');
@@ -735,6 +786,111 @@ class SrvdImpl
       );
     }
     sessions.remove(sessionId);
+  }
+
+  /// The most distinct signing keys recorded for one session. Each side of a
+  /// session signs with one enrollment's key.
+  static const maxSigningKeysPerSession = 4;
+
+  /// Records that a socket of session [sessionId] was accepted with a
+  /// signature from the `_apsk` record [signingKeyUri], in the canonical form
+  /// an atServer stores it under, so spellings of one record count once.
+  @visibleForTesting
+  void recordSigningKey(String sessionId, String signingKeyUri) {
+    final si = sessions[sessionId];
+    if (si == null) return;
+    final key = 'public:'
+        '${signingKeyUri.toLowerCase().replaceFirst(RegExp('^public:'), '')}';
+    if (si.signingKeys.contains(key)) return;
+    if (si.signingKeys.length >= maxSigningKeysPerSession) {
+      logger.warning(
+        'Not recording signing key $key for session $sessionId, which already'
+        ' has ${si.signingKeys.length}',
+      );
+      return;
+    }
+    si.signingKeys.add(key);
+  }
+
+  /// Looks up afresh, each from its own atServer, every `_apsk` record a live
+  /// session's ESCR sockets were accepted with, and ends each session one of
+  /// them has been withdrawn from: moved by its atServer to `r.__e` (the
+  /// enrollment was revoked or superseded) or `d.__e` (deleted or expired). A
+  /// key that is merely missing, and a lookup that fails any other way, keep
+  /// the session, so an atServer that is unreachable or being restored ends
+  /// nothing. A key whose last re-check hasn't finished is left out, so a
+  /// slow atServer delays only the re-checks of its own keys.
+  @visibleForTesting
+  Future<void> checkSigningKeys() async {
+    final keys = {
+      for (final si in sessions.values)
+        if (!si.ending) ...si.signingKeys,
+    }.difference(_keysBeingChecked);
+    await Future.wait([for (final key in keys) _recheck(key)]);
+  }
+
+  Future<void> _recheck(String key) async {
+    _keysBeingChecked.add(key);
+    try {
+      final withdrawnTo = await _whereWithdrawn(key);
+      if (withdrawnTo == null) return;
+      for (final MapEntry(key: sessionId, value: si)
+          in sessions.entries.toList()) {
+        if (!si.ending && si.signingKeys.contains(key)) {
+          _endSession(sessionId, si, key, withdrawnTo);
+        }
+      }
+    } finally {
+      _keysBeingChecked.remove(key);
+    }
+  }
+
+  /// Where [key] has been withdrawn to, or null when it is still published,
+  /// merely missing, or a lookup fails, all of which keep its sessions.
+  Future<String?> _whereWithdrawn(String key) async {
+    try {
+      if (await publicLookup.lookupDirect(key) != null) return null;
+    } catch (e) {
+      logger.warning(
+        'Could not re-check signing key $key, so the sessions it signed'
+        ' carry on: $e',
+      );
+      return null;
+    }
+    try {
+      final withdrawnTo = await publicLookup.withdrawnTo(key);
+      if (withdrawnTo == null) {
+        logger.warning(
+          'Signing key $key is missing but has not been withdrawn, so the'
+          ' sessions it signed carry on',
+        );
+      }
+      return withdrawnTo;
+    } catch (e) {
+      logger.warning(
+        'Could not tell whether signing key $key was withdrawn, so the'
+        ' sessions it signed carry on: $e',
+      );
+      return null;
+    }
+  }
+
+  void _endSession(
+    String sessionId,
+    SessionInfo si,
+    String signingKey,
+    String withdrawnTo,
+  ) {
+    si.ending = true;
+    logger.warning(
+      'Ending session $sessionId (${si.atSignA} to ${si.atSignB}):'
+      ' signing key $signingKey has been withdrawn to $withdrawnTo',
+    );
+    if (si.toWorker != null) {
+      si.toWorker!.send(IIRequest.create('stop', null));
+    } else if (si.params.only443) {
+      toIsolate443?.send(IIRequest.create('endSession', sessionId));
+    }
   }
 
   Future<void> _handleNewConnection(IIRequest msg) async {
@@ -838,6 +994,9 @@ class SrvdImpl
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
           case 'newConnection':
             await _handleNewConnection(msg);
@@ -981,6 +1140,9 @@ class SrvdImpl
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
           case 'newConnection':
             await _handleNewConnection(msg);
