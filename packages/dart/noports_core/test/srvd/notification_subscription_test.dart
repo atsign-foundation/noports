@@ -76,6 +76,7 @@ void main() {
         bind443: false,
         localBindPort443: 443,
         relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration.zero,
       );
 
       // Create a stream controller to simulate the notification received from the sshnp
@@ -206,6 +207,7 @@ void main() {
           bind443: bind443,
           localBindPort443: localBindPort443,
           relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+          signingKeyCheckInterval: Duration.zero,
         );
       }
 

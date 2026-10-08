@@ -19,6 +19,11 @@ int verify_envelope_contents(cJSON *envelope, enum payload_type type);
 
 int verify_payload_contents(cJSON *payload, enum payload_type type);
 
+// Whether session_id is a UUID (8-4-4-4-12 hex digits), the only form the
+// daemon accepts: it names the atKey of every reply, so anything else could
+// carry characters that break the atProtocol command the reply is sent in.
+bool is_valid_session_id(const char *session_id);
+
 int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_key, char **rvd_auth_string);
 
 // Notify the requesting client that its session request was denied and why.

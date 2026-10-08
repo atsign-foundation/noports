@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/utils.dart';
@@ -160,7 +161,13 @@ abstract class Srv<T> {
     );
   }
 
+  /// The binary [getLocalBinaryPath] returns, when set, rather than an srv
+  /// beside this executable.
+  @visibleForTesting
+  static String? localBinaryPathOverride;
+
   static Future<String?> getLocalBinaryPath() async {
+    if (localBinaryPathOverride != null) return localBinaryPathOverride;
     List<String> binaryNames = ['srv', 'sshrv'];
     for (var name in binaryNames) {
       var binary = await _getBinaryPathByName(name);

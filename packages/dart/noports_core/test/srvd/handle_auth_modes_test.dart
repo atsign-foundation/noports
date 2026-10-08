@@ -40,6 +40,7 @@ void main() {
       bind443: false,
       localBindPort443: 443,
       relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+      signingKeyCheckInterval: Duration.zero,
     );
 
     /// Registers a session owned by this relay instance, wiring [toWorker] to a

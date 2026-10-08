@@ -122,9 +122,13 @@ void assertNullOrValidMapValue(Map m, String k, Type t) {
 /// Wraps [payload] in an envelope signed with [atClient]'s atSign encryption
 /// key, which [verifyEnvelopeSignature] checks against that atSign's
 /// `public:publickey`.
-Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async {
+Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async =>
+    jsonEncode(await signAndWrap(atClient, payload));
+
+/// The envelope [signAndWrapAndJsonEncode] encodes.
+Future<Map<String, Object?>> signAndWrap(AtClient atClient, Map payload) async {
   final keyPair = await _encryptionKeyPair(atClient);
-  return jsonEncode({
+  return {
     'payload': payload,
     'signature': rsaSignString(
       jsonEncode(payload),
@@ -132,7 +136,7 @@ Future<String> signAndWrapAndJsonEncode(AtClient atClient, Map payload) async {
     ),
     'hashingAlgo': HashingAlgoType.sha256.name,
     'signingAlgo': SigningAlgoType.rsa2048.name,
-  });
+  };
 }
 
 /// Reads [atClient]'s envelope signing keypair now, so that later signatures

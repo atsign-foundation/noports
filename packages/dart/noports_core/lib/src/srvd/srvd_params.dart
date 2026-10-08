@@ -6,6 +6,10 @@ import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 
+/// How often srvd re-checks, by default, that the signing keys a live session
+/// was authenticated with haven't been withdrawn.
+const Duration defaultSigningKeyCheckInterval = Duration(minutes: 5);
+
 class SrvdParams {
   final String atSign;
   final String homeDirectory;
@@ -30,6 +34,11 @@ class SrvdParams {
   /// connecting side to speak (legacy) before assuming ESCR and challenging it.
   final int relayAuthDetectWindowMs;
 
+  /// How often (seconds) to re-check that each live session's ESCR signing
+  /// keys haven't been withdrawn, ending a session one of them has been
+  /// withdrawn from; 0 turns the check off.
+  final int signingKeyCheckSecs;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -47,6 +56,7 @@ class SrvdParams {
     required this.bind443,
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
+    required this.signingKeyCheckSecs,
     required this.debug,
   });
 
@@ -79,9 +89,17 @@ class SrvdParams {
           ? 443
           : int.parse(r['443-bind-port']),
       relayAuthDetectWindowMs: int.parse(r['relay-auth-detect-window-ms']),
+      signingKeyCheckSecs: _nonNegative(
+        'signing-key-check-secs',
+        int.parse(r['signing-key-check-secs']),
+      ),
       debug: r['debug'],
     );
   }
+
+  static int _nonNegative(String option, int value) => value >= 0
+      ? value
+      : throw ArgumentError('--$option must not be negative, but was $value');
 
   static ArgParser _createArgParser() {
     var parser = ArgParser(
@@ -191,6 +209,16 @@ class SrvdParams {
           ' exceed a legacy peer\'s first-packet arrival (~one RTT after'
           ' connect); larger is safer for legacy peers, smaller speeds up ESCR'
           ' handshakes.',
+    );
+    parser.addOption(
+      'signing-key-check-secs',
+      mandatory: false,
+      defaultsTo: '${defaultSigningKeyCheckInterval.inSeconds}',
+      help:
+          'How often (seconds) to re-check that the signing keys each live'
+          ' session was authenticated with (ESCR) are still valid. A session'
+          ' is ended once the enrollment that published one of them is'
+          ' revoked, superseded, deleted or expires. 0 turns the check off.',
     );
     parser.addFlag(
       'help',
