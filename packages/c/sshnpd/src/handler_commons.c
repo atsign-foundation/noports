@@ -11,6 +11,7 @@
 #include <atchops/rsa_key.h>
 #include <atclient/json.h>
 #include <atlogger/atlogger.h>
+#include <ctype.h>
 #include <sshnpd/handler_commons.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -318,10 +319,26 @@ static bool is_valid_port(const cJSON *port) {
   return value >= 1 && value <= 65535 && value == (double)(uint16_t)value;
 }
 
+bool is_valid_session_id(const char *session_id) {
+  if (session_id == NULL || strlen(session_id) != 36) {
+    return false;
+  }
+  for (size_t i = 0; i < 36; i++) {
+    const bool dash_expected = i == 8 || i == 13 || i == 18 || i == 23;
+    if (dash_expected ? session_id[i] != '-' : !isxdigit((unsigned char)session_id[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 int verify_payload_contents(cJSON *payload, enum payload_type type) {
   bool has_valid_values = cJSON_IsObject(payload);
 
-  has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
+  if (has_valid_values && !is_valid_session_id(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")))) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload's sessionId is missing or not a UUID\n");
+    return 1;
+  }
 
   switch (type) {
   case payload_type_ssh: {
