@@ -255,6 +255,26 @@ void public_lookup_worker_init(const public_lookup_directory *directory) {
 // The atSign a public record uri belongs to: everything from its last '@'
 static const char *uri_atsign(const char *uri) { return strrchr(uri, '@'); }
 
+static long monotonic_ms(void) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return (long)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+}
+
+// When the worker must be done, by monotonic_ms
+static long worker_done_by_ms;
+
+// How long the worker's next GET may take: what is left of its budget, and
+// no more than one lookup's timeout; 0 when nothing is left, since curl reads
+// a timeout of 0 as none
+static long next_timeout_ms(void) {
+  long left = worker_done_by_ms - monotonic_ms();
+  if (left <= 0) {
+    return 0;
+  }
+  return left < PUBLIC_LOOKUP_TIMEOUT_MS ? left : PUBLIC_LOOKUP_TIMEOUT_MS;
+}
+
 static int run_lookup(const public_lookup_directory *directory, const char *uri) {
   char *host = NULL;
   uint16_t port = 0;
@@ -263,7 +283,9 @@ static int run_lookup(const public_lookup_directory *directory, const char *uri)
     return result;
   }
   char *value = NULL;
-  result = public_lookup_at(directory->scheme, host, port, uri, PUBLIC_LOOKUP_TIMEOUT_MS, &value);
+  long timeout_ms = next_timeout_ms();
+  result = timeout_ms == 0 ? PUBLIC_LOOKUP_FAILED
+                           : public_lookup_at(directory->scheme, host, port, uri, timeout_ms, &value);
   free(host);
   if (result == PUBLIC_LOOKUP_FOUND) {
     fputs(value, stdout);
@@ -280,8 +302,9 @@ static int run_key_check(const public_lookup_directory *directory, const char *u
     return PUBLIC_LOOKUP_KEY_CHECK_UNKNOWN;
   }
   char *value = NULL;
-  enum public_lookup_result result = public_lookup_at(directory->scheme, host, port, uri, PUBLIC_LOOKUP_TIMEOUT_MS,
-                                                      &value);
+  long timeout_ms = next_timeout_ms();
+  enum public_lookup_result result =
+      timeout_ms == 0 ? PUBLIC_LOOKUP_FAILED : public_lookup_at(directory->scheme, host, port, uri, timeout_ms, &value);
   free(value);
   int outcome;
   if (result == PUBLIC_LOOKUP_FOUND) {
@@ -289,8 +312,11 @@ static int run_key_check(const public_lookup_directory *directory, const char *u
   } else if (result != PUBLIC_LOOKUP_NOT_FOUND) {
     outcome = PUBLIC_LOOKUP_KEY_CHECK_UNKNOWN;
   } else {
+    // The two lookups of where it went share what is left of the budget
     const char *location = NULL;
-    if (public_lookup_withdrawn_to_at(directory->scheme, host, port, uri, PUBLIC_LOOKUP_TIMEOUT_MS, &location) != 0) {
+    long each_ms = next_timeout_ms() / 2;
+    if (each_ms == 0 ||
+        public_lookup_withdrawn_to_at(directory->scheme, host, port, uri, each_ms, &location) != 0) {
       outcome = PUBLIC_LOOKUP_KEY_CHECK_UNKNOWN;
     } else if (location == NULL) {
       outcome = PUBLIC_LOOKUP_KEY_CHECK_MISSING;
@@ -302,10 +328,12 @@ static int run_key_check(const public_lookup_directory *directory, const char *u
   return outcome;
 }
 
-// The longest a worker may run: one atDirectory lookup, and one GET for a
-// lookup or three for a key check, each within PUBLIC_LOOKUP_TIMEOUT_MS
-static unsigned int worker_deadline_secs(const char *mode) {
-  return (strcmp(mode, "key-check") == 0 ? 4 : 2) * PUBLIC_LOOKUP_TIMEOUT_MS / 1000 + 5;
+// How long a worker may take in all, its atDirectory lookup included: one
+// lookup's timeout for a lookup, which holds up the daemon's main loop, and
+// two for a key check, as the Dart daemon's lookupDirect then withdrawnTo
+// allow
+static unsigned int worker_budget_secs(const char *mode) {
+  return (strcmp(mode, "key-check") == 0 ? 2 : 1) * PUBLIC_LOOKUP_TIMEOUT_MS / 1000;
 }
 
 // argv: <exe> --__public-lookup <lookup|key-check> <scheme> <directory host> <port> <atdirectory|proxy> <uri>
@@ -323,7 +351,8 @@ int public_lookup_worker_main(int argc, const char **argv) {
   // NOTE: SIGALRM's default action ends the worker, which the daemon reads as
   // a lookup that couldn't be done, however the network stalls it
   signal(SIGALRM, SIG_DFL);
-  alarm(worker_deadline_secs(mode));
+  alarm(worker_budget_secs(mode) + 1);
+  worker_done_by_ms = monotonic_ms() + (long)worker_budget_secs(mode) * 1000;
   atlogger_set_logging_stream(stderr);
   atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_WARN);
   if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
@@ -396,7 +425,7 @@ enum public_lookup_result public_lookup_direct(const char *uri, char **value) {
   if (pid < 0) {
     return PUBLIC_LOOKUP_FAILED;
   }
-  long deadline_ms = (long)(worker_deadline_secs("lookup") + 2) * 1000;
+  long deadline_ms = (long)(worker_budget_secs("lookup") + 2) * 1000;
   struct timespec start;
   clock_gettime(CLOCK_MONOTONIC, &start);
   char *out = NULL;

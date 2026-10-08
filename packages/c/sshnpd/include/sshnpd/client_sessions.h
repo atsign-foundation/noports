@@ -7,9 +7,10 @@
 #include <time.h>
 
 // At most this many key checks run at once, and at most
-// CLIENT_SESSIONS_MAX_KEY_CHECKS_PER_ATSIGN of them for any one atSign, as the
-// Dart daemon's lookups allow
-#define CLIENT_SESSIONS_MAX_KEY_CHECKS 16
+// CLIENT_SESSIONS_MAX_KEY_CHECKS_PER_ATSIGN of them for any one atSign. Fewer
+// at once than the Dart daemon's 16 lookups, since each is a process (about
+// 1.7 MB resident) and clients choose how many keys there are to check.
+#define CLIENT_SESSIONS_MAX_KEY_CHECKS 4
 #define CLIENT_SESSIONS_MAX_KEY_CHECKS_PER_ATSIGN 2
 
 // How a key check is started and a process ended, so tests can stand in
