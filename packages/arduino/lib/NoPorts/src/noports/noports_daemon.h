@@ -19,6 +19,17 @@
 #include <Arduino.h>
 #include "noports_config.h"
 #include "noports_relay.h"
+#include "noports_enrollment_signature.h"
+
+// The `_apsk` record a relay's client signed its session request with,
+// verified, and the atServer that holds it
+struct ClientSigningKey {
+  char    *signing_key;        // NULL when the session isn't watched
+  char     atserver_host[254]; // empty until found
+  uint16_t atserver_port;
+  bool     due;                // to be checked this round
+  bool     ending;             // found withdrawn, its relay told to stop
+};
 
 // Maximum concurrent relays (limited by memory/sockets)
 // S3 has more SRAM/PSRAM and a larger lwIP PCB pool (see sdkconfig.defaults.s3)
@@ -231,6 +242,11 @@ private:
   NoPortsRelay _relays[NOPORTS_MAX_RELAYS];
   uint8_t      _relay_count;
 
+  // The signing key of each relay's client, by slot, and when they were last
+  // checked
+  ClientSigningKey _client_keys[NOPORTS_MAX_RELAYS];
+  uint32_t         _last_key_check_ms;
+
   // Timeout tracking
   uint32_t _timeout_counter;
   uint8_t  _reconnect_failures;    // consecutive TLS connection failures (monitor + worker)
@@ -303,6 +319,27 @@ private:
   // Relay management
   int  _findFreeRelaySlot();
   void _cleanupFinishedRelays();
+
+  // Client signing keys
+  // Finds atsign's atServer, or the reverse proxy every atServer is reached
+  // through. Returns false when there is no address for it.
+  bool _findAtServer(const char *atsign, char *host, size_t host_size, uint16_t *port);
+  // Looks a client's `_apsk` record up straight from its atServer, or from
+  // this daemon's own when that doesn't serve it over HTTP; ctx says where
+  static noports_lookup_result _lookupSigningKey(const char *uri, char **value, void *ctx);
+  // Verifies the enrollment signature on env, filling key when it verifies.
+  // Refuses the request, telling the client why, when a session with its id
+  // is already being watched, when its signature doesn't verify, or, under
+  // require_enrollment_signature, when it is unsigned or can't be checked.
+  // Returns false when it refused.
+  bool _checkClientSigningKey(void *env, const char *requesting_atsign, const char *session_id,
+                              ClientSigningKey *key);
+  void _forgetClientSigningKey(int slot);
+  // Checks one key afresh, returning what it found
+  int  _checkKey(ClientSigningKey *key);
+  // Checks the key of each watched relay every client_key_check_secs, one
+  // key per call, stopping each relay whose key has been withdrawn
+  void _checkClientKeys();
 
   // Reconnection
   bool _reconnectMonitor();
