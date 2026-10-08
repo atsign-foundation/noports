@@ -11,6 +11,7 @@
 #include <atchops/rsa_key.h>
 #include <atclient/json.h>
 #include <atlogger/atlogger.h>
+#include <ctype.h>
 #include <sshnpd/handler_commons.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -105,6 +106,10 @@ char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign) 
     snprintf(uri, size, "public:_apsk.%s.a.__e%s", enrollment_id, atsign);
   }
   return uri;
+}
+
+bool public_signing_key_needs_publishing(const char *published, const char *pkam_public_key_base64) {
+  return published == NULL || strcmp(published, pkam_public_key_base64) != 0;
 }
 
 bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
@@ -218,6 +223,19 @@ int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atc
   return res;
 }
 
+// Whether key's modulus is 2048 bits. Its DER INTEGER encoding pads the
+// modulus with a leading 0x00 whenever its top bit is set, so a valid RSA-2048
+// key usually arrives with n.len == 257: count significant bytes, not raw ones.
+static bool is_rsa2048_public_key(const atchops_rsa_key_public_key *key) {
+  const unsigned char *n_bytes = key->n.value;
+  size_t n_sig = key->n.len;
+  while (n_sig > 0 && n_bytes[0] == 0x00) {
+    n_bytes++;
+    n_sig--;
+  }
+  return n_sig == 256;
+}
+
 int verify_envelope_signature(atchops_rsa_key_public_key *publickey, const unsigned char *payload,
                               unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
   int ret = 0;
@@ -231,6 +249,10 @@ int verify_envelope_signature(atchops_rsa_key_public_key *publickey, const unsig
     return -1;
   }
   if (strcmp(signing_algo, "rsa2048") == 0) {
+    if (!is_rsa2048_public_key(publickey)) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Envelope signer's public key is not RSA-2048\n");
+      return -1;
+    }
     ret = atchops_rsa_verify(publickey, mdtype, payload, strlen((char *)payload), signature);
     if (ret != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
@@ -318,10 +340,26 @@ static bool is_valid_port(const cJSON *port) {
   return value >= 1 && value <= 65535 && value == (double)(uint16_t)value;
 }
 
+bool is_valid_session_id(const char *session_id) {
+  if (session_id == NULL || strlen(session_id) != 36) {
+    return false;
+  }
+  for (size_t i = 0; i < 36; i++) {
+    const bool dash_expected = i == 8 || i == 13 || i == 18 || i == 23;
+    if (dash_expected ? session_id[i] != '-' : !isxdigit((unsigned char)session_id[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 int verify_payload_contents(cJSON *payload, enum payload_type type) {
   bool has_valid_values = cJSON_IsObject(payload);
 
-  has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "sessionId"));
+  if (has_valid_values && !is_valid_session_id(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")))) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload's sessionId is missing or not a UUID\n");
+    return 1;
+  }
 
   switch (type) {
   case payload_type_ssh: {
@@ -508,26 +546,14 @@ int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key
       // are written into the fixed BYTES(256) buffers below, so a key whose
       // real modulus is larger than 2048 bits (e.g. RSA-4096 -> 512 bytes)
       // would overflow those heap allocations. Enforce a true 2048-bit
-      // modulus before any encryption is attempted. Note: the DER INTEGER
-      // encoding pads the modulus with a leading 0x00 whenever its MSB is set
-      // (always, for a real modulus), so a valid RSA-2048 key normally arrives
-      // here with n.len == 257 - compare significant bytes, not raw length.
-      {
-        const unsigned char *n_bytes = ac.n.value;
-        size_t n_sig = ac.n.len;
-        while (n_sig > 0 && n_bytes[0] == 0x00) {
-          n_bytes++;
-          n_sig--;
-        }
-        if (n_sig != 256) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "client ephemeral pk modulus is not RSA-2048 (significant bytes=%zu, raw n.len=%zu)\n", n_sig,
-                       ac.n.len);
-          atchops_rsa_key_public_key_free(&ac);
-          free(*session_aes_key);
-          free(*session_iv);
-          return 1;
-        }
+      // modulus before any encryption is attempted.
+      if (!is_rsa2048_public_key(&ac)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "client ephemeral pk modulus is not RSA-2048 (n.len=%zu)\n",
+                     ac.n.len);
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        return 1;
       }
 
       session_aes_key_encrypted = malloc(BYTES(256));

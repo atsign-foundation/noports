@@ -1,17 +1,19 @@
-name: Firmware
+name: Arduino Firmware
 
-# Builds every firmware target on pull requests (build verification — this
-# repo has no other build CI), and on version tags additionally assembles
-# single-file factory images and attaches them to the GitHub release.
+# Builds every firmware target on pull requests (build verification), and on
+# version tags additionally assembles single-file factory images and attaches
+# them to the GitHub release.
 
 on:
   pull_request:
     branches: ["trunk"]
+    paths:
+     - 'packages/arduino/**'
   push:
-    tags: ["v*"]
+    tags: ["a*"]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,32 +31,32 @@ jobs:
           # firmware.factory.bin itself; the CYD targets use the older
           # espressif32 platform, so their images are merged with esptool.
           - name: NoPorts_PoE-esp32p4
-            project: packages/NoPorts_PoE
+            project: packages/arduino/packages/NoPorts_PoE
             pio_env: esp32p4
             factory: platform # firmware.factory.bin comes from the platform
           - name: NoPorts_CYD-cyd
-            project: packages/NoPorts_CYD
+            project: packages/arduino/packages/NoPorts_CYD
             pio_env: cyd
             chip: esp32
             flash_size: 4MB
             flash_freq: 40m
             bootloader_offset: "0x1000"
           - name: NoPorts_CYD-cyd2usb
-            project: packages/NoPorts_CYD
+            project: packages/arduino/packages/NoPorts_CYD
             pio_env: cyd2usb
             chip: esp32
             flash_size: 4MB
             flash_freq: 40m
             bootloader_offset: "0x1000"
           - name: NoPorts_CYD-cyd2usb_s3
-            project: packages/NoPorts_CYD
+            project: packages/arduino/packages/NoPorts_CYD
             pio_env: cyd2usb_s3
             chip: esp32s3
             flash_size: 16MB
             flash_freq: 80m
             bootloader_offset: "0x0"
           - name: NoPorts_CYD-crowpanel_adv7
-            project: packages/NoPorts_CYD
+            project: packages/arduino/packages/NoPorts_CYD
             pio_env: crowpanel_adv7
             chip: esp32s3
             flash_size: 16MB
@@ -125,6 +127,12 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    permissions:
+      contents: write # Mandatory for making GitHub Releases
+      id-token: write # Mandatory for sigstore
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,3 +157,25 @@ jobs:
             gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
           fi
           gh release upload "$TAG" assets/*.factory.bin assets/SHA256SUMS --clobber
+
+      - id: hash
+        name: Pass artifact hashes for SLSA provenance
+        working-directory: assets
+        run: |
+          echo "hashes=$(cat SHA256SUMS | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+      - name: GitHub attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: "assets/**"
+
+  provenance:
+    needs: [release]
+    permissions:
+      actions: read # Needed for detection of GitHub Actions environment.
+      id-token: write # Needed for provenance signing and ID
+      contents: write # Needed for release uploads
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # 5a775b367a56d5bd118a224a811bba288150a563
+    with:
+      base64-subjects: "${{ needs.release.outputs.hashes }}"
+      upload-assets: true

@@ -9,6 +9,13 @@ class SessionInfo {
   final SocketConnector? connector;
   final Map<String, String> lookups = {};
 
+  /// The `_apsk` records this session's accepted ESCR sockets were signed
+  /// with.
+  final Set<String> signingKeys = {};
+
+  /// Set once the relay has asked for this session to be ended.
+  bool ending = false;
+
   Stats? stats;
 
   final DateTime requestTime = DateTime.timestamp();

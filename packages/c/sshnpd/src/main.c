@@ -495,17 +495,21 @@ int main(int argc, char **argv) {
       atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
       int get_res = atclient_get_public_key(&worker, &sk_key, &existing, NULL);
       atlogger_set_logging_level(log_level);
-      if (get_res == 0 && existing != NULL) {
+      if (get_res == 0 && !public_signing_key_needs_publishing(existing, atkeys.pkam_public_key_base64)) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Public signing key already published at %s\n",
                      signing_key_uri);
-        free(existing);
       } else {
+        if (get_res == 0 && existing != NULL) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                       "%s holds a key other than this daemon's - republishing\n", signing_key_uri);
+        }
         res = atclient_put_public_key(&worker, &sk_key, atkeys.pkam_public_key_base64, NULL, NULL);
         if (res == 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Published public signing key at %s\n",
                        signing_key_uri);
         }
       }
+      free(existing);
     }
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,

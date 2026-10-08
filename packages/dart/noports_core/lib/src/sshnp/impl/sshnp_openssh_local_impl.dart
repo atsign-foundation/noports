@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
@@ -75,8 +77,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
           : null,
     );
 
-    final notifyPayload = await signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapRequest(
       atClient,
+      this,
       sessionRequest.toJson(),
     );
     logger.info('Sending: $notifyPayload');

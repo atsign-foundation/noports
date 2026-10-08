@@ -18,7 +18,11 @@ import 'package:noports_core/src/common/relay_latency_checker.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show ApskSignatureException, verifyEnrollmentSignature;
+import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/srv/srv.dart';
+import 'package:noports_core/src/srv/srv_impl.dart' show SrvImplExec;
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -100,6 +104,18 @@ class SshnpdImpl
   @override
   late final bool strict;
 
+  @override
+  final Duration clientKeyCheckInterval;
+
+  @override
+  final bool requireEnrollmentSignature;
+
+  /// How this daemon looks up the `_apsk` records clients sign requests with.
+  final PublicLookup publicLookup;
+
+  final Map<String, _ClientSession> _clientSessions = {};
+  final Set<String> _keysBeingChecked = {};
+
   /// State variables used by [clientRequestNotificationHandler]
   String _privateKey = '';
 
@@ -166,7 +182,11 @@ class SshnpdImpl
     bool? inline,
     this.notifPreProcessor,
     required this.strict,
-  }) : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " ") {
+    required this.clientKeyCheckInterval,
+    required this.requireEnrollmentSignature,
+    PublicLookup? publicLookup,
+  })  : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " "),
+        publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -266,6 +286,8 @@ class SshnpdImpl
         version: version,
         permitOpen: p.permitOpen.split(',').map((e) => e.trim()).toList(),
         strict: p.strict,
+        clientKeyCheckInterval: Duration(seconds: p.clientKeyCheckSecs),
+        requireEnrollmentSignature: p.requireEnrollmentSignature,
         notifPreProcessor: notifPreProcessor,
       );
 
@@ -325,6 +347,15 @@ class SshnpdImpl
     logger.info('Starting heartbeat');
     startHeartbeats();
 
+    if (clientKeyCheckInterval > Duration.zero) {
+      _addTimer(
+        Timer.periodic(
+          clientKeyCheckInterval,
+          (_) => unawaited(checkClientKeys()),
+        ),
+      );
+    }
+
     _addSubscription(handlePublicKeyChangedEvent(atClient, deviceAtsign));
 
     String regex = '(^$device|\\.$device)\\.${DefaultArgs.namespace}@';
@@ -370,6 +401,7 @@ class SshnpdImpl
       timer.cancel();
     }
     _timers.clear();
+    publicLookup.close();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -881,6 +913,13 @@ class SshnpdImpl
       }
     }
 
+    final (:refused, :signingKey) = await _clientSigningKey(
+      requestingAtsign,
+      req.sessionId,
+      envelope,
+    );
+    if (refused) return;
+
     String requested = '${req.requestedHost}:${req.requestedPort}';
     // Check if this *daemon* allows connections to the requested host / port
     if (!_permittedToOpen(permitOpen, req)) {
@@ -946,7 +985,11 @@ class SshnpdImpl
 
     // Start our side of the tunnel
     try {
-      await startNpt(requestingAtsign: requestingAtsign, req: req);
+      await startNpt(
+        requestingAtsign: requestingAtsign,
+        req: req,
+        clientSigningKey: signingKey,
+      );
     } catch (e) {
       logger.severe('startNpt failed with unexpected error : $e');
       // Notify sshnp that this session is NOT connected
@@ -1008,6 +1051,7 @@ class SshnpdImpl
   Future<void> startNpt({
     required String requestingAtsign,
     required NptSessionRequest req,
+    String? clientSigningKey,
   }) async {
     logger.info(
       'Setting up ports for tunnel session using ${sshClient.name} ($sshClient) from: $requestingAtsign session: ${req.sessionId}',
@@ -1079,10 +1123,18 @@ class SshnpdImpl
         timeout: req.timeout,
       ).run();
       logger.info('Started rv INLINE - socket connector $sc');
+      if (clientSigningKey != null) {
+        trackClientSession(
+          req.sessionId,
+          clientSigningKey,
+          ended: sc.done.then((_) {}),
+          end: sc.close,
+        );
+      }
     } else {
       // Connect to rendezvous point using background process.
       // This program can then exit without causing an issue.
-      Process rv = await Srv.exec(
+      final srv = Srv.exec(
         req.rvdHost,
         req.rvdPort,
         localPort: req.requestedPort,
@@ -1095,8 +1147,10 @@ class SshnpdImpl
         ivD2C: d2cBundle?.iv,
         multi: true,
         timeout: req.timeout,
-      ).run();
+      );
+      Process rv = await srv.run();
       logger.info('Started rv - pid is ${rv.pid}');
+      _trackSrvProcess(req.sessionId, clientSigningKey, srv, rv);
     }
 
     /// - Send response message to the sshnp client which includes the
@@ -1186,6 +1240,13 @@ class SshnpdImpl
       }
     }
 
+    final (:refused, :signingKey) = await _clientSigningKey(
+      requestingAtsign,
+      req.sessionId,
+      envelope,
+    );
+    if (refused) return;
+
     String requested = '$localSshdHost:$localSshdPort';
     // Check if this *daemon* allows connections to the requested host / port
     if (!_permittedToOpen(permitOpen, req)) {
@@ -1251,7 +1312,11 @@ class SshnpdImpl
     try {
       if (req.direct) {
         // direct ssh requested
-        await startDirectSsh(requestingAtsign: requestingAtsign, req: req);
+        await startDirectSsh(
+          requestingAtsign: requestingAtsign,
+          req: req,
+          clientSigningKey: signingKey,
+        );
       } else {
         // reverse ssh requested
         await startReverseSsh(requestingAtsign: requestingAtsign, req: req);
@@ -1307,6 +1372,10 @@ class SshnpdImpl
     } else {
       // sshnp <2.0.0 clients do not send sessionId, it's generated here
       sessionId = Uuid().v4();
+    }
+    if (requireEnrollmentSignature) {
+      await _refuse(requestingAtsign, sessionId, _unsignedRefused);
+      return;
     }
     SshnpSessionRequest req = SshnpSessionRequest(
       direct: false,
@@ -1365,6 +1434,7 @@ class SshnpdImpl
   Future<void> startDirectSsh({
     required String requestingAtsign,
     required SshnpSessionRequest req,
+    String? clientSigningKey,
   }) async {
     bool? authenticateToRvd = req.authenticateToRvd;
     bool? encryptRvdTraffic = req.encryptRvdTraffic;
@@ -1436,7 +1506,7 @@ class SshnpdImpl
     }
     // Connect to rendezvous point using background process.
     // This program can then exit without causing an issue.
-    Process rv = await Srv.exec(
+    final srv = Srv.exec(
       req.host,
       req.port,
       localPort: localSshdPort,
@@ -1447,8 +1517,10 @@ class SshnpdImpl
       aesD2C: d2cBundle?.aesKey,
       ivD2C: d2cBundle?.iv,
       timeout: DefaultArgs.srvTimeout,
-    ).run();
+    );
+    Process rv = await srv.run();
     logger.info('Started rv - pid is ${rv.pid}');
+    _trackSrvProcess(req.sessionId, clientSigningKey, srv, rv);
 
     LocalSshKeyUtil keyUtil = LocalSshKeyUtil(homeDirectory: homeDirectory);
 
@@ -2081,6 +2153,185 @@ class SshnpdImpl
     );
   }
 
+  /// The canonical `_apsk` record [requestingAtsign] signed [envelope] with,
+  /// verified, or null when it wasn't signed with an enrollment key. Refuses
+  /// the request, telling the client why, when the signature doesn't verify,
+  /// or when it is missing and [requireEnrollmentSignature] is set.
+  Future<({bool refused, String? signingKey})> _clientSigningKey(
+    Atsign requestingAtsign,
+    String sessionId,
+    Map envelope,
+  ) async {
+    Future<({bool refused, String? signingKey})> refuse(String why) async {
+      await _refuse(requestingAtsign, sessionId, why);
+      return (refused: true, signingKey: null);
+    }
+
+    if (_clientSessions.containsKey(sessionId)) {
+      return refuse('A session with id $sessionId is already live');
+    }
+    final String? signingKey;
+    try {
+      signingKey = await verifyEnrollmentSignature(
+        publicLookup,
+        requestingAtsign,
+        envelope,
+      );
+    } on ApskSignatureException catch (e) {
+      return refuse('Enrollment signature not verified: $e');
+    } catch (e) {
+      if (requireEnrollmentSignature) {
+        return refuse('Could not check the enrollment signature: $e');
+      }
+      logger.warning(
+        'Could not check the enrollment signature on session $sessionId from'
+        ' $requestingAtsign, so it goes ahead unwatched, as an unsigned'
+        ' request would: $e',
+      );
+      return (refused: false, signingKey: null);
+    }
+    if (signingKey == null && requireEnrollmentSignature) {
+      return refuse(_unsignedRefused);
+    }
+    return (refused: false, signingKey: signingKey);
+  }
+
+  static const _unsignedRefused = 'This daemon requires session requests'
+      ' signed with the client\'s enrollment key';
+
+  /// Tells [requestingAtsign] that this daemon refuses [sessionId], and [why].
+  Future<void> _refuse(
+    String requestingAtsign,
+    String sessionId,
+    String why,
+  ) async {
+    logger.warning('Refusing session $sessionId from $requestingAtsign: $why');
+    await _notify(
+      atKey: _createResponseAtKey(
+        requestingAtsign: requestingAtsign,
+        sessionId: sessionId,
+      ),
+      value: why,
+      sessionId: sessionId,
+    );
+  }
+
+  /// Tracks the srv process [srv] started for [sessionId], when its client
+  /// signed the request with [clientSigningKey]. A process whose exit can't
+  /// be seen isn't tracked, since its pid could later be reused.
+  void _trackSrvProcess(
+    String sessionId,
+    String? clientSigningKey,
+    Srv<Process> srv,
+    Process rv,
+  ) {
+    if (clientSigningKey == null || srv is! SrvImplExec) return;
+    trackClientSession(
+      sessionId,
+      clientSigningKey,
+      ended: srv.exited,
+      end: () => rv.kill(),
+    );
+  }
+
+  /// Ends [sessionId] by calling [end] if [signingKey], the `_apsk` record its
+  /// client signed the request with, is withdrawn before [ended] completes.
+  /// A session started under an id already being watched is ended at once.
+  @visibleForTesting
+  void trackClientSession(
+    String sessionId,
+    String signingKey, {
+    required Future<void> ended,
+    required void Function() end,
+  }) {
+    if (_clientSessions.containsKey(sessionId)) {
+      logger.warning(
+        'Ending session $sessionId: a session with that id is already being'
+        ' watched',
+      );
+      end();
+      return;
+    }
+    _clientSessions[sessionId] = _ClientSession(signingKey, end);
+    unawaited(ended.whenComplete(() => _clientSessions.remove(sessionId)));
+  }
+
+  /// How many sessions [checkClientKeys] is watching.
+  @visibleForTesting
+  int get trackedClientSessions => _clientSessions.length;
+
+  /// Looks up afresh, from the client's own atServer, the `_apsk` record each
+  /// tracked session's client signed its request with, and ends each session
+  /// whose record has been withdrawn: moved by the client's atServer to
+  /// `r.__e` (the enrollment was revoked or superseded) or `d.__e` (deleted or
+  /// expired). A record that is merely missing, and a lookup that fails any
+  /// other way, keep the session. A key whose last re-check hasn't finished
+  /// is left out, so a slow atServer delays only the re-checks of its own
+  /// keys.
+  @visibleForTesting
+  Future<void> checkClientKeys() async {
+    final keys = {
+      for (final session in _clientSessions.values)
+        if (!session.ending) session.signingKey,
+    }.difference(_keysBeingChecked);
+    await Future.wait([for (final key in keys) _recheck(key)]);
+  }
+
+  Future<void> _recheck(String key) async {
+    _keysBeingChecked.add(key);
+    try {
+      final withdrawnTo = await _whereWithdrawn(key);
+      if (withdrawnTo == null) return;
+      for (final MapEntry(key: sessionId, value: session)
+          in _clientSessions.entries.toList()) {
+        if (!session.ending && session.signingKey == key) {
+          session.ending = true;
+          logger.warning(
+            'Ending session $sessionId: its client\'s signing key $key has'
+            ' been withdrawn to $withdrawnTo',
+          );
+          try {
+            session.end();
+          } catch (e) {
+            logger.warning('Could not end session $sessionId: $e');
+          }
+        }
+      }
+    } finally {
+      _keysBeingChecked.remove(key);
+    }
+  }
+
+  /// Where [key] has been withdrawn to, or null when it is still published,
+  /// merely missing, or a lookup fails, all of which keep its sessions.
+  Future<String?> _whereWithdrawn(String key) async {
+    try {
+      if (await publicLookup.lookupDirect(key) != null) return null;
+    } catch (e) {
+      logger.warning(
+        'Could not re-check client signing key $key, so the sessions it'
+        ' signed carry on: $e',
+      );
+      return null;
+    }
+    try {
+      final withdrawnTo = await publicLookup.withdrawnTo(key);
+      if (withdrawnTo == null) {
+        logger.warning(
+          'Client signing key $key is missing but has not been withdrawn, so'
+          ' the sessions it signed carry on',
+        );
+      }
+      return withdrawnTo;
+    } catch (e) {
+      logger.warning(
+        'Could not tell whether client signing key $key was withdrawn, so the'
+        ' sessions it signed carry on: $e',
+      );
+      return null;
+    }
+  }
+
   Future<bool> verifyRequestSignature(
     Atsign requestingAtsign,
     String sessionId,
@@ -2287,4 +2538,14 @@ Future<AesKeyBundle> genBundle(
     iv: iv,
     ivEncrypted: ivEncrypted,
   );
+}
+
+/// A session whose client signed its request with an enrollment key, and how
+/// to end it.
+class _ClientSession {
+  _ClientSession(this.signingKey, this.end);
+
+  final String signingKey;
+  final void Function() end;
+  bool ending = false;
 }

@@ -30,6 +30,8 @@ class SshnpdParams {
   final String permitOpen;
   final bool clearCachedPKs;
   final bool strict;
+  final int clientKeyCheckSecs;
+  final bool requireEnrollmentSignature;
 
   SshnpdParams({
     required this.device,
@@ -55,6 +57,8 @@ class SshnpdParams {
     required this.permitOpen,
     required this.clearCachedPKs,
     required this.strict,
+    required this.clientKeyCheckSecs,
+    required this.requireEnrollmentSignature,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -175,6 +179,9 @@ class SshnpdParams {
       clearCachedPKs: c.value(SshnpdOption.clearCachedPks),
       strict:
           c.optionalValue(SshnpdOption.strict) ?? policyManagerAtsign != null,
+      clientKeyCheckSecs: c.value(SshnpdOption.clientKeyCheckSecs),
+      requireEnrollmentSignature:
+          c.value(SshnpdOption.requireEnrollmentSignature),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/at_ssh_key_util/local_ssh_key_util.dart';
+import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
 import 'package:test/test.dart';
@@ -82,6 +83,9 @@ void main() {
         version: '1.0.0',
         permitOpen: ['localhost:22'],
         strict: false,
+        clientKeyCheckInterval:
+            const Duration(seconds: DefaultSshnpdArgs.clientKeyCheckSecs),
+        requireEnrollmentSignature: false,
       )..initialized = true;
 
   /// Runs [daemon] in a zone that records its periodic timers and fires its
@@ -110,8 +114,8 @@ void main() {
   // NOTE the auth-check AtRpc keeps no handle on its subscription and has
   // no stop, so it lives until the AtClient's notification service stops.
   for (final (label, deviceInfo, policy, timerCount, survivors) in [
-    ('minimal', false, null, 2, 0),
-    ('device info and a policy manager', true, '@policy', 3, 1),
+    ('minimal', false, null, 3, 0),
+    ('device info and a policy manager', true, '@policy', 4, 1),
   ]) {
     test('stop() ends every timer and subscription run() started ($label)',
         () async {
@@ -158,7 +162,7 @@ void main() {
     release.complete();
     final timers = await running;
 
-    expect(timers, hasLength(3));
+    expect(timers, hasLength(4));
     expect(subscriptions, hasLength(2));
     expect(timers.where((t) => t.isActive), isEmpty);
     expect(listening(), isEmpty);

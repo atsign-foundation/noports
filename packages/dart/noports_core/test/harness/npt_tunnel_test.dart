@@ -49,13 +49,10 @@ void main() {
 
   /// The atSigns whose ESCR signing key the relay looked up.
   Set<String> escrVerifiedSides(NoPortsHarness harness) => {
-        for (final c in harness.server.connections)
-          if (c.atSign.atSign == NoPortsHarness.relayAtSign)
-            for (final command in c.commands)
-              if (RegExp(r'^plookup:.*_apsk\.[^.]+\.a\.__e(@[^@]+)$')
-                      .firstMatch(command)
-                  case final m?)
-                m.group(1)!,
+        for (final path in harness.relayHttp.asked)
+          if (RegExp(r'^/(@[^/]+)/_apsk\.[^.]+\.a\.__e$').firstMatch(path)
+              case final m?)
+            m.group(1)!,
       };
 
   /// Replaces the signing key [atSign] publishes for its first enrollment
