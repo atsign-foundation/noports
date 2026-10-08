@@ -33,7 +33,7 @@ And once:
 
 ## Running locally
 
-On an ephemeral environment (EE), with atSigns of the run's own:
+On an ephemeral environment (EE), as in CI, with atSigns of the run's own:
 
 ```bash
 echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts   # once
@@ -46,15 +46,10 @@ dart run tests/npe2e/bin/revocation_tests.dart \
 tests/tools/ee/teardown_ee.sh ee_rev rvc_mine rvd_mine rvr_mine
 ```
 
-`setup_ee.sh` takes its base port from `BASE_PORT` (2500 when unset), so to
-run beside other rigs, lease one:
-`~/.claude/bin/portlease run -- tests/tools/ee/setup_ee.sh ...`, then pass
-`--root-domain vip.ve.atsign.zone:<base>`. It refuses a container name,
-keyfile or port that is already taken rather than clearing it.
-
-On the virtual environment (VE), after `tests/tools/ve/setup_ve.sh`, use
-three of its demo atSigns and `--root-domain vip.ve.atsign.zone`. The client
-atSign's keys must be able to enroll and revoke devices.
+`setup_ee.sh` takes its base port from `BASE_PORT` (2500 when unset), and the
+EE uses that port and the 99 after it; to run beside another EE, give each its
+own base and pass `--root-domain vip.ve.atsign.zone:<base>`. It refuses a
+container name, keyfile or port that is already taken rather than clearing it.
 
 Run from the repo root, after `melos bootstrap`. The run's directory is
 `npe2e_revocation_tests/<test-run-id>/`; its

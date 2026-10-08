@@ -62,8 +62,7 @@ class RevocationTestsParams {
       ..addOption(
         'root-domain',
         mandatory: true,
-        help: 'atDirectory host:port, e.g. vip.ve.atsign.zone:2500 for an EE'
-            ' or vip.ve.atsign.zone for the VE',
+        help: 'atDirectory host:port, e.g. vip.ve.atsign.zone:2500 for an EE',
       )
       ..addOption(
         'relay-host',

@@ -25,7 +25,7 @@ There are four test packs, each with its own entrypoint under `bin/`:
 The examples below use the core pack; relay and policy take the same
 arguments. The revocation pack starts its own relay and daemons, so it takes
 fewer; [lib/revocation_tests/README.md](lib/revocation_tests/README.md) says
-how to run it on an EE or the VE.
+how to run it on an EE.
 
 ## Prerequisites
 
