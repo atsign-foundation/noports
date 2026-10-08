@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
+#include <time.h>
 #include <unistd.h>
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -61,7 +63,8 @@ void sshnpd_close_inherited_fds(int from_fd) {
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
                     bool authenticate_to_rvd, char *rvd_auth_string, const sshnpd_escr_context *escr,
                     bool encrypt_rvd_traffic, bool multi, int timeout_seconds, unsigned char *session_aes_key_c2d,
-                    unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c) {
+                    unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c,
+                    int ready_fd) {
 
   const char *local_host = requested_host != NULL ? requested_host : "localhost";
   uint16_t local_port = requested_port != 0 ? requested_port : 22;
@@ -133,7 +136,12 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "requested: %s:%s\n", local_host, local_port_str);
   fflush(stdout);
 
-  sshnpd_close_inherited_fds(3);
+  if (ready_fd >= 0 && dup2(ready_fd, 3) == 3) {
+    setenv("SRV_READY_FD", "3", 1);
+    sshnpd_close_inherited_fds(4);
+  } else {
+    sshnpd_close_inherited_fds(3);
+  }
 
   // Self-exec only: re-run this exact (already-trusted) binary in srv worker
   // mode. There is deliberately no path to an external srv binary - that would
@@ -153,4 +161,49 @@ int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *reque
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to self-exec srv worker (%s): %s\n", exe_path,
                strerror(errno));
   return -1;
+}
+
+int wait_for_srv_start(int ready_fd, int timeout_ms, char *why, size_t why_size) {
+  struct timespec start;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  char seen[sizeof(SRV_COMPLETION_STRING) + 1];
+  size_t len = 0;
+  for (;;) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    long left = timeout_ms - ((long)(now.tv_sec - start.tv_sec) * 1000 + (now.tv_nsec - start.tv_nsec) / 1000000);
+    if (left <= 0) {
+      snprintf(why, why_size, "srv did not report starting within %d seconds", timeout_ms / 1000);
+      return 1;
+    }
+    struct pollfd p = {ready_fd, POLLIN, 0};
+    int ready = poll(&p, 1, (int)left);
+    if (ready < 0 && errno == EINTR) {
+      continue;
+    }
+    if (ready < 0) {
+      snprintf(why, why_size, "could not wait for srv: %s", strerror(errno));
+      return 1;
+    }
+    if (ready == 0) {
+      continue;
+    }
+    ssize_t n = read(ready_fd, seen + len, sizeof(seen) - 1 - len);
+    if (n < 0 && errno == EINTR) {
+      continue;
+    }
+    if (n <= 0) {
+      snprintf(why, why_size, "srv exited before reporting that it had started");
+      return 1;
+    }
+    len += (size_t)n;
+    seen[len] = '\0';
+    if (strstr(seen, SRV_COMPLETION_STRING) != NULL) {
+      return 0;
+    }
+    if (len == sizeof(seen) - 1) {
+      snprintf(why, why_size, "srv reported something other than starting");
+      return 1;
+    }
+  }
 }

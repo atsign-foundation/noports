@@ -84,6 +84,11 @@ int main(int argc, char **argv) {
     if (parse_srv_params(&srv_params, argc - 1, (const char **)(argv + 1), NULL) != 0) {
       return 1;
     }
+    const char *ready_fd = getenv("SRV_READY_FD");
+    if (ready_fd != NULL) {
+      srv_params.ready_fd = atoi(ready_fd);
+      unsetenv("SRV_READY_FD");
+    }
     atlogger_set_logging_level(INFO);
     return run_srv(&srv_params);
   }

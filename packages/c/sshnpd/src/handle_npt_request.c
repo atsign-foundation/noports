@@ -18,6 +18,7 @@
 #include <sshnpd/handle_ssh_request.h>
 #include <sshnpd/handler_commons.h>
 #include <sshnpd/run_srv_process.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -218,6 +219,13 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
   // - session_iv_c2d_base64 (if encrypt_rvd_traffic == true)
   // - the four session_*_d2c* equivalents (if twin_keys == true)
 
+  // srv reports on this pipe once it has reached the relay
+  int ready[2] = {-1, -1};
+  if (pipe(ready) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to make a pipe for srv: %s\n", strerror(errno));
+    ready[0] = ready[1] = -1;
+  }
+
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Running fork()...\n");
 
   pid_t pid = fork();
@@ -225,6 +233,9 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
 
   if (pid == 0) {
     // child process
+    if (ready[0] >= 0) {
+      close(ready[0]);
+    }
 
     // free this immediately, we don't need it on the child fork
     if (encrypt_rvd_traffic) {
@@ -263,7 +274,7 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
 
     run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
                     rvd_auth_string, use_escr ? &escr_context : NULL, encrypt_rvd_traffic, multi, timeout_seconds,
-                    session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c);
+                    session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c, ready[1]);
 
     *is_child_process = true;
 
@@ -285,6 +296,26 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
     // end of child process
   } else if (pid > 0) {
     // parent process
+    if (ready[1] >= 0) {
+      close(ready[1]);
+      ready[1] = -1;
+    }
+    if (ready[0] >= 0) {
+      char why[160];
+      int start_failed = wait_for_srv_start(ready[0], SRV_START_TIMEOUT_MS, why, sizeof(why));
+      close(ready[0]);
+      ready[0] = -1;
+      if (start_failed != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "srv failed to start: %s\n", why);
+        kill(pid, SIGTERM);
+        char error_message[256];
+        snprintf(error_message, sizeof(error_message),
+                 "Failed to start up the daemon side of the relay socket tunnel : %s", why);
+        send_session_error(atclient, params, requesting_atsign,
+                           cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")), error_message);
+        goto cancel;
+      }
+    }
 
     // since we use WNOHANG,
     // waitpid will return -1, if an error occurred
@@ -322,6 +353,11 @@ static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *i
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fork the srv process: %s\n", strerror(errno));
   }
 cancel:
+  for (int i = 0; i < 2; i++) {
+    if (ready[i] >= 0) {
+      close(ready[i]);
+    }
+  }
   if (rvd_auth_string != NULL) {
     cJSON_free(rvd_auth_string);
   }

@@ -28,10 +28,21 @@ typedef struct {
 // request doesn't specify one.
 // escr: non-NULL to authenticate to the relay with ESCR instead of the legacy
 // rvd_auth_string.
+// ready_fd: the write end of a pipe srv reports on once it has reached the
+// relay (see wait_for_srv_start), or -1.
 int run_srv_process(const char *srvd_host, uint16_t srvd_port, const char *requested_host, uint16_t requested_port,
                     bool authenticate_to_rvd, char *rvd_auth_string, const sshnpd_escr_context *escr,
                     bool encrypt_rvd_traffic, bool multi, int timeout_seconds, unsigned char *session_aes_key_c2d,
-                    unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c);
+                    unsigned char *session_iv_c2d, unsigned char *session_aes_key_d2c, unsigned char *session_iv_d2c,
+                    int ready_fd);
+
+// How long srv may take to reach the relay, as the Dart daemon allows
+#define SRV_START_TIMEOUT_MS 15000
+
+// Waits up to timeout_ms for srv to report on ready_fd, the read end of the
+// pipe passed to run_srv_process, that it has reached the relay. Returns
+// non-zero, with why set, when it exits or times out first.
+int wait_for_srv_start(int ready_fd, int timeout_ms, char *why, size_t why_size);
 // Writes the path of this process's executable into buf, for re-executing
 // it as a worker. Returns non-zero when it can't be found.
 int sshnpd_own_exe_path(char *buf, size_t bufsize);
