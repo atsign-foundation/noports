@@ -100,7 +100,9 @@ endif()
 
 # 5. Create sshnpd_lib library target
 
-add_compile_options("-lrt")
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  add_compile_options("-lrt")
+endif()
 add_library(${PROJECT_NAME}-lib STATIC ${SSHNPD_SRCS})
 set(include_dirs "")
 set(
