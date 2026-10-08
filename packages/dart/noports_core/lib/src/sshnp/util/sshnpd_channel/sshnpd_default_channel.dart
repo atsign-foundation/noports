@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
-import 'package:meta/meta.dart';
-import 'package:noports_core/src/common/io_types.dart';
+import 'package:noports_core/events.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 
 class SshnpdDefaultChannel extends SshnpdChannel
     with SshnpdDefaultPayloadHandler {
@@ -19,12 +18,11 @@ class SshnpdDefaultChannel extends SshnpdChannel
 
 mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ephemeralPrivateKey;
-  String? sessionAESKeyString;
-  String? sessionIVString;
-
-  @visibleForTesting
-  // disable publickey cache on windows
-  FileSystem? fs = Platform.isWindows ? null : LocalFileSystem();
+  String? aesC2D;
+  String? ivC2D;
+  String? aesD2C;
+  String? ivD2C;
+  String? errorReceived;
 
   @override
   Future<void> initialize() async {
@@ -37,21 +35,23 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
     bool validResponse = notification.value?.startsWith('{') ?? false;
     if (!validResponse) {
       logger.shout('invalid daemon response: ${notification.value}');
+      errorReceived = notification.value;
       return SshnpdAck.acknowledgedWithErrors;
     } else {
       late final Map envelope;
       late final Map daemonResponse;
       try {
         envelope = jsonDecode(notification.value!);
-        assertValidValue(envelope, 'signature', String);
-        assertValidValue(envelope, 'hashingAlgo', String);
-        assertValidValue(envelope, 'signingAlgo', String);
+        assertValidMapValue(envelope, 'signature', String);
+        assertValidMapValue(envelope, 'hashingAlgo', String);
+        assertValidMapValue(envelope, 'signingAlgo', String);
 
         daemonResponse = envelope['payload'] as Map;
-        assertValidValue(daemonResponse, 'sessionId', String);
+        assertValidMapValue(daemonResponse, 'sessionId', String);
       } catch (e) {
         logger.shout(
-            'Failed to extract parameters from notification value "${notification.value}" with error : $e');
+          'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+        );
         return SshnpdAck.acknowledgedWithErrors;
       }
 
@@ -60,12 +60,12 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           atClient,
           params.sshnpdAtSign,
           logger,
-          envelope,
-          fs: fs,
+          envelope
         );
       } catch (e) {
         logger.shout(
-            'Failed to verify signature of msg from ${params.sshnpdAtSign}');
+          'Failed to verify signature of msg from ${params.sshnpdAtSign}',
+        );
         logger.shout('Exception: $e');
         logger.shout('Notification value: ${notification.value}');
         return SshnpdAck.acknowledgedWithErrors;
@@ -76,26 +76,39 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
       logger.info('Received ephemeralPrivateKey: $ephemeralPrivateKey');
 
-      String? sessionAESKeyStringEncrypted = daemonResponse['sessionAESKey'];
-      logger.info(
-          'Received encrypted sessionAESKey: $sessionAESKeyStringEncrypted');
+      String? aesKeyC2DEncrypted =
+          daemonResponse['sessionAESKey'] ?? daemonResponse['aesKeyC2D'];
+      logger.info('Received encrypted aesKeyC2D: $aesKeyC2DEncrypted');
 
-      String? sessionIVStringEncrypted = daemonResponse['sessionIV'];
-      logger.info('Received encrypted sessionIV: $sessionIVStringEncrypted');
+      String? ivC2DEncrypted =
+          daemonResponse['sessionIV'] ?? daemonResponse['ivC2D'];
+      logger.info('Received encrypted ivC2D: $ivC2DEncrypted');
 
-      if (sessionAESKeyStringEncrypted != null &&
-          sessionIVStringEncrypted != null) {
-        AtChops atChops =
-            AtChopsImpl(AtChopsKeys.create(params.sessionKP, null));
-        sessionAESKeyString = atChops
-            .decryptString(sessionAESKeyStringEncrypted, params.sessionKPType)
-            .result;
-        sessionIVString = atChops
-            .decryptString(sessionIVStringEncrypted, params.sessionKPType)
-            .result;
+      if (aesKeyC2DEncrypted != null && ivC2DEncrypted != null) {
+        aesC2D = _decryptWithSessionKP(aesKeyC2DEncrypted);
+        ivC2D = _decryptWithSessionKP(ivC2DEncrypted);
+      }
+
+      String? aesKeyD2CEncrypted = daemonResponse['aesKeyD2C'];
+      logger.info('Received encrypted aesKeyD2C: $aesKeyD2CEncrypted');
+
+      String? ivD2CEncrypted = daemonResponse['ivD2C'];
+      logger.info('Received encrypted ivD2C: $ivD2CEncrypted');
+
+      if (aesKeyD2CEncrypted != null && ivD2CEncrypted != null) {
+        aesD2C = _decryptWithSessionKP(aesKeyD2CEncrypted);
+        ivD2C = _decryptWithSessionKP(ivD2CEncrypted);
+      }
+
+      final elcJson = daemonResponse['eventLoggingConfig'];
+      if (elcJson != null) {
+        eventLoggingConfig = AtEventConfig.fromJson(elcJson);
       }
 
       return SshnpdAck.acknowledged;
     }
   }
+
+  String _decryptWithSessionKP(String ciphertext) =>
+      rsaDecryptString(ciphertext, keyPair: params.sessionKP);
 }

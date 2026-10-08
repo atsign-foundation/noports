@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_C_STANDARD 99)
 cmake_policy(SET CMP0135 NEW)
 
-project(srv VERSION 0.0.1 LANGUAGES C)
+project(srv VERSION 1.1.1 LANGUAGES C)
 
 # 1. Variables - you are free to edit anything in this step
 
@@ -10,6 +10,7 @@ project(srv VERSION 0.0.1 LANGUAGES C)
 # globs are known as bad practice, so we do not use them here
 set(
   SRV_SRCS
+  ${CMAKE_CURRENT_LIST_DIR}/src/escr.c
   ${CMAKE_CURRENT_LIST_DIR}/src/params.c
   ${CMAKE_CURRENT_LIST_DIR}/src/side.c
   ${CMAKE_CURRENT_LIST_DIR}/src/srv.c
@@ -52,7 +53,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/atsdk.cmake)
 find_package(argparse-static QUIET)
 if(NOT argparse-static_FOUND)
   message(STATUS "[SRV] argparse not found, fetching from local repository..")
-  fetchcontent_declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
+  FetchContent_Declare(argparse-static SOURCE_DIR ${ARGPARSE_DIR})
   list(APPEND SRV_TARGETS_TO_INSTALL argparse-static)
   list(APPEND SRV_MAKE_AVAILABLE argparse-static)
 else()
@@ -61,17 +62,30 @@ endif()
 
 # 4c. make everything available
 if(SRV_MAKE_AVAILABLE)
-  fetchcontent_makeavailable(${SRV_MAKE_AVAILABLE})
+  FetchContent_MakeAvailable(${SRV_MAKE_AVAILABLE})
 endif()
 
 # 5. Create srv_lib library target
 
+add_compile_options("-pthread")
 add_library(${PROJECT_NAME}-lib STATIC ${SRV_SRCS})
 
-target_link_libraries(
-  ${PROJECT_NAME}-lib
-  PRIVATE argparse::argparse-static atlogger atchops mbedtls
-)
+set(include_dirs "")
+set(link_libs argparse::argparse-static atlogger atchops)
+if(NOPORTS_USE_SHARED_LIBS)
+  find_path(mbedtls_include_dir NAMES mbedtls/x509.h REQUIRED)
+  list(APPEND include_dirs ${mbedtls_include_dir})
+  find_library(
+    mbedtls_lib_path
+    NAMES libmbedtls.so
+    PATHS /usr/lib /usr/lib64 /usr/local/lib NO_CACHE
+    REQUIRED
+  )
+  list(APPEND link_libs ${mbedtls_lib_path})
+else()
+  list(APPEND link_libs mbedtls)
+endif()
+target_link_libraries(${PROJECT_NAME}-lib PRIVATE ${link_libs})
 
 # Set include directories for srv target
 target_include_directories(
@@ -79,6 +93,7 @@ target_include_directories(
   PUBLIC
     $<BUILD_INTERFACE:${SRV_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    ${include_dirs}
 )
 
 # 6 Install srv library
@@ -103,10 +118,7 @@ install(
 # 7. Create srv executable target
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/main.c)
 
-target_link_libraries(
-  ${PROJECT_NAME}
-  PRIVATE ${PROJECT_NAME}-lib atlogger atchops mbedtls argparse::argparse-static
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}-lib ${link_libs})
 
 # 8. Build tests
 if(SRV_BUILD_TESTS)

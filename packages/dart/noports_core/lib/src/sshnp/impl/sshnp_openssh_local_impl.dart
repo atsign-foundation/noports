@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/src/sshnp/util/ephemeral_port_binder.dart';
@@ -54,7 +56,34 @@ class SshnpOpensshLocalImpl extends SshnpCore
     logger.info(msg);
     sendProgress(msg);
 
-    /// Send an ssh request to sshnpd
+    final sessionRequest = SshnpSessionRequest(
+      direct: true,
+      sessionId: sessionId,
+      host: srvdChannel.rvdHost,
+      port: srvdChannel.daemonPort,
+      authenticateToRvd: params.authenticateDeviceToRvd,
+      relayAuthMode: srvdChannel.daemonRelayAuthMode(
+        daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+      ),
+      relayAuthAesKey: srvdChannel.relayAuthAesKey,
+      clientNonce: srvdChannel.clientNonce,
+      rvdNonce: srvdChannel.rvdNonce,
+      encryptRvdTraffic: params.encryptRvdTraffic,
+      clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+      clientEphemeralPKType: params.sessionKPType.name,
+      twinKeys: sshnpdChannel.twinKeys,
+      relayAtsign: srvdChannel.supportsEventLogging
+          ? params.srvdAtSign.toAtsign()
+          : null,
+    );
+
+    final notifyPayload = await signAndWrapRequest(
+      atClient,
+      this,
+      sessionRequest.toJson(),
+    );
+    logger.info('Sending: $notifyPayload');
+
     await notify(
       AtKey()
         ..key = 'ssh_request'
@@ -62,20 +91,7 @@ class SshnpOpensshLocalImpl extends SshnpCore
         ..sharedBy = params.clientAtSign
         ..sharedWith = params.sshnpdAtSign
         ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-          atClient,
-          SshnpSessionRequest(
-            direct: true,
-            sessionId: sessionId,
-            host: srvdChannel.rvdHost,
-            port: srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-          ).toJson()),
+      notifyPayload,
       checkForFinalDeliveryStatus: false,
       waitForFinalDeliveryStatus: false,
       ttln: Duration(minutes: 1),
@@ -114,8 +130,10 @@ class SshnpOpensshLocalImpl extends SshnpCore
     sendProgress('Creating connection to socket rendezvous');
     await srvdChannel.runSrv(
       localRvPort: localRvPort,
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: false,
       detached: true,
       timeout: DefaultArgs.srvTimeout,
@@ -163,8 +181,9 @@ class SshnpOpensshLocalImpl extends SshnpCore
       localPort: localPort,
       host: 'localhost',
       remoteUsername: remoteUsername,
-      localSshOptions:
-          (params.addForwardsToTunnel) ? null : params.localSshOptions,
+      localSshOptions: (params.addForwardsToTunnel)
+          ? null
+          : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: bean,
     );

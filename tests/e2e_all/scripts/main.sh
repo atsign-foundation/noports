@@ -17,15 +17,14 @@
 
 function usageAndExit {
   echo "Usage:"
-  echo "  $scriptName @client_atsign @daemon_atsign @socket_rendezvous_atsign \\"
+  echo "  $scriptName @client_atsign @daemon_atsign @relay_atsign @relay_latest_atsign @policy_atsign @policy_latest_atsign @events_atsign \\"
   echo "     [-r <atDirectory (aka root) host>] \\"
   echo "     [-t <space-separated list of test scripts to run from the e2e_all/scripts/tests/ subdirectory>] \\"
   echo "     [-s <daemon versions>] - defaults to $defaultDaemonVersions\\"
   echo "     [-c <client versions>] - defaults to $defaultClientVersions \\"
-  echo "     [-u <remote username>] - defaults to the local username \\"
   echo "     [-w <daemon start wait time> - how long to wait for daemons to start up - defaults to 30 seconds] \\"
   echo "     [-n (Do not recompile binaries for current commit. Default is to always recompile.)]"
-  echo "     [-p (Enable test parallelization, requires GNU parallel to be installed.) ]"
+  echo "     [-p (Enable test parallelization) ]"
   echo ""
   echo "Notes:"
   echo "  <atDirectory host> defaults to root.atsign.org"
@@ -49,8 +48,8 @@ atDirectoryPort=64
 testsToRun="all"
 
 # defaultDaemonVersions="c:current"
-defaultDaemonVersions="d:4.0.5 d:5.2.0 d:5.5.0 d:current c:current"
-defaultClientVersions="d:4.0.5 d:5.2.0 d:5.5.0 d:current"
+defaultDaemonVersions="d:current c:current d:5.9.4 d:5.11.2 d:5.13.0"
+defaultClientVersions="d:current d:5.9.4 d:5.11.2 d:5.13.0"
 
 daemonVersions=$defaultDaemonVersions
 clientVersions=$defaultClientVersions
@@ -69,6 +68,7 @@ cd "$(dirname -- "$0")" || exit 1
 testScriptsDir=$(pwd)
 export testScriptsDir
 
+export recompile
 source "$testScriptsDir/common/common_functions.include.sh"
 
 if ! command -v timeout &>/dev/null; then
@@ -78,6 +78,10 @@ fi
 unset clientAtSign
 unset daemonAtSign
 unset srvAtSign
+unset srvLatestAtSign
+unset policyAtSign
+unset policyLatestAtSign
+unset eventsAtSign
 
 if (($# < 3)); then
   usageAndExit
@@ -88,41 +92,69 @@ if test "${clientAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid clientAtSign $clientAtSign"
   usageAndExit
 fi
-daemonAtSign="$2"
+shift
+
+daemonAtSign="$1"
 if test "${daemonAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid daemonAtSign $daemonAtSign"
   usageAndExit
 fi
-srvAtSign="$3"
+shift
+
+srvAtSign="$1"
 if test "${srvAtSign:0:1}" != "@"; then
   logErrorAndReport "invalid srvAtSign $srvAtSign"
   usageAndExit
 fi
+shift
 
-export clientAtSign daemonAtSign srvAtSign
+srvLatestAtSign="$1"
+if test "${srvLatestAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid srvLatestAtSign $srvLatestAtSign"
+  usageAndExit
+fi
 shift
+
+policyAtSign="$1"
+if test "${policyAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid policyAtSign $policyAtSign"
+  usageAndExit
+fi
 shift
+
+policyLatestAtSign="$1"
+if test "${policyLatestAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid policyLatestAtSign $policyLatestAtSign"
+  usageAndExit
+fi
 shift
+
+eventsAtSign="$1"
+if test "${eventsAtSign:0:1}" != "@"; then
+  logErrorAndReport "invalid eventsAtSign $eventsAtSign"
+  usageAndExit
+fi
+shift
+
+export clientAtSign daemonAtSign srvAtSign srvLatestAtSign policyAtSign policyLatestAtSign eventsAtSign
 
 commitId="$(git rev-parse --short HEAD)"
 export commitId
 
-remoteUsername=$(whoami)
 identityFilename="$HOME/.ssh/e2e_all.${commitId}"
 
-daemonStartWait=15
+daemonStartWait=20
 
 while getopts r:t:s:c:u:w:pn opt; do
   case $opt in
-    r) atDirectoryHost=$OPTARG ;;
-    t) testsToRun=$OPTARG ;;
-    s) daemonVersions=$OPTARG ;;
-    c) clientVersions=$OPTARG ;;
-    u) remoteUsername=$OPTARG ;;
-    w) daemonStartWait=$OPTARG ;;
-    p) allowParallelization="true" ;;
-    n) recompile="false" ;;
-    *) usageAndExit ;;
+  r) atDirectoryHost=$OPTARG ;;
+  t) testsToRun=$OPTARG ;;
+  s) daemonVersions=$OPTARG ;;
+  c) clientVersions=$OPTARG ;;
+  w) daemonStartWait=$OPTARG ;;
+  p) allowParallelization="true" ;;
+  n) recompile="false" ;;
+  *) usageAndExit ;;
   esac
 done
 
@@ -137,12 +169,13 @@ export atDirectoryPort
 export testsToRun
 export daemonVersions
 export clientVersions
-export remoteUsername
+export remoteUsername="atsign"
 export identityFilename
 export daemonStartWait
 export allowParallelization
-timeoutDuration=20
+timeoutDuration=30 # time out for each test
 export timeoutDuration
+export recompile
 
 shift "$((OPTIND - 1))"
 
@@ -168,30 +201,50 @@ export testRuntimeDir
 "$testScriptsDir/common/cleanup_tmp_files.sh" -s
 
 logInfo "  --> will execute setup_binaries, start_daemons and run_tests with "
-logInfo "    testRootDir:      $testRootDir"
-logInfo "    testRuntimeDir:   $testRuntimeDir"
-logInfo "    testScriptsDir:   $testScriptsDir"
-logInfo "    recompile:        $recompile"
-logInfo "    parallelization:  $allowParallelization"
-logInfo "    atDirectoryHost:  $atDirectoryHost"
-logInfo "    daemonVersions:   $daemonVersions"
-logInfo "    clientVersions:   $clientVersions"
-logInfo "    commitId:         $commitId"
-logInfo "    testsToRun:       $(tr "\n" ";" <<<"$testsToRun")"
+logInfo "    clientAtSign:       $clientAtSign"
+logInfo "    daemonAtSign:       $daemonAtSign"
+logInfo "    relayAtSign:        $srvAtSign"
+logInfo "    relayLatestAtSign:  $srvLatestAtSign"
+logInfo "    policyAtSign:       $policyAtSign"
+logInfo "    policyLatestAtSign: $policyLatestAtSign"
+logInfo "    eventsAtSign:       $eventsAtSign"
+logInfo "    testRootDir:        $testRootDir"
+logInfo "    testRuntimeDir:     $testRuntimeDir"
+logInfo "    testScriptsDir:     $testScriptsDir"
+logInfo "    recompile:          $recompile"
+logInfo "    parallelization:    $allowParallelization"
+logInfo "    atDirectoryHost:    $atDirectoryHost"
+logInfo "    daemonVersions:     $daemonVersions"
+logInfo "    clientVersions:     $clientVersions"
+logInfo "    commitId:           $commitId"
+logInfo "    testsToRun:         $(tr "\n" ";" <<<"$testsToRun")"
 
 echo
-logInfo "Calling setup_binaries.sh"
-export recompile
-"$testScriptsDir/common/setup_binaries.sh"
-retCode=$?
-if test "$retCode" != 0; then
-  logErrorAndReport "Failed to set up binaries - exiting"
-  exit $retCode
+logInfo "Calling common/build_docker_daemons.sh"
+if [ "${allowParallelization}" = "true" ]; then
+  # shellcheck disable=SC2016
+  "$testScriptsDir/common/build_docker_daemons.sh" &
+  buildDockerDaemonPidParallel=$!
+else
+  "$testScriptsDir/common/build_docker_daemons.sh"
 fi
 
 echo
-logInfo "Calling apkam_setup.sh"
-"$testScriptsDir/common/apkam_setup.sh"
+logInfo "Calling common/setup_binaries.sh"
+if [ "${allowParallelization}" = "true" ]; then
+  "$testScriptsDir/common/setup_binaries.sh" &
+  setupBinariesPidParallel=$!
+else
+  "$testScriptsDir/common/setup_binaries.sh"
+fi
+
+echo
+logInfo "Calling common/wipe_known_hosts.sh"
+"$testScriptsDir/common/wipe_known_hosts.sh"
+
+echo
+logInfo "Calling common/setup_atkeys.sh"
+"$testScriptsDir/common/setup_atkeys.sh"
 
 echo
 logInfo "Generating new ssh key"
@@ -203,10 +256,36 @@ backupAuthorizedKeys
 
 # Kill any daemons that might be running since last time, due to a Ctrl-C or whatever
 echo
-logInfo "Calling stop_daemons.sh"
+logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"
 
-logInfo "Calling start_daemons.sh"
+if [ "${allowParallelization}" = "true" ]; then
+  logInfo "Waiting for setup_binaries.sh to finish"
+  wait "$setupBinariesPidParallel"
+  retCode=$?
+  if [ "$retCode" -ne 0 ]; then
+    logErrorAndReport "setup_binaries.sh failed with exit code $retCode"
+    exit $retCode
+  fi
+  logInfo "setup_binaries.sh finished with exit code $?"
+fi
+
+echo
+logInfo "Calling common/apkam_setup.sh"
+"$testScriptsDir/common/apkam_setup.sh"
+
+if [ "${allowParallelization}" = "true" ]; then
+  logInfo "Waiting for build_docker_daemons.sh to finish"
+  wait "$buildDockerDaemonPidParallel"
+  retCode=$?
+  if [ "$retCode" -ne 0 ]; then
+    logErrorAndReport "build_docker_daemons.sh failed with exit code $retCode"
+    exit $retCode
+  fi
+  logInfo "build_docker_daemons.sh finished with exit code $?"
+fi
+
+logInfo "Calling common/start_daemons.sh"
 "$testScriptsDir/common/start_daemons.sh"
 retCode=$?
 if test "$retCode" != 0; then
@@ -219,6 +298,7 @@ else
   "$testScriptsDir/common/run_tests.sh"
   testExitStatus=$?
 fi
+
 
 logInfo "Calling common/stop_daemons.sh"
 "$testScriptsDir/common/stop_daemons.sh"

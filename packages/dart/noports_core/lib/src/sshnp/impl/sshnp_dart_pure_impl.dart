@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -40,8 +43,9 @@ class SshnpDartPureImpl extends SshnpCore
     if (!isSafeToInitialize) return;
     await super.initialize();
     if (params.identityFile != null) {
-      identityKeyPair =
-          await keyUtil.getKeyPair(identifier: params.identityFile!);
+      identityKeyPair = await keyUtil.getKeyPair(
+        identifier: params.identityFile!,
+      );
     }
     completeInitialization();
   }
@@ -64,31 +68,7 @@ class SshnpDartPureImpl extends SshnpCore
     sendProgress(msg);
 
     /// Send an ssh request to sshnpd
-    await notify(
-      AtKey()
-        ..key = 'ssh_request'
-        ..namespace = namespace
-        ..sharedBy = params.clientAtSign
-        ..sharedWith = params.sshnpdAtSign
-        ..metadata = (Metadata()..ttl = 10000),
-      signAndWrapAndJsonEncode(
-          atClient,
-          SshnpSessionRequest(
-            direct: true,
-            sessionId: sessionId,
-            host: srvdChannel.rvdHost,
-            port: srvdChannel.daemonPort,
-            authenticateToRvd: params.authenticateDeviceToRvd,
-            clientNonce: srvdChannel.clientNonce,
-            rvdNonce: srvdChannel.rvdNonce,
-            encryptRvdTraffic: params.encryptRvdTraffic,
-            clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
-            clientEphemeralPKType: params.sessionKPType.name,
-          ).toJson()),
-      checkForFinalDeliveryStatus: false,
-      waitForFinalDeliveryStatus: false,
-      ttln: Duration(minutes: 1),
-    );
+    await sendSshRequestToSshnpd();
 
     /// Wait for a response from sshnpd
     sendProgress('Waiting for response from the device daemon');
@@ -108,8 +88,10 @@ class SshnpDartPureImpl extends SshnpCore
     /// Start srv
     sendProgress('Creating connection to socket rendezvous');
     SSHSocket? temp = await srvdChannel.runSrv(
-      sessionAESKeyString: sshnpdChannel.sessionAESKeyString,
-      sessionIVString: sshnpdChannel.sessionIVString,
+      aesC2D: sshnpdChannel.aesC2D,
+      ivC2D: sshnpdChannel.ivC2D,
+      aesD2C: sshnpdChannel.aesD2C,
+      ivD2C: sshnpdChannel.ivD2C,
       multi: false,
       detached: false,
       timeout: DefaultArgs.srvTimeout,
@@ -155,10 +137,54 @@ class SshnpDartPureImpl extends SshnpCore
       localPort: localPort,
       host: 'localhost',
       remoteUsername: remoteUsername,
-      localSshOptions:
-          (params.addForwardsToTunnel) ? null : params.localSshOptions,
+      localSshOptions: (params.addForwardsToTunnel)
+          ? null
+          : params.localSshOptions,
       privateKeyFileName: identityKeyPair?.identifier,
       connectionBean: tunnelSshClient,
+    );
+  }
+
+  @visibleForTesting
+  Future<void> sendSshRequestToSshnpd() async {
+    final sessionRequest = SshnpSessionRequest(
+      direct: true,
+      sessionId: sessionId,
+      host: srvdChannel.rvdHost,
+      port: srvdChannel.daemonPort,
+      authenticateToRvd: params.authenticateDeviceToRvd,
+      relayAuthMode: srvdChannel.daemonRelayAuthMode(
+        daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+      ),
+      relayAuthAesKey: srvdChannel.relayAuthAesKey,
+      clientNonce: srvdChannel.clientNonce,
+      rvdNonce: srvdChannel.rvdNonce,
+      encryptRvdTraffic: params.encryptRvdTraffic,
+      clientEphemeralPK: params.sessionKP.atPublicKey.publicKey,
+      clientEphemeralPKType: params.sessionKPType.name,
+      twinKeys: sshnpdChannel.twinKeys,
+      relayAtsign: srvdChannel.supportsEventLogging
+          ? params.srvdAtSign.toAtsign()
+          : null,
+    );
+    final notifyPayload = await signAndWrapRequest(
+      atClient,
+      this,
+      sessionRequest.toJson(),
+    );
+    logger.info('Sending: $notifyPayload');
+
+    await notify(
+      AtKey()
+        ..key = 'ssh_request'
+        ..namespace = namespace
+        ..sharedBy = params.clientAtSign
+        ..sharedWith = params.sshnpdAtSign
+        ..metadata = (Metadata()..ttl = 10000),
+      notifyPayload,
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(minutes: 1),
     );
   }
 
@@ -168,8 +194,9 @@ class SshnpDartPureImpl extends SshnpCore
   @override
   Future<SshnpRemoteProcess> runShell() async {
     sendProgress('Starting user session');
-    SSHClient userSession =
-        await startUserSession(sshSocket: _sshSocketForUserSession);
+    SSHClient userSession = await startUserSession(
+      sshSocket: _sshSocketForUserSession,
+    );
 
     sendProgress('Starting remote shell');
     SSHSession shell = await userSession.shell();

@@ -1,17 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../sshnp_mocks.dart';
 import 'srvd_channel_mocks.dart';
+
+class FakeNotificationParams extends Fake implements NotificationParams {}
 
 void main() {
   group('SrvdChannel', () {
@@ -28,21 +32,24 @@ void main() {
     // Invocation patterns as closures so they can be referred to by name
     // instead of explicitly writing these calls several times in the test
     notifyInvocation() => notifyStub(
-          any(),
-          any(),
-          checkForFinalDeliveryStatus:
-              any(named: 'checkForFinalDeliveryStatus'),
-          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
-          ttln: any(named: 'ttln'),
-        );
+      any(),
+      any(),
+      checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+      waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+      ttln: any(named: 'ttln'),
+      maxTries: any(named: 'maxTries'),
+    );
     subscribeInvocation() => subscribeStub(
-          regex: any(named: 'regex'),
-          shouldDecrypt: any(named: 'shouldDecrypt'),
-        );
-    srvGeneratorInvocation() => srvGeneratorStub(any(), any(),
-        localPort: any(named: 'localPort'),
-        bindLocalPort: any(named: 'bindLocalPort'),
-        rvdAuthString: any(named: 'rvdAuthString'));
+      regex: any(named: 'regex'),
+      shouldDecrypt: any(named: 'shouldDecrypt'),
+    );
+    srvGeneratorInvocation() => srvGeneratorStub(
+      any(),
+      any(),
+      localPort: any(named: 'localPort'),
+      bindLocalPort: any(named: 'bindLocalPort'),
+      relayAuthenticator: any(named: 'relayAuthenticator'),
+    );
     srvRunInvocation() => mockSrv.run();
 
     setUp(() {
@@ -60,24 +67,23 @@ void main() {
         atClient: mockAtClient,
         params: mockParams,
         sessionId: sessionId,
-        srvGenerator: srvGeneratorStub,
-        notify: notifyStub,
-        subscribe: subscribeStub,
+        srvGenerator: srvGeneratorStub.call,
+        notify: notifyStub.call,
+        subscribe: subscribeStub.call,
       );
 
       registerFallbackValue(AtKey());
       registerFallbackValue(Duration(minutes: 1));
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
 
-      // Create an AtChops instance for testing
-      AtEncryptionKeyPair encryptionKeyPair =
-          AtChopsUtil.generateAtEncryptionKeyPair();
-
-      AtChops atChops = AtChopsImpl(
-        AtChopsKeys.create(encryptionKeyPair, null),
-      );
-
-      when(() => mockAtClient.atChops).thenReturn(atChops);
+      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
+      stubSigningKeyPublish(mockAtClient);
+      when(
+        () => mockAtClient.get(
+          any(),
+          getRequestOptions: any(named: 'getRequestOptions'),
+        ),
+      ).thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
     });
 
     test('public API', () {
@@ -94,10 +100,14 @@ void main() {
       expect(
         stubbedSrvdChannel.srvGenerator,
         isA<
-            Srv<String> Function(String, int,
-                {required int localPort,
-                required bool bindLocalPort,
-                String? rvdAuthString})>(),
+          Srv<String> Function(
+            String,
+            int, {
+            required int localPort,
+            required bool bindLocalPort,
+            RelayAuthenticator? relayAuthenticator,
+          })
+        >(),
       );
       expect(stubbedSrvdChannel.atClient, mockAtClient);
       expect(stubbedSrvdChannel.params, mockParams);
@@ -114,27 +124,29 @@ void main() {
       when(() => mockParams.encryptRvdTraffic).thenReturn(true);
       when(() => mockParams.sendSshPublicKey).thenReturn(false);
 
-      when(subscribeInvocation)
-          .thenAnswer((_) => notificationStreamController.stream);
+      when(
+        subscribeInvocation,
+      ).thenAnswer((_) => notificationStreamController.stream);
 
-      when(notifyInvocation).thenAnswer(
-        (_) async {
-          final testIp = '123.123.123.123';
-          final portA = 10456;
-          final portB = 10789;
-          final rvdSessionNonce = DateTime.now().toIso8601String();
+      when(notifyInvocation).thenAnswer((_) async {
+        final testIp = '123.123.123.123';
+        final portA = 10456;
+        final portB = 10789;
+        final rvdSessionNonce = DateTime.now().toIso8601String();
 
-          notificationStreamController.add(
-            AtNotification.empty()
-              ..id = Uuid().v4()
-              ..key = '$sessionId.${Srvd.namespace}'
-              ..from = '@srvd'
-              ..to = '@client'
-              ..epochMillis = DateTime.now().millisecondsSinceEpoch
-              ..value = '$testIp,$portA,$portB,$rvdSessionNonce',
-          );
-        },
-      );
+        final n = AtNotification.empty()
+          ..id = Uuid().v4()
+          ..key = '$sessionId.${Srvd.namespace}'
+          ..from = '@srvd'
+          ..to = '@client'
+          ..epochMillis = DateTime.now().millisecondsSinceEpoch
+          ..value = '$testIp,$portA,$portB,$rvdSessionNonce';
+        notificationStreamController.add(n);
+        return NotificationResult()
+          ..atKey = AtKey.fromString('${n.to}:${n.key}${n.from}')
+          ..notificationID = n.id
+          ..notificationStatusEnum = NotificationStatusEnum.undelivered;
+      });
     }
 
     test('Initialization - srvd host', () async {
@@ -150,26 +162,29 @@ void main() {
 
       verifyInOrder([
         () => subscribeStub(
-            regex: '$sessionId.${Srvd.namespace}@', shouldDecrypt: true),
+          regex: '$sessionId.${Srvd.namespace}@',
+          shouldDecrypt: true,
+        ),
         () => notifyStub(
-              any<AtKey>(
-                that: predicate(
-                  // Predicate matching specifically the srvdIdKey format
-                  (AtKey key) =>
-                      key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
-                      key.sharedBy == '@client' &&
-                      key.sharedWith == '@srvd' &&
-                      key.metadata.namespaceAware == false &&
-                      key.metadata.ttl == 10000,
-                ),
-              ),
-              any(),
-              checkForFinalDeliveryStatus:
-                  any(named: 'checkForFinalDeliveryStatus'),
-              waitForFinalDeliveryStatus:
-                  any(named: 'waitForFinalDeliveryStatus'),
-              ttln: any(named: 'ttln'),
+          any<AtKey>(
+            that: predicate(
+              // Predicate matching specifically the srvdIdKey format
+              (AtKey key) =>
+                  key.key == 'mydevice.request_ports.${Srvd.namespace}' &&
+                  key.sharedBy == '@client' &&
+                  key.sharedWith == '@srvd' &&
+                  key.metadata.namespaceAware == false &&
+                  key.metadata.ttl == 10000,
             ),
+          ),
+          any(),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          ttln: any(named: 'ttln'),
+          maxTries: any(named: 'maxTries'),
+        ),
       ]);
 
       verifyNever(subscribeInvocation);
@@ -203,18 +218,606 @@ void main() {
       verifyNever(srvGeneratorInvocation);
       verifyNever(srvRunInvocation);
 
-      await expectLater(
-        await stubbedSrvdChannel.runSrv(),
-        'called srv run',
-      );
+      await expectLater(await stubbedSrvdChannel.runSrv(), 'called srv run');
 
-      verifyInOrder([
-        srvGeneratorInvocation,
-        srvRunInvocation,
-      ]);
+      verifyInOrder([srvGeneratorInvocation, srvRunInvocation]);
 
       verifyNever(srvGeneratorInvocation);
       verifyNever(srvRunInvocation);
     }); // test runSrv
   }); // group SrvdChannel
+
+  group('A group of tests to assert notifications received from the srvd', () {
+    test(
+      'A test to assert getHostAndPortFromSrvd sets host and ports received from srvd via notification',
+      () async {
+        registerFallbackValue(FakeNotificationParams());
+        String sessionId = 'dummy-session-id';
+        MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
+        MockNotificationService mockNotificationService =
+            MockNotificationService();
+
+        when(
+          () => mockAtClient.notificationService,
+        ).thenReturn(mockNotificationService);
+
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer(
+          (_) async => Future.value(
+            NotificationResult()
+              ..notificationStatusEnum = NotificationStatusEnum.delivered,
+          ),
+        );
+
+        // Create a stream controller to simulate the notification received from the srvd
+        // which contains the host and port numbers.
+        final streamController = StreamController<AtNotification>();
+        streamController.add(
+          AtNotification(
+            '123',
+            '$sessionId.${Srvd.namespace}',
+            '@alice',
+            '@bob',
+            123,
+            'key',
+            true,
+          )..value = '127.0.0.1,98878,98879,rvd_dummy_nonce',
+        );
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((_) => streamController.stream);
+
+        SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30),
+        );
+        SrvdDartBindPortChannel srvdDartBindPortChannel =
+            SrvdDartBindPortChannel(
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
+        await srvdDartBindPortChannel.getHostAndPortFromSrvd();
+        expect(srvdDartBindPortChannel.rvdHost, '127.0.0.1');
+        expect(srvdDartBindPortChannel.clientPort, 98878);
+        expect(srvdDartBindPortChannel.daemonPort, 98879);
+        expect(srvdDartBindPortChannel.rvdNonce, 'rvd_dummy_nonce');
+        expect(srvdDartBindPortChannel.fetched, true);
+        expect(srvdDartBindPortChannel.srvdAck, SrvdAck.acknowledged);
+        // Legacy CSV response (older relay) does not advertise auto-detection.
+        expect(srvdDartBindPortChannel.autoDetectsRelayAuth, false);
+      },
+    );
+
+    test(
+      'getHostAndPortFromSrvd reads autoDetectsRelayAuth from a JSON relay response',
+      () async {
+        registerFallbackValue(FakeNotificationParams());
+        String sessionId = 'dummy-session-id';
+        MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
+        MockNotificationService mockNotificationService =
+            MockNotificationService();
+
+        when(
+          () => mockAtClient.notificationService,
+        ).thenReturn(mockNotificationService);
+
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer(
+          (_) async => Future.value(
+            NotificationResult()
+              ..notificationStatusEnum = NotificationStatusEnum.delivered,
+          ),
+        );
+
+        final streamController = StreamController<AtNotification>();
+        streamController.add(
+          AtNotification(
+            '123',
+            '$sessionId.${Srvd.namespace}',
+            '@alice',
+            '@bob',
+            123,
+            'key',
+            true,
+          )..value = jsonEncode({
+            'address': '127.0.0.1',
+            'portA': 98878,
+            'portB': 98879,
+            'rvdNonce': 'rvd_dummy_nonce',
+            'supportsEventLogging': true,
+            'autoDetectsRelayAuth': true,
+          }),
+        );
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((_) => streamController.stream);
+
+        SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30),
+        );
+        SrvdDartBindPortChannel srvdDartBindPortChannel =
+            SrvdDartBindPortChannel(
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
+        await srvdDartBindPortChannel.getHostAndPortFromSrvd();
+        expect(srvdDartBindPortChannel.rvdHost, '127.0.0.1');
+        expect(srvdDartBindPortChannel.clientPort, 98878);
+        expect(srvdDartBindPortChannel.daemonPort, 98879);
+        expect(srvdDartBindPortChannel.rvdNonce, 'rvd_dummy_nonce');
+        expect(srvdDartBindPortChannel.autoDetectsRelayAuth, true);
+      },
+    );
+
+    // Verify SshnpError thrown if a NACK is received from a relay.
+    // For backwards compatibility, note that NACKs are only send if the
+    // `multipleAcksOk` flag is set to true in the relay session request.
+
+    // We'll mock sending a request
+    // And we'll mock sending a NACK response
+    test('test handling of relay NACKS', () async {
+      registerFallbackValue(FakeNotificationParams());
+      String sessionId = 'dummy-session-id';
+      MockAtClient mockAtClient = MockAtClient();
+      when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      when(
+        () => mockAtClient.notificationService,
+      ).thenReturn(mockNotificationService);
+
+      when(
+        () => mockNotificationService.notify(
+          any(),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary: any(named: 'onSentToSecondary'),
+        ),
+      ).thenAnswer(
+        (_) async => Future.value(
+          NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered,
+        ),
+      );
+
+      // Create a stream controller to simulate the notification received from the srvd
+      final streamController = StreamController<AtNotification>();
+      var aRelayNackMessage = 'Some NACK message received from Relay';
+      streamController.add(
+        AtNotification(
+          '123',
+          'nack.$sessionId.${Srvd.namespace}',
+          '@alice',
+          '@bob',
+          123,
+          'key',
+          true,
+        )..value = aRelayNackMessage,
+      );
+      when(
+        () => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        ),
+      ).thenAnswer((_) => streamController.stream);
+
+      SrvdChannelParams srvdChannelParams = NptParams(
+        clientAtSign: '@sshnp',
+        sshnpdAtSign: '@sshnpd',
+        srvdAtSign: '@srvd',
+        remoteHost: '127.0.0.1',
+        remotePort: 9887,
+        device: 'my_device1',
+        inline: true,
+        timeout: Duration(seconds: 30),
+      );
+      SrvdDartBindPortChannel srvdDartBindPortChannel = SrvdDartBindPortChannel(
+        atClient: mockAtClient,
+        params: srvdChannelParams,
+        sessionId: sessionId,
+      );
+
+      await expectLater(
+        srvdDartBindPortChannel.getHostAndPortFromSrvd(),
+        throwsA(
+          predicate(
+            (dynamic e) => e is SshnpError && e.message == aRelayNackMessage,
+          ),
+        ),
+      );
+
+      expect(srvdDartBindPortChannel.srvdAck, SrvdAck.acknowledgedWithErrors);
+      expect(srvdDartBindPortChannel.srvdNackMessage, aRelayNackMessage);
+
+      expect(
+        () => srvdDartBindPortChannel.rvdHost,
+        throwsA(
+          predicate(
+            (dynamic e) =>
+                e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
+      expect(
+        () => srvdDartBindPortChannel.clientPort,
+        throwsA(
+          predicate(
+            (dynamic e) =>
+                e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
+      expect(
+        () => srvdDartBindPortChannel.daemonPort,
+        throwsA(
+          predicate(
+            (dynamic e) =>
+                e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
+      expect(
+        () => srvdDartBindPortChannel.rvdNonce,
+        throwsA(
+          predicate(
+            (dynamic e) =>
+                e is SshnpError && e.message == 'Not yet fetched from srvd',
+          ),
+        ),
+      );
+      expect(srvdDartBindPortChannel.fetched, false);
+    });
+
+    test(
+      'A test to verify timeout exception when srvd does not respond',
+      () async {
+        registerFallbackValue(FakeNotificationParams());
+
+        String sessionId = 'dummy-session-id';
+        MockAtClient mockAtClient = MockAtClient();
+        when(() => mockAtClient.getCurrentAtSign()).thenReturn('@sshnp');
+        MockNotificationService mockNotificationService =
+            MockNotificationService();
+
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((_) => StreamController<AtNotification>().stream);
+
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer(
+          (_) async => Future.value(
+            NotificationResult()
+              ..notificationStatusEnum = NotificationStatusEnum.delivered,
+          ),
+        );
+
+        when(
+          () => mockAtClient.notificationService,
+        ).thenReturn(mockNotificationService);
+
+        SrvdChannelParams srvdChannelParams = NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: '@srvd',
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30),
+        );
+
+        when(
+          () => mockAtClient.notificationService,
+        ).thenReturn(mockNotificationService);
+
+        SrvdDartBindPortChannel srvdDartBindPortChannel =
+            SrvdDartBindPortChannel(
+              atClient: mockAtClient,
+              params: srvdChannelParams,
+              sessionId: sessionId,
+            );
+
+        expect(
+          () async => await srvdDartBindPortChannel.getHostAndPortFromSrvd(
+            // set timeout to something short so unit test runs quickly
+            timeout: Duration(milliseconds: 50),
+          ),
+          throwsA(
+            predicate(
+              (dynamic e) =>
+                  e is TimeoutException &&
+                  e.message == 'Connection timeout to srvd @srvd service',
+            ),
+          ),
+        );
+        expect(srvdDartBindPortChannel.srvdAck, SrvdAck.notAcknowledged);
+      },
+    );
+  });
+
+  group('SrvdChannel.effectiveRelayAuthMode', () {
+    RelayAuthMode call({
+      required RelayAuthMode preference,
+      required bool autoDetect,
+      required bool peerSupportsEscr,
+      bool only443 = false,
+      bool prescribed = false,
+    }) => SrvdChannel.effectiveRelayAuthMode(
+      preference: preference,
+      autoDetect: autoDetect,
+      peerSupportsEscr: peerSupportsEscr,
+      only443: only443,
+      prescribed: prescribed,
+    );
+
+    test('escr only when preference=escr AND relay auto-detects AND peer '
+        'supports it', () {
+      expect(
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: true,
+          peerSupportsEscr: true,
+        ),
+        RelayAuthMode.escr,
+      );
+    });
+
+    test('always escr on the 443-only path (ESCR-only on every relay), '
+        'regardless of auto-detect or preference', () {
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          for (final pref in [RelayAuthMode.escr, RelayAuthMode.payload]) {
+            expect(
+              call(
+                preference: pref,
+                autoDetect: ad,
+                peerSupportsEscr: ps,
+                only443: true,
+              ),
+              RelayAuthMode.escr,
+              reason: 'only443 must force escr (pref=$pref ad=$ad ps=$ps)',
+            );
+          }
+        }
+      }
+    });
+
+    test('legacy when the relay does NOT auto-detect (the regression fix)', () {
+      // A relay that applies one session-wide mode to both sides would break a
+      // peer that cannot do ESCR, so we must fall back to legacy there.
+      expect(
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: false,
+          peerSupportsEscr: true,
+        ),
+        RelayAuthMode.payload,
+      );
+    });
+
+    test('legacy when the peer does not support escr', () {
+      expect(
+        call(
+          preference: RelayAuthMode.escr,
+          autoDetect: true,
+          peerSupportsEscr: false,
+        ),
+        RelayAuthMode.payload,
+      );
+    });
+
+    test('legacy when the client did not prefer escr, regardless', () {
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          expect(
+            call(
+              preference: RelayAuthMode.payload,
+              autoDetect: ad,
+              peerSupportsEscr: ps,
+            ),
+            RelayAuthMode.payload,
+          );
+        }
+      }
+    });
+
+    test('prescribed escr is forced where the peer can do it, degraded where '
+        'it cannot', () {
+      for (final ad in [true, false]) {
+        // Peer supports escr -> escr forced regardless of auto-detect.
+        expect(
+          call(
+            preference: RelayAuthMode.escr,
+            autoDetect: ad,
+            peerSupportsEscr: true,
+            prescribed: true,
+          ),
+          RelayAuthMode.escr,
+          reason: 'prescribed escr + capable peer must be escr (ad=$ad)',
+        );
+        // Peer cannot do escr -> degrade THIS side to legacy (the client always
+        // can, so this only bites side B; side A passes peerSupportsEscr:true).
+        expect(
+          call(
+            preference: RelayAuthMode.escr,
+            autoDetect: ad,
+            peerSupportsEscr: false,
+            prescribed: true,
+          ),
+          RelayAuthMode.payload,
+          reason: 'prescribed escr + incapable peer must degrade (ad=$ad)',
+        );
+      }
+    });
+
+    test('prescribed payload is forced to legacy regardless', () {
+      for (final ad in [true, false]) {
+        for (final ps in [true, false]) {
+          expect(
+            call(
+              preference: RelayAuthMode.payload,
+              autoDetect: ad,
+              peerSupportsEscr: ps,
+              prescribed: true,
+            ),
+            RelayAuthMode.payload,
+          );
+        }
+      }
+    });
+
+    test('only443 wins even over a prescribed payload mode', () {
+      expect(
+        call(
+          preference: RelayAuthMode.payload,
+          autoDetect: false,
+          peerSupportsEscr: true,
+          only443: true,
+          prescribed: true,
+        ),
+        RelayAuthMode.escr,
+      );
+    });
+  });
+
+  group('SrvdChannel.escrRequestedButUnreconcilable', () {
+    bool call({
+      bool explicitEscr = true,
+      bool only443 = false,
+      bool authenticateDeviceToRvd = true,
+      bool autoDetect = false,
+      bool daemonSupportsEscr = false,
+    }) => SrvdChannel.escrRequestedButUnreconcilable(
+      explicitEscr: explicitEscr,
+      only443: only443,
+      authenticateDeviceToRvd: authenticateDeviceToRvd,
+      autoDetect: autoDetect,
+      daemonSupportsEscr: daemonSupportsEscr,
+    );
+
+    test('true: explicit escr + old relay + non-escr daemon + device '
+        'authenticates', () {
+      expect(call(), true);
+    });
+
+    test('true: 443 + non-escr daemon, even on an auto-detecting relay', () {
+      // 443 is ESCR-only end-to-end on every relay, so a non-escr daemon can
+      // never use it — reject regardless of auto-detect or explicit.
+      for (final ad in [true, false]) {
+        for (final ex in [true, false]) {
+          expect(
+            call(only443: true, autoDetect: ad, explicitEscr: ex),
+            true,
+            reason: 'only443 + non-escr daemon must reject (ad=$ad ex=$ex)',
+          );
+        }
+      }
+    });
+
+    test('false: 443 with an escr-capable daemon', () {
+      expect(call(only443: true, daemonSupportsEscr: true), false);
+    });
+
+    test('false when the relay auto-detects (non-443 escr reconciles per '
+        'socket)', () {
+      expect(call(autoDetect: true), false);
+    });
+
+    test('false when the daemon can do escr', () {
+      expect(call(daemonSupportsEscr: true), false);
+    });
+
+    test('false when escr was not explicitly requested (and not 443)', () {
+      expect(call(explicitEscr: false), false);
+    });
+
+    test('false when the device does not authenticate to the relay', () {
+      // No relay auth on side B at all, so its escr capability is moot — even
+      // for 443 (though 443 forces device auth elsewhere).
+      expect(call(authenticateDeviceToRvd: false), false);
+      expect(call(only443: true, authenticateDeviceToRvd: false), false);
+    });
+  });
+}
+
+class FakeNotificationParamsMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    if (item is NotificationParams) {
+      return true;
+    }
+    return false;
+  }
 }

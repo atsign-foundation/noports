@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
+import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/src/sshnp/models/config_file_repository.dart';
 import 'package:noports_core/src/sshnp/models/sshnp_arg.dart';
@@ -24,16 +25,27 @@ abstract interface class ClientParams {
 
   bool get authenticateDeviceToRvd;
 
+  RelayAuthMode get relayAuthMode;
+
+  /// Whether [relayAuthMode] was explicitly chosen by the caller (CLI flag,
+  /// config file, or API) rather than left at the default. When true the caller
+  /// is being prescriptive: the mode is forced on BOTH sides of the session and
+  /// the daemon is required to support it (an ESCR-incapable daemon is a
+  /// hard error) instead of the mode being softly negotiated per socket.
+  bool get relayAuthModeExplicit;
+
   bool get encryptRvdTraffic;
 
   String? get atKeysFilePath;
+
+  String? get passPhrase;
 
   /// An encryption keypair which should only ever reside in memory.
   /// The public key is provided in requests to the daemon, and is
   /// used by daemons to encrypt symmetric encryption keys intended for
   /// one-time use in a NoPorts session, and share the encrypted details
   /// as part of the daemon's response
-  AtEncryptionKeyPair get sessionKP;
+  RsaKeyPair get sessionKP;
 
   EncryptionKeyType get sessionKPType;
 
@@ -42,6 +54,8 @@ abstract interface class ClientParams {
   int get localPort;
 
   Duration get daemonPingTimeout;
+
+  bool get only443;
 }
 
 abstract class ClientParamsBase implements ClientParams {
@@ -70,27 +84,39 @@ abstract class ClientParamsBase implements ClientParams {
   final bool authenticateDeviceToRvd;
 
   @override
+  final RelayAuthMode relayAuthMode;
+
+  @override
+  final bool relayAuthModeExplicit;
+
+  @override
   final bool encryptRvdTraffic;
 
   @override
   final String? atKeysFilePath;
 
   @override
+  final String? passPhrase;
+
+  @override
   int localPort;
 
   @override
-  AtEncryptionKeyPair get sessionKP {
-    _sessionKP ??= AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+  RsaKeyPair get sessionKP {
+    _sessionKP ??= RsaKeyPair.generate(keySize: 2048);
     return _sessionKP!;
   }
 
   /// Generate the ephemeralKeyPair only on demand
-  AtEncryptionKeyPair? _sessionKP;
+  RsaKeyPair? _sessionKP;
   @override
   final EncryptionKeyType sessionKPType = EncryptionKeyType.rsa2048;
 
   @override
   final Duration daemonPingTimeout;
+
+  @override
+  final bool only443;
 
   ClientParamsBase({
     required this.clientAtSign,
@@ -100,14 +126,36 @@ abstract class ClientParamsBase implements ClientParams {
     this.device = DefaultSshnpArgs.device,
     this.verbose = DefaultArgs.verbose,
     this.atKeysFilePath,
+    this.passPhrase,
     this.rootDomain = DefaultArgs.rootDomain,
     this.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     this.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    required this.relayAuthMode,
+    this.relayAuthModeExplicit = false,
     this.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     this.daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    required this.only443,
   }) {
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
+    }
+    if (only443 && relayAuthMode != RelayAuthMode.escr) {
+      throw ArgumentError(
+        'You must use'
+        ' "${SshnpArg.relayAuthModeArg.name} ${RelayAuthMode.escr.name}"'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
+      );
+    }
+    // The 443 single-port relay multiplexes both sides onto one port and
+    // identifies each from its authenticated payload, so both sides must
+    // authenticate. General ESCR sessions do NOT require this: the relay
+    // auto-detects and verifies each socket independently, so one side may
+    // authenticate with ESCR while the other does not authenticate at all.
+    if (only443 && (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
+      throw ArgumentError(
+        'Both client and device must authenticate to the relay'
+        ' when using the "${SshnpArg.only443Arg.name}" flag',
+      );
     }
   }
 }
@@ -136,6 +184,12 @@ class NptParams extends ClientParamsBase
   /// How long to keep the local port open if there have been no connections
   final Duration timeout;
 
+  /// Interval between heartbeats on the control channel.
+  final Duration? controlChannelHeartbeat;
+
+  /// Local IP address to bind to. If null, binds to localhost (127.0.0.1)
+  final String? localHost;
+
   NptParams({
     required super.clientAtSign,
     required super.sshnpdAtSign,
@@ -146,14 +200,31 @@ class NptParams extends ClientParamsBase
     super.localPort = DefaultSshnpArgs.localPort,
     super.verbose = DefaultArgs.verbose,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     required this.inline,
     super.daemonPingTimeout,
     required this.timeout,
-  });
+    this.controlChannelHeartbeat,
+    this.localHost,
+    super.only443 = false,
+  }) {
+    try {
+      AtUtils.fixAtSign(clientAtSign);
+      AtUtils.fixAtSign(sshnpdAtSign);
+      // Only fix srvd atSign if it's not a list
+      if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+        AtUtils.fixAtSign(srvdAtSign);
+      }
+    } on InvalidAtSignException catch (e) {
+      throw ArgumentError(e.message);
+    }
+  }
 
   /// not relevant for Npt
   @override
@@ -212,6 +283,7 @@ class SshnpParams extends ClientParamsBase
     this.remoteUsername,
     this.tunnelUsername,
     super.atKeysFilePath,
+    super.passPhrase,
     super.rootDomain = DefaultArgs.rootDomain,
     this.listDevices = DefaultSshnpArgs.listDevices,
     this.remoteSshdPort = DefaultArgs.remoteSshdPort,
@@ -219,8 +291,11 @@ class SshnpParams extends ClientParamsBase
     this.addForwardsToTunnel = DefaultArgs.addForwardsToTunnel,
     super.authenticateClientToRvd = DefaultArgs.authenticateClientToRvd,
     super.authenticateDeviceToRvd = DefaultArgs.authenticateDeviceToRvd,
+    super.relayAuthMode = DefaultArgs.relayAuthMode,
+    super.relayAuthModeExplicit = false,
     super.encryptRvdTraffic = DefaultArgs.encryptRvdTraffic,
     super.daemonPingTimeout,
+    super.only443 = false,
   });
 
   factory SshnpParams.empty() {
@@ -229,13 +304,16 @@ class SshnpParams extends ClientParamsBase
       clientAtSign: '',
       sshnpdAtSign: '',
       srvdAtSign: '',
+      only443: false,
     );
   }
 
   /// Merge an SshnpPartialParams objects into an SshnpParams
   /// Params in params2 take precedence over params1
-  factory SshnpParams.merge(SshnpParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpParams.merge(
+    SshnpParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -245,6 +323,7 @@ class SshnpParams extends ClientParamsBase
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -263,8 +342,14 @@ class SshnpParams extends ClientParamsBase
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
+      // An explicitly-set mode in the incoming partial makes it prescriptive;
+      // otherwise inherit whatever the base params already resolved.
+      relayAuthModeExplicit:
+          params2.relayAuthMode != null || params1.relayAuthModeExplicit,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
@@ -281,21 +366,21 @@ class SshnpParams extends ClientParamsBase
         (throw ArgumentError('from (clientAtSign) is mandatory'));
 
     if (!(partial.listDevices ?? DefaultSshnpArgs.listDevices)) {
-      // if list-devices is not set, then ensure sshnpdAtSign and srvdAtSign are set
+      // if list-devices is not set, then ensure sshnpdAtSign is set
       partial.sshnpdAtSign ??
           (throw ArgumentError(
-              'Option to is mandatory, unless list-devices is passed.'));
-      partial.srvdAtSign ??
-          (throw ArgumentError(
-              'srvdAtSign is mandatory, unless list-devices is passed.'));
+            'Option to is mandatory, unless list-devices is passed.',
+          ));
     }
 
+    String device = partial.device ?? DefaultSshnpArgs.device;
+    device = snakifyDeviceName(device);
     return SshnpParams(
       profileName: partial.profileName,
       clientAtSign: partial.clientAtSign!,
       sshnpdAtSign: partial.sshnpdAtSign ?? "",
       srvdAtSign: partial.srvdAtSign ?? "",
-      device: partial.device ?? DefaultSshnpArgs.device,
+      device: device,
       localPort: partial.localPort ?? DefaultSshnpArgs.localPort,
       identityFile: partial.identityFile,
       identityPassphrase: partial.identityPassphrase,
@@ -307,26 +392,35 @@ class SshnpParams extends ClientParamsBase
       remoteUsername: partial.remoteUsername,
       tunnelUsername: partial.tunnelUsername,
       atKeysFilePath: partial.atKeysFilePath,
+      passPhrase: partial.passPhrase,
       rootDomain: partial.rootDomain ?? DefaultArgs.rootDomain,
       listDevices: partial.listDevices ?? DefaultSshnpArgs.listDevices,
       remoteSshdPort: partial.remoteSshdPort ?? DefaultArgs.remoteSshdPort,
       idleTimeout: partial.idleTimeout ?? DefaultArgs.idleTimeout,
       addForwardsToTunnel:
           partial.addForwardsToTunnel ?? DefaultArgs.addForwardsToTunnel,
-      authenticateClientToRvd: partial.authenticateClientToRvd ??
+      authenticateClientToRvd:
+          partial.authenticateClientToRvd ??
           DefaultArgs.authenticateClientToRvd,
-      authenticateDeviceToRvd: partial.authenticateDeviceToRvd ??
+      authenticateDeviceToRvd:
+          partial.authenticateDeviceToRvd ??
           DefaultArgs.authenticateDeviceToRvd,
+      relayAuthMode: partial.relayAuthMode ?? DefaultArgs.relayAuthMode,
+      // A mode present in the partial came from a CLI flag or config file, so
+      // the caller chose it deliberately — treat it as prescriptive.
+      relayAuthModeExplicit: partial.relayAuthMode != null,
       encryptRvdTraffic:
           partial.encryptRvdTraffic ?? DefaultArgs.encryptRvdTraffic,
       daemonPingTimeout:
           partial.daemonPingTimeout ?? DefaultArgs.daemonPingTimeoutDuration,
+      only443: partial.only443 ?? false,
     );
   }
 
   factory SshnpParams.fromConfigLines(String profileName, List<String> lines) {
     return SshnpParams.fromPartial(
-        SshnpPartialParams.fromConfigLines(profileName, lines));
+      SshnpPartialParams.fromConfigLines(profileName, lines),
+    );
   }
 
   List<String> toConfigLines({ParserType parserType = ParserType.configFile}) {
@@ -355,6 +449,7 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.deviceArg.name: device,
       SshnpArg.localPortArg.name: localPort,
       SshnpArg.keyFileArg.name: atKeysFilePath,
+      SshnpArg.passPhraseArg.name: passPhrase,
       SshnpArg.identityFileArg.name: identityFile,
       SshnpArg.identityPassphraseArg.name: identityPassphrase,
       SshnpArg.sendSshPublicKeyArg.name: sendSshPublicKey,
@@ -362,13 +457,21 @@ class SshnpParams extends ClientParamsBase
       SshnpArg.remoteUserNameArg.name: remoteUsername,
       SshnpArg.tunnelUserNameArg.name: tunnelUsername,
       SshnpArg.verboseArg.name: verbose,
-      SshnpArg.rootDomainArg.name: rootDomain,
+      SshnpArg.rootServerArg.name: rootDomain,
       SshnpArg.remoteSshdPortArg.name: remoteSshdPort,
       SshnpArg.idleTimeoutArg.name: idleTimeout,
       SshnpArg.addForwardsToTunnelArg.name: addForwardsToTunnel,
       SshnpArg.authenticateClientToRvdArg.name: authenticateClientToRvd,
       SshnpArg.authenticateDeviceToRvdArg.name: authenticateDeviceToRvd,
       SshnpArg.encryptRvdTrafficArg.name: encryptRvdTraffic,
+      // Persist the relay-auth mode ONLY when it was explicitly chosen: the
+      // key's presence is what marks it prescriptive on reload (fromPartial
+      // derives relayAuthModeExplicit from it being non-null). Writing it
+      // unconditionally would silently make every saved config prescriptive;
+      // null is dropped by toConfigLines/round-trips as absent.
+      SshnpArg.relayAuthModeArg.name: relayAuthModeExplicit
+          ? relayAuthMode.name
+          : null,
     };
     args.removeWhere(
       (key, value) => !parserType.shouldParse(SshnpArg.fromName(key).parseWhen),
@@ -393,6 +496,7 @@ class SshnpPartialParams {
   final String? device;
   final int? localPort;
   final String? atKeysFilePath;
+  final String? passPhrase;
   final String? identityFile;
   final String? identityPassphrase;
   final bool? sendSshPublicKey;
@@ -407,8 +511,10 @@ class SshnpPartialParams {
   final SupportedSshAlgorithm? sshAlgorithm;
   final bool? authenticateClientToRvd;
   final bool? authenticateDeviceToRvd;
+  final RelayAuthMode? relayAuthMode;
   final bool? encryptRvdTraffic;
   final Duration? daemonPingTimeout;
+  final bool? only443;
 
   /// Operation flags
   final bool? listDevices;
@@ -421,6 +527,7 @@ class SshnpPartialParams {
     this.device,
     this.localPort,
     this.atKeysFilePath,
+    this.passPhrase,
     this.identityFile,
     this.identityPassphrase,
     this.sendSshPublicKey,
@@ -436,8 +543,10 @@ class SshnpPartialParams {
     this.sshAlgorithm,
     this.authenticateClientToRvd,
     this.authenticateDeviceToRvd,
+    this.relayAuthMode,
     this.encryptRvdTraffic,
     this.daemonPingTimeout,
+    this.only443,
   });
 
   factory SshnpPartialParams.empty() {
@@ -446,8 +555,10 @@ class SshnpPartialParams {
 
   /// Merge two SshnpPartialParams objects together
   /// Params in params2 take precedence over params1
-  factory SshnpPartialParams.merge(SshnpPartialParams params1,
-      [SshnpPartialParams? params2]) {
+  factory SshnpPartialParams.merge(
+    SshnpPartialParams params1, [
+    SshnpPartialParams? params2,
+  ]) {
     params2 ??= SshnpPartialParams.empty();
     return SshnpPartialParams(
       profileName: params2.profileName ?? params1.profileName,
@@ -457,6 +568,7 @@ class SshnpPartialParams {
       device: params2.device ?? params1.device,
       localPort: params2.localPort ?? params1.localPort,
       atKeysFilePath: params2.atKeysFilePath ?? params1.atKeysFilePath,
+      passPhrase: params2.passPhrase ?? params1.passPhrase,
       identityFile: params2.identityFile ?? params1.identityFile,
       identityPassphrase:
           params2.identityPassphrase ?? params1.identityPassphrase,
@@ -476,20 +588,25 @@ class SshnpPartialParams {
           params2.authenticateClientToRvd ?? params1.authenticateClientToRvd,
       authenticateDeviceToRvd:
           params2.authenticateDeviceToRvd ?? params1.authenticateDeviceToRvd,
+      relayAuthMode: params2.relayAuthMode ?? params1.relayAuthMode,
       encryptRvdTraffic: params2.encryptRvdTraffic ?? params1.encryptRvdTraffic,
       daemonPingTimeout: params2.daemonPingTimeout ?? params1.daemonPingTimeout,
+      only443: params2.only443 ?? params1.only443,
     );
   }
 
   factory SshnpPartialParams.fromFile(String fileName) {
     var args = ConfigFileRepository.parseConfigFile(fileName);
-    args[SshnpArg.profileNameArg.name] =
-        ConfigFileRepository.toProfileName(fileName);
+    args[SshnpArg.profileNameArg.name] = ConfigFileRepository.toProfileName(
+      fileName,
+    );
     return SshnpPartialParams.fromArgMap(args);
   }
 
   factory SshnpPartialParams.fromConfigLines(
-      String profileName, List<String> lines) {
+    String profileName,
+    List<String> lines,
+  ) {
     var args = ConfigFileRepository.parseConfigFileContents(lines);
     args[SshnpArg.profileNameArg.name] = profileName;
     return SshnpPartialParams.fromArgMap(args);
@@ -512,6 +629,7 @@ class SshnpPartialParams {
       device: args[SshnpArg.deviceArg.name],
       localPort: args[SshnpArg.localPortArg.name],
       atKeysFilePath: args[SshnpArg.keyFileArg.name],
+      passPhrase: args[SshnpArg.passPhraseArg.name],
       identityFile: args[SshnpArg.identityFileArg.name],
       identityPassphrase: args[SshnpArg.identityPassphraseArg.name],
       sendSshPublicKey: args[SshnpArg.sendSshPublicKeyArg.name],
@@ -521,7 +639,7 @@ class SshnpPartialParams {
       remoteUsername: args[SshnpArg.remoteUserNameArg.name],
       tunnelUsername: args[SshnpArg.tunnelUserNameArg.name],
       verbose: args[SshnpArg.verboseArg.name],
-      rootDomain: args[SshnpArg.rootDomainArg.name],
+      rootDomain: args[SshnpArg.rootServerArg.name] ?? DefaultArgs.rootDomain,
       listDevices: args[SshnpArg.listDevicesArg.name],
       remoteSshdPort: args[SshnpArg.remoteSshdPortArg.name],
       idleTimeout: args[SshnpArg.idleTimeoutArg.name],
@@ -529,20 +647,29 @@ class SshnpPartialParams {
       sshAlgorithm: args[SshnpArg.sshAlgorithmArg.name] == null
           ? null
           : SupportedSshAlgorithm.fromString(
-              args[SshnpArg.sshAlgorithmArg.name]),
+              args[SshnpArg.sshAlgorithmArg.name],
+            ),
       authenticateClientToRvd: args[SshnpArg.authenticateClientToRvdArg.name],
       authenticateDeviceToRvd: args[SshnpArg.authenticateDeviceToRvdArg.name],
       encryptRvdTraffic: args[SshnpArg.encryptRvdTrafficArg.name],
+      relayAuthMode: args[SshnpArg.relayAuthModeArg.name] == null
+          ? null
+          : RelayAuthMode.values.byName(args[SshnpArg.relayAuthModeArg.name]),
       daemonPingTimeout: Duration(
-          seconds: args[SshnpArg.daemonPingTimeoutArg.name] ??
-              DefaultArgs.daemonPingTimeoutSeconds),
+        seconds:
+            args[SshnpArg.daemonPingTimeoutArg.name] ??
+            DefaultArgs.daemonPingTimeoutSeconds,
+      ),
+      only443: args[SshnpArg.only443Arg.name],
     );
   }
 
   /// Parses args from command line
   /// first merges from a config file if provided via --config-file
-  factory SshnpPartialParams.fromArgList(List<String> args,
-      {ParserType parserType = ParserType.all}) {
+  factory SshnpPartialParams.fromArgList(
+    List<String> args, {
+    ParserType parserType = ParserType.all,
+  }) {
     var params = SshnpPartialParams.empty();
     var parser = SshnpArg.createArgParser(
       withDefaults: false,

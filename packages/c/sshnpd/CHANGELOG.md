@@ -1,3 +1,196 @@
+## 1.1.2
+
+- fix: refuse a session request whose session id isn't a UUID, as the Dart
+  daemon does
+- fix: refuse a session request from a requester whose public key isn't
+  RSA-2048, as the Dart daemon does
+- fix: republish the public signing key when it holds a key other than
+  the daemon's, as the Dart daemon does
+
+## 1.1.1
+
+- fix: srv segfault on connection teardown (pthread_join clobbered tid)
+- fix: C daemon filters device atSign out of the manager atSign list
+- fix: handle the case where the only manager atSign is the device atSign
+- fix: sshnpd + srv code review findings (24 fixes: bounds checks, leak
+  fixes, error-path hardening, log hygiene)
+- build(deps): bump atsdk to at_c v0.4.1 for the atauth/onboarding
+  code-review fixes (at_c#715)
+- build: musl test toolchain moved into a dependabot-tracked Dockerfile
+
+## 1.1.0
+
+- fix: validate --root-domain port with strtol instead of atoi
+- fix: don't log an error when the public signing key doesn't exist yet 
+- fix: bring the monitor filters to exact Dart daemon parity
+- fix: anchor the device name in the devices.policy monitor filter alternative
+- fix: filter the policy-mode monitor server side like the Dart daemon
+- fix: don't treat policy service traffic as session requests
+- feat: support 'proxy:' root domains in csshnpd
+- feat: tell clients why a session request was denied (Dart daemon parity)
+- feat: policy service (--policy-manager) support in csshnpd
+- feat: ESCR relay authentication in csshnpd and c srv (supportsRamEscr)
+- feat: adjustableTimeout support in csshnpd
+- fix: log a summary after sharing username keys with manager atSigns
+- fix: sshnpd C daemon manager list handling and exact -m authorization
+- fix: stop leaking buffer and socket fd when a side thread is cancelled
+- feat: Add twinned session key (twinKeys) support to C sshnpd and srv
+
+## 1.0.20
+
+- fix: only manager Atsigns can establish sshnp connections with csshnpd
+- fix: ssh public key validation in csshnpd
+- fix: trailing comma parsing
+- fix: is_manager_atsign NULL checks
+- feat: normalize manager atSign format
+- chore: warn when a permit open is denied
+- chore: move is_manager_atsign authorization check earlier in daemon
+- test: unit test gaps for csshnpd
+
+## 1.0.19
+
+- build(deps): Bump at_c to use MbedTLS 3.6.7
+
+## 1.0.18
+
+- build(deps): Bump at_c to use MbedTLS 3.6.6
+
+## 1.0.17
+
+- build(deps): Bump at_c to use MbedTLS 3.6.5
+
+## 1.0.16
+
+- build(deps): Bump at_c to use cJSON 1.7.19
+
+## 1.0.15
+
+- feat: Add SBOM using Conan lock file
+
+## 1.0.14
+
+- build(deps): Bump at_c to use MbedTLS 3.6.4
+
+## 1.0.13
+
+- feat: csshnpd root-domain implementation
+
+## 1.0.12
+
+- fix: convert device name to lower case to comply with Dart
+- build(deps): Bump at_c to support cjson patch
+
+## 1.0.11
+
+- build(deps): Bump to at_c 0.4.3 to get mbedtls 3.6.3.1
+
+## 1.0.10
+
+- fix: CMake search paths for cross compile
+
+## 1.0.9
+
+- feat: add support for linking against shared third party dependencies
+
+## 1.0.8
+
+- fix: version number in version.h
+
+## 1.0.7
+
+- fix: switch statement fallthrough warning
+
+## 1.0.6
+
+- fix: more build warnings for openwrt upstream
+
+## 1.0.5
+
+- chore: stricter compile options to match openwrt upstream
+- fix: build warnings for openwrt upstream
+
+## 1.0.4
+
+- chore: change source packaging format
+  - If you are using 1.0.3 from GitHub releases (non-source code),
+    then there is no need to upgrade
+
+## 1.0.3
+
+- fix: uptake segfault bug fix in atsdk
+
+## 1.0.2
+
+- chore: uptake atsdk changes
+
+## 1.0.1
+
+- fix: remove the background thread used to update device_info (now synchronous)
+
+## 1.0.0
+
+- fix: memory leaks on the main daemon process
+
+## 0.4.1
+
+- feat: add Dart compliant at_activate binary in place of existing ones
+
+## 0.4.0
+
+- breaking: reimplement at_activate to conform to dart interface
+  - only onboard supported with this new interface
+
+## 0.3.4
+
+- ci: Use TARGETARCH so armv7 builds on arm64 runner
+
+## 0.3.3
+
+- ci: Move armv7 build back to amd64 runner
+
+## 0.3.2
+
+- chore: Fix version numbers
+
+## 0.3.1
+
+- chore: explicitly link cjson
+- ci: Use arm64 runners for arm builds
+
+## 0.3.0
+
+- feat: Add at_activate
+
+## 0.2.6
+
+- fix: stabilize monitor connection
+  - automatic failover / reconnect after ~40 seconds of down time
+
+## 0.2.5
+
+- fix: uptake some fixes in monitor
+
+## 0.2.4
+
+- fix: Disabled clang-tidy missing-includes, as it malformed header includes
+- fix: Restore the malformed headers
+
+## 0.2.3
+
+- Update to atSDK v0.3.1 with type fixes
+
+## 0.2.2
+
+- Fix 32bit support for device_info
+
+## 0.2.1
+
+- Bump at_c to v0.3.0 to have more explicit int types
+
+## 0.2.0
+
+- Beta release of C sshnpd
+
 ## 0.1.0
 
 - Initial alpha version of C sshnpd

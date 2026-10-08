@@ -8,14 +8,15 @@ import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 abstract class NPARequestHandler {
   Future<NPAAuthCheckResponse> doAuthCheck(
-      NPAAuthCheckRequest authCheckRequest);
+    NPAAuthCheckRequest authCheckRequest,
+  );
 }
 
 /// - Listens for authorization check requests from sshnp daemons
 /// - Checks if the clientAtSign is currently authorized to access
 ///   the sshnpd atSign and device
 /// - Responds accordingly
-abstract class NPA implements AtRpcCallbacks {
+abstract class NPA {
   abstract final AtSignLogger logger;
 
   /// The [AtClient] used to communicate with SSHNPDs
@@ -27,17 +28,21 @@ abstract class NPA implements AtRpcCallbacks {
   /// The home directory on this host
   abstract final String homeDirectory;
 
-  String get authorizerAtsign;
+  /// Policy service's atSign
+  Atsign get policyAtsign;
 
-  abstract Set<String> daemonAtsigns;
+  /// atSign to which we will send noports session logging events
+  Atsign? get eventLoggingAtsign;
 
-  abstract NPARequestHandler handler;
+  NPARequestHandler get handler;
 
-  static Future<NPA> fromCommandLineArgs(List<String> args,
-      {required NPARequestHandler handler,
-      AtClient? atClient,
-      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<NPA> fromCommandLineArgs(
+    List<String> args, {
+    required NPARequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+  }) async {
     return NPAImpl.fromCommandLineArgs(
       args,
       handler: handler,

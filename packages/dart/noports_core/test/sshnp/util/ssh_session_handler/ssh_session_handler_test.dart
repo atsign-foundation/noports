@@ -12,13 +12,16 @@ void main() {
       handler = StubbedSshnpSshSessionHandler();
     });
     test('public API', () async {
-      when(() => handler.startInitialTunnelSession(
-              ephemeralKeyPairIdentifier: 'asdf'))
-          .thenAnswer((invocation) async => 'Called');
+      when(
+        () => handler.startInitialTunnelSession(
+          ephemeralKeyPairIdentifier: 'asdf',
+        ),
+      ).thenAnswer((invocation) async => 'Called');
 
       await expectLater(
         await handler.startInitialTunnelSession(
-            ephemeralKeyPairIdentifier: 'asdf'),
+          ephemeralKeyPairIdentifier: 'asdf',
+        ),
         'Called',
       );
     }); // test public API

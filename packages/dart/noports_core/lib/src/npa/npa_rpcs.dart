@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
-
 class NPAAuthCheckRequest {
+  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
   final String daemonAtsign;
   final String daemonDeviceName;
   final String daemonDeviceGroupName;
@@ -25,31 +25,45 @@ class NPAAuthCheckRequest {
   }
 
   Map<String, dynamic> toJson() => {
-        'daemonAtsign': daemonAtsign,
-        'daemonDeviceName': daemonDeviceName,
-        'daemonDeviceGroupName': daemonDeviceGroupName,
-        'clientAtsign': clientAtsign,
-      };
+    'daemonAtsign': daemonAtsign,
+    'daemonDeviceName': daemonDeviceName,
+    'daemonDeviceGroupName': daemonDeviceGroupName,
+    'clientAtsign': clientAtsign,
+  };
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());
 }
 
 class NPAAuthCheckResponse {
+  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+
+  /// The clientAtsign is 'known' to the policy service.
+  /// Should not be called 'authorized' but this code will all be replaced soon
+  /// when we move to using the at_policy package
   final bool authorized;
   final String? message;
+  final List<String> permitOpen;
 
-  NPAAuthCheckResponse({required this.authorized, required this.message});
+  NPAAuthCheckResponse({
+    required this.authorized,
+    required this.message,
+    required this.permitOpen,
+  });
 
   static NPAAuthCheckResponse fromJson(Map<String, dynamic> json) {
     return NPAAuthCheckResponse(
       authorized: json['authorized'],
       message: json['message'],
+      permitOpen: List<String>.from(json['permitOpen']),
     );
   }
 
-  Map<String, dynamic> toJson() =>
-      {'authorized': authorized, 'message': message};
+  Map<String, dynamic> toJson() => {
+    'authorized': authorized,
+    'message': message,
+    'permitOpen': permitOpen,
+  };
 
   @override
   String toString() => jsonPrettyPrinter.convert(toJson());

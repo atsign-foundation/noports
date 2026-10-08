@@ -1,6 +1,6 @@
 #include <atchops/base64.h>
 #include <atlogger/atlogger.h>
-#include <srv/stream.h>
+#include <srv/srv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,7 +23,7 @@ int main() {
     return res;
   }
 
-  atclient_atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_DEBUG);
   // Encrypt transfomer 1
   printf("Setup et1\n");
   chunked_transformer_t et1;
@@ -45,8 +45,10 @@ int main() {
   dt1.transform = aes_ctr_crypt_stream;
 
   printf("Setup buffers\n");
-  char buffer1[len1];
-  char output1[len1];
+  char buffer1[len1 + 1];
+  char output1[len1 + 1];
+  buffer1[len1] = '\0';
+  output1[len1] = '\0';
   // iterate byte for byte through input1 and do stream encrypt
   // and then decrypt, recording middle point and final output
   unsigned char *c = malloc(sizeof(char));

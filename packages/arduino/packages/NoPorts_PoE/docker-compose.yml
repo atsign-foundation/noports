@@ -1,0 +1,20 @@
+# docker compose -f packages/NoPorts_PoE/docker-compose.yml up --build
+#
+# Build context is the repo root so the Dockerfile can access lib/ and
+# packages/NoPorts_PoE/.
+#
+# The port is bound to 127.0.0.1 only, so the flasher is reachable from this
+# machine but NOT the local network. WebSerial needs a secure context, which
+# http://localhost:8080 satisfies. To flash from another machine, change the
+# bind below AND serve it over HTTPS (a plain-HTTP flasher on the LAN is unsafe;
+# the chrome://flags insecure-origin workaround weakens the browser and is not
+# recommended).
+
+services:
+  flasher:
+    build:
+      context: ../..
+      dockerfile: packages/NoPorts_PoE/Dockerfile
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped

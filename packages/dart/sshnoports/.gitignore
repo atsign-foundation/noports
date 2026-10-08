@@ -1,0 +1,5 @@
+#binaries generated during local testing
+/sshnp/**
+#packages generated during local testing
+*.deb
+*.rpm

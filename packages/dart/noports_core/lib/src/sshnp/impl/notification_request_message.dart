@@ -1,27 +1,76 @@
+import 'package:noports_core/utils.dart';
+import 'package:at_commons/atsign.dart';
+
+/// The payload of a client's `ssh_request` notification to a daemon.
+/// Construction throws an [ArgumentError] if a field is invalid, including a
+/// [sessionId] which is not a UUID.
 class SshnpSessionRequest {
   final bool direct;
   final String sessionId;
   final String host;
   final int port;
-  final bool authenticateToRvd;
-  final String clientNonce;
+  final bool? authenticateToRvd;
+  final RelayAuthMode relayAuthMode;
+  final String? relayAuthAesKey;
+  final String? clientNonce;
   final String? rvdNonce;
-  final bool encryptRvdTraffic;
+  final bool? encryptRvdTraffic;
   final String? clientEphemeralPK;
   final String? clientEphemeralPKType;
+  final String? username;
+  final int? remoteForwardPort;
+  final String? privateKey;
+  final bool twinKeys;
+  final Atsign? relayAtsign;
 
   SshnpSessionRequest({
     required this.direct,
     required this.sessionId,
     required this.host,
     required this.port,
-    required this.authenticateToRvd,
-    required this.clientNonce,
-    required this.rvdNonce,
-    required this.encryptRvdTraffic,
-    required this.clientEphemeralPK,
-    required this.clientEphemeralPKType,
-  });
+    // optional params
+    this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
+    this.clientNonce,
+    this.rvdNonce,
+    this.encryptRvdTraffic,
+    this.clientEphemeralPK,
+    this.clientEphemeralPKType,
+    // required for reverse (direct = false)
+    this.username,
+    this.remoteForwardPort,
+    this.privateKey,
+    required this.twinKeys,
+    required this.relayAtsign,
+  }) {
+    // sessionId, host (of the rvd) and port (of the rvd) are required.
+    assertValidSessionId(sessionId);
+    assertValidValue('host', host, String);
+    assertValidValue('port', port, int);
+
+    // v5+ params are not required but must be valid if supplied
+    assertNullOrValidValue('authenticateToRvd', authenticateToRvd, bool);
+    assertNullOrValidValue('clientNonce', clientNonce, String);
+    assertNullOrValidValue('rvdNonce', rvdNonce, String);
+    assertNullOrValidValue('encryptRvdTraffic', encryptRvdTraffic, bool);
+    assertNullOrValidValue('clientEphemeralPK', clientEphemeralPK, String);
+    assertNullOrValidValue(
+      'clientEphemeralPKType',
+      clientEphemeralPKType,
+      String,
+    );
+
+    // If a reverse ssh (v3, LEGACY BEHAVIOUR) is being requested, then we
+    // also require a username (to ssh back to the client), a privateKey (for
+    // that ssh) and a remoteForwardPort, to set up the ssh tunnel back to
+    // this device from the client side.
+    if (!direct) {
+      assertValidValue('username', username, String);
+      assertValidValue('remoteForwardPort', remoteForwardPort, int);
+      assertValidValue('privateKey', privateKey, String);
+    }
+  }
 
   static SshnpSessionRequest fromJson(Map<String, dynamic> json) {
     return SshnpSessionRequest(
@@ -30,29 +79,41 @@ class SshnpSessionRequest {
       host: json['host'],
       port: json['port'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
+      twinKeys: json['twinKeys'] ?? false,
+      relayAtsign: json['relayAtsign'],
     );
   }
 
   /// NB: Do not change any existing names as this will break all previous daemons
   Map<String, dynamic> toJson() => {
-        'direct': direct,
-        'sessionId': sessionId,
-        'host': host,
-        'port': port,
-        'authenticateToRvd': authenticateToRvd,
-        'clientNonce': clientNonce,
-        'rvdNonce': rvdNonce,
-        'encryptRvdTraffic': encryptRvdTraffic,
-        'clientEphemeralPK': clientEphemeralPK,
-        'clientEphemeralPKType': clientEphemeralPKType,
-      };
+    'direct': direct,
+    'sessionId': sessionId,
+    'host': host,
+    'port': port,
+    'authenticateToRvd': authenticateToRvd,
+    'relayAuthMode': relayAuthMode.name,
+    'relayAuthAesKey': relayAuthAesKey,
+    'clientNonce': clientNonce,
+    'rvdNonce': rvdNonce,
+    'encryptRvdTraffic': encryptRvdTraffic,
+    'clientEphemeralPK': clientEphemeralPK,
+    'clientEphemeralPKType': clientEphemeralPKType,
+    'twinKeys': twinKeys,
+    'relayAtsign': relayAtsign,
+  };
 }
 
+/// The payload of a client's `npt_request` notification to a daemon.
+/// Construction throws an [ArgumentError] if [sessionId] is not a UUID.
 class NptSessionRequest {
   static const int defaultTimeout = 1000 * 60;
   final String sessionId;
@@ -61,12 +122,16 @@ class NptSessionRequest {
   final String requestedHost;
   final int requestedPort;
   final bool authenticateToRvd;
+  final RelayAuthMode relayAuthMode;
+  final String? relayAuthAesKey;
   final String clientNonce;
   final String rvdNonce;
   final bool encryptRvdTraffic;
   final String clientEphemeralPK;
   final String clientEphemeralPKType;
   final Duration timeout;
+  final bool twinKeys;
+  final Atsign? relayAtsign;
 
   NptSessionRequest({
     required this.sessionId,
@@ -75,13 +140,19 @@ class NptSessionRequest {
     required this.requestedHost,
     required this.requestedPort,
     required this.authenticateToRvd,
+    required this.relayAuthMode,
+    required this.relayAuthAesKey,
     required this.clientNonce,
     required this.rvdNonce,
     required this.encryptRvdTraffic,
     required this.clientEphemeralPK,
     required this.clientEphemeralPKType,
     required this.timeout,
-  });
+    required this.twinKeys,
+    required this.relayAtsign,
+  }) {
+    assertValidSessionId(sessionId);
+  }
 
   static NptSessionRequest fromJson(Map<String, dynamic> json) {
     return NptSessionRequest(
@@ -91,28 +162,38 @@ class NptSessionRequest {
       requestedHost: json['requestedHost'],
       requestedPort: json['requestedPort'],
       authenticateToRvd: json['authenticateToRvd'],
+      relayAuthMode: json['relayAuthMode'] == null
+          ? RelayAuthMode.payload
+          : RelayAuthMode.values.byName(json['relayAuthMode']),
+      relayAuthAesKey: json['relayAuthAesKey'],
       clientNonce: json['clientNonce'],
       rvdNonce: json['rvdNonce'],
       encryptRvdTraffic: json['encryptRvdTraffic'],
       clientEphemeralPK: json['clientEphemeralPK'],
       clientEphemeralPKType: json['clientEphemeralPKType'],
       timeout: Duration(milliseconds: json['timeout'] ?? defaultTimeout),
+      twinKeys: json['twinKeys'] ?? false,
+      relayAtsign: json['relayAtsign'],
     );
   }
 
   /// NB: Do not change any existing names as this will break all previous daemons
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'rvdHost': rvdHost,
-        'rvdPort': rvdPort,
-        'requestedPort': requestedPort,
-        'requestedHost': requestedHost,
-        'authenticateToRvd': authenticateToRvd,
-        'clientNonce': clientNonce,
-        'rvdNonce': rvdNonce,
-        'encryptRvdTraffic': encryptRvdTraffic,
-        'clientEphemeralPK': clientEphemeralPK,
-        'clientEphemeralPKType': clientEphemeralPKType,
-        'timeout': timeout.inMilliseconds,
-      };
+    'sessionId': sessionId,
+    'rvdHost': rvdHost,
+    'rvdPort': rvdPort,
+    'requestedPort': requestedPort,
+    'requestedHost': requestedHost,
+    'authenticateToRvd': authenticateToRvd,
+    'relayAuthMode': relayAuthMode.name,
+    'relayAuthAesKey': relayAuthAesKey,
+    'clientNonce': clientNonce,
+    'rvdNonce': rvdNonce,
+    'encryptRvdTraffic': encryptRvdTraffic,
+    'clientEphemeralPK': clientEphemeralPK,
+    'clientEphemeralPKType': clientEphemeralPKType,
+    'timeout': timeout.inMilliseconds,
+    'twinKeys': twinKeys,
+    'relayAtsign': relayAtsign,
+  };
 }

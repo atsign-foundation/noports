@@ -1,0 +1,29 @@
+# mbedTLS tuning for NoPorts relay under high-throughput sessions (e.g. SCP).
+#
+# The ESP32-P4 hardware AES engine needs a contiguous DMA-capable SRAM block
+# for alignment buffers. Under load, heap fragmentation causes that allocation
+# to fail ("Failed to allocate memory for end alignment buffer"), which drops
+# the TLS session and resets the relay connection.
+#
+# Dynamic buffers: allocate only while processing a TLS record, free immediately.
+# This trades a small per-record overhead for dramatically lower peak fragmentation.
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+
+# Full Mozilla CA bundle (~130 roots) stored in flash — zero heap cost.
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+
+# Reduce max TLS record size from 16384 to 8192 bytes.
+# Halves the contiguous block the AES DMA needs per session.
+# 8192 is still large enough for all NoPorts/SSH traffic.
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=8192
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=8192
+
+# lwIP TCP buffer tuning for NoPorts relay under multiple concurrent sessions.
+# Same approach as CYD: 1xMSS per PCB keeps lwIP pbuf budget bounded even with
+# several relay sockets open simultaneously on Ethernet.
+CONFIG_LWIP_TCP_WND_DEFAULT=1460
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=1460
+CONFIG_LWIP_TCP_RECVMBOX_SIZE=12
+# Halve TIME_WAIT to 5 s (default 60 s) so closed PCB slots recycle quickly.
+CONFIG_LWIP_TCP_MSL=5000

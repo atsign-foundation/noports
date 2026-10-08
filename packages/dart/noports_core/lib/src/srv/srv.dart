@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:dartssh2/dartssh2.dart';
+import 'package:meta/meta.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/utils.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -24,15 +26,21 @@ abstract class Srv<T> {
   /// Defaults to localhost
   abstract final String? localHost;
 
-  /// A string which needs to be presented to the rvd before the rvd
-  /// will allow any further traffic on the socket
-  abstract final String? rvdAuthString;
+  abstract final RelayAuthenticator? relayAuthenticator;
 
-  /// The AES key for encryption / decryption of the rv traffic
-  abstract final String? sessionAESKeyString;
+  /// The AES key for Client-to-Daemon encryption in a single-socket
+  /// session, or on the control channel for a multi-socket session
+  abstract final String? aesC2D;
 
-  /// The IV to use with the [sessionAESKeyString]
-  abstract final String? sessionIVString;
+  /// The IV to use with the [aesC2D]
+  abstract final String? ivC2D;
+
+  /// The AES key for Daemon-to-Client encryption in a single-socket
+  /// session, or on the control channel for a multi-socket session
+  abstract final String? aesD2C;
+
+  /// The IV to use with the [aesD2C]
+  abstract final String? ivD2C;
 
   /// Whether to bind a local port or not
   abstract final bool? bindLocalPort;
@@ -42,6 +50,13 @@ abstract class Srv<T> {
 
   /// How long to keep the SocketConnector open if there have been no connections
   abstract final Duration timeout;
+
+  /// How frequently to send heartbeats over the control channel.
+  ///
+  /// Heartbeats are an attempt to persuade over-zealous network
+  /// intermediaries that the control channel shouldn't be closed due to lack
+  /// of activity.
+  abstract final Duration? controlChannelHeartbeat;
 
   Future<T> run();
 
@@ -53,11 +68,15 @@ abstract class Srv<T> {
     String? localHost,
     bool? bindLocalPort,
     String? rvdAuthString,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    required RelayAuthenticator? relayAuthenticator,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplExec(
       streamingHost,
@@ -65,11 +84,14 @@ abstract class Srv<T> {
       localPort: localPort,
       localHost: localHost,
       bindLocalPort: bindLocalPort,
-      rvdAuthString: rvdAuthString,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      relayAuthenticator: relayAuthenticator,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 
@@ -80,11 +102,15 @@ abstract class Srv<T> {
     bool? bindLocalPort,
     String? localHost,
     String? rvdAuthString,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    required RelayAuthenticator? relayAuthenticator,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplDart(
       streamingHost,
@@ -92,12 +118,15 @@ abstract class Srv<T> {
       localPort: localPort!,
       localHost: localHost,
       bindLocalPort: bindLocalPort!,
-      rvdAuthString: rvdAuthString,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      relayAuthenticator: relayAuthenticator,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       detached: detached,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 
@@ -108,24 +137,37 @@ abstract class Srv<T> {
     bool? bindLocalPort,
     String? localHost,
     String? rvdAuthString,
-    String? sessionAESKeyString,
-    String? sessionIVString,
+    required RelayAuthenticator? relayAuthenticator,
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
     bool multi = false,
     bool detached = false,
     Duration timeout = DefaultArgs.srvTimeout,
+    Duration? controlChannelHeartbeat,
   }) {
     return SrvImplInline(
       streamingHost,
       streamingPort,
-      rvdAuthString: rvdAuthString,
-      sessionAESKeyString: sessionAESKeyString,
-      sessionIVString: sessionIVString,
+      relayAuthenticator: relayAuthenticator,
+      aesC2D: aesC2D,
+      ivC2D: ivC2D,
+      aesD2C: aesD2C,
+      ivD2C: ivD2C,
       multi: multi,
       timeout: timeout,
+      controlChannelHeartbeat: controlChannelHeartbeat,
     );
   }
 
+  /// The binary [getLocalBinaryPath] returns, when set, rather than an srv
+  /// beside this executable.
+  @visibleForTesting
+  static String? localBinaryPathOverride;
+
   static Future<String?> getLocalBinaryPath() async {
+    if (localBinaryPathOverride != null) return localBinaryPathOverride;
     List<String> binaryNames = ['srv', 'sshrv'];
     for (var name in binaryNames) {
       var binary = await _getBinaryPathByName(name);
@@ -136,9 +178,11 @@ abstract class Srv<T> {
 
   static Future<String?> _getBinaryPathByName(String name) async {
     String postfix = Platform.isWindows ? '.exe' : '';
-    List<String> pathList =
-        Platform.resolvedExecutable.split(Platform.pathSeparator);
-    bool isExe = (pathList.last == 'sshnp$postfix' ||
+    List<String> pathList = Platform.resolvedExecutable.split(
+      Platform.pathSeparator,
+    );
+    bool isExe =
+        (pathList.last == 'sshnp$postfix' ||
         pathList.last == 'sshnpd$postfix' ||
         pathList.last == 'npt$postfix');
 

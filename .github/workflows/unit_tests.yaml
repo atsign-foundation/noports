@@ -10,28 +10,95 @@ on:
       - trunk
 
   pull_request:
-    branches:
-      - trunk
-      - release-v*.*.*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   cli_tags:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/composite/verify_cli_tags
-  noports_core-unit_tests:
+  np_admin-unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672 # v1.6.5
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
         with:
-          go-version: "stable"
-          cache-dependency-path: tools/osv-scanner/go.sum
+          sdk: stable
+      - name: dart pub get enforce lockfile
+        working-directory: apps/admin/admin_api
+        run: dart pub get --enforce-lockfile
+      - name: dart analyze
+        working-directory: apps/admin/admin_api
+        run: dart analyze
+      - name: dart test
+        working-directory: apps/admin/admin_api
+        run: dart test
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+        with:
+          scan-args: |-
+            --lockfile=./apps/admin/admin_api/pubspec.lock
+
+  sshnoports-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: stable
+      - name: dart pub get enforce lockfile
+        working-directory: packages/dart/sshnoports
+        run: dart pub get --enforce-lockfile
+      - name: dart analyze
+        working-directory: packages/dart/sshnoports
+        run: dart analyze
+      - name: dart test
+        working-directory: packages/dart/sshnoports
+        run: dart test
+      - name: compile each shipped binary and check --help
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          mkdir -p "$RUNNER_TEMP/bin"
+          # NOTE: keep this list in step with BINS in multibuild.yaml, plus srvd
+          for b in at_activate noports npevents npp npp_atserver npp_file npt srv sshnp sshnpd srvd; do
+            echo "$b"
+            dart compile exe "bin/$b.dart" -o "$RUNNER_TEMP/bin/$b"
+            "$RUNNER_TEMP/bin/$b" --help > /dev/null
+          done
+      # Runs osv-scanner to find any vulnerable Dart dependencies
+      # It needs to look at pubspec.lock files, which is why it's
+      # placed here, as the `dart pub get` above will create them
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/sshnoports/pubspec.lock
+
+  noports_core-unit_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dart-channel: [stable,beta]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: ${{ matrix.dart-channel}}
       - name: dart pub get
         working-directory: packages/dart/noports_core
         run: dart pub get
+      - name: dart run build_runner build
+        working-directory: packages/dart/noports_core
+        run: dart run build_runner build
       - name: dart analyze
         working-directory: packages/dart/noports_core
         run: dart analyze
@@ -42,9 +109,7 @@ jobs:
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
       - name: Run osv-scanner
-        working-directory: packages/dart
-        run: |
-          go install github.com/google/osv-scanner/cmd/osv-scanner@6316373e47d7e3e4b4fd3630c4bbc10987738de6 # v1.4.3
-          osv-scanner --lockfile=./sshnoports/pubspec.lock
-          osv-scanner --lockfile=./sshnp_flutter/pubspec.lock
-          osv-scanner --lockfile=./noports_core/pubspec.lock
+        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+        with:
+          scan-args: |-
+            --lockfile=./packages/dart/noports_core/pubspec.lock

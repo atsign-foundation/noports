@@ -4,13 +4,12 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
-# SSH! No ports
+# NoPorts CLI Binaries
 
-ssh no ports provides a way to ssh to a remote linux host/device without that
-device or the client having any open ports (not even 22) on external interfaces. All
-network connectivity is out bound and there is no need to know the IP
-address the device has been given. As long as the device and client has an IP address (public or private 1918),
-DNS and Internet access, you will be able to connect to it.
+This is the source code for the NoPorts Command Line Interface (CLI) binaries.
+See [the website](https://noports.com) for more information, or its companion
+[documentation site](https://docs.noports.com) for technical and usage
+information.
 
 ## Quick demo
 ![sshnp](https://github.com/atsign-foundation/noports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)
@@ -170,12 +169,39 @@ by cron using:
 The systemd directory contains an example unit file with its own
 [README](systemd/README.md).
 
+## SLSA
+
+Since the v5.13.0 release, the Docker images created from this repo as part
+of a release have SLSA Build Level 3 attestations.
+
+These can be verified using the
+[slsa-verifier](https://github.com/slsa-framework/slsa-verifier) tool e.g.:
+
+```sh
+IMAGE="atsigncompany/srvd"
+SHA=$(docker buildx imagetools inspect ${IMAGE}:prod \
+  --format "{{json .Manifest}}" | jq -r .digest)
+slsa-verifier verify-image ${IMAGE}@${SHA} --source-uri \
+  github.com/atsign-foundation/noports
+```
+
+## Docker image signing
+
+This repo is the source for a number of Docker images, and they're signed
+during the build process so that you can verify their authenticity using
+[cosign](https://github.com/sigstore/cosign):
+
+```sh
+cosign verify atsigncompany/srvd:prod \
+--certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+--certificate-identity-regexp='^https://github.com/atsign-foundation/noports/.+'
+```
+
 ## Maintainers
 
 Created by Atsign 
 
 Thoughts/bugs/contributions via PR all very welcome!
-
 
 Original code by [@cconstab](https://github.com/cconstab)
 

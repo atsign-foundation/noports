@@ -19,7 +19,8 @@ import 'package:sshnp_flutter/src/repository/navigation_repository.dart';
 import '../utility/constants.dart';
 
 /// A provider that exposes an [AuthenticationRepository] instance to the app.
-final authenticationRepositoryProvider = Provider<AuthenticationRepository>((ref) => AuthenticationRepository());
+final authenticationRepositoryProvider =
+    Provider<AuthenticationRepository>((ref) => AuthenticationRepository());
 
 /// A singleton that makes all the network calls to the @platform.
 class AuthenticationRepository {
@@ -61,7 +62,8 @@ class AuthenticationRepository {
   }
 
   Future<void> clearKeychainEntries() async {
-    List<String> atsignList = await KeyChainManager.getInstance().getAtSignListFromKeychain();
+    List<String> atsignList =
+        await KeyChainManager.getInstance().getAtSignListFromKeychain();
     if (atsignList.isEmpty) {
       return;
     } else {

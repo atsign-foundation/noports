@@ -1,13 +1,26 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/features.dart';
+import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
-import 'package:mocktail/mocktail.dart';
 
-import 'sshnp_mocks.dart';
 import 'sshnp_core_mocks.dart';
+import 'sshnp_mocks.dart';
+import 'util/sshnpd_channel/sshnpd_channel_mocks.dart';
+
+class FakeScanVerbBuilder extends Fake implements ScanVerbBuilder {}
+
+class FakeAtKey extends Fake implements AtKey {}
+
+class FakeNotificationParams extends Fake implements NotificationParams {}
 
 void main() {
   group('SshnpCore', () {
@@ -56,15 +69,22 @@ void main() {
       when(() => stubbedInitialize()).thenAnswer((_) async {});
       when(() => stubbedCompleteInitialization()).thenReturn(null);
 
-      when(() => mockSshnpdChannel.callInitialization())
-          .thenAnswer((_) async {});
-      when(() => mockSshnpdChannel.resolveRemoteUsername())
-          .thenAnswer((_) async => 'myRemoteUsername');
-      when(() => mockSshnpdChannel.resolveTunnelUsername(
-              remoteUsername: any(named: 'remoteUsername')))
-          .thenAnswer((_) async => 'myTunnelUsername');
-      when(() => mockSshnpdChannel.sharePublicKeyIfRequired(
-          identityKeyPair ?? any())).thenAnswer((_) async {});
+      when(
+        () => mockSshnpdChannel.callInitialization(),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockSshnpdChannel.resolveRemoteUsername(),
+      ).thenAnswer((_) async => 'myRemoteUsername');
+      when(
+        () => mockSshnpdChannel.resolveTunnelUsername(
+          remoteUsername: any(named: 'remoteUsername'),
+        ),
+      ).thenAnswer((_) async => 'myTunnelUsername');
+      when(
+        () => mockSshnpdChannel.sharePublicKeyIfRequired(
+          identityKeyPair ?? any(),
+        ),
+      ).thenAnswer((_) async {});
       when(() => mockSshnpdChannel.featureCheck(any())).thenAnswer((_) async {
         return DaemonFeature.values.map((f) => (f, true, 'mocked')).toList();
       });
@@ -145,9 +165,11 @@ void main() {
           () => mockSshnpdChannel.callInitialization(),
           () => mockSshnpdChannel.resolveRemoteUsername(),
           () => mockSshnpdChannel.resolveTunnelUsername(
-              remoteUsername: 'myRemoteUsername'),
-          () => mockSshnpdChannel
-              .sharePublicKeyIfRequired(sshnpCore.identityKeyPair),
+            remoteUsername: 'myRemoteUsername',
+          ),
+          () => mockSshnpdChannel.sharePublicKeyIfRequired(
+            sshnpCore.identityKeyPair,
+          ),
           () => mockSrvdChannel.callInitialization(),
           () => stubbedCompleteInitialization(),
         ]);
@@ -157,10 +179,16 @@ void main() {
         verifyNever(() => stubbedInitialize());
         verifyNever(() => mockSshnpdChannel.callInitialization());
         verifyNever(() => mockSshnpdChannel.resolveRemoteUsername());
-        verifyNever(() => mockSshnpdChannel.resolveTunnelUsername(
-            remoteUsername: 'myRemoteUsername'));
-        verifyNever(() => mockSshnpdChannel
-            .sharePublicKeyIfRequired(sshnpCore.identityKeyPair));
+        verifyNever(
+          () => mockSshnpdChannel.resolveTunnelUsername(
+            remoteUsername: 'myRemoteUsername',
+          ),
+        );
+        verifyNever(
+          () => mockSshnpdChannel.sharePublicKeyIfRequired(
+            sshnpCore.identityKeyPair,
+          ),
+        );
         verifyNever(() => mockSrvdChannel.callInitialization());
         verifyNever(() => stubbedCompleteInitialization());
 
@@ -174,39 +202,408 @@ void main() {
       });
       test('tunnelUsername not supplied', () async {
         final params = SshnpParams(
-            clientAtSign: '@client',
-            sshnpdAtSign: '@daemon',
-            srvdAtSign: '@srvd',
-            remoteUsername: 'alice');
+          clientAtSign: '@client',
+          sshnpdAtSign: '@daemon',
+          srvdAtSign: '@srvd',
+          remoteUsername: 'alice',
+        );
         final channel = SshnpdDefaultChannel(
-            atClient: mockAtClient,
-            params: params,
-            sessionId: 'test_tunnelUsername_not_supplied',
-            namespace: 'test');
+          atClient: mockAtClient,
+          params: params,
+          sessionId: 'test_tunnelUsername_not_supplied',
+          namespace: 'test',
+        );
         final remoteUsername = await channel.resolveRemoteUsername();
         expect(remoteUsername, 'alice');
         expect(
-            await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
-            'alice');
+          await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
+          'alice',
+        );
       });
       test('tunnelUsername supplied', () async {
         final params = SshnpParams(
-            clientAtSign: '@client',
-            sshnpdAtSign: '@daemon',
-            srvdAtSign: '@srvd',
-            remoteUsername: 'alice',
-            tunnelUsername: 'bob');
+          clientAtSign: '@client',
+          sshnpdAtSign: '@daemon',
+          srvdAtSign: '@srvd',
+          remoteUsername: 'alice',
+          tunnelUsername: 'bob',
+        );
         final channel = SshnpdDefaultChannel(
-            atClient: mockAtClient,
-            params: params,
-            sessionId: 'test_tunnelUsername_supplied',
-            namespace: 'test');
+          atClient: mockAtClient,
+          params: params,
+          sessionId: 'test_tunnelUsername_supplied',
+          namespace: 'test',
+        );
         final remoteUsername = await channel.resolveRemoteUsername();
         expect(remoteUsername, 'alice');
         expect(
-            await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
-            'bob');
+          await channel.resolveTunnelUsername(remoteUsername: remoteUsername),
+          'bob',
+        );
       });
     }); // group Initialization
+
+    group('explicit-escr unreconcilable rejection', () {
+      // Runs the real SshnpCore.initialize() (via StubbedSshnp). The default
+      // mocks report the unreconcilable environment for explicit escr: a
+      // NON-auto-detecting relay (MockSrvdChannel.autoDetectsRelayAuth == false)
+      // and a NON-escr daemon (MockSshnpdChannel.daemonSupportsRelayAuthEscr ==
+      // false).
+      Future<void> runInit(SshnpParams params) {
+        when(() => mockAtClient.getPreferences()).thenReturn(null);
+        when(() => mockAtClient.setPreferences(any())).thenReturn(null);
+        final sshnpCore = StubbedSshnp(
+          atClient: mockAtClient,
+          params: params,
+          sshnpdChannel: mockSshnpdChannel,
+          srvdChannel: mockSrvdChannel,
+        );
+        sshnpCore.stubAsyncInitialization(
+          stubbedCallInitialization: stubbedCallInitialization,
+          stubbedInitialize: stubbedInitialize,
+          stubbedCompleteInitialization: stubbedCompleteInitialization,
+        );
+        whenInitialization(identityKeyPair: sshnpCore.identityKeyPair);
+        return sshnpCore.callInitialization();
+      }
+
+      SshnpParams paramsWith({
+        required RelayAuthMode relayAuthMode,
+        required bool relayAuthModeExplicit,
+        required bool authenticateDeviceToRvd,
+      }) => SshnpParams(
+        clientAtSign: '@client',
+        sshnpdAtSign: '@daemon',
+        srvdAtSign: '@srvd',
+        relayAuthMode: relayAuthMode,
+        relayAuthModeExplicit: relayAuthModeExplicit,
+        authenticateDeviceToRvd: authenticateDeviceToRvd,
+      );
+
+      test('aborts: explicit escr + non-auto-detecting relay + non-escr daemon '
+          '+ device authenticates', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          throwsA(isA<SshnpError>()),
+        );
+      });
+
+      test('does not abort: escr not explicit (graceful default)', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: false,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          completes,
+        );
+      });
+
+      test('does not abort: device does not authenticate to the relay',
+          () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: false,
+            ),
+          ),
+          completes,
+        );
+      });
+
+      test('does not abort: explicit payload', () async {
+        await expectLater(
+          runInit(
+            paramsWith(
+              relayAuthMode: RelayAuthMode.payload,
+              relayAuthModeExplicit: true,
+              authenticateDeviceToRvd: true,
+            ),
+          ),
+          completes,
+        );
+      });
+    }); // group explicit-escr unreconcilable rejection
   }); // group SshnpCore
+
+  group('A group of tests related to sshnp', () {
+    test('A test to verify list devices in sshnp', () async {
+      registerFallbackValue(FakeScanVerbBuilder());
+      registerFallbackValue(FakeAtKey());
+      registerFallbackValue(FakeNotificationParams());
+
+      MockAtClient mockAtClient = MockAtClient();
+      RemoteSecondary mockRemoteSecondary = MockRemoteSecondary();
+      NotificationService mockNotificationService = MockNotificationService();
+
+      when(
+        () => mockAtClient.getRemoteSecondary(),
+      ).thenAnswer((_) => mockRemoteSecondary);
+      when(
+        () => mockAtClient.notificationService,
+      ).thenAnswer((_) => mockNotificationService);
+      when(
+        () => mockRemoteSecondary.executeVerb(
+          any(that: FakeScanVerbBuilderMatcher()),
+        ),
+      ).thenAnswer(
+        (_) => Future.value(
+          'data:["device_info.active.sshnp@alice_device","device_info.inactive.sshnp@alice_device"]',
+        ),
+      );
+
+      // StreamController to add the mock notification responses from SSHNPD.
+      StreamController<AtNotification> streamController = StreamController();
+      // Adding a brief delay to set the device as the active device.
+      // First, the list of devices are fetched using AtClient.get("device_info.local.sshnp@<device_atsign>").
+      // Then, a heartbeat is sent to each device to check if it's active.
+      // The delay ensures notification response is sent after AtClient.get is invoked.
+      Future.delayed(Duration(milliseconds: 500), () {
+        streamController.add(
+          AtNotification(
+              '123',
+              '@alice:heartbeat.active.sshnp@alice_device',
+              '@alice_device',
+              '@alice',
+              DateTime.now().millisecondsSinceEpoch,
+              'key',
+              false,
+            )
+            ..value =
+                '{"devicename":"active","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}',
+        );
+      });
+      when(
+        () => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        ),
+      ).thenAnswer((_) {
+        return streamController.stream;
+      });
+
+      when(
+        () => mockAtClient.get(
+          any(that: FakeAtKeyMatcher()),
+          getRequestOptions: any(named: 'getRequestOptions'),
+        ),
+      ).thenAnswer((Invocation invocation) {
+        String deviceName;
+        (invocation.positionalArguments[0].key.contains('inactive'))
+            ? deviceName = 'inactive'
+            : deviceName = 'active';
+        String value =
+            '{"devicename":"$deviceName","version":"5.3.0","corePackageVersion":"6.1.0","supportedFeatures":{"srAuth":true,"srE2ee":true,"acceptsPublicKeys":true,"supportsPortChoice":true,"adjustableTimeout":true},"allowedServices":["localhost:22","localhost:3389"]}';
+        return Future.value(AtValue()..value = value);
+      });
+
+      when(
+        () => mockNotificationService.notify(
+          any(),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary: any(named: 'onSentToSecondary'),
+        ),
+      ).thenAnswer(
+        (_) async => Future.value(
+          NotificationResult()
+            ..notificationStatusEnum = NotificationStatusEnum.delivered,
+        ),
+      );
+
+      SshnpParams sshnpParams = SshnpParams(
+        clientAtSign: '@alice',
+        sshnpdAtSign: '@alice_device',
+        srvdAtSign: '@srvd',
+      );
+      AtSshKeyPair atSshKeyPair = await DartSshKeyUtil().generateKeyPair(
+        identifier: 'my-test',
+      );
+      StreamController<String> testStreamController = StreamController();
+      Sshnp sshnp = SshnpDartPureImpl(
+        atClient: mockAtClient,
+        params: sshnpParams,
+        identityKeyPair: atSshKeyPair,
+        logStream: testStreamController.stream,
+      );
+
+      SshnpDeviceList sshnpDeviceList = await sshnp.listDevices(
+        waitDuration: Duration(seconds: 1),
+      );
+      expect(sshnpDeviceList.info.length, 2);
+      expect(sshnpDeviceList.activeDevices, ['active']);
+      expect(sshnpDeviceList.inactiveDevices, ['inactive']);
+    });
+
+    test('A test to verify notifying ssh request to sshnpd', () async {
+      registerFallbackValue(FakeNotificationParams());
+
+      MockAtClient mockAtClient = MockAtClient();
+      MockNotificationService mockNotificationService =
+          MockNotificationService();
+
+      stubSigningKeyPublish(mockAtClient);
+      when(
+        () => mockAtClient.get(
+          any(),
+          getRequestOptions: any(named: 'getRequestOptions'),
+        ),
+      ).thenAnswer((_) => Future.value(AtValue()..value = 'Hello hello'));
+      stubEncryptionKeys(
+        mockAtClient,
+        RsaKeyPair.generate(),
+        apkamKeyPair: RsaKeyPair.generate(),
+      );
+
+      when(
+        () => mockAtClient.notificationService,
+      ).thenAnswer((_) => mockNotificationService);
+
+      when(
+        () => mockNotificationService.notify(
+          any(),
+          checkForFinalDeliveryStatus: any(
+            named: 'checkForFinalDeliveryStatus',
+          ),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary: any(named: 'onSentToSecondary'),
+        ),
+      ).thenAnswer(
+        expectAsync1((Invocation invocation) async {
+          // Assert when the notification response belongs to "ssh_request"
+          if (invocation.positionalArguments[0].atKey.key.contains(
+            'ssh_request',
+          )) {
+            expect(
+              invocation.positionalArguments[0].atKey.toString(),
+              '@alice_device:ssh_request.default.sshnp@alice',
+            );
+            print(invocation.positionalArguments[0].value);
+            Map sshRequestResponse = jsonDecode(
+              invocation.positionalArguments[0].value,
+            );
+            expect(sshRequestResponse['payload']['direct'], true);
+            expect(
+              sshRequestResponse['payload']['sessionId'].toString().isNotEmpty,
+              true,
+            );
+            expect(sshRequestResponse['payload']['host'], '127.0.0.1');
+            expect(sshRequestResponse['payload']['port'], 98879);
+            expect(sshRequestResponse['payload']['authenticateToRvd'], true);
+            expect(
+              sshRequestResponse['payload']['rvdNonce'],
+              'rvd_dummy_nonce',
+            );
+            expect(sshRequestResponse['payload']['encryptRvdTraffic'], true);
+            expect(
+              sshRequestResponse['payload']['clientEphemeralPK'].isNotEmpty,
+              true,
+            );
+            expect(sshRequestResponse['signature'].isNotEmpty, true);
+            expect(sshRequestResponse['hashingAlgo'].isNotEmpty, true);
+            expect(sshRequestResponse['signingAlgo'].isNotEmpty, true);
+            final Map? enrollmentSignature =
+                sshRequestResponse['enrollmentSignature'];
+            expect(
+              enrollmentSignature?['sk'],
+              startsWith('public:_apsk.'),
+              reason: 'sshnp signs its request with its enrollment key too',
+            );
+            expect(enrollmentSignature!['s'], isA<String>());
+          }
+
+          return Future.value(
+            NotificationResult()
+              ..notificationStatusEnum = NotificationStatusEnum.delivered,
+          );
+        }, count: 2),
+      );
+
+      // Create a stream controller to simulate the notification received from the srvd
+      // which contains the host and port numbers.
+      final streamController = StreamController<AtNotification>();
+      streamController.add(
+        AtNotification(
+          '123',
+          'local.request_ports.${Srvd.namespace}',
+          '@alice',
+          '@bob',
+          123,
+          'key',
+          true,
+        )..value = '127.0.0.1,98878,98879,rvd_dummy_nonce',
+      );
+      when(
+        () => mockNotificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        ),
+      ).thenAnswer((_) => streamController.stream);
+
+      SshnpParams sshnpParams = SshnpParams(
+        clientAtSign: '@alice',
+        sshnpdAtSign: '@alice_device',
+        srvdAtSign: '@srvd',
+      );
+      AtSshKeyPair atSshKeyPair = await DartSshKeyUtil().generateKeyPair(
+        identifier: 'my-test',
+      );
+      StreamController<String> testStreamController = StreamController();
+      SshnpDartPureImpl sshnp = SshnpDartPureImpl(
+        atClient: mockAtClient,
+        params: sshnpParams,
+        identityKeyPair: atSshKeyPair,
+        logStream: testStreamController.stream,
+      );
+
+      // Initialize srvd, to fetch the host and port from the srvd -
+      // Here returning a mocked response from a stream controller.
+      await sshnp.srvdChannel.initialize();
+      sshnp.sshnpdChannel.twinKeys = false;
+      await sshnp.sendSshRequestToSshnpd();
+    });
+  });
+}
+
+class FakeScanVerbBuilderMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    return true;
+  }
+}
+
+class FakeAtKeyMatcher extends Matcher {
+  @override
+  Description describe(Description description) {
+    return description;
+  }
+
+  @override
+  bool matches(item, Map matchState) {
+    if (item is AtKey) {
+      return true;
+    }
+    return false;
+  }
 }

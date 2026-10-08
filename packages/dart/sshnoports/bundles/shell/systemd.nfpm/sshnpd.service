@@ -1,0 +1,16 @@
+[Unit]
+Description=NoPorts Daemon
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+KillMode=process
+
+# The line below runs the sshnpd service, with the config from
+# /etc/noports/sshnpd.yaml
+ExecStart=/usr/bin/sshnpd

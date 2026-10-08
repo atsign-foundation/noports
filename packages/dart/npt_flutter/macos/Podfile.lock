@@ -1,0 +1,28 @@
+PODS:
+  - biometric_storage (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - window_manager (0.2.0):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - biometric_storage (from `Flutter/ephemeral/.symlinks/plugins/biometric_storage/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - window_manager (from `Flutter/ephemeral/.symlinks/plugins/window_manager/macos`)
+
+EXTERNAL SOURCES:
+  biometric_storage:
+    :path: Flutter/ephemeral/.symlinks/plugins/biometric_storage/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  window_manager:
+    :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
+
+SPEC CHECKSUMS:
+  biometric_storage: 9de0cb4e591e52329ca0da7df42e964db6c526cf
+  FlutterMacOS: c232990155153907050900a2e175c7773903ba4e
+  window_manager: 1d01fa7ac65a6e6f83b965471b1a7fdd3f06166c
+
+PODFILE CHECKSUM: f0c21717cb7ee9112f915044c74bfceb5b12e02a
+
+COCOAPODS: 1.17.0

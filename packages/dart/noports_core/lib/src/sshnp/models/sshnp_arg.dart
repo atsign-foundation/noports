@@ -2,23 +2,11 @@ import 'package:args/args.dart';
 
 import 'package:noports_core/utils.dart';
 
-enum ArgFormat {
-  option,
-  multiOption,
-  flag,
-}
+enum ArgFormat { option, multiOption, flag }
 
-enum ArgType {
-  string,
-  integer,
-}
+enum ArgType { string, integer }
 
-enum ParseWhen {
-  always,
-  commandLine,
-  configFile,
-  never,
-}
+enum ParseWhen { always, commandLine, configFile, never }
 
 const Map<ParserType, Set<ParseWhen>> _allowListMap = {
   ParserType.all: {
@@ -77,8 +65,11 @@ class SshnpArg {
 
   String get bashName => name.replaceAll('-', '_').toUpperCase();
 
-  List<String> get aliasList =>
-      ['--$name', ...aliases?.map((e) => '--$e') ?? [], '-$abbr'];
+  List<String> get aliasList => [
+    '--$name',
+    ...aliases?.map((e) => '--$e') ?? [],
+    '-$abbr',
+  ];
 
   factory SshnpArg.noArg() {
     return SshnpArg(name: '');
@@ -102,6 +93,7 @@ class SshnpArg {
     profileNameArg,
     helpArg,
     keyFileArg,
+    passPhraseArg,
     fromArg,
     toArg,
     deviceArg,
@@ -115,7 +107,7 @@ class SshnpArg {
     verboseArg,
     remoteUserNameArg,
     tunnelUserNameArg,
-    rootDomainArg,
+    rootServerArg,
     remoteSshdPortArg,
     idleTimeoutArg,
     sshAlgorithmArg,
@@ -124,8 +116,10 @@ class SshnpArg {
     listDevicesArg,
     authenticateClientToRvdArg,
     authenticateDeviceToRvdArg,
+    relayAuthModeArg,
     encryptRvdTrafficArg,
     daemonPingTimeoutArg,
+    only443Arg,
   ];
 
   @override
@@ -142,10 +136,7 @@ class SshnpArg {
     Iterable<String>? excludeList,
     int? usageLineLength,
   }) {
-    var parser = ArgParser(
-      usageLineLength: usageLineLength,
-      showAliasesInUsage: true,
-    );
+    var parser = ArgParser(usageLineLength: usageLineLength);
     // Basic arguments
     for (SshnpArg arg in SshnpArg.args) {
       if (!parserType.shouldParse(arg.parseWhen) ||
@@ -210,6 +201,14 @@ class SshnpArg {
     help: 'Sending atSign\'s atKeys file if not in ~/.atsign/keys/',
     parseWhen: ParseWhen.commandLine,
   );
+  static const passPhraseArg = SshnpArg(
+    name: 'pass-phrase',
+    aliases: ['passPhrase'],
+    abbr: 'P',
+    help: 'Pass Phrase to encrypt/decrypt the password protected atKeys file',
+    mandatory: false,
+    defaultsTo: '',
+  );
   static const fromArg = SshnpArg(
     name: 'from',
     abbr: 'f',
@@ -231,7 +230,10 @@ class SshnpArg {
   static const srvdArg = SshnpArg(
     name: 'srvd',
     abbr: 'r',
-    help: 'atSign of srvd daemon',
+    help:
+        'The Relay atSign to use. Omit to auto-select '
+        'the fastest available relay, or provide a comma-separated list to '
+        'pick the fastest among them.',
   );
   static const legacySrvdArg = SshnpArg(
     name: 'host',
@@ -242,7 +244,8 @@ class SshnpArg {
   static const localPortArg = SshnpArg(
     name: 'local-port',
     abbr: 'l',
-    help: 'client-side local port for the ssh tunnel.'
+    help:
+        'client-side local port for the ssh tunnel.'
         ' If not supplied, we will ask the o/s for a spare port',
     defaultsTo: DefaultSshnpArgs.localPort,
     type: ArgType.integer,
@@ -293,12 +296,15 @@ class SshnpArg {
     abbr: 'U',
     help: 'username to use for the initial ssh tunnel',
   );
-  static const rootDomainArg = SshnpArg(
-    name: 'root-domain',
-    help: 'atDirectory domain',
+  static const rootServerArg = SshnpArg(
+    name: 'root-server',
+    help:
+        'atDirectory domain.'
+        ' Aliases (for backwards compatibility): --root-domain, --rootDomain',
     defaultsTo: DefaultArgs.rootDomain,
     mandatory: false,
     format: ArgFormat.option,
+    aliases: ['root-domain', 'rootDomain'],
   );
   static const remoteSshdPortArg = SshnpArg(
     name: 'remote-sshd-port',
@@ -327,7 +333,8 @@ class SshnpArg {
   );
   static const addForwardsToTunnelArg = SshnpArg(
     name: 'add-forwards-to-tunnel',
-    help: 'When true, any local forwarding directives provided in'
+    help:
+        'When true, any local forwarding directives provided in'
         '--local-ssh-options will be added to the initial tunnel ssh request',
     defaultsTo: DefaultArgs.addForwardsToTunnel,
     format: ArgFormat.flag,
@@ -342,7 +349,9 @@ class SshnpArg {
   );
   static const listDevicesArg = SshnpArg(
     name: 'list-devices',
-    help: 'List available devices',
+    help:
+        'List available devices.'
+        ' Alias: --ls',
     defaultsTo: DefaultSshnpArgs.listDevices,
     format: ArgFormat.flag,
     aliases: ['ls'],
@@ -352,7 +361,9 @@ class SshnpArg {
   static const authenticateClientToRvdArg = SshnpArg(
     name: 'authenticate-client-to-rvd',
     aliases: ['ac'],
-    help: 'When false, client will not authenticate itself to rvd',
+    help:
+        'When false, client will not authenticate itself to rvd.'
+        ' Alias: --ac',
     defaultsTo: DefaultArgs.authenticateClientToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -360,7 +371,9 @@ class SshnpArg {
   static const authenticateDeviceToRvdArg = SshnpArg(
     name: 'authenticate-device-to-rvd',
     aliases: ['ad'],
-    help: 'When false, device will not authenticate to the socket rendezvous',
+    help:
+        'When false, device will not authenticate itself to rvd.'
+        ' Alias: --ad',
     defaultsTo: DefaultArgs.authenticateDeviceToRvd,
     format: ArgFormat.flag,
     mandatory: false,
@@ -368,21 +381,49 @@ class SshnpArg {
   static const encryptRvdTrafficArg = SshnpArg(
     name: 'encrypt-rvd-traffic',
     aliases: ['et'],
-    help: 'When true, traffic via the socket rendezvous is encrypted,'
+    help:
+        'When true, traffic via the socket rendezvous is encrypted,'
         ' in addition to whatever encryption the traffic already has'
-        ' (e.g. an ssh session)',
+        ' (e.g. an ssh session).'
+        ' Alias: --et',
     defaultsTo: DefaultArgs.encryptRvdTraffic,
     format: ArgFormat.flag,
     mandatory: false,
   );
+  static const relayAuthModeArg = SshnpArg(
+    name: 'relay-auth-mode',
+    aliases: ['ram'],
+    help:
+        'The authentication mode to use when authenticating to the relay.'
+        ' "escr" (encrypted signed challenge response) is strongest and is the'
+        ' default: it is used wherever the whole path supports it, while older'
+        ' relays/daemons fall back to legacy and the relay auto-detects each'
+        ' side. Passing "escr" EXPLICITLY forces ESCR wherever the path supports'
+        ' it - the daemon side degrades to legacy if it cannot do ESCR, which an'
+        ' auto-detecting relay reconciles - and errors only when the relay does'
+        ' not auto-detect AND the daemon cannot do ESCR. "payload" is the legacy'
+        ' mode. Alias: --ram',
+    defaultsTo: 'escr',
+    allowed: ['payload', 'escr'],
+    // allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+  );
   static const daemonPingTimeoutArg = SshnpArg(
     name: 'daemon-ping-timeout',
     aliases: ['dpt'],
-    help: 'Seconds the client should wait for response after pinging a daemon',
+    help:
+        'Seconds the client should wait for response after pinging a daemon.'
+        ' Alias: --dpt',
     defaultsTo: DefaultArgs.daemonPingTimeoutSeconds,
     mandatory: false,
     format: ArgFormat.option,
     type: ArgType.integer,
     parseWhen: ParseWhen.commandLine,
+  );
+  static const only443Arg = SshnpArg(
+    name: '443',
+    help: 'When true, will request ports (443, 443) from relay',
+    defaultsTo: false,
+    format: ArgFormat.flag,
+    mandatory: false,
   );
 }

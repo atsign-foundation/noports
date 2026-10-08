@@ -1,7 +1,7 @@
 # Systemd Units
 
-This directory contains systemd unit definitions for running various components
-of the SSH No Ports suite.
+This directory contains systemd unit definitions for running various
+components of the NoPorts suite.
 
 ## sshnpd
 
@@ -9,8 +9,14 @@ of the SSH No Ports suite.
 
 The `sshnpd.service` file should be placed in `/etc/systemd/system` (as root).
 
-Modify the `sshnpd.service` unit to use the appropriate host and client atSigns,
-(The boilerplate uses @device_atsign @manager_atsign) as well as the devicename.
+The `sshnpd.service` unit `override.conf` can be modified by running:
+
+```sh
+sudo systemctl edit sshnpd
+```
+
+It should be edited to use the appropriate host and client atSigns, (The
+boilerplate uses @device_atsign @manager_atsign) as well as the devicename.
 Also change the username and make sure that username running sshnpd has the
 .atkeys file in place at '~/.atsign/keys'.
 
@@ -24,20 +30,20 @@ Run the following command to view full usage information of the sshnpd binary:
 To enable the service:
 
 ```sh
-sudo systemctl enable sshnpd.service
+sudo systemctl enable sshnpd
 ```
 
 The services will then start at the next reboot, or can be started immediately
 with:
 
 ```sh
-sudo systemctl start sshnpd.service
+sudo systemctl start sshnpd
 ```
 
 To view the realtime logs, use journalctl:
 
 ```sh
-sudo journalctl -u sshnpd.service
+journalctl -u sshnpd -f
 ```
 
 ## srvd
@@ -46,12 +52,19 @@ sudo journalctl -u sshnpd.service
 
 The `srvd.service` file should be placed in `/etc/systemd/system` (as root).
 
-Modify the `srvd.service` unit to use the appropriate atSign,
+The `srvd.service` unit `override.conf` can be modified by running:
+
+```sh
+sudo systemctl edit ssrvd
+```
+
+It should be edited to use the appropriate atSign,
 (The boilerplate uses @atsign) as well as the internet address.
 Also change the username and make sure that username running srvd has the
 .atkeys file in place at '~/.atsign/keys'.
 
 Run the following command to view full usage information of the srvd binary:
+
 ```sh
 /usr/local/bin/srvd
 ```
@@ -61,18 +74,18 @@ Run the following command to view full usage information of the srvd binary:
 To enable the service use:
 
 ```sh
-sudo systemctl enable srvd.service
+sudo systemctl enable srvd
 ```
 
 The services will then start at the next reboot, or can be started immediately
 with:
 
 ```sh
-sudo systemctl start srvd.service
+sudo systemctl start srvd
 ```
 
 To view the realtime logs, use journalctl:
 
 ```sh
-sudo journalctl -u srvd.service
+journalctl -u srvd -f
 ```

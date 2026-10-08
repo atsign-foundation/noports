@@ -5,6 +5,10 @@ is_root() {
   [ "$(id -u)" -eq 0 ]
 }
 
+is_darwin() {
+  [ "$(uname)" = 'Darwin' ]
+}
+
 unset binary_dir
 user_home=$HOME
 define_env() {
@@ -12,6 +16,10 @@ define_env() {
   bin_dir="/usr/local/bin"
   systemd_dir="/etc/systemd/system"
   if is_root; then
+    if is_darwin; then
+      echo "Installing as root is not available on MacOS"
+      exit 1
+    fi
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
@@ -28,10 +36,6 @@ define_env() {
   user_sshnpd_dir="$user_home/.sshnpd"
   user_log_dir="$user_sshnpd_dir/logs"
   user_ssh_dir="$user_home/.ssh"
-}
-
-is_darwin() {
-  [ "$(uname)" = 'Darwin' ]
 }
 
 sedi() {
@@ -109,8 +113,11 @@ usage() {
 
 setup_authorized_keys() {
   mkdir -p "$user_ssh_dir"
+  if is_root; then
+    chown $user:$user "$user_ssh_dir" 2>/dev/null || chown $user "$user_ssh_dir" 2>/dev/null
+  fi
   touch "$user_ssh_dir/authorized_keys"
-  chown $user:$user "$user_ssh_dir/authorized_keys" || chown $user "$user_ssh_dir/authorized_keys"
+  chown $user:$user "$user_ssh_dir/authorized_keys" 2>/dev/null || chown $user "$user_ssh_dir/authorized_keys" 2>/dev/null
   chmod 644 "$user_ssh_dir/authorized_keys"
 }
 
@@ -150,12 +157,13 @@ install_single_binary() {
   then
     if ! [ -d "$user_bin_dir" ]; then
       mkdir -p "$user_bin_dir"
-      chown -R $user:$user "$user_bin_dir" || chown -R $user "$user_bin_dir"
     fi
 
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
-      chown $user:$user "$user_bin_dir/$1" || chown $user "$user_bin_dir/$1"
+      chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
+      chmod o+x "$dest/$1"
+
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
       echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
@@ -198,7 +206,10 @@ install_all_binaries() {
 # SYSTEMD #
 
 post_systemd_message() {
-  echo "Systemd unit installed, make sure to configure the unit by editing $dest"
+  echo "Systemd unit installed, make sure to configure the unit by editing"
+  echo "the override.conf using:"
+  echo "  sudo systemctl edit $unit_name"
+  echo ""
   echo "Learn more in $script_dir/systemd/README.md"
   echo ""
   echo "To enable the service on next boot:"
@@ -210,10 +221,54 @@ post_systemd_message() {
 
 install_systemd_unit() {
   unit_name="$1"
+  systemd_unit="$systemd_dir/$unit_name"
+  systemd_config="$systemd_unit.d/override.conf"
+  if ! [ -d "$systemd_unit.d" ]; then
+    mkdir -p "$systemd_unit.d"
+  fi
   no_mac
-  mkdir -p "$systemd_dir"
-  dest="$systemd_dir/$unit_name"
-  cp "$script_dir/systemd/$unit_name" "$dest"
+  if [ -f "$systemd_unit" ]; then
+    # migrate old config from systemd unit file to override.conf
+    touch "$systemd_config"
+    if [ ! -s "$systemd_config" ]; then
+      echo "[Service]" >>"$systemd_config"
+    fi
+    temp_file="$systemd_unit.tmp"
+    while IFS= read -r line; do
+      case "$line" in
+      Environment=*)
+        # Comment out the line in the original file
+        echo "# config migrated to $systemd_config" >>"$temp_file"
+        echo "# $line" >>"$temp_file"
+        # Extract the environment variable and write it to the override file
+        echo "# config migrated from $systemd_unit" >>"$systemd_config"
+        echo "$line" >>"$systemd_config"
+        ;;
+      User=*)
+        # Comment out the line in the original file
+        echo "# config migrated to $systemd_config" >>"$temp_file"
+        echo "# $line" >>"$temp_file"
+        # Extract the user variable and write it to the override file
+        echo "# config migrated from $systemd_unit" >>"$systemd_config"
+        echo "$line" >>"$systemd_config"
+        ;;
+      *)
+        echo "$line" >>"$temp_file"
+        ;;
+      esac
+    done <"$systemd_unit"
+    # Overwrite the original file with the modified content
+    mv "$temp_file" "$systemd_unit"
+    echo "sshnpd configuration migrated to override.conf"
+  else
+    cp "$script_dir/systemd/$unit_name" "$systemd_unit"
+  fi
+  if [ -f "$systemd_config" ]; then
+    echo "systemd config already in place"
+  else
+    cp "$script_dir/systemd/$unit_name.d/override.conf" "$systemd_config"
+  fi
+  systemctl daemon-reload
   post_systemd_message
 }
 
@@ -232,22 +287,22 @@ install_systemd_srvd() {
 
 systemd() {
   if is_darwin; then
-    echo "Unknown command: systemd"
+    echo "systemd is not supported on MacOS"
     usage
     exit 1
   fi
   case "$1" in
-    --help)
-      usage
-      exit 0
-      ;;
-    sshnpd) install_systemd_sshnpd ;;
-    srvd) install_systemd_srvd ;;
-    *)
-      echo "Unknown systemd unit: $1"
-      usage
-      exit 1
-      ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  sshnpd) install_systemd_sshnpd ;;
+  srvd) install_systemd_srvd ;;
+  *)
+    echo "Unknown systemd unit: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -264,7 +319,11 @@ install_launchd_unit() {
   mac_only
   mkdir -p "$launchd_dir"
   dest="$launchd_dir/$unit_name"
-  cp "$script_dir/launchd/$unit_name" "$dest"
+  if [ -f "$dest" ]; then
+    echo "launchd config already in place"
+  else
+    cp "$script_dir/launchd/$unit_name" "$dest"
+  fi
   post_launchd_message
 }
 
@@ -281,16 +340,16 @@ launchd() {
     exit 1
   fi
   case "$1" in
-    --help)
-      usage
-      exit 0
-      ;;
-    sshnpd) install_launchd_sshnpd ;;
-    *)
-      echo "Unknown launchd unit: $1"
-      usage
-      exit 1
-      ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  sshnpd) install_launchd_sshnpd ;;
+  *)
+    echo "Unknown launchd unit: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -361,17 +420,17 @@ install_headless_srvd() {
 
 headless() {
   case "$1" in
-    --help | '')
-      usage
-      exit 0
-      ;;
-    sshnpd) install_headless_sshnpd ;;
-    srvd) install_headless_srvd ;;
-    *)
-      echo "Error: Unknown headless job: $1"
-      usage
-      exit 1
-      ;;
+  --help | '')
+    usage
+    exit 0
+    ;;
+  sshnpd) install_headless_sshnpd ;;
+  srvd) install_headless_srvd ;;
+  *)
+    echo "Error: Unknown headless job: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
 }
@@ -442,19 +501,33 @@ install_tmux_srvd() {
 
 tmux() {
   case "$1" in
-    --help | '')
-      usage
-      exit 0
-      ;;
-    sshnpd) install_tmux_sshnpd ;;
-    srvd) install_tmux_srvd ;;
-    *)
-      echo "Unknown tmux service: $1"
-      usage
-      exit 1
-      ;;
+  --help | '')
+    usage
+    exit 0
+    ;;
+  sshnpd) install_tmux_sshnpd ;;
+  srvd) install_tmux_srvd ;;
+  *)
+    echo "Unknown tmux service: $1"
+    usage
+    exit 1
+    ;;
   esac
   setup_authorized_keys
+}
+
+add_home_local_bin_to_path() {
+  if grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
+    return 0
+  fi
+
+  if ! [ -d "$user_home/.profile" ]; then
+    touch "$user_home/.profile"
+    chown $user:$user "$user_home/.profile" 2>/dev/null || chown $user "$user_home/.profile" 2>/dev/null
+  fi
+
+  echo 'Adding $HOME/.local/bin/ to the PATH in ~/.profile'
+  echo 'PATH="$PATH:$HOME/.local/bin"' >>"$user_home/.profile"
 }
 
 # MAIN #
@@ -466,34 +539,49 @@ main() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      -h)
-        usage
-        exit 0
-        ;;
-      -b)
-        binary_dir="$2"
-        shift
-        ;;
-      -u)
-        user="$2"
-        user_home=$(sudo -u "$user" sh -c 'echo $HOME')
-        shift
-        ;;
-      at_activate | npt | sshnp | sshnpd | srv | srvd) install_single_binary "$1" ;;
-      binaries) install_base_binaries ;;
-      debug_srvd) install_debug_binary "${1#"debug_"}" ;; # strips debug_ prefix from the command input
-      debug) install_debug_binaries ;;
-      all) install_all_binaries ;;
-      systemd | launchd | headless | tmux)
-        command=$1
-        shift 1
-        $command "$@"
-        ;;
-      *)
-        echo "Unknown command: $1"
-        usage
-        exit 1
-        ;;
+    -h)
+      usage
+      exit 0
+      ;;
+    -b)
+      binary_dir="$2"
+      shift
+      ;;
+    -u)
+      user="$2"
+      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      shift
+      ;;
+    at_activate | npt | sshnp | sshnpd | srv | srvd)
+      install_single_binary "$1"
+      add_home_local_bin_to_path
+      ;;
+    binaries)
+      install_base_binaries
+      add_home_local_bin_to_path
+      ;;
+    debug_srvd)
+      install_debug_binary "${1#"debug_"}"
+      add_home_local_bin_to_path
+      ;; # strips debug_ prefix from the command input
+    debug)
+      install_debug_binaries
+      add_home_local_bin_to_path
+      ;;
+    all)
+      install_all_binaries
+      add_home_local_bin_to_path
+      ;;
+    systemd | launchd | headless | tmux)
+      command=$1
+      shift 1
+      $command "$@"
+      ;;
+    *)
+      echo "Unknown command: $1"
+      usage
+      exit 1
+      ;;
     esac
     shift
   done

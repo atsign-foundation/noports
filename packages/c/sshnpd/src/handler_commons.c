@@ -1,0 +1,809 @@
+#include "atchops/aes.h"
+#include "atchops/base64.h"
+#include "atchops/iv.h"
+#include "atchops/rsa.h"
+#include "atclient/notify.h"
+#include "atclient/notify_params.h"
+#include "sshnpd/authorization.h"
+#include "sshnpd/params.h"
+#include "sshnpd/sshnpd.h"
+#include <atchops/constants.h>
+#include <atchops/rsa_key.h>
+#include <atclient/json.h>
+#include <atlogger/atlogger.h>
+#include <ctype.h>
+#include <sshnpd/handler_commons.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define LOGGER_TAG "HANDLER_COMMONS"
+
+int send_session_error(atclient *atclient, sshnpd_params *params, char *requesting_atsign, const char *session_id,
+                       const char *message) {
+  if (session_id == NULL || requesting_atsign == NULL) {
+    return 1;
+  }
+
+  atclient_atkey atkey;
+  atclient_atkey_init(&atkey);
+
+  size_t keyname_size = strlen(session_id) + strlen(params->device) + 2;
+  char *keyname = malloc(keyname_size);
+  if (keyname == NULL) {
+    atclient_atkey_free(&atkey);
+    return 1;
+  }
+  snprintf(keyname, keyname_size, "%s.%s", session_id, params->device);
+  int res = atclient_atkey_create_shared_key(&atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
+  free(keyname);
+  if (res != 0) {
+    atclient_atkey_free(&atkey);
+    return res;
+  }
+  atclient_atkey_metadata_set_is_public(&atkey.metadata, false);
+  atclient_atkey_metadata_set_is_encrypted(&atkey.metadata, true);
+  atclient_atkey_metadata_set_ttl(&atkey.metadata, 10000);
+
+  atclient_notify_params notify_params;
+  atclient_notify_params_init(&notify_params);
+  if ((res = atclient_notify_params_set_atkey(&notify_params, &atkey)) == 0 &&
+      (res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) == 0 &&
+      (res = atclient_notify_params_set_value(&notify_params, message)) == 0) {
+    res = atclient_notify(atclient, &notify_params, NULL);
+  }
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send error message to %s\n", requesting_atsign);
+  }
+  atclient_notify_params_free(&notify_params);
+  atclient_atkey_free(&atkey);
+  return res;
+}
+
+void format_permitopen_list(char **hosts, const uint16_t *ports, size_t len, char *buf, size_t bufsize) {
+  size_t pos = 0;
+  pos += snprintf(buf + pos, bufsize - pos, "[");
+  for (size_t i = 0; i < len && pos < bufsize - 1; i++) {
+    if (ports[i] == 0) {
+      pos += snprintf(buf + pos, bufsize - pos, "%s%s:*", i > 0 ? ", " : "", hosts[i]);
+    } else {
+      pos += snprintf(buf + pos, bufsize - pos, "%s%s:%u", i > 0 ? ", " : "", hosts[i], (unsigned int)ports[i]);
+    }
+  }
+  if (pos < bufsize - 1) {
+    snprintf(buf + pos, bufsize - pos, "]");
+  } else {
+    buf[bufsize - 2] = ']';
+    buf[bufsize - 1] = '\0';
+  }
+}
+
+void format_string_list(char **items, size_t len, char *buf, size_t bufsize) {
+  size_t pos = 0;
+  pos += snprintf(buf + pos, bufsize - pos, "[");
+  for (size_t i = 0; i < len && pos < bufsize - 1; i++) {
+    pos += snprintf(buf + pos, bufsize - pos, "%s%s", i > 0 ? ", " : "", items[i]);
+  }
+  if (pos < bufsize - 1) {
+    snprintf(buf + pos, bufsize - pos, "]");
+  } else {
+    buf[bufsize - 2] = ']';
+    buf[bufsize - 1] = '\0';
+  }
+}
+
+char *public_signing_key_uri(const atclient_atkeys *atkeys, const char *atsign) {
+  // 'primary' is the Dart at_client fallback when the atkeys file carries no
+  // APKAM enrollment id
+  const char *enrollment_id = "primary";
+  if (atkeys->enrollment_id != NULL && atkeys->enrollment_id[0] != '\0') {
+    enrollment_id = atkeys->enrollment_id;
+  }
+  size_t size = strlen("public:_apsk.") + strlen(enrollment_id) + strlen(".a.__e") + strlen(atsign) + 1;
+  char *uri = malloc(size);
+  if (uri != NULL) {
+    snprintf(uri, size, "public:_apsk.%s.a.__e%s", enrollment_id, atsign);
+  }
+  return uri;
+}
+
+bool public_signing_key_needs_publishing(const char *published, const char *pkam_public_key_base64) {
+  return published == NULL || strcmp(published, pkam_public_key_base64) != 0;
+}
+
+bool is_manager_atsign(const sshnpd_params *params, const char *atsign) {
+  if (params == NULL || atsign == NULL || atsign[0] == '\0') {
+    return false;
+  }
+
+  if (params->manager_list == NULL || params->manager_list_len == 0) {
+    return false;
+  }
+
+  // The manager list was canonicalized at startup; canonicalize the requesting
+  // atSign the same way so the comparison is always exact (case, dots, '@'
+  // prefix). Anything that isn't a valid atSign fails closed.
+  char normalized[SSHNPD_ATSIGN_BUFFER_LEN];
+  if (sshnpd_normalize_atsign(atsign, normalized, sizeof(normalized)) != 0) {
+    return false;
+  }
+
+  for (size_t i = 0; i < params->manager_list_len; i++) {
+    if (params->manager_list[i] == NULL) {
+      continue;
+    }
+    if (strcmp(normalized, params->manager_list[i]) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int verify_envelope_signature_from(cJSON *envelope, char *requesting_atsign, atclient *atclient) {
+  cJSON *signature = cJSON_GetObjectItem(envelope, "signature");
+  cJSON *hashing_algo = cJSON_GetObjectItem(envelope, "hashingAlgo");
+  cJSON *signing_algo = cJSON_GetObjectItem(envelope, "signingAlgo");
+  cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
+
+  // The envelope is attacker-controlled and has not been shape-validated yet
+  // (verify_envelope_contents runs after this). Reject anything missing the
+  // signed fields before we do the atServer public-key round-trip, otherwise
+  // the cJSON_GetStringValue/cJSON_PrintUnformatted results below are NULL and
+  // strlen/strcmp segfault the daemon.
+  if (!cJSON_IsString(signature) || !cJSON_IsString(hashing_algo) || !cJSON_IsString(signing_algo) || payload == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Envelope missing signature/hashingAlgo/signingAlgo/payload - rejecting\n");
+    return 1;
+  }
+
+  int res = 0;
+  atclient_atkey atkey;
+  atclient_atkey_init(&atkey);
+
+  if ((res = atclient_atkey_create_public_key(&atkey, "publickey", requesting_atsign, NULL)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create public key\n");
+    atclient_atkey_free(&atkey);
+    return 1;
+  }
+
+  // TODO lock wrap
+  char *buffer = NULL;
+  res = atclient_get_public_key(atclient, &atkey, &buffer, NULL);
+  atclient_atkey_free(&atkey);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to get public key\n");
+    return 1;
+  }
+
+  atchops_rsa_key_public_key requesting_atsign_publickey;
+  atchops_rsa_key_public_key_init(&requesting_atsign_publickey);
+
+  res = atchops_rsa_key_populate_public_key(&requesting_atsign_publickey, buffer, strlen(buffer));
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_rsa_key_populate_public_key (failed): %d\n", res);
+    free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
+    return 1;
+  }
+
+  char *signature_str = cJSON_GetStringValue(signature);
+  char *hashing_algo_str = cJSON_GetStringValue(hashing_algo);
+  char *signing_algo_str = cJSON_GetStringValue(signing_algo);
+
+  size_t valueolen = 0;
+  res =
+      atchops_base64_decode(signature_str, strlen(signature_str), (unsigned char *)buffer, strlen(buffer), &valueolen);
+
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "atchops_base64_decode: %d\n", res);
+    free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
+    return 1;
+  }
+
+  char *payloadstr = cJSON_PrintUnformatted(payload);
+  if (payloadstr == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to serialize envelope payload\n");
+    free(buffer);
+    atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
+    return 1;
+  }
+  res = verify_envelope_signature(&requesting_atsign_publickey, (const unsigned char *)payloadstr,
+                                  (unsigned char *)buffer, hashing_algo_str, signing_algo_str);
+
+  free(buffer);
+  atchops_rsa_key_public_key_free(&requesting_atsign_publickey);
+  cJSON_free(payloadstr);
+
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to verify envelope signature\n");
+  }
+
+  return res;
+}
+
+// Whether key's modulus is 2048 bits. Its DER INTEGER encoding pads the
+// modulus with a leading 0x00 whenever its top bit is set, so a valid RSA-2048
+// key usually arrives with n.len == 257: count significant bytes, not raw ones.
+static bool is_rsa2048_public_key(const atchops_rsa_key_public_key *key) {
+  const unsigned char *n_bytes = key->n.value;
+  size_t n_sig = key->n.len;
+  while (n_sig > 0 && n_bytes[0] == 0x00) {
+    n_bytes++;
+    n_sig--;
+  }
+  return n_sig == 256;
+}
+
+int verify_envelope_signature(atchops_rsa_key_public_key *publickey, const unsigned char *payload,
+                              unsigned char *signature, const char *hashing_algo, const char *signing_algo) {
+  int ret = 0;
+
+  atchops_md_type mdtype;
+
+  if (strcmp(hashing_algo, "sha256") == 0) {
+    mdtype = ATCHOPS_MD_SHA256;
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unsupported hash type for envelope verify\n");
+    return -1;
+  }
+  if (strcmp(signing_algo, "rsa2048") == 0) {
+    if (!is_rsa2048_public_key(publickey)) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Envelope signer's public key is not RSA-2048\n");
+      return -1;
+    }
+    ret = atchops_rsa_verify(publickey, mdtype, payload, strlen((char *)payload), signature);
+    if (ret != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "verify_envelope_signature (failed)\n");
+      return -1;
+    }
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Unsupported signing algo for envelope verify");
+    return -1;
+  }
+
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "verify_envelope_signature (success)\n");
+
+  return ret;
+}
+
+cJSON *extract_envelope_from_notification(atclient_monitor_message *message) {
+  // Sanity check the notification. The field must be initialized AND non-NULL;
+  // the guards previously used && (rejecting only the impossible
+  // uninitialized-but-non-NULL case), so a NULL from/decrypted_value fell
+  // through to strlen(NULL) below.
+  if (!atclient_atnotification_is_from_initialized(message->notification) || message->notification->from == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to initialize the from field of the notification\n");
+    return NULL;
+  }
+
+  if (!atclient_atnotification_is_decrypted_value_initialized(message->notification) ||
+      message->notification->decrypted_value == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to initialize the decrypted value of the notification\n");
+    return NULL;
+  }
+
+  // Get the decrypted envelope
+  char *decrypted_json = malloc(sizeof(char) * (strlen(message->notification->decrypted_value) + 1));
+  if (decrypted_json == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to decrypt the envelope\n");
+    return NULL;
+  }
+
+  memcpy(decrypted_json, message->notification->decrypted_value, strlen(message->notification->decrypted_value));
+  *(decrypted_json + strlen(message->notification->decrypted_value)) = '\0';
+
+  // log the decrypted json
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Decrypted json: %s\n", decrypted_json);
+
+  // Parse it to cJSON*
+  cJSON *envelope = cJSON_Parse(decrypted_json);
+  free(decrypted_json);
+  if (envelope == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the decrypted notification\n");
+  }
+  return envelope;
+}
+
+int verify_envelope_contents(cJSON *envelope, enum payload_type type) {
+  bool has_valid_values = cJSON_IsObject(envelope);
+
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the envelope\n");
+    return 1;
+  }
+
+  // These 4 values are always required for a signed envelope
+  cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
+  has_valid_values = has_valid_values && cJSON_IsObject(payload) &&
+                     cJSON_IsString(cJSON_GetObjectItem(envelope, "signature")) &&
+                     cJSON_IsString(cJSON_GetObjectItem(envelope, "hashingAlgo")) &&
+                     cJSON_IsString(cJSON_GetObjectItem(envelope, "signingAlgo"));
+
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid envelope format\n");
+    return 1;
+  }
+
+  return verify_payload_contents(payload, type);
+}
+
+// A valid port is an integral JSON number in [1, 65535] — anything else would
+// invoke UB (or silently wrap) when later cast to uint16_t
+static bool is_valid_port(const cJSON *port) {
+  if (!cJSON_IsNumber(port)) {
+    return false;
+  }
+  double value = cJSON_GetNumberValue(port);
+  return value >= 1 && value <= 65535 && value == (double)(uint16_t)value;
+}
+
+bool is_valid_session_id(const char *session_id) {
+  if (session_id == NULL || strlen(session_id) != 36) {
+    return false;
+  }
+  for (size_t i = 0; i < 36; i++) {
+    const bool dash_expected = i == 8 || i == 13 || i == 18 || i == 23;
+    if (dash_expected ? session_id[i] != '-' : !isxdigit((unsigned char)session_id[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+int verify_payload_contents(cJSON *payload, enum payload_type type) {
+  bool has_valid_values = cJSON_IsObject(payload);
+
+  if (has_valid_values && !is_valid_session_id(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")))) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload's sessionId is missing or not a UUID\n");
+    return 1;
+  }
+
+  switch (type) {
+  case payload_type_ssh: {
+    cJSON *direct = cJSON_GetObjectItem(payload, "direct");
+    has_valid_values = has_valid_values && cJSON_IsBool(direct);
+
+    if (!has_valid_values) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Couldn't determine if payload is direct\n");
+      return 1;
+    }
+
+    if (!cJSON_IsTrue(direct)) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Only direct mode is supported by this device\n");
+      return 1;
+    }
+
+    has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "host")) &&
+                       is_valid_port(cJSON_GetObjectItem(payload, "port"));
+    break;
+  }
+  case payload_type_npt: {
+    has_valid_values = has_valid_values && cJSON_IsString(cJSON_GetObjectItem(payload, "rvdHost")) &&
+                       is_valid_port(cJSON_GetObjectItem(payload, "rvdPort")) &&
+                       cJSON_IsString(cJSON_GetObjectItem(payload, "requestedHost"));
+
+    has_valid_values = has_valid_values && is_valid_port(cJSON_GetObjectItem(payload, "requestedPort"));
+    break;
+  }
+  }
+
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received invalid payload format\n");
+    return 1;
+  }
+  return 0;
+}
+
+int create_rvd_auth_string(cJSON *payload, atchops_rsa_key_private_key *signing_key, char **rvd_auth_string) {
+
+  (void)(rvd_auth_string); // Tell the compiler to be quiet about output parameters
+
+  cJSON *client_nonce = cJSON_GetObjectItem(payload, "clientNonce");
+  cJSON *rvd_nonce = cJSON_GetObjectItem(payload, "rvdNonce");
+  bool has_valid_values = cJSON_IsString(client_nonce) && cJSON_IsString(rvd_nonce);
+
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Missing nonce values, cannot create auth string for rvd\n");
+    return 1;
+  }
+
+  cJSON *rvd_auth_payload = cJSON_CreateObject();
+  cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
+  cJSON_AddItemReferenceToObject(rvd_auth_payload, "sessionId", session_id);
+  cJSON_AddItemReferenceToObject(rvd_auth_payload, "clientNonce", client_nonce);
+  cJSON_AddItemReferenceToObject(rvd_auth_payload, "rvdNonce", rvd_nonce);
+
+  cJSON *res_envelope = cJSON_CreateObject();
+  cJSON_AddItemReferenceToObject(res_envelope, "payload", rvd_auth_payload);
+
+  char *signing_input = cJSON_PrintUnformatted(rvd_auth_payload);
+  unsigned char signature[256];
+  memset(signature, 0, BYTES(256));
+  int res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, (unsigned char *)signing_input,
+                             strlen((char *)signing_input), signature);
+  cJSON_free(signing_input);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the auth string payload\n");
+    cJSON_Delete(rvd_auth_payload);
+    cJSON_Delete(res_envelope);
+    return res;
+  }
+
+  char base64signature[384];
+  memset(base64signature, 0, BYTES(384));
+
+  size_t sig_len;
+  res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the auth string payload\n");
+    cJSON_Delete(rvd_auth_payload);
+    cJSON_Delete(res_envelope);
+    return res;
+  }
+
+  cJSON_AddItemToObject(res_envelope, "signature", cJSON_CreateString((char *)base64signature));
+  cJSON_AddItemToObject(res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
+  cJSON_AddItemToObject(res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
+
+  *rvd_auth_string = cJSON_PrintUnformatted(res_envelope);
+  cJSON_Delete(rvd_auth_payload);
+  cJSON_Delete(res_envelope);
+
+  if (*rvd_auth_string == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to write auth string from rvd auth envelope\n");
+    return 1;
+  }
+  return 0;
+}
+
+int setup_rvd_session_encryption(cJSON *payload, unsigned char **session_aes_key, char **session_aes_key_base64,
+                                 unsigned char **session_iv, char **session_iv_base64) {
+  cJSON *client_ephemeral_pk = cJSON_GetObjectItem(payload, "clientEphemeralPK");
+  cJSON *client_ephemeral_pk_type = cJSON_GetObjectItem(payload, "clientEphemeralPKType");
+  unsigned char key[32], iv[16];
+  unsigned char *session_aes_key_encrypted, *session_iv_encrypted;
+  size_t session_aes_key_len, session_iv_len, session_aes_key_encrypted_len, session_iv_encrypted_len;
+
+  bool is_valid = false;
+  bool has_valid_values = cJSON_IsString(client_ephemeral_pk) && cJSON_IsString(client_ephemeral_pk_type);
+  if (!has_valid_values) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "encryptRvdTraffic was requested, but no client ephemeral public key / key type was provided\n");
+    return 1;
+  }
+  int res = 0;
+
+  memset(key, 0, BYTES(32));
+  if ((res = atchops_aes_generate_key(key, ATCHOPS_AES_256)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
+    return res;
+  }
+
+  *session_aes_key = malloc(sizeof(unsigned char) * 49);
+  if (*session_aes_key == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "unable to allocate memory for: session_aes_key");
+    free(*session_aes_key);
+    return 1;
+  }
+
+  memset(*session_aes_key, 0, BYTES(49));
+  res = atchops_base64_encode(key, 32, (char *)*session_aes_key, 49, &session_aes_key_len);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session aes key\n");
+    free(*session_aes_key);
+    return res;
+  }
+
+  memset(iv, 0, BYTES(16));
+  if ((res = atchops_iv_generate(iv)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
+    free(*session_aes_key);
+    return res;
+  }
+
+  *session_iv = malloc(sizeof(unsigned char) * 25);
+  if (*session_iv == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "unable to allocate memory for: session_iv");
+    free(*session_aes_key);
+    return 1;
+  }
+
+  memset(*session_iv, 0, BYTES(25));
+  res = atchops_base64_encode(iv, 16, (char *)*session_iv, 25, &session_iv_len);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to generate session iv\n");
+    free(*session_aes_key);
+    free(*session_iv);
+    return res;
+  }
+
+  char *pk_type = cJSON_GetStringValue(client_ephemeral_pk_type);
+  char *pk = cJSON_GetStringValue(client_ephemeral_pk);
+
+  switch (strlen(pk_type)) {
+  case 7: { // rsa2048 is the only valid type right now
+    if (strncmp(pk_type, "rsa2048", 7) == 0) {
+      is_valid = true;
+      atchops_rsa_key_public_key ac;
+      atchops_rsa_key_public_key_init(&ac);
+
+      res = atchops_rsa_key_populate_public_key(&ac, pk, strlen(pk));
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to populate client ephemeral pk\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        return res;
+      }
+
+      // The "rsa2048" type above is client-supplied and only names the type;
+      // it does not constrain the actual modulus. atchops_rsa_encrypt imports
+      // the raw modulus via mbedtls, whose ciphertext length is the count of
+      // SIGNIFICANT modulus bytes (leading zeros stripped) - that many bytes
+      // are written into the fixed BYTES(256) buffers below, so a key whose
+      // real modulus is larger than 2048 bits (e.g. RSA-4096 -> 512 bytes)
+      // would overflow those heap allocations. Enforce a true 2048-bit
+      // modulus before any encryption is attempted.
+      if (!is_rsa2048_public_key(&ac)) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "client ephemeral pk modulus is not RSA-2048 (n.len=%zu)\n",
+                     ac.n.len);
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        return 1;
+      }
+
+      session_aes_key_encrypted = malloc(BYTES(256));
+      if (session_aes_key_encrypted == NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to allocate memory to encrypt the session aes key\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        return 1;
+      }
+
+      res = atchops_rsa_encrypt(&ac, *session_aes_key, session_aes_key_len, session_aes_key_encrypted, 256, NULL);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session aes key\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(session_aes_key_encrypted);
+        return res;
+      }
+
+      session_aes_key_encrypted_len = 256;
+      session_aes_key_len = session_aes_key_encrypted_len * 3 / 2; // reusing this since we can
+
+      *session_aes_key_base64 = malloc(BYTES(session_aes_key_len));
+      if (*session_aes_key_base64 == NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to allocate memory to base64 encode the session aes key\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(session_aes_key_encrypted);
+        return 1;
+      }
+      memset(*session_aes_key_base64, 0, session_aes_key_len);
+
+      size_t session_aes_key_base64_len;
+      res = atchops_base64_encode(session_aes_key_encrypted, session_aes_key_encrypted_len, *session_aes_key_base64,
+                                  session_aes_key_len, &session_aes_key_base64_len);
+      // No longer need this
+      free(session_aes_key_encrypted);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session aes key\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(*session_aes_key_base64);
+        return res;
+      }
+
+      session_iv_encrypted = malloc(BYTES(256));
+      if (session_iv_encrypted == NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory to encrypt the session iv\n");
+        atchops_rsa_key_public_key_free(&ac);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(*session_aes_key_base64);
+        return 1;
+      }
+      memset(session_iv_encrypted, 0, BYTES(256));
+
+      res = atchops_rsa_encrypt(&ac, *session_iv, session_iv_len, session_iv_encrypted, 256, NULL);
+      atchops_rsa_key_public_key_free(&ac);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to encrypt the session iv\n");
+        free(session_iv_encrypted);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(*session_aes_key_base64);
+        return res;
+      }
+
+      session_iv_encrypted_len = 256;
+      session_iv_len = session_iv_encrypted_len * 3 / 2; // reusing this since we can
+      *session_iv_base64 = malloc(BYTES(session_iv_len));
+      if (*session_iv_base64 == NULL) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                     "Failed to allocate memory to base64 encode the session iv\n");
+        free(session_iv_encrypted);
+        free(*session_aes_key);
+        free(*session_iv);
+        free(*session_aes_key_base64);
+        return 1;
+      }
+      memset(*session_iv_base64, 0, session_iv_len);
+
+      size_t session_iv_base64_len;
+      res = atchops_base64_encode(session_iv_encrypted, session_iv_encrypted_len, *session_iv_base64, session_iv_len,
+                                  &session_iv_base64_len);
+      // No longer need this
+      free(session_iv_encrypted);
+      if (res != 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to base64 encode the session iv\n");
+        free(*session_aes_key);
+        free(*session_iv);
+        free(*session_iv_base64);
+        free(*session_aes_key_base64);
+        return res;
+      }
+    } // rsa2048 - allocates (session_iv_base64, session_aes_key_base64)
+  } // case 7
+  } // switch
+
+  if (!is_valid) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "%s is not an accepted key type for encrypting the aes key\n", pk_type);
+    free(*session_aes_key);
+    free(*session_iv);
+    *session_aes_key = NULL;
+    *session_iv = NULL;
+    return 1;
+  }
+  return res;
+}
+
+int send_success_payload(cJSON *payload, atclient *atclient, sshnpd_params *params, char *session_aes_key_c2d_base64,
+                         char *session_iv_c2d_base64, char *session_aes_key_d2c_base64, char *session_iv_d2c_base64,
+                         atchops_rsa_key_private_key *signing_key, char *requesting_atsign) {
+  int res = 0;
+  bool twin_keys = session_aes_key_d2c_base64 != NULL && session_iv_d2c_base64 != NULL;
+  cJSON *session_id = cJSON_GetObjectItem(payload, "sessionId");
+  char *identifier = cJSON_GetStringValue(session_id);
+  if (identifier == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Payload is missing a valid sessionId\n");
+    return 1;
+  }
+  cJSON *final_res_payload = cJSON_CreateObject();
+  cJSON_AddStringToObject(final_res_payload, "status", "connected");
+  cJSON_AddItemReferenceToObject(final_res_payload, "sessionId", session_id);
+  if (twin_keys) {
+    cJSON_AddStringToObject(final_res_payload, "aesKeyC2D", (char *)session_aes_key_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "ivC2D", (char *)session_iv_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "aesKeyD2C", (char *)session_aes_key_d2c_base64);
+    cJSON_AddStringToObject(final_res_payload, "ivD2C", (char *)session_iv_d2c_base64);
+  } else {
+    cJSON_AddStringToObject(final_res_payload, "sessionAESKey", (char *)session_aes_key_c2d_base64);
+    cJSON_AddStringToObject(final_res_payload, "sessionIV", (char *)session_iv_c2d_base64);
+  }
+
+  cJSON *final_res_envelope = cJSON_CreateObject();
+  cJSON_AddItemToObject(final_res_envelope, "payload", final_res_payload);
+
+  unsigned char *signing_input = (unsigned char *)cJSON_PrintUnformatted(final_res_payload);
+  if (signing_input == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res payload\n");
+    res = 1;
+    goto clean_json;
+  }
+
+  unsigned char signature[256];
+  memset(signature, 0, 256);
+  res = atchops_rsa_sign(signing_key, ATCHOPS_MD_SHA256, signing_input, strlen((char *)signing_input), signature);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to sign the final res payload\n");
+    goto clean_json;
+  }
+
+  char base64signature[384];
+  memset(base64signature, 0, sizeof(unsigned char) * 384);
+
+  size_t sig_len;
+  res = atchops_base64_encode(signature, 256, base64signature, 384, &sig_len);
+  if (res != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                 "Failed to base64 encode the final res payload's signature\n");
+    goto clean_json;
+  }
+
+  cJSON_AddItemToObject(final_res_envelope, "signature", cJSON_CreateString((char *)base64signature));
+  cJSON_AddItemToObject(final_res_envelope, "hashingAlgo", cJSON_CreateString("sha256"));
+  cJSON_AddItemToObject(final_res_envelope, "signingAlgo", cJSON_CreateString("rsa2048"));
+  char *final_res_value = cJSON_PrintUnformatted(final_res_envelope);
+  if (final_res_value == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to print the final res envelope\n");
+    res = 1;
+    goto clean_json;
+  }
+
+  atclient_atkey final_res_atkey;
+  atclient_atkey_init(&final_res_atkey);
+
+  size_t keynamelen = strlen(identifier) + strlen(params->device) + 2; // + 1 for '.' +1 for '\0'
+  char *keyname = malloc(sizeof(char) * keynamelen);
+  if (keyname == NULL) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for keyname\n");
+    res = 1;
+    goto clean_final_res_value;
+  }
+
+  snprintf(keyname, keynamelen, "%s.%s", identifier, params->device);
+  int ret = atclient_atkey_create_shared_key(&final_res_atkey, keyname, params->atsign, requesting_atsign, SSHNP_NS);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create success shared key\n");
+    res = ret;
+    free(keyname);
+    goto clean_final_res_value;
+  }
+
+  // print final_res_atkey
+  char *final_res_atkey_str = NULL;
+  ret = atclient_atkey_to_string(&final_res_atkey, &final_res_atkey_str);
+  if (ret == 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Final response atkey: %s\n", final_res_atkey_str);
+  } else {
+    res = ret;
+    goto clean_res;
+  }
+
+  atclient_atkey_metadata *metadata = &final_res_atkey.metadata;
+  atclient_atkey_metadata_set_is_public(metadata, false);
+  atclient_atkey_metadata_set_is_encrypted(metadata, true);
+  atclient_atkey_metadata_set_ttl(metadata, 10000);
+
+  atclient_notify_params notify_params;
+  atclient_notify_params_init(&notify_params);
+  if ((res = atclient_notify_params_set_atkey(&notify_params, &final_res_atkey)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set atkey in notify params\n");
+    goto clean_notify;
+  }
+  if ((res = atclient_notify_params_set_value(&notify_params, final_res_value)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set value in notify params\n");
+    goto clean_notify;
+  }
+  if ((res = atclient_notify_params_set_operation(&notify_params, ATCLIENT_NOTIFY_OPERATION_UPDATE)) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set operation in notify params\n");
+    goto clean_notify;
+  }
+
+  ret = atclient_notify(atclient, &notify_params, NULL);
+  if (ret != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to send final response to %s\n", requesting_atsign);
+    res = ret;
+  }
+
+clean_notify:
+  atclient_notify_params_free(&notify_params);
+clean_res: {
+  if (final_res_atkey_str != NULL) {
+    free(final_res_atkey_str);
+  }
+  free(keyname);
+}
+clean_final_res_value: {
+  atclient_atkey_free(&final_res_atkey);
+  cJSON_free(final_res_value);
+}
+clean_json: {
+  cJSON_Delete(final_res_envelope);
+  cJSON_free(signing_input);
+}
+  return res;
+}

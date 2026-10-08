@@ -1,31 +1,54 @@
+#include <atlogger/atlogger.h>
+#include <errno.h>
+#include <sshnpd/authorization.h>
 #include <sshnpd/params.h>
+#include <sshnpd/permitopen.h>
+#include <sshnpd/version.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define LOGGER_TAG "sshnpd - params"
 #define default_permitopen "localhost:22,localhost:3389"
 void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
+  params->manager_list = NULL;
+  params->manager_list_len = 0;
+  params->normalized_manager_buf = NULL;
+  params->policy = NULL;
   params->device = "default";
   params->sshpublickey = 0;
   params->hide = 0;
   params->verbose = 0;
   params->ssh_algorithm = ED25519;
-  params->ephemeral_permission = "";
   params->root_domain = "root.atsign.org";
   params->local_sshd_port = 22;
+  params->storage_path = NULL;
 }
 
 int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   char *ssh_algorithm_input = "";
   char *manager = NULL;
   char *permitopen = NULL;
+  char *ephemeral_permissions = NULL;
+  // OPT_INTEGER writes a full int through the pointer, so it must not point at
+  // the uint16_t params->local_sshd_port directly
+  int local_sshd_port = params->local_sshd_port;
+
+// pragma GCC works for both gcc and clang
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   ArgparseOption options[] = {
       OPT_HELP(),
       OPT_STRING('k', "key-file", &params->key_file, "Path to the key file"),
       OPT_STRING('a', "atsign", &params->atsign, "Atsign to use (mandatory)"),
-      OPT_STRING('m', "manager", &manager, "Manager to use (mandatory)"),
+      OPT_STRING('m', "manager", &manager,
+                 "atSign or list of atSigns (comma separated) that this device will accept requests from. At least one "
+                 "of --manager and --policy-manager must be supplied."),
+      OPT_STRING('p', "policy-manager", &params->policy,
+                 "The atSign which this device will use to decide whether or not to accept requests from some client "
+                 "atSign. At least one of --manager and --policy-manager must be supplied."),
       OPT_STRING('d', "device", &params->device, "Device to use"),
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
       OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
@@ -34,13 +57,20 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "Comma separated-list of host:port to which the daemon will permit a connection from an authorized "
                  "client. (defaults to \"localhost:22,localhost:3389\")"),
       OPT_STRING(0, "ssh-algorithm", &ssh_algorithm_input, "SSH algorithm to use"),
-      OPT_STRING(0, "ephemeral-permission", &params->ephemeral_permission, "Ephemeral permission to use"),
-      OPT_STRING(0, "root-domain", &params->root_domain, "Root domain to use"),
-      OPT_INTEGER(0, "local-sshd-port", &params->local_sshd_port, "Local sshd port to use"),
+      OPT_STRING(0, "ephemeral-permission", &ephemeral_permissions, "(Kept for compatibility)"),
+      OPT_STRING(0, "root-domain", &params->root_domain,
+                 "Root domain to use. If a host but no port is specified (e.g. 'root.atsign.org'), the default port 64 "
+                 "will be appended (defaults to \"root.atsign.org:64\"). A 'proxy:' prefix (e.g. "
+                 "\"proxy:proxy0001.atsign.org:443\") skips the atDirectory and connects to every atServer via that "
+                 "reverse proxy instead"),
+      OPT_INTEGER(0, "local-sshd-port", &local_sshd_port, "Local sshd port to use"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
+
+      // Doesn't do anything more, added in case old config would cause a parsing issue
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
       OPT_END(),
   };
+#pragma GCC diagnostic pop
 
   Argparse argparse;
   argparse_init(&argparse, options, NULL, 0);
@@ -50,29 +80,52 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
 
+  if (local_sshd_port < 1 || local_sshd_port > 65535) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): local-sshd-port must be 1-65535\n");
+    return 1;
+  }
+  params->local_sshd_port = (uint16_t)local_sshd_port;
+
   // Mandatory options
   if (params->atsign == NULL) {
     argparse_usage(&argparse);
     printf("Invalid Argument(s): Option atsign is mandatory\n");
     return 1;
-  } else if (manager == NULL) {
+  } else if (manager == NULL && params->policy == NULL) {
     argparse_usage(&argparse);
-    printf("Invalid Argument(s) Option manager is mandatory\n");
+    printf("Invalid Argument(s) One of --manager or --policy-manager must be provided");
     return 1;
   }
 
   if (permitopen == NULL) {
-    params->permitopen_str = malloc(sizeof(char) * (strlen(default_permitopen) + 1)); // FIXME: leaks
+    // With a policy manager and no explicit --permit-open, the policy
+    // service's permitOpen list is the effective ACL, so the daemon's own
+    // list defaults to allow-all rather than localhost only
+    const char *effective_default = params->policy != NULL ? "*:*" : default_permitopen;
+    params->permitopen_str = malloc(sizeof(char) * (strlen(effective_default) + 1));
     if (params->permitopen_str == NULL) {
       printf("Failed to allocate memory for default permitopen string\n");
       return 1;
     }
-    strcpy(params->permitopen_str, default_permitopen);
+    strcpy(params->permitopen_str, effective_default);
     permitopen = params->permitopen_str;
   }
+  if ((parse_permitopen(permitopen, &params->permitopen_hosts, &params->permitopen_ports, &params->permitopen_len,
+                        false) != 0)) {
+    printf("Failed to parse permit-open string\n");
+    free(params->permitopen_str);
+    return 1;
+  }
 
-  int manager_end = strlen(manager);
-  int permitopen_end = strlen(permitopen);
+  printf("permitting open:\n");
+  for (size_t i = 0; i < params->permitopen_len; i++) {
+    if (params->permitopen_ports[i] == 0) {
+      printf("%s:*\n", params->permitopen_hosts[i]);
+    } else {
+      printf("%s:%d\n", params->permitopen_hosts[i], params->permitopen_ports[i]);
+    }
+  }
 
   if (strlen(ssh_algorithm_input) != 0) {
     // Parse ssh_algorithm_input to its enum value
@@ -96,6 +149,11 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     return 1;
   }
 
+  int manager_end = 0;
+  if (manager != NULL) {
+    manager_end = strlen(manager);
+  }
+
   // Validation and type inference for manager list
   int sep_count = 0;
   // first counter the number of seperators
@@ -105,71 +163,113 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     }
   }
 
-  // malloc pointers to each string, but don't malloc any more memory for individual char storage
-  params->manager_list = malloc((sep_count + 1) * sizeof(char *)); // FIXME: leak
-  if (params->manager_list == NULL) {
-    printf("Failed to allocate memory for manager list\n");
-    free(params->permitopen_str);
-    return 1;
-  }
-  params->manager_list[0] = manager;
-  int pos = 1; // Starts at 1 since we already added the first item to the list
-  for (int i = 0; i < manager_end; i++) {
-    if (manager[i] == ',') {
-      // Set this comma to a null terminator
-      manager[i] = '\0';
-      if (manager[i + 1] == '\0') {
-        // Trailing comma, so we over counted by one
-        sep_count--;
-        // The allocated memory has a double trailing null seperator, but that's fine
-        break;
+  int pos; // position counter
+  if (manager != NULL) {
+    // malloc pointers to each string, but don't malloc any more memory for individual char storage
+    params->manager_list = malloc((sep_count + 1) * sizeof(char *)); // FIXME: leak
+    if (params->manager_list == NULL) {
+      printf("Failed to allocate memory for manager list\n");
+      free(params->permitopen_str);
+      return 1;
+    }
+    params->manager_list[0] = manager;
+    pos = 1; // Starts at 1 since we already added the first item to the list
+    for (int i = 0; i < manager_end; i++) {
+      if (manager[i] == ',') {
+        // Set this comma to a null terminator
+        manager[i] = '\0';
+        if (manager[i + 1] == '\0') {
+          break;
+        }
+        if (manager[i + 1] != '@') {
+          printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", manager);
+          free(params->manager_list);
+          free(params->permitopen_str);
+          return 1;
+        }
+        // Keep track of the start of the next item
+        params->manager_list[pos++] = manager + i + 1;
       }
-      if (manager[i + 1] != '@') {
-        printf("Invalid Argument(s): Expected a list of atSigns: \"%s\"\n", manager);
+    }
+    params->manager_list_len = sep_count + 1;
+
+    char *norm_buf = malloc(params->manager_list_len * SSHNPD_ATSIGN_BUFFER_LEN);
+    if (norm_buf == NULL) {
+      printf("Failed to allocate memory for normalized manager list\n");
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    char normalized_device_atsign[SSHNPD_ATSIGN_BUFFER_LEN];
+    bool has_normalized_device_atsign =
+        (sshnpd_normalize_atsign(params->atsign, normalized_device_atsign, sizeof(normalized_device_atsign)) == 0);
+
+    size_t filtered_count = 0;
+    for (size_t i = 0; i < params->manager_list_len; i++) {
+      char *slot = norm_buf + filtered_count * SSHNPD_ATSIGN_BUFFER_LEN;
+      if (sshnpd_normalize_atsign(params->manager_list[i], slot, SSHNPD_ATSIGN_BUFFER_LEN) != 0) {
+        printf("Invalid manager atSign: \"%s\"\n", params->manager_list[i]);
+        free(norm_buf);
         free(params->manager_list);
         free(params->permitopen_str);
         return 1;
       }
-      // Keep track of the start of the next item
-      params->manager_list[pos++] = manager + i + 1;
+      if (has_normalized_device_atsign && strcmp(slot, normalized_device_atsign) == 0) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                     "Device atSign \"%s\" included in --manager list; filtering out\n", slot);
+        continue;
+      }
+      params->manager_list[filtered_count++] = slot;
     }
+    if (filtered_count == 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                   "Manager list is empty after filtering out device atSign\n");
+      free(norm_buf);
+      free(params->manager_list);
+      params->manager_list = NULL;
+      params->manager_list_len = 0;
+      free(params->permitopen_str);
+      params->permitopen_str = NULL;
+      return 1;
+    }
+    params->manager_list_len = filtered_count;
+    params->normalized_manager_buf = norm_buf;
+  } else {
+    params->manager_list_len = 0;
   }
-  params->manager_list_len = sep_count + 1;
+
+  // Normalize the policy atSign the same way as managers. policy.c compares it
+  // case- and dot-sensitively against the canonical `from` the atServer
+  // delivers, so a non-canonical operator value (e.g. "@Policy", "@pol.icy")
+  // would make every policy response fail to match and silently deny all
+  // non-manager clients. That fails safe, but normalize it for parity so the
+  // configured policy service actually works.
+  if (params->policy != NULL) {
+    char *normalized_policy = malloc(SSHNPD_ATSIGN_BUFFER_LEN);
+    if (normalized_policy == NULL) {
+      printf("Failed to allocate memory for normalized policy atSign\n");
+      free(params->normalized_manager_buf);
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    if (sshnpd_normalize_atsign(params->policy, normalized_policy, SSHNPD_ATSIGN_BUFFER_LEN) != 0) {
+      printf("Invalid policy-manager atSign: \"%s\"\n", params->policy);
+      free(normalized_policy);
+      free(params->normalized_manager_buf);
+      free(params->manager_list);
+      free(params->permitopen_str);
+      return 1;
+    }
+    params->policy = normalized_policy;
+  }
 
   // Repeat for permit-open
-  sep_count = 0;
-  for (int i = 0; i < permitopen_end - 1; i++) {
-    if (permitopen[i] == ',') {
-      sep_count++;
+  // Convert devicename to lower case
+  for (char *c = params->device; c[0] != '\0'; c++) {
+    if (*c >= 'A' && *c <= 'Z') {
+      *c += ('a' - 'A');
     }
   }
-
-  // malloc pointers to each string, but don't malloc any more memory for individual char storage
-  params->permitopen = malloc((sep_count + 1) * sizeof(char *)); // FIXME  leak
-  if (params->permitopen == NULL) {
-    printf("Failed to allocate memory for permitopen\n");
-    free(params->manager_list);
-    free(params->permitopen_str);
-    return 1;
-  }
-
-  params->permitopen[0] = permitopen;
-  pos = 1; // Starts at 1 since we already added the first item to the list
-  for (int i = 0; i < permitopen_end; i++) {
-    if (permitopen[i] == ',') {
-      // Set this comma to a null terminator
-      permitopen[i] = '\0';
-      if (permitopen[i + 1] == '\0') {
-        // Trailing comma, so we over counted by one
-        sep_count--;
-        // The allocated memory has a double trailing null seperator, but that's fine
-        break;
-      }
-      // Keep track of the start of the next item
-      params->permitopen[pos++] = permitopen + i + 1;
-    }
-  }
-  params->permitopen_len = sep_count + 1;
-
   return 0;
 }

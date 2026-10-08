@@ -24,14 +24,40 @@ class DefaultArgs {
   static const bool authenticateDeviceToRvd = true;
   static const bool encryptRvdTraffic = true;
 
-  /// How long a client should wait for response after pinging a daemon
+  /// Default relay auth mode. ESCR (the strongest) is the default: the relay
+  /// auto-detects each side's mode, so a client can use its best without
+  /// knowing the daemon's capabilities in advance. Legacy remains available as
+  /// an explicit override (`--relay-auth-mode payload`).
+  static const RelayAuthMode relayAuthMode = RelayAuthMode.escr;
+
+  /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
-  static const Duration daemonPingTimeoutDuration =
-      Duration(seconds: daemonPingTimeoutSeconds);
+  static const Duration daemonPingTimeoutDuration = Duration(
+    seconds: daemonPingTimeoutSeconds,
+  );
+
+  /// How long a client should wait for response from a NoPorts relay
+  static const int relayResponseTimeoutSeconds = 20;
+  static const Duration relayResponseTimeoutDuration = Duration(
+    seconds: relayResponseTimeoutSeconds,
+  );
 
   /// How long srv should stay running if SocketConnector has no connections
   static const int srvTimeoutInSeconds = 30;
   static const Duration srvTimeout = Duration(seconds: srvTimeoutInSeconds);
+
+  /// How frequently to send heartbeats over the control channel.
+  ///
+  /// Heartbeats are an attempt to persuade over-zealous network
+  /// intermediaries that the control channel shouldn't be closed due to lack
+  /// of activity.
+  static const int controlChannelHeartbeatIntervalMins = 5;
+  static const Duration controlChannelHeartbeatInterval = Duration(
+    minutes: controlChannelHeartbeatIntervalMins,
+  );
+
+  /// namespace for event logging
+  static const String eventLoggingNamespace = 'events.logging.sshnp';
 }
 
 class DefaultSshnpArgs {
@@ -48,4 +74,7 @@ class DefaultSshnpdArgs {
   static const int localSshdPort = 22;
   static const String deviceGroupName = '__none__';
   static const String sshPublicKeyPermissions = "";
+  static const Duration policyHeartbeatFrequency = Duration(minutes: 5);
+  static const String permitOpen = 'localhost:22,localhost:3389';
+  static const int clientKeyCheckSecs = 10;
 }

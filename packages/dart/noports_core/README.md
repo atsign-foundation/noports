@@ -3,19 +3,20 @@
 [![GitHub License](https://img.shields.io/badge/license-BSD3-blue.svg)](./LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports)
 
-# No Ports Core
+# NoPorts Core
 
-No Ports Core is the underlying library used to enable sshnoports and the rest of the No Ports suite.
+NoPorts Core is the shared library used to enable the rest of the NoPorts suite.
+This contains the heart of the NoPorts implementation.
 
 ## Examples
 
 ### CLI Example
 
-See the [sshnoports](https://github.com/atsign-foundation/noports/tree/trunk/packages/dart/sshnoports) project.
+See the [sshnoports](../sshnoports/README.md) project.
 
 ### Flutter Example
 
-See the [sshnp_flutter](https://github.com/atsign-foundation/noports/tree/trunk/packages/dart/sshnp_flutter) project.
+See the [npt_flutter](../npt_flutter/README.md) project.
 
 ## Maintainers
 

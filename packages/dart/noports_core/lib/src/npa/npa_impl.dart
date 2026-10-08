@@ -3,16 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_client/at_client_mixins.dart';
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 
-@protected
-class NPAImpl implements NPA {
+final AtSignLogger _logger = AtSignLogger('NPAImpl');
+
+class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements NPA {
   @override
-  final AtSignLogger logger = AtSignLogger(' sshnpa ');
+  final AtSignLogger logger = _logger;
 
   @override
   late AtClient atClient;
@@ -21,38 +23,47 @@ class NPAImpl implements NPA {
   final String homeDirectory;
 
   @override
-  String get authorizerAtsign => atClient.getCurrentAtSign()!;
+  Atsign get policyAtsign => atClient.getCurrentAtSign()!.toAtsign();
 
   @override
-  Set<String> daemonAtsigns;
+  final Atsign? eventLoggingAtsign;
+
+  AtEventConfig? elc;
+
+  final Set<String> _sharedElcWith = {};
 
   @override
-  NPARequestHandler handler;
-
-  static const JsonEncoder jsonPrettyPrinter = JsonEncoder.withIndent('    ');
+  final NPARequestHandler handler;
 
   NPAImpl({
     // final fields
     required this.atClient,
     required this.homeDirectory,
-    required this.daemonAtsigns,
     required this.handler,
+    required this.eventLoggingAtsign,
   }) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
 
-  static Future<NPA> fromCommandLineArgs(List<String> args,
-      {required NPARequestHandler handler,
-      AtClient? atClient,
-      FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
-      void Function(Object, StackTrace)? usageCallback}) async {
+  static Future<NPA> fromCommandLineArgs(
+    List<String> args, {
+    required NPARequestHandler handler,
+    AtClient? atClient,
+    FutureOr<AtClient> Function(NPAParams)? atClientGenerator,
+    void Function(Object, StackTrace)? usageCallback,
+  }) async {
     try {
-      var p = await NPAParams.fromArgs(args);
+      final NPAParams p;
+      try {
+        p = await NPAParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('Unable to find .atKeys file: ${p.atKeysFilePath}');
       }
 
       AtSignLogger.root_level = 'SHOUT';
@@ -69,8 +80,8 @@ class NPAImpl implements NPA {
       var sshnpa = NPAImpl(
         atClient: atClient,
         homeDirectory: p.homeDirectory,
-        daemonAtsigns: p.daemonAtsigns,
         handler: handler,
+        eventLoggingAtsign: p.eventLoggingAtsign?.toAtsign(),
       );
 
       if (p.verbose) {
@@ -78,7 +89,7 @@ class NPAImpl implements NPA {
       }
 
       return sshnpa;
-    } catch (e, s) {
+    } on ArgumentError catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
     }
@@ -86,47 +97,148 @@ class NPAImpl implements NPA {
 
   @override
   Future<void> run() async {
-    AtRpc rpc = AtRpc(
-        atClient: atClient,
-        baseNameSpace: DefaultArgs.namespace,
-        domainNameSpace: 'auth_checks',
-        callbacks: this,
-        allowList: daemonAtsigns);
+    if (eventLoggingAtsign != null) {
+      elc = await getEventLoggingConfig(
+        atSign: eventLoggingAtsign!,
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      logger.shout(
+        'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
+      );
+    }
 
-    rpc.start();
+    _startPolicyInfoRpcServer();
 
-    logger.info('Listening for requests at '
-        '${rpc.domainNameSpace}.${rpc.rpcsNameSpace}.${rpc.baseNameSpace}');
+    subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
+      (AtNotification n) async {
+        if (n.value == null) return;
+
+        if (elc != null && !_sharedElcWith.contains(n.from)) {
+          try {
+            logger.info('Sharing event logging config with ${n.from}');
+            await shareEventLoggingConfigWithAtsigns(
+              config: elc!,
+              atSigns: [n.from.toAtsign()],
+              namespace: DefaultArgs.eventLoggingNamespace,
+            );
+            _sharedElcWith.add(n.from);
+          } catch (e) {
+            logger.warning(
+              'Failed to share event logging config with ${n.from}: $e',
+            );
+          }
+        }
+      },
+    );
   }
+
+  late final AtRpc _policyInfoRpcServer;
+
+  void _startPolicyInfoRpcServer() {
+    _policyInfoRpcServer = AtRpc(
+      atClient: atClient,
+      baseNameSpace: DefaultArgs.namespace,
+      domainNameSpace: 'auth_checks',
+      callbacks: PolicyInfoRpcRequestHandler(
+        policyAtsign: policyAtsign,
+        namespace: DefaultArgs.namespace,
+        handler: handler,
+        atClient: atClient,
+      ),
+      allowList: {},
+      allowAll: true,
+      isClient: false,
+      isServer: true,
+      enableRequestMutex: true,
+    );
+
+    _policyInfoRpcServer.start();
+
+    logger.info(
+      'Listening for requests at'
+      ' ${_policyInfoRpcServer.domainNameSpace}'
+      '.${_policyInfoRpcServer.rpcsNameSpace}'
+      '.${_policyInfoRpcServer.baseNameSpace}',
+    );
+  }
+}
+
+class PolicyInfoRpcRequestHandler
+    with AtClientBindings
+    implements AtRpcCallbacks {
+  @override
+  final AtClient atClient;
+  @override
+  final AtSignLogger logger = AtSignLogger('PolicyInfoRpcRequestHandler');
+
+  final Atsign policyAtsign;
+  final String namespace;
+  final NPARequestHandler handler;
+
+  PolicyInfoRpcRequestHandler({
+    required this.policyAtsign,
+    required this.namespace,
+    required this.handler,
+    required this.atClient,
+  });
 
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
-    logger.info('Received request from $fromAtSign: '
-        '${jsonPrettyPrinter.convert(request.toJson())}');
+    logger.info(
+      'Received request from $fromAtSign: '
+      '${jsonPrettyPrinter.convert(request.toJson())}',
+    );
 
-    NPAAuthCheckRequest authCheckRequest =
-        NPAAuthCheckRequest.fromJson(request.payload);
+    NPAAuthCheckRequest authCheckRequest = NPAAuthCheckRequest.fromJson(
+      request.payload,
+    );
+    AtRpcResp rpcResponse;
     try {
       var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      return AtRpcResp(
-          reqId: request.reqId,
-          respType: AtRpcRespType.success,
-          payload: authCheckResponse.toJson());
+      rpcResponse = AtRpcResp(
+        reqId: request.reqId,
+        respType: AtRpcRespType.success,
+        payload: authCheckResponse.toJson(),
+      );
     } catch (e, st) {
       logger.shout('Exception: $e : StackTrace : \n$st');
-      return AtRpcResp(
-          reqId: request.reqId,
-          respType: AtRpcRespType.success,
-          payload:
-              NPAAuthCheckResponse(authorized: false, message: 'Exception: $e')
-                  .toJson());
+      rpcResponse = AtRpcResp(
+        reqId: request.reqId,
+        respType: AtRpcRespType.success,
+        payload: NPAAuthCheckResponse(
+          authorized: false,
+          message: 'Exception: $e',
+          permitOpen: [],
+        ).toJson(),
+      );
     }
+    // We will send a 'log' notification to ourselves
+    var logKey = AtKey()
+      ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
+      ..sharedBy = policyAtsign
+      ..sharedWith = policyAtsign
+      ..namespace = namespace
+      ..metadata = (Metadata()
+        ..isPublic = false
+        ..isEncrypted = true
+        ..namespaceAware = true);
+    await notify(
+      logKey,
+      jsonEncode({
+        'daemon': fromAtSign,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'payload': {'request': request, 'response': rpcResponse},
+      }),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+      ttln: Duration(hours: 1),
+    );
+    return rpcResponse;
   }
 
   /// We're not sending any RPCs so we don't implement `handleResponse`
   @override
   Future<void> handleResponse(AtRpcResp response) {
-    // TODO: implement handleResponse
     throw UnimplementedError();
   }
 }

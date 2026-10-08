@@ -16,8 +16,9 @@ abstract interface class SshnpRemoteProcess {
 }
 
 abstract interface class Sshnp {
-  static final StreamingLoggingHandler _slh =
-      StreamingLoggingHandler(AtSignLogger.defaultLoggingHandler);
+  static final StreamingLoggingHandler _slh = StreamingLoggingHandler(
+    AtSignLogger.defaultLoggingHandler,
+  );
 
   /// Think of this as the "default" client - calls openssh
   factory Sshnp.openssh({
@@ -26,7 +27,10 @@ abstract interface class Sshnp {
   }) {
     AtSignLogger.defaultLoggingHandler = _slh;
     return SshnpOpensshLocalImpl(
-        atClient: atClient, params: params, logStream: _slh.stream);
+      atClient: atClient,
+      params: params,
+      logStream: _slh.stream,
+    );
   }
 
   /// Uses a dartssh2 ssh client - requires that you pass in the identity keypair
@@ -37,10 +41,11 @@ abstract interface class Sshnp {
   }) {
     AtSignLogger.defaultLoggingHandler = _slh;
     var sshnp = SshnpDartPureImpl(
-        atClient: atClient,
-        params: params,
-        identityKeyPair: identityKeyPair,
-        logStream: _slh.stream);
+      atClient: atClient,
+      params: params,
+      identityKeyPair: identityKeyPair,
+      logStream: _slh.stream,
+    );
     if (identityKeyPair != null) {
       sshnp.keyUtil.addKeyPair(keyPair: identityKeyPair);
     }
@@ -70,12 +75,16 @@ abstract interface class Sshnp {
   /// and starts a shell.
   Future<SshnpRemoteProcess> runShell();
 
+  static const Duration defaultListDevicesWaitTime = Duration(seconds: 10);
+
   /// Send a ping out to all sshnpd and listen for heartbeats
   /// Returns two Iterable<String> and a Map<String, dynamic>:
   /// - Iterable<String> of atSigns of sshnpd that responded
   /// - Iterable<String> of atSigns of sshnpd that did not respond
   /// - Map<String, dynamic> where the keys are all atSigns included in the maps, and the values being their device info
-  Future<SshnpDeviceList> listDevices();
+  Future<SshnpDeviceList> listDevices({
+    Duration waitDuration = defaultListDevicesWaitTime,
+  });
 
   /// Yields a string every time something interesting happens with regards to
   /// progress towards establishing the ssh connection.

@@ -1,0 +1,466 @@
+// ignore_for_file: deprecated_member_use
+import 'dart:io';
+
+import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:at_lookup/at_lookup.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/onboarding/model/multi_activation_file_content.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
+import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
+import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
+
+/// state of the file based activation flow.
+enum MultiActivationFileUploadState { idle, loading, success, error }
+
+/// keeps track of the state of the file based activation flow including the content of the file and the current upload state.
+class MultiActivationState {
+  final MultiActivationFileUploadState uploadState;
+  final MultiActivationFileContent fileContent;
+
+  /// True while [MultiActivationCubit.activateAll] is working through the
+  /// entries. The UI must not offer sign in / retry while this is set.
+  final bool isActivating;
+
+  MultiActivationState({
+    required this.uploadState,
+    required this.fileContent,
+    this.isActivating = false,
+  });
+
+  MultiActivationState copyWith({
+    MultiActivationFileUploadState? uploadState,
+    MultiActivationFileContent? fileContent,
+    bool? isActivating,
+  }) {
+    return MultiActivationState(
+      uploadState: uploadState ?? this.uploadState,
+      fileContent: fileContent ?? this.fileContent,
+      isActivating: isActivating ?? this.isActivating,
+    );
+  }
+}
+
+/// A cubit which tracks the state of the file based activation flow.
+class MultiActivationCubit extends Cubit<MultiActivationState> {
+  MultiActivationCubit()
+    : super(
+        MultiActivationState(
+          uploadState: MultiActivationFileUploadState.idle,
+          fileContent: MultiActivationFileContent(entries: [], fileName: ''),
+        ),
+      );
+
+  /// Bulk activation only ever onboards atsigns we have just confirmed are up
+  /// and sitting in teapot, so there is no newly-registered atsign to wait for
+  /// provisioning. Without this, activation polls for provisioning for five
+  /// minutes per atsign, and a file full of dud atsigns stalls the dialog for
+  /// 5 minutes each.
+  static const Duration onboardTimeout = Duration(seconds: 90);
+
+  /// Where the .atKeys backups go. Remembered from the first [activateAll] run
+  /// so a retry doesn't re-prompt for the folder.
+  String? _backupDirectory;
+
+  /// Read the activation file and update the state with the content of the file and the upload state.
+  Future<void> processFile(String filePath, String fileName) async {
+    try {
+      File f = File(filePath);
+
+      var data = loadYaml(await f.readAsString());
+      emit(
+        state.copyWith(
+          fileContent: MultiActivationFileContent.fromYaml(data, fileName),
+          uploadState: MultiActivationFileUploadState.success,
+        ),
+      );
+
+      App.log('uploaded activation file content successfully'.loggable);
+    } catch (e) {
+      emit(state.copyWith(uploadState: MultiActivationFileUploadState.error));
+      App.log('Error processing activation file: $e'.loggable);
+    }
+    return;
+  }
+
+  /// Get the activation file path from the file picker.
+  Future<void> getFilePickerPath() async {
+    emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
+
+    FilePickerResult? result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['yaml'],
+    );
+
+    if (result == null) {
+      emit(state.copyWith(uploadState: MultiActivationFileUploadState.idle));
+      return;
+    }
+
+    await processFile(result.files.single.path!, result.files.single.name);
+  }
+
+  /// Get the activation file path from the drag and drop.
+  Future<void> getDragAndDropPath(DropDoneDetails details) async {
+    emit(state.copyWith(uploadState: MultiActivationFileUploadState.loading));
+
+    await processFile(details.files.single.path, details.files.single.name);
+  }
+
+  /// Set the new state of the file upload flow.
+  void setActivationFileUploadState(MultiActivationFileUploadState newState) {
+    emit(state.copyWith(uploadState: newState));
+  }
+
+  /// Reset the file upload flow to the initial state (idle with empty file content).
+  void reset() {
+    _backupDirectory = null;
+    emit(
+      MultiActivationState(
+        uploadState: MultiActivationFileUploadState.idle,
+        fileContent: MultiActivationFileContent(entries: [], fileName: ''),
+      ),
+    );
+  }
+
+  /// Get the atsign that is currently being activated.
+  Atsign? getActivatingAtsign() {
+    try {
+      final ActivationKeyPair activationKeyPair = state.fileContent.entries
+          .firstWhere(
+            (entry) =>
+                entry.activationKeyStatus == ActivationKeyStatus.activating,
+          );
+      return activationKeyPair.atsign;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Put every previously failed Atsign back to waiting and run [activateAll]
+  /// again. The already activated ones are left alone.
+  Future<void> retryFailed() async {
+    if (state.isActivating) return;
+
+    emit(
+      state.copyWith(
+        fileContent: state.fileContent.copyWith(
+          entries: resetFailedEntries(state.fileContent.entries),
+        ),
+      ),
+    );
+
+    await activateAll();
+  }
+
+  /// Activate all Atsigns in the activation file.
+  Future<void> activateAll() async {
+    if (state.isActivating) return;
+
+    //0. Prompt to atKeys file location to save files.
+    final context = App.navState.currentContext!;
+    final strings = AppLocalizations.of(context)!;
+
+    // Only ask once per activation file - a retry reuses the same folder.
+    final String? defaultDir = await _defaultAtKeysDir();
+    String? selectedDirectory =
+        _backupDirectory ??
+        await FilePicker.getDirectoryPath(
+          dialogTitle: strings.activationAtsignFileStorageLocation,
+          initialDirectory: defaultDir,
+        );
+
+    if (selectedDirectory == null) {
+      Navigator.of(context).pop();
+      showDialog(
+        context: context,
+        builder: (context) => const ActivationDialogInitial(),
+      );
+      // User cancelled the picker
+      return;
+    }
+    _backupDirectory = selectedDirectory;
+
+    // 1. create a mutable copy of the entries to update the status of each entry as we go through the activation process
+    // TODO: re-evalaute if a copy is necessary here or if we can just update the entries directly since we are emitting a new state with the updated entries each time we update the status of an atsign
+    var currentEntries = List<ActivationKeyPair>.from(
+      state.fileContent.entries,
+    );
+
+    final onboardingUtil = await NoPortsOnboardingUtil.create(
+      App.navState.currentContext!,
+    );
+
+    emit(state.copyWith(isActivating: true));
+
+    void publish() {
+      emit(
+        state.copyWith(
+          fileContent: state.fileContent.copyWith(
+            entries: List.from(currentEntries),
+          ),
+        ),
+      );
+    }
+
+    try {
+      for (int i = 0; i < currentEntries.length; i++) {
+        var entry = currentEntries[i];
+
+        // A retry only re-runs the entries that are still waiting.
+        if (entry.activationKeyStatus != ActivationKeyStatus.waiting) continue;
+
+        //1. Ask the atServer where this atsign stands. The check reports its
+        // own failures as states, but guard anyway - one bad atsign must not
+        // abort the whole file.
+        AtSignServerState? status;
+        try {
+          status = (await onboardingUtil.checkAtServer(entry.atsign)).state;
+        } catch (e) {
+          App.log('Error checking status of ${entry.atsign}: $e'.loggable);
+          status = null;
+        }
+
+        if (status == AtSignServerState.activated) {
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.alreadyActivated,
+          );
+          publish();
+          App.log('Atsign ${entry.atsign} is already activated.'.loggable);
+          continue;
+        }
+
+        // Nothing to onboard against: the atsign isn't in the atDirectory, or
+        // its atServer is down. Fail it now instead of letting activation poll
+        // for provisioning that is never coming.
+        if (status != AtSignServerState.notActivated) {
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.failed,
+            failureReason: _unreachableReason(status, strings),
+          );
+          publish();
+          App.log(
+            'Skipping ${entry.atsign}: atServer status is $status'.loggable,
+          );
+          continue;
+        }
+
+        //2. Update status to Activating
+        currentEntries[i] = entry.copyWith(
+          activationKeyStatus: ActivationKeyStatus.activating,
+        );
+        publish();
+        App.log('Activating atsign ${entry.atsign}...'.loggable);
+
+        try {
+          Atsign atsign = entry.atsign;
+          String cramSecret = entry.activationKey;
+
+          // The atServer says this atsign is in teapot, so any keys we still
+          // hold for it locally are from a previous life of the atsign (it was
+          // reset on the registrar). Activation refuses to overwrite them, so
+          // drop them first.
+          await NoPortsOnboardingUtil.discardStaleKeys(atsign);
+
+          await _activateIntoKeychain(atsign, cramSecret);
+
+          await backUpActivatedAtsigns(selectedDirectory, atsign);
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.activated,
+          );
+          App.log('Successfully activated ${entry.atsign}'.loggable);
+        } catch (e) {
+          App.log('Exception activating ${entry.atsign}: $e'.loggable);
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.failed,
+            failureReason: describeOnboardingError(e, strings),
+          );
+        }
+
+        // Emit final state for this iteration
+        publish();
+      }
+    } finally {
+      emit(state.copyWith(isActivating: false));
+    }
+
+    if (currentEntries.every(
+      (entry) => entry.activationKeyStatus == ActivationKeyStatus.activated,
+    )) {
+      App.log('All Atsigns activated successfully!'.loggable);
+    } else if (currentEntries.any(
+      (entry) =>
+          entry.activationKeyStatus == ActivationKeyStatus.alreadyActivated,
+    )) {
+      App.log(
+        'Some Atsigns were already activated. No activation was attempted for those Atsigns.'
+            .loggable,
+      );
+    } else if (currentEntries.any(
+      (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed,
+    )) {
+      App.log(
+        'Some Atsigns failed to activate. Please check the status for each Atsign.'
+            .loggable,
+      );
+    }
+  }
+
+  /// Activates [atsign] with [cramSecret], leaving its keys in the keychain
+  /// and nothing else behind: bulk activation never keeps a client for these
+  /// atsigns, so the one the activation opens is stopped at once and the
+  /// storage it opened on is deleted.
+  Future<void> _activateIntoKeychain(Atsign atsign, String cramSecret) async {
+    final scratch = await Directory.systemTemp.createTemp('npt-activate-');
+    try {
+      final preference = await AtClientMethods.loadAtClientPreference(
+        'root.atsign.org',
+      )
+        ..hiveStoragePath = scratch.path
+        ..commitLogPath = scratch.path;
+      final client = await atsign.activate(
+        cramSecret: cramSecret,
+        keys: KeychainAtKeysIo(),
+        preference: preference,
+        provisioningBudget: onboardTimeout,
+      );
+      await client.stop();
+    } finally {
+      if (await scratch.exists()) await scratch.delete(recursive: true);
+    }
+  }
+
+  /// Says why an atsign that cannot be activated now is out of reach, from
+  /// the [state] the atServer check reported; null when the check itself
+  /// failed.
+  String _unreachableReason(
+    AtSignServerState? state,
+    AppLocalizations strings,
+  ) => switch (state) {
+    AtSignServerState.notInDirectory => strings.errorAtsignNotExist,
+    // The atDirectory knows this atsign, so its atServer is down or still
+    // being provisioned.
+    AtSignServerState.atServerUnreachable => strings.errorAtsignUnavailable,
+    _ => strings.errorAtServerUnavailable,
+  };
+
+
+  /// Check if any Atsign has a failed activation status.
+  bool isAnyFailedStatus() {
+    return state.fileContent.entries.any(
+      (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed,
+    );
+  }
+
+  /// Check if any Atsign has an activated or already activated status.
+  bool isAnyActivatedStatus() {
+    return state.fileContent.entries.any(
+      (entry) =>
+          entry.activationKeyStatus == ActivationKeyStatus.activated ||
+          entry.activationKeyStatus == ActivationKeyStatus.alreadyActivated,
+    );
+  }
+
+  /// True once every entry has reached a terminal status.
+  ///
+  /// Sign in must stay disabled until this is true. Signing in mid-run starts
+  /// an APKAM enrolment (OTP by email) against an atsign whose onboarding is
+  /// still in flight, which ends with the app holding a second set of keys and
+  /// prompting to replace the ones bulk activation just wrote.
+  bool isActivationComplete() {
+    if (state.isActivating) return false;
+    return areEntriesSettled(state.fileContent.entries);
+  }
+
+  /// Whether no entry is still waiting or mid-flight.
+  static bool areEntriesSettled(List<ActivationKeyPair> entries) {
+    return !entries.any(
+      (entry) =>
+          entry.activationKeyStatus == ActivationKeyStatus.waiting ||
+          entry.activationKeyStatus == ActivationKeyStatus.activating,
+    );
+  }
+
+  /// The atsign to sign in with once activation finishes: the last one that
+  /// actually made it through, so a trailing failure doesn't hand the
+  /// onboarding flow an atsign that was never activated.
+  Atsign? getSignInAtsign() => signInAtsignFor(state.fileContent.entries);
+
+  /// The last entry in [entries] that reached an activated status, if any.
+  static Atsign? signInAtsignFor(List<ActivationKeyPair> entries) {
+    for (final entry in entries.reversed) {
+      if (entry.activationKeyStatus == ActivationKeyStatus.activated ||
+          entry.activationKeyStatus == ActivationKeyStatus.alreadyActivated) {
+        return entry.atsign;
+      }
+    }
+    return null;
+  }
+
+  /// Puts every failed entry back to waiting, leaving the rest untouched, so a
+  /// retry only re-runs what actually needs re-running.
+  static List<ActivationKeyPair> resetFailedEntries(
+    List<ActivationKeyPair> entries,
+  ) {
+    return entries
+        .map(
+          (entry) => entry.activationKeyStatus == ActivationKeyStatus.failed
+              ? entry.copyWith(
+                  activationKeyStatus: ActivationKeyStatus.waiting,
+                  clearFailureReason: true,
+                )
+              : entry,
+        )
+        .toList();
+  }
+
+  // Back Up the atKeys for the activated Atsign.
+  Future<void> backUpActivatedAtsigns(
+    String fileLocation,
+    Atsign atsign,
+  ) async {
+    // Activation wrote the keys through KeychainAtKeysIo, so the
+    // freshly-activated keys are already in the keychain at this point.
+    final atKeys = await KeychainStorage().getAtsign(atsign);
+    if (atKeys == null) return;
+
+    final filePath = path.join(fileLocation, '${atsign}_key.atKeys');
+    final file = File(filePath);
+    if (await file.exists()) await file.delete();
+    await FileAtKeysIo(filePath: (_) => filePath).write(atsign, atKeys);
+  }
+
+  /// Check if any Atsign is still waiting for activation.
+  bool isAnyWaitingStatus() {
+    return state.fileContent.entries.any(
+      (entry) => entry.activationKeyStatus == ActivationKeyStatus.waiting,
+    );
+  }
+
+  // Get the overall activation state to show in the UI based on the status of each individual atsign activation.
+  String overallActicationState() {
+    if (isAnyWaitingStatus()) {
+      return 'Activating';
+    } else if (isAnyActivatedStatus()) {
+      return 'Activation Completed';
+    } else {
+      return "Activation Failed";
+    }
+  }
+
+  static Future<String?> _defaultAtKeysDir() async {
+    final String? home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (home == null) return null;
+    final Directory dir = Directory(path.join(home, '.atsign', 'keys'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir.path;
+  }
+}

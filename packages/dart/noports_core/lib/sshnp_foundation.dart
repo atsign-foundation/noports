@@ -18,6 +18,7 @@ export 'src/sshnp/models/sshnp_device_list.dart';
 // Sshnp Utils
 export 'src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 export 'src/sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
+export 'src/common/relay_selector.dart';
 
 export 'src/sshnp/util/srvd_channel/srvd_channel.dart';
 export 'src/sshnp/util/srvd_channel/srvd_dart_channel.dart';
@@ -42,10 +43,8 @@ export 'src/common/at_ssh_key_util/local_ssh_key_util.dart';
 
 export 'src/common/mixins/async_completion.dart';
 export 'src/common/mixins/async_initialization.dart';
-export 'src/common/mixins/at_client_bindings.dart';
 
 export 'src/common/default_args.dart';
-export 'src/common/file_system_utils.dart';
 export 'src/common/types.dart';
 export 'src/common/validation_utils.dart';
 export 'src/common/noports_exception.dart';

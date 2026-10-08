@@ -14,10 +14,12 @@
       <string>-d</string>
       <string>[device_name]</string>
       <string>-su</string>
+      <string>[policy_option]</string>
+      <string>[policy_atsign]</string>
 	</array>
   <key>KeepAlive</key>
   <true/>
-	<key>RunAtLoad</key>
-	<true/>
+  <key>RunAtLoad</key>
+  <true/>
 </dict>
 </plist>

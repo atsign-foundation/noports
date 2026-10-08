@@ -98,8 +98,10 @@ class AppTheme {
                 borderRadius: BorderRadius.circular(18.0),
               ),
             ),
-            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
-            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
+            backgroundColor:
+                MaterialStateProperty.all<Color>(const Color(0xFF12DE26)),
+            foregroundColor:
+                MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
           ),
         ),
         dialogTheme: const DialogTheme(
@@ -130,7 +132,8 @@ class AppTheme {
     return ThemeData(
       visualDensity: VisualDensity.adaptivePlatformDensity,
       useMaterial3: true,
-      colorScheme: const ColorScheme.dark().copyWith(primary: kPrimaryColor, background: kBackGroundColorDark),
+      colorScheme: const ColorScheme.dark()
+          .copyWith(primary: kPrimaryColor, background: kBackGroundColorDark),
       checkboxTheme: CheckboxThemeData(
         fillColor: MaterialStateColor.resolveWith(
           (states) {
@@ -138,8 +141,8 @@ class AppTheme {
           },
         ),
       ),
-      floatingActionButtonTheme:
-          const FloatingActionButtonThemeData(foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          foregroundColor: Colors.white, backgroundColor: kPrimaryColor),
       textTheme: darkTextTheme,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
@@ -152,8 +155,10 @@ class AppTheme {
               borderRadius: BorderRadius.circular(Sizes.p3),
             ),
           ),
-          backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
-          foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF707070)),
+          backgroundColor:
+              MaterialStateProperty.all<Color>(const Color(0xFF2F2F2F)),
+          foregroundColor:
+              MaterialStateProperty.all<Color>(const Color(0xFF707070)),
         ),
       ),
       dialogTheme: const DialogTheme(
@@ -182,11 +187,14 @@ class AppTheme {
           fixedSize: const Size(48, 43),
         ),
       ),
-      appBarTheme: const AppBarTheme(backgroundColor: kPrimaryColor, systemOverlayStyle: SystemUiOverlayStyle.light),
+      appBarTheme: const AppBarTheme(
+          backgroundColor: kPrimaryColor,
+          systemOverlayStyle: SystemUiOverlayStyle.light),
     );
   }
 
   static MacosThemeData macosDark() {
-    return MacosThemeData(brightness: Brightness.dark, primaryColor: kPrimaryColor);
+    return MacosThemeData(
+        brightness: Brightness.dark, primaryColor: kPrimaryColor);
   }
 }

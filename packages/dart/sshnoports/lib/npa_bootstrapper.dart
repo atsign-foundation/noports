@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/at_commons.dart' show AtException;
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
-import 'package:sshnoports/src/print_version.dart';
-import 'package:sshnoports/src/service_factories.dart';
 
 Future<void> run(
-    NPARequestHandler handler, List<String> commandLineArgs) async {
+  NPARequestHandler handler,
+  List<String> commandLineArgs,
+) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   late final NPA sshnpa;
@@ -18,24 +20,31 @@ Future<void> run(
       commandLineArgs,
       handler: handler,
       atClientGenerator: (NPAParams p) => createAtClientCli(
-        atsign: p.authorizerAtsign,
+        atsign: p.policyAtsign,
         atKeysFilePath: p.atKeysFilePath,
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
         namespace: DefaultArgs.namespace,
         storagePath: standardAtClientStoragePath(
-            homeDirectory: p.homeDirectory,
-            atSign: p.authorizerAtsign,
+            baseDir: p.homeDirectory,
+            atSign: p.policyAtsign,
             progName: '.${DefaultArgs.namespace}',
             uniqueID: 'single'),
       ),
       usageCallback: (e, s) {
-        printVersion();
-        stdout.writeln(NPAParams.parser.usage);
+        stderr.write(formatCliHelp(
+            description: 'NoPorts policy service.',
+            optionsUsage: NPAParams.parser.usage));
         stderr.writeln('\n$e');
       },
     );
   } on ArgumentError catch (_) {
+    exit(1);
+  } on AtException catch (e) {
+    stderr.writeln('Error: ${e.message}');
+    exit(1);
+  } catch (e, s) {
+    stderr.writeln('Error: $e\n$s');
     exit(1);
   }
 

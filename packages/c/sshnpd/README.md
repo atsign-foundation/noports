@@ -2,33 +2,7 @@
 
 ## Status
 
-The C version of sshnpd is currently in alpha, we are working hard to deliver a
-lighter weight and more widely available version of sshnpd (NoPorts device
-daemon).
-
-## Caveats
-
-Because this is still in alpha, and it is dependent on the alpha
-[C atSDK](https://github.com/atsign-foundation/at_c), this version of sshnpd is
-expected to have both known and unknown bugs as it undergoes extensive testing
-and analysis.
-
-### Known bugs
-
-There are some known memory leaks in the current alpha (0.1.0) release. We are
-actively addressing the most critical ones first, and will provide valgrind
-suppression files for non-critical ones.
-
-In this case, "non-critical memory leaks" includes finite memory leaks which
-will not grow with continued use of the software. This can include:
-
-- Memory leaks which are cleaned upon closure of a forked child process
-- Memory which should be allocated for the entire life of the main process
-
-### Likely bugs
-
-Stability around system calls is not well tested, and may not work in all
-environments. We have done our best to use portable solutions where possible.
+The C version of sshnpd is production ready.
 
 ## How to build
 
@@ -51,7 +25,7 @@ With `gcc` (disables warnings found in mbedtls' tests):
 
 ```bash
 cd packages/c/sshnpd
-cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-calloc-transposed-args -Wno-error -pthread -lrt"
+cmake -B build -S . -DBUILD_SHARED_LIBS=off -DCMAKE_C_COMPILER=gcc -DCMAKE_C_FLAGS="-Wno-error -pthread -lrt"
 cmake --build build
 ```
 

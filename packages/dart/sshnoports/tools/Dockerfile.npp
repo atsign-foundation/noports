@@ -1,0 +1,39 @@
+# Dockerfile.npp
+# Build image for a containerized call of the npp binary
+FROM dart:3.13.4@sha256:33faf91bc941466a767ce845b4bbb5d578ecd180abe5ee243e9c8c039109d215 AS buildimage
+ENV PACKAGEDIR=packages/dart/sshnoports
+ENV BINARYDIR=/usr/local/at
+SHELL ["/bin/bash", "-c"]
+WORKDIR /app
+COPY . .
+RUN \
+  set -eux ; \
+  mkdir -p ${BINARYDIR} ; \
+  cd ${PACKAGEDIR}; \
+  dart pub get --enforce-lockfile; \
+  dart run build_runner build --delete-conflicting-outputs ; \
+  dart compile exe bin/npp.dart -o ${BINARYDIR}/npp
+
+# Second stage of build FROM debian-slim
+FROM debian:stable-20260918-slim@sha256:5bc3287b25407c965a30f38e32603dc253a3869e1b12a21ac09bfc27fd8b13ce
+ENV USER=atsign
+ENV HOMEDIR=/${USER}
+ENV BINARYDIR=/usr/local/at
+ENV USER_ID=1024
+ENV GROUP_ID=1024
+
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/npp /usr/local/at/
+WORKDIR ${HOMEDIR}
+
+RUN \
+  set -eux ; \
+  apt-get update ; \
+  apt-get install -y adduser ca-certificates sudo ; \
+  addgroup --gid ${GROUP_ID} ${USER} ; \
+  useradd --system --uid ${USER_ID} --gid ${GROUP_ID} --shell /bin/bash --home ${HOMEDIR} ${USER} ; \
+  mkdir -p ${HOMEDIR}/.atsign/keys ; \
+  chown -R ${USER}:${USER} ${HOMEDIR} ; \
+  usermod -aG sudo ${USER} ;
+
+USER ${USER}
+ENTRYPOINT [ "/usr/local/at/npp" ]

@@ -1,0 +1,21 @@
+# docker compose up --build
+#
+# The build context is set to the repo root (at_Arduino_NoPorts/) so that the
+# Dockerfile can access both lib/ and packages/NoPorts_CYD/.
+#
+# The port is bound to 127.0.0.1 only, so the flasher is reachable from this
+# machine but NOT the local network. WebSerial (used for in-browser flashing)
+# needs a secure context, which http://localhost:8080 satisfies.
+# To flash from another machine, change the bind below AND serve it over HTTPS
+# (add a reverse proxy with TLS). A plain-HTTP flasher on the LAN is unsafe; the
+# chrome://flags insecure-origin workaround weakens the browser and is not
+# recommended.
+
+services:
+  flasher:
+    build:
+      context: ../..
+      dockerfile: packages/NoPorts_CYD/Dockerfile
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped

@@ -1,6 +1,5 @@
 #ifndef SSHNPD_PARAMS_H
 #define SSHNPD_PARAMS_H
-#define SSHNPD_VERSION "0.1.0"
 
 #include <argparse/argparse.h>
 #include <getopt.h>
@@ -15,15 +14,19 @@ enum SupportedSshAlgorithm {
   RSA,
 };
 
-struct _sshnpd_params {
+typedef struct {
   char *atsign;
   char *device;
 
   size_t manager_list_len;
   char **manager_list;
+  char *normalized_manager_buf;
+
+  char *policy;
 
   size_t permitopen_len;
-  char **permitopen;
+  char **permitopen_hosts;
+  uint16_t *permitopen_ports; // 0 = '*'
   char *permitopen_str;
   bool should_free_permitopen_str;
 
@@ -39,8 +42,7 @@ struct _sshnpd_params {
 
   char *key_file;
   char *storage_path;
-};
-typedef struct _sshnpd_params sshnpd_params;
+} sshnpd_params;
 
 void apply_default_values_to_sshnpd_params(sshnpd_params *params);
 int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv);

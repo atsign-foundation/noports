@@ -7,8 +7,12 @@ include: package:lints/recommended.yaml
 # Uncomment to specify additional rules.
 linter:
   rules:
+    annotate_overrides: true
+    prefer_final_fields: true
+    implicit_call_tearoffs: true
     camel_case_types : true
     unnecessary_string_interpolations : true
     await_only_futures : true
     unawaited_futures: true
     depend_on_referenced_packages : false
+    avoid_function_literals_in_foreach_calls: true

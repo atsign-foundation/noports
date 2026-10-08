@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/types.dart';
@@ -85,19 +86,53 @@ abstract class Sshnpd {
   /// The version of whatever program is using this library.
   abstract final String version;
 
+  /// Sent by the policy atSign when using policy service
+  abstract AtEventConfig? elc;
+
+  /// Pre-process the received notification
+  abstract final Future<void> Function(AtNotification)? notifPreProcessor;
+
+  /// If true, srv processes will execute within the sshnpd process.
+  /// If false, they will be forked as separate processes.
+  /// If not explicitly set, then it will be set to true if `SRV_ONLINE=true`
+  /// is in the environment.
+  abstract final bool inline;
+
+  /// If true, signatures of requests will be verified against cached public
+  /// keys. If false, they will not. By default, this is set to true if a
+  /// policy service is being used, and false otherwise.
+  abstract final bool strict;
+
+  /// How often to check that the enrollment each session's client signed its
+  /// request with hasn't been withdrawn, ending the session once it has;
+  /// [Duration.zero] turns the check off.
+  abstract final Duration clientKeyCheckInterval;
+
+  /// Whether to refuse a session request that the client hasn't signed with
+  /// its enrollment key.
+  abstract final bool requireEnrollmentSignature;
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,
     FutureOr<AtClient> Function(SshnpdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    void Function()? helpCallback,
+    void Function()? versionCallback,
+    Future<void> Function()? doctorCallback,
     required String version,
+    Future<void> Function(AtNotification)? notifPreProcessor,
   }) async {
     return SshnpdImpl.fromCommandLineArgs(
       args,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      helpCallback: helpCallback,
+      versionCallback: versionCallback,
+      doctorCallback: doctorCallback,
       version: version,
+      notifPreProcessor: notifPreProcessor,
     );
   }
 
@@ -114,4 +149,12 @@ abstract class Sshnpd {
   /// - If an 'sshpublickey' notification is received, Checks if the SSH public key is valid, Appends the SSH public key to the authorized_keys file in the user's SSH directory if it is not already present
   /// - If an 'sshd' notification is received, it triggers the sshCallback function to handle the SSH callback request.
   Future<void> run();
+
+  /// Stops what [run] started: cancels its timers and notification
+  /// subscriptions, and removes any ephemeral keys still awaiting removal.
+  /// Sessions already running carry on, and the [atClient] stays open for
+  /// whoever owns it. With a policy manager, the auth-check RPC listener ends
+  /// only when the [atClient]'s notification service stops. Anything [run] is
+  /// still starting when this is called is stopped as it starts.
+  Future<void> stop();
 }

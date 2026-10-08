@@ -12,7 +12,8 @@ void main() {
         container = ProviderContainer();
         addTearDown(() => container.dispose());
 
-        container.listen(terminalSessionController.notifier, (_, __) {}, fireImmediately: true);
+        container.listen(terminalSessionController.notifier, (_, __) {},
+            fireImmediately: true);
         controller = container.read(terminalSessionController.notifier);
       });
       test(
@@ -49,8 +50,11 @@ void main() {
         container = ProviderContainer();
         addTearDown(() => container.dispose());
 
-        container.listen(terminalSessionFamilyController('test').notifier, (_, __) {}, fireImmediately: true);
-        controller = container.read(terminalSessionFamilyController('test').notifier);
+        container.listen(
+            terminalSessionFamilyController('test').notifier, (_, __) {},
+            fireImmediately: true);
+        controller =
+            container.read(terminalSessionFamilyController('test').notifier);
       });
 
       test(

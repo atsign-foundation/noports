@@ -6,6 +6,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns:
@@ -14,9 +16,14 @@ updates:
     directories:
       - "/packages/c/sshnpd/tools/"
       - "/packages/dart/sshnoports/tools/"
-      - "/tests/end2end_tests/image/"
+      - "/tests/e2e_all/dockerfiles/"
+      - "/tests/npe2e/tools/dockerfiles/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      exclude:
+      - "atsigncompany/*"
     groups:
       docker:
         patterns:
@@ -25,17 +32,24 @@ updates:
     directories:
       - "/packages/dart/sshnoports/"
       - "/packages/dart/sshnp_flutter/"
+      - "/apps/admin/admin_api/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+      exclude:
+      - "at_*"
     groups:
       pub:
         patterns:
           - "*"
-  - package-ecosystem: "pip"
-    directory: "/packages/python/sshnpd/"
+  - package-ecosystem: 'npm'
+    directory: "/apps/admin/webapp/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
-      pip:
+      npm:
         patterns:
           - "*"

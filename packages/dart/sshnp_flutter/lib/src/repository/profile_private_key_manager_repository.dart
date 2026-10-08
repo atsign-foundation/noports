@@ -7,17 +7,22 @@ import '../application/profile_private_key_manager.dart';
 
 /// A repository for managing [ProfilePrivateKeyManager]s network requests.
 class ProfilePrivateKeyManagerRepository {
-  static const _profilePrivateKeyManager = 'com.atsign.sshnoports.profile-private-key-manager';
+  static const _profilePrivateKeyManager =
+      'com.atsign.sshnoports.profile-private-key-manager';
 
   /// Writes a [ProfilePrivateKeyManager] to the device's secure storage.
-  static Future<void> writeProfilePrivateKeyManager(ProfilePrivateKeyManager manager) async {
+  static Future<void> writeProfilePrivateKeyManager(
+      ProfilePrivateKeyManager manager) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$_profilePrivateKeyManager-${manager.profileNickname}', jsonEncode(manager.toMap()));
+    await prefs.setString(
+        '$_profilePrivateKeyManager-${manager.profileNickname}',
+        jsonEncode(manager.toMap()));
     await readProfilePrivateKeyManager(manager.profileNickname);
   }
 
   /// Reads a [ProfilePrivateKeyManager] from the device's secure storage.
-  static Future<ProfilePrivateKeyManager> readProfilePrivateKeyManager(String identifier) async {
+  static Future<ProfilePrivateKeyManager> readProfilePrivateKeyManager(
+      String identifier) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('$_profilePrivateKeyManager-$identifier');
     if (data.isNull || data!.isEmpty) {

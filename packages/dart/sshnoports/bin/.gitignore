@@ -2,4 +2,7 @@
 *
 # Allow dart files
 !*.dart
+!*.yaml
 !.gitignore
+!demo
+!demo/*

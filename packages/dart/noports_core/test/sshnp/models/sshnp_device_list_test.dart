@@ -6,15 +6,9 @@ void main() {
     late SshnpDeviceList deviceList;
     setUp(() => deviceList = SshnpDeviceList());
     test('public API', () {
-      expect(
-        deviceList.info,
-        allOf(isA<Map<String, dynamic>>(), isEmpty),
-      );
+      expect(deviceList.info, allOf(isA<Map<String, dynamic>>(), isEmpty));
 
-      expect(
-        deviceList.activeDevices,
-        allOf(isA<Set<String>>(), isEmpty),
-      );
+      expect(deviceList.activeDevices, allOf(isA<Set<String>>(), isEmpty));
     }); // test public API
 
     test('setActive', () {
@@ -22,10 +16,7 @@ void main() {
 
       deviceList.info['dev1'] = 'asdf';
       deviceList.setActive('dev1');
-      expect(
-        deviceList.activeDevices,
-        allOf(hasLength(1), contains('dev1')),
-      );
+      expect(deviceList.activeDevices, allOf(hasLength(1), contains('dev1')));
 
       deviceList.setActive('dev2');
       expect(
@@ -39,10 +30,7 @@ void main() {
       deviceList.info['dev2'] = 'jkl;';
       deviceList.setActive('dev1');
 
-      expect(
-        deviceList.inactiveDevices,
-        allOf(hasLength(1), contains('dev2')),
-      );
+      expect(deviceList.inactiveDevices, allOf(hasLength(1), contains('dev2')));
     }); // test inactiveDevices
   }); // group SshnpDeviceList
 }

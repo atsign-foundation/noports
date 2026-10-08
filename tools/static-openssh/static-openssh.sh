@@ -3,7 +3,7 @@
 set -uex
 umask 0077
 
-ZLIB_VERSION=1.3.1
+ZLIB_VERSION=1.3.2
 OPENSSL_VERSION=3.2.1
 OPENSSH_VERSION=V_9_6_P1
 
@@ -24,7 +24,7 @@ mkdir -p "$root" "$build" "$dist"
 if [ ! -f "build/zlib-$ZLIB_VERSION/minigzip" ]; then
 echo "---- Building ZLIB -----"
 if [ ! -f "$dist/zlib-$ZLIB_VERSION.tar.gz" ]; then
-curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://zlib.net/zlib-$ZLIB_VERSION.tar.gz
+curl --output $dist/zlib-$ZLIB_VERSION.tar.gz --location https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 gzip -dc $dist/zlib-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/zlib-*
@@ -42,13 +42,16 @@ gzip -dc $dist/openssl-*.tar.gz |(cd "$build" && tar xf -)
 fi
 cd "$build"/openssl-*
 # Debian 12 / Ubuntu 20.x.x break the autoconf in ./config on armv7 devices
-  CPU=$(uname -m)
-  if [[ $CPU == "armv7l" ]]
-     then  
-     ./Configure linux-armv4 --prefix="$root"  no-shared no-tests
-     else
-     ./config --prefix="$root"  no-shared no-tests
-  fi
+# $ARCH passed in from Dockerfile
+# Don't use `uname -m` as we get the wrong answer on arm64 runners
+if [[ $ARCH == "arm" ]]
+  then
+    echo "Found arm architecture, configuring explicitly"
+    ./Configure linux-armv4 --prefix="$root"  no-shared no-tests
+  else
+    echo "Found ${ARCH} architecture, using default config script"
+    ./config --prefix="$root"  no-shared no-tests
+fi
 make
 make install
 cd "$top"

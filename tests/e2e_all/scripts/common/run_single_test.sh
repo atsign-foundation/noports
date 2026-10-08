@@ -7,6 +7,8 @@
 script_dir="$(dirname -- "$(readlink -f -- "$0")")"
 source "$script_dir/common_functions.include.sh"
 
+# "$script_dir/wipe_known_hosts.sh" # to avoid SSH issues
+
 clientVersion="$1"
 daemonVersion="$2"
 testToRun="$3"
@@ -28,9 +30,6 @@ logInfo "$what" | tee -a "$singleTestOutputLog"
 
 exitStatus=1
 maxAttempts=5
-if [[ $(uname -s) == "Darwin" ]]; then
-  maxAttempts=2
-fi
 attempts=0
 
 while ((exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts)); do

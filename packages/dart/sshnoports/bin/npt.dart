@@ -4,17 +4,22 @@ import 'dart:io';
 
 // other packages
 import 'package:args/args.dart';
-
 // atPlatform packages
-import 'package:at_utils/at_logger.dart';
-import 'package:at_cli_commons/at_cli_commons.dart' as cli;
+import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/atsign.dart';
+import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
-
 // local packages
 import 'package:sshnoports/src/print_version.dart';
+
+const String _description =
+    'NoPorts TCP client: opens an encrypted TCP tunnel to a service on a'
+    ' remote device which has no open ports.';
 
 void main(List<String> args) async {
   const int keepAliveDefaultTimeoutHours = 24;
@@ -51,8 +56,8 @@ void main(List<String> args) async {
 
   // Create the printUsage closure
   void printUsage({Object? error}) {
-    printVersion();
-    stderr.writeln(parser.usage);
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -62,6 +67,7 @@ void main(List<String> args) async {
 
   // After parsing, this gets set to whatever the command-line specifies
   bool verbose = true;
+  bool debug = false;
 
   await runZonedGuarded(() async {
     try {
@@ -80,8 +86,10 @@ void main(List<String> args) async {
       parser.addOption(
         'srvd',
         abbr: 'r',
-        mandatory: true,
-        help: 'The socket rendezvous\'s atSign',
+        mandatory: false,
+        help: 'The Relay atSign to use. Omit to auto-select '
+            'the fastest available relay, or provide a comma-separated list to '
+            'pick the best among them.',
       );
       parser.addOption(
         'device',
@@ -94,7 +102,8 @@ void main(List<String> args) async {
         aliases: ['lp'],
         abbr: 'l',
         help: 'client-side local port for the socket tunnel.'
-            ' If not supplied, we will ask the o/s for a spare port',
+            ' If not supplied, we will ask the o/s for a spare port.'
+            ' Alias: --lp',
         defaultsTo: '0',
       );
       parser.addOption(
@@ -102,14 +111,30 @@ void main(List<String> args) async {
         abbr: 'p',
         aliases: ['rp'],
         mandatory: true,
-        help: 'The remote port required',
+        help: 'The remote port required.'
+            ' Alias: --rp',
       );
       parser.addOption(
         'remote-host',
         abbr: 'h',
         aliases: ['rh'],
         defaultsTo: 'localhost',
-        help: 'The remote host required',
+        help: 'The remote host required'
+            ' Alias: --rh',
+      );
+      parser.addOption(
+        'local-host',
+        aliases: ['lh'],
+        defaultsTo: 'localhost',
+        help:
+            'Local IP address to bind to, or comma-separated list with fallbacks.'
+            ' When specified, npt will act as a gateway by binding to the'
+            ' first available IP instead of the default localhost.'
+            ' If multiple IPs are provided, only the first valid one is used.'
+            ' Example: --local-host 192.168.1.100,10.0.0.50'
+            ' To bind to all interfaces, use 0 or 0.0.0.0'
+            ' Example: --local-host 0 or --local-host 0.0.0.0'
+            ' Alias: --lh',
       );
       parser.addOption(
         'key-file',
@@ -117,13 +142,16 @@ void main(List<String> args) async {
         mandatory: false,
         aliases: const ['keyFile'],
         help:
-            'Path to this client\'s atSign\'s keyFile, if not in ~/.atsign/keys/',
+            'Path to this client\'s atSign\'s keyFile, if not in ~/.atsign/keys/ '
+            ' Alias: --keyFile',
       );
       parser.addOption(
-        'root-domain',
+        'root-server',
+        aliases: const ['root-domain'],
         mandatory: false,
         defaultsTo: 'root.atsign.org',
-        help: 'atDirectory domain',
+        help: 'atDirectory domain.'
+            ' Alias (for backwards compatibility): --root-domain',
       );
       parser.addOption(
         'daemon-ping-timeout',
@@ -131,7 +159,8 @@ void main(List<String> args) async {
         mandatory: false,
         defaultsTo: DefaultArgs.daemonPingTimeoutSeconds.toString(),
         help: 'Seconds the client should wait for response'
-            ' after pinging a daemon',
+            ' after pinging a daemon.'
+            ' Alias: --dpt',
       );
       parser.addFlag(
         'per-session-storage',
@@ -142,7 +171,8 @@ void main(List<String> args) async {
             ' Defaults to true, enabling you to run multiple local clients'
             ' concurrently. However: if you wish to run just one client at a'
             ' time, then you will get a performance boost if you negate this'
-            ' flag.',
+            ' flag.'
+            ' Alias: --pss',
       );
       parser.addFlag(
         'verbose',
@@ -150,6 +180,12 @@ void main(List<String> args) async {
         defaultsTo: false,
         negatable: false,
         help: 'More logging',
+      );
+      parser.addFlag(
+        'debug',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Log everything this process does, at FINEST',
       );
       parser.addFlag(
         quietFlag,
@@ -160,6 +196,24 @@ void main(List<String> args) async {
       );
       parser.addFlag('help',
           defaultsTo: false, negatable: false, help: 'Print usage');
+      parser.addFlag('version',
+          defaultsTo: false, negatable: false, help: 'Print version');
+
+      parser.addFlag(
+        'ipv4',
+        abbr: '4',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv4 addresses only',
+      );
+
+      parser.addFlag(
+        'ipv6',
+        abbr: '6',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Forces npt to bind to IPv6 addresses only',
+      );
 
       parser.addFlag(
         'exit-when-connected',
@@ -203,26 +257,106 @@ void main(List<String> args) async {
             ' it has started its session.',
       );
 
+      parser.addOption(
+        'heartbeat',
+        abbr: 'H',
+        mandatory: false,
+        defaultsTo: '${DefaultArgs.controlChannelHeartbeatIntervalMins}m',
+        help: 'How frequently to send heartbeats on the connection\'s'
+            ' control channel. Heartbeats are an attempt to persuade zealous'
+            ' network intermediaries that the control channel shouldn\'t be'
+            ' closed due to lack of activity. Heartbeats will not be sent'
+            ' to older daemons which do not support them.'
+            ' Argument must be supplied in human readable'
+            ' form e.g. as follows: "30s" or "1h" or "1h,14m,30s"'
+            ' or "7d".',
+      );
+
+      parser.addFlag(
+        'encrypt-rvd-traffic',
+        aliases: ['et'],
+        help: 'When true, traffic via the socket rendezvous is encrypted,'
+            ' in addition to whatever encryption the traffic already has'
+            ' (e.g. an ssh session).'
+            ' Alias: --et',
+        defaultsTo: DefaultArgs.encryptRvdTraffic,
+        negatable: true,
+      );
+
+      parser.addOption('passPhrase',
+          abbr: 'P',
+          mandatory: false,
+          help: 'The pass phrase to access the password protected atKeys file');
+
+      parser.addOption(
+        'relay-auth-mode',
+        aliases: ['ram'],
+        help: 'The authentication mode to use when authenticating to the'
+            ' relay. "escr" (encrypted signed challenge response) is strongest'
+            ' and is the default; used wherever the whole path supports it, with'
+            ' older relays/daemons falling back to legacy (relay auto-detects).'
+            ' Passing "escr" explicitly forces it where the path supports it (the'
+            ' daemon side degrades to legacy if it cannot), erroring only when the'
+            ' relay does not auto-detect AND the daemon cannot do ESCR. "payload"'
+            ' is legacy. Alias: --ram',
+        allowed: RelayAuthMode.values.map((c) => c.name).toList(),
+        defaultsTo: RelayAuthMode.escr.name,
+      );
+
+      parser.addFlag(
+        '443',
+        help: 'When true, asks the relay to use port 443 for this session',
+        defaultsTo: false,
+      );
+
       // Parse Args
       ArgResults parsedArgs = parser.parse(args);
 
+      if (parsedArgs['version'] == true) {
+        printVersion();
+        exit(0);
+      }
+
       if (parsedArgs['help'] == true) {
-        print(parser.usage);
+        stdout.write(formatCliHelp(
+            description: _description, optionsUsage: parser.usage));
         exit(0);
       }
 
       verbose = parsedArgs['verbose'];
+      debug = parsedArgs['debug'];
+      String clientAtSign = parsedArgs['from'];
       String daemonAtSign = parsedArgs['to'];
-      String srvdAtSign = parsedArgs['srvd'];
+      String srvdAtSign = parsedArgs['srvd'] ?? '';
+
+      try {
+        clientAtSign = AtUtils.fixAtSign(clientAtSign);
+        daemonAtSign = AtUtils.fixAtSign(daemonAtSign);
+        // Only fix srvd atSign if it's not a list
+        if (srvdAtSign.isNotEmpty && !srvdAtSign.contains(',')) {
+          srvdAtSign = AtUtils.fixAtSign(srvdAtSign);
+        }
+      } catch (e) {
+        throw ArgumentError(e.toString());
+      }
+
       int remotePort = int.parse(parsedArgs['remote-port']);
       String remoteHost = parsedArgs['remote-host'];
       String device = parsedArgs['device'];
-      String rootDomain = parsedArgs['root-domain'];
+      String rootDomain = parsedArgs['root-server'] ?? 'root.atsign.org';
       perSessionStorage = parsedArgs['per-session-storage'];
       int localPort = int.parse(parsedArgs['local-port']);
       bool inline = !parsedArgs['exit-when-connected'];
       bool quiet = parsedArgs[quietFlag];
       bool keepAlive = parsedArgs['keep-alive'];
+
+      // Do we have a valid device name?
+      // First of all let's snakify it
+      device = snakifyDeviceName(device);
+      // and now check it against desired regex
+      if (invalidDeviceName(device)) {
+        throw ArgumentError(invalidDeviceNameMsg);
+      }
 
       // A listen progress listener for the CLI
       // Will only log if verbose is false, since if verbose is true
@@ -242,8 +376,6 @@ void main(List<String> args) async {
 
       // Windows will not let us delete files in use so
       // We will point storage to temp directory and let OS clean up
-      var clientAtSign = parsedArgs['from'];
-
       late String uniqueID;
       if (perSessionStorage) {
         uniqueID = DateTime.now().millisecondsSinceEpoch.toString();
@@ -252,14 +384,14 @@ void main(List<String> args) async {
       }
       if (Platform.isWindows) {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: Platform.environment['TEMP']!,
+          baseDir: Platform.environment['TEMP']!,
           atSign: clientAtSign,
           progName: '.npt',
           uniqueID: uniqueID,
         ));
       } else {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: homeDirectory,
+          baseDir: homeDirectory,
           atSign: clientAtSign,
           progName: '.npt',
           uniqueID: uniqueID,
@@ -276,7 +408,7 @@ void main(List<String> args) async {
         });
       }
 
-      cli.CLIBase cliBase = cli.CLIBase(
+      CLIBase cliBase = CLIBase(
           atSign: clientAtSign,
           atKeysFilePath: parsedArgs['key-file'],
           nameSpace: DefaultArgs.namespace,
@@ -284,7 +416,13 @@ void main(List<String> args) async {
           homeDir: getHomeDirectory(),
           storageDir: storageDir?.path,
           verbose: parsedArgs['verbose'],
-          syncDisabled: true);
+          syncDisabled: true,
+          passPhrase: parsedArgs['passPhrase']);
+
+      if (debug) {
+        AtSignLogger.root_level = 'finest';
+        cliBase.logger.logger.level = Level.FINEST;
+      }
 
       await cliBase.init();
 
@@ -301,6 +439,98 @@ void main(List<String> args) async {
             ' setting timeout to $keepAliveDefaultTimeoutHours hours');
         timeoutArg = '${keepAliveDefaultTimeoutHours}h';
       }
+
+      // Determine address type from IPv4/IPv6 flags
+      InternetAddressType? addressType;
+      if (parsedArgs['ipv4'] && parsedArgs['ipv6']) {
+        stderr.writeln('Error: Cannot specify both --ipv4 and --ipv6 flags');
+        exitProgram(exitCode: 1);
+      } else if (parsedArgs['ipv4']) {
+        addressType = InternetAddressType.IPv4;
+      } else if (parsedArgs['ipv6']) {
+        addressType = InternetAddressType.IPv6;
+      }
+
+      // Parse and validate local host with address type filtering
+      final hostsString = parsedArgs['local-host'] as String;
+      final parsedHosts = HostValidator.parseHostsList(hostsString);
+
+      // Find the first host that can actually bind to the port
+      final localHost = await HostValidator.findBindableHost(
+          hostsString, localPort,
+          addressType: addressType);
+
+      String? resolvedLocalHost;
+      String?
+          originalLocalHost; // Keep track of the original hostname for display
+      if (localHost != null) {
+        originalLocalHost = localHost; // Store the original hostname
+        final resolvedAddress = await HostValidator.resolveHost(localHost,
+            addressType: addressType);
+        if (resolvedAddress != null) {
+          resolvedLocalHost = resolvedAddress.address;
+          if (!quiet) {
+            if (parsedHosts.length == 1) {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address})');
+            } else {
+              stderr.writeln(
+                  '${DateTime.now()} : Will bind to local host: $localHost (${resolvedAddress.address}) (first bindable from: ${parsedHosts.join(', ')})');
+            }
+          }
+        }
+      }
+
+      // Validate that resolved IP matches the requested address type
+      if (resolvedLocalHost != null && addressType != null) {
+        final resolvedAddress = InternetAddress.tryParse(resolvedLocalHost);
+        if (resolvedAddress != null) {
+          if (addressType == InternetAddressType.IPv4 &&
+              resolvedAddress.type != InternetAddressType.IPv4) {
+            stderr.writeln(
+                'Error: --ipv4 flag specified but resolved to IPv6 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          } else if (addressType == InternetAddressType.IPv6 &&
+              resolvedAddress.type != InternetAddressType.IPv6) {
+            stderr.writeln(
+                'Error: --ipv6 flag specified but resolved to IPv4 address: $resolvedLocalHost');
+            exitProgram(exitCode: 1);
+          }
+        }
+      }
+
+      if (localHost == null || resolvedLocalHost == null) {
+        final addressTypeStr = addressType == InternetAddressType.IPv4
+            ? ' (IPv4 only)'
+            : addressType == InternetAddressType.IPv6
+                ? ' (IPv6 only)'
+                : '';
+        stderr.writeln(
+            'Error: No bindable hosts found for port $localPort in: ${parsedHosts.join(', ')}$addressTypeStr');
+        exitProgram(exitCode: 1);
+      }
+
+      // auto select the best relay if none is specified
+      if (srvdAtSign.isEmpty || srvdAtSign.contains(',')) {
+        logProgress(
+          'No relay supplied, will find the lowest-latency relay available; '
+          'this may take up to 25 seconds',
+        );
+        List<Atsign>? rvAtSigns;
+        if (srvdAtSign.isNotEmpty) {
+          rvAtSigns =
+              srvdAtSign.split(',').map((a) => a.trim().toAtsign()).toList();
+        }
+        final rs = RelaySelector(
+          atClient: cliBase.atClient,
+          clientAtSign: clientAtSign,
+          sshnpdAtSign: daemonAtSign,
+          device: device,
+          rootDomain: rootDomain,
+        );
+        srvdAtSign = await rs.selectBestRelay(rvAtSigns: rvAtSigns);
+      }
+
       NptParams params = NptParams(
         clientAtSign: clientAtSign,
         sshnpdAtSign: daemonAtSign,
@@ -310,11 +540,20 @@ void main(List<String> args) async {
         device: device,
         localPort: localPort,
         verbose: verbose,
-        rootDomain: parsedArgs['root-domain'],
+        rootDomain: rootDomain,
         inline: inline,
         daemonPingTimeout:
             Duration(seconds: int.parse(parsedArgs['daemon-ping-timeout'])),
+        encryptRvdTraffic: parsedArgs['encrypt-rvd-traffic'],
+        relayAuthMode:
+            RelayAuthMode.values.byName(parsedArgs['relay-auth-mode']),
+        // Prescriptive only when the user actually passed the flag (this parser
+        // has a defaultsTo, so the value alone can't tell explicit from default).
+        relayAuthModeExplicit: parsedArgs.wasParsed('relay-auth-mode'),
         timeout: parseDuration(timeoutArg),
+        controlChannelHeartbeat: parseDuration(parsedArgs['heartbeat']),
+        localHost: resolvedLocalHost,
+        only443: parsedArgs['443'],
       );
 
       while (true) {
@@ -329,7 +568,13 @@ void main(List<String> args) async {
           final actualLocalPort = await npt.run();
           params.localPort = actualLocalPort;
 
-          logProgress('npt is listening on localhost:$actualLocalPort');
+          // Show detailed binding address with original hostname and resolved IP
+          String resolvedIP = params.localHost!; // This is now the resolved IP
+          String hostDisplay = originalLocalHost ??
+              resolvedIP; // Use original hostname if available
+
+          logProgress(
+              'npt is listening on $hostDisplay:$actualLocalPort ($resolvedIP:$actualLocalPort)');
 
           if (!inline) {
             stdout.writeln('$actualLocalPort');
@@ -340,6 +585,18 @@ void main(List<String> args) async {
           if (!keepAlive) {
             throw SshnpError(e.toString());
           }
+        } on SshnpError catch (e) {
+          logProgress(e.toString());
+          await npt.close();
+          if (!keepAlive) {
+            rethrow;
+          }
+        } catch (e) {
+          logProgress(e.toString());
+          await npt.close();
+          if (!keepAlive) {
+            rethrow;
+          }
         }
 
         await npt.done;
@@ -349,8 +606,10 @@ void main(List<String> args) async {
               ' will wait 5 seconds and retry');
           await Future.delayed(Duration(seconds: 5));
         } else {
+          if (inline) {
+            logProgress('Session ended');
+          }
           // not keeping alive - break out of the "while (true)"
-          logProgress('Session ended');
           break;
         }
       }

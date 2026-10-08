@@ -1,0 +1,15 @@
+.table td {
+    background-color: aliceblue;
+}
+.table th {
+    background-color: lightcyan;
+}
+
+.selected {
+    font-weight: bold;
+    background-color: cadetblue !important;
+}
+
+.container {
+    max-width: 90%;
+}

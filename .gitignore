@@ -6,8 +6,9 @@ pubspec_overrides.yaml
 .dart_tool/
 .packages
 
+
+
 # Binaries build from dart/sshnoports
-packages/dart/sshnoports/bin/activate_cli
 packages/dart/sshnoports/bin/at_activate
 packages/dart/sshnoports/bin/demo/npa_cli
 packages/dart/sshnoports/bin/demo/sshnpa_always_deny
@@ -18,6 +19,9 @@ packages/dart/sshnoports/bin/sshnp
 packages/dart/sshnoports/bin/sshnpd
 
 packages/dart/sshnoports/build/
+
+# Visual Studio
+.vs/*
 
 # Jetbrains
 .idea/*
@@ -46,7 +50,22 @@ build/
 
 # Python
 dist/
-poetry.lock
 __pycache__
 
 .env
+
+# AI stuff
+.claude/
+CLAUDE.md
+.serena
+
+# Windows MSI stuff
+.wix
+
+# Test run-times
+npe2e_core_tests/
+npe2e_relay_tests/
+npe2e_policy_tests/
+
+# Local-only notes, never committed
+/untracked/

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 // other packages
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
 
@@ -12,12 +13,16 @@ import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_devices.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/create_sshnp.dart';
-import 'package:sshnoports/src/service_factories.dart';
+
+const String _description =
+    'NoPorts SSH client: opens an SSH session to a remote device which has'
+    ' no open ports.';
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
@@ -29,8 +34,8 @@ void main(List<String> args) async {
 
   // Create the printUsage closure
   void printUsage({Object? error}) {
-    printVersion();
-    stderr.writeln(parser.usage);
+    stderr.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     if (error != null) {
       stderr.writeln('\n$error');
     }
@@ -86,10 +91,17 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
+  // Manually check if the version flag is set and print version
+  if (args.contains('--version')) {
+    printVersion();
+    exitProgram();
+  }
+
   // Manually check if the help flag is set and print usage
   Set<String> helpSet = SshnpArg.fromName('help').aliasList.toSet();
   if (args.toSet().intersection(helpSet).isNotEmpty) {
-    printUsage();
+    stdout.write(
+        formatCliHelp(description: _description, optionsUsage: parser.usage));
     exitProgram();
   }
 
@@ -120,14 +132,14 @@ void main(List<String> args) async {
       // We will point storage to temp directory and let OS clean up
       if (Platform.isWindows) {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: Platform.environment['TEMP']!,
+          baseDir: Platform.environment['TEMP']!,
           atSign: params.clientAtSign,
           progName: '.sshnp',
           uniqueID: '${DateTime.now().millisecondsSinceEpoch}',
         ));
       } else {
         storageDir = Directory(standardAtClientStoragePath(
-          homeDirectory: homeDirectory,
+          baseDir: homeDirectory,
           atSign: params.clientAtSign,
           progName: '.sshnp',
           uniqueID: '${DateTime.now().millisecondsSinceEpoch}',
@@ -143,13 +155,25 @@ void main(List<String> args) async {
         });
       }
 
+      // A listen progress listener for the CLI
+      // Will only log if verbose is false, since if verbose is true
+      // there will already be a boatload of log messages.
+      // However, will NOT log if the quiet flag has been set.
+      void logProgress(String s) {
+        if (params?.verbose == false && argResults[quietFlag] == false) {
+          stderr.writeln('${DateTime.now()} : $s');
+        }
+      }
+
       // Create Sshnp Instance
       final sshnp = await createSshnp(
         params,
+        onProgress: logProgress,
         atClientGenerator: (SshnpParams params) => createAtClientCli(
           atsign: params.clientAtSign,
           atKeysFilePath: params.atKeysFilePath ??
               getDefaultAtKeysFilePath(homeDirectory, params.clientAtSign),
+          passPhrase: params.passPhrase,
           rootDomain: params.rootDomain,
           storagePath: storageDir!.path,
           namespace: DefaultArgs.namespace,
@@ -163,16 +187,6 @@ void main(List<String> args) async {
         }
         throw e;
       });
-
-      // A listen progress listener for the CLI
-      // Will only log if verbose is false, since if verbose is true
-      // there will already be a boatload of log messages.
-      // However, will NOT log if the quiet flag has been set.
-      void logProgress(String s) {
-        if (params?.verbose == false && argResults[quietFlag] == false) {
-          stderr.writeln('${DateTime.now()} : $s');
-        }
-      }
 
       sshnp.progressStream?.listen((s) => logProgress(s));
 

@@ -26,7 +26,7 @@ enroll() {
   fi
   atSign=$1
   which=$2
-  authBinary="$(getDartCompilationOutputDir)/activate_cli"
+  authBinary="$(getDartCompilationOutputDir)/at_activate"
 
   mkdir -p "$(getApkamKeysDir)"
 
@@ -70,6 +70,9 @@ enroll() {
   # verify atKeys file created
   if test -f "$keysFileName"; then
     logInfo "keys file HAS been created at $keysFileName"
+    # NOTE at_activate writes keyfiles owner-only, and the containers that
+    # mount this one run as a different user.
+    chmod 644 "$keysFileName" || return $?
     return 0
   else
     logErrorAndReport "keys file has NOT been created at $keysFileName"
@@ -84,6 +87,11 @@ enroll "$clientAtSign" client || exit 1
 logInfo
 logInfo "Doing APKAM enrollment for $daemonAtSign daemon"
 enroll "$daemonAtSign" daemon || exit 1
+
+logInfo
+atKeysDir="$testRuntimeDir/keys"
+logInfo "Copying all contents in "$(getApkamKeysDir)" to $atKeysDir"
+cp $(getApkamKeysDir)/* "$atKeysDir" || exit 1
 
 logInfo
 logInfo "apkam_setup.sh complete"

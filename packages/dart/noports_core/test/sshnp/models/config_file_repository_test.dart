@@ -1,7 +1,7 @@
 import 'package:noports_core/sshnp_params.dart';
-import 'package:noports_core/utils.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as path;
+import 'package:at_cli_commons/at_cli_commons.dart';
 
 void main() {
   group('', () {
@@ -9,22 +9,37 @@ void main() {
       String profileName = 'myProfileName';
 
       expect(
-          ConfigFileRepository.getDefaultSshnpConfigDirectory(
-              getHomeDirectory()!),
-          isA<String>());
-      expect(ConfigFileRepository.fromProfileName(profileName),
-          isA<Future<String>>());
-      expect(ConfigFileRepository.fromProfileName(profileName), completes);
-      expect(
-        await ConfigFileRepository.fromProfileName(profileName,
-            basenameOnly: false),
-        equals(path.join(
-            getHomeDirectory()!, '.sshnp', 'config', '$profileName.env')),
+        ConfigFileRepository.getDefaultSshnpConfigDirectory(
+          getHomeDirectory()!,
+        ),
+        isA<String>(),
       );
       expect(
-          await ConfigFileRepository.fromProfileName(profileName,
-              basenameOnly: true),
-          equals('$profileName.env'));
+        ConfigFileRepository.fromProfileName(profileName),
+        isA<Future<String>>(),
+      );
+      expect(ConfigFileRepository.fromProfileName(profileName), completes);
+      expect(
+        await ConfigFileRepository.fromProfileName(
+          profileName,
+          basenameOnly: false,
+        ),
+        equals(
+          path.join(
+            getHomeDirectory()!,
+            '.sshnp',
+            'config',
+            '$profileName.env',
+          ),
+        ),
+      );
+      expect(
+        await ConfigFileRepository.fromProfileName(
+          profileName,
+          basenameOnly: true,
+        ),
+        equals('$profileName.env'),
+      );
     });
 
     group('[depends on ConfigFileRepository.atKeyFromProfileName]', () {

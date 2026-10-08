@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+import 'package:mutex/mutex.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:path/path.dart' as path;
 import 'package:posix/posix.dart' show PosixException, chmod;
 
@@ -14,6 +16,20 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   };
 
   static final Map<String, AtSshKeyPair> _keyPairCache = {};
+
+  /// One lock per `authorized_keys` path, shared by every instance, so that
+  /// concurrent edits in this process don't lose each other's changes.
+  static final Map<String, Mutex> _authorizedKeysLocks = {};
+
+  String get _authorizedKeysPath =>
+      path.normalize('$sshHomeDirectory/authorized_keys');
+
+  Future<T> _editAuthorizedKeys<T>(Future<T> Function(File file) edit) {
+    final filePath = _authorizedKeysPath;
+    return (_authorizedKeysLocks[filePath] ??= Mutex()).protect(
+      () => edit(fs.file(filePath)),
+    );
+  }
 
   @visibleForTesting
   final FileSystem fs;
@@ -68,8 +84,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     required AtSshKeyPair keyPair,
     String? identifier,
   }) async {
-    var files =
-        _filesFromIdentifier(identifier: identifier ?? keyPair.identifier);
+    var files = _filesFromIdentifier(
+      identifier: identifier ?? keyPair.identifier,
+    );
     await Future.wait([
       files[0].create(recursive: true),
       files[1].create(recursive: true),
@@ -95,8 +112,10 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }
 
   @override
-  Future<AtSshKeyPair> getKeyPair(
-      {required String identifier, String? passphrase}) async {
+  Future<AtSshKeyPair> getKeyPair({
+    required String identifier,
+    String? passphrase,
+  }) async {
     if (_keyPairCache.containsKey((identifier))) {
       return _keyPairCache[(identifier)]!;
     }
@@ -114,13 +133,12 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }
 
   @override
-  Future<List<FileSystemEntity>> deleteKeyPair(
-      {required String identifier}) async {
+  Future<List<FileSystemEntity>> deleteKeyPair({
+    required String identifier,
+  }) async {
     var files = _filesFromIdentifier(identifier: identifier);
 
-    return Future.wait(files.map(
-      (f) => f.delete(),
-    )).catchError((e) => throw e);
+    return Future.wait(files.map((f) => f.delete())).catchError((e) => throw e);
   }
 
   @override
@@ -134,10 +152,16 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     String workingDirectory = directory ?? _defaultDirectory;
 
     await processRunner(
-      'ssh-keygen',
-      [..._sshKeygenArgMap[algorithm]!, '-f', identifier, '-q', '-N', ''],
-      workingDirectory: workingDirectory,
-    );
+        'ssh-keygen',
+        [
+          ..._sshKeygenArgMap[algorithm]!,
+          '-f',
+          identifier,
+          '-q',
+          '-N',
+          '',
+        ],
+        workingDirectory: workingDirectory);
 
     String pemText =
         await fs.file(path.join(workingDirectory, identifier)).readAsString();
@@ -159,50 +183,57 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
   }) async {
     // Check to see if the ssh public key is
     // supported keys by the dartssh2 package
-    if (!sshPublicKey.startsWith(RegExp(
-        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)'))) {
+    if (!sshPublicKey.startsWith(
+      RegExp(
+        r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)',
+      ),
+    )) {
       throw ('$sshPublicKey does not look like a public key');
     }
 
     // Check to see if the ssh Publickey is already in the authorized_keys file.
     // If not, then append it.
-    var authKeys = fs.file(path.normalize('$sshHomeDirectory/authorized_keys'));
-
-    var authKeysContent = await authKeys.readAsString();
-    if (!authKeysContent.endsWith('\n')) {
-      await authKeys.writeAsString('\n', mode: FileMode.append);
-    }
-
-    if (!authKeysContent.contains(sshPublicKey)) {
-      if (permissions.isNotEmpty && !permissions.startsWith(',')) {
-        permissions = ',$permissions';
+    await _editAuthorizedKeys((authKeys) async {
+      var authKeysContent = await authKeys.readAsString();
+      if (!authKeysContent.endsWith('\n')) {
+        await authKeys.writeAsString('\n', mode: FileMode.append);
       }
-      // Set up a safe authorized_keys file, for the ssh tunnel
-      await authKeys.writeAsString(
-        'command="echo \\"ssh session complete\\";sleep 20"'
-        ',PermitOpen="localhost:$localSshdPort"'
-        '$permissions'
-        ' '
-        '${sshPublicKey.trim()}'
-        ' '
-        'sshnp_ephemeral_$sessionId\n',
-        mode: FileMode.append,
-        flush: true,
-      );
-    }
+
+      if (!authKeysContent.contains(sshPublicKey)) {
+        if (permissions.isNotEmpty && !permissions.startsWith(',')) {
+          permissions = ',$permissions';
+        }
+        // Set up a safe authorized_keys file, for the ssh tunnel
+        await authKeys.writeAsString(
+          'command="echo \\"ssh session complete\\";sleep 20"'
+          ',PermitOpen="localhost:$localSshdPort"'
+          '$permissions'
+          ' '
+          '${sshPublicKey.trim()}'
+          ' '
+          'sshnp_ephemeral_$sessionId\n',
+          mode: FileMode.append,
+          flush: true,
+        );
+      }
+    });
   }
 
+  /// Removes the key [authorizePublicKey] added for [sessionId]: every
+  /// `authorized_keys` line ending in exactly ` sshnp_ephemeral_<sessionId>`.
   Future<void> deauthorizePublicKey(String sessionId) async {
     try {
-      final File file =
-          fs.file(path.normalize('$sshHomeDirectory/authorized_keys'));
-      // read into List of strings
-      final List<String> lines = await file.readAsLines();
-      // find the line we want to remove
-      lines.removeWhere((element) => element.contains(sessionId));
-      // Write back the file and add a \n
-      await file.writeAsString(lines.join('\n'));
-      await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
+      await _editAuthorizedKeys((file) async {
+        // read into List of strings
+        final List<String> lines = await file.readAsLines();
+        // find the line we want to remove
+        lines.removeWhere(
+          (element) => element.endsWith(' sshnp_ephemeral_$sessionId'),
+        );
+        // Write back the file and add a \n
+        await file.writeAsString(lines.join('\n'));
+        await file.writeAsString('\n', mode: FileMode.writeOnlyAppend);
+      });
     } catch (e) {
       throw SshnpError(
         'Failed to remove ephemeral key from authorized_keys',

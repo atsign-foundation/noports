@@ -1,0 +1,151 @@
+#include "sshnpd/permitopen.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int parse_permitopen(char *input, char ***permitopen_hosts, uint16_t **permitopen_ports, size_t *permitopen_len,
+                     bool is_logger_available) {
+  const char *TAG = "parse_permitopen";
+  int sep_count = 0;
+  int permitopen_start = 0;
+  int permitopen_end = strlen(input);
+
+  // trim leading quotations
+  while (permitopen_start < permitopen_end && (input[permitopen_start] == '"' || input[permitopen_start] == '\'')) {
+    permitopen_start++;
+  }
+  // trim trailing quotations
+  while (permitopen_end > permitopen_start && (input[permitopen_end - 1] == '"' || input[permitopen_end - 1] == '\'')) {
+    permitopen_end--;
+  }
+  // re-terminate in case trailing quotes were trimmed, so they never reach the
+  // port tokens below
+  input[permitopen_end] = '\0';
+
+  // validate the shape up front: every non-empty comma-separated entry must
+  // contain exactly one ':', otherwise the host/port token walk below
+  // desynchronizes and reads past the end of the input
+  int entry_colons = 0;
+  int entry_len = 0;
+  for (int i = permitopen_start; i <= permitopen_end; i++) {
+    char c = i == permitopen_end ? ',' : input[i];
+    if (c == ',') {
+      if (entry_len > 0 && entry_colons != 1) {
+        if (is_logger_available) {
+          atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Argument error, each permitopen entry must be host:port\n");
+        } else {
+          printf("Argument error, each permitopen entry must be host:port\n");
+        }
+        return 1;
+      }
+      entry_colons = 0;
+      entry_len = 0;
+    } else {
+      if (c == ':') {
+        entry_colons++;
+      }
+      entry_len++;
+    }
+  }
+
+  for (int i = permitopen_start; i < permitopen_end; i++) {
+    if (input[i] == ':') {
+      sep_count++;
+      input[i] = '\0';
+    }
+
+    if (input[i] == ',') {
+      input[i] = '\0';
+    }
+  }
+
+  if (sep_count == 0) {
+    if (is_logger_available) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Argument error, no permitopen entries found\n");
+    } else {
+      printf("Argument error, no permitopen entries found\n");
+    }
+    return 1;
+  }
+
+  // malloc pointers to each string, but don't malloc any more memory for individual char storage
+  *permitopen_hosts = malloc((sep_count) * sizeof(char *));
+  *permitopen_ports = malloc((sep_count) * sizeof(uint16_t));
+  if (*permitopen_hosts == NULL || *permitopen_ports == NULL) {
+    if (is_logger_available) {
+      atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for permitopen\n");
+    } else {
+      printf("Failed to allocate memory for permitopen\n");
+    }
+    free(*permitopen_hosts);
+    free(*permitopen_ports);
+    return 1;
+  }
+
+  int pos = permitopen_start;
+  for (int i = 0; i < sep_count; i++) {
+    // Add the host to the host list
+    (*permitopen_hosts)[i] = input + pos;
+    // Jump to the port string
+    pos += strlen(input + pos) + 1;
+    if (input[pos] == '*') {
+      (*permitopen_ports)[i] = 0;
+      if (input[pos + 1] != '\0') {
+        // error received a string other than '*' for port
+        if (is_logger_available) {
+          atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Argument error, received %s for port, must be a number 1-65535 or '*'", input + pos);
+        } else {
+          printf("Argument error, received %s for port, must be a number 1-65535 or '*'", input + pos);
+        }
+        free(*permitopen_hosts);
+        free(*permitopen_ports);
+        return 1;
+      }
+    } else {
+      char *end;
+      errno = 0;
+      long num = strtol(input + pos, &end, 10);
+      // port 0 is the internal wildcard encoding, so it must not be accepted
+      // from input; wildcards are only expressible as '*'
+      if (end == input + pos || *end != '\0' || errno == ERANGE || num < 1 || num > 65535) {
+        if (is_logger_available) {
+          atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
+                       "Argument error, received %s for port, must be a number 1-65535 or '*'", input + pos);
+        } else {
+          printf("Argument error, received %s for port, must be a number 1-65535 or '*'", input + pos);
+        }
+        free(*permitopen_hosts);
+        free(*permitopen_ports);
+        return 1;
+      }
+
+      (*permitopen_ports)[i] = (uint16_t)num;
+    }
+
+    // Jump to the host string
+    //
+    pos = pos + strlen(input + pos) + 1;
+  }
+
+  *permitopen_len = sep_count;
+  return 0;
+}
+
+bool should_permitopen(permitopen_params *params) {
+
+  for (size_t i = 0; i < params->permitopen_len; i++) {
+    // permitopen_port[i] = 0 is equivalent to '*'
+    if (params->permitopen_ports[i] == 0 || params->permitopen_ports[i] == params->requested_port) {
+      if (params->permitopen_hosts[i][0] == '*' && strlen(params->permitopen_hosts[i]) == 1) {
+        return true;
+      }
+      if (strcmp(params->permitopen_hosts[i], params->requested_host) == 0) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}

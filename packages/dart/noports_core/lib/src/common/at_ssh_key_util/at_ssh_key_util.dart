@@ -15,18 +15,14 @@ abstract interface class AtSshKeyUtil {
     SupportedSshAlgorithm algorithm,
   });
 
-  FutureOr<AtSshKeyPair> getKeyPair({
-    required String identifier,
-  });
+  FutureOr<AtSshKeyPair> getKeyPair({required String identifier});
 
   FutureOr<dynamic> addKeyPair({
     required AtSshKeyPair keyPair,
     String? identifier,
   });
 
-  FutureOr<dynamic> deleteKeyPair({
-    required String identifier,
-  });
+  FutureOr<dynamic> deleteKeyPair({required String identifier});
 }
 
 class AtSshKeyPair {

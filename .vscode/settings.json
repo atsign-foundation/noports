@@ -3,5 +3,6 @@
         "sshnoports",
         "sshnp",
         "sshnpd"
-    ]
+    ],
+    "dotnet.defaultSolution": "disable"
 }

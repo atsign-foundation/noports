@@ -1,0 +1,16 @@
+[Unit]
+Description=NoPorts Socket Rendezvous Daemon
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+
+# The line below runs the srvd service, with the options set in the
+# override.conf file found in /lib/systemd/system/srvd.service.d
+# You can edit that config with: sudo systemctl edit srvd
+ExecStart=/usr/bin/srvd -a "$atsign" -i "$internet_address" "$additional_args"

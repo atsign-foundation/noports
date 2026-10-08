@@ -4,9 +4,32 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/atsign-foundation/noports/badge)](https://securityscorecards.dev/viewer/?uri=github.com/atsign-foundation/noports&sort_by=check-score&sort_direction=desc)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8102/badge)](https://www.bestpractices.dev/projects/8102)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
+[![sbomified](https://sbomify.com/assets/images/logo/badge.svg)](https://app.sbomify.com/public/product/h4kKfn8vMA/)
 
 # noports
-This repo contains the open source code of the Atsign's NoPorts suite. Check out our product site at [noports.com](https://noports.com). Documentation can be found at [docs.noports.com](https://docs.noports.com)
 
-* [sshnoports](./packages/dart/sshnoports) provides a way to ssh to a remote linux host/device without that
-device or the client having any open ports (not even 22) on external interfaces.
+This repo contains the open source code of the Atsign's NoPorts product. Check
+out our product site at [noports.com](https://noports.com).
+
+## Get Started
+
+Installation, use-cases and usage guides can all be found on our
+[docs site](https://docs.noports.com).
+
+## Source Code Availability
+
+If you are interested in auditing the source code for NoPorts, this is where you
+can find various bits of interest:
+
+- [packages/](./packages/) - contains the bulk of the source code
+  - [dart/](./packages/dart/) - contains the Dart implementation of NoPorts
+    - [noports_core/](./packages/dart/noports_core/) - contains the core logic
+      for NoPorts as a shared library which is used by the other Dart packages
+    - [sshnoports/](./packages/dart/sshnoports) - contains the Dart CLI binaries
+      for NoPorts (sshnp, npt, sshnpd, srvd)
+    - [sshnp_flutter/](./packages/dart/sshnp_flutter/) - contains the Flutter
+      Desktop app for SSHNP
+  - [c/](./packages/c/) - contains the C implementation of NoPorts
+  - [python/](./packages/python/) - contains the Python implementation of
+    NoPorts (this is deprecated, we recommend that you use the C version
+    instead)

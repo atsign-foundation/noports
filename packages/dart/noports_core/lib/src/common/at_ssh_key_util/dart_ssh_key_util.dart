@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:at_chops/at_chops.dart';
-import 'package:cryptography/cryptography.dart';
+import 'package:at_chops/at_chops.dart' show RsaKeyPair;
+import 'package:cryptography/cryptography.dart' show Ed25519;
 import 'package:noports_core/utils.dart';
 import 'package:openssh_ed25519/openssh_ed25519.dart';
 
@@ -31,7 +31,9 @@ class DartSshKeyUtil implements AtSshKeyUtil {
   }
 
   AtSshKeyPair _generateRSAKeyPair(String identifier) => AtSshKeyPair.fromPem(
-        AtChopsUtil.generateRSAKeyPair(keySize: 4096).privateKey.toPEM(),
+        '-----BEGIN RSA PRIVATE KEY-----\n'
+        '${RsaKeyPair.generate(keySize: 4096).atPrivateKey.privateKey}\n'
+        '-----END RSA PRIVATE KEY-----',
         identifier: identifier,
       );
 
@@ -41,17 +43,11 @@ class DartSshKeyUtil implements AtSshKeyUtil {
       privateBytes: await keyPair2.extractPrivateKeyBytes(),
       publicBytes: (await keyPair2.extractPublicKey()).bytes,
     );
-    return AtSshKeyPair.fromPem(
-      pemText,
-      identifier: identifier,
-    );
+    return AtSshKeyPair.fromPem(pemText, identifier: identifier);
   }
 
   @override
-  FutureOr addKeyPair({
-    required AtSshKeyPair keyPair,
-    String? identifier,
-  }) {
+  FutureOr addKeyPair({required AtSshKeyPair keyPair, String? identifier}) {
     _keyPairCache[identifier ?? keyPair.identifier] = keyPair;
   }
 
