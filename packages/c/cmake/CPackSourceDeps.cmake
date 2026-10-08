@@ -10,3 +10,7 @@ file(
   COPY "@CMAKE_BINARY_DIR@/_deps/atsdk-src"
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/deps
 )
+file(
+  COPY "@CMAKE_BINARY_DIR@/_deps/curl-src"
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/deps
+)

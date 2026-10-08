@@ -68,6 +68,9 @@ cmake_policy(SET CMP0135 NEW)
 # 4a. atsdk
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/atsdk.cmake)
 
+# 4a.ii curl, built on the atsdk's mbedtls
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/curl.cmake)
+
 # 4b. argparse
 find_package(argparse-static QUIET)
 if(NOT argparse-static_FOUND)
@@ -110,6 +113,7 @@ set(
   atlogger
   srv-lib
   argparse::argparse-static
+  CURL::libcurl
 )
 if(NOPORTS_USE_SHARED_LIBS)
   find_path(cjson_include_dir NAMES cjson/cJSON.h REQUIRED)
