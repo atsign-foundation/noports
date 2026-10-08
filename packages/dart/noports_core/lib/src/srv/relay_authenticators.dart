@@ -8,6 +8,8 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:mutex/mutex.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signWithApskKey;
 import 'package:noports_core/src/common/session_crypto.dart';
 
 /// Clients which are authenticating to a relay may use a [RelayAuthenticator]
@@ -279,23 +281,11 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
       'p': {'sid': sessionId, 'c': challenge, 'side': (isSideA ? 'a' : 'b')},
     };
     final signed = jsonEncode(envelope['p']);
-    envelope['s'] = switch (signingAlgo) {
-      SigningAlgoType.mldsa65 => base64Encode(
-          MlDsa65PureDartAlgo.signBytesSync(
-            utf8.encode(signed),
-            secretKey: base64Decode(privateSigningKey),
-          ),
-        ),
-      SigningAlgoType.rsa2048 => rsaSignString(
-          signed,
-          privateKey: privateSigningKey,
-        ),
-      _ => throw ArgumentError.value(
-          signingAlgo,
-          'signingAlgo',
-          'relay authentication signs with ${escrSigningAlgorithms.map((a) => a.name).join(' or ')}',
-        ),
-    };
+    envelope['s'] = signWithApskKey(
+      signed,
+      algorithm: signingAlgo,
+      privateKey: privateSigningKey,
+    );
     envelope['ha'] = HashingAlgoType.sha256.name;
     envelope['sa'] = signingAlgo.name;
     envelope['sk'] = publicSigningKeyUri;

@@ -8,6 +8,7 @@ import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
@@ -799,8 +800,7 @@ class SrvdImpl
   void recordSigningKey(String sessionId, String signingKeyUri) {
     final si = sessions[sessionId];
     if (si == null) return;
-    final key = 'public:'
-        '${signingKeyUri.toLowerCase().replaceFirst(RegExp('^public:'), '')}';
+    final key = canonicalSigningKeyUri(signingKeyUri);
     if (si.signingKeys.contains(key)) return;
     if (si.signingKeys.length >= maxSigningKeysPerSession) {
       logger.warning(

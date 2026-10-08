@@ -57,6 +57,9 @@ class NoPortsHarness {
   /// The public records the relay has asked for over HTTP.
   late final FakeHttpSurface relayHttp;
 
+  /// The public records the daemon has asked for over HTTP.
+  late final FakeHttpSurface daemonHttp;
+
   /// A [DirectPublicLookup] for [atClient] that finds every atSign on
   /// [surface], with each lookup giving up after [timeout].
   DirectPublicLookup lookupOn(
@@ -137,21 +140,33 @@ class NoPortsHarness {
   /// Starts sshnpd on the daemon atSign, managed by the client atSign and
   /// permitted to open [permitOpen]. With [advertisesEscr] false it tells
   /// clients it predates ESCR relay authentication, as an old daemon does;
-  /// with [strict] it verifies each request's signature.
+  /// with [strict] it verifies each request's signature. It checks clients'
+  /// enrollments every [clientKeyCheckInterval], and with
+  /// [requireEnrollmentSignature] refuses requests not signed with one. With
+  /// [inline] false it runs each session's srv as a process, as it does
+  /// unless `SRV_INLINE` is set. It looks public records up over HTTP on
+  /// [daemonHttp].
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
     bool advertisesEscr = true,
     bool strict = false,
+    Duration clientKeyCheckInterval =
+        const Duration(seconds: DefaultSshnpdArgs.clientKeyCheckSecs),
+    bool requireEnrollmentSignature = false,
+    bool inline = true,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
+    final atClient = await openClient(
+      daemonAtSign,
+      namespace: DefaultArgs.namespace,
+      posture: posture,
+      dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
+    );
+    daemonHttp = await server.serveHttp();
+    _surfaces.add(daemonHttp);
     final daemon = this.daemon = SshnpdImpl(
-      atClient: await openClient(
-        daemonAtSign,
-        namespace: DefaultArgs.namespace,
-        posture: posture,
-        dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
-      ),
+      atClient: atClient,
       username: 'harness',
       homeDirectory: home.path,
       device: device,
@@ -168,7 +183,10 @@ class NoPortsHarness {
       version: '1.0.0',
       permitOpen: permitOpen,
       strict: strict,
-      inline: true,
+      clientKeyCheckInterval: clientKeyCheckInterval,
+      requireEnrollmentSignature: requireEnrollmentSignature,
+      inline: inline,
+      publicLookup: lookupOn(daemonHttp, atClient),
     );
     (daemon.pingResponse['supportedFeatures'] as Map)[
         DaemonFeature.supportsRamEscr.name] = advertisesEscr;
