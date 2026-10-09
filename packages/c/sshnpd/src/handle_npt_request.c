@@ -11,6 +11,8 @@
 #include <atlogger/atlogger.h>
 #include <errno.h>
 #include <srv/params.h>
+#include <sshnpd/client_sessions.h>
+#include <sshnpd/client_signing_key.h>
 #include <sshnpd/daemon.h>
 #include <sshnpd/handle_npt_request.h>
 #include <sshnpd/handle_ssh_request.h>
@@ -22,6 +24,10 @@
 #include <unistd.h>
 
 #define LOGGER_TAG "NPT_REQUEST"
+
+static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *is_child_process, cJSON *envelope,
+                              char *requesting_atsign, atchops_rsa_key_private_key signing_key,
+                              const sshnpd_policy_decision *policy, const char *client_signing_key);
 
 void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_child_process,
                         atclient_monitor_message *message, atchops_rsa_key_private_key signing_key,
@@ -54,6 +60,23 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     cJSON_Delete(envelope);
     return;
   }
+
+  char *client_signing_key = NULL;
+  if (check_client_signing_key(atclient, params, requesting_atsign, envelope, &client_signing_key) != 0) {
+    cJSON_Delete(envelope);
+    return;
+  }
+  start_npt_session(atclient, params, is_child_process, envelope, requesting_atsign, signing_key, policy,
+                    client_signing_key);
+  free(client_signing_key);
+}
+
+// Starts the session envelope requests, watching it when its client signed
+// the request with client_signing_key, and deletes envelope
+static void start_npt_session(atclient *atclient, sshnpd_params *params, bool *is_child_process, cJSON *envelope,
+                              char *requesting_atsign, atchops_rsa_key_private_key signing_key,
+                              const sshnpd_policy_decision *policy, const char *client_signing_key) {
+  int res = 0;
   // Passed to various handlers in handler_commons
   cJSON *payload = cJSON_GetObjectItem(envelope, "payload");
 
@@ -195,6 +218,13 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   // - session_iv_c2d_base64 (if encrypt_rvd_traffic == true)
   // - the four session_*_d2c* equivalents (if twin_keys == true)
 
+  // srv reports on this pipe once it has reached the relay
+  int ready[2] = {-1, -1};
+  if (pipe(ready) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to make a pipe for srv: %s\n", strerror(errno));
+    ready[0] = ready[1] = -1;
+  }
+
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Running fork()...\n");
 
   pid_t pid = fork();
@@ -202,6 +232,9 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
   if (pid == 0) {
     // child process
+    if (ready[0] >= 0) {
+      close(ready[0]);
+    }
 
     // free this immediately, we don't need it on the child fork
     if (encrypt_rvd_traffic) {
@@ -240,7 +273,7 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
 
     run_srv_process(rvd_host_str, rvd_port_int, requested_host_str, requested_port_int, authenticate_to_rvd,
                     rvd_auth_string, use_escr ? &escr_context : NULL, encrypt_rvd_traffic, multi, timeout_seconds,
-                    session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c);
+                    session_aes_key_c2d, session_iv_c2d, session_aes_key_d2c, session_iv_d2c, ready[1]);
 
     *is_child_process = true;
 
@@ -262,6 +295,10 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     // end of child process
   } else if (pid > 0) {
     // parent process
+    if (ready[1] >= 0) {
+      close(ready[1]);
+      ready[1] = -1;
+    }
 
     // since we use WNOHANG,
     // waitpid will return -1, if an error occurred
@@ -282,6 +319,16 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
       goto cancel;
     }
 
+    // NOTE: the reply doesn't wait for srv to reach the relay, since the
+    // client chooses the relay and this loop serves every request
+    if (ready[0] >= 0) {
+      srv_starts_watch(pid, ready[0], sshnpd_monotonic_ms());
+      ready[0] = -1;
+    }
+    if (client_signing_key != NULL) {
+      client_sessions_track(cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId")), client_signing_key, pid);
+    }
+
     res = send_success_payload(payload, atclient, params, session_aes_key_c2d_base64, session_iv_c2d_base64,
                                session_aes_key_d2c_base64, session_iv_d2c_base64, &signing_key, requesting_atsign);
     if (res != 0) {
@@ -295,6 +342,11 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to fork the srv process: %s\n", strerror(errno));
   }
 cancel:
+  for (int i = 0; i < 2; i++) {
+    if (ready[i] >= 0) {
+      close(ready[i]);
+    }
+  }
   if (rvd_auth_string != NULL) {
     cJSON_free(rvd_auth_string);
   }

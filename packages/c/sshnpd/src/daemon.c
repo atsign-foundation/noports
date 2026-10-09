@@ -1,3 +1,4 @@
+#include "sshnpd/client_sessions.h"
 #include "sshnpd/device_info.h"
 #include "sshnpd/handle_npt_request.h"
 #include "sshnpd/handle_ping.h"
@@ -33,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #define LOGGER_TAG "sshnpd - loop"
@@ -69,6 +71,17 @@ size_t device_info_pos;
 time_t *device_info_last_sent;
 uint8_t device_info_attempts;
 
+// Reaps every child that has exited: a session's srv or a key check, which
+// only this loop reaps, so a pid the daemon signals is never one reused
+static void reap_children(void) {
+  int status;
+  pid_t pid;
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    srv_starts_reaped(pid);
+    client_sessions_reaped(pid, status);
+  }
+}
+
 void main_loop() {
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
 
@@ -84,6 +97,10 @@ void main_loop() {
   size_t timeout_counter = 0;
 
   while (should_run == 1) {
+    reap_children();
+    srv_starts_poll(sshnpd_monotonic_ms());
+    client_sessions_tick(time(NULL));
+
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending next device info\n");
     send_next_device_info(&worker, &params);
     policy_send_heartbeat(&worker, &params, ping_response);

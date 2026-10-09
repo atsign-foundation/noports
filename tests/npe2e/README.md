@@ -6,19 +6,26 @@ enrols APKAM keys for the client and daemon atSigns, starts each daemon in its
 own container, then runs the client (`npt` / `sshnp`) on the host against those
 containerised daemons through a relay (`srvd`).
 
-In CI these run against the public atDirectory (`root.atsign.org`). This README
-covers running them **locally against a local atStack** — the usual reason being
-to test an atServer that has not been released to production yet.
+In CI, core and relay run against the public atDirectory (`root.atsign.org`),
+policy against the virtual environment (VE, `tests/tools/ve/setup_ve.sh`), and
+revocation against an ephemeral environment (EE, `tests/tools/ee/setup_ee.sh`)
+with atSigns created for the run. This README covers running them **locally
+against a local atStack** — the usual reason being to test an atServer that has
+not been released to production yet.
 
-There are three test packs, each with its own entrypoint under `bin/`:
+There are four test packs, each with its own entrypoint under `bin/`:
 
-| Pack | Entrypoint |
-| --- | --- |
-| core | `bin/core_tests.dart` |
-| relay | `bin/relay_tests.dart` |
-| policy | `bin/policy_tests.dart` |
+| Pack | Entrypoint | Runs on in CI |
+| --- | --- | --- |
+| core | `bin/core_tests.dart` | `root.atsign.org` |
+| relay | `bin/relay_tests.dart` | `root.atsign.org` |
+| policy | `bin/policy_tests.dart` | VE |
+| revocation | `bin/revocation_tests.dart` | EE |
 
-The examples below use the core pack; the others take the same arguments.
+The examples below use the core pack; relay and policy take the same
+arguments. The revocation pack starts its own relay and daemons, so it takes
+fewer; [lib/revocation_tests/README.md](lib/revocation_tests/README.md) says
+how to run it on an EE.
 
 ## Prerequisites
 
