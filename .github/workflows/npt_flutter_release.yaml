@@ -216,6 +216,10 @@ jobs:
       base64-subjects: "${{ needs.build-windows-desktop.outputs.hashes }}"
       upload-assets: false
 
+  # Upload provenance separately because the SLSA generator's upload-assets
+  # option cannot see draft releases. It creates a new published release,
+  # which GitHub then marks as "Latest". By uploading ourselves with
+  # `gh release upload`, the provenance goes into the existing draft.
   upload-provenance:
     needs: [provenance]
     runs-on: ubuntu-latest
