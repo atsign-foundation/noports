@@ -90,9 +90,7 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
     FutureOr<void> Function(AtNotification) handler,
   ) async {
     if (n.from.toAtsign() != atClient.getCurrentAtSign()!.toAtsign()) {
-      logger.warning(
-        'Ignoring $kind ${n.key} from ${n.from}, which is not this service',
-      );
+      logger.shout('Ignoring $kind ${n.key} from ${n.from}');
       return;
     }
     try {
