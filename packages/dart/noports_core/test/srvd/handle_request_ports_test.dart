@@ -93,21 +93,21 @@ void main() {
 
     test('refuses a sender that is not the manager', () async {
       expect(
-        await allocates(manager: '@manager', from: '@mallory', atSignA: '@mallory'),
+        await allocates(manager: '@manager', from: '@carol', atSignA: '@carol'),
         isFalse,
       );
     });
 
     test('refuses a sender naming the manager as atSignA', () async {
       expect(
-        await allocates(manager: '@manager', from: '@mallory', atSignA: '@manager'),
+        await allocates(manager: '@manager', from: '@carol', atSignA: '@manager'),
         isFalse,
       );
     });
 
     test('refuses a sender naming another atSign on an open relay', () async {
       expect(
-        await allocates(manager: 'open', from: '@mallory', atSignA: '@alice'),
+        await allocates(manager: 'open', from: '@carol', atSignA: '@alice'),
         isFalse,
       );
     });
@@ -121,7 +121,7 @@ void main() {
 
     test('refuses a session id that is already live', () async {
       expect(
-        await allocates(manager: 'open', from: '@mallory', atSignA: '@mallory'),
+        await allocates(manager: 'open', from: '@carol', atSignA: '@carol'),
         isTrue,
         reason: 'the same request is let through when no session is live',
       );
@@ -142,7 +142,7 @@ void main() {
       srvd.sessions['the session'] = live;
 
       await srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
 
       expect(srvd.allocated, isFalse);
@@ -159,7 +159,7 @@ void main() {
       expect(srvd.allocations, 1, reason: 'the first request is mid-start');
 
       final second = srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
       await pumpEventQueue();
       expect(srvd.allocations, 1);
@@ -167,7 +167,7 @@ void main() {
       gate.complete();
       await Future.wait([first, second]);
       await srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
       expect(srvd.allocations, 2, reason: 'a start that failed frees its id');
     });
@@ -215,12 +215,12 @@ void main() {
         "denies it without looking up either side's public key", () async {
       final notAtSignA = srvdAnsweringLookups(managerAtsign: 'open');
       await notAtSignA.handleRequestPorts(
-        payloadRequest(from: '@mallory', atSignA: '@alice'),
+        payloadRequest(from: '@carol', atSignA: '@alice'),
       );
 
       final notManager = srvdAnsweringLookups(managerAtsign: '@manager');
       await notManager.handleRequestPorts(
-        payloadRequest(from: '@mallory', atSignA: '@mallory'),
+        payloadRequest(from: '@carol', atSignA: '@carol'),
       );
 
       final liveId = srvdAnsweringLookups(managerAtsign: 'open');
