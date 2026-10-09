@@ -434,6 +434,28 @@ class SrvdImpl
       return;
     }
 
+    if (sessionParams.only443) {
+      final refusal = SinglePortWorker.whyRefused(sessionParams);
+      if (refusal != null) {
+        logger.shout(
+          'Session ${sessionParams.sessionId} requested by ${n.from}'
+          ' is denied: $refusal',
+        );
+        if (sessionParams.multipleAcksOk) {
+          try {
+            await sendNack(
+              sessionId: sessionParams.sessionId,
+              requestingAtsign: n.from,
+              message: refusal,
+            );
+          } catch (e) {
+            logger.shout('Error while sending NACK: $e');
+          }
+        }
+        return;
+      }
+    }
+
     _startingSessions.add(sessionParams.sessionId);
     try {
       await _startSession(n, sessionParams);
@@ -786,6 +808,17 @@ class SrvdImpl
         ),
       );
     }
+    sessions.remove(sessionId);
+  }
+
+  /// Forgets a session the single-port isolate refused to start, which would
+  /// otherwise stay recorded with nothing left to remove it.
+  void _handleStartRefused(IIRequest msg) {
+    final String sessionId = msg.payload['sessionId'];
+    logger.warning(
+      'Single-port isolate refused to start session $sessionId:'
+      ' ${msg.payload['reason']}',
+    );
     sessions.remove(sessionId);
   }
 
@@ -1149,6 +1182,9 @@ class SrvdImpl
             break;
           case 'sessionComplete':
             await _handleSessionComplete(msg);
+            break;
+          case 'startRefused':
+            _handleStartRefused(msg);
             break;
           case 'handleIsolateFailure':
             logger.shout('');

@@ -51,6 +51,19 @@ class SinglePortWorker extends RelayWorker {
     reqHandlers['endSession'] = endSession;
   }
 
+  /// Why a single-port session with [params] can't be started, or null if it
+  /// can: the single port accepts only sockets that both authenticate with
+  /// ESCR.
+  static String? whyRefused(SrvdSessionParams params) {
+    if (params.relayAuthMode == RelayAuthMode.payload) {
+      return 'relayAuthMode may not be "payload" on port 443';
+    }
+    if (!(params.authenticateSocketA && params.authenticateSocketB)) {
+      return 'both sides must authenticate on port 443';
+    }
+    return null;
+  }
+
   @override
   Future<String> lookup(String sessionId, String atKey) async {
     SessionInfo? si = sessions[sessionId];
@@ -219,18 +232,14 @@ class SinglePortWorker extends RelayWorker {
     SrvdSessionParams params = req.payload;
     logger.info('Starting socket connector session for $params');
 
-    if (params.relayAuthMode == RelayAuthMode.payload) {
-      logger.shout(
-        'relayAuthMode may not be "payload".'
-        ' Invalid params $params',
-      );
-      return;
-    }
-
-    if (!(params.authenticateSocketA && params.authenticateSocketB)) {
-      logger.shout(
-        'Both sides are required to authenticate;'
-        ' Invalid params $params',
+    final refusal = whyRefused(params);
+    if (refusal != null) {
+      logger.shout('Not starting session ${params.sessionId}: $refusal');
+      toMain.send(
+        IIRequest.create('startRefused', {
+          'sessionId': params.sessionId,
+          'reason': refusal,
+        }),
       );
       return;
     }
