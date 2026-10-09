@@ -253,5 +253,32 @@ void main() {
       expect(accepted.allocated, isTrue);
       verify(() => (accepted.atClient as MockAtClient).get(any())).called(2);
     });
+
+    test(
+        'when two requests for the same session id arrive together and the '
+        'first is still looking up its payload-mode keys, then srvd starts '
+        'only the first', () async {
+      final keysGate = Completer<void>();
+      final srvd = RecordingSrvd(managerAtsign: 'open');
+      when(() => (srvd.atClient as MockAtClient).get(any())).thenAnswer(
+        (_) async {
+          await keysGate.future;
+          return AtValue()..value = 'a public key';
+        },
+      );
+
+      final first = srvd.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+      final second = srvd.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+      await pumpEventQueue();
+      expect(srvd.allocations, 0, reason: 'the first is still looking up');
+
+      keysGate.complete();
+      await Future.wait([first, second]);
+      expect(srvd.allocations, 1);
+    });
   });
 }
