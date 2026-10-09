@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
@@ -10,18 +11,19 @@ import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
 
-/// Finds every atSign in [ports] on the loopback address.
+/// Finds every atSign in [ports] at [host], a loopback name.
 class _LoopbackFinder implements SecondaryAddressFinder {
-  _LoopbackFinder(this.ports);
+  _LoopbackFinder(this.ports, {this.host = '127.0.0.1'});
 
   final Map<String, int> ports;
+  final String host;
 
   @override
   Future<SecondaryAddress> findSecondary(String atSign, {Duration? timeout}) {
     final port = ports[atSign];
     return port == null
         ? Future.error(SecondaryNotFoundException('$atSign is not here'))
-        : Future.value(SecondaryAddress('127.0.0.1', port));
+        : Future.value(SecondaryAddress(host, port));
   }
 }
 
@@ -40,14 +42,18 @@ void main() {
     Duration timeout = const Duration(seconds: 5),
     int maxConcurrent = 16,
     int maxPerAtSign = 2,
+    String scheme = 'http',
+    String host = '127.0.0.1',
+    SecurityContext? securityContext,
   }) {
     final lookup = DirectPublicLookup(
       atClient,
-      addressFinder: _LoopbackFinder(ports),
+      addressFinder: _LoopbackFinder(ports, host: host),
       timeout: timeout,
       maxConcurrent: maxConcurrent,
       maxPerAtSign: maxPerAtSign,
-      scheme: 'http',
+      scheme: scheme,
+      securityContext: securityContext,
     );
     addTearDown(lookup.close);
     return lookup;
@@ -256,6 +262,109 @@ void main() {
         lookupWith().lookupDirect(aliceKey),
         throwsA(isA<FormatException>()),
       );
+    });
+  });
+
+  group('over TLS', () {
+    late Directory tls;
+
+    // A test CA and a day's certificate it signs for localhost, made afresh,
+    // since macOS refuses a server certificate valid for more than 825 days
+    setUpAll(() async {
+      tls = await Directory.systemTemp.createTemp('public_lookup_test');
+      String at(String name) => '${tls.path}/$name';
+      await File(at('server.ext')).writeAsString(
+        'subjectAltName=DNS:localhost\nbasicConstraints=critical,CA:FALSE\n'
+        'extendedKeyUsage=serverAuth\n',
+      );
+      const ec = ['-newkey', 'ec', '-pkeyopt', 'ec_paramgen_curve:prime256v1'];
+      for (final args in [
+        ['req', '-x509', ...ec, '-nodes', '-days', '1', '-subj', '/CN=test CA'] +
+            ['-keyout', at('ca_key.pem'), '-out', at('ca.pem')],
+        ['req', ...ec, '-nodes', '-subj', '/CN=localhost'] +
+            ['-keyout', at('server_key.pem'), '-out', at('server.csr')],
+        ['x509', '-req', '-in', at('server.csr'), '-CA', at('ca.pem')] +
+            ['-CAkey', at('ca_key.pem'), '-CAcreateserial', '-days', '1'] +
+            ['-extfile', at('server.ext'), '-out', at('server.pem')],
+      ]) {
+        final made = await Process.run('openssl', args);
+        if (made.exitCode != 0) {
+          fail('openssl ${args.first} could not make the test certificates:'
+              ' ${made.stderr}');
+        }
+      }
+    });
+    tearDownAll(() => tls.delete(recursive: true));
+
+    SecurityContext trustingTestCa() => SecurityContext(withTrustedRoots: false)
+      ..setTrustedCertificates('${tls.path}/ca.pem');
+
+    /// An atServer for [atSign] that, as at_server does, answers a connection
+    /// over HTTP only when ALPN selected `http/1.1`, and otherwise sends the
+    /// atProtocol prompt; over HTTP it answers every GET with [value].
+    Future<void> serveTls(String atSign, String value) async {
+      final server = await SecureServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+        SecurityContext()
+          ..useCertificateChain('${tls.path}/server.pem')
+          ..usePrivateKey('${tls.path}/server_key.pem')
+          ..setAlpnProtocols(['atProtocol/1.0', 'http/1.1'], true),
+      );
+      final accepted = <SecureSocket>[];
+      addTearDown(() async {
+        for (final socket in accepted) {
+          socket.destroy();
+        }
+        await server.close();
+      });
+      ports[atSign] = server.port;
+      server.listen((socket) {
+        accepted.add(socket);
+        if (socket.selectedProtocol != 'http/1.1') {
+          socket.write('@');
+          socket.listen((_) {}, onError: (_) {}, cancelOnError: true);
+          return;
+        }
+        final request = <int>[];
+        socket.listen((chunk) {
+          request.addAll(chunk);
+          if (!latin1.decode(request).contains('\r\n\r\n')) return;
+          final body = utf8.encode(value);
+          socket
+            ..write('HTTP/1.1 200 OK\r\ncontent-length: ${body.length}\r\n'
+                'connection: close\r\n\r\n')
+            ..add(body);
+          unawaited(socket.close());
+        }, onError: (_) {}, cancelOnError: true);
+      });
+    }
+
+    test(
+        "offers http/1.1 by ALPN, without which an atServer doesn't answer"
+        ' over HTTP', () async {
+      await serveTls('@alice', 'a public key');
+      final lookup = lookupWith(
+        scheme: 'https',
+        host: 'localhost',
+        securityContext: trustingTestCa(),
+      );
+
+      expect(await lookup.lookupDirect(aliceKey), 'a public key');
+      expect(await lookup.lookup(aliceKey), 'a public key');
+      verifyNever(() => atClient.get(any(),
+          getRequestOptions: any(named: 'getRequestOptions')));
+    });
+
+    test('the test atServer answers a client offering no ALPN in atProtocol',
+        () async {
+      await serveTls('@alice', 'a public key');
+      final client = HttpClient(context: trustingTestCa());
+      addTearDown(() => client.close(force: true));
+
+      final request = await client.getUrl(Uri.parse(
+          'https://localhost:${ports['@alice']}/@alice/_apsk.alice-enrollment.a.__e'));
+      await expectLater(request.close(), throwsA(isA<HttpException>()));
     });
   });
 
