@@ -50,6 +50,8 @@
 * fix: sshnpd no longer leaves a session's ephemeral key in
   `authorized_keys`, or drops a new session's key, when sessions start and
   end at the same moment
+* fix: `npp_atserver` keeps running when a notification can't be read
+* test: more test coverage for policy service
 
 ## v5.17.0
 
