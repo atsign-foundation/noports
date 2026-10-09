@@ -232,6 +232,13 @@ class SinglePortWorker extends RelayWorker {
     SrvdSessionParams params = req.payload;
     logger.info('Starting socket connector session for $params');
 
+    // NOTE a start for a live id is refused without telling main, since
+    // main's record of that id is the live session's.
+    if (sessions.containsKey(params.sessionId)) {
+      logger.shout('Cannot start; session ${params.sessionId} already started');
+      return;
+    }
+
     final refusal = whyRefused(params);
     if (refusal != null) {
       logger.shout('Not starting session ${params.sessionId}: $refusal');
@@ -241,11 +248,6 @@ class SinglePortWorker extends RelayWorker {
           'reason': refusal,
         }),
       );
-      return;
-    }
-
-    if (sessions.containsKey(params.sessionId)) {
-      logger.shout('Cannot start; session ${params.sessionId} already started');
       return;
     }
 

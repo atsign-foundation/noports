@@ -27,6 +27,7 @@ SrvdSessionParams params443({
   RelayAuthMode relayAuthMode = RelayAuthMode.escr,
   bool authenticateSocketA = true,
   bool authenticateSocketB = true,
+  bool only443 = true,
 }) =>
     SrvdSessionParams(
       sessionId: sessionId,
@@ -36,52 +37,57 @@ SrvdSessionParams params443({
       authenticateSocketB: authenticateSocketB,
       rvdNonce: 'rvd nonce',
       relayAuthMode: relayAuthMode,
-      only443: true,
+      only443: only443,
       multipleAcksOk: true,
       preFetch: const [],
       sendJsonResponse: true,
     );
 
 void main() {
-  group('SinglePortWorker.startSession', () {
-    late ReceivePort toMain;
-    late SinglePortWorker worker;
-    late List<IIRequest> sentToMain;
+  late ReceivePort toMain;
+  late SinglePortWorker worker;
+  late List<IIRequest> sentToMain;
 
-    setUp(() {
-      toMain = ReceivePort();
-      sentToMain = [];
-      toMain.listen((m) {
-        if (m is IIRequest) sentToMain.add(m);
-      });
-      worker = SinglePortWorker(
-        toMain: toMain.sendPort,
-        logTraffic: false,
-        verbose: false,
-        loggingTag: 'single port refused start test',
-        address: '127.0.0.1',
-        useTLS: false,
-        bindPort: 0,
-      );
+  void setUpWorker() {
+    toMain = ReceivePort();
+    sentToMain = [];
+    toMain.listen((m) {
+      if (m is IIRequest) sentToMain.add(m);
     });
+    worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port refused start test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+    );
+  }
 
-    tearDown(() {
-      for (final si in worker.sessions.values) {
-        si.connector?.close();
-      }
-      worker.fromMain.close();
-      toMain.close();
-    });
-
-    Future<List<IIRequest>> refusalsFor(SrvdSessionParams params) async {
-      await worker.startSession(IIRequest.create('start', params));
-      await pumpEventQueue();
-      return sentToMain.where((m) => m.type == 'startRefused').toList();
+  void tearDownWorker() {
+    for (final si in worker.sessions.values) {
+      si.connector?.close();
     }
+    worker.fromMain.close();
+    toMain.close();
+  }
 
-    test('tells main when it refuses a payload-mode session', () async {
+  Future<List<IIRequest>> refusalsAfterStart(SrvdSessionParams params) async {
+    await worker.startSession(IIRequest.create('start', params));
+    await pumpEventQueue();
+    return sentToMain.where((m) => m.type == 'startRefused').toList();
+  }
+
+  group('Given a single-port isolate', () {
+    setUp(setUpWorker);
+    tearDown(tearDownWorker);
+
+    test(
+        'when a start in payload mode arrives, then it tells main '
+        'startRefused and starts nothing', () async {
       final id = Uuid().v4();
-      final refusals = await refusalsFor(
+      final refusals = await refusalsAfterStart(
         params443(sessionId: id, relayAuthMode: RelayAuthMode.payload),
       );
       expect(refusals, hasLength(1));
@@ -89,10 +95,11 @@ void main() {
       expect(worker.sessions, isEmpty);
     });
 
-    test('tells main when it refuses a session without both auth flags',
-        () async {
+    test(
+        "when a start where a side won't authenticate arrives, then it "
+        'tells main startRefused and starts nothing', () async {
       final id = Uuid().v4();
-      final refusals = await refusalsFor(
+      final refusals = await refusalsAfterStart(
         params443(sessionId: id, authenticateSocketB: false),
       );
       expect(refusals, hasLength(1));
@@ -100,18 +107,42 @@ void main() {
       expect(worker.sessions, isEmpty);
     });
 
-    test('says nothing to main about a session it starts', () async {
+    test(
+        'when a start with ESCR and both sides authenticating arrives, then '
+        'it starts the session and tells main nothing', () async {
       final id = Uuid().v4();
-      expect(await refusalsFor(params443(sessionId: id)), isEmpty);
+      expect(await refusalsAfterStart(params443(sessionId: id)), isEmpty);
       expect(worker.sessions.keys, [id]);
     });
   });
 
-  group('SrvdImpl with a single-port isolate', () {
+  group('Given a single-port isolate with a live session X', () {
+    setUp(setUpWorker);
+    tearDown(tearDownWorker);
+
+    test(
+        'when a start for X arrives with params it would refuse, then it '
+        'tells main nothing and X stays live', () async {
+      final x = Uuid().v4();
+      expect(await refusalsAfterStart(params443(sessionId: x)), isEmpty);
+      final live = worker.sessions[x];
+      expect(live, isNotNull);
+
+      final refusals = await refusalsAfterStart(
+        params443(sessionId: x, relayAuthMode: RelayAuthMode.payload),
+      );
+      expect(refusals, isEmpty);
+      expect(worker.sessions[x], same(live));
+    });
+  });
+
+  group('Given srvd bound to port 443', () {
     late MockAtClient atClient;
     late MockNotificationService notificationService;
     late List<NotificationParams> notified;
     late SrvdImpl srvd;
+    late ReceivePort isolateRecorder;
+    late List<IIRequest> sentToIsolate;
 
     setUpAll(() {
       registerFallbackValue(FakeNotificationParams());
@@ -163,11 +194,23 @@ void main() {
         signingKeyCheckInterval: Duration.zero,
       );
       await srvd.init();
+      isolateRecorder = ReceivePort();
+      sentToIsolate = [];
+      isolateRecorder.listen((m) {
+        if (m is IIRequest) sentToIsolate.add(m);
+      });
     });
 
     tearDown(() {
+      isolateRecorder.close();
       srvd.isolate443?.kill(priority: Isolate.immediate);
     });
+
+    /// Swaps srvd's channel to its single-port isolate for one that records
+    /// what srvd sends it.
+    void recordWhatTheIsolateIsSent() {
+      srvd.toIsolate443 = isolateRecorder.sendPort;
+    }
 
     AtNotification requestPorts(
       String sessionId, {
@@ -202,31 +245,84 @@ void main() {
     bool answered(String sessionId) =>
         notified.any((n) => n.atKey.key == sessionId);
 
-    test('refuses a payload-mode request without recording it', () async {
+    bool startSent(String sessionId) => sentToIsolate.any(
+        (m) => m.type == 'start' && m.payload.sessionId == sessionId);
+
+    void verifyNoMutex() => verifyNever(
+          () => atClient.put(
+            any(),
+            any(),
+            putRequestOptions: any(named: 'putRequestOptions'),
+          ),
+        );
+
+    Future<void> expectRefusedWithNack(AtNotification request) async {
+      recordWhatTheIsolateIsSent();
+      final id = jsonDecode(request.value!)['sessionId'];
+      await srvd.handleRequestPorts(request);
+      await pumpEventQueue();
+      expect(nacked(id), isTrue);
+      expect(startSent(id), isFalse);
+      verifyNoMutex();
+      expect(srvd.sessions.containsKey(id), isFalse);
+      expect(answered(id), isFalse);
+
+      final control = Uuid().v4();
+      await srvd.handleRequestPorts(requestPorts(control));
+      await pumpEventQueue();
+      expect(
+        startSent(control),
+        isTrue,
+        reason: 'control: the recorder sees the start of a session srvd '
+            'accepts',
+      );
+    }
+
+    test(
+        'when a port 443 request in payload mode arrives from a client that '
+        'takes several acks, then srvd NACKs it, sends the isolate nothing, '
+        'takes no session mutex and records no session', () async {
+      await expectRefusedWithNack(
+        requestPorts(Uuid().v4(), relayAuthMode: RelayAuthMode.payload),
+      );
+    });
+
+    test(
+        "when a port 443 request where a side won't authenticate arrives "
+        'from a client that takes several acks, then srvd NACKs it, sends '
+        'the isolate nothing, takes no session mutex and records no session',
+        () async {
+      await expectRefusedWithNack(
+        requestPorts(Uuid().v4(), authenticateSocketB: false),
+      );
+    });
+
+    test(
+        'when a port 443 request in payload mode arrives with both auth '
+        "flags set, then srvd NACKs it without looking up either side's "
+        'public key', () async {
       final id = Uuid().v4();
       await srvd.handleRequestPorts(
         requestPorts(id, relayAuthMode: RelayAuthMode.payload),
       );
       await pumpEventQueue();
-      expect(srvd.sessions.containsKey(id), isFalse);
       expect(nacked(id), isTrue);
-      expect(answered(id), isFalse);
-    });
+      verifyNever(() => atClient.get(any()));
 
-    test('refuses a request without both auth flags without recording it',
-        () async {
-      final id = Uuid().v4();
-      await srvd.handleRequestPorts(
-        requestPorts(id, authenticateSocketB: false),
+      await srvd.withPayloadKeys(
+        params443(
+          sessionId: Uuid().v4(),
+          relayAuthMode: RelayAuthMode.payload,
+          only443: false,
+        ),
       );
-      await pumpEventQueue();
-      expect(srvd.sessions.containsKey(id), isFalse);
-      expect(nacked(id), isTrue);
-      expect(answered(id), isFalse);
+      verify(() => atClient.get(any())).called(2);
     });
 
-    test('refuses without a NACK a client that cannot take several acks',
-        () async {
+    test(
+        'when a refused port 443 request arrives from a client that takes '
+        'one ack, then srvd refuses it without a NACK', () async {
+      recordWhatTheIsolateIsSent();
       final id = Uuid().v4();
       await srvd.handleRequestPorts(
         requestPorts(
@@ -236,21 +332,40 @@ void main() {
         ),
       );
       await pumpEventQueue();
-      expect(srvd.sessions.containsKey(id), isFalse);
       expect(nacked(id), isFalse);
+      expect(startSent(id), isFalse);
+      verifyNoMutex();
+      expect(srvd.sessions.containsKey(id), isFalse);
       expect(answered(id), isFalse);
+
+      final control = Uuid().v4();
+      await srvd.handleRequestPorts(
+        requestPorts(control, multipleAcksOk: false),
+      );
+      await pumpEventQueue();
+      verify(
+        () => atClient.put(
+          any(),
+          any(),
+          putRequestOptions: any(named: 'putRequestOptions'),
+        ),
+      ).called(1);
     });
 
-    test('records an ESCR request with both auth flags', () async {
+    test(
+        'when a port 443 request with ESCR and both sides authenticating '
+        'arrives, then srvd answers it and records the session', () async {
       final id = Uuid().v4();
       await srvd.handleRequestPorts(requestPorts(id));
       await pumpEventQueue();
       expect(srvd.sessions.containsKey(id), isTrue);
-      expect(nacked(id), isFalse);
       expect(answered(id), isTrue);
+      expect(nacked(id), isFalse);
     });
 
-    test('forgets a session the single-port isolate refuses to start',
+    test(
+        'when the isolate refuses to start a session srvd has recorded, '
+        'then srvd forgets it and keeps the sessions the isolate started',
         () async {
       final refused = Uuid().v4();
       final started = Uuid().v4();
@@ -268,11 +383,7 @@ void main() {
         await Future.delayed(Duration(milliseconds: 10));
       }
       expect(srvd.sessions.containsKey(refused), isFalse);
-      expect(
-        srvd.sessions.containsKey(started),
-        isTrue,
-        reason: 'a session the isolate starts stays recorded',
-      );
+      expect(srvd.sessions.containsKey(started), isTrue);
     });
   });
 }

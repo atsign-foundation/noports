@@ -403,7 +403,7 @@ class SrvdImpl
   Future<void> handleRequestPorts(AtNotification n) async {
     SrvdSessionParams sessionParams;
     try {
-      sessionParams = await srvdSessionParamsFromNotification(n.value!);
+      sessionParams = srvdSessionParamsFromJson(n.value!);
 
       if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
         logger.shout(
@@ -458,7 +458,14 @@ class SrvdImpl
 
     _startingSessions.add(sessionParams.sessionId);
     try {
-      await _startSession(n, sessionParams);
+      final SrvdSessionParams withKeys;
+      try {
+        withKeys = await withPayloadKeys(sessionParams);
+      } catch (e) {
+        logger.shout('Unable to provide the socket pair due to: $e');
+        return;
+      }
+      await _startSession(n, withKeys);
     } finally {
       _startingSessions.remove(sessionParams.sessionId);
     }
@@ -534,27 +541,23 @@ class SrvdImpl
       }
     }
 
-    if (sessionParams.only443) {
-      if (!bind443) {
-        var message =
-            'Client requested port 443'
-            ' but this relay is not bound to port 443';
-        logger.shout(message);
-        if (sessionParams.multipleAcksOk) {
-          try {
-            await sendNack(
-              sessionId: sessionParams.sessionId,
-              requestingAtsign: n.from,
-              message: message,
-            );
-          } catch (e) {
-            logger.shout('Error while sending NACK: $e');
-          }
+    if (sessionParams.only443 && !bind443) {
+      var message =
+          'Client requested port 443'
+          ' but this relay is not bound to port 443';
+      logger.shout(message);
+      if (sessionParams.multipleAcksOk) {
+        try {
+          await sendNack(
+            sessionId: sessionParams.sessionId,
+            requestingAtsign: n.from,
+            message: message,
+          );
+        } catch (e) {
+          logger.shout('Error while sending NACK: $e');
         }
-        return;
-      } else {
-        toIsolate443!.send(IIRequest.create('start', sessionParams));
       }
+      return;
     }
 
     sessions[sessionParams.sessionId] = SessionInfo(
@@ -562,6 +565,9 @@ class SrvdImpl
       connector: null,
       toWorker: ppiSendToSpawned,
     );
+    if (sessionParams.only443) {
+      toIsolate443!.send(IIRequest.create('start', sessionParams));
+    }
 
     var (portA, portB) = ports;
     logger.shout(
