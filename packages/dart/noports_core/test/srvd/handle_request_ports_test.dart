@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/session_info.dart';
@@ -14,6 +15,8 @@ import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
+
+class FakeAtKey extends Fake implements AtKey {}
 
 /// Records whether a request got as far as allocating ports, then stops it,
 /// once [gate] (when given) completes.
@@ -90,21 +93,21 @@ void main() {
 
     test('refuses a sender that is not the manager', () async {
       expect(
-        await allocates(manager: '@manager', from: '@mallory', atSignA: '@mallory'),
+        await allocates(manager: '@manager', from: '@carol', atSignA: '@carol'),
         isFalse,
       );
     });
 
     test('refuses a sender naming the manager as atSignA', () async {
       expect(
-        await allocates(manager: '@manager', from: '@mallory', atSignA: '@manager'),
+        await allocates(manager: '@manager', from: '@carol', atSignA: '@manager'),
         isFalse,
       );
     });
 
     test('refuses a sender naming another atSign on an open relay', () async {
       expect(
-        await allocates(manager: 'open', from: '@mallory', atSignA: '@alice'),
+        await allocates(manager: 'open', from: '@carol', atSignA: '@alice'),
         isFalse,
       );
     });
@@ -118,7 +121,7 @@ void main() {
 
     test('refuses a session id that is already live', () async {
       expect(
-        await allocates(manager: 'open', from: '@mallory', atSignA: '@mallory'),
+        await allocates(manager: 'open', from: '@carol', atSignA: '@carol'),
         isTrue,
         reason: 'the same request is let through when no session is live',
       );
@@ -139,7 +142,7 @@ void main() {
       srvd.sessions['the session'] = live;
 
       await srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
 
       expect(srvd.allocated, isFalse);
@@ -156,7 +159,7 @@ void main() {
       expect(srvd.allocations, 1, reason: 'the first request is mid-start');
 
       final second = srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
       await pumpEventQueue();
       expect(srvd.allocations, 1);
@@ -164,9 +167,118 @@ void main() {
       gate.complete();
       await Future.wait([first, second]);
       await srvd.handleRequestPorts(
-        requestPorts(from: '@mallory', atSignA: '@mallory'),
+        requestPorts(from: '@carol', atSignA: '@carol'),
       );
       expect(srvd.allocations, 2, reason: 'a start that failed frees its id');
+    });
+  });
+
+  group('Given srvd', () {
+    setUpAll(() => registerFallbackValue(FakeAtKey()));
+
+    AtNotification payloadRequest({
+      required String from,
+      required String atSignA,
+      String sessionId = 'the session',
+    }) =>
+        AtNotification(
+          'notif-id',
+          '@relay:device.request_ports.sshrvd$from',
+          from,
+          '@relay',
+          DateTime.now().millisecondsSinceEpoch,
+          'key',
+          true,
+          value: jsonEncode({
+            'sessionId': sessionId,
+            'atSignA': atSignA,
+            'atSignB': '@device',
+            'clientNonce': 'client nonce',
+            'authenticateSocketA': true,
+            'authenticateSocketB': true,
+            'relayAuthMode': RelayAuthMode.payload.name,
+          }),
+        );
+
+    RecordingSrvd srvdAnsweringLookups({required String managerAtsign}) {
+      final srvd = RecordingSrvd(managerAtsign: managerAtsign);
+      when(() => (srvd.atClient as MockAtClient).get(any())).thenAnswer(
+        (_) async => AtValue()..value = 'a public key',
+      );
+      return srvd;
+    }
+
+    test(
+        "when a session request it will deny arrives (from a sender who "
+        "isn't the request's atSignA, from someone other than the manager "
+        'on a managed relay, or for a session id already live), then srvd '
+        "denies it without looking up either side's public key", () async {
+      final notAtSignA = srvdAnsweringLookups(managerAtsign: 'open');
+      await notAtSignA.handleRequestPorts(
+        payloadRequest(from: '@carol', atSignA: '@alice'),
+      );
+
+      final notManager = srvdAnsweringLookups(managerAtsign: '@manager');
+      await notManager.handleRequestPorts(
+        payloadRequest(from: '@carol', atSignA: '@carol'),
+      );
+
+      final liveId = srvdAnsweringLookups(managerAtsign: 'open');
+      liveId.sessions['the session'] = SessionInfo(
+        params: SrvdSessionParams(
+          sessionId: 'the session',
+          atSignA: '@bob',
+          atSignB: '@device',
+          rvdNonce: 'rvd nonce',
+          only443: false,
+          multipleAcksOk: true,
+          preFetch: const [],
+          sendJsonResponse: true,
+        ),
+        connector: null,
+      );
+      await liveId.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+
+      for (final srvd in [notAtSignA, notManager, liveId]) {
+        expect(srvd.allocated, isFalse);
+        verifyNever(() => (srvd.atClient as MockAtClient).get(any()));
+      }
+
+      final accepted = srvdAnsweringLookups(managerAtsign: 'open');
+      await accepted.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+      expect(accepted.allocated, isTrue);
+      verify(() => (accepted.atClient as MockAtClient).get(any())).called(2);
+    });
+
+    test(
+        'when two requests for the same session id arrive together and the '
+        'first is still looking up its payload-mode keys, then srvd starts '
+        'only the first', () async {
+      final keysGate = Completer<void>();
+      final srvd = RecordingSrvd(managerAtsign: 'open');
+      when(() => (srvd.atClient as MockAtClient).get(any())).thenAnswer(
+        (_) async {
+          await keysGate.future;
+          return AtValue()..value = 'a public key';
+        },
+      );
+
+      final first = srvd.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+      final second = srvd.handleRequestPorts(
+        payloadRequest(from: '@alice', atSignA: '@alice'),
+      );
+      await pumpEventQueue();
+      expect(srvd.allocations, 0, reason: 'the first is still looking up');
+
+      keysGate.complete();
+      await Future.wait([first, second]);
+      expect(srvd.allocations, 1);
     });
   });
 }
