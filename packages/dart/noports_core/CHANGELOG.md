@@ -79,6 +79,8 @@
   keep accepting connections and then threw a `StateError` when it ended
 - fix: sshnpd authorizes a direct ssh session's ephemeral key under the
   `homeDirectory` it was given, rather than always under `$HOME`
+- fix: `npp_atserver` keeps running when a notification can't be read
+- test: more test coverage for policy service
 - fix: npt and sshnp act on the first response from the relay they asked,
   and ignore later responses and any from another atSign
 
