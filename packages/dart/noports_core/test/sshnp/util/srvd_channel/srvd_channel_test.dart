@@ -269,7 +269,7 @@ void main() {
           AtNotification(
             '123',
             '$sessionId.${Srvd.namespace}',
-            '@alice',
+            '@srvd',
             '@bob',
             123,
             'key',
@@ -350,7 +350,7 @@ void main() {
           AtNotification(
             '123',
             '$sessionId.${Srvd.namespace}',
-            '@alice',
+            '@srvd',
             '@bob',
             123,
             'key',
@@ -439,7 +439,7 @@ void main() {
         AtNotification(
           '123',
           'nack.$sessionId.${Srvd.namespace}',
-          '@alice',
+          '@srvd',
           '@bob',
           123,
           'key',
@@ -803,6 +803,182 @@ void main() {
       // for 443 (though 443 forces device auth elsewhere).
       expect(call(authenticateDeviceToRvd: false), false);
       expect(call(only443: true, authenticateDeviceToRvd: false), false);
+    });
+  });
+
+  group("Given a client waiting for the relay's answer to its session request",
+      () {
+    const sessionId = 'the-session';
+    const relay = '@srvd';
+
+    late StreamController<AtNotification> responses;
+    late List<Object> uncaught;
+
+    AtNotification nack(String message, {String from = relay}) =>
+        AtNotification(
+          'nack-id',
+          'nack.$sessionId.${Srvd.namespace}',
+          from,
+          '@sshnp',
+          1,
+          'key',
+          true,
+        )..value = message;
+
+    AtNotification ack(String address, {String from = relay}) =>
+        AtNotification(
+          'ack-id',
+          '$sessionId.${Srvd.namespace}',
+          from,
+          '@sshnp',
+          2,
+          'key',
+          true,
+        )..value = jsonEncode({
+            'address': address,
+            'portA': 1001,
+            'portB': 1002,
+            'rvdNonce': 'relay nonce',
+            'supportsEventLogging': true,
+          });
+
+    SrvdDartBindPortChannel relayChannel() {
+      registerFallbackValue(FakeNotificationParams());
+      final atClient = MockAtClient();
+      when(() => atClient.getCurrentAtSign()).thenReturn('@sshnp');
+      final notificationService = MockNotificationService();
+      when(() => atClient.notificationService)
+          .thenReturn(notificationService);
+      when(
+        () => notificationService.notify(
+          any(),
+          checkForFinalDeliveryStatus:
+              any(named: 'checkForFinalDeliveryStatus'),
+          waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+          onSuccess: any(named: 'onSuccess'),
+          onError: any(named: 'onError'),
+          onSentToSecondary: any(named: 'onSentToSecondary'),
+        ),
+      ).thenAnswer(
+        (_) async => NotificationResult()
+          ..notificationStatusEnum = NotificationStatusEnum.delivered,
+      );
+      when(
+        () => notificationService.subscribe(
+          regex: any(named: 'regex'),
+          shouldDecrypt: any(named: 'shouldDecrypt'),
+        ),
+      ).thenAnswer((_) => responses.stream);
+      return SrvdDartBindPortChannel(
+        atClient: atClient,
+        params: NptParams(
+          clientAtSign: '@sshnp',
+          sshnpdAtSign: '@sshnpd',
+          srvdAtSign: relay,
+          remoteHost: '127.0.0.1',
+          remotePort: 9887,
+          device: 'my_device1',
+          inline: true,
+          timeout: Duration(seconds: 30),
+        ),
+        sessionId: sessionId,
+      );
+    }
+
+    /// Waits for [channel]'s answer, then lets every queued response arrive,
+    /// and gives back what the wait threw, or null.
+    Future<Object?> answerOf(SrvdDartBindPortChannel channel) async {
+      final thrown = Completer<Object?>();
+      unawaited(runZonedGuarded(() async {
+        Object? error;
+        try {
+          await channel.getHostAndPortFromSrvd(
+            timeout: Duration(seconds: 2),
+          );
+        } catch (e) {
+          error = e;
+        }
+        await pumpEventQueue();
+        thrown.complete(error);
+      }, (e, _) => uncaught.add(e)));
+      return thrown.future;
+    }
+
+    setUp(() {
+      responses = StreamController<AtNotification>();
+      uncaught = [];
+    });
+
+    test(
+        'when the relay NACKs and then NACKs again, then the client reports '
+        "the first NACK's message and raises nothing else", () async {
+      final channel = relayChannel();
+      responses
+        ..add(nack('first'))
+        ..add(nack('second'));
+
+      final thrown = await answerOf(channel);
+
+      expect(thrown, isA<SshnpError>());
+      expect((thrown as SshnpError).message, 'first');
+      expect(uncaught, isEmpty);
+    });
+
+    test(
+        'when the relay NACKs and then ACKs, then the client reports the NACK '
+        'and keeps no relay address', () async {
+      final channel = relayChannel();
+      responses
+        ..add(nack('not bound to port 443'))
+        ..add(ack('10.0.0.1'));
+
+      final thrown = await answerOf(channel);
+
+      expect(thrown, isA<SshnpError>());
+      expect((thrown as SshnpError).message, 'not bound to port 443');
+      expect(channel.srvdAck, SrvdAck.acknowledgedWithErrors);
+      expect(channel.fetched, isFalse);
+      expect(() => channel.rvdHost, throwsA(isA<SshnpError>()));
+      expect(uncaught, isEmpty);
+    });
+
+    test('when the relay ACKs and then NACKs, then the client uses the ACK',
+        () async {
+      final channel = relayChannel();
+      responses
+        ..add(ack('10.0.0.1'))
+        ..add(nack('late'));
+
+      expect(await answerOf(channel), isNull);
+      expect(channel.rvdHost, '10.0.0.1');
+      expect(channel.srvdAck, SrvdAck.acknowledged);
+      expect(uncaught, isEmpty);
+    });
+
+    test(
+        'when an ACK for its session arrives from an atSign other than the '
+        'relay, then the client ignores it and goes on waiting', () async {
+      final channel = relayChannel();
+      responses
+        ..add(ack('10.0.0.66', from: '@carol'))
+        ..add(ack('10.0.0.1'));
+
+      expect(await answerOf(channel), isNull);
+      expect(channel.rvdHost, '10.0.0.1');
+      expect(uncaught, isEmpty);
+    });
+
+    test(
+        'when a NACK for its session arrives from an atSign other than the '
+        'relay, then the client ignores it and goes on waiting', () async {
+      final channel = relayChannel();
+      responses
+        ..add(nack('from elsewhere', from: '@carol'))
+        ..add(ack('10.0.0.1'));
+
+      expect(await answerOf(channel), isNull);
+      expect(channel.rvdHost, '10.0.0.1');
+      expect(uncaught, isEmpty);
     });
   });
 }

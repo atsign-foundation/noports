@@ -542,7 +542,7 @@ void main() {
         AtNotification(
           '123',
           'local.request_ports.${Srvd.namespace}',
-          '@alice',
+          '@srvd',
           '@bob',
           123,
           'key',

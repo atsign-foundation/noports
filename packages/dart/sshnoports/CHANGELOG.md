@@ -52,6 +52,8 @@
 * fix: sshnpd no longer leaves a session's ephemeral key in
   `authorized_keys`, or drops a new session's key, when sessions start and
   end at the same moment
+* fix: sshnp and npt act on the first response from the relay they asked,
+  and ignore later responses and any from another atSign
 
 ## v5.17.0
 
