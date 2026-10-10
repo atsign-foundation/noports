@@ -2047,7 +2047,7 @@ class SshnpdImpl
       return;
     }
     String regex =
-        '\\.$device\\.devices\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign';
+        '\\.$device\\.devices\\.policy\\.${DefaultArgs.namespace}$policyManagerAtsign\$';
     logger.shout('Subscribing to $regex');
     _addSubscription(
       subscribe(

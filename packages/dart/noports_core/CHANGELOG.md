@@ -84,6 +84,7 @@
 - fix: npt and sshnp act on the first response from the relay they asked,
   and ignore later responses and any from another atSign
 - fix: sshnpd discards malformed policy configs
+- fix: tighten regexes
 
 # 6.15.0
 

@@ -146,6 +146,19 @@ void main() {
     });
 
     test(
+        "when @policy2 sends a config, then the daemon's policy subscription"
+        " doesn't deliver it, and the daemon keeps its event-logging config",
+        () async {
+      final d = daemon()..elc = existing;
+      final subscription = await subscribe(d);
+
+      await send(config(configFor('@policy2events'), from: '@policy2'));
+
+      expect(subscription.delivered, isEmpty);
+      expect(d.elc, same(existing));
+    });
+
+    test(
         "when @policy sends a config that isn't JSON, then the daemon keeps its"
         ' event-logging config and keeps running', () async {
       final d = daemon()..elc = existing;
