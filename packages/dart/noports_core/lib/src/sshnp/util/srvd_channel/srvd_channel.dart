@@ -357,7 +357,14 @@ abstract class SrvdChannel<T>
       regex: '$sessionId.${Srvd.namespace}@',
       shouldDecrypt: true,
     ).listen((notification) async {
-      if (fetched) {
+      if (notification.from.toAtsign() != params.srvdAtSign.toAtsign()) {
+        logger.warning(
+          'Ignoring a response for session $sessionId'
+          ' from ${notification.from}, which is not ${params.srvdAtSign}',
+        );
+        return;
+      }
+      if (acked.isCompleted) {
         logger.warning(
           'Got additional relay response ${notification.value} - ignoring',
         );

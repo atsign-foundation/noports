@@ -70,6 +70,8 @@
   itself
 - fix: a long-running srvd no longer keeps a receive port open for every
   session it has relayed
+- fix: srvd refuses a port 443 session request it can't serve (payload
+  mode, or a side that won't authenticate) as soon as it arrives
 - fix: sshnpd no longer leaves a session's ephemeral key in
   `authorized_keys`, or drops a new session's key, when sessions start and
   end at the same moment
@@ -77,6 +79,10 @@
   keep accepting connections and then threw a `StateError` when it ended
 - fix: sshnpd authorizes a direct ssh session's ephemeral key under the
   `homeDirectory` it was given, rather than always under `$HOME`
+- fix: `npp_atserver` keeps running when a notification can't be read
+- test: more test coverage for policy service
+- fix: npt and sshnp act on the first response from the relay they asked,
+  and ignore later responses and any from another atSign
 
 # 6.15.0
 
