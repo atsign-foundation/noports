@@ -54,6 +54,8 @@
   end at the same moment
 * fix: `npp_atserver` keeps running when a notification can't be read
 * test: more test coverage for policy service
+* fix: sshnp and npt act on the first response from the relay they asked,
+  and ignore later responses and any from another atSign
 
 ## v5.17.0
 
