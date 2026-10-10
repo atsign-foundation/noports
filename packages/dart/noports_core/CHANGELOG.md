@@ -19,6 +19,8 @@
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
+- **BREAKING CHANGE** fix: `NPARequestHandler` implementations must add
+  `hasRulesFor`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
@@ -94,6 +96,8 @@
 - feat: npevents adds the sending atSign to each event it prints
 - fix: sessions work when the client, daemon and relay share an atSign
 - test: the in-process harness runs every role as one atSign
+- fix: policy services answer only daemons that have rules, and each only
+  about itself
 
 # 6.15.0
 

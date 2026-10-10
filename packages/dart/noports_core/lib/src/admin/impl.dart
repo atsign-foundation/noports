@@ -174,6 +174,17 @@ class PolicyServiceInMem implements PolicyService {
   @override
   final Map<String, UserGroup> groups = {};
 
+  /// Whether any group's daemon atSigns list [daemonAtsign].
+  bool hasRulesFor(Atsign daemonAtsign) => groups.values.any(
+        (group) => group.daemonAtSigns.any((atSign) {
+          try {
+            return atSign.toAtsign() == daemonAtsign;
+          } catch (_) {
+            return false;
+          }
+        }),
+      );
+
   @override
   final List<dynamic> logEvents = [];
 

@@ -142,6 +142,9 @@ class Handler implements NPARequestHandler {
   }
 
   @override
+  bool hasRulesFor(Atsign daemonAtsign) => api.hasRulesFor(daemonAtsign);
+
+  @override
   Future<NPAAuthCheckResponse> doAuthCheck(
       NPAAuthCheckRequest authCheckRequest) async {
     logger.info('Checking policy for request: $authCheckRequest');

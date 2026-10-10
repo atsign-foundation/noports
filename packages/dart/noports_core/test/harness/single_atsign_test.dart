@@ -19,6 +19,9 @@ class _AllowAll implements NPARequestHandler {
   final List<String> permitOpen;
 
   @override
+  bool hasRulesFor(Atsign daemonAtsign) => true;
+
+  @override
   Future<NPAAuthCheckResponse> doAuthCheck(NPAAuthCheckRequest request) async =>
       NPAAuthCheckResponse(
         authorized: true,

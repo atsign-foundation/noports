@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
+import 'package:at_client/at_client.dart' show Atsign, AtsignString;
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
@@ -114,10 +115,18 @@ class FileBasedPolicy implements NPARequestHandler {
 
   final Map<String, Map> _userAtSigns = {};
 
+  final Set<Atsign> _daemons = {};
+
   FileBasedPolicy(this.yaml) {
     // Create a map of userAtSign->daemonAtSign->deviceNames/deviceGroupNames->[PermitOpens]
     for (String userGroupName in yaml['userGroups'].keys ?? []) {
       final group = yaml['userGroups'][userGroupName];
+      for (String daemonAtSign
+          in group['permissions']?['daemonAtSigns'] ?? []) {
+        try {
+          _daemons.add(daemonAtSign.toAtsign());
+        } catch (_) {}
+      }
       for (String userAtSign in group['userAtSigns']) {
         _userAtSigns.putIfAbsent(
             userAtSign, () => {'userGroups': [], 'daemons': {}});
@@ -177,6 +186,9 @@ class FileBasedPolicy implements NPARequestHandler {
       }
     }
   }
+
+  @override
+  bool hasRulesFor(Atsign daemonAtsign) => _daemons.contains(daemonAtsign);
 
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(

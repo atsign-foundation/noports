@@ -1,3 +1,4 @@
+import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 
 import './models.dart';
@@ -99,6 +100,30 @@ class NppCache {
       matchedClientGroups.add(clientGroup);
     }
     return matchedClientGroups;
+  }
+
+  /// Whether a service ACL covers any service of the daemon [daemonAtSign].
+  bool hasServiceACLsForDaemon(final Atsign daemonAtSign) {
+    for (final Daemon daemon in _daemons) {
+      if (daemon.id == null || !_sameAtSign(daemon.atSign, daemonAtSign)) {
+        continue;
+      }
+      for (final Service service in getServicesByDaemonId(daemon.id!)) {
+        if (service.id != null &&
+            getServiceACLsByServiceID(service.id!).isNotEmpty) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  static bool _sameAtSign(String atSign, Atsign other) {
+    try {
+      return atSign.toAtsign() == other;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// get* from NppCache
