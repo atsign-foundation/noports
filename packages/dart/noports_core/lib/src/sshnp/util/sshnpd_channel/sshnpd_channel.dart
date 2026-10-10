@@ -62,6 +62,8 @@ abstract class SshnpdChannel
 
   Completer acked = Completer();
 
+  bool _responded = false;
+
   /// If the daemon supports twinKeys then this gets set to true by the
   /// [featureCheck] function.
   late final bool twinKeys;
@@ -87,7 +89,7 @@ abstract class SshnpdChannel
   /// Initialization starts the subscription to notifications from the daemon.
   @override
   Future<void> initialize() async {
-    String regex = '$sessionId.$namespace${params.sshnpdAtSign}';
+    String regex = '$sessionId.$namespace${params.sshnpdAtSign}\$';
     logger.info('Starting monitor for notifications with regex: "$regex"');
     subscribe(regex: regex, shouldDecrypt: true).listen(handleSshnpdResponses);
 
@@ -110,6 +112,14 @@ abstract class SshnpdChannel
   /// Main response handler for the daemon's notifications.
   @visibleForTesting
   Future<void> handleSshnpdResponses(AtNotification notification) async {
+    if (_responded) {
+      logger.warning(
+        'Ignoring another response for session $sessionId'
+        ' from ${notification.from}',
+      );
+      return;
+    }
+    _responded = true;
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace@${notification.from}', '')

@@ -87,6 +87,8 @@
 - fix: tighten regexes
 - fix: srvd takes a session's event logging config only from the session's
   daemon
+- fix: sshnp and npt act on the daemon's first response and ignore any later
+  ones
 
 # 6.15.0
 

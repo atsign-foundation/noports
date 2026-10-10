@@ -86,7 +86,7 @@ void main() {
 
       verify(
         () => subscribeStub(
-          regex: '$sessionId.$namespace@sshnpd',
+          regex: '$sessionId.$namespace@sshnpd\$',
           shouldDecrypt: true,
         ),
       ).called(1);
