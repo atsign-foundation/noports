@@ -150,7 +150,8 @@ class NoPortsHarness {
   /// Starts sshnpd on [atSign] as [enrollment] (by default its first),
   /// managed by [managerAtsigns] (with
   /// [policyAtSign] as its policy service, when given) and permitted to open
-  /// [permitOpen]. With [advertisesEscr] false it tells
+  /// [permitOpen], sharing its device info with its managers when
+  /// [makeDeviceInfoVisible]. With [advertisesEscr] false it tells
   /// clients it predates ESCR relay authentication, as an old daemon does;
   /// with [strict] it verifies each request's signature. It checks clients'
   /// enrollments every [clientKeyCheckInterval], and with
@@ -164,6 +165,7 @@ class NoPortsHarness {
     List<String> managerAtsigns = const [clientAtSign],
     String? policyAtSign,
     FakeEnrollment? enrollment,
+    bool makeDeviceInfoVisible = false,
     bool advertisesEscr = true,
     bool strict = false,
     Duration clientKeyCheckInterval =
@@ -190,7 +192,7 @@ class NoPortsHarness {
       managerAtsigns: managerAtsigns,
       policyManagerAtsign: policyAtSign?.toAtsign(),
       sshClient: SupportedSshClient.openssh,
-      makeDeviceInfoVisible: false,
+      makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: false,
       localSshdPort: 22,
       sshPublicKeyPermissions: '',

@@ -12,11 +12,13 @@ import 'package:test/test.dart';
 import 'fake_atserver.dart';
 import 'noports_harness.dart';
 
-/// Lets every client of the daemon open anything the daemon allows.
-class _AllowAll implements NPARequestHandler {
-  _AllowAll(this.permitOpen);
+/// Lets every client of the daemon open [permitOpen], or nothing once
+/// [allow] is false.
+class _Policy implements NPARequestHandler {
+  _Policy(this.permitOpen);
 
   final List<String> permitOpen;
+  bool allow = true;
 
   @override
   bool hasRulesFor(Atsign daemonAtsign) => true;
@@ -24,9 +26,9 @@ class _AllowAll implements NPARequestHandler {
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(NPAAuthCheckRequest request) async =>
       NPAAuthCheckResponse(
-        authorized: true,
-        message: 'allowed',
-        permitOpen: permitOpen,
+        authorized: allow,
+        message: allow ? 'allowed' : 'denied',
+        permitOpen: allow ? permitOpen : [],
       );
 }
 
@@ -40,6 +42,7 @@ void main() {
     late ServerSocket echo;
     late List<Map<String, dynamic>> events;
     late AtEventConfig elc;
+    late _Policy rules;
 
     /// The keys of the notifications [a] has received, with ids, numbers and
     /// the event topic replaced by placeholders.
@@ -53,6 +56,33 @@ void main() {
                   '<id>',
                 )
                 .replaceAll(RegExp(r'\d{10,}'), '<n>'),
+        ];
+
+    /// What [a] receives when the daemon starts: its heartbeat to the policy
+    /// service.
+    const startUp = ['@a:harness.devices.policy.sshnp@a'];
+
+    /// The daemon's check with the policy service, and the policy log entry.
+    const policyCheck = [
+      '@a:request.<n>.auth_checks.__rpcs.sshnp@a',
+      '@a:ack.<n>.auth_checks.__rpcs.sshnp@a',
+      '@a:success.<n>.auth_checks.__rpcs.sshnp@a',
+      '@a:<n>.logs.policy.sshnp@a',
+    ];
+
+    /// What [a] receives for one npt session, with the daemon's policy check
+    /// unless the decision is [cached].
+    List<String> sessionKeys({bool cached = false}) => [
+          '@a:ping.harness.sshnp@a',
+          '@a:heartbeat.harness.sshnp@a',
+          '@a:harness.request_ports.sshrvd@a',
+          '@a:<id>.sshrvd@a',
+          '@a:harness.auth_modes.sshrvd@a',
+          if (!cached) ...policyCheck,
+          '@a:npt_request.harness.sshnp@a',
+          '@a:<id>.harness.sshnp@a',
+          '@a:logging.<id>.sessions.sshrvd@a',
+          for (var i = 0; i < 5; i++) '@a:<topic>@a',
         ];
 
     /// The number of times the event-logging config shared with [a] has been
@@ -126,6 +156,7 @@ void main() {
       // first would wait for an event that never comes.
       listener.getJsonStream(elc).listen((json) => events.add(jsonDecode(json)));
 
+      rules = _Policy(['127.0.0.1:${echo.port}']);
       final policy = NPAImpl(
         atClient: await harness.openClient(
           a,
@@ -133,7 +164,7 @@ void main() {
           enrollment: role('policy'),
         ),
         homeDirectory: harness.home.path,
-        handler: _AllowAll(['127.0.0.1:${echo.port}']),
+        handler: rules,
         eventLoggingAtsign: a.toAtsign(),
       );
       await policy.run();
@@ -141,20 +172,34 @@ void main() {
       await harness.startRelay(atSign: a, enrollment: role('relay'));
     });
 
-    Future<void> startDaemon() async {
+    Future<void> startDaemon({
+      List<String> managers = const [],
+      bool strict = false,
+      bool requireEnrollmentSignature = false,
+      bool makeDeviceInfoVisible = false,
+    }) async {
       await harness.startDaemon(
         atSign: a,
-        managerAtsigns: const [],
+        managerAtsigns: managers,
         policyAtSign: a,
         enrollment: role('daemon'),
         permitOpen: ['127.0.0.1:${echo.port}'],
+        strict: strict,
+        requireEnrollmentSignature: requireEnrollmentSignature,
+        makeDeviceInfoVisible: makeDeviceInfoVisible,
       );
       await until(() => harness.daemon!.elc != null);
     }
 
-    Future<Npt> npt() async {
+    Future<Npt> npt({
+      RelayAuthMode? relayAuthMode,
+      Duration daemonPingTimeout = DefaultArgs.daemonPingTimeoutDuration,
+    }) async {
       final npt = Npt.create(
         params: NptParams(
+          relayAuthMode: relayAuthMode ?? DefaultArgs.relayAuthMode,
+          relayAuthModeExplicit: relayAuthMode != null,
+          daemonPingTimeout: daemonPingTimeout,
           clientAtSign: a,
           sshnpdAtSign: a,
           srvdAtSign: a,
@@ -203,7 +248,7 @@ void main() {
       await settles();
 
       expect(configShares() - sharesBefore, 1);
-      expect(receivedKeys(), ['@a:harness.devices.policy.sshnp@a']);
+      expect(receivedKeys(), startUp);
       expect(harness.server.unhandled, isEmpty);
     });
 
@@ -236,23 +281,138 @@ void main() {
       await session.close();
       await settles();
 
+      expect(receivedKeys(), unorderedEquals([...startUp, ...sessionKeys()]));
+      expect(harness.server.unhandled, isEmpty);
+    });
+    test(
+        'when the client runs a second session straight after the first, then'
+        ' both carry data, and the second needs no new policy check', () async {
+      await startDaemon();
+      for (final message in ['first', 'second']) {
+        final session = await npt();
+        expect(await roundTrip(await session.run(), message), message);
+        await session.close();
+      }
+      await settles();
+
+      expect(
+        receivedKeys(),
+        unorderedEquals([...startUp, ...sessionKeys(), ...sessionKeys(cached: true)]),
+      );
+      expect(harness.server.unhandled, isEmpty);
+    });
+
+    test(
+        'when the client asks for ESCR relay auth explicitly, then the session'
+        ' carries data', () async {
+      await startDaemon();
+      final session = await npt(relayAuthMode: RelayAuthMode.escr);
+
+      expect(await roundTrip(await session.run(), 'escr'), 'escr');
+      expect(
+        harness.relayHttp.asked.where((path) => path.contains('_apsk.')),
+        isNotEmpty,
+        reason: 'the relay looks each side up by its signing key',
+      );
+      await session.close();
+      await settles();
+
+      expect(receivedKeys(), unorderedEquals([...startUp, ...sessionKeys()]));
+      expect(harness.server.unhandled, isEmpty);
+    });
+
+    test(
+        "when the daemon is strict, then it verifies the client's request"
+        " against @a's key from the atServer, and the session carries data",
+        () async {
+      await startDaemon(strict: true);
+      final session = await npt();
+
+      expect(await roundTrip(await session.run(), 'strict'), 'strict');
+      await session.close();
+      await settles();
+
+      expect(receivedKeys(), unorderedEquals([...startUp, ...sessionKeys()]));
+      expect(harness.server.unhandled, isEmpty);
+    });
+
+    test(
+        'when the daemon requires an enrollment signature, then it verifies the'
+        " client enrollment's signing key, and the session carries data",
+        () async {
+      await startDaemon(requireEnrollmentSignature: true);
+      final session = await npt();
+
+      expect(await roundTrip(await session.run(), 'signed'), 'signed');
+      await session.close();
+      await settles();
+
+      expect(receivedKeys(), unorderedEquals([...startUp, ...sessionKeys()]));
+      expect(harness.server.unhandled, isEmpty);
+    });
+
+    test(
+        "when the policy service's rules deny @a, then the session is refused",
+        () async {
+      rules.allow = false;
+      await startDaemon();
+      final session =
+          await npt(daemonPingTimeout: const Duration(seconds: 3));
+
+      await expectLater(session.run(), throwsA(anything));
+      await settles();
+
       expect(
         receivedKeys(),
         unorderedEquals([
-          '@a:harness.devices.policy.sshnp@a',
+          ...startUp,
           '@a:ping.harness.sshnp@a',
-          '@a:heartbeat.harness.sshnp@a',
           '@a:harness.request_ports.sshrvd@a',
           '@a:<id>.sshrvd@a',
-          '@a:harness.auth_modes.sshrvd@a',
-          '@a:request.<n>.auth_checks.__rpcs.sshnp@a',
-          '@a:ack.<n>.auth_checks.__rpcs.sshnp@a',
-          '@a:success.<n>.auth_checks.__rpcs.sshnp@a',
-          '@a:<n>.logs.policy.sshnp@a',
-          '@a:npt_request.harness.sshnp@a',
-          '@a:<id>.harness.sshnp@a',
-          '@a:logging.<id>.sessions.sshrvd@a',
-          for (var i = 0; i < 5; i++) '@a:<topic>@a',
+          ...policyCheck,
+        ]),
+        reason: 'a denied client is sent nothing',
+      );
+      expect(harness.server.unhandled, isEmpty);
+    });
+
+    test(
+        "when the client lists the daemon's devices, then the daemon's device"
+        ' is listed as active', () async {
+      await startDaemon(managers: const [a], makeDeviceInfoVisible: true);
+      final channel = SshnpdDefaultChannel(
+        atClient: await harness.openClient(
+          a,
+          namespace: DefaultArgs.namespace,
+          enrollment: role('client'),
+        ),
+        params: NptParams(
+          clientAtSign: a,
+          sshnpdAtSign: a,
+          srvdAtSign: a,
+          remoteHost: '127.0.0.1',
+          remotePort: echo.port,
+          device: NoPortsHarness.device,
+          inline: true,
+          timeout: const Duration(seconds: 30),
+        ),
+        sessionId: 'listing',
+        namespace: DefaultArgs.namespace,
+      );
+
+      final devices =
+          await channel.listDevices(waitDuration: const Duration(seconds: 2));
+
+      expect(devices.info.keys, contains(NoPortsHarness.device));
+      expect(devices.activeDevices, contains(NoPortsHarness.device));
+      await settles();
+      expect(
+        receivedKeys(),
+        unorderedEquals([
+          '@a:username.harness.sshnp@a',
+          ...startUp,
+          '@a:ping.harness.sshnp@a',
+          '@a:heartbeat.harness.sshnp@a',
         ]),
       );
       expect(harness.server.unhandled, isEmpty);
