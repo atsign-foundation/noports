@@ -24,6 +24,7 @@ void apply_default_values_to_srv_params(srv_params_t *params) {
   params->escr_aes_key_base64 = NULL;
   params->escr_signing_key_uri = NULL;
   params->escr_signing_key = NULL;
+  params->ready_fd = -1;
 }
 
 int parse_srv_params(srv_params_t *params, int argc, const char **argv, srv_env_t *environment) {

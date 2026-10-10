@@ -16,6 +16,7 @@ int manager_list_test();
 int manager_list_trailing_comma_test();
 int manager_list_filter_device_atsign_test();
 int manager_list_filter_device_atsign_error_logged_test();
+int client_key_check_params_test();
 
 int main() {
   int ret = 0;
@@ -60,6 +61,10 @@ int main() {
     printf("manager_list_filter_device_atsign_error_logged_test failed\n");
     ret++;
   }
+  if (client_key_check_params_test()) {
+    printf("client_key_check_params_test failed\n");
+    ret++;
+  }
 
   printf("Tests failed: %d\n", ret);
   return ret;
@@ -90,6 +95,9 @@ int default_values_test() {
     ret = 1;
   }
   if (params->local_sshd_port != 22) {
+    ret = 1;
+  }
+  if (params->client_key_check_secs != 10 || params->require_enrollment_signature) {
     ret = 1;
   }
 
@@ -615,4 +623,45 @@ int manager_list_filter_device_atsign_error_logged_test() {
   }
 
   return 0;
+}
+
+// Parses --client-key-check-secs value (when not NULL) and, when require,
+// --require-enrollment-signature, returning what parse_sshnpd_params does
+static int parse_client_key_check(const char *value, bool require, sshnpd_params *params) {
+  const char *argv[8] = {"sshnpd", "-a", "@atsign", "-m", "@manager"};
+  int argc = 5;
+  if (value != NULL) {
+    argv[argc++] = "--client-key-check-secs";
+    argv[argc++] = value;
+  }
+  if (require) {
+    argv[argc++] = "--require-enrollment-signature";
+  }
+  apply_default_values_to_sshnpd_params(params);
+  return parse_sshnpd_params(params, argc, argv);
+}
+
+int client_key_check_params_test() {
+  int ret = 0;
+  sshnpd_params params;
+
+  if (parse_client_key_check("30", true, &params) != 0 || params.client_key_check_secs != 30 ||
+      !params.require_enrollment_signature) {
+    printf("--client-key-check-secs 30 --require-enrollment-signature was not read\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("0", false, &params) != 0 || params.client_key_check_secs != 0 ||
+      params.require_enrollment_signature) {
+    printf("--client-key-check-secs 0 was not accepted\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("-1", false, &params) == 0) {
+    printf("--client-key-check-secs -1 was accepted\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("86401", false, &params) == 0) {
+    printf("--client-key-check-secs 86401 was accepted\n");
+    ret = 1;
+  }
+  return ret;
 }

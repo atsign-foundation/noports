@@ -177,6 +177,12 @@ struct NoPortsConfig {
   NoPortsPermitOpen permitopen[255]; // Allowed tunnel targets (LAN hosts)
   uint8_t           permitopen_count;
 
+  uint32_t client_key_check_secs;    // How often to check each client's enrollment is
+                                     // still valid, ending its session once it isn't
+                                     // (default 10; 0 turns it off)
+  bool     require_enrollment_signature; // Refuse requests not signed with the
+                                         // client's enrollment key
+
   // Callbacks (optional)
   void (*on_tunnel_open)(const char *host, uint16_t port, const char *session_id);
   void (*on_tunnel_close)(const char *session_id);

@@ -1,8 +1,8 @@
 # npe2e harness — shape and invariants
 
-Status: three packs (`core_tests`, `relay_tests`, `policy_tests`) live in
-`tests/npe2e`, all three wired into `.github/workflows/e2e_all.yaml` as one
-matrix job. The older shell harness `tests/e2e_all/scripts/main.sh` still runs
+Status: four packs (`core_tests`, `relay_tests`, `policy_tests`,
+`revocation_tests`) live in `tests/npe2e`, each a job of
+`.github/workflows/e2e_all.yaml`. The older shell harness `tests/e2e_all/scripts/main.sh` still runs
 as a separate job in the same workflow; npe2e does not replace it yet.
 
 ## Direction
@@ -27,6 +27,12 @@ images and instances, APKAM enrolment, client-binary fetch, ssh keys, version
 parsing — sit directly in `lib/`.
 
 ## Decisions
+
+**`revocation_tests` runs on an ephemeral environment with atSigns made for
+the run.** It revokes the enrollments it tests, so it never runs against
+atSigns another job or person uses: CI starts an EE
+(`tests/tools/ee/setup_ee.sh`) with its own atSigns, and a local run names its
+own.
 
 **Each npe2e pack runs on its own atSign set in CI.** `core_tests` takes
 client01/daemon01, `policy_tests` takes client02/daemon02 plus policy01/policy02,

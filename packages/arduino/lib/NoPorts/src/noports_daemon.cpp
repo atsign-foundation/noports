@@ -133,6 +133,8 @@ NoPortsDaemon::NoPortsDaemon()
     _relays[i].encrypter = NULL;
     _relays[i].decrypter = NULL;
   }
+  memset(_client_keys, 0, sizeof(_client_keys));
+  _last_key_check_ms = 0;
   memset(&_policy_pending, 0, sizeof(_policy_pending));
   memset(_policy_cooldown, 0, sizeof(_policy_cooldown));
 }
@@ -541,6 +543,7 @@ void NoPortsDaemon::loop() {
 
   // Clean up finished relays
   _cleanupFinishedRelays();
+  _checkClientKeys();
 
   // Policy RPC timeout: if we sent an auth-check request and got no response
   // within the timeout window, clean up the pending slot so the next request
@@ -745,6 +748,10 @@ void NoPortsDaemon::stop() {
     if (noports_relay_is_running(&_relays[i])) {
       noports_relay_stop(&_relays[i]);
     }
+  }
+
+  for (int i = 0; i < NOPORTS_MAX_RELAYS; i++) {
+    _forgetClientSigningKey(i);
   }
 
   _state = DAEMON_STOPPED;
@@ -1854,6 +1861,16 @@ void NoPortsDaemon::_continueNptRequest(void *env,
   const char *session_id_str =
       cJSON_GetStringValue(cJSON_GetObjectItem(payload, "sessionId"));
 
+  // Freed on every return, unless handed to the relay's slot
+  struct OwnedClientKey {
+    ClientSigningKey key;
+    ~OwnedClientKey() { free(key.signing_key); }
+  } client_key;
+  if (!_checkClientSigningKey(envelope, requesting_atsign, session_id_str, &client_key.key)) {
+    cJSON_Delete(envelope);
+    return;
+  }
+
   // Check permitopen — requestedHost and requestedPort are mandatory
   cJSON *requested_host = cJSON_GetObjectItem(payload, "requestedHost");
   cJSON *requested_port = cJSON_GetObjectItem(payload, "requestedPort");
@@ -2376,6 +2393,12 @@ void NoPortsDaemon::_continueNptRequest(void *env,
     return;
   }
 
+  if (client_key.key.signing_key != NULL) {
+    _forgetClientSigningKey(slot);
+    _client_keys[slot] = client_key.key;
+    client_key.key.signing_key = NULL;
+  }
+
   if (_config.on_tunnel_open) {
     _config.on_tunnel_open(
       cJSON_GetStringValue(requested_host),
@@ -2560,6 +2583,7 @@ void NoPortsDaemon::_cleanupFinishedRelays() {
           _config.on_tunnel_close(_relays[i].config.session_id);
         }
         _relays[i].state = RELAY_IDLE;
+        _forgetClientSigningKey(i);
         _relays[i].bytes_in = 0;
         _relays[i].bytes_out = 0;
         _relays[i].start_ms = 0;

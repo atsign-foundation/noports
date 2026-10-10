@@ -264,6 +264,79 @@ jobs:
           path: npe2e_policy_tests_artifacts.zip
           if-no-files-found: warn
 
+  npe2e_revocation_tests:
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
+    name: npe2e (revocation_tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+
+      - name: Add EE host entry
+        run: |
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup EE
+        run: |
+          tests/tools/ee/setup_ee.sh ee_revocation rvclient rvdaemon rvrelay
+
+      - name: dart pub get (tests/npe2e)
+        working-directory: tests/npe2e
+        run: |
+          dart pub get
+
+      - name: dart pub get (packages/dart/sshnoports)
+        working-directory: packages/dart/sshnoports
+        run: |
+          dart pub get
+
+      - name: Env variables
+        run: |
+          echo "LOGS_DIR=npe2e_revocation_tests" >> $GITHUB_ENV
+          echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Run npe2e revocation_tests
+        run: |
+          dart run tests/npe2e/bin/revocation_tests.dart \
+            --client-atsign "@rvclient" \
+            --daemon-atsign "@rvdaemon" \
+            --relay-atsign "@rvrelay" \
+            --root-domain "vip.ve.atsign.zone:2500" \
+            --base-directory "$LOGS_DIR" \
+            --test-run-id "$TEST_RUN_ID"
+
+      - name: Teardown EE
+        if: always()
+        run: |
+          tests/tools/ee/teardown_ee.sh ee_revocation rvclient rvdaemon rvrelay
+
+      - name: Zip npe2e artifacts
+        if: always()
+        run: |
+          if [ -d "$LOGS_DIR" ]; then
+            # NOTE keyfiles hold live APKAM private keys: keep them out of the artifact
+            zip -r npe2e_revocation_tests_artifacts.zip "$LOGS_DIR" -x '*.atKeys' '*.atKeys.bak' '*.atKeys.pre-v1' '*.atKeys.tmp'
+            echo "Zipped $LOGS_DIR directory contents into npe2e_revocation_tests_artifacts.zip"
+          else
+            echo "No $LOGS_DIR directory found. Skipping zipping artifacts."
+          fi
+
+      - name: Upload npe2e artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npe2e_revocation_tests_artifacts
+          path: npe2e_revocation_tests_artifacts.zip
+          if-no-files-found: warn
+
   npe2e_relay_tests:
     if:
       ${{ github.event.pull_request.head.repo.fork == false && github.actor !=

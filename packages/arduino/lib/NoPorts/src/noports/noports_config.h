@@ -129,6 +129,14 @@ struct NoPortsConfig {
   NoPortsPermitOpen permitopen[NOPORTS_MAX_PERMITOPEN];
   uint8_t           permitopen_count;
 
+  // How often (seconds) to check that the enrollment each client signed its
+  // session request with is still valid, ending the session once it is
+  // revoked, superseded, deleted or expires; 0 turns the check off
+  uint32_t client_key_check_secs;
+  // Refuse session requests not signed with the client's enrollment key, or
+  // whose signature can't be checked
+  bool     require_enrollment_signature;
+
   // Keys – raw base64-encoded atKeys (loaded from SPIFFS/LittleFS or hardcoded)
   // See noports_keys.h for helpers to load from filesystem
   const char *pkam_private_key_base64;
@@ -160,6 +168,8 @@ inline void noports_config_init(NoPortsConfig *cfg) {
   cfg->manager_count   = 0;
   cfg->policy_atsign   = NULL;
   cfg->permitopen_count = 0;
+  cfg->client_key_check_secs = 10;
+  cfg->require_enrollment_signature = false;
   cfg->on_tunnel_open  = NULL;
   cfg->on_tunnel_close = NULL;
   cfg->on_ping         = NULL;
