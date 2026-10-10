@@ -28,6 +28,7 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/policy.h>
+#include <sshnpd/policy_limits.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +81,14 @@ void main_loop() {
   sshnpd_policy_decision policy_decision;
   memset(&policy_decision, 0, sizeof(policy_decision));
   bool policy_checked = false;
+
+  policy_cache decisions;
+  if (policy_cache_init(&decisions, params.policy_cache_size) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set up the policy decision cache\n");
+    return;
+  }
+  policy_throttle checked_senders;
+  policy_throttle_init(&checked_senders);
 
   size_t timeout_counter = 0;
 
@@ -167,7 +176,20 @@ void main_loop() {
         policy_checked = false;
         if (!is_manager_atsign(&params, message.notification->from)) {
           if (params.policy != NULL && message.notification->from != NULL) {
-            policy_auth_check(&worker, &monitor_ctx, &params, message.notification->from, &policy_decision);
+            const char *from = message.notification->from;
+            if (!policy_cache_lookup(&decisions, from, policy_now_millis(), &policy_decision)) {
+              if (!policy_throttle_allows(&checked_senders, from, policy_now_millis())) {
+                atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                             "Dropping a request from %s, whose last policy check was under %d ms ago\n", from,
+                             POLICY_THROTTLE_MS);
+                break;
+              }
+              policy_auth_check(&worker, &monitor_ctx, &params, from, &policy_decision);
+              if (policy_cache_store(&decisions, from, &policy_decision, policy_now_millis()) != 0) {
+                atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cache the policy decision for %s\n",
+                             from);
+              }
+            }
             if (!policy_decision.authorized) {
               atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
                            "Rejecting request from atSign not authorized by the policy service: %s\n",
@@ -255,6 +277,7 @@ void main_loop() {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
             policy_decision_free(&policy_decision);
+            policy_cache_free(&decisions);
             return;
           }
           break;
@@ -268,6 +291,7 @@ void main_loop() {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
             policy_decision_free(&policy_decision);
+            policy_cache_free(&decisions);
             return;
           }
           break;
@@ -291,4 +315,5 @@ void main_loop() {
     atclient_monitor_message_free(&message);
     policy_decision_free(&policy_decision); // safe when nothing was allocated
   } // end of while loop
+  policy_cache_free(&decisions);
 }

@@ -23,6 +23,7 @@ typedef struct {
   char *normalized_manager_buf;
 
   char *policy;
+  size_t policy_cache_size;
 
   size_t permitopen_len;
   char **permitopen_hosts;
