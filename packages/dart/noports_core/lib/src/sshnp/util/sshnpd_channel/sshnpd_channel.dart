@@ -425,7 +425,9 @@ abstract class SshnpdChannel
       var atValue = await atClient
           .get(
             entryKey,
-            getRequestOptions: GetRequestOptions()..bypassCache = true,
+            getRequestOptions: GetRequestOptions()
+              ..bypassCache = true
+              ..useRemoteAtServer = true,
           )
           .catchError((_) {
             // Probably a cached key which should have been deleted
