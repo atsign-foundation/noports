@@ -340,9 +340,11 @@ class SrvdImpl
 
     final SessionInfo sessionInfo = sessions[sessionId]!;
 
-    // Is the atSign who sent this message one of the participants in the session?
-    if (n.from != sessionInfo.atSignA && n.from != sessionInfo.atSignB) {
-      logger.shout('Received ${n.from} is not a participant in $sessionId');
+    if (n.from.toAtsign() != sessionInfo.atSignB.toAtsign()) {
+      logger.warning(
+        'Ignoring $topic from ${n.from},'
+        ' which is not the daemon ${sessionInfo.atSignB}',
+      );
       return;
     }
 

@@ -85,6 +85,8 @@
   and ignore later responses and any from another atSign
 - fix: sshnpd discards malformed policy configs
 - fix: tighten regexes
+- fix: srvd takes a session's event logging config only from the session's
+  daemon
 
 # 6.15.0
 
