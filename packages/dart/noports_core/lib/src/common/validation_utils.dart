@@ -233,13 +233,17 @@ Future<void> clearLocallyCachedPKs({
   }
 }
 
+/// [atSign]'s `public:publickey`, fetched from the atServer.
 Future<String> getRemotePK({
   required AtClient atClient,
   required String atSign,
 }) async {
   atSign = AtUtils.fixAtSign(atSign);
   var s = 'public:publickey$atSign';
-  final AtValue av = await atClient.get(AtKey.fromString(s));
+  final AtValue av = await atClient.get(
+    AtKey.fromString(s),
+    getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+  );
   if (av.value == null) {
     throw AtPublicKeyNotFoundException('Failed to retrieve $s');
   }

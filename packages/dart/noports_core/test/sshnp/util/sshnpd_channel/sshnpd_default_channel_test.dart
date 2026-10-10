@@ -123,6 +123,7 @@ void main() {
           any<AtKey>(
             that: predicate((AtKey key) => key.key.contains('publickey')),
           ),
+          getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).thenAnswer(
         (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,
@@ -162,6 +163,7 @@ void main() {
           any<AtKey>(
             that: predicate((AtKey key) => key.key.contains('publickey')),
           ),
+          getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).thenAnswer(
         (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,
@@ -206,6 +208,7 @@ void main() {
           any<AtKey>(
             that: predicate((AtKey key) => key.key.contains('publickey')),
           ),
+          getRequestOptions: any(named: 'getRequestOptions'),
         ),
       ).thenAnswer(
         (_) async => AtValue()..value = encryptionKeyPair.atPublicKey.publicKey,

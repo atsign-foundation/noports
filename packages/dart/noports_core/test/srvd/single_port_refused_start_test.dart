@@ -155,7 +155,7 @@ void main() {
       notified = [];
       when(() => atClient.getCurrentAtSign()).thenReturn('@relay');
       when(() => atClient.notificationService).thenReturn(notificationService);
-      when(() => atClient.get(any())).thenAnswer(
+      when(() => atClient.get(any(), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async => AtValue()..value = 'a public key',
       );
       when(
@@ -307,7 +307,7 @@ void main() {
       );
       await pumpEventQueue();
       expect(nacked(id), isTrue);
-      verifyNever(() => atClient.get(any()));
+      verifyNever(() => atClient.get(any(), getRequestOptions: any(named: 'getRequestOptions')));
 
       await srvd.withPayloadKeys(
         params443(
@@ -316,7 +316,7 @@ void main() {
           only443: false,
         ),
       );
-      verify(() => atClient.get(any())).called(2);
+      verify(() => atClient.get(any(), getRequestOptions: any(named: 'getRequestOptions'))).called(2);
     });
 
     test(

@@ -65,6 +65,7 @@
 - fix: `--list-devices` credits each heartbeat to the daemon that sent it,
   and skips malformed ones
 - feat: npevents adds the sending atSign to each event it prints
+- fix: sessions work when the client, daemon and relay share an atSign
 
 ## v5.17.0
 
