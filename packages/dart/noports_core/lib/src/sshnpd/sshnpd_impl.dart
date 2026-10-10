@@ -2087,13 +2087,19 @@ class SshnpdImpl
     if (n.value == null) {
       return;
     }
-    final json = jsonDecode(n.value!);
-    final elcJson = json['eventLoggingConfig'];
-    if (elcJson == null) {
-      logger.info('No eventLoggingConfig in policy config notification');
+    final AtEventConfig config;
+    try {
+      final elcJson = jsonDecode(n.value!)['eventLoggingConfig'];
+      if (elcJson == null) {
+        logger.info('No eventLoggingConfig in policy config notification');
+        return;
+      }
+      config = AtEventConfig.fromJson(elcJson);
+    } catch (e) {
+      logger.warning('Ignoring policy config ${n.key}: $e');
       return;
     }
-    elc = AtEventConfig.fromJson(elcJson);
+    elc = config;
   }
 
   static const _configRetryDelay = Duration(seconds: 5);
