@@ -89,6 +89,8 @@
   daemon
 - fix: sshnp and npt act on the daemon's first response and ignore any later
   ones
+- fix: `--list-devices` credits each heartbeat to the daemon that sent it,
+  and skips malformed ones
 
 # 6.15.0
 

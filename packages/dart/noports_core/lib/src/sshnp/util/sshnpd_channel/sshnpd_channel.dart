@@ -394,15 +394,29 @@ abstract class SshnpdChannel
 
     // Listen for heartbeat notifications
     subscribe(
-      regex: 'heartbeat\\.$sshnpDeviceNameRegex',
+      regex:
+          'heartbeat\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}$sharedBy\$',
       shouldDecrypt: true,
     ).listen((notification) {
-      var deviceInfo = jsonDecode(notification.value ?? '{}');
-      var devicename = deviceInfo['devicename'];
-      var fullDeviceName = devicename + sharedBy;
-      if (devicename != null) {
-        deviceList.setActive(useFullDeviceName ? fullDeviceName : devicename);
+      final String? devicename;
+      try {
+        devicename = jsonDecode(notification.value ?? '{}')['devicename'];
+      } catch (e) {
+        logger.warning(
+          'Ignoring heartbeat ${notification.key} from ${notification.from}: $e',
+        );
+        return;
       }
+      if (devicename == null) {
+        logger.warning(
+          'Ignoring heartbeat ${notification.key} from ${notification.from}'
+          ' with no devicename',
+        );
+        return;
+      }
+      deviceList.setActive(
+        useFullDeviceName ? devicename + sharedBy : devicename,
+      );
     });
 
     // for each key, get the value
