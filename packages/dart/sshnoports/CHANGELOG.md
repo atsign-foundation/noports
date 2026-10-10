@@ -66,6 +66,7 @@
   and skips malformed ones
 - feat: npevents adds the sending atSign to each event it prints
 - fix: sessions work when the client, daemon and relay share an atSign
+- test: the in-process harness runs every role as one atSign
 
 ## v5.17.0
 
