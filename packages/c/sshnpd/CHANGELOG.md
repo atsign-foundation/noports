@@ -13,6 +13,7 @@
   decision isn't kept
 - fix: deny a request the policy service hasn't answered within 30 seconds
   of asking, however often it acknowledges
+- fix: keep the monitor connection when a notification can't be decrypted
 
 ## 1.1.1
 

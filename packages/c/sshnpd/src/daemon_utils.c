@@ -99,3 +99,18 @@ void free_atclient_without_disconnect(atclient *atclient) {
   // has been addressed
   // atclient_tls_socket_free(&conn->_socket);
 }
+
+size_t sshnpd_next_timeout_counter(int read_ret, enum atclient_monitor_message_type type, size_t counter) {
+  size_t next = read_ret != 0 ? MONITOR_RECONNECT_COUNTER : counter;
+  switch (type) {
+  case ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY:
+    return next + 1;
+  case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION:
+  case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
+  case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
+  case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
+    return 0;
+  default:
+    return next;
+  }
+}

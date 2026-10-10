@@ -115,26 +115,21 @@ void main_loop() {
 
     // Read the next monitor message
     ret = atclient_monitor_read(&monitor_ctx, &worker, &message, NULL);
-    if (ret != 0) {
+    timeout_counter = sshnpd_next_timeout_counter(ret, message.type, timeout_counter);
+    if (ret != 0 && message.type != ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Possible bad state: monitor read failed, resetting connection (ret: %d)\n", ret);
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
     }
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
     switch (message.type) {
     case ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY:
-      timeout_counter++;
-      break;
     case ATCLIENT_MONITOR_ERROR_READ:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
-      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message.data_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
-      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received an error response: %s\n",
                    message.error_response);
       break;
@@ -142,15 +137,15 @@ void main_loop() {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
       break;
     case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring a notification from %s that couldn't be decrypted\n",
+                   message.notification != NULL && atclient_atnotification_is_from_initialized(message.notification)
+                       ? message.notification->from
+                       : "(unknown)");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      timeout_counter = 0;
       bool is_init = atclient_atnotification_is_decrypted_value_initialized(message.notification);
       bool has_key = atclient_atnotification_is_key_initialized(message.notification);
       bool has_id = atclient_atnotification_is_id_initialized(message.notification) && message.notification->id != NULL;
