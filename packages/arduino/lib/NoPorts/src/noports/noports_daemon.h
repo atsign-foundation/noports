@@ -269,6 +269,7 @@ private:
   // notification arrives on the monitor.
   void _sendPolicyRpcRequest(const char *client_atsign);
   void _handlePolicyResponse(void *message);
+  void _handleDecryptFailure(void *message); // atclient_monitor_message*
   void _cleanupPolicyPending();
   // DoS throttle: returns true if a request of the given |type| from |atsign|
   // should be dropped because one was already accepted within

@@ -1,5 +1,6 @@
 // Given a daemon in policy mode, with policy service @policy and authorised
-// client @alice: its decision cache, sender cooldown and policy-wait cap
+// client @alice: its decision cache, sender cooldown, policy-wait cap and
+// reaction to a notification it can't decrypt
 #include "noports/noports_policy_limits.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -162,6 +163,18 @@ static void test_size_cap(void) {
         "when the operator sets a cache size above the cap, then the daemon refuses to start");
 }
 
+static void test_decrypt_failure(void) {
+  check(!noports_policy_resend_after_decrypt_failure(true, "@carol", "@policy"),
+        "when @carol sends a notification the daemon can't decrypt, then the daemon doesn't send its pending policy "
+        "check again");
+  check(noports_policy_resend_after_decrypt_failure(true, "@policy", "@policy"),
+        "when @policy's answer can't be decrypted, then the daemon sends its pending policy check again");
+  check(!noports_policy_resend_after_decrypt_failure(false, "@policy", "@policy"),
+        "with no policy check pending, the daemon sends nothing");
+  check(!noports_policy_resend_after_decrypt_failure(true, NULL, "@policy"),
+        "a notification with no sender sends nothing");
+}
+
 int main(void) {
   test_reuse_within_ttl();
   test_denial_reused();
@@ -172,6 +185,7 @@ int main(void) {
   test_oldest_dropped_when_full();
   test_size_zero();
   test_size_cap();
+  test_decrypt_failure();
   if (failures > 0) {
     printf("%d check(s) failed\n", failures);
     return 1;

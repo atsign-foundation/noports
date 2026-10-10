@@ -33,6 +33,13 @@ int noports_normalize_atsign(const char *atsign, char *out, size_t out_len) {
   return 0;
 }
 
+bool noports_atsign_equals(const char *a, const char *b) {
+  char na[NOPORTS_ATSIGN_BUFFER_LEN];
+  char nb[NOPORTS_ATSIGN_BUFFER_LEN];
+  return noports_normalize_atsign(a, na, sizeof(na)) == 0 && noports_normalize_atsign(b, nb, sizeof(nb)) == 0 &&
+         strcmp(na, nb) == 0;
+}
+
 void noports_policy_decision_free(noports_policy_decision *decision) {
   for (size_t i = 0; i < decision->permit_open_len; i++) {
     free(decision->permit_open[i]);
@@ -194,4 +201,8 @@ bool noports_policy_cooldown_allows(noports_policy_cooldown *cooldown, const cha
 
 bool noports_policy_wait_over(int64_t started_ms, int64_t progress_ms, int64_t now_ms) {
   return now_ms - progress_ms > NOPORTS_POLICY_WAIT_MS || now_ms - started_ms > NOPORTS_POLICY_WAIT_CAP_MS;
+}
+
+bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from, const char *policy_atsign) {
+  return pending && noports_atsign_equals(from, policy_atsign);
 }

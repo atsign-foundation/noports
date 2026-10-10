@@ -73,6 +73,11 @@ typedef struct {
 int noports_normalize_atsign(const char *atsign, char *out, size_t out_len);
 
 /**
+ * @brief Whether a and b name the same atSign.
+ */
+bool noports_atsign_equals(const char *a, const char *b);
+
+/**
  * @brief Free the permitOpen rules a decision holds.
  */
 void noports_policy_decision_free(noports_policy_decision *decision);
@@ -131,6 +136,13 @@ bool noports_policy_cooldown_allows(noports_policy_cooldown *cooldown, const cha
  * after its last progress, or NOPORTS_POLICY_WAIT_CAP_MS after it started.
  */
 bool noports_policy_wait_over(int64_t started_ms, int64_t progress_ms, int64_t now_ms);
+
+/**
+ * @brief Whether a notification from `from` that couldn't be decrypted should
+ * have the pending policy check sent again: only when one is pending and
+ * `from` is the policy atSign.
+ */
+bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from, const char *policy_atsign);
 
 #ifdef __cplusplus
 }

@@ -619,21 +619,7 @@ void NoPortsDaemon::loop() {
     }
 
     if (message.type == ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION) {
-      // Decrypt failed — the worker's shared-key cache may be stale.
-      // Reconnect the worker (which refreshes the key cache) but leave the
-      // monitor stream intact.
-      NOPORTS_LOGW(TAG, "Monitor: decrypt failed, reconnecting worker");
-      _reconnectWorker();
-      // If a policy RPC is in-flight, the response notification was just
-      // dropped.  Now that the worker has refreshed its key cache the next
-      // exchange WILL decrypt, so re-send the request immediately.
-      if (_policy_pending.in_use) {
-        NOPORTS_LOGI(TAG, "Policy RPC: re-sending request after decrypt failure "
-                         "(reqId=%lu, key cache refreshed)",
-                    (unsigned long)_policy_pending.req_id);
-        _policy_pending.progress_at_ms = _now_ms();
-        _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
-      }
+      _handleDecryptFailure(&message);
       atclient_monitor_message_free(&message);
       return;
     }
@@ -721,18 +707,7 @@ void NoPortsDaemon::loop() {
       break;
 
     case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
-      NOPORTS_LOGE(TAG, "Failed to decrypt notification, reconnecting worker");
-      _reconnectWorker();
-      // Don't force monitor reconnect — the monitor stream is fine,
-      // only the worker (used for key lookup) was stale.
-      // Same recovery as above: re-send a pending policy request.
-      if (_policy_pending.in_use) {
-        NOPORTS_LOGI(TAG, "Policy RPC: re-sending request after decrypt failure "
-                         "(reqId=%lu, key cache refreshed)",
-                    (unsigned long)_policy_pending.req_id);
-        _policy_pending.progress_at_ms = _now_ms();
-        _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
-      }
+      _handleDecryptFailure(&message);
       break;
 
     default:
@@ -1612,6 +1587,25 @@ void NoPortsDaemon::_cachePolicyDecision(const char *atsign, bool authorized,
   decision.permit_open_len = policy_po_count > 0 ? (size_t)policy_po_count : 0;
   if (noports_policy_cache_store(&_policy_decisions, atsign, &decision, _now_ms()) != 0) {
     NOPORTS_LOGW(TAG, "Policy RPC: failed to remember the decision for %s", atsign);
+  }
+}
+
+// NOTE: at_client looks up each notification's shared key afresh, so a
+// notification that couldn't be decrypted needs no reconnect
+void NoPortsDaemon::_handleDecryptFailure(void *msg) {
+  atclient_monitor_message *message = (atclient_monitor_message *)msg;
+  const char *from = message->notification != nullptr &&
+                             atclient_atnotification_is_from_initialized(message->notification)
+                         ? message->notification->from
+                         : nullptr;
+  NOPORTS_LOGW(TAG, "Ignoring a notification from %s that couldn't be decrypted",
+               from ? from : "(unknown)");
+  if (noports_policy_resend_after_decrypt_failure(_policy_pending.in_use, from,
+                                                  _config.policy_atsign)) {
+    NOPORTS_LOGI(TAG, "Policy RPC: re-sending request (reqId=%lu)",
+                 (unsigned long)_policy_pending.req_id);
+    _policy_pending.progress_at_ms = _now_ms();
+    _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
   }
 }
 
