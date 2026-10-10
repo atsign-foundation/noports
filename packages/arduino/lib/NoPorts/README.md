@@ -174,6 +174,9 @@ struct NoPortsConfig {
   bool        verbose;         // Enable debug logging
   bool        hide;            // Don't publish device info
 
+  const char *policy_atsign;   // Policy service atSign, instead of manager_list
+  uint16_t    policy_cache_size; // Clients' policy decisions reused for 15 s (0-64, default 8)
+
   NoPortsPermitOpen permitopen[255]; // Allowed tunnel targets (LAN hosts)
   uint8_t           permitopen_count;
 
@@ -219,6 +222,7 @@ handle_ping.c                    -->   NoPortsDaemon::_handlePing()
 handle_npt_request.c             -->   NoPortsDaemon::_handleNptRequest()
 handle_ssh_request.c             -->   NOT IMPLEMENTED (no SSH on ESP32)
 handler_commons.c                -->   NoPortsDaemon::_verifyEnvelope*()
+policy.c + policy_limits.c       -->   NoPortsDaemon::_handlePolicyResponse() + noports_policy_limits.c
 run_srv_process.c + srv/srv.c    -->   noports_relay.cpp (FreeRTOS tasks)
 params.c (argparse)              -->   NoPortsConfig struct
 atkeys_file.c (filesystem)      -->   noports_keys.cpp (LittleFS)
@@ -288,6 +292,17 @@ The relay uses the same SRVD dual-connection architecture as the Dart NPT client
 ```
 
 ---
+
+## Host tests
+
+`test/` holds tests for the library's plain-C modules, which run on the
+development machine rather than the ESP32:
+
+```bash
+cmake -S test -B build/host-tests
+cmake --build build/host-tests
+ctest --test-dir build/host-tests --output-on-failure
+```
 
 ## Troubleshooting
 

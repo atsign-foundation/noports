@@ -33,6 +33,13 @@ jobs:
           ctest --test-dir build/sshnpd/tests --output-on-failure --timeout 2
           ctest --test-dir build/_deps/srv-lib-build/tests --output-on-failure --timeout 10
 
+      - name: Arduino daemon host CTest
+        working-directory: packages/arduino/lib/NoPorts
+        run: |
+          cmake -S test -B build/host-tests
+          cmake --build build/host-tests
+          ctest --test-dir build/host-tests --output-on-failure --timeout 2
+
       # The srv teardown regression test (issue #2891) can only fail on musl
       # x86-64: glibc masks the corruption it guards against by caching joined
       # thread stacks instead of unmapping them. Run the srv suite once more on

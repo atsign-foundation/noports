@@ -10,6 +10,7 @@
 #define NOPORTS_CONFIG_H
 
 #include <Arduino.h>
+#include "noports_policy_limits.h"
 
 // ---------------------------------------------------------------------------
 // Version & protocol constants (from sshnpd/version.h and sshnpd/sshnpd.h)
@@ -124,6 +125,9 @@ struct NoPortsConfig {
   // atSign instead of checking manager_list.  Set either manager_count > 0 OR
   // policy_atsign, not both.
   const char *policy_atsign;   // e.g. "@mypolicyservice"
+  // How many clients' policy decisions are reused for 15 seconds: 0 to
+  // NOPORTS_POLICY_CACHE_MAX_SIZE (64), default 8; 0 checks every request.
+  uint16_t    policy_cache_size;
 
   // PermitOpen – which host:port combinations the device is willing to relay
   NoPortsPermitOpen permitopen[NOPORTS_MAX_PERMITOPEN];
@@ -159,6 +163,7 @@ inline void noports_config_init(NoPortsConfig *cfg) {
   cfg->hide            = false;
   cfg->manager_count   = 0;
   cfg->policy_atsign   = NULL;
+  cfg->policy_cache_size = NOPORTS_POLICY_CACHE_DEFAULT_SIZE;
   cfg->permitopen_count = 0;
   cfg->on_tunnel_open  = NULL;
   cfg->on_tunnel_close = NULL;
