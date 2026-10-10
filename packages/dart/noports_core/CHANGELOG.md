@@ -91,6 +91,7 @@
   ones
 - fix: `--list-devices` credits each heartbeat to the daemon that sent it,
   and skips malformed ones
+- feat: npevents adds the sending atSign to each event it prints
 
 # 6.15.0
 
