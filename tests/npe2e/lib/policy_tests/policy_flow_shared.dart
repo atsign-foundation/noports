@@ -796,7 +796,13 @@ Future<DockerInstance> startPolicyFlowDaemon({
     ],
   );
   transcript.info('daemon container: ${daemon.containerName}');
-  await waitForLogMessage(daemon, 'Daemon is running', transcript: transcript);
+  await waitForLogMessage(
+    daemon,
+    daemonVersion.language == Language.c
+        ? 'Starting main loop'
+        : 'Daemon is running',
+    transcript: transcript,
+  );
   transcript.ok('daemon is running (device=$deviceName)');
   return daemon;
 }
