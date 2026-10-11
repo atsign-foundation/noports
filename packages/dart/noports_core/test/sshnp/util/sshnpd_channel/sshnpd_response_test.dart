@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -72,7 +73,8 @@ void main() {
       await runZonedGuarded(channel.initialize, (e, _) => uncaught.add(e));
     }
 
-    AtNotification response({String from = daemon}) => AtNotification(
+    AtNotification response({String from = daemon, String value = '{}'}) =>
+        AtNotification(
           Uuid().v4(),
           '$sessionId.$namespace$from',
           from,
@@ -80,8 +82,16 @@ void main() {
           1,
           'key',
           true,
-          value: '{}',
+          value: value,
         );
+
+    /// A signed response envelope whose payload names session [id].
+    String envelopeFor(String id) => jsonEncode({
+          'signature': 'c2lnbmF0dXJl',
+          'hashingAlgo': 'sha256',
+          'signingAlgo': 'rsa2048',
+          'payload': {'sessionId': id},
+        });
 
     Future<void> send(AtNotification n) async {
       notifications.add(n);
@@ -133,6 +143,51 @@ void main() {
       expect(await answer, SshnpdAck.acknowledged);
       expect(payloads, hasLength(1), reason: 'the second is never read');
       expect(channel.sshnpdAck, SshnpdAck.acknowledged);
+      expect(uncaught, isEmpty);
+    });
+
+    test(
+        'when a daemon-signed response for another session arrives first, then'
+        " the client ignores it, keeps waiting, and acts on its own session's"
+        ' response', () async {
+      await listen();
+      final answer = channel.waitForDaemonResponse(maxWaitMillis: 1000);
+
+      await send(response(value: envelopeFor(Uuid().v4())));
+      expect(payloads, isEmpty, reason: "another session's response is not read");
+      await send(response(value: envelopeFor(sessionId)));
+      payloads.single.complete(SshnpdAck.acknowledged);
+
+      expect(await answer, SshnpdAck.acknowledged);
+      expect(delivered, hasLength(2));
+      expect(uncaught, isEmpty);
+    });
+
+    test("when its own session's response arrives, then the client acts on it",
+        () async {
+      await listen();
+      final answer = channel.waitForDaemonResponse(maxWaitMillis: 1000);
+
+      await send(response(value: envelopeFor(sessionId)));
+      payloads.single.complete(SshnpdAck.acknowledged);
+
+      expect(await answer, SshnpdAck.acknowledged);
+    });
+
+    test(
+        'when reading the session keys or the event-logging config fails, then'
+        ' the client reports the response as failed at once', () async {
+      await listen();
+      final started = DateTime.now();
+      final answer = channel.waitForDaemonResponse(maxWaitMillis: 5000);
+
+      await send(response(value: envelopeFor(sessionId)));
+      payloads.single.completeError(Exception('cannot decrypt'));
+
+      expect(await answer, SshnpdAck.acknowledgedWithErrors);
+      expect(DateTime.now().difference(started).inMilliseconds, lessThan(2000),
+          reason: 'the client does not wait out its timeout');
+      expect(channel.errorReceived, isNotNull);
       expect(uncaught, isEmpty);
     });
 

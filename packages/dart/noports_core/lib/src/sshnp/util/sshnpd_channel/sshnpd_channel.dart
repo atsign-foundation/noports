@@ -51,6 +51,10 @@ abstract class SshnpdChannel
 
   Map<String, dynamic>? pingResponse;
 
+  /// What went wrong with the daemon's response, when [sshnpdAck] is
+  /// [SshnpdAck.acknowledgedWithErrors].
+  String? errorReceived;
+
   /// The keystore key we are going to use to cache ping responses in local
   /// storage.
   /// local:cached.ping.bob.device_name.sshnp@alice
@@ -119,6 +123,12 @@ abstract class SshnpdChannel
       );
       return;
     }
+    if (_isForAnotherSession(notification)) {
+      logger.warning(
+        'Ignoring a response for another session from ${notification.from}',
+      );
+      return;
+    }
     _responded = true;
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
@@ -128,11 +138,29 @@ abstract class SshnpdChannel
         .toLowerCase();
     logger.info('Received $notificationKey notification');
 
-    sshnpdAck = await handleSshnpdPayload(notification);
+    try {
+      sshnpdAck = await handleSshnpdPayload(notification);
+    } catch (e) {
+      logger.shout('Failed to read the response for session $sessionId: $e');
+      errorReceived = "Failed to read the daemon's response";
+      sshnpdAck = SshnpdAck.acknowledgedWithErrors;
+    }
     acked.complete();
 
     if (sshnpdAck == SshnpdAck.acknowledged) {
       logger.info('Session $sessionId connected successfully');
+    }
+  }
+
+  /// Whether [notification] carries a payload naming a session other than
+  /// this one.
+  bool _isForAnotherSession(AtNotification notification) {
+    try {
+      final payload = jsonDecode(notification.value ?? '')['payload'];
+      final id = payload is Map ? payload['sessionId'] : null;
+      return id is String && id != sessionId;
+    } catch (_) {
+      return false;
     }
   }
 
