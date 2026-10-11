@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:noports_core/events.dart';
@@ -41,6 +42,7 @@ void main() {
 
     late NoPortsHarness harness;
     late _Rules rules;
+    late AtClient policyClient;
     final rpcs = <String, AtRpcClient>{};
 
     setUp(() async {
@@ -61,9 +63,10 @@ void main() {
         namespace: DefaultArgs.eventLoggingNamespace,
       );
 
+      policyClient =
+          await harness.openClient(policy, namespace: DefaultArgs.namespace);
       await NPAImpl(
-        atClient:
-            await harness.openClient(policy, namespace: DefaultArgs.namespace),
+        atClient: policyClient,
         homeDirectory: harness.home.path,
         handler: rules,
         eventLoggingAtsign: events.toAtsign(),
@@ -118,6 +121,22 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
+    /// The policy log entries [policy] writes while [act] runs, as the
+    /// admin API decrypts them, waiting up to 2 s for the first.
+    Future<List<Map<String, dynamic>>> policyLogDuring(
+        Future<void> Function() act) async {
+      final entries = <Map<String, dynamic>>[];
+      final subscription = policyClient.notificationService
+          .subscribe(regex: r'\.logs\.policy\.sshnp@', shouldDecrypt: true)
+          .listen((n) => entries.add(jsonDecode(n.value!)));
+      await act();
+      for (var i = 0; i < 20 && entries.isEmpty; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      await subscription.cancel();
+      return entries;
+    }
+
     /// How many times [policy] has shared its event-logging config with [to].
     int configSharesWith(String to) => harness.server[policy].writes
         .where((k) =>
@@ -153,13 +172,24 @@ void main() {
 
     test(
         'when @daemon asks about @daemon2, then the service replies'
-        ' authorized: false with no permitOpen, without consulting its rules',
-        () async {
-      final answer = await ask(daemon, about: '@daemon2');
+        ' authorized: false with no permitOpen, without consulting its rules,'
+        ' and the policy log gets one entry naming @daemon, its request and'
+        ' the refusal', () async {
+      late Map<String, dynamic>? answer;
+      final log = await policyLogDuring(
+          () async => answer = await ask(daemon, about: '@daemon2'));
 
       expect(answer?['authorized'], isFalse);
       expect(answer?['permitOpen'], isEmpty);
       expect(rules.checked, isEmpty);
+      expect(log, hasLength(1),
+          reason: 'the refusal is logged like any answer');
+      expect(log.single['daemon'], daemon);
+      final payload = log.single['payload'];
+      expect(payload['request']['payload']['daemonAtsign'], '@daemon2');
+      expect(payload['response']['payload']['authorized'], isFalse);
+      expect(payload['response']['payload']['message'],
+          'A daemon may ask only about itself');
     });
 
     test(

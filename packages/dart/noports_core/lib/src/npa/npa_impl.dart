@@ -195,12 +195,13 @@ class PolicyInfoRpcRequestHandler
     NPAAuthCheckRequest authCheckRequest = NPAAuthCheckRequest.fromJson(
       request.payload,
     );
+    AtRpcResp rpcResponse;
     if (fromAtSign.toAtsign() != authCheckRequest.daemonAtsign.toAtsign()) {
       logger.warning(
         'Refusing a check from $fromAtSign'
         ' about ${authCheckRequest.daemonAtsign}',
       );
-      return AtRpcResp(
+      rpcResponse = AtRpcResp(
         reqId: request.reqId,
         respType: AtRpcRespType.success,
         payload: NPAAuthCheckResponse(
@@ -209,26 +210,26 @@ class PolicyInfoRpcRequestHandler
           permitOpen: [],
         ).toJson(),
       );
-    }
-    AtRpcResp rpcResponse;
-    try {
-      var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: authCheckResponse.toJson(),
-      );
-    } catch (e, st) {
-      logger.shout('Exception: $e : StackTrace : \n$st');
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: NPAAuthCheckResponse(
-          authorized: false,
-          message: 'Exception: $e',
-          permitOpen: [],
-        ).toJson(),
-      );
+    } else {
+      try {
+        var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
+        rpcResponse = AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: authCheckResponse.toJson(),
+        );
+      } catch (e, st) {
+        logger.shout('Exception: $e : StackTrace : \n$st');
+        rpcResponse = AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'Exception: $e',
+            permitOpen: [],
+          ).toJson(),
+        );
+      }
     }
     // We will send a 'log' notification to ourselves
     var logKey = AtKey()
