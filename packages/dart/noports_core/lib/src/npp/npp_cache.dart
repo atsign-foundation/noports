@@ -1,6 +1,8 @@
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
 
+import 'package:noports_core/src/common/validation_utils.dart';
+
 import './models.dart';
 
 class NppCache {
@@ -105,7 +107,7 @@ class NppCache {
   /// Whether a service ACL covers any service of the daemon [daemonAtSign].
   bool hasServiceACLsForDaemon(final Atsign daemonAtSign) {
     for (final Daemon daemon in _daemons) {
-      if (daemon.id == null || !_sameAtSign(daemon.atSign, daemonAtSign)) {
+      if (daemon.id == null || !sameAtsign(daemon.atSign, daemonAtSign)) {
         continue;
       }
       for (final Service service in getServicesByDaemonId(daemon.id!)) {
@@ -116,14 +118,6 @@ class NppCache {
       }
     }
     return false;
-  }
-
-  static bool _sameAtSign(String atSign, Atsign other) {
-    try {
-      return atSign.toAtsign() == other;
-    } catch (_) {
-      return false;
-    }
   }
 
   /// get* from NppCache
@@ -140,7 +134,7 @@ class NppCache {
   }
 
   Daemon? getDaemonByAtSign(final String atSign) {
-    Set<Daemon> candidates = _daemons.where((daemon) => daemon.atSign == atSign).toSet();
+    Set<Daemon> candidates = _daemons.where((daemon) => sameAtsign(daemon.atSign, atSign)).toSet();
     if(candidates.length > 1) {
       throw Exception('Found more than one Daemon object with atSign $atSign');
     }

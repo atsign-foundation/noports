@@ -5,6 +5,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/admin.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 
 class PolicyServiceWithAtClient extends PolicyServiceInMem
     with AtClientBindings {
@@ -176,13 +177,8 @@ class PolicyServiceInMem implements PolicyService {
 
   /// Whether any group's daemon atSigns list [daemonAtsign].
   bool hasRulesFor(Atsign daemonAtsign) => groups.values.any(
-        (group) => group.daemonAtSigns.any((atSign) {
-          try {
-            return atSign.toAtsign() == daemonAtsign;
-          } catch (_) {
-            return false;
-          }
-        }),
+        (group) => group.daemonAtSigns
+            .any((atSign) => sameAtsign(atSign, daemonAtsign)),
       );
 
   @override
@@ -287,7 +283,7 @@ class PolicyServiceInMem implements PolicyService {
 
     for (String groupId in groups.keys) {
       UserGroup g = groups[groupId]!;
-      if (g.userAtSigns.contains(atSign)) {
+      if (g.userAtSigns.any((user) => sameAtsign(user, atSign))) {
         l.add(g);
       }
     }

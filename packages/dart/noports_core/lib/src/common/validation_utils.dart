@@ -19,6 +19,23 @@ const String deviceNameFormatHelp =
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
+/// [atSign] in canonical form, or null when it isn't a valid atSign.
+Atsign? canonicalAtsign(String? atSign) {
+  if (atSign == null) return null;
+  try {
+    return atSign.toAtsign();
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Whether [a] and [b] are the same atSign once both are canonical; false
+/// when either isn't a valid atSign.
+bool sameAtsign(String? a, String? b) {
+  final canonical = canonicalAtsign(a);
+  return canonical != null && canonical == canonicalAtsign(b);
+}
+
 bool isUnprintable(int codeUnit) {
   return (codeUnit < 33 || codeUnit > 127);
 }

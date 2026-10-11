@@ -271,12 +271,8 @@ class _DaemonsWithRules extends SetBase<String> {
 
   @override
   bool contains(Object? element) {
-    if (element is! String) return false;
-    try {
-      return handler.hasRulesFor(element.toAtsign());
-    } catch (_) {
-      return false;
-    }
+    final atSign = element is String ? canonicalAtsign(element) : null;
+    return atSign != null && handler.hasRulesFor(atSign);
   }
 
   @override

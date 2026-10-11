@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
@@ -415,7 +416,8 @@ class SrvdImpl
         );
         return;
       }
-      if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
+      if (managerAtsign != 'open' &&
+          !sameAtsign(managerAtsign, sessionParams.atSignA)) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
           ' for ${sessionParams.atSignA}'
@@ -672,7 +674,7 @@ class SrvdImpl
       logger.info('auth_modes: this relay does not know session $sessionId');
       return;
     }
-    if (n.from != si.params.atSignA) {
+    if (!sameAtsign(n.from, si.params.atSignA)) {
       logger.shout(
         'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
         ' of session $sessionId',

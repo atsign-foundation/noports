@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:at_client/at_client.dart' show Atsign, AtsignString;
+import 'package:at_client/at_client.dart' show Atsign;
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
@@ -123,19 +123,22 @@ class FileBasedPolicy implements NPARequestHandler {
       final group = yaml['userGroups'][userGroupName];
       for (String daemonAtSign
           in group['permissions']?['daemonAtSigns'] ?? []) {
-        try {
-          _daemons.add(daemonAtSign.toAtsign());
-        } catch (_) {}
+        final daemon = canonicalAtsign(daemonAtSign);
+        if (daemon != null) _daemons.add(daemon);
       }
-      for (String userAtSign in group['userAtSigns']) {
+      for (String rawUserAtSign in group['userAtSigns']) {
+        final userAtSign = canonicalAtsign(rawUserAtSign);
+        if (userAtSign == null) continue;
         _userAtSigns.putIfAbsent(
             userAtSign, () => {'userGroups': [], 'daemons': {}});
         ((_userAtSigns[userAtSign] as Map)['userGroups'] as List)
             .add(userGroupName);
         Map userDaemonPermissions =
             (_userAtSigns[userAtSign] as Map)['daemons'] as Map;
-        for (String daemonAtSign
+        for (String rawDaemonAtSign
             in group['permissions']['daemonAtSigns'] ?? []) {
+          final daemonAtSign = canonicalAtsign(rawDaemonAtSign);
+          if (daemonAtSign == null) continue;
           userDaemonPermissions.putIfAbsent(
               daemonAtSign, () => {'deviceNames': {}, 'deviceGroupNames': {}});
 
@@ -196,7 +199,8 @@ class FileBasedPolicy implements NPARequestHandler {
     /// - The policy service needs to check if the clientAtsign is
     ///   - 1. permitted to talk to this daemonAtsign
     ///     - --> is there a value at _userAtSigns[@client][@daemon]
-    final clientEntry = _userAtSigns[authCheckRequest.clientAtsign];
+    final clientEntry =
+        _userAtSigns[canonicalAtsign(authCheckRequest.clientAtsign)];
     if (clientEntry == null) {
       return NPAAuthCheckResponse(
         authorized: false,
@@ -204,7 +208,8 @@ class FileBasedPolicy implements NPARequestHandler {
         permitOpen: [],
       );
     }
-    final daemonEntry = clientEntry['daemons'][authCheckRequest.daemonAtsign];
+    final daemonEntry =
+        clientEntry['daemons'][canonicalAtsign(authCheckRequest.daemonAtsign)];
     if (daemonEntry == null) {
       return NPAAuthCheckResponse(
         authorized: false,
