@@ -56,20 +56,20 @@
 * test: more test coverage for policy service
 * fix: sshnp and npt act on the first response from the relay they asked,
   and ignore later responses and any from another atSign
-- fix: sshnpd discards malformed policy configs
-- fix: tighten regexes
-- fix: srvd takes a session's event logging config only from the session's
+* fix: sshnpd discards malformed policy configs
+* fix: regex consistency
+* fix: srvd takes a session's event logging config only from the session's
   daemon
-- fix: sshnp and npt act on the daemon's first response and ignore any later
+* fix: sshnp and npt act on the daemon's first response and ignore any later
   ones
-- fix: `--list-devices` credits each heartbeat to the daemon that sent it,
+* fix: `--list-devices` credits each heartbeat to the daemon that sent it,
   and skips malformed ones
-- feat: npevents adds the sending atSign to each event it prints
-- fix: sessions work when the client, daemon and relay share an atSign
-- test: the in-process harness runs every role as one atSign
-- fix: policy services answer only daemons that have rules, and each only
+* feat: npevents adds the sending atSign to each event it prints
+* sessions work when the client, daemon and relay share an atSign
+* test: the in-process harness runs every role as one atSign
+* fix: policy services answer only daemons that have rules, and each only
   about itself
-- fix: `--list-devices` lists a daemon on the client's own atSign
+* fix: `--list-devices` lists a daemon on the client's own atSign
 
 ## v5.17.0
 

@@ -86,7 +86,7 @@
 - fix: npt and sshnp act on the first response from the relay they asked,
   and ignore later responses and any from another atSign
 - fix: sshnpd discards malformed policy configs
-- fix: tighten regexes
+- fix: regex consistency
 - fix: srvd takes a session's event logging config only from the session's
   daemon
 - fix: sshnp and npt act on the daemon's first response and ignore any later
