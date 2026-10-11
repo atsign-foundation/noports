@@ -18,6 +18,7 @@
 
 #include <Arduino.h>
 #include "noports_config.h"
+#include "noports_policy_limits.h"
 #include "noports_relay.h"
 #include "noports_enrollment_signature.h"
 
@@ -45,16 +46,6 @@ struct ClientSigningKey {
 // Policy-service RPC pending state
 // ---------------------------------------------------------------------------
 
-// Per-sender policy-check throttle (DoS mitigation).
-//   NOPORTS_POLICY_COOLDOWN_SLOTS — size of the LRU table of recent senders.
-//   NOPORTS_POLICY_COOLDOWN_MS    — minimum interval between accepted policy
-//     checks for the same atSign.  A single sender can therefore spend at most
-//     one policy-check slot per this interval; bursts in between are dropped.
-//     Kept modest so a manager opening a second tunnel is not noticeably
-//     delayed, while a flooding atSign cannot monopolise the single slot.
-#define NOPORTS_POLICY_COOLDOWN_SLOTS 8
-#define NOPORTS_POLICY_COOLDOWN_MS    2000UL
-
 /** Type of request pending policy authorization */
 enum NoPortsPolicyPendingType {
   NOPORTS_POLICY_NONE = 0,
@@ -73,7 +64,8 @@ struct NoPortsPolicyPending {
   bool                     in_use;
   NoPortsPolicyPendingType type;
   uint32_t                 req_id;
-  uint32_t                 sent_at_ms;  ///< millis() when the RPC was sent
+  int64_t                  started_at_ms;   ///< when the check was first sent
+  int64_t                  progress_at_ms;  ///< when it was last sent or acknowledged
   char                     requesting_atsign[64];
   void                    *envelope;   ///< cJSON* for NPT, nullptr for ping
 };
@@ -268,12 +260,11 @@ private:
   // Ping and NPT are tracked separately so the normal client sequence
   // (ping, then immediately an NPT request from the same atSign) is not
   // throttled — only rapid repeats of the SAME request type are.
-  struct PolicyCooldownEntry {
-    char     atsign[64];
-    uint32_t last_ping_ms;  // millis() of last ACCEPTED ping check (0 = never)
-    uint32_t last_npt_ms;   // millis() of last ACCEPTED NPT request (0 = never)
-    bool     used;
-  } _policy_cooldown[NOPORTS_POLICY_COOLDOWN_SLOTS];
+  noports_policy_cooldown _policy_cooldown;
+
+  noports_policy_cache _policy_decisions;
+
+  int64_t _decrypt_reconnect_at_ms;  // -1 until a decrypt failure reconnects the worker
 
   // Internal methods (mirror the C sshnpd functions)
   void _freeResources();  // free all allocated SDK objects
@@ -298,6 +289,7 @@ private:
   // notification arrives on the monitor.
   void _sendPolicyRpcRequest(const char *client_atsign);
   void _handlePolicyResponse(void *message);
+  void _handleDecryptFailure(void *message); // atclient_monitor_message*
   void _cleanupPolicyPending();
   // DoS throttle: returns true if a request of the given |type| from |atsign|
   // should be dropped because one was already accepted within
@@ -305,6 +297,9 @@ private:
   // acceptance timestamp for that type (LRU-evicting the oldest entry when the
   // table is full).  Ping and NPT are throttled independently.
   bool _policyRateLimited(const char *atsign, NoPortsPolicyPendingType type);
+  // Remembers the decision for |atsign| for NOPORTS_POLICY_CACHE_TTL_MS.
+  void _cachePolicyDecision(const char *atsign, bool authorized,
+                            const char **policy_po, int policy_po_count);
   // Extracts post-auth ping response logic (called directly in manager mode,
   // or from _handlePolicyResponse after a successful policy RPC).
   void _handlePingAuthorized(const char *from_atsign);

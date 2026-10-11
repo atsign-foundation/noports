@@ -22,7 +22,6 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
   String? ivC2D;
   String? aesD2C;
   String? ivD2C;
-  String? errorReceived;
 
   @override
   Future<void> initialize() async {

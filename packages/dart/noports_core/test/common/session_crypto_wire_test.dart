@@ -181,7 +181,10 @@ void main() {
     test('verifyEnvelopeSignature accepts the released envelope', () async {
       final client = MockAtClient();
       when(
-        () => client.get(any()),
+        () => client.get(
+          any(),
+          getRequestOptions: any(named: 'getRequestOptions'),
+        ),
       ).thenAnswer((_) async => AtValue()..value = _publicKey);
       await verifyEnvelopeSignature(
         client,
@@ -196,7 +199,7 @@ void main() {
           'lookup', () async {
         final client = MockAtClient();
         when(
-          () => client.get(any()),
+          () => client.get(any(), getRequestOptions: any(named: 'getRequestOptions')),
         ).thenAnswer((_) async => AtValue()..value = _publicKey);
         final envelope = jsonDecode(_envelope)..['signingAlgo'] = label;
         await expectLater(
@@ -208,7 +211,7 @@ void main() {
           ),
           throwsA(isA<AtSigningVerificationException>()),
         );
-        verifyNever(() => client.get(any()));
+        verifyNever(() => client.get(any(), getRequestOptions: any(named: 'getRequestOptions')));
       });
     }
   });

@@ -142,6 +142,9 @@ class Handler implements NPARequestHandler {
   }
 
   @override
+  bool hasRulesFor(Atsign daemonAtsign) => api.hasRulesFor(daemonAtsign);
+
+  @override
   Future<NPAAuthCheckResponse> doAuthCheck(
       NPAAuthCheckRequest authCheckRequest) async {
     logger.info('Checking policy for request: $authCheckRequest');
@@ -161,7 +164,8 @@ class Handler implements NPARequestHandler {
     // for each group
     // does it contain the authCheckRequest.daemonAtsign?
     for (final group in groups) {
-      if (group.daemonAtSigns.contains(authCheckRequest.daemonAtsign)) {
+      if (group.daemonAtSigns
+          .any((a) => sameAtsign(a, authCheckRequest.daemonAtsign))) {
         // does it contain a matching deviceName? if so, add the permitOpens
         for (final d in group.devices) {
           if (d.name == authCheckRequest.daemonDeviceName) {

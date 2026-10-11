@@ -3,6 +3,7 @@
 #include <sshnpd/authorization.h>
 #include <sshnpd/params.h>
 #include <sshnpd/permitopen.h>
+#include <sshnpd/policy_limits.h>
 #include <sshnpd/version.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,7 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->manager_list_len = 0;
   params->normalized_manager_buf = NULL;
   params->policy = NULL;
+  params->policy_cache_size = POLICY_CACHE_DEFAULT_SIZE;
   params->device = "default";
   params->sshpublickey = 0;
   params->hide = 0;
@@ -39,6 +41,7 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   // OPT_INTEGER writes a full int through the pointer, so it must not point at
   // the uint16_t params->local_sshd_port directly
   int local_sshd_port = params->local_sshd_port;
+  int policy_cache_size = (int)params->policy_cache_size;
 
 // pragma GCC works for both gcc and clang
 #pragma GCC diagnostic push
@@ -68,6 +71,9 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "\"proxy:proxy0001.atsign.org:443\") skips the atDirectory and connects to every atServer via that "
                  "reverse proxy instead"),
       OPT_INTEGER(0, "local-sshd-port", &local_sshd_port, "Local sshd port to use"),
+      OPT_INTEGER(0, "policy-cache-size", &policy_cache_size,
+                  "How many clients' policy decisions to reuse for 15 seconds (0 to 64, default 8; 0 checks every "
+                  "request)"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
       OPT_INTEGER(0, "client-key-check-secs", &params->client_key_check_secs,
                   "How often (seconds) to check that the enrollment each client signed its session request with is "
@@ -99,6 +105,13 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     return 1;
   }
   params->local_sshd_port = (uint16_t)local_sshd_port;
+
+  if (policy_cache_size < 0 || policy_cache_size > POLICY_CACHE_MAX_SIZE) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): policy-cache-size must be 0-%d\n", POLICY_CACHE_MAX_SIZE);
+    return 1;
+  }
+  params->policy_cache_size = (size_t)policy_cache_size;
 
   if (params->client_key_check_secs < 0 || params->client_key_check_secs > max_client_key_check_secs) {
     argparse_usage(&argparse);

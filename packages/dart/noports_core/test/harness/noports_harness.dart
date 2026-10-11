@@ -32,12 +32,14 @@ class NoPortsHarness {
   static const relayAtSign = '@relay';
   static const device = 'harness';
 
-  /// A harness whose atSigns exist but whose daemon and relay aren't running.
-  static NoPortsHarness create() {
-    final server = FakeAtServer()
-      ..addAtSign(clientAtSign)
-      ..addAtSign(daemonAtSign)
-      ..addAtSign(relayAtSign);
+  /// A harness whose atSigns exist but whose daemon and relay aren't running:
+  /// [clientAtSign], [daemonAtSign] and [relayAtSign], or [atSigns] when
+  /// given.
+  static NoPortsHarness create({Set<String>? atSigns}) {
+    final server = FakeAtServer();
+    for (final atSign in atSigns ?? {clientAtSign, daemonAtSign, relayAtSign}) {
+      server.addAtSign(atSign);
+    }
     final home = Directory.systemTemp.createTempSync('noports_harness');
     final harness = NoPortsHarness._(server, home);
     final loggingHandler = AtSignLogger.defaultLoggingHandler;
@@ -74,17 +76,21 @@ class NoPortsHarness {
         scheme: 'http',
       );
 
-  /// A client for [atSign], authenticated as its first enrollment, under
-  /// [posture].
+  /// A client for [atSign], authenticated as [enrollment] (by default its
+  /// first), under [posture].
   Future<AtClient> openClient(
     String atSign, {
     required String namespace,
+    FakeEnrollment? enrollment,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final fake = server[atSign];
     final client = await Atsign(atSign).open(
-      keys: InMemoryAtKeysIo.holding(atSign, fake.firstEnrollment.keys),
+      keys: InMemoryAtKeysIo.holding(
+        atSign,
+        (enrollment ?? fake.firstEnrollment).keys,
+      ),
       preference: AtClientPreference(
         posture: posture,
         dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
@@ -100,18 +106,22 @@ class NoPortsHarness {
     return client;
   }
 
-  /// Starts srvd on the relay atSign, re-checking live sessions' signing keys
-  /// every [signingKeyCheckInterval], and looking public records up over HTTP
-  /// on [relayHttp], each lookup giving up after [lookupTimeout].
+  /// Starts srvd on [atSign] as [enrollment] (by default its first),
+  /// re-checking live sessions' signing keys every
+  /// [signingKeyCheckInterval], and looking public records up over HTTP on
+  /// [relayHttp], each lookup giving up after [lookupTimeout].
   Future<SrvdImpl> startRelay({
+    String atSign = relayAtSign,
+    FakeEnrollment? enrollment,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
     Duration signingKeyCheckInterval = defaultSigningKeyCheckInterval,
     Duration lookupTimeout = DirectPublicLookup.defaultTimeout,
   }) async {
     final atClient = await openClient(
-      relayAtSign,
+      atSign,
       namespace: Srvd.namespace,
+      enrollment: enrollment,
       posture: posture,
       dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
     );
@@ -119,7 +129,7 @@ class NoPortsHarness {
     _surfaces.add(relayHttp);
     final relay = this.relay = SrvdImpl(
       atClient: atClient,
-      atSign: relayAtSign.toAtsign(),
+      atSign: atSign.toAtsign(),
       homeDirectory: home.path,
       atKeysFilePath: home.path,
       managerAtsign: 'open',
@@ -137,8 +147,11 @@ class NoPortsHarness {
     return relay;
   }
 
-  /// Starts sshnpd on the daemon atSign, managed by the client atSign and
-  /// permitted to open [permitOpen]. With [advertisesEscr] false it tells
+  /// Starts sshnpd on [atSign] as [enrollment] (by default its first),
+  /// managed by [managerAtsigns] (with
+  /// [policyAtSign] as its policy service, when given) and permitted to open
+  /// [permitOpen], sharing its device info with its managers when
+  /// [makeDeviceInfoVisible]. With [advertisesEscr] false it tells
   /// clients it predates ESCR relay authentication, as an old daemon does;
   /// with [strict] it verifies each request's signature. It checks clients'
   /// enrollments every [clientKeyCheckInterval], and with
@@ -148,6 +161,11 @@ class NoPortsHarness {
   /// [daemonHttp].
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
+    String atSign = daemonAtSign,
+    List<String> managerAtsigns = const [clientAtSign],
+    String? policyAtSign,
+    FakeEnrollment? enrollment,
+    bool makeDeviceInfoVisible = false,
     bool advertisesEscr = true,
     bool strict = false,
     Duration clientKeyCheckInterval =
@@ -158,8 +176,9 @@ class NoPortsHarness {
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
   }) async {
     final atClient = await openClient(
-      daemonAtSign,
+      atSign,
       namespace: DefaultArgs.namespace,
+      enrollment: enrollment,
       posture: posture,
       dataSigningKeyAlgorithms: dataSigningKeyAlgorithms,
     );
@@ -170,10 +189,10 @@ class NoPortsHarness {
       username: 'harness',
       homeDirectory: home.path,
       device: device,
-      managerAtsigns: [clientAtSign],
-      policyManagerAtsign: null,
+      managerAtsigns: managerAtsigns,
+      policyManagerAtsign: policyAtSign?.toAtsign(),
       sshClient: SupportedSshClient.openssh,
-      makeDeviceInfoVisible: false,
+      makeDeviceInfoVisible: makeDeviceInfoVisible,
       addSshPublicKeys: false,
       localSshdPort: 22,
       sshPublicKeyPermissions: '',

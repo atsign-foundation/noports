@@ -51,6 +51,10 @@ abstract class SshnpdChannel
 
   Map<String, dynamic>? pingResponse;
 
+  /// What went wrong with the daemon's response, when [sshnpdAck] is
+  /// [SshnpdAck.acknowledgedWithErrors].
+  String? errorReceived;
+
   /// The keystore key we are going to use to cache ping responses in local
   /// storage.
   /// local:cached.ping.bob.device_name.sshnp@alice
@@ -61,6 +65,8 @@ abstract class SshnpdChannel
   Map<String, dynamic>? cachedPingResponse;
 
   Completer acked = Completer();
+
+  bool _responded = false;
 
   /// If the daemon supports twinKeys then this gets set to true by the
   /// [featureCheck] function.
@@ -87,7 +93,7 @@ abstract class SshnpdChannel
   /// Initialization starts the subscription to notifications from the daemon.
   @override
   Future<void> initialize() async {
-    String regex = '$sessionId.$namespace${params.sshnpdAtSign}';
+    String regex = '$sessionId.$namespace${params.sshnpdAtSign}\$';
     logger.info('Starting monitor for notifications with regex: "$regex"');
     subscribe(regex: regex, shouldDecrypt: true).listen(handleSshnpdResponses);
 
@@ -110,6 +116,20 @@ abstract class SshnpdChannel
   /// Main response handler for the daemon's notifications.
   @visibleForTesting
   Future<void> handleSshnpdResponses(AtNotification notification) async {
+    if (_responded) {
+      logger.warning(
+        'Ignoring another response for session $sessionId'
+        ' from ${notification.from}',
+      );
+      return;
+    }
+    if (_isForAnotherSession(notification)) {
+      logger.warning(
+        'Ignoring a response for another session from ${notification.from}',
+      );
+      return;
+    }
+    _responded = true;
     String notificationKey = notification.key
         .replaceAll('${notification.to}:', '')
         .replaceAll('.$namespace@${notification.from}', '')
@@ -118,11 +138,29 @@ abstract class SshnpdChannel
         .toLowerCase();
     logger.info('Received $notificationKey notification');
 
-    sshnpdAck = await handleSshnpdPayload(notification);
+    try {
+      sshnpdAck = await handleSshnpdPayload(notification);
+    } catch (e) {
+      logger.shout('Failed to read the response for session $sessionId: $e');
+      errorReceived = "Failed to read the daemon's response";
+      sshnpdAck = SshnpdAck.acknowledgedWithErrors;
+    }
     acked.complete();
 
     if (sshnpdAck == SshnpdAck.acknowledged) {
       logger.info('Session $sessionId connected successfully');
+    }
+  }
+
+  /// Whether [notification] carries a payload naming a session other than
+  /// this one.
+  bool _isForAnotherSession(AtNotification notification) {
+    try {
+      final payload = jsonDecode(notification.value ?? '')['payload'];
+      final id = payload is Map ? payload['sessionId'] : null;
+      return id is String && id != sessionId;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -384,15 +422,29 @@ abstract class SshnpdChannel
 
     // Listen for heartbeat notifications
     subscribe(
-      regex: 'heartbeat\\.$sshnpDeviceNameRegex',
+      regex:
+          'heartbeat\\.$sshnpDeviceNameRegex\\.${DefaultArgs.namespace}$sharedBy\$',
       shouldDecrypt: true,
     ).listen((notification) {
-      var deviceInfo = jsonDecode(notification.value ?? '{}');
-      var devicename = deviceInfo['devicename'];
-      var fullDeviceName = devicename + sharedBy;
-      if (devicename != null) {
-        deviceList.setActive(useFullDeviceName ? fullDeviceName : devicename);
+      final String? devicename;
+      try {
+        devicename = jsonDecode(notification.value ?? '{}')['devicename'];
+      } catch (e) {
+        logger.warning(
+          'Ignoring heartbeat ${notification.key} from ${notification.from}: $e',
+        );
+        return;
       }
+      if (devicename == null) {
+        logger.warning(
+          'Ignoring heartbeat ${notification.key} from ${notification.from}'
+          ' with no devicename',
+        );
+        return;
+      }
+      deviceList.setActive(
+        useFullDeviceName ? devicename + sharedBy : devicename,
+      );
     });
 
     // for each key, get the value
@@ -401,7 +453,9 @@ abstract class SshnpdChannel
       var atValue = await atClient
           .get(
             entryKey,
-            getRequestOptions: GetRequestOptions()..bypassCache = true,
+            getRequestOptions: GetRequestOptions()
+              ..bypassCache = true
+              ..useRemoteAtServer = true,
           )
           .catchError((_) {
             // Probably a cached key which should have been deleted
