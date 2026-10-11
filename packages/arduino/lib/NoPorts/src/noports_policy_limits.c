@@ -206,3 +206,7 @@ bool noports_policy_wait_over(int64_t started_ms, int64_t progress_ms, int64_t n
 bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from, const char *policy_atsign) {
   return pending && noports_atsign_equals(from, policy_atsign);
 }
+
+bool noports_reconnect_after_decrypt_failure(int64_t last_ms, int64_t now_ms) {
+  return last_ms < 0 || now_ms - last_ms >= NOPORTS_DECRYPT_RECONNECT_MS;
+}

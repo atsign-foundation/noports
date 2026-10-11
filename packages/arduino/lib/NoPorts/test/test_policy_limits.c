@@ -175,6 +175,21 @@ static void test_decrypt_failure(void) {
         "a notification with no sender sends nothing");
 }
 
+static void test_reconnect_after_decrypt_failure(void) {
+  check(noports_reconnect_after_decrypt_failure(-1, 1000),
+        "given no worker reconnect after a decrypt failure yet, when a notification can't be decrypted, then the "
+        "daemon reconnects the worker");
+  check(noports_reconnect_after_decrypt_failure(1000, 1000 + NOPORTS_DECRYPT_RECONNECT_MS + 1000),
+        "given no such reconnect in the last 30 seconds, when a notification can't be decrypted, then the daemon "
+        "reconnects the worker");
+  check(!noports_reconnect_after_decrypt_failure(1000, 1000 + NOPORTS_DECRYPT_RECONNECT_MS - 1),
+        "given such a reconnect under 30 seconds ago, when another notification can't be decrypted, then the daemon "
+        "doesn't reconnect");
+  check(noports_reconnect_after_decrypt_failure(1000, 1000 + NOPORTS_DECRYPT_RECONNECT_MS),
+        "given such a reconnect 30 seconds or more ago, when a notification can't be decrypted, then the daemon "
+        "reconnects again");
+}
+
 int main(void) {
   test_reuse_within_ttl();
   test_denial_reused();
@@ -186,6 +201,7 @@ int main(void) {
   test_size_zero();
   test_size_cap();
   test_decrypt_failure();
+  test_reconnect_after_decrypt_failure();
   if (failures > 0) {
     printf("%d check(s) failed\n", failures);
     return 1;

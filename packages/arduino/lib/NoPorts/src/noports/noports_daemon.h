@@ -264,6 +264,8 @@ private:
 
   noports_policy_cache _policy_decisions;
 
+  int64_t _decrypt_reconnect_at_ms;  // -1 until a decrypt failure reconnects the worker
+
   // Internal methods (mirror the C sshnpd functions)
   void _freeResources();  // free all allocated SDK objects
   bool _authenticate();

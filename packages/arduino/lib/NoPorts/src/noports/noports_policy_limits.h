@@ -144,6 +144,16 @@ bool noports_policy_wait_over(int64_t started_ms, int64_t progress_ms, int64_t n
  */
 bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from, const char *policy_atsign);
 
+// How long after reconnecting the worker for a decrypt failure before another
+// decrypt failure may reconnect it again
+#define NOPORTS_DECRYPT_RECONNECT_MS 30000
+
+/**
+ * @brief Whether a decrypt failure at now_ms should reconnect the worker, the
+ * last reconnect for one being at last_ms (negative when there has been none).
+ */
+bool noports_reconnect_after_decrypt_failure(int64_t last_ms, int64_t now_ms);
+
 #ifdef __cplusplus
 }
 #endif

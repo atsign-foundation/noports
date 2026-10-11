@@ -112,7 +112,8 @@ NoPortsDaemon::NoPortsDaemon()
   , _worker_keepalive_ms(NOPORTS_WORKER_KEEPALIVE_MS)
   , _worker_last_used_ms(0)
   , _max_relays(2)
-  , _atserver_port(0) {
+  , _atserver_port(0)
+  , _decrypt_reconnect_at_ms(-1) {
   memset(_last_error, 0, sizeof(_last_error));
   memset(_root_host, 0, sizeof(_root_host));
   memset(_atserver_host, 0, sizeof(_atserver_host));
@@ -1607,8 +1608,15 @@ void NoPortsDaemon::_handleDecryptFailure(void *msg) {
                          : nullptr;
   NOPORTS_LOGW(TAG, "Ignoring a notification from %s that couldn't be decrypted",
                from ? from : "(unknown)");
+  if (noports_reconnect_after_decrypt_failure(_decrypt_reconnect_at_ms, _now_ms())) {
+    NOPORTS_LOGW(TAG, "Reconnecting the worker after a decrypt failure");
+    _decrypt_reconnect_at_ms = _now_ms();
+    _reconnectWorker();
+  }
   if (noports_policy_resend_after_decrypt_failure(_policy_pending.in_use, from,
                                                   _config.policy_atsign)) {
+    // NOTE @policy answers each request id once, so a re-send needs a fresh one
+    _policy_pending.req_id = _next_policy_req_id();
     NOPORTS_LOGI(TAG, "Policy RPC: re-sending request (reqId=%lu)",
                  (unsigned long)_policy_pending.req_id);
     _policy_pending.progress_at_ms = _now_ms();
