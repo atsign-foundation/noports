@@ -36,6 +36,16 @@ bool sameAtsign(String? a, String? b) {
   return canonical != null && canonical == canonicalAtsign(b);
 }
 
+/// The canonical forms of the atSigns a set of rules names, each worked out
+/// once; hold one only for atSigns the rules hold, never for senders'.
+class CanonicalAtsigns {
+  final Map<String, Atsign?> _known = {};
+
+  /// [atSign] in canonical form, or null when it isn't a valid atSign.
+  Atsign? of(String atSign) =>
+      _known.putIfAbsent(atSign, () => canonicalAtsign(atSign));
+}
+
 bool isUnprintable(int codeUnit) {
   return (codeUnit < 33 || codeUnit > 127);
 }

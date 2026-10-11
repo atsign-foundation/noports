@@ -14,6 +14,7 @@ class NppCache {
   final Set<Daemon> _daemons; // Daemon.atSign must be unique across all daemons
   final Set<Service> _services;
   final Set<ServiceACL> _serviceACLs;
+  final CanonicalAtsigns _canonical = CanonicalAtsigns();
 
   Set<Client> get clients => _clients;
   Set<ClientGroup> get clientGroups => _clientGroups;
@@ -107,7 +108,7 @@ class NppCache {
   /// Whether a service ACL covers any service of the daemon [daemonAtSign].
   bool hasServiceACLsForDaemon(final Atsign daemonAtSign) {
     for (final Daemon daemon in _daemons) {
-      if (daemon.id == null || !sameAtsign(daemon.atSign, daemonAtSign)) {
+      if (daemon.id == null || _canonical.of(daemon.atSign) != daemonAtSign) {
         continue;
       }
       for (final Service service in getServicesByDaemonId(daemon.id!)) {
@@ -134,7 +135,10 @@ class NppCache {
   }
 
   Daemon? getDaemonByAtSign(final String atSign) {
-    Set<Daemon> candidates = _daemons.where((daemon) => sameAtsign(daemon.atSign, atSign)).toSet();
+    final asked = canonicalAtsign(atSign);
+    Set<Daemon> candidates = _daemons
+        .where((daemon) => asked != null && _canonical.of(daemon.atSign) == asked)
+        .toSet();
     if(candidates.length > 1) {
       throw Exception('Found more than one Daemon object with atSign $atSign');
     }

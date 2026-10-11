@@ -175,10 +175,12 @@ class PolicyServiceInMem implements PolicyService {
   @override
   final Map<String, UserGroup> groups = {};
 
+  final CanonicalAtsigns _canonical = CanonicalAtsigns();
+
   /// Whether any group's daemon atSigns list [daemonAtsign].
   bool hasRulesFor(Atsign daemonAtsign) => groups.values.any(
         (group) => group.daemonAtSigns
-            .any((atSign) => sameAtsign(atSign, daemonAtsign)),
+            .any((atSign) => _canonical.of(atSign) == daemonAtsign),
       );
 
   @override
@@ -280,10 +282,11 @@ class PolicyServiceInMem implements PolicyService {
   @override
   Future<List<UserGroup>> getGroupsForUser(String atSign) async {
     List<UserGroup> l = [];
+    final asked = canonicalAtsign(atSign);
 
     for (String groupId in groups.keys) {
       UserGroup g = groups[groupId]!;
-      if (g.userAtSigns.any((user) => sameAtsign(user, atSign))) {
+      if (asked != null && g.userAtSigns.any((user) => _canonical.of(user) == asked)) {
         l.add(g);
       }
     }
