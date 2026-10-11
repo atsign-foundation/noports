@@ -11,6 +11,8 @@
 
 #define LOGGER_TAG "sshnpd - params"
 #define default_permitopen "localhost:22,localhost:3389"
+#define default_client_key_check_secs 10
+#define max_client_key_check_secs 86400
 void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
@@ -27,6 +29,8 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->root_domain = "root.atsign.org";
   params->local_sshd_port = 22;
   params->storage_path = NULL;
+  params->client_key_check_secs = default_client_key_check_secs;
+  params->require_enrollment_signature = false;
 }
 
 int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
@@ -71,6 +75,15 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                   "How many clients' policy decisions to reuse for 15 seconds (0 to 64, default 8; 0 checks every "
                   "request)"),
       OPT_STRING(0, "storage-path", &params->storage_path, NULL),
+      OPT_INTEGER(0, "client-key-check-secs", &params->client_key_check_secs,
+                  "How often (seconds) to check that the enrollment each client signed its session request with is "
+                  "still valid. A session is ended once that enrollment is revoked, superseded, deleted or expires. "
+                  "Only signed requests are checked (see --require-enrollment-signature), and only while this daemon "
+                  "runs. 0 turns the check off. (defaults to 10)"),
+      OPT_BOOLEAN(0, "require-enrollment-signature", &params->require_enrollment_signature,
+                  "Refuse session requests that aren't signed with the client's enrollment key, or whose signature "
+                  "can't be checked because the client's atServer can't be reached. Older clients, and clients whose "
+                  "enrollment holds no signing key, don't sign them."),
 
       // Doesn't do anything more, added in case old config would cause a parsing issue
       OPT_BOOLEAN('u', "un-hide", NULL, NULL),
@@ -99,6 +112,12 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     return 1;
   }
   params->policy_cache_size = (size_t)policy_cache_size;
+
+  if (params->client_key_check_secs < 0 || params->client_key_check_secs > max_client_key_check_secs) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): client-key-check-secs must be 0-%d\n", max_client_key_check_secs);
+    return 1;
+  }
 
   // Mandatory options
   if (params->atsign == NULL) {

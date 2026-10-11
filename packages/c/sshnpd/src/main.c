@@ -26,6 +26,8 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/handler_commons.h>
+#include <sshnpd/client_sessions.h>
+#include <sshnpd/public_lookup.h>
 #include <sshnpd/run_srv_process.h>
 #include <srv/params.h>
 #include <srv/srv.h>
@@ -51,17 +53,15 @@ static void exit_handler(int sig) {
   (void)ignored;
   should_run = 0;
 }
-static void child_exit_handler(int sig) {
-  (void)sig;
-  // SIGCHLD is not queued: several children exiting close together coalesce
-  // into a single delivery, so reap in a loop or zombies accumulate until PID
-  // exhaustion. Only async-signal-safe calls here - waitpid is safe, atlogger
-  // (stdio + locks) is not, so no logging. errno is saved/restored so a signal
-  // landing mid-syscall on the main thread doesn't clobber its errno.
-  int saved_errno = errno;
-  while (waitpid(-1, NULL, WNOHANG) > 0) {
-  }
-  errno = saved_errno;
+
+static pid_t start_key_check(const char *signing_key, void *ctx) {
+  (void)ctx;
+  return public_lookup_worker_start("key-check", signing_key, NULL);
+}
+
+static int signal_process(pid_t pid, int sig, void *ctx) {
+  (void)ctx;
+  return kill(pid, sig);
 }
 
 static void free_if_not_null(void *ptr) {
@@ -84,8 +84,16 @@ int main(int argc, char **argv) {
     if (parse_srv_params(&srv_params, argc - 1, (const char **)(argv + 1), NULL) != 0) {
       return 1;
     }
+    const char *ready_fd = getenv("SRV_READY_FD");
+    if (ready_fd != NULL) {
+      srv_params.ready_fd = atoi(ready_fd);
+      unsetenv("SRV_READY_FD");
+    }
     atlogger_set_logging_level(INFO);
     return run_srv(&srv_params);
+  }
+  if (argc >= 2 && strcmp(argv[1], PUBLIC_LOOKUP_WORKER_FLAG) == 0) {
+    return public_lookup_worker_main(argc, (const char **)argv);
   }
 
   int res = 0;
@@ -109,7 +117,6 @@ int main(int argc, char **argv) {
 
   // Catch sigint and pass to the handler
   signal(SIGINT, exit_handler);
-  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
@@ -303,6 +310,13 @@ int main(int argc, char **argv) {
                  root_port);
   }
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
+
+  // 6.b Look clients' signing keys up where their atServers are found, and
+  // keep checking the keys of the sessions they sign
+  public_lookup_directory lookup_directory = {root_host, root_port, via_atserver_proxy, "https"};
+  public_lookup_worker_init(&lookup_directory);
+  client_sessions_ops session_ops = {start_key_check, signal_process, NULL};
+  client_sessions_init((unsigned int)params.client_key_check_secs, &session_ops);
 
   // 7.a Initialize the monitor atclient
   atclient_monitor_init(&monitor_ctx);
