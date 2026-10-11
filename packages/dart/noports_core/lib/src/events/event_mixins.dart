@@ -100,16 +100,11 @@ mixin AtEventListener on AtClientBindings {
         continue;
       }
       try {
-        final event = jsonDecode(
-          AtEventEnvelope.fromJson(jsonDecode(n.value!)).payload,
-        );
-        if (event is! Map<String, dynamic>) {
-          logger.shout('Skipping event from ${n.from}: not a JSON object');
-          continue;
-        }
+        final event =
+            AtEventEnvelope.fromJson(jsonDecode(n.value!)).atEventPayload;
         yield jsonEncode({...event, 'sender': n.from.toAtsign()});
       } catch (e) {
-        logger.shout('Failed to unmarshal event: $e');
+        logger.shout('Skipping event from ${n.from}: $e');
       }
     }
   }
