@@ -83,6 +83,11 @@ static void reap_children(void) {
   }
 }
 
+static int check_with_policy_service(void *ctx, const char *client_atsign, sshnpd_policy_decision *decision) {
+  (void)ctx;
+  return policy_auth_check(&worker, &monitor_ctx, &params, client_atsign, decision);
+}
+
 void main_loop() {
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
 
@@ -183,29 +188,28 @@ void main_loop() {
           break;
         }
 
+        enum notification_key notification_key = sshnpd_notification_kind(
+            message.notification->key,
+            atclient_atnotification_is_to_initialized(message.notification) ? message.notification->to : NULL,
+            params.device, message.notification->from);
+
         // Managers are approved without a policy check; everyone else is
         // referred to the policy service when one is configured
         policy_checked = false;
         if (!is_manager_atsign(&params, message.notification->from)) {
           if (params.policy != NULL && message.notification->from != NULL) {
             const char *from = message.notification->from;
-            if (!policy_cache_lookup(&decisions, from, policy_now_millis(), &policy_decision)) {
-              if (!policy_throttle_allows(&checked_senders, from, policy_now_millis())) {
-                atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                             "Dropping a request from %s, whose last policy check was under %d ms ago\n", from,
-                             POLICY_THROTTLE_MS);
-                break;
-              }
-              policy_auth_check(&worker, &monitor_ctx, &params, from, &policy_decision);
-              if (policy_cache_store(&decisions, from, &policy_decision, policy_now_millis()) != 0) {
-                atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cache the policy decision for %s\n",
-                             from);
-              }
-            }
-            if (!policy_decision.authorized) {
+            policy_gate_result gate = policy_gate(&decisions, &checked_senders, from, notification_key,
+                                                  policy_now_millis, check_with_policy_service, NULL, &policy_decision);
+            if (gate == POLICY_GATE_DROP) {
               atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                           "Rejecting request from atSign not authorized by the policy service: %s\n",
-                           message.notification->from);
+                           "Dropping a request from %s, whose last policy check for it was under %d ms ago\n", from,
+                           POLICY_THROTTLE_MS);
+              break;
+            }
+            if (gate == POLICY_GATE_DENY) {
+              atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                           "Rejecting request from atSign not authorized by the policy service: %s\n", from);
               break;
             }
             policy_checked = true;
@@ -216,54 +220,10 @@ void main_loop() {
           }
         }
 
-        char *key = message.notification->key;
-
-        // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
-        char tail[strlen(params.device) + strlen(SSHNP_NS) + strlen(message.notification->from) + 3];
-        sprintf(tail, ".%s.%s%s", params.device, SSHNP_NS, message.notification->from);
-        char *tailstart = strstr(key, tail);
-        if (tailstart == NULL) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the tail\n");
+        if (notification_key == NK_NONE) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping message: %s names no request handled here\n",
+                       message.notification->key);
           break;
-        }
-        *tailstart = '\0'; // reterminate the string at the start of the trail
-
-        // strip notification.to from the front
-        // first let's validate that notification.to is on the front
-        char *head = message.notification->to;
-        if (!atclient_atnotification_is_to_initialized(message.notification) || head == NULL) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: notification has no 'to' field\n");
-          break;
-        }
-        size_t head_len = strlen(head);
-        if (strlen(key) < head_len) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "Skipping message: key length is shorter than the expected head\n");
-          break;
-        }
-        int is_equal = strncmp(key, head, head_len);
-        if (is_equal != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the head\n");
-          break;
-        }
-
-        // Now that we've confirmed it to be at the front, just do a pointer shift
-        key += head_len + 1; // shift the pointer over (+1 for ":")
-
-        // Do the string compare for this key in place, that way we can use a switch/case instead of endless if
-        // statements
-        enum notification_key notification_key = NK_NONE;
-        int keys_length;
-#ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
-        keys_length = NOTIFICATION_KEYS_LEN + 1;
-#else
-        keys_length = NOTIFICATION_KEYS_LEN;
-#endif
-        for (int i = 1; i < keys_length; i++) {
-          if (strcmp(key, notification_key_map[i].str) == 0) {
-            notification_key = notification_key_map[i].key;
-            break;
-          }
         }
 
         if (!should_run) {

@@ -114,3 +114,29 @@ size_t sshnpd_next_timeout_counter(int read_ret, enum atclient_monitor_message_t
     return next;
   }
 }
+
+enum notification_key sshnpd_notification_kind(const char *key, const char *to, const char *device, const char *from) {
+  if (key == NULL || to == NULL || device == NULL || from == NULL) {
+    return NK_NONE;
+  }
+  char tail[strlen(device) + strlen(SSHNP_NS) + strlen(from) + 3];
+  snprintf(tail, sizeof(tail), ".%s.%s%s", device, SSHNP_NS, from);
+  const char *tail_start = strstr(key, tail);
+  size_t head_len = strlen(to);
+  if (tail_start == NULL || (size_t)(tail_start - key) <= head_len || strncmp(key, to, head_len) != 0) {
+    return NK_NONE;
+  }
+  const char *name = key + head_len + 1;
+  size_t name_len = (size_t)(tail_start - name);
+#ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
+  int keys_length = NOTIFICATION_KEYS_LEN + 1;
+#else
+  int keys_length = NOTIFICATION_KEYS_LEN;
+#endif
+  for (int i = 1; i < keys_length; i++) {
+    if (strlen(notification_key_map[i].str) == name_len && strncmp(name, notification_key_map[i].str, name_len) == 0) {
+      return notification_key_map[i].key;
+    }
+  }
+  return NK_NONE;
+}

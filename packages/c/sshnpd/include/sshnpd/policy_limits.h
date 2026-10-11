@@ -38,6 +38,7 @@ typedef struct {
 typedef struct {
   bool used;
   char atsign[SSHNPD_ATSIGN_BUFFER_LEN];
+  int kind;
   int64_t checked_at_ms;
 } policy_throttle_slot;
 
@@ -90,11 +91,36 @@ int policy_cache_store(policy_cache *cache, const char *atsign, const sshnpd_pol
 void policy_throttle_init(policy_throttle *throttle);
 
 /**
- * @brief Whether atsign may be checked at now_ms, its last check being at
- * least POLICY_THROTTLE_MS earlier; when it may, records now_ms as its last
- * check, replacing the sender checked longest ago when the table is full.
+ * @brief Whether atsign may be checked at now_ms for a request of the given
+ * kind, its last check for that kind being at least POLICY_THROTTLE_MS
+ * earlier; when it may, records now_ms as that check, replacing the one made
+ * longest ago when the table is full.
  */
-bool policy_throttle_allows(policy_throttle *throttle, const char *atsign, int64_t now_ms);
+bool policy_throttle_allows(policy_throttle *throttle, const char *atsign, int kind, int64_t now_ms);
+
+/**
+ * @brief Asks the policy service whether client_atsign may be served, filling
+ * decision; returns 0 once it decided or the wait ran out (a denial), and
+ * non-zero when the question couldn't be sent.
+ */
+typedef int (*policy_check_fn)(void *ctx, const char *client_atsign, sshnpd_policy_decision *decision);
+
+typedef enum {
+  POLICY_GATE_ALLOW,
+  POLICY_GATE_DENY,
+  POLICY_GATE_DROP,
+} policy_gate_result;
+
+/**
+ * @brief Decides a request of the given kind from client_atsign: from a cached
+ * decision when there is one, else by a check that the throttle allows, whose
+ * outcome is cached unless the question couldn't be sent. DROP means the
+ * throttle refused the check. decision holds what was decided, for the caller
+ * to free with policy_decision_free.
+ */
+policy_gate_result policy_gate(policy_cache *cache, policy_throttle *throttle, const char *client_atsign, int kind,
+                               int64_t (*now_ms)(void), policy_check_fn check, void *check_ctx,
+                               sshnpd_policy_decision *decision);
 
 /**
  * @brief When a policy check started at started_ms, whose last progress was

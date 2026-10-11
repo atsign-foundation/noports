@@ -55,6 +55,13 @@ extern uint8_t device_info_attempts;
  */
 size_t sshnpd_next_timeout_counter(int read_ret, enum atclient_monitor_message_type type, size_t counter);
 
+/**
+ * @brief The request a notification key names: the text between "<to>:" and
+ * ".<device>.sshnp<from>", matched against notification_key_map; NK_NONE when
+ * the key isn't shaped that way or names no request this daemon handles.
+ */
+enum notification_key sshnpd_notification_kind(const char *key, const char *to, const char *device, const char *from);
+
 // Utility functions that act on global state
 int lock_atclient(void);
 int unlock_atclient(int);

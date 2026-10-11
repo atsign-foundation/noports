@@ -1,8 +1,11 @@
 #define _POSIX_C_SOURCE 200809L
 #include "sshnpd/policy_limits.h"
+#include <atlogger/atlogger.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define LOGGER_TAG "sshnpd - policy limits"
 
 int64_t policy_now_millis(void) {
   struct timespec ts;
@@ -115,14 +118,15 @@ int policy_cache_store(policy_cache *cache, const char *atsign, const sshnpd_pol
 
 void policy_throttle_init(policy_throttle *throttle) { memset(throttle, 0, sizeof(*throttle)); }
 
-bool policy_throttle_allows(policy_throttle *throttle, const char *atsign, int64_t now_ms) {
+bool policy_throttle_allows(policy_throttle *throttle, const char *atsign, int kind, int64_t now_ms) {
   char normalized[SSHNPD_ATSIGN_BUFFER_LEN];
   if (sshnpd_normalize_atsign(atsign, normalized, sizeof(normalized)) != 0) {
     return false;
   }
   policy_throttle_slot *slot = NULL;
   for (size_t i = 0; i < POLICY_THROTTLE_SLOTS && slot == NULL; i++) {
-    if (throttle->slots[i].used && strcmp(throttle->slots[i].atsign, normalized) == 0) {
+    if (throttle->slots[i].used && throttle->slots[i].kind == kind &&
+        strcmp(throttle->slots[i].atsign, normalized) == 0) {
       slot = &throttle->slots[i];
     }
   }
@@ -143,9 +147,28 @@ bool policy_throttle_allows(policy_throttle *throttle, const char *atsign, int64
     }
   }
   strcpy(slot->atsign, normalized);
+  slot->kind = kind;
   slot->checked_at_ms = now_ms;
   slot->used = true;
   return true;
+}
+
+policy_gate_result policy_gate(policy_cache *cache, policy_throttle *throttle, const char *client_atsign, int kind,
+                               int64_t (*now_ms)(void), policy_check_fn check, void *check_ctx,
+                               sshnpd_policy_decision *decision) {
+  if (!policy_cache_lookup(cache, client_atsign, now_ms(), decision)) {
+    if (!policy_throttle_allows(throttle, client_atsign, kind, now_ms())) {
+      return POLICY_GATE_DROP;
+    }
+    if (check(check_ctx, client_atsign, decision) != 0) {
+      return POLICY_GATE_DENY;
+    }
+    if (policy_cache_store(cache, client_atsign, decision, now_ms()) != 0) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Failed to cache the policy decision for %s\n",
+                   client_atsign);
+    }
+  }
+  return decision->authorized ? POLICY_GATE_ALLOW : POLICY_GATE_DENY;
 }
 
 int64_t policy_wait_deadline(int64_t started_ms, int64_t last_progress_ms) {
