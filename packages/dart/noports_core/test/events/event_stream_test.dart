@@ -68,6 +68,19 @@ void main() {
     });
 
     test(
+        "when an event's payload carries a sender naming another atSign, then"
+        ' npevents prints the atSign the notification came from as its sender',
+        () async {
+      final printed = events.getJsonStream(config).first;
+      await pumpEventQueue();
+
+      notifications.add(event(
+          '@daemon', {'sessionId': 's3', 'state': 'done', 'sender': '@other'}));
+
+      expect(jsonDecode(await printed)['sender'], '@daemon');
+    });
+
+    test(
         "when an event's payload isn't a JSON object, then npevents skips it,"
         ' logs why, and keeps printing later events', () async {
       final printed = events.getJsonStream(config).first;
