@@ -68,6 +68,7 @@ void main() {
       '@a:ack.<n>.auth_checks.__rpcs.sshnp@a',
       '@a:success.<n>.auth_checks.__rpcs.sshnp@a',
       '@a:<n>.logs.policy.sshnp@a',
+      '@a:<topic>@a',
     ];
 
     /// What [a] receives for one npt session, with the daemon's policy check
