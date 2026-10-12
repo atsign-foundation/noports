@@ -8,7 +8,10 @@ import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
+import 'package:noports_core/src/common/public_lookup.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
@@ -46,6 +49,22 @@ class SrvdImpl
   final bool bind443;
   @override
   final int localBindPort443;
+
+  /// Window (ms) the auto-detecting relay auth verifiers wait for a connecting
+  /// side to speak (legacy) before assuming ESCR and issuing a challenge.
+  final int relayAuthDetectWindowMs;
+
+  /// How often to re-check that the signing keys each live session's ESCR
+  /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
+  /// the check off.
+  final Duration signingKeyCheckInterval;
+
+  /// How this relay looks up the `_apsk` records sockets sign with.
+  final PublicLookup publicLookup;
+
+  Timer? _signingKeyCheckTimer;
+  final Set<String> _keysBeingChecked = {};
+
   @override
   bool verbose = false;
 
@@ -55,9 +74,25 @@ class SrvdImpl
 
   Map<String, SessionInfo> sessions = {};
 
+  final Set<String> _startingSessions = {};
+
   Isolate? isolate443;
   SendPort? toIsolate443;
   PortPair portPair443 = (443, 443);
+
+  final List<StreamSubscription> _subscriptions = [];
+
+  /// The relay isolates still running: where to send them requests, and when
+  /// they exit.
+  final Map<Isolate, ({Future<SendPort> toWorker, Future<void> exited})>
+  _workers = {};
+
+  bool _stopped = false;
+
+  static const _workerStopTimeout = Duration(seconds: 5);
+
+  @visibleForTesting
+  int get runningWorkers => _workers.length;
 
   SrvdImpl({
     required this.atClient,
@@ -70,7 +105,10 @@ class SrvdImpl
     required this.verbose,
     required this.bind443,
     required this.localBindPort443,
-  }) {
+    required this.relayAuthDetectWindowMs,
+    required this.signingKeyCheckInterval,
+    PublicLookup? publicLookup,
+  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -90,7 +128,7 @@ class SrvdImpl
       }
 
       if (!await File(p.atKeysFilePath).exists()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('Unable to find .atKeys file: ${p.atKeysFilePath}');
       }
 
       AtSignLogger.root_level = 'SHOUT';
@@ -118,13 +156,15 @@ class SrvdImpl
         verbose: p.verbose,
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
+        relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
       );
 
       if (p.verbose) {
         srvd.logger.logger.level = Level.INFO;
       }
       return srvd;
-    } catch (e, s) {
+    } on ArgumentError catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
     }
@@ -157,13 +197,81 @@ class SrvdImpl
     }
     NotificationService notificationService = atClient.notificationService;
 
-    handlePublicKeyChangedEvent(atClient, atSign);
+    _subscriptions.add(handlePublicKeyChangedEvent(atClient, atSign));
 
     const String subscriptionRegex = '\\.${Srvd.namespace}@';
 
-    notificationService
-        .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
-        .listen(notificationHandler);
+    _subscriptions.add(
+      notificationService
+          .subscribe(regex: subscriptionRegex, shouldDecrypt: true)
+          .listen(notificationHandler),
+    );
+
+    if (signingKeyCheckInterval > Duration.zero) {
+      _signingKeyCheckTimer = Timer.periodic(
+        signingKeyCheckInterval,
+        (_) => unawaited(checkSigningKeys()),
+      );
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    _stopped = true;
+    _signingKeyCheckTimer?.cancel();
+    publicLookup.close();
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    await Future.wait([
+      for (final MapEntry(key: worker, value: (:toWorker, :exited))
+          in _workers.entries.toList())
+        _stopWorker(worker, toWorker, exited),
+    ]);
+    sessions.clear();
+  }
+
+  /// Tracks [worker] until [exitPort] reports it has exited, then closes
+  /// [fromWorker]. A worker registered after [stop] is stopped at once.
+  void _register(
+    Isolate worker,
+    ReceivePort fromWorker,
+    ReceivePort exitPort,
+    Future<SendPort> toWorker,
+  ) {
+    final exited = exitPort.first.then((_) {
+      exitPort.close();
+      fromWorker.close();
+    });
+    _workers[worker] = (toWorker: toWorker, exited: exited);
+    if (_stopped) {
+      unawaited(_stopWorker(worker, toWorker, exited));
+    }
+  }
+
+  /// Asks [worker] to stop, so that it closes its own sockets, and kills it
+  /// only if it hasn't exited within [_workerStopTimeout].
+  Future<void> _stopWorker(
+    Isolate worker,
+    Future<SendPort> toWorker,
+    Future<void> exited,
+  ) async {
+    try {
+      await Future.any([
+        exited,
+        toWorker.then((port) {
+          port.send(IIRequest.create('stop', null));
+          return exited;
+        }),
+      ]).timeout(_workerStopTimeout);
+    } on TimeoutException {
+      logger.warning(
+        'A relay isolate did not stop within ${_workerStopTimeout.inSeconds}s,'
+        ' so it was killed; its sockets may stay open',
+      );
+      worker.kill(priority: Isolate.immediate);
+    }
   }
 
   Future<void> notificationHandler(AtNotification n) async {
@@ -197,6 +305,8 @@ class SrvdImpl
       switch (messageType) {
         case 'request_ports':
           return await handleRequestPorts(n);
+        case 'auth_modes':
+          return await handleAuthModes(n);
         case 'sessions':
           return await handleSessionMessages(topic, n);
         case 'discover_request':
@@ -231,9 +341,11 @@ class SrvdImpl
 
     final SessionInfo sessionInfo = sessions[sessionId]!;
 
-    // Is the atSign who sent this message one of the participants in the session?
-    if (n.from != sessionInfo.atSignA && n.from != sessionInfo.atSignB) {
-      logger.shout('Received ${n.from} is not a participant in $sessionId');
+    if (n.from.toAtsign() != sessionInfo.atSignB.toAtsign()) {
+      logger.warning(
+        'Ignoring $topic from ${n.from},'
+        ' which is not the daemon ${sessionInfo.atSignB}',
+      );
       return;
     }
 
@@ -294,13 +406,30 @@ class SrvdImpl
   Future<void> handleRequestPorts(AtNotification n) async {
     SrvdSessionParams sessionParams;
     try {
-      sessionParams = await srvdSessionParamsFromNotification(n.value!);
+      sessionParams = srvdSessionParamsFromJson(n.value!);
 
-      if (managerAtsign != 'open' && managerAtsign != sessionParams.atSignA) {
+      if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
+        logger.shout(
+          'Session ${sessionParams.sessionId}'
+          ' for ${sessionParams.atSignA}'
+          ' requested by ${n.from} is denied',
+        );
+        return;
+      }
+      if (managerAtsign != 'open' &&
+          !sameAtsign(managerAtsign, sessionParams.atSignA)) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
           ' for ${sessionParams.atSignA}'
           ' is denied',
+        );
+        return;
+      }
+      if (sessions.containsKey(sessionParams.sessionId) ||
+          _startingSessions.contains(sessionParams.sessionId)) {
+        logger.shout(
+          'Session ${sessionParams.sessionId} requested by ${n.from}'
+          ' is denied: a session with that id is already live',
         );
         return;
       }
@@ -309,6 +438,49 @@ class SrvdImpl
       return;
     }
 
+    if (sessionParams.only443) {
+      final refusal = SinglePortWorker.whyRefused(sessionParams);
+      if (refusal != null) {
+        logger.shout(
+          'Session ${sessionParams.sessionId} requested by ${n.from}'
+          ' is denied: $refusal',
+        );
+        if (sessionParams.multipleAcksOk) {
+          try {
+            await sendNack(
+              sessionId: sessionParams.sessionId,
+              requestingAtsign: n.from,
+              message: refusal,
+            );
+          } catch (e) {
+            logger.shout('Error while sending NACK: $e');
+          }
+        }
+        return;
+      }
+    }
+
+    _startingSessions.add(sessionParams.sessionId);
+    try {
+      final SrvdSessionParams withKeys;
+      try {
+        withKeys = await withPayloadKeys(sessionParams);
+      } catch (e) {
+        logger.shout('Unable to provide the socket pair due to: $e');
+        return;
+      }
+      await _startSession(n, withKeys);
+    } finally {
+      _startingSessions.remove(sessionParams.sessionId);
+    }
+  }
+
+  /// Allocates ports for [sessionParams], which [n] requested, records the
+  /// session and sends the requester its ports.
+  Future<void> _startSession(
+    AtNotification n,
+    SrvdSessionParams sessionParams,
+  ) async {
     logger.info('New session request params: $sessionParams');
 
     PortPair ports;
@@ -373,33 +545,33 @@ class SrvdImpl
       }
     }
 
-    if (sessionParams.only443) {
-      if (!bind443) {
-        var message =
-            'Client requested port 443'
-            ' but this relay is not bound to port 443';
-        logger.shout(message);
-        if (sessionParams.multipleAcksOk) {
-          try {
-            await sendNack(
-              sessionId: sessionParams.sessionId,
-              requestingAtsign: n.from,
-              message: message,
-            );
-          } catch (e) {
-            logger.shout('Error while sending NACK: $e');
-          }
+    if (sessionParams.only443 && !bind443) {
+      var message =
+          'Client requested port 443'
+          ' but this relay is not bound to port 443';
+      logger.shout(message);
+      if (sessionParams.multipleAcksOk) {
+        try {
+          await sendNack(
+            sessionId: sessionParams.sessionId,
+            requestingAtsign: n.from,
+            message: message,
+          );
+        } catch (e) {
+          logger.shout('Error while sending NACK: $e');
         }
-        return;
-      } else {
-        toIsolate443!.send(IIRequest.create('start', sessionParams));
       }
+      return;
     }
 
     sessions[sessionParams.sessionId] = SessionInfo(
       params: sessionParams,
       connector: null,
+      toWorker: ppiSendToSpawned,
     );
+    if (sessionParams.only443) {
+      toIsolate443!.send(IIRequest.create('start', sessionParams));
+    }
 
     var (portA, portB) = ports;
     logger.shout(
@@ -448,19 +620,94 @@ class SrvdImpl
       logger.shout("Error sending response to client");
     }
 
-    preFetched[sessionParams.sessionId] = {};
-    for (final s in sessionParams.preFetch) {
-      try {
-        final AtValue value = await _atClientLookup(AtKey.fromString(s));
-        preFetched[sessionParams.sessionId]![s] = value.value;
-      } catch (e) {
-        logger.shout('$e while preFetching $s');
-      }
-    }
+    final fetched = preFetched[sessionParams.sessionId] = {};
+    await Future.wait([
+      for (final s in sessionParams.preFetch)
+        () async {
+          try {
+            fetched[s] = await _lookupPublic(s);
+          } catch (e) {
+            logger.shout('$e while preFetching $s');
+          }
+        }(),
+    ]);
     unawaited(
       Future.delayed(
         Duration(seconds: 30),
       ).whenComplete(() => preFetched.remove(sessionParams.sessionId)),
+    );
+  }
+
+  /// A requesting client, having learnt (via the daemon ping) which relay-auth
+  /// mode each side of its session will use, sends this so the relay can skip
+  /// the auto-detect window (see [Srvd] / RelayAuthVerifierAuto). Best-effort:
+  /// if it arrives after a socket has already connected, that socket falls back
+  /// to auto-detect. Only the session's requester (side A) may send it.
+  ///
+  /// Several relay instances share this atSign and all receive this
+  /// notification, but only one is actually handling the session — the one
+  /// whose response the client accepted. We match on that response's [rvdNonce]
+  /// (unique per relay instance's response) so the others ignore it. (When the
+  /// client cannot handle multiple acks, only the mutex-winning relay records
+  /// the session at all, so this is a belt-and-braces check there.)
+  Future<void> handleAuthModes(AtNotification n) async {
+    if (n.value == null) {
+      logger.warning('Received auth_modes with empty value from ${n.from}');
+      return;
+    }
+    final Map decoded;
+    try {
+      decoded = jsonDecode(n.value!);
+    } catch (e) {
+      logger.warning('Malformed auth_modes request from ${n.from}: $e');
+      return;
+    }
+
+    final String? sessionId = decoded['sessionId'];
+    if (sessionId == null) {
+      logger.warning('auth_modes request from ${n.from} has no sessionId');
+      return;
+    }
+
+    final SessionInfo? si = sessions[sessionId];
+    if (si == null) {
+      logger.info('auth_modes: this relay does not know session $sessionId');
+      return;
+    }
+    if (!sameAtsign(n.from, si.params.atSignA)) {
+      logger.shout(
+        'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
+        ' of session $sessionId',
+      );
+      return;
+    }
+    if (decoded['rvdNonce'] != si.params.rvdNonce) {
+      logger.info(
+        'auth_modes: rvdNonce (${decoded['rvdNonce']}) is not this relay\'s'
+        ' rvdNonce (${si.params.rvdNonce}) for $sessionId'
+        ' — another instance is handling it; ignoring',
+      );
+      return;
+    }
+
+    final SendPort? toWorker = si.toWorker;
+    if (toWorker == null) {
+      logger.info(
+        'auth_modes: no worker isolate for session $sessionId'
+        ' (only443 sessions do not auto-detect)',
+      );
+      return;
+    }
+
+    toWorker.send(
+      IIRequest.create('auth_modes', {
+        'sideA': decoded['sideA'],
+        'sideB': decoded['sideB'],
+      }),
+    );
+    logger.info(
+      'Forwarded definitive auth modes for $sessionId to worker:'
+      ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
     );
   }
 
@@ -519,12 +766,13 @@ class SrvdImpl
 
   Map<String, Map<String, dynamic>> preFetched = {};
 
-  Future<AtValue> _atClientLookup(AtKey atKey) async {
-    logger.info('Looking up $atKey on atServer');
-    return await atClient.get(
-      atKey,
-      getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
-    );
+  /// The value of the public record [key], whether or not it is written with
+  /// its `public:` prefix. Throws when it can't be found.
+  Future<String> _lookupPublic(String key) async {
+    final uri = key.startsWith('public:') ? key : 'public:$key';
+    logger.info('Looking up $uri');
+    return await publicLookup.lookup(uri) ??
+        (throw AtKeyNotFoundException('$uri does not exist'));
   }
 
   @override
@@ -533,17 +781,17 @@ class SrvdImpl
       logger.info('request: "lookup" : ${msg.payload}');
       String sessionId = msg.payload['sessionId'];
       String key = msg.payload['key'];
-      AtValue value;
+      String value;
       String fromPreFetch = '';
       if (preFetched[sessionId]?[key] != null) {
-        value = AtValue()..value = preFetched[sessionId]?[key];
+        value = preFetched[sessionId]![key];
         fromPreFetch = ' (pre-fetched)';
       } else {
-        value = await _atClientLookup(AtKey.fromString(key));
+        value = await _lookupPublic(key);
       }
-      logger.info('request: "lookup" : success$fromPreFetch: ${value.value}');
+      logger.info('request: "lookup" : success$fromPreFetch: $value');
       toSpawned.send(
-        IIResponse(id: msg.id, isError: false, payload: value.value),
+        IIResponse(id: msg.id, isError: false, payload: value),
       );
     } catch (err) {
       logger.info('request: "lookup" : error $err');
@@ -571,6 +819,121 @@ class SrvdImpl
       );
     }
     sessions.remove(sessionId);
+  }
+
+  /// Forgets a session the single-port isolate refused to start, which would
+  /// otherwise stay recorded with nothing left to remove it.
+  void _handleStartRefused(IIRequest msg) {
+    final String sessionId = msg.payload['sessionId'];
+    logger.warning(
+      'Single-port isolate refused to start session $sessionId:'
+      ' ${msg.payload['reason']}',
+    );
+    sessions.remove(sessionId);
+  }
+
+  /// The most distinct signing keys recorded for one session. Each side of a
+  /// session signs with one enrollment's key.
+  static const maxSigningKeysPerSession = 4;
+
+  /// Records that a socket of session [sessionId] was accepted with a
+  /// signature from the `_apsk` record [signingKeyUri], in the canonical form
+  /// an atServer stores it under, so spellings of one record count once.
+  @visibleForTesting
+  void recordSigningKey(String sessionId, String signingKeyUri) {
+    final si = sessions[sessionId];
+    if (si == null) return;
+    final key = canonicalSigningKeyUri(signingKeyUri);
+    if (si.signingKeys.contains(key)) return;
+    if (si.signingKeys.length >= maxSigningKeysPerSession) {
+      logger.warning(
+        'Not recording signing key $key for session $sessionId, which already'
+        ' has ${si.signingKeys.length}',
+      );
+      return;
+    }
+    si.signingKeys.add(key);
+  }
+
+  /// Looks up afresh, each from its own atServer, every `_apsk` record a live
+  /// session's ESCR sockets were accepted with, and ends each session one of
+  /// them has been withdrawn from: moved by its atServer to `r.__e` (the
+  /// enrollment was revoked or superseded) or `d.__e` (deleted or expired). A
+  /// key that is merely missing, and a lookup that fails any other way, keep
+  /// the session, so an atServer that is unreachable or being restored ends
+  /// nothing. A key whose last re-check hasn't finished is left out, so a
+  /// slow atServer delays only the re-checks of its own keys.
+  @visibleForTesting
+  Future<void> checkSigningKeys() async {
+    final keys = {
+      for (final si in sessions.values)
+        if (!si.ending) ...si.signingKeys,
+    }.difference(_keysBeingChecked);
+    await Future.wait([for (final key in keys) _recheck(key)]);
+  }
+
+  Future<void> _recheck(String key) async {
+    _keysBeingChecked.add(key);
+    try {
+      final withdrawnTo = await _whereWithdrawn(key);
+      if (withdrawnTo == null) return;
+      for (final MapEntry(key: sessionId, value: si)
+          in sessions.entries.toList()) {
+        if (!si.ending && si.signingKeys.contains(key)) {
+          _endSession(sessionId, si, key, withdrawnTo);
+        }
+      }
+    } finally {
+      _keysBeingChecked.remove(key);
+    }
+  }
+
+  /// Where [key] has been withdrawn to, or null when it is still published,
+  /// merely missing, or a lookup fails, all of which keep its sessions.
+  Future<String?> _whereWithdrawn(String key) async {
+    try {
+      if (await publicLookup.lookupDirect(key) != null) return null;
+    } catch (e) {
+      logger.warning(
+        'Could not re-check signing key $key, so the sessions it signed'
+        ' carry on: $e',
+      );
+      return null;
+    }
+    try {
+      final withdrawnTo = await publicLookup.withdrawnTo(key);
+      if (withdrawnTo == null) {
+        logger.warning(
+          'Signing key $key is missing but has not been withdrawn, so the'
+          ' sessions it signed carry on',
+        );
+      }
+      return withdrawnTo;
+    } catch (e) {
+      logger.warning(
+        'Could not tell whether signing key $key was withdrawn, so the'
+        ' sessions it signed carry on: $e',
+      );
+      return null;
+    }
+  }
+
+  void _endSession(
+    String sessionId,
+    SessionInfo si,
+    String signingKey,
+    String withdrawnTo,
+  ) {
+    si.ending = true;
+    logger.warning(
+      'Ending session $sessionId (${si.atSignA} to ${si.atSignB}):'
+      ' signing key $signingKey has been withdrawn to $withdrawnTo',
+    );
+    if (si.toWorker != null) {
+      si.toWorker!.send(IIRequest.create('stop', null));
+    } else if (si.params.only443) {
+      toIsolate443?.send(IIRequest.create('endSession', sessionId));
+    }
   }
 
   Future<void> _handleNewConnection(IIRequest msg) async {
@@ -615,6 +978,7 @@ class SrvdImpl
       BuildEnv.enableSnoop && logTraffic,
       verbose,
       sessionParams.sessionId,
+      relayAuthDetectWindowMs,
     );
 
     logger.info(
@@ -633,25 +997,34 @@ class SrvdImpl
         logTraffic: connectorParams.$2,
         verbose: connectorParams.$3,
         loggingTag: connectorParams.$4,
+        relayAuthDetectWindowMs: connectorParams.$5,
       );
 
       await worker.run();
     }
 
+    final exitPort = ReceivePort();
     Isolate spawned = await Isolate.spawn<PortPairIsolateParams>(
       portPairIsolateEntryPoint,
       parameters,
+      onExit: exitPort.sendPort,
     );
+    final toWorker = Completer<SendPort>();
+    _register(spawned, fromSpawned, exitPort, toWorker.future);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
     Completer receivedPortPair = Completer();
+    // NOTE the worker can exit with nothing awaiting this, so its error must
+    // not surface as uncaught.
+    receivedPortPair.future.ignore();
     late PortPair ports;
 
     logger.info('Waiting for isolate to send its port pair info');
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
       }
@@ -664,6 +1037,9 @@ class SrvdImpl
         switch (msg.type) {
           case 'lookup':
             await lookup(msg, toSpawned);
+            break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
           case 'newConnection':
             await _handleNewConnection(msg);
@@ -692,6 +1068,13 @@ class SrvdImpl
         'Unknown message from isolate -'
         ' type: ${msg.runtimeType} message: $msg',
       );
+    }, onDone: () {
+      _workers.remove(spawned);
+      if (!receivedPortPair.isCompleted) {
+        receivedPortPair.completeError(
+          StateError('relay isolate exited before reporting its ports'),
+        );
+      }
     });
 
     // Wait to receive the SendPort from the spawned isolate
@@ -724,6 +1107,9 @@ class SrvdImpl
       ' for session ${sessionParams.sessionId}',
     );
 
+    if (_stopped) {
+      throw StateError('srvd stopped while starting ${sessionParams.sessionId}');
+    }
     return (ports, spawned, toSpawned);
   }
 
@@ -773,10 +1159,14 @@ class SrvdImpl
     logger.info("Spawning single-port isolate for port $bindPort");
 
     // Spawn the isolate
+    final exitPort = ReceivePort();
     Isolate spawned = await Isolate.spawn<SinglePortIsolateParams>(
       singlePortIsolateEntryPoint,
       parameters,
+      onExit: exitPort.sendPort,
     );
+    final toWorker = Completer<SendPort>();
+    _register(spawned, fromSpawned, exitPort, toWorker.future);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -785,6 +1175,7 @@ class SrvdImpl
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
       }
@@ -793,11 +1184,17 @@ class SrvdImpl
           case 'lookup':
             await lookup(msg, toSpawned);
             break;
+          case 'signingKey':
+            recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
+            break;
           case 'newConnection':
             await _handleNewConnection(msg);
             break;
           case 'sessionComplete':
             await _handleSessionComplete(msg);
+            break;
+          case 'startRefused':
+            _handleStartRefused(msg);
             break;
           case 'handleIsolateFailure':
             logger.shout('');
@@ -825,7 +1222,7 @@ class SrvdImpl
         'Unknown message from isolate -'
         ' type: ${msg.runtimeType} message: $msg',
       );
-    });
+    }, onDone: () => _workers.remove(spawned));
 
     // Wait to receive the SendPort from the spawned isolate
     try {
@@ -839,6 +1236,9 @@ class SrvdImpl
       );
     }
 
+    if (_stopped) {
+      throw StateError('srvd stopped while starting the 443 listener');
+    }
     return (portPair443, spawned, toSpawned);
   }
 

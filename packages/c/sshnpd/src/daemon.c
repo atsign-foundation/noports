@@ -1,3 +1,4 @@
+#include "sshnpd/client_sessions.h"
 #include "sshnpd/device_info.h"
 #include "sshnpd/handle_npt_request.h"
 #include "sshnpd/handle_ping.h"
@@ -28,11 +29,13 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/policy.h>
+#include <sshnpd/policy_limits.h>
 #include <sshnpd/run_srv_process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #define LOGGER_TAG "sshnpd - loop"
@@ -69,6 +72,22 @@ size_t device_info_pos;
 time_t *device_info_last_sent;
 uint8_t device_info_attempts;
 
+// Reaps every child that has exited: a session's srv or a key check, which
+// only this loop reaps, so a pid the daemon signals is never one reused
+static void reap_children(void) {
+  int status;
+  pid_t pid;
+  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    srv_starts_reaped(pid);
+    client_sessions_reaped(pid, status);
+  }
+}
+
+static int check_with_policy_service(void *ctx, const char *client_atsign, sshnpd_policy_decision *decision) {
+  (void)ctx;
+  return policy_auth_check(&worker, &monitor_ctx, &params, client_atsign, decision);
+}
+
 void main_loop() {
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
 
@@ -81,9 +100,21 @@ void main_loop() {
   memset(&policy_decision, 0, sizeof(policy_decision));
   bool policy_checked = false;
 
+  policy_cache decisions;
+  if (policy_cache_init(&decisions, params.policy_cache_size) != 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to set up the policy decision cache\n");
+    return;
+  }
+  policy_throttle checked_senders;
+  policy_throttle_init(&checked_senders);
+
   size_t timeout_counter = 0;
 
   while (should_run == 1) {
+    reap_children();
+    srv_starts_poll(sshnpd_monotonic_ms());
+    client_sessions_tick(time(NULL));
+
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Sending next device info\n");
     send_next_device_info(&worker, &params);
     policy_send_heartbeat(&worker, &params, ping_response);
@@ -106,26 +137,21 @@ void main_loop() {
 
     // Read the next monitor message
     ret = atclient_monitor_read(&monitor_ctx, &worker, &message, NULL);
-    if (ret != 0) {
+    timeout_counter = sshnpd_next_timeout_counter(ret, message.type, timeout_counter);
+    if (ret != 0 && message.type != ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
                    "Possible bad state: monitor read failed, resetting connection (ret: %d)\n", ret);
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
     }
 
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received message of type: %d\n", message.type);
     switch (message.type) {
     case ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY:
-      timeout_counter++;
-      break;
     case ATCLIENT_MONITOR_ERROR_READ:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1;
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_DATA_RESPONSE:
-      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received a data response: %s\n", message.data_response);
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_ERROR_RESPONSE:
-      timeout_counter = 0;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received an error response: %s\n",
                    message.error_response);
       break;
@@ -133,15 +159,15 @@ void main_loop() {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Received a NONE notification type\n");
       break;
     case ATCLIENT_MONITOR_ERROR_PARSE_NOTIFICATION:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to parse the notification\n");
       break;
     case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
-      timeout_counter = MONITOR_NOOP_TIMEOUT_MS + 1;
-      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to decrypt the notification\n");
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Ignoring a notification from %s that couldn't be decrypted\n",
+                   message.notification != NULL && atclient_atnotification_is_from_initialized(message.notification)
+                       ? message.notification->from
+                       : "(unknown)");
       break;
     case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      timeout_counter = 0;
       bool is_init = atclient_atnotification_is_decrypted_value_initialized(message.notification);
       bool has_key = atclient_atnotification_is_key_initialized(message.notification);
       bool has_id = atclient_atnotification_is_id_initialized(message.notification) && message.notification->id != NULL;
@@ -162,16 +188,28 @@ void main_loop() {
           break;
         }
 
+        enum notification_key notification_key = sshnpd_notification_kind(
+            message.notification->key,
+            atclient_atnotification_is_to_initialized(message.notification) ? message.notification->to : NULL,
+            params.device, message.notification->from);
+
         // Managers are approved without a policy check; everyone else is
         // referred to the policy service when one is configured
         policy_checked = false;
         if (!is_manager_atsign(&params, message.notification->from)) {
           if (params.policy != NULL && message.notification->from != NULL) {
-            policy_auth_check(&worker, &monitor_ctx, &params, message.notification->from, &policy_decision);
-            if (!policy_decision.authorized) {
+            const char *from = message.notification->from;
+            policy_gate_result gate = policy_gate(&decisions, &checked_senders, from, notification_key,
+                                                  policy_now_millis, check_with_policy_service, NULL, &policy_decision);
+            if (gate == POLICY_GATE_DROP) {
               atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                           "Rejecting request from atSign not authorized by the policy service: %s\n",
-                           message.notification->from);
+                           "Dropping a request from %s, whose last policy check for it was under %d ms ago\n", from,
+                           POLICY_THROTTLE_MS);
+              break;
+            }
+            if (gate == POLICY_GATE_DENY) {
+              atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                           "Rejecting request from atSign not authorized by the policy service: %s\n", from);
               break;
             }
             policy_checked = true;
@@ -182,54 +220,10 @@ void main_loop() {
           }
         }
 
-        char *key = message.notification->key;
-
-        // strip '.$device.${DefaultArgs.namespace}${notification.from}' from the back
-        char tail[strlen(params.device) + strlen(SSHNP_NS) + strlen(message.notification->from) + 3];
-        sprintf(tail, ".%s.%s%s", params.device, SSHNP_NS, message.notification->from);
-        char *tailstart = strstr(key, tail);
-        if (tailstart == NULL) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the tail\n");
+        if (notification_key == NK_NONE) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping message: %s names no request handled here\n",
+                       message.notification->key);
           break;
-        }
-        *tailstart = '\0'; // reterminate the string at the start of the trail
-
-        // strip notification.to from the front
-        // first let's validate that notification.to is on the front
-        char *head = message.notification->to;
-        if (!atclient_atnotification_is_to_initialized(message.notification) || head == NULL) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: notification has no 'to' field\n");
-          break;
-        }
-        size_t head_len = strlen(head);
-        if (strlen(key) < head_len) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                       "Skipping message: key length is shorter than the expected head\n");
-          break;
-        }
-        int is_equal = strncmp(key, head, head_len);
-        if (is_equal != 0) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Skipping message: couldn't find the head\n");
-          break;
-        }
-
-        // Now that we've confirmed it to be at the front, just do a pointer shift
-        key += head_len + 1; // shift the pointer over (+1 for ":")
-
-        // Do the string compare for this key in place, that way we can use a switch/case instead of endless if
-        // statements
-        enum notification_key notification_key = NK_NONE;
-        int keys_length;
-#ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
-        keys_length = NOTIFICATION_KEYS_LEN + 1;
-#else
-        keys_length = NOTIFICATION_KEYS_LEN;
-#endif
-        for (int i = 1; i < keys_length; i++) {
-          if (strcmp(key, notification_key_map[i].str) == 0) {
-            notification_key = notification_key_map[i].key;
-            break;
-          }
         }
 
         if (!should_run) {
@@ -255,6 +249,7 @@ void main_loop() {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
             policy_decision_free(&policy_decision);
+            policy_cache_free(&decisions);
             return;
           }
           break;
@@ -268,6 +263,7 @@ void main_loop() {
             atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
             atclient_monitor_message_free(&message);
             policy_decision_free(&policy_decision);
+            policy_cache_free(&decisions);
             return;
           }
           break;
@@ -291,4 +287,5 @@ void main_loop() {
     atclient_monitor_message_free(&message);
     policy_decision_free(&policy_decision); // safe when nothing was allocated
   } // end of while loop
+  policy_cache_free(&decisions);
 }

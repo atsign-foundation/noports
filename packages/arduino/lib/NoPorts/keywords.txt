@@ -1,0 +1,36 @@
+#######################################
+#	Syntax Coloring Map NoPorts
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+NoPortsDaemon	KEYWORD1
+NoPortsConfig	KEYWORD1
+NoPortsRelay	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+loop	KEYWORD2
+stop	KEYWORD2
+setAtSign	KEYWORD2
+setDeviceName	KEYWORD2
+setManagerAtSign	KEYWORD2
+setKeyFile	KEYWORD2
+setVerbose	KEYWORD2
+setLocalPort	KEYWORD2
+setPermitOpen	KEYWORD2
+setRootDomain	KEYWORD2
+isRunning	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+NOPORTS_VERSION	LITERAL1
+NOPORTS_DEFAULT_ROOT_HOST	LITERAL1
+NOPORTS_DEFAULT_ROOT_PORT	LITERAL1

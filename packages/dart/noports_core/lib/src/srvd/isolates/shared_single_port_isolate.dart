@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
@@ -23,7 +24,8 @@ import 'package:socket_connector/socket_connector.dart';
 ///   - creates a RelayAuthVerifier for the new socket
 ///   - verifies the socket's authentication
 ///   - checks that the socket is for a currently live session
-///   - double-checks the socket is from one of that session's atSigns
+///   - checks the socket is signed by that session's atSign for the side it
+///     claims
 ///   - Assigns verified sockets to that session's SocketConnector
 class SinglePortWorker extends RelayWorker {
   final String address;
@@ -46,6 +48,20 @@ class SinglePortWorker extends RelayWorker {
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
+    reqHandlers['endSession'] = endSession;
+  }
+
+  /// Why a single-port session with [params] can't be started, or null if it
+  /// can: the single port accepts only sockets that both authenticate with
+  /// ESCR.
+  static String? whyRefused(SrvdSessionParams params) {
+    if (params.relayAuthMode == RelayAuthMode.payload) {
+      return 'relayAuthMode may not be "payload" on port 443';
+    }
+    if (!(params.authenticateSocketA && params.authenticateSocketB)) {
+      return 'both sides must authenticate on port 443';
+    }
+    return null;
   }
 
   @override
@@ -156,13 +172,15 @@ class SinglePortWorker extends RelayWorker {
         throw Exception('Session not active: $sessionId');
       }
       SessionInfo si = sessions[sessionId]!;
-      if (atSign != si.atSignA && atSign != si.atSignB) {
+      final expected = (rav.isSideA! ? si.atSignA : si.atSignB).toAtsign();
+      if (atSign != expected) {
         throw Exception(
           'Connection from $atSign'
-          ' which is not one of the atSigns (${si.atSignA}, ${si.atSignB})'
-          ' for this session $sessionId',
+          ' for side ${rav.isSideA! ? 'A' : 'B'} of session $sessionId,'
+          ' which expects $expected',
         );
       }
+      reportSigningKey(sessionId, rav.signingKeyUri!);
       Side side = Side(socket, rav.isSideA!);
 
       side.stream = verifiedSocketStream!;
@@ -187,6 +205,10 @@ class SinglePortWorker extends RelayWorker {
     } catch (e) {
       logger.shout('Error $e while closing server socket');
     }
+    // NOTE killing this isolate leaves its sockets open, so close them first.
+    for (final si in sessions.values) {
+      si.connector?.close();
+    }
     stopped.complete();
   }
 
@@ -200,28 +222,32 @@ class SinglePortWorker extends RelayWorker {
     }
   }
 
+  /// Ends the session whose id is the request's payload, closing its
+  /// connections.
+  Future<void> endSession(IIRequest req) async {
+    sessions[req.payload]?.connector?.close();
+  }
+
   Future<void> startSession(IIRequest req) async {
     SrvdSessionParams params = req.payload;
     logger.info('Starting socket connector session for $params');
 
-    if (params.relayAuthMode == RelayAuthMode.payload) {
-      logger.shout(
-        'relayAuthMode may not be "payload".'
-        ' Invalid params $params',
-      );
-      return;
-    }
-
-    if (!(params.authenticateSocketA && params.authenticateSocketB)) {
-      logger.shout(
-        'Both sides are required to authenticate;'
-        ' Invalid params $params',
-      );
-      return;
-    }
-
+    // NOTE a start for a live id is refused without telling main, since
+    // main's record of that id is the live session's.
     if (sessions.containsKey(params.sessionId)) {
       logger.shout('Cannot start; session ${params.sessionId} already started');
+      return;
+    }
+
+    final refusal = whyRefused(params);
+    if (refusal != null) {
+      logger.shout('Not starting session ${params.sessionId}: $refusal');
+      toMain.send(
+        IIRequest.create('startRefused', {
+          'sessionId': params.sessionId,
+          'reason': refusal,
+        }),
+      );
       return;
     }
 

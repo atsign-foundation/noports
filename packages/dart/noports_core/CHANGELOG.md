@@ -1,3 +1,105 @@
+# 6.16.0
+
+- build: depends on the at_client_sdk release candidates: at_client
+  3.15.0-rc3, at_auth 4.0.0-rc3, at_lookup 3.7.0-rc3, at_cli_commons
+  3.1.2-rc2 and at_onboarding_cli 2.0.0-rc3, plus at_commons 5.18.0 and
+  at_utils 3.4.1
+- build: requires socket_connector 2.6.1, so `Srvd.stop()` and `Npt.close()`
+  also end the connections already open through their tunnels
+- **BREAKING CHANGE** refactor: `signAndWrapAndJsonEncode` is async,
+  `SshnpParams.sessionKP` is an `RsaKeyPair`, and `Activate` takes an
+  `ActivateFlows` rather than an `AtOnboardingService`
+- **BREAKING CHANGE** feat: `SrvdParams` requires `relayAuthDetectWindowMs`
+  and `signingKeyCheckSecs`, and `ClientParams` implementations must add
+  `relayAuthModeExplicit`
+- **BREAKING CHANGE** feat: `SshnpdParams` requires `clientKeyCheckSecs`
+  and `requireEnrollmentSignature`, `SshnpdOption` has two new values, and
+  `Sshnpd` implementations must add `clientKeyCheckInterval` and
+  `requireEnrollmentSignature`
+- **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
+  what `init()` and `run()` started, so implementations must add `stop()`
+- **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
+- **BREAKING CHANGE** fix: `NPARequestHandler` implementations must add
+  `hasRulesFor`
+- feat: ESCR relay authentication works for an enrollment that holds signing
+  keys of its own or authenticates with ML-DSA-65, which srvd now verifies
+  as well as RSA-2048
+- feat: srvd checks every 5 minutes (by default) whether either side's
+  enrollment has been revoked, superseded, deleted or expired, and ends the
+  session if so, for each side that authenticated with ESCR
+- feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions. srvd now connects out to atServers itself, and asks its own
+  atServer instead when it can't reach one that way (or it predates HTTP
+  GET, c3.6.0), except when re-checking a key
+- feat: sshnp and npt sign each session request with the client's
+  enrollment key, and sshnpd ends a signed session once that enrollment is
+  revoked, superseded, deleted or expired, checking every 10 seconds by
+  default. New sshnpd `--client-key-check-secs` (0 turns the check off) and
+  `--require-enrollment-signature` (refuse requests that aren't signed)
+  options. A session that outlives a restart of sshnpd is no longer checked.
+  sshnpd looks the key up straight from the client's atServer over HTTPS,
+  so it needs outbound access to that atServer for the check
+- feat: srvd works out each side's relay-auth mode (ESCR or legacy) for
+  itself, so the client and the daemon can each use the strongest one they
+  support. New `srvd --relay-auth-detect-window-ms` option (default 500).
+- feat: `relayAuthMode` now defaults to ESCR, used wherever the relay and the
+  daemon support it. Against an older relay both sides stay on legacy, so
+  daemons that predate ESCR keep working. An explicit `--relay-auth-mode escr`
+  forces ESCR wherever it can, and is refused up front when it can't (an
+  older relay with a daemon that predates ESCR). The full matrix is in
+  `docs/reference/relay-auth-modes.md`.
+- feat: `escrSigningKeyPair`, the key and algorithm ESCR relay auth signs
+  with, and `loadEnvelopeSigningKey`, which reads the envelope signing key up
+  front
+- refactor: `verifyEnvelopeSignature` accepts only rsa2048 signatures from
+  2048-bit keys, which is what every NoPorts release sends, and so do the
+  relay verifiers when they verify RSA
+- refactor: moved off at_chops's deprecated compatibility API. Nothing
+  changes on the wire, and released versions can still exchange session
+  keys with this one
+- fix: the two-port relay path issues a fresh ESCR challenge for every
+  connection, so a captured response can't be replayed onto a later
+  connection in the same session.
+- fix: sshnpd refuses a session request whose session id isn't a UUID, and
+  `SshnpSessionRequest` and `NptSessionRequest` throw an `ArgumentError` for
+  one. New `isValidSessionId` makes the same check
+- fix: `LocalSshKeyUtil.deauthorizePublicKey` no longer removes other
+  `authorized_keys` lines that happen to contain the session id
+- fix: srvd accepts an ESCR-authenticated socket only when it is signed by
+  the atSign of the side it claims
+- fix: `srvd --manager` accepts session requests only from the manager
+  itself
+- fix: a long-running srvd no longer keeps a receive port open for every
+  session it has relayed
+- fix: srvd refuses a port 443 session request it can't serve (payload
+  mode, or a side that won't authenticate) as soon as it arrives
+- fix: sshnpd no longer leaves a session's ephemeral key in
+  `authorized_keys`, or drops a new session's key, when sessions start and
+  end at the same moment
+- fix: `Npt.close()` closes the tunnel an inline npt opened, which used to
+  keep accepting connections and then threw a `StateError` when it ended
+- fix: sshnpd authorizes a direct ssh session's ephemeral key under the
+  `homeDirectory` it was given, rather than always under `$HOME`
+- fix: `npp_atserver` keeps running when a notification can't be read
+- test: more test coverage for policy service
+- fix: npt and sshnp act on the first response from the relay they asked,
+  and ignore later responses and any from another atSign
+- fix: sshnpd discards malformed policy configs
+- fix: regex consistency
+- fix: srvd takes a session's event logging config only from the session's
+  daemon
+- fix: sshnp and npt act on the daemon's first response and ignore any later
+  ones
+- fix: `--list-devices` credits each heartbeat to the daemon that sent it,
+  and skips malformed ones
+- feat: npevents adds the sending atSign to each event it prints
+- fix: sessions work when the client, daemon and relay share an atSign
+- test: the in-process harness runs every role as one atSign
+- fix: policy services answer only daemons that have rules, and each only
+  about itself
+- fix: `--list-devices` lists a daemon on the client's own atSign
+
 # 6.15.0
 
 - feat: srv/srvd now carry tunnel traffic through at_chops's OpenSSL-backed

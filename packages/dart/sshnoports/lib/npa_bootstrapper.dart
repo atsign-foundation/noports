@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/at_commons.dart' show AtException;
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
@@ -38,6 +39,12 @@ Future<void> run(
       },
     );
   } on ArgumentError catch (_) {
+    exit(1);
+  } on AtException catch (e) {
+    stderr.writeln('Error: ${e.message}');
+    exit(1);
+  } catch (e, s) {
+    stderr.writeln('Error: $e\n$s');
     exit(1);
   }
 

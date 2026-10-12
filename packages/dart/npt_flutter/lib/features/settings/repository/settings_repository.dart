@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/util/constants.dart';
 import 'package:npt_flutter/util/language.dart';
@@ -36,7 +37,12 @@ class SettingsRepository {
       }
       var settings = Settings.fromJson(jsonDecode(value.value));
       return settings;
-    } catch (_) {
+    } on AtKeyNotFoundException {
+      // No settings saved, so use the defaults
+      return defaultSettings;
+    } catch (e, st) {
+      App.log('Failed to load settings: $e'.loggable);
+      App.log(st.toString().loggable);
       return null;
     }
   }

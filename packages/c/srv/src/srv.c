@@ -85,6 +85,21 @@ static int parse_control_message(char *original, char **message_type, char **new
                                  char **new_session_aes_iv_c2d_string, char **new_session_aes_key_d2c_string,
                                  char **new_session_aes_iv_d2c_string);
 
+// Tells sshnpd that srv has reached the relay: on stderr, and once on
+// params->ready_fd when it is set
+static void report_started(const srv_params_t *params) {
+  static bool reported = false;
+  fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
+  fflush(stderr);
+  if (params->ready_fd >= 0 && !reported) {
+    static const char line[] = SRV_COMPLETION_STRING "\n";
+    ssize_t ignored = write(params->ready_fd, line, sizeof(line) - 1);
+    (void)ignored;
+    close(params->ready_fd);
+  }
+  reported = true;
+}
+
 int run_srv(srv_params_t *params) {
   int res = 0;
   if (params->bind_local_port == 0) {
@@ -203,9 +218,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
 
   atlogger_log(TAG, INFO, "Starting recv loop\n");
 
-  // signal to sshnpd that we are done
-  fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
-  fflush(stderr);
+  report_started(params);
 
   unsigned char *buffer = malloc(4096 * sizeof(unsigned char));
   // Control messages are newline-terminated lines, but TCP does not preserve
@@ -538,9 +551,7 @@ int socket_to_socket(const srv_params_t *params, const char *auth_string, chunke
   }
 
   if (!is_srv_ready) {
-    // signal to sshnpd that we are done
-    fprintf(stderr, "%s\n", SRV_COMPLETION_STRING);
-    fflush(stderr);
+    report_started(params);
   }
 
   // Wait for all threads to finish and join them back to the main thread

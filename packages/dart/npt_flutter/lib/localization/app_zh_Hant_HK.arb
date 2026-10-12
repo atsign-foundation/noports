@@ -146,6 +146,7 @@
   "fileFormatInvalidDetails": "設定檔區段遺失或格式不正確。請檢查文件。",
   "fileImported": "檔案已匯入",
   "fileSaved": "檔案已儲存",
+  "fileSaveFailed": "儲存檔案失敗",
   "findOtp": "該請求將顯示在 Authenticator 的「請求」中，位於任何透過管理員金鑰連接至您 Atsign 的應用程式。",
   "getStarted": "開始使用",
   "groupAdd": "新增群組",

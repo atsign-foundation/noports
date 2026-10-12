@@ -146,6 +146,7 @@
    "fileFormatInvalidDetails": "The profiles section is missing or incorrectly formatted. Please check the document.",
    "fileImported": "File Imported",
    "fileSaved": "File Saved",
+   "fileSaveFailed": "Failed to save file",
    "findOtp": "The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.",
    "getStarted": "Get Started",
    "groupAdd": "Add Group",

@@ -20,8 +20,9 @@ class SettingsErrorHint extends StatelessWidget {
         return state is SettingsFailedLoad;
       },
       builder: (context, hasError) {
-        if (hasError)
+        if (hasError) {
           return Text(AppLocalizations.of(context)!.profileFailedLoaded);
+        }
         return Container();
       },
     );

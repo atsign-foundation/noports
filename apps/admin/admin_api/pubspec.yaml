@@ -10,9 +10,9 @@ environment:
 # Add regular dependencies here.
 dependencies:
   alfred: 1.1.2+1
-  at_client: ^3.11.0
+  at_client: ^3.15.0-rc3
   json_annotation: 4.11.0
-  at_cli_commons: ^3.0.1
+  at_cli_commons: ^3.1.2-rc2
   args: 2.7.0
   meta: 1.18.2
   noports_core:

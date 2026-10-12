@@ -14,6 +14,7 @@ import 'package:npe2e/relay_tests/relay_tests_params.dart';
 import 'package:npe2e/relay_tests/relay_tests_test_result.dart';
 import 'package:npe2e/relay_tests/relay_test_flow_shared.dart';
 import 'package:npe2e/relay_tests/tests/normal_to_443_test.dart';
+import 'package:npe2e/relay_tests/tests/escr_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/normal_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_443_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_normal_test.dart';
@@ -22,7 +23,20 @@ import 'package:npe2e/utils.dart';
 
 const String relayTestsApkamApp = 'npe2e_relay';
 
+/// Runs the relay tests, revoking the run's APKAM enrollments however it ends.
 Future<void> relayTests(RelayTestsParams params) async {
+  final ApkamRevocations revocations = ApkamRevocations();
+  try {
+    await _relayTests(params, revocations);
+  } finally {
+    await revocations.revokeAll();
+  }
+}
+
+Future<void> _relayTests(
+  RelayTestsParams params,
+  ApkamRevocations revocations,
+) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
 
   final List<NoPortsVersion> clientVersions = _parseVersions(
@@ -100,14 +114,22 @@ Future<void> relayTests(RelayTestsParams params) async {
           cb.binaryType == ClientBinaryType.at_activate &&
           cb.noPortsVersion.version == 'current',
     );
+    final List<ApkamAtsign> apkamAtsigns = [
+      (which: 'client', atsign: params.clientAtsign),
+      (which: 'daemon', atsign: params.daemonAtsign),
+      for (int i = 0; i < selfRelayAtsigns.length; i++)
+        (which: 'self_relay_$i', atsign: selfRelayAtsigns[i]),
+    ];
+    revocations.add(
+      atActivateClientBinary: atActivateClientBinary,
+      atsigns: apkamAtsigns,
+      rootDomain: params.rootDomain,
+      testRunId: testRunId,
+      apkamApp: relayTestsApkamApp,
+    );
     return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
-      atsigns: [
-        (which: 'client', atsign: params.clientAtsign),
-        (which: 'daemon', atsign: params.daemonAtsign),
-        for (int i = 0; i < selfRelayAtsigns.length; i++)
-          (which: 'self_relay_$i', atsign: selfRelayAtsigns[i]),
-      ],
+      atsigns: apkamAtsigns,
       rootDomain: params.rootDomain,
       apkamKeysDirectory: apkamKeysDirectory,
       testRunId: testRunId,
@@ -221,6 +243,11 @@ Future<void> relayTests(RelayTestsParams params) async {
 
       final List<Future<RelayTestResult> Function()> testFactories = [
         ...runNormalToNormalTests(
+          context: context,
+          environment: environment,
+          clientVersions: clientVersions,
+        ),
+        ...runEscrToNormalTests(
           context: context,
           environment: environment,
           clientVersions: clientVersions,

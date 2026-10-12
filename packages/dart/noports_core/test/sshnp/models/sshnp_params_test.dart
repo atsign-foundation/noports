@@ -237,7 +237,7 @@ void main() {
           true,
         );
       });
-      test('ClientParamsBase escr requires both sides auth', () {
+      test('ClientParamsBase 443 requires both sides auth', () {
         expect(
           () => SshnpParams(
             clientAtSign: '@myClientAtSign',
@@ -286,6 +286,66 @@ void main() {
           ).relayAuthMode,
           RelayAuthMode.escr,
         );
+      });
+      test('ClientParamsBase non-443 escr allows one-sided auth', () {
+        // With per-socket auto-detect at the relay, ESCR (outside the 443
+        // single-port path) no longer requires both sides to authenticate.
+        expect(
+          SshnpParams(
+            clientAtSign: '@myClientAtSign',
+            sshnpdAtSign: '',
+            srvdAtSign: '',
+            relayAuthMode: RelayAuthMode.escr,
+            authenticateClientToRvd: true,
+            authenticateDeviceToRvd: false,
+          ).relayAuthMode,
+          RelayAuthMode.escr,
+        );
+      });
+
+      test('explicit relayAuthMode survives a config round-trip as prescriptive',
+          () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            relayAuthMode: RelayAuthMode.escr,
+            relayAuthModeExplicit: true,
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthMode, RelayAuthMode.escr);
+        expect(reloaded.relayAuthModeExplicit, true);
+      });
+
+      test('an explicit payload mode also survives a config round-trip', () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            relayAuthMode: RelayAuthMode.payload,
+            relayAuthModeExplicit: true,
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthMode, RelayAuthMode.payload);
+        expect(reloaded.relayAuthModeExplicit, true);
+      });
+
+      test('a non-explicit (default) relayAuthMode is not persisted, so a saved '
+          'config does not silently become prescriptive on reload', () {
+        final reloaded = SshnpParams.fromConfigLines(
+          'profile',
+          SshnpParams(
+            clientAtSign: '@client',
+            sshnpdAtSign: '@daemon',
+            srvdAtSign: '@srvd',
+            // relayAuthMode left at default, relayAuthModeExplicit false
+          ).toConfigLines(),
+        );
+        expect(reloaded.relayAuthModeExplicit, false);
       });
       test('SshnpParams.clientAtSign test', () {
         final params = SshnpParams(

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
@@ -77,8 +76,8 @@ class ActivateUtil {
   }
 
   /// Activates an atsign from teapot using a CRAM key obtained via
-  /// [verifyActivation], then sets up the AtClient for the newly-activated
-  /// atsign.
+  /// [verifyActivation], writes its keys to the keychain and adopts the
+  /// client the activation opens.
   Future<NoPortsOnboardingResult> onboardFromCramKey({
     required Atsign atsign,
     required String cramkey,
@@ -86,18 +85,13 @@ class ActivateUtil {
     required AppLocalizations strings,
   }) async {
     try {
-      var request = AtOnboardingRequest(atsign)
-        ..rootDomain = AtRootDomain.parse(rootDomain);
-
-      var response = await AuthService().onboard(request, cramkey);
-
-      if (!response.isSuccessful) {
-        return NoPortsOnboardingResult.error(
-          message: strings.errorAuthenticationFailed,
-        );
-      }
-
-      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
+      await AtClientMethods.stopCurrentClient();
+      final client = await atsign.activate(
+        cramSecret: cramkey,
+        keys: KeychainAtKeysIo(),
+        preference: await AtClientMethods.loadAtClientPreference(rootDomain),
+      );
+      AtClientMethods.adopt(client);
       return NoPortsOnboardingResult.success(atsign: atsign);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(message: strings.msgResponseTimeOut);

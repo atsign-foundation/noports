@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:at_commons/at_commons.dart' as at_commons;
 
@@ -17,9 +18,14 @@ import 'aes_ctr_transformer.dart';
 
 const newLineCodeUnit = 10;
 
-@visibleForTesting
 class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
+
+  final Completer<void> _exited = Completer<void>();
+
+  /// Completes once the srv process [run] started has exited, which a
+  /// detached process reports only by closing its stdout.
+  Future<void> get exited => _exited.future;
 
   @override
   final String streamingHost;
@@ -166,7 +172,9 @@ class SrvImplExec implements Srv<Process> {
           }
         }
       }
-    }, onError: (e) {});
+    }, onError: (e) {}, onDone: () {
+      if (!_exited.isCompleted) _exited.complete();
+    });
     p.stderr.listen(
       (List<int> l) {
         var allLines = utf8.decode(l).trim();
@@ -188,7 +196,12 @@ class SrvImplExec implements Srv<Process> {
       },
     );
 
-    await rvPortBound.future.timeout(Duration(seconds: 15));
+    try {
+      await rvPortBound.future.timeout(Duration(seconds: 15));
+    } catch (_) {
+      p.kill();
+      rethrow;
+    }
 
     await Future.delayed(Duration(milliseconds: 100));
 
@@ -854,22 +867,14 @@ class SrvImplDart implements Srv<SocketConnector> {
               sideB.stream = authenticatedStream;
             }
           }
-          String socketAESKeyC2D = AtChopsUtil.generateSymmetricKey(
-            EncryptionKeyType.aes256,
-          ).key;
-          String socketIVC2D = base64Encode(
-            AtChopsUtil.generateRandomIV(16).ivBytes,
-          );
+          String socketAESKeyC2D = generateAes256Key();
+          String socketIVC2D = generateIvBase64();
 
           String socketAESKeyD2C, socketIVD2C;
 
           if (twinKeys) {
-            socketAESKeyD2C = AtChopsUtil.generateSymmetricKey(
-              EncryptionKeyType.aes256,
-            ).key;
-            socketIVD2C = base64Encode(
-              AtChopsUtil.generateRandomIV(16).ivBytes,
-            );
+            socketAESKeyD2C = generateAes256Key();
+            socketIVD2C = generateIvBase64();
           } else {
             // Backwards compatibility
             socketAESKeyD2C = socketAESKeyC2D;

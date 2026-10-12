@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_commons/at_commons.dart' show AtException;
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/utils.dart';
@@ -22,10 +23,11 @@ void main(List<String> args) async {
   ArgResults r;
   try {
     r = SrvdParams.parser.parse(args);
-  } catch (_) {
+  } on FormatException catch (e) {
     stderr.write(formatCliHelp(
         description: _description, optionsUsage: SrvdParams.parser.usage));
-    exit(0);
+    stderr.writeln('\n${e.message}');
+    exit(1);
   }
 
   if (r.wasParsed('version')) {
@@ -125,6 +127,12 @@ void main(List<String> args) async {
       },
     );
   } on ArgumentError catch (_) {
+    exit(1);
+  } on AtException catch (e) {
+    stderr.writeln('Error: ${e.message}');
+    exit(1);
+  } catch (e, s) {
+    stderr.writeln('Error: $e\n$s');
     exit(1);
   }
 

@@ -478,6 +478,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileSaved => '文件已保存';
 
   @override
+  String get fileSaveFailed => '保存文件失败';
+
+  @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
 
@@ -1523,6 +1526,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get fileSaved => '文件已保存';
 
   @override
+  String get fileSaveFailed => '保存文件失败';
+
+  @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
 
@@ -2566,6 +2572,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get fileSaved => '檔案已儲存';
+
+  @override
+  String get fileSaveFailed => '儲存檔案失敗';
 
   @override
   String get findOtp =>

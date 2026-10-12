@@ -103,6 +103,15 @@ abstract class Sshnpd {
   /// policy service is being used, and false otherwise.
   abstract final bool strict;
 
+  /// How often to check that the enrollment each session's client signed its
+  /// request with hasn't been withdrawn, ending the session once it has;
+  /// [Duration.zero] turns the check off.
+  abstract final Duration clientKeyCheckInterval;
+
+  /// Whether to refuse a session request that the client hasn't signed with
+  /// its enrollment key.
+  abstract final bool requireEnrollmentSignature;
+
   static Future<Sshnpd> fromCommandLineArgs(
     List<String> args, {
     AtClient? atClient,
@@ -140,4 +149,12 @@ abstract class Sshnpd {
   /// - If an 'sshpublickey' notification is received, Checks if the SSH public key is valid, Appends the SSH public key to the authorized_keys file in the user's SSH directory if it is not already present
   /// - If an 'sshd' notification is received, it triggers the sshCallback function to handle the SSH callback request.
   Future<void> run();
+
+  /// Stops what [run] started: cancels its timers and notification
+  /// subscriptions, and removes any ephemeral keys still awaiting removal.
+  /// Sessions already running carry on, and the [atClient] stays open for
+  /// whoever owns it. With a policy manager, the auth-check RPC listener ends
+  /// only when the [atClient]'s notification service stops. Anything [run] is
+  /// still starting when this is called is stopped as it starts.
+  Future<void> stop();
 }

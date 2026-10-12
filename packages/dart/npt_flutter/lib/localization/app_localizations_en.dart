@@ -505,6 +505,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fileSaved => 'File Saved';
 
   @override
+  String get fileSaveFailed => 'Failed to save file';
+
+  @override
   String get findOtp =>
       'The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.';
 

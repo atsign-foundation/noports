@@ -995,6 +995,12 @@ abstract class AppLocalizations {
   /// **'File Saved'**
   String get fileSaved;
 
+  /// No description provided for @fileSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save file'**
+  String get fileSaveFailed;
+
   /// No description provided for @findOtp.
   ///
   /// In en, this message translates to:

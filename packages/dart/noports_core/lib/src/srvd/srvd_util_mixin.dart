@@ -43,6 +43,8 @@ mixin SrvdUtilMixin {
       switch (messageType) {
         case 'request_ports':
           return topic.split('.').length == 1;
+        case 'auth_modes':
+          return topic.split('.').length == 1;
         case 'sessions':
           final parts = topic.split('.');
           if (parts.length != 2) {
@@ -86,16 +88,10 @@ mixin SrvdUtilMixin {
     }
   }
 
-  /// Handles requests from all clients v4 onwards
-  ///
-  /// If session wants v0 authentication, fetch atSigns' public keys here
-  ///
-  /// When sessions want v1 authentication, we don't until auth time
-  /// what signing keys are going to be used, so the spawned isolate
-  /// will ask the main isolate to fetch public signing keys
-  Future<SrvdSessionParams> srvdSessionParamsFromNotification(
-    String encodedJson,
-  ) async {
+  /// Reads a session request's fields, from clients v4 onwards, without
+  /// looking anything up; [withPayloadKeys] adds the public keys a
+  /// payload-mode session needs.
+  SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
     dynamic json = jsonDecode(encodedJson);
     logger.info('Received session request JSON: $json');
 
@@ -120,22 +116,12 @@ mixin SrvdUtilMixin {
     RelayAuthMode relayAuthMode = RelayAuthMode.values.byName(
       relayAuthModeName,
     );
-    String? publicKeyA;
-    String? publicKeyB;
-    if (relayAuthMode == RelayAuthMode.payload && authenticateSocketA) {
-      publicKeyA = await _fetchPublicKey(atSignA);
-    }
-    if (relayAuthMode == RelayAuthMode.payload && authenticateSocketB) {
-      publicKeyB = await _fetchPublicKey(atSignB);
-    }
     return SrvdSessionParams(
       sessionId: sessionId,
       atSignA: atSignA,
       atSignB: atSignB,
       authenticateSocketA: authenticateSocketA,
       authenticateSocketB: authenticateSocketB,
-      publicKeyA: publicKeyA,
-      publicKeyB: publicKeyB,
       rvdNonce: rvdSessionNonce,
       clientNonce: clientNonce,
       relayAuthMode: relayAuthMode,
@@ -144,6 +130,37 @@ mixin SrvdUtilMixin {
       multipleAcksOk: json['multipleAcksOk'] ?? false,
       preFetch: List<String>.from(json['preFetch'] ?? []),
       sendJsonResponse: json['sendJsonResponse'] ?? false,
+    );
+  }
+
+  /// [params] with the public key of each side that authenticates, when the
+  /// session is in payload mode; [params] itself otherwise. ESCR sessions
+  /// look their signing keys up at socket-auth time instead.
+  Future<SrvdSessionParams> withPayloadKeys(SrvdSessionParams params) async {
+    if (params.relayAuthMode != RelayAuthMode.payload ||
+        !(params.authenticateSocketA || params.authenticateSocketB)) {
+      return params;
+    }
+    return SrvdSessionParams(
+      sessionId: params.sessionId,
+      atSignA: params.atSignA,
+      atSignB: params.atSignB,
+      authenticateSocketA: params.authenticateSocketA,
+      authenticateSocketB: params.authenticateSocketB,
+      publicKeyA: params.authenticateSocketA
+          ? await _fetchPublicKey(params.atSignA)
+          : null,
+      publicKeyB: params.authenticateSocketB
+          ? await _fetchPublicKey(params.atSignB)
+          : null,
+      rvdNonce: params.rvdNonce,
+      clientNonce: params.clientNonce,
+      relayAuthMode: params.relayAuthMode,
+      relayAuthAesKey: params.relayAuthAesKey,
+      only443: params.only443,
+      multipleAcksOk: params.multipleAcksOk,
+      preFetch: params.preFetch,
+      sendJsonResponse: params.sendJsonResponse,
     );
   }
 
@@ -161,6 +178,9 @@ mixin SrvdUtilMixin {
           portB: portB,
           rvdNonce: sessionParams.rvdNonce,
           supportsEventLogging: true,
+          // This srvd auto-detects each socket's relay-auth mode per side, so
+          // clients may safely use their strongest mode independently.
+          autoDetectsRelayAuth: true,
         ),
       );
     } else {
@@ -168,8 +188,6 @@ mixin SrvdUtilMixin {
     }
   }
 
-  Future<String?> _fetchPublicKey(String atSign) async {
-    AtValue v = await atClient.get(AtKey.fromString('public:publickey$atSign'));
-    return v.value;
-  }
+  Future<String?> _fetchPublicKey(String atSign) =>
+      getRemotePK(atClient: atClient, atSign: atSign);
 }

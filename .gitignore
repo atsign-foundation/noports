@@ -66,3 +66,6 @@ CLAUDE.md
 npe2e_core_tests/
 npe2e_relay_tests/
 npe2e_policy_tests/
+
+# Local-only notes, never committed
+/untracked/

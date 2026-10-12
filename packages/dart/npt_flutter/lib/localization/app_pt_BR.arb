@@ -146,6 +146,7 @@
   "fileFormatInvalidDetails": "A seção de perfis está ausente ou formatada incorretamente. Por favor, verifique o documento.",
   "fileImported": "Arquivo Importado",
   "fileSaved": "Arquivo Salvo",
+  "fileSaveFailed": "Falha ao salvar o arquivo",
   "findOtp": "A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.",
   "getStarted": "Começar",
   "groupAdd": "Adicionar Grupo",

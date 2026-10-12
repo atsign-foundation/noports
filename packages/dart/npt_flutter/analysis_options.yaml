@@ -16,6 +16,9 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - "**/*.mocks.dart"
+  errors:
+    use_build_context_synchronously: warning
 include: package:flutter_lints/flutter.yaml
 
 linter:
