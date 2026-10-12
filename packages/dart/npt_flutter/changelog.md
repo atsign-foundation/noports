@@ -1,4 +1,4 @@
-## 1.9.6+33
+## 1.9.7+34
 
 - FEAT: Use the remote atServer as the source of truth instead of synchronizing a local store.
 
