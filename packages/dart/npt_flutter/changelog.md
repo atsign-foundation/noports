@@ -1,3 +1,5 @@
+## 1.9.6+33
+
 ## 1.9.5+32
 
 - FEAT: A dot beside the atSign shows whether its atServer connection is online, offline or refused, with the reason in its tooltip.
