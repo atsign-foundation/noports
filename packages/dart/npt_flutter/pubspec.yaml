@@ -16,13 +16,13 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.9.5+32
+version: 1.9.6+33
 msix_config:
   display_name: "NoPorts Desktop"
   publisher_display_name: Atsign Inc
   identity_name: TheCompany.NoPortsDesktop
   publisher: CN=BBFE1D0B-F713-4C7F-B375-5EA851CBB1FF
-  msix_version: 1.9.5.0
+  msix_version: 1.9.6.0
   logo_path: "assets/logo.png"
   capabilities: internetClient
   store: true
@@ -37,7 +37,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  at_client_flutter: ^2.0.0-rc4
+  at_client_flutter: ^2.0.0-rc5
   desktop_drop: ^0.7.0
   device_info_plus: ^12.4.0
   dotted_border: ^3.1.0

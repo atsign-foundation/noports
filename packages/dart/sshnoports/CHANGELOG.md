@@ -65,11 +65,14 @@
 * fix: `--list-devices` credits each heartbeat to the daemon that sent it,
   and skips malformed ones
 * feat: npevents adds the sending atSign to each event it prints
-* sessions work when the client, daemon and relay share an atSign
+* fix: sessions work when the client, daemon and relay share an atSign
 * test: the in-process harness runs every role as one atSign
 * fix: policy services answer only daemons that have rules, and each only
   about itself
 * fix: `--list-devices` lists a daemon on the client's own atSign
+* build: built on the at_client_sdk release candidates: at_client
+  3.15.0-rc6, at_onboarding_cli 2.0.0-rc6, at_cli_commons 3.1.2-rc3 and
+  at_auth 4.0.0-rc5, plus at_commons 5.21.0 and at_utils 3.4.2
 
 ## v5.17.0
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class SettingsRelayAtsignTextField extends StatefulWidget {
@@ -46,16 +47,17 @@ class _SettingsRelayAtsignTextFieldState
               errorMaxLines: 2,
             ),
             onChanged: (value) {
-              value = value.toAtsign();
+              final atsign = value.toAtsignOrNull();
+              if (atsign == null) return;
               controller.value = TextEditingValue(
-                text: value,
-                selection: TextSelection.collapsed(offset: value.length),
+                text: atsign,
+                selection: TextSelection.collapsed(offset: atsign.length),
               );
               var bloc = context.read<SettingsBloc>();
               bloc.add(
                 SettingsEditEvent(
                   settings: (bloc.state as SettingsLoadedState).settings
-                      .copyWith(relayAtsign: value.toAtsign()),
+                      .copyWith(relayAtsign: atsign),
                   save: true,
                 ),
               );
