@@ -19,6 +19,8 @@
 - **BREAKING CHANGE** feat: `Sshnpd.stop()` and `Srvd.stop()` shut down
   what `init()` and `run()` started, so implementations must add `stop()`
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
+- **BREAKING CHANGE** fix: `NPARequestHandler` implementations must add
+  `hasRulesFor`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
@@ -83,6 +85,20 @@
 - test: more test coverage for policy service
 - fix: npt and sshnp act on the first response from the relay they asked,
   and ignore later responses and any from another atSign
+- fix: sshnpd discards malformed policy configs
+- fix: regex consistency
+- fix: srvd takes a session's event logging config only from the session's
+  daemon
+- fix: sshnp and npt act on the daemon's first response and ignore any later
+  ones
+- fix: `--list-devices` credits each heartbeat to the daemon that sent it,
+  and skips malformed ones
+- feat: npevents adds the sending atSign to each event it prints
+- fix: sessions work when the client, daemon and relay share an atSign
+- test: the in-process harness runs every role as one atSign
+- fix: policy services answer only daemons that have rules, and each only
+  about itself
+- fix: `--list-devices` lists a daemon on the client's own atSign
 
 # 6.15.0
 

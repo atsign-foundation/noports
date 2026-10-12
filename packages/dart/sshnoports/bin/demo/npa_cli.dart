@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:at_client/at_client.dart' show Atsign;
 import 'package:noports_core/npa.dart';
 import 'package:sshnoports/npa_bootstrapper.dart' as bootstrapper;
 
@@ -8,6 +9,9 @@ void main(List<String> args) async {
 }
 
 class CLI implements NPARequestHandler {
+  @override
+  bool hasRulesFor(Atsign daemonAtsign) => true;
+
   @override
   Future<NPAAuthCheckResponse> doAuthCheck(
       NPAAuthCheckRequest authCheckRequest) async {

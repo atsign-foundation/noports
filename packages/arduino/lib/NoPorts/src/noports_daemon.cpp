@@ -27,6 +27,7 @@
 #include <mbedtls/platform_util.h> // mbedtls_platform_zeroize
 #include <esp_system.h>   // esp_restart(), esp_random()
 #include <esp_heap_caps.h> // heap_caps_get_largest_free_block()
+#include <esp_timer.h>     // esp_timer_get_time()
 
 // === Embedded atSDK includes ===
 // These are bundled directly in this library (no external atsdk dependency)
@@ -55,14 +56,9 @@ extern "C" {
 // Policy-service RPC settings (used in loop(), _startMonitor(), and helpers)
 #define NOPORTS_POLICY_DOMAIN_NS   "auth_checks"
 // ATCLIENT_RPC_NS_RPCS ("__rpcs") is defined in atclient/rpc.h
-// Milliseconds to wait for a policy-service response before aborting and
-// releasing the single pending slot.  The timer is reset when the server ACKs
-// (see _handlePolicyResponse), so this bounds the wait after the last sign of
-// progress.  Kept short so a slow/unreachable policy server — or a bogus
-// request that the server never answers — cannot hold the slot for long and
-// stall legitimate checks.  Must stay comfortably above the real policy-server
-// round-trip time under load.
-#define NOPORTS_POLICY_TIMEOUT_MS  10000
+
+// Milliseconds since boot; unlike millis() it never wraps
+static int64_t _now_ms() { return esp_timer_get_time() / 1000; }
 
 // Monotonically increasing counter shared across all policy RPC requests.
 // Each ping AND npt check must use a unique reqId so the Dart AtRpc server's
@@ -116,7 +112,8 @@ NoPortsDaemon::NoPortsDaemon()
   , _worker_keepalive_ms(NOPORTS_WORKER_KEEPALIVE_MS)
   , _worker_last_used_ms(0)
   , _max_relays(2)
-  , _atserver_port(0) {
+  , _atserver_port(0)
+  , _decrypt_reconnect_at_ms(-1) {
   memset(_last_error, 0, sizeof(_last_error));
   memset(_root_host, 0, sizeof(_root_host));
   memset(_atserver_host, 0, sizeof(_atserver_host));
@@ -136,7 +133,8 @@ NoPortsDaemon::NoPortsDaemon()
   memset(_client_keys, 0, sizeof(_client_keys));
   _last_key_check_ms = 0;
   memset(&_policy_pending, 0, sizeof(_policy_pending));
-  memset(_policy_cooldown, 0, sizeof(_policy_cooldown));
+  noports_policy_cooldown_init(&_policy_cooldown);
+  memset(&_policy_decisions, 0, sizeof(_policy_decisions));
 }
 
 void NoPortsDaemon::_freeResources() {
@@ -183,6 +181,7 @@ void NoPortsDaemon::_freeResources() {
     free(_monitor_regex);
     _monitor_regex = nullptr;
   }
+  noports_policy_cache_free(&_policy_decisions);
   // enrollment_id is strdup'd in begin() — free our copy
   if (_config.enrollment_id) {
     free((void *)_config.enrollment_id);
@@ -280,6 +279,11 @@ bool NoPortsDaemon::begin(const NoPortsConfig &config) {
   if (_config.manager_count == 0 &&
       (!_config.policy_atsign || _config.policy_atsign[0] == '\0')) {
     _setError("At least one manager atSign is required (or set a policy atSign)");
+    _state = DAEMON_ERROR;
+    return false;
+  }
+  if (noports_policy_cache_init(&_policy_decisions, _config.policy_cache_size) != 0) {
+    _setError("policy_cache_size must be 0-%d", NOPORTS_POLICY_CACHE_MAX_SIZE);
     _state = DAEMON_ERROR;
     return false;
   }
@@ -549,11 +553,13 @@ void NoPortsDaemon::loop() {
   // within the timeout window, clean up the pending slot so the next request
   // is not blocked indefinitely.
   if (_policy_pending.in_use &&
-      (millis() - _policy_pending.sent_at_ms) > NOPORTS_POLICY_TIMEOUT_MS) {
+      noports_policy_wait_over(_policy_pending.started_at_ms,
+                               _policy_pending.progress_at_ms, _now_ms())) {
     NOPORTS_LOGW(TAG, "Policy RPC: timeout waiting for response "
                       "(reqId=%lu, pending=%s) — clearing",
                  (unsigned long)_policy_pending.req_id,
                  _policy_pending.requesting_atsign);
+    _cachePolicyDecision(_policy_pending.requesting_atsign, false, nullptr, 0);
     if (_policy_pending.type == NOPORTS_POLICY_NPT && _policy_pending.envelope) {
       cJSON *env_j  = (cJSON *)_policy_pending.envelope;
       cJSON *env_pl = cJSON_GetObjectItem(env_j, "payload");
@@ -617,21 +623,7 @@ void NoPortsDaemon::loop() {
     }
 
     if (message.type == ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION) {
-      // Decrypt failed — the worker's shared-key cache may be stale.
-      // Reconnect the worker (which refreshes the key cache) but leave the
-      // monitor stream intact.
-      NOPORTS_LOGW(TAG, "Monitor: decrypt failed, reconnecting worker");
-      _reconnectWorker();
-      // If a policy RPC is in-flight, the response notification was just
-      // dropped.  Now that the worker has refreshed its key cache the next
-      // exchange WILL decrypt, so re-send the request immediately.
-      if (_policy_pending.in_use) {
-        NOPORTS_LOGI(TAG, "Policy RPC: re-sending request after decrypt failure "
-                         "(reqId=%lu, key cache refreshed)",
-                    (unsigned long)_policy_pending.req_id);
-        _policy_pending.sent_at_ms = millis();
-        _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
-      }
+      _handleDecryptFailure(&message);
       atclient_monitor_message_free(&message);
       return;
     }
@@ -719,18 +711,7 @@ void NoPortsDaemon::loop() {
       break;
 
     case ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION:
-      NOPORTS_LOGE(TAG, "Failed to decrypt notification, reconnecting worker");
-      _reconnectWorker();
-      // Don't force monitor reconnect — the monitor stream is fine,
-      // only the worker (used for key lookup) was stale.
-      // Same recovery as above: re-send a pending policy request.
-      if (_policy_pending.in_use) {
-        NOPORTS_LOGI(TAG, "Policy RPC: re-sending request after decrypt failure "
-                         "(reqId=%lu, key cache refreshed)",
-                    (unsigned long)_policy_pending.req_id);
-        _policy_pending.sent_at_ms = millis();
-        _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
-      }
+      _handleDecryptFailure(&message);
       break;
 
     default:
@@ -1360,6 +1341,18 @@ void NoPortsDaemon::_handlePing(void *msg) {
       NOPORTS_LOGW(TAG, "Ping: rate-limited (cooldown) — dropping ping from %s", from);
       return;
     }
+    noports_policy_decision cached;
+    memset(&cached, 0, sizeof(cached));
+    if (noports_policy_cache_lookup(&_policy_decisions, from, _now_ms(), &cached)) {
+      bool authorized = cached.authorized;
+      noports_policy_decision_free(&cached);
+      if (authorized) {
+        _handlePingAuthorized(from);
+      } else {
+        NOPORTS_LOGW(TAG, "Ping: denied by a recent policy decision for %s", from);
+      }
+      return;
+    }
     if (_policy_pending.in_use) {
       NOPORTS_LOGW(TAG, "Ping: policy check in flight, ignoring ping from %s", from);
       return;
@@ -1367,7 +1360,8 @@ void NoPortsDaemon::_handlePing(void *msg) {
     _policy_pending.in_use          = true;
     _policy_pending.type            = NOPORTS_POLICY_PING;
     _policy_pending.req_id          = _next_policy_req_id();
-    _policy_pending.sent_at_ms      = millis();
+    _policy_pending.started_at_ms   = _now_ms();
+    _policy_pending.progress_at_ms  = _policy_pending.started_at_ms;
     _policy_pending.envelope        = nullptr;
     strncpy(_policy_pending.requesting_atsign, from,
             sizeof(_policy_pending.requesting_atsign) - 1);
@@ -1446,6 +1440,31 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
     // Continuation runs in _handlePolicyResponse → _continueNptRequest.
     // (Per-sender throttle already applied at the top of this function.)
 
+    noports_policy_decision cached;
+    memset(&cached, 0, sizeof(cached));
+    if (noports_policy_cache_lookup(&_policy_decisions, requesting_atsign, _now_ms(), &cached)) {
+      if (cached.authorized) {
+        const char *po_ptrs[16];
+        int po_count = 0;
+        for (size_t i = 0; i < cached.permit_open_len && po_count < 16; i++) {
+          po_ptrs[po_count++] = cached.permit_open[i];
+        }
+        _continueNptRequest(envelope, requesting_atsign,
+                            po_count > 0 ? po_ptrs : nullptr, po_count);
+      } else {
+        NOPORTS_LOGW(TAG, "NPT: denied by a recent policy decision for %s",
+                     requesting_atsign);
+        cJSON *env_pl = cJSON_GetObjectItem(envelope, "payload");
+        _sendNptError(requesting_atsign,
+                      env_pl ? cJSON_GetStringValue(cJSON_GetObjectItem(env_pl, "sessionId"))
+                             : nullptr,
+                      "Access denied by policy server");
+        cJSON_Delete(envelope);
+      }
+      noports_policy_decision_free(&cached);
+      return;
+    }
+
     if (_policy_pending.in_use) {
       // NPT is the high-value path; do not let a pending PING check block it.
       // Preempt an in-flight ping (its late response will be dropped on reqId
@@ -1464,7 +1483,8 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
     _policy_pending.in_use          = true;
     _policy_pending.type            = NOPORTS_POLICY_NPT;
     _policy_pending.req_id          = _next_policy_req_id();
-    _policy_pending.sent_at_ms      = millis();
+    _policy_pending.started_at_ms   = _now_ms();
+    _policy_pending.progress_at_ms  = _policy_pending.started_at_ms;
     _policy_pending.envelope        = envelope;  // ownership transferred
     strncpy(_policy_pending.requesting_atsign, requesting_atsign,
             sizeof(_policy_pending.requesting_atsign) - 1);
@@ -1561,50 +1581,47 @@ void NoPortsDaemon::_cleanupPolicyPending() {
 bool NoPortsDaemon::_policyRateLimited(const char *atsign,
                                        NoPortsPolicyPendingType type) {
   if (!atsign) return false;
-  uint32_t now = millis();
+  return !noports_policy_cooldown_allows(&_policy_cooldown, atsign,
+                                         type == NOPORTS_POLICY_PING ? NOPORTS_POLICY_CHECK_PING
+                                                                     : NOPORTS_POLICY_CHECK_NPT,
+                                         _now_ms());
+}
 
-  int free_slot = -1;
-  int oldest_slot = 0;
-  uint32_t oldest_recency = 0xFFFFFFFFUL;  // smallest max(ts) → LRU victim
-
-  for (int i = 0; i < NOPORTS_POLICY_COOLDOWN_SLOTS; i++) {
-    if (_policy_cooldown[i].used) {
-      if (strcmp(_policy_cooldown[i].atsign, atsign) == 0) {
-        uint32_t *ts = (type == NOPORTS_POLICY_PING)
-                         ? &_policy_cooldown[i].last_ping_ms
-                         : &_policy_cooldown[i].last_npt_ms;
-        // *ts == 0 means "never accepted for this type" → not throttled.
-        if (*ts != 0 && (now - *ts) < NOPORTS_POLICY_COOLDOWN_MS) {
-          return true;  // throttled — do NOT refresh the timestamp
-        }
-        *ts = now ? now : 1;  // accepted — start a new window (avoid 0 sentinel)
-        return false;
-      }
-      // Track the least-recently-active entry for LRU eviction.
-      uint32_t recency = _policy_cooldown[i].last_ping_ms > _policy_cooldown[i].last_npt_ms
-                           ? _policy_cooldown[i].last_ping_ms
-                           : _policy_cooldown[i].last_npt_ms;
-      if (recency < oldest_recency) {
-        oldest_recency = recency;
-        oldest_slot = i;
-      }
-    } else if (free_slot < 0) {
-      free_slot = i;
-    }
+void NoPortsDaemon::_cachePolicyDecision(const char *atsign, bool authorized,
+                                         const char **policy_po, int policy_po_count) {
+  noports_policy_decision decision;
+  decision.authorized = authorized;
+  decision.permit_open = (char **)policy_po;
+  decision.permit_open_len = policy_po_count > 0 ? (size_t)policy_po_count : 0;
+  if (noports_policy_cache_store(&_policy_decisions, atsign, &decision, _now_ms()) != 0) {
+    NOPORTS_LOGW(TAG, "Policy RPC: failed to remember the decision for %s", atsign);
   }
+}
 
-  // Not seen — record in a free slot, else evict the least-recently-active (LRU).
-  int slot = (free_slot >= 0) ? free_slot : oldest_slot;
-  memset(&_policy_cooldown[slot], 0, sizeof(_policy_cooldown[slot]));
-  strncpy(_policy_cooldown[slot].atsign, atsign,
-          sizeof(_policy_cooldown[slot].atsign) - 1);
-  _policy_cooldown[slot].atsign[sizeof(_policy_cooldown[slot].atsign) - 1] = '\0';
-  if (type == NOPORTS_POLICY_PING)
-    _policy_cooldown[slot].last_ping_ms = now ? now : 1;
-  else
-    _policy_cooldown[slot].last_npt_ms = now ? now : 1;
-  _policy_cooldown[slot].used = true;
-  return false;
+// NOTE: at_client looks up each notification's shared key afresh, so a
+// notification that couldn't be decrypted needs no reconnect
+void NoPortsDaemon::_handleDecryptFailure(void *msg) {
+  atclient_monitor_message *message = (atclient_monitor_message *)msg;
+  const char *from = message->notification != nullptr &&
+                             atclient_atnotification_is_from_initialized(message->notification)
+                         ? message->notification->from
+                         : nullptr;
+  NOPORTS_LOGW(TAG, "Ignoring a notification from %s that couldn't be decrypted",
+               from ? from : "(unknown)");
+  if (noports_reconnect_after_decrypt_failure(_decrypt_reconnect_at_ms, _now_ms())) {
+    NOPORTS_LOGW(TAG, "Reconnecting the worker after a decrypt failure");
+    _decrypt_reconnect_at_ms = _now_ms();
+    _reconnectWorker();
+  }
+  if (noports_policy_resend_after_decrypt_failure(_policy_pending.in_use, from,
+                                                  _config.policy_atsign)) {
+    // NOTE @policy answers each request id once, so a re-send needs a fresh one
+    _policy_pending.req_id = _next_policy_req_id();
+    NOPORTS_LOGI(TAG, "Policy RPC: re-sending request (reqId=%lu)",
+                 (unsigned long)_policy_pending.req_id);
+    _policy_pending.progress_at_ms = _now_ms();
+    _sendPolicyRpcRequest(_policy_pending.requesting_atsign);
+  }
 }
 
 void NoPortsDaemon::_sendPolicyRpcRequest(const char *client_atsign) {
@@ -1690,7 +1707,7 @@ void NoPortsDaemon::_handlePolicyResponse(void *msg) {
   // ACK = server received the request; reset timeout and wait for the decision.
   if (rpc_resp.resp_type == ATCLIENT_RPC_RESP_ACK) {
     NOPORTS_LOGI(TAG, "Policy RPC: ack received — waiting for decision");
-    _policy_pending.sent_at_ms = millis();
+    _policy_pending.progress_at_ms = _now_ms();
     return;
   }
 
@@ -1751,6 +1768,8 @@ void NoPortsDaemon::_handlePolicyResponse(void *msg) {
   } else {
     NOPORTS_LOGW(TAG, "Policy RPC: type=%d response — rejecting", (int)rpc_resp.resp_type);
   }
+
+  _cachePolicyDecision(_policy_pending.requesting_atsign, authorized, po_ptrs, po_count);
 
   if (!authorized) {
     NOPORTS_LOGW(TAG, "Policy RPC: access denied for %s",

@@ -15,6 +15,14 @@
   check their signing keys, and links libcurl to do it
 - fix: stop an srv that hasn't reached the relay within 15 seconds, rather
   than leaving it running
+- fix: reuse a client's policy decision for 15 seconds, as the Dart daemon
+  does; `--policy-cache-size` sets how many clients' decisions are kept
+  (default 8, at most 64, 0 to check every request)
+- fix: ignore a client's requests for 2 seconds after a policy check whose
+  decision isn't kept
+- fix: deny a request the policy service hasn't answered within 30 seconds
+  of asking, however often it acknowledges
+- fix: keep the monitor connection when a notification can't be decrypted
 
 ## 1.1.1
 

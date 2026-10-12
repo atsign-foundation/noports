@@ -12,7 +12,7 @@ StreamSubscription<AtNotification> handlePublicKeyChangedEvent(
   AtClient atClient,
   Atsign atSign,
 ) {
-  String topic = '.*\\.events\\.__atserver$atSign';
+  String topic = '.*\\.events\\.__atserver$atSign\$';
 
   return atClient.notificationService
       .subscribe(regex: topic, shouldDecrypt: true)

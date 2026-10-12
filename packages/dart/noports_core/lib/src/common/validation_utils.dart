@@ -19,6 +19,33 @@ const String deviceNameFormatHelp =
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
 
+/// [atSign] in canonical form, or null when it isn't a valid atSign.
+Atsign? canonicalAtsign(String? atSign) {
+  if (atSign == null) return null;
+  try {
+    return atSign.toAtsign();
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Whether [a] and [b] are the same atSign once both are canonical; false
+/// when either isn't a valid atSign.
+bool sameAtsign(String? a, String? b) {
+  final canonical = canonicalAtsign(a);
+  return canonical != null && canonical == canonicalAtsign(b);
+}
+
+/// The canonical forms of the atSigns a set of rules names, each worked out
+/// once; hold one only for atSigns the rules hold, never for senders'.
+class CanonicalAtsigns {
+  final Map<String, Atsign?> _known = {};
+
+  /// [atSign] in canonical form, or null when it isn't a valid atSign.
+  Atsign? of(String atSign) =>
+      _known.putIfAbsent(atSign, () => canonicalAtsign(atSign));
+}
+
 bool isUnprintable(int codeUnit) {
   return (codeUnit < 33 || codeUnit > 127);
 }
@@ -233,13 +260,17 @@ Future<void> clearLocallyCachedPKs({
   }
 }
 
+/// [atSign]'s `public:publickey`, fetched from the atServer.
 Future<String> getRemotePK({
   required AtClient atClient,
   required String atSign,
 }) async {
   atSign = AtUtils.fixAtSign(atSign);
   var s = 'public:publickey$atSign';
-  final AtValue av = await atClient.get(AtKey.fromString(s));
+  final AtValue av = await atClient.get(
+    AtKey.fromString(s),
+    getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+  );
   if (av.value == null) {
     throw AtPublicKeyNotFoundException('Failed to retrieve $s');
   }

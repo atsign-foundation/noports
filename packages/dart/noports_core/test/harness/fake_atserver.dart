@@ -119,6 +119,9 @@ class FakeAtSign {
   /// The final status of each notification this atSign has sent, by id.
   final Map<String, String> sentStatus = {};
 
+  /// The keys written to this atSign's store, oldest first.
+  final List<String> writes = [];
+
   final List<FakeConnection> _monitors = [];
   int _commitId = 0;
 
@@ -159,8 +162,10 @@ class FakeAtSign {
   /// The record stored under [key], or null.
   FakeRecord? recordAt(String key) => _keyStore[key.toLowerCase()];
 
-  void _store(String key, FakeRecord record) =>
-      _keyStore[key.toLowerCase()] = record;
+  void _store(String key, FakeRecord record) {
+    writes.add(key.toLowerCase());
+    _keyStore[key.toLowerCase()] = record;
+  }
 
   int _commit(String key) {
     final k = key.toLowerCase();

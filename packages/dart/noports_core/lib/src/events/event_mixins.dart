@@ -86,6 +86,9 @@ mixin AtEventListener on AtClientBindings {
     }
   }
 
+  /// Each event on [elc]'s topic as a JSON object, with a `sender` field
+  /// naming the atSign that sent it; payloads that aren't JSON objects are
+  /// skipped.
   Stream<String> getJsonStream(AtEventConfig elc) async* {
     logger.info('Subscribing to ${elc.topicListenRegex}');
     Stream<AtNotification> stream = subscribe(
@@ -97,9 +100,11 @@ mixin AtEventListener on AtClientBindings {
         continue;
       }
       try {
-        yield AtEventEnvelope.fromJson(jsonDecode(n.value!)).payload;
+        final event =
+            AtEventEnvelope.fromJson(jsonDecode(n.value!)).atEventPayload;
+        yield jsonEncode({...event, 'sender': n.from.toAtsign()});
       } catch (e) {
-        logger.shout('Failed to unmarshal event: $e');
+        logger.shout('Skipping event from ${n.from}: $e');
       }
     }
   }

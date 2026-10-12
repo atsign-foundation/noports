@@ -176,9 +176,17 @@ jobs:
 
   npe2e_policy_tests:
     if: ${{ github.event.pull_request.head.repo.fork == false }}
-    name: npe2e (policy_tests)
+    name: npe2e (policy_tests, ${{ matrix.daemon }} daemon)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - daemon: dart
+            daemon_versions: "d:current"
+          - daemon: c
+            daemon_versions: "c:current"
 
     steps:
       - name: Checkout
@@ -233,6 +241,7 @@ jobs:
             --base-directory "$LOGS_DIR" \
             --test-run-id "$TEST_RUN_ID" \
             --test-timeout-seconds 480 \
+            --daemon-versions "${{ matrix.daemon_versions }}" \
             --batch-size 2
 
       - name: Stop srvd relay
@@ -260,7 +269,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: npe2e_policy_tests_artifacts
+          name: npe2e_policy_tests_${{ matrix.daemon }}_daemon_artifacts
           path: npe2e_policy_tests_artifacts.zip
           if-no-files-found: warn
 
