@@ -176,9 +176,18 @@ Future<void> main(List<String> args) async {
     binariesVersion: binaries_version.packageVersion,
     eventLoggingAtSign: nppParams.eventLoggingAtSign,
   );
-  nppService.init();
-
-  await nppService.start();
+    try {
+    nppService.init();
+    await nppService.start();
+  } on InvalidAtSignException catch (e) {
+    stderr.writeln('Invalid --event-logging-atsign: ${e.message}');
+    exit(1);
+  } on AtKeyNotFoundException {
+    if (nppParams.eventLoggingAtSign == null) rethrow;
+    stderr.writeln('${nppParams.eventLoggingAtSign} has not yet shared its'
+        ' event logging config with this policy atSign');
+    exit(1);
+  }
 }
 
 /// Generate policy cache by fetching AtKeys from the atServer.
