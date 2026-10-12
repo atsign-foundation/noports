@@ -14,6 +14,13 @@ dart run tests/npe2e/bin/policy_tests.dart \
     --batch-size 2
 ```
 
+`--daemon-versions` picks the daemons the flow runs against: `d:current` by
+default, `c:current` for the C daemon built from this checkout. CI runs the
+flow once with each.
+
+The flow waits 15 seconds after each rule change, which is also how long every
+daemon reuses a policy decision, so each stage gets a fresh check.
+
 ## General Test Flow
 
 0. Set up actors

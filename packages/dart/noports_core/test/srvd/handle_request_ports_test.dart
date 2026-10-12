@@ -202,7 +202,7 @@ void main() {
 
     RecordingSrvd srvdAnsweringLookups({required String managerAtsign}) {
       final srvd = RecordingSrvd(managerAtsign: managerAtsign);
-      when(() => (srvd.atClient as MockAtClient).get(any())).thenAnswer(
+      when(() => (srvd.atClient as MockAtClient).get(any(), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async => AtValue()..value = 'a public key',
       );
       return srvd;
@@ -243,7 +243,7 @@ void main() {
 
       for (final srvd in [notAtSignA, notManager, liveId]) {
         expect(srvd.allocated, isFalse);
-        verifyNever(() => (srvd.atClient as MockAtClient).get(any()));
+        verifyNever(() => (srvd.atClient as MockAtClient).get(any(), getRequestOptions: any(named: 'getRequestOptions')));
       }
 
       final accepted = srvdAnsweringLookups(managerAtsign: 'open');
@@ -251,7 +251,7 @@ void main() {
         payloadRequest(from: '@alice', atSignA: '@alice'),
       );
       expect(accepted.allocated, isTrue);
-      verify(() => (accepted.atClient as MockAtClient).get(any())).called(2);
+      verify(() => (accepted.atClient as MockAtClient).get(any(), getRequestOptions: any(named: 'getRequestOptions'))).called(2);
     });
 
     test(
@@ -260,7 +260,7 @@ void main() {
         'only the first', () async {
       final keysGate = Completer<void>();
       final srvd = RecordingSrvd(managerAtsign: 'open');
-      when(() => (srvd.atClient as MockAtClient).get(any())).thenAnswer(
+      when(() => (srvd.atClient as MockAtClient).get(any(), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async {
           await keysGate.future;
           return AtValue()..value = 'a public key';

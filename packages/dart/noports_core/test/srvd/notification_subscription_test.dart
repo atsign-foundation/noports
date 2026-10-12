@@ -60,7 +60,7 @@ void main() {
           ..notificationStatusEnum = NotificationStatusEnum.delivered;
       });
 
-      when(() => mockAtClient.get(any(that: FakeAtKeyMatcher()))).thenAnswer(
+      when(() => mockAtClient.get(any(that: FakeAtKeyMatcher()), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async => Future.value(AtValue()..value = 'dummy-public-key'),
       );
 

@@ -188,8 +188,6 @@ mixin SrvdUtilMixin {
     }
   }
 
-  Future<String?> _fetchPublicKey(String atSign) async {
-    AtValue v = await atClient.get(AtKey.fromString('public:publickey$atSign'));
-    return v.value;
-  }
+  Future<String?> _fetchPublicKey(String atSign) =>
+      getRemotePK(atClient: atClient, atSign: atSign);
 }

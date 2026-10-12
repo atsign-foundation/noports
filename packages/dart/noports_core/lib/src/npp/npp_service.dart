@@ -11,6 +11,10 @@ class NppRequestHandler implements NPARequestHandler {
   });
 
   @override
+  bool hasRulesFor(Atsign daemonAtsign) =>
+      nppCache.hasServiceACLsForDaemon(daemonAtsign);
+
+  @override
   Future<NPAAuthCheckResponse> doAuthCheck(NPAAuthCheckRequest authCheckRequest) async {
     final String clientAtSign = authCheckRequest.clientAtsign;
     final String daemonAtSign = authCheckRequest.daemonAtsign;
