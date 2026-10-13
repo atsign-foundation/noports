@@ -2,6 +2,19 @@
 
 - FEAT: Use the remote atServer as the source of truth instead of synchronizing a local store.
 
+## 1.9.6+33
+
+- FIX: Two operations that need the app's keys at the same moment no longer fail
+  with "Self encryption key is not set for current atSign". at_client_flutter is
+  now 2.0.0-rc5, bringing at_client 3.15.0-rc6.
+- FIX: An atSign field shows an error for an atSign longer than 55 characters,
+  the most an atSign can have, and Sign in and Next go ahead only once the
+  atSign field holds a valid atSign.
+- FIX: Connections act on the device's first response and ignore any later ones,
+  and act on the first response from the relay they asked, ignoring any later
+  responses.
+- FIX: Connections work when the device or the relay shares the app's atSign.
+
 ## 1.9.5+32
 
 - FEAT: A dot beside the atSign shows whether its atServer connection is online, offline or refused, with the reason in its tooltip.

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 
 class FormValidator {
   static String? validateRequiredField(String? value) {
@@ -22,7 +23,8 @@ class FormValidator {
       return strings.validationErrorEmptyField;
     }
     // Can starts with '@' and contains only valid atsign characters
-    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
+    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!) ||
+        value.isTooLongForAtsign) {
       return strings.validationErrorAtsignField;
     }
 
@@ -37,7 +39,8 @@ class FormValidator {
       return null;
     }
     // Can start with '@' and contains only valid atsign characters
-    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!)) {
+    if (!RegExp(r'^@?[a-z0-9_]+$').hasMatch(value!) ||
+        value.isTooLongForAtsign) {
       return strings.validationErrorAtsignField;
     }
 
@@ -107,7 +110,9 @@ class FormValidator {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
     if (value?.isEmpty ?? true) {
       return null;
-    } else if (!value!.startsWith('@') || value.length < 2) {
+    } else if (!value!.startsWith('@') ||
+        value.length < 2 ||
+        value.isTooLongForAtsign) {
       return strings.validationErrorRelayField;
     }
     validateRequiredField(value);

@@ -178,12 +178,6 @@ class MockAtClient extends _i1.Mock implements _i10.AtClient {
           as _i7.Atsign);
 
   @override
-  set telemetry(_i7.AtTelemetryService? telemetryService) => super.noSuchMethod(
-    Invocation.setter(#telemetry, telemetryService),
-    returnValueForMissingStub: null,
-  );
-
-  @override
   set atChops(_i15.AtChops? atChops) => super.noSuchMethod(
     Invocation.setter(#atChops, atChops),
     returnValueForMissingStub: null,

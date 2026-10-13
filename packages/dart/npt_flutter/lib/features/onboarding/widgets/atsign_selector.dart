@@ -5,6 +5,7 @@ import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dar
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/onboarding/util/atsign_manager.dart';
 import 'package:npt_flutter/styles/app_color.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -43,10 +44,12 @@ class _AtsignSelectorState extends State<AtsignSelector> {
           }
           return TextFormField(
             controller: controller,
-            onChanged: (atsign) {
+            onChanged: (value) {
+              final atsign = value.toAtsignOrNull();
+              if (atsign == null) return;
               context.read<OnboardingCubit>().setState(
-                atsign: atsign.toAtsign(),
-                rootDomain: widget.options?[atsign]?.rootDomain,
+                atsign: atsign,
+                rootDomain: widget.options?[value]?.rootDomain,
               );
               // Resetting the multiActivationCubitState will set the MultiActivationFileUploadState to idle allowing the "Next" button (manual activation button) to be visible in the dialog. This is only required when multiActivationCubitState is error.
               final multiActivationCubitState = context

@@ -363,12 +363,12 @@ void main() {
       );
 
       blocTest<OnboardingCubit, OnboardingState>(
-        'handles very long atSign',
+        'handles an atSign of the maximum length',
         build: () => cubit,
-        act: (cubit) => cubit.setAtsign('@${'a' * 100}'.toAtsign()),
+        act: (cubit) => cubit.setAtsign('@${'a' * 55}'.toAtsign()),
         expect: () => [
           OnboardingState(
-            atsign: '@${'a' * 100}'.toAtsign(),
+            atsign: '@${'a' * 55}'.toAtsign(),
             status: OnboardingStatus.offboarded,
             rootDomain: 'root.atsign.org',
           ),
