@@ -34,77 +34,80 @@ class _SignInDialogState extends State<SignInDialog> {
       content: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(Sizes.p20),
-          child: Column(
-            spacing: Sizes.p10,
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                strings.signIn,
-                style: titleStyle!.copyWith(color: Colors.black),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    strings.selectorTitleAtsign,
-                    style: titleStyle.copyWith(color: Colors.black),
-                  ),
-                  Text(strings.selectorSubTitleAtsign),
-                  gapH16,
-                  AtsignSelector(options: widget.options),
-                ],
-              ),
-
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    strings.selectorTitleRootDomain,
-                    style: titleStyle.copyWith(color: Colors.black),
-                  ),
-                  Text(strings.selectorSubTitleRootDomain),
-                  gapH16,
-                  AtDirectorySelector(options: widget.options),
-                ],
-              ),
-              const Divider(color: AppColor.dividerColorAlt),
-              BlocBuilder<OnboardingCubit, OnboardingState>(
-                builder: (context, state) {
-                  return SizedBox(
-                    width: width,
-                    child: Row(
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(false);
-                          },
-                          child: Text(strings.cancel),
-                        ),
-                        const Spacer(),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(Sizes.p80, Sizes.p40),
-                          ),
-                          onPressed:
-                              FormValidator.validateRequiredAtsignField(
-                                    state.atsign,
-                                  ) ==
-                                  null
-                              ? () {
-                                  Navigator.of(context).pop(true);
-                                }
-                              : null,
-                          child: Text(strings.signIn),
-                        ),
-                      ],
+          child: Form(
+            child: Column(
+              spacing: Sizes.p10,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.signIn,
+                  style: titleStyle!.copyWith(color: Colors.black),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.selectorTitleAtsign,
+                      style: titleStyle.copyWith(color: Colors.black),
                     ),
-                  );
-                },
-              ),
-            ],
+                    Text(strings.selectorSubTitleAtsign),
+                    gapH16,
+                    AtsignSelector(options: widget.options),
+                  ],
+                ),
+
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.selectorTitleRootDomain,
+                      style: titleStyle.copyWith(color: Colors.black),
+                    ),
+                    Text(strings.selectorSubTitleRootDomain),
+                    gapH16,
+                    AtDirectorySelector(options: widget.options),
+                  ],
+                ),
+                const Divider(color: AppColor.dividerColorAlt),
+                BlocBuilder<OnboardingCubit, OnboardingState>(
+                  builder: (context, state) {
+                    return SizedBox(
+                      width: width,
+                      child: Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(false);
+                            },
+                            child: Text(strings.cancel),
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(Sizes.p80, Sizes.p40),
+                            ),
+                            onPressed:
+                                FormValidator.validateRequiredAtsignField(
+                                      state.atsign,
+                                    ) ==
+                                    null
+                                ? () {
+                                    if (!Form.of(context).validate()) return;
+                                    Navigator.of(context).pop(true);
+                                  }
+                                : null,
+                            child: Text(strings.signIn),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

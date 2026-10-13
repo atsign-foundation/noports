@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "5813a8ace3d15102db3eb9ae733c419bc47638d550e2ee2140b82de5f55c947b"
+      sha256: "5a867956441494144a77033cee0b4d50c1f8d6eefddd9dfff3d081f6c2250426"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0-rc3"
+    version: "4.0.0-rc5"
   at_base2e15:
     dependency: transitive
     description:
@@ -77,26 +77,26 @@ packages:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: "7ee0263e1f39e81a2978531c74c1001c08827c50f96fa08b2d468551d76f05be"
+      sha256: "8fcdff091fc1d91827f24d503973aad5613fa217f676909a7468c82fc9ebe7a2"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.2-rc2"
+    version: "3.1.2-rc3"
   at_client:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: "44f28a3323479f6326290feb9da17ffbedcf60c3e5998b2388e849f1d8d67d73"
+      sha256: "3512a4722ce1998b48355f191108c3f4ae701b707026aeedc2b770521442ae8b"
       url: "https://pub.dev"
     source: hosted
-    version: "3.15.0-rc3"
+    version: "3.15.0-rc6"
   at_commons:
     dependency: "direct main"
     description:
       name: at_commons
-      sha256: "30d95e35bd5e4563b9a8c75e67257edc116fd572946bbdc8facbf920a203b506"
+      sha256: b75a38fb93a48131289dea0e744fa8584c86dd4eb3fdff1575c804ab00b4b3c4
       url: "https://pub.dev"
     source: hosted
-    version: "5.18.0"
+    version: "5.21.0"
   at_lookup:
     dependency: transitive
     description:
@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: a9788de0c37108a487b99d6e166d0cfe2a5da1233c2ce9dfe86ca688b2cd8ae8
+      sha256: f5f9b4a2cdcc3599616724646cd026927d1900460eba4191d87d91295a8d6762
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0-rc3"
+    version: "2.0.0-rc6"
   at_persistence_secondary_server:
     dependency: transitive
     description:
@@ -133,10 +133,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: b737acf746b337beccf29c27e24d399c0c503c258d8b1b0bd521ca938229cccd
+      sha256: "7b0d8594fa7d2c1003cc63d19941098d5ed34c227082cef406cf5161481ed4b7"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.1"
+    version: "3.4.2"
   better_cryptography:
     dependency: transitive
     description:
