@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:noports_core/npa.dart'
     show NPAAuthCheckRequest, NPAAuthCheckResponse;
 import 'package:npt_flutter/app.dart';
@@ -27,6 +28,11 @@ class PolicyLogEntry {
     this.policyPayload,
   });
 
+  /// Whether [notification] is a policy service's record of a decision,
+  /// rather than a daemon's heartbeat.
+  static bool isPolicyLog(AtNotification notification) =>
+      notification.key.contains('logs.policy.sshnp');
+
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(
       notification.epochMillis,
@@ -38,7 +44,7 @@ class PolicyLogEntry {
     String type = 'heartbeat';
     String? policyPayload;
 
-    if (notification.key.contains('logs.policy.sshnp')) {
+    if (isPolicyLog(notification)) {
       type = 'policy request';
       policyPayload = notification.value;
 
@@ -117,6 +123,7 @@ class PolicyLogEntry {
 
 class PolicyLogMonitorService {
   static PolicyLogMonitorService? _instance;
+  final AtClient? _atClient;
   StreamSubscription<AtNotification>? _subscription;
   final StreamController<PolicyLogEntry> _logStreamController =
       StreamController<PolicyLogEntry>.broadcast();
@@ -127,7 +134,15 @@ class PolicyLogMonitorService {
     return _instance ??= PolicyLogMonitorService._();
   }
 
-  PolicyLogMonitorService._();
+  PolicyLogMonitorService._({AtClient? atClient}) : _atClient = atClient;
+
+  /// A service of its own, monitoring through [atClient] instead of the
+  /// current client.
+  @visibleForTesting
+  PolicyLogMonitorService.withAtClient(AtClient atClient)
+    : this._(atClient: atClient);
+
+  AtClient get _client => _atClient ?? AtClientManager.getInstance().atClient;
 
   Stream<PolicyLogEntry> get logStream => _logStreamController.stream;
   List<PolicyLogEntry> get logs => List.unmodifiable(_logs);
@@ -143,7 +158,7 @@ class PolicyLogMonitorService {
     }
 
     try {
-      final AtClient atClient = AtClientManager.getInstance().atClient;
+      final AtClient atClient = _client;
 
       final deviceRegexParts = deviceNames
           .map((device) => '$device\\.devices\\.policy\\.sshnp')
@@ -162,15 +177,7 @@ class PolicyLogMonitorService {
       _subscription = notificationService
           .subscribe(regex: monitorRegex, shouldDecrypt: true)
           .listen(
-            (notification) {
-              final logEntry = PolicyLogEntry.fromNotification(notification);
-              _logs.insert(0, logEntry);
-
-              if (_logs.length > 100) {
-                _logs.removeRange(100, _logs.length);
-              }
-              _logStreamController.add(logEntry);
-            },
+            (notification) => _onNotification(notification, atClient),
             onError: (error) {
               App.log(
                 '[ERROR] PolicyLogMonitorService.startMonitoring stream error: $error'
@@ -205,7 +212,7 @@ class PolicyLogMonitorService {
     }
 
     try {
-      final AtClient atClient = AtClientManager.getInstance().atClient;
+      final AtClient atClient = _client;
 
       const deviceRegex = r'[^:]*\.devices\.policy\.sshnp';
       const policyLogRegex = 'logs\\.policy\\.sshnp';
@@ -217,16 +224,7 @@ class PolicyLogMonitorService {
       _subscription = notificationService
           .subscribe(regex: monitorRegex, shouldDecrypt: true)
           .listen(
-            (notification) {
-              final logEntry = PolicyLogEntry.fromNotification(notification);
-              _logs.insert(0, logEntry);
-
-              if (_logs.length > 100) {
-                _logs.removeRange(100, _logs.length);
-              }
-
-              _logStreamController.add(logEntry);
-            },
+            (notification) => _onNotification(notification, atClient),
             onError: (error) {
               App.log(
                 '[ERROR] PolicyLogMonitorService.startGlobalMonitoring stream error: $error'
@@ -257,6 +255,30 @@ class PolicyLogMonitorService {
       _subscription = null;
       _isMonitoring = false;
     }
+  }
+
+  void _onNotification(AtNotification notification, AtClient atClient) {
+    if (PolicyLogEntry.isPolicyLog(notification) &&
+        !_isFromSelf(notification, atClient)) {
+      App.log(
+        '[WARNING] PolicyLogMonitorService ignored policy log'
+                ' ${notification.key} from ${notification.from}'
+            .loggable,
+      );
+      return;
+    }
+    final logEntry = PolicyLogEntry.fromNotification(notification);
+    _logs.insert(0, logEntry);
+
+    if (_logs.length > 100) {
+      _logs.removeRange(100, _logs.length);
+    }
+    _logStreamController.add(logEntry);
+  }
+
+  bool _isFromSelf(AtNotification notification, AtClient atClient) {
+    final self = atClient.getCurrentAtSign();
+    return self != null && notification.from.toAtsign() == self.toAtsign();
   }
 
   Future<void> stopMonitoring() async {
