@@ -25,7 +25,7 @@ void main() {
     eventLoggingAtSign: eventLoggingAtSign,
   );
 
-  group('NppService event logging atSign', () {
+  group('NppService event logging Atsign', () {
     test('is handed to the policy request handler, normalised', () {
       final s = service(eventLoggingAtSign: 'Logs')..init();
       expect((s.npa as NPAImpl).eventLoggingAtsign, '@logs');
@@ -36,7 +36,7 @@ void main() {
       expect((s.npa as NPAImpl).eventLoggingAtsign, isNull);
     });
 
-    test('is rejected when it is not a valid atSign', () {
+    test('is rejected when it is not a valid Atsign', () {
       expect(
         () => service(eventLoggingAtSign: '@a@b').init(),
         throwsA(isA<InvalidAtSignException>()),

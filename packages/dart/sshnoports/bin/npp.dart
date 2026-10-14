@@ -176,7 +176,7 @@ Future<void> main(List<String> args) async {
     binariesVersion: binaries_version.packageVersion,
     eventLoggingAtSign: nppParams.eventLoggingAtSign,
   );
-    try {
+  try {
     nppService.init();
     await nppService.start();
   } on InvalidAtSignException catch (e) {
@@ -185,7 +185,12 @@ Future<void> main(List<String> args) async {
   } on AtKeyNotFoundException {
     if (nppParams.eventLoggingAtSign == null) rethrow;
     stderr.writeln('${nppParams.eventLoggingAtSign} has not yet shared its'
-        ' event logging config with this policy atSign');
+        ' event logging config with this policy Atsign');
+    exit(1);
+  } on AtClientException catch (e) {
+    if (nppParams.eventLoggingAtSign == null) rethrow;
+    stderr.writeln('Could not fetch the event logging config from'
+        ' ${nppParams.eventLoggingAtSign}: ${e.message}');
     exit(1);
   }
 }
