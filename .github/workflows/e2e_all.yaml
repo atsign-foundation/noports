@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload /tmp/e2e_all as artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tmp_e2e_all_artifacts
           path: tmp_e2e_all_artifacts.zip
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload npe2e artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: npe2e_core_tests_artifacts
           path: npe2e_core_tests_artifacts.zip
@@ -267,7 +267,7 @@ jobs:
 
       - name: Upload npe2e artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: npe2e_policy_tests_${{ matrix.daemon }}_daemon_artifacts
           path: npe2e_policy_tests_artifacts.zip
@@ -340,7 +340,7 @@ jobs:
 
       - name: Upload npe2e artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: npe2e_revocation_tests_artifacts
           path: npe2e_revocation_tests_artifacts.zip
@@ -426,7 +426,7 @@ jobs:
 
       - name: Upload npe2e artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: npe2e_relay_tests_artifacts
           path: npe2e_relay_tests_artifacts.zip
