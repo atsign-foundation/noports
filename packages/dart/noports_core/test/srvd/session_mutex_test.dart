@@ -186,6 +186,23 @@ void main() {
     });
   });
 
+  group('Given a session id that cannot name a lock record', () {
+    test(
+      'when srvd receives request_ports from a client that takes one ack,'
+      ' then it stops the port pair it spawned and does not answer',
+      () async {
+        const id = 'the session';
+
+        await srvd.handleRequestPorts(requestPorts(id, multipleAcksOk: false));
+        await pumpEventQueue();
+
+        expect(portPairStopped(), isTrue);
+        expect(answered(id), isFalse);
+        expect(srvd.sessions.containsKey(id), isFalse);
+      },
+    );
+  });
+
   group('Given a client that takes several acks', () {
     test(
       'when srvd receives request_ports, then it takes no lock and answers',

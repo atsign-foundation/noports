@@ -510,31 +510,29 @@ class SrvdImpl
       );
     } else {
       // client cannot handle multiple acks, so we need to lock a mutex
-      var mutexKey = AtKey.fromString(
-        '${sessionParams.sessionId}'
-        '.session_mutexes.${Srvd.namespace}'
-        '${atClient.getCurrentAtSign()!}',
-      );
+      final mutexName = '${sessionParams.sessionId}'
+          '.session_mutexes.${Srvd.namespace}'
+          '${atClient.getCurrentAtSign()!}';
       try {
         final lease = await atClient.tryAcquireServerMutex(
-          mutexKey,
+          AtKey.fromString(mutexName),
           ttl: DefaultArgs.sessionMutexTtl,
         );
         if (lease == null) {
           logger.shout(
             '🤷‍♂️ Will not handle request from ${n.from}'
-            '; did not acquire mutex $mutexKey',
+            '; did not acquire mutex $mutexName',
           );
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
           return;
         }
         logger.shout(
           '😎 Will handle request from ${n.from}'
-          '; acquired mutex $mutexKey',
+          '; acquired mutex $mutexName',
         );
       } catch (err) {
         logger.shout(
-          'Will not handle; did not acquire mutex $mutexKey : $err',
+          'Will not handle; did not acquire mutex $mutexName : $err',
         );
         ppiSendToSpawned?.send(IIRequest.create('stop', null));
         return;
