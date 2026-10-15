@@ -10,6 +10,7 @@ import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/version.dart' as binaries_version;
 import 'package:path/path.dart' as path;
+import 'package:noports_core/npa.dart';
 
 late AtSignLogger logger;
 
@@ -94,6 +95,16 @@ Future<void> main(List<String> args) async {
       .toSet();
   }
 
+  // 3e. --event-logging-atsign
+  if (nppParams.eventLoggingAtSign != null) {
+    try {
+      nppParams.eventLoggingAtSign!.toAtsign();
+    } on InvalidAtSignException catch (e) {
+      stderr.writeln('Invalid --event-logging-atsign: ${e.message}');
+      exit(1);
+    }
+  }
+
 
   // 4. Set up AtClient instance
   final AtClient atClient;
@@ -176,21 +187,11 @@ Future<void> main(List<String> args) async {
     binariesVersion: binaries_version.packageVersion,
     eventLoggingAtSign: nppParams.eventLoggingAtSign,
   );
+  nppService.init();
   try {
-    nppService.init();
     await nppService.start();
-  } on InvalidAtSignException catch (e) {
-    stderr.writeln('Invalid --event-logging-atsign: ${e.message}');
-    exit(1);
-  } on AtKeyNotFoundException {
-    if (nppParams.eventLoggingAtSign == null) rethrow;
-    stderr.writeln('${nppParams.eventLoggingAtSign} has not yet shared its'
-        ' event logging config with this policy Atsign');
-    exit(1);
-  } on AtClientException catch (e) {
-    if (nppParams.eventLoggingAtSign == null) rethrow;
-    stderr.writeln('Could not fetch the event logging config from'
-        ' ${nppParams.eventLoggingAtSign}: ${e.message}');
+  } on EventLoggingConfigException catch (e) {
+    stderr.writeln(e);
     exit(1);
   }
 }
