@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
-import 'package:at_client/sqlite.dart';
+import 'package:at_client/memory.dart';
 import 'package:test/test.dart';
 
 import 'fake_atserver.dart';

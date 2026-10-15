@@ -2,6 +2,21 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.1
+
+* fix: atSigns whose RSA PKAM key is 1024 bits authenticate again
+* fix: data that NoPorts v5.0.0 to v5.6.1 and the v5.7.0 pre-releases wrote,
+  such as policy groups saved by those releases' np_admin, is read decrypted
+  again
+* fix: a policy service answers a request it can't parse with a refusal and
+  keeps running
+* chore: a policy service needs its atServer at p3.13.0 or later; on an older
+  one it answers no requests
+* chore: on an atServer from c3.16.3 or p3.16.5, the policy service's
+  per-request lock leaves no commit log entry
+* build: at_client 3.15.0-rc7, at_auth 4.0.0-rc6 and at_onboarding_cli
+  2.0.0-rc7
+
 ## v5.18.0
 
 * feat: `npt --debug` logs everything at FINEST
