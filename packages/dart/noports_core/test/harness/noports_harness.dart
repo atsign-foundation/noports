@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_client/sqlite.dart';
+import 'package:at_client/memory.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
