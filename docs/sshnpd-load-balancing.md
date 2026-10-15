@@ -74,4 +74,4 @@ Unit tests verify:
 
 ## Usage
 
-No configuration changes are required. Simply run multiple sshnpd instances with the same atSign and device name on different machines. The mutex mechanism will automatically ensure only one instance handles each session.
+No configuration changes are required. Simply run multiple sshnpd instances with the same atSign and device name on different machines. The mutex mechanism will automatically ensure only one instance handles each session, provided the device atSign's atServer is p3.13.0 or later; on an older one, every instance handles every session request.
