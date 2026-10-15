@@ -2,6 +2,19 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.2
+
+* feat: sshnpd and srvd take their session locks with at_client's server
+  mutex, so on an atServer from c3.16.3 or p3.16.5 the locks leave no commit
+  log entry
+* fix: srvd closes a session's ports at once when it can't take the session's
+  lock, rather than after 30 seconds
+* chore: sshnpd logs a session lock it can't take at warning
+* chore: load-balanced sshnpd instances, and srvd serving clients older than
+  v5.11.2, need their atServer at p3.13.0 or later; on an older one every
+  sshnpd instance handles every session request, and srvd answers no session
+  from those clients
+
 ## v5.18.1
 
 * fix: atSigns whose RSA PKAM key is 1024 bits authenticate again
