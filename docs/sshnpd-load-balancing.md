@@ -21,9 +21,9 @@ For each session-based request, a mutex key is generated using the pattern:
 ```
 
 ### Mutex Acquisition
-1. When sshnpd receives a session-based notification (`ssh_request`, `npt_request`, or legacy `sshd`), it attempts to create an immutable AtKey with the session ID
-2. The first sshnpd instance to successfully create the key acquires the mutex and processes the request
-3. Other instances receive an "immutable key" error and ignore the request
+1. When sshnpd receives a session-based notification (`ssh_request`, `npt_request`, or legacy `sshd`), it takes at_client's server mutex (`tryAcquireServerMutex`) on that key: an immutable record written straight to the atServer with `:nc`, so it reaches no client's sync and, on atServers from c3.16.3 and p3.16.5, leaves no commit log entry
+2. The first sshnpd instance to create the record acquires the mutex and processes the request
+3. Other instances find the record already there and ignore the request. Daemons from earlier releases write the same immutable record, so a group of daemons on mixed releases still lets only one instance handle each session
 4. The mutex key has a TTL of 30 seconds to prevent stale locks
 
 ### Session ID Extraction
@@ -47,12 +47,13 @@ Requests that don't have sessions (like `ping`, `sshpublickey`, `privatekey`) ar
 
 ### Error Handling
 - If the session ID can't be extracted, or isn't a UUID, the request is refused and logged at warning, before the mutex is attempted
-- If mutex acquisition fails due to non-immutable errors, the request proceeds to maintain functionality
-- Only immutable key errors trigger request rejection
+- If the mutex can't be taken for any other reason, such as an atServer older than p3.13.0, which doesn't accept `:nc`, the request proceeds and the failure is logged at warning
+- Only a lock record that already exists makes an instance ignore the request
 
 ### Logging
 - Successful mutex acquisition: `😎 Will handle {type} request from {client}; acquired mutex {key}`
 - Failed mutex acquisition: `🤷‍♂️ Will not handle {type} request from {client}; did not acquire session mutex (another sshnpd instance will handle this)`
+- Mutex not taken for another reason: `Will handle {type} request from {client} without a session mutex, which could not be taken: {error}`
 - Refused request: `Refusing {type} request {notification id} from {client}: its sessionId is missing or not a UUID`
 
 ## Benefits

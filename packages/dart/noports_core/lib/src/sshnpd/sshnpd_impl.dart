@@ -640,7 +640,8 @@ class SshnpdImpl
 
   /// Attempts to acquire a session-based mutex for load balancing between multiple sshnpd instances.
   /// Returns true if mutex was acquired (this instance should handle the request),
-  /// false if another instance already acquired the mutex (this instance should ignore the request).
+  /// false if another instance already acquired the mutex (this instance should ignore the request),
+  /// and true when the mutex could not be taken for any other reason.
   @visibleForTesting
   Future<bool> tryAcquireSessionMutex(
     AtNotification notification,
@@ -656,39 +657,33 @@ class SshnpdImpl
         return true; // Proceed without mutex for backward compatibility
       }
 
-      // Create a mutex key using the session ID
-      var mutexKey =
-          AtKey.fromString(
-              '$sessionId'
-              '.session_mutexes.${DefaultArgs.namespace}'
-              '${atClient.getCurrentAtSign()!}',
-            )
-            ..metadata = (Metadata()
-              ..immutable =
-                  true // only one sshnpd will succeed in doing this
-              ..ttl = 30000); // expire after 30 seconds to keep datastore clean
-
-      PutRequestOptions pro = PutRequestOptions()
-        ..shouldEncrypt = false
-        ..useRemoteAtServer = true;
-
-      await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
+      var mutexKey = AtKey.fromString(
+        '$sessionId'
+        '.session_mutexes.${DefaultArgs.namespace}'
+        '${atClient.getCurrentAtSign()!}',
+      );
+      final lease = await atClient.tryAcquireServerMutex(
+        mutexKey,
+        ttl: DefaultArgs.sessionMutexTtl,
+      );
+      if (lease == null) {
+        logger.info(
+          '🤷‍♂️ Will not handle $notificationKey request from ${notification.from}'
+          '; did not acquire session mutex (another sshnpd instance will handle this)',
+        );
+        return false;
+      }
       logger.info(
         '😎 Will handle $notificationKey request from ${notification.from}'
         '; acquired mutex $mutexKey',
       );
       return true;
     } catch (err) {
-      if (err.toString().toLowerCase().contains('immutable')) {
-        logger.info(
-          '🤷‍♂️ Will not handle $notificationKey request from ${notification.from}'
-          '; did not acquire session mutex (another sshnpd instance will handle this)',
-        );
-        return false;
-      } else {
-        logger.info('Unexpected error acquiring session mutex: $err');
-        return true; // Proceed anyway to maintain functionality
-      }
+      logger.warning(
+        'Will handle $notificationKey request from ${notification.from}'
+        ' without a session mutex, which could not be taken: $err',
+      );
+      return true;
     }
   }
 

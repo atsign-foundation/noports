@@ -8,6 +8,7 @@ import 'package:noports_core/events.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
@@ -509,38 +510,33 @@ class SrvdImpl
       );
     } else {
       // client cannot handle multiple acks, so we need to lock a mutex
-      var mutexKey =
-          AtKey.fromString(
-              '${sessionParams.sessionId}'
-              '.session_mutexes.${Srvd.namespace}'
-              '${atClient.getCurrentAtSign()!}',
-            )
-            ..metadata = (Metadata()
-              ..immutable =
-                  true // only one srvd will succeed in doing this
-              ..ttl = 30000); // expire after 30 seconds to keep datastore clean
-      PutRequestOptions pro = PutRequestOptions()
-        ..shouldEncrypt = false
-        ..useRemoteAtServer = true;
-
+      var mutexKey = AtKey.fromString(
+        '${sessionParams.sessionId}'
+        '.session_mutexes.${Srvd.namespace}'
+        '${atClient.getCurrentAtSign()!}',
+      );
       try {
-        await atClient.put(mutexKey, 'lock', putRequestOptions: pro);
-        logger.shout(
-          '😎 Will handle request from ${n.from}'
-          '; acquired mutex $mutexKey',
+        final lease = await atClient.tryAcquireServerMutex(
+          mutexKey,
+          ttl: DefaultArgs.sessionMutexTtl,
         );
-      } catch (err) {
-        if (err.toString().toLowerCase().contains('immutable')) {
+        if (lease == null) {
           logger.shout(
             '🤷‍♂️ Will not handle request from ${n.from}'
             '; did not acquire mutex $mutexKey',
           );
           ppiSendToSpawned?.send(IIRequest.create('stop', null));
-        } else {
-          logger.shout(
-            'Will not handle; did not acquire mutex $mutexKey : $err',
-          );
+          return;
         }
+        logger.shout(
+          '😎 Will handle request from ${n.from}'
+          '; acquired mutex $mutexKey',
+        );
+      } catch (err) {
+        logger.shout(
+          'Will not handle; did not acquire mutex $mutexKey : $err',
+        );
+        ppiSendToSpawned?.send(IIRequest.create('stop', null));
         return;
       }
     }

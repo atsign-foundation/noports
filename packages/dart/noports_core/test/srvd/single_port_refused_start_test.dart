@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
@@ -21,6 +22,10 @@ import '../sshnp/sshnp_mocks.dart';
 class FakeNotificationParams extends Fake implements NotificationParams {}
 
 class FakeAtKey extends Fake implements AtKey {}
+
+class FakeVerbBuilder extends Fake implements VerbBuilder {}
+
+class MockRemoteSecondary extends Mock implements RemoteSecondary {}
 
 SrvdSessionParams params443({
   required String sessionId,
@@ -138,6 +143,7 @@ void main() {
 
   group('Given srvd bound to port 443', () {
     late MockAtClient atClient;
+    late MockRemoteSecondary remote;
     late MockNotificationService notificationService;
     late List<NotificationParams> notified;
     late SrvdImpl srvd;
@@ -147,6 +153,7 @@ void main() {
     setUpAll(() {
       registerFallbackValue(FakeNotificationParams());
       registerFallbackValue(FakeAtKey());
+      registerFallbackValue(FakeVerbBuilder());
     });
 
     setUp(() async {
@@ -154,6 +161,9 @@ void main() {
       notificationService = MockNotificationService();
       notified = [];
       when(() => atClient.getCurrentAtSign()).thenReturn('@relay');
+      remote = MockRemoteSecondary();
+      when(() => atClient.getRemoteSecondary()).thenReturn(remote);
+      when(() => remote.executeVerb(any())).thenAnswer((_) async => '-1');
       when(() => atClient.notificationService).thenReturn(notificationService);
       when(() => atClient.get(any(), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async => AtValue()..value = 'a public key',
@@ -248,13 +258,16 @@ void main() {
     bool startSent(String sessionId) => sentToIsolate.any(
         (m) => m.type == 'start' && m.payload.sessionId == sessionId);
 
-    void verifyNoMutex() => verifyNever(
-          () => atClient.put(
-            any(),
-            any(),
-            putRequestOptions: any(named: 'putRequestOptions'),
-          ),
-        );
+    void verifyNoMutex() {
+      verifyNever(() => remote.executeVerb(any()));
+      verifyNever(
+        () => atClient.put(
+          any(),
+          any(),
+          putRequestOptions: any(named: 'putRequestOptions'),
+        ),
+      );
+    }
 
     Future<void> expectRefusedWithNack(AtNotification request) async {
       recordWhatTheIsolateIsSent();
@@ -343,13 +356,10 @@ void main() {
         requestPorts(control, multipleAcksOk: false),
       );
       await pumpEventQueue();
-      verify(
-        () => atClient.put(
-          any(),
-          any(),
-          putRequestOptions: any(named: 'putRequestOptions'),
-        ),
-      ).called(1);
+      final lock = verify(() => remote.executeVerb(captureAny()))
+          .captured
+          .single as UpdateVerbBuilder;
+      expect(lock.atKey.toString(), '$control.session_mutexes.sshrvd@relay');
     });
 
     test(
