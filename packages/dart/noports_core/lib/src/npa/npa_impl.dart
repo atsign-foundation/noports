@@ -110,7 +110,6 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
       logger.shout(
         'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
       );
-    
     }
 
     _startPolicyInfoRpcServer();

@@ -17,7 +17,7 @@ class EventLoggingConfigException implements Exception {
   @override
   String toString() => notShared
       ? '$eventLoggingAtsign has not yet shared its event logging config'
-          ' with this policy Atsign'
+            ' with this policy Atsign'
       : 'Could not fetch the event logging config from $eventLoggingAtsign:'
-          ' ${cause is AtException ? (cause as AtException).message : cause}';
+            ' ${cause is AtException ? (cause as AtException).message : cause}';
 }

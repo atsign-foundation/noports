@@ -11,10 +11,10 @@ import '../sshnp/sshnp_mocks.dart';
 void main() {
   late MockAtClient atClient;
 
-setUpAll(() {
-  registerFallbackValue(AtKey());
-  registerFallbackValue(GetRequestOptions());
-});
+  setUpAll(() {
+    registerFallbackValue(AtKey());
+    registerFallbackValue(GetRequestOptions());
+  });
 
   setUp(() {
     atClient = MockAtClient();
@@ -49,25 +49,46 @@ setUpAll(() {
     });
   });
 
-  
   group('NppService.start() event logging config fetch', () {
-    void getThrows(Object e) => when(() => atClient.get(any(),
-        getRequestOptions: any(named: 'getRequestOptions'))).thenThrow(e);
+    void getThrows(Object e) => when(
+      () => atClient.get(
+        any(),
+        getRequestOptions: any(named: 'getRequestOptions'),
+      ),
+    ).thenThrow(e);
 
     test('not shared → notShared is true', () async {
       getThrows(AtKeyNotFoundException('key not found'));
       final s = service(eventLoggingAtSign: '@logs')..init();
-      await expectLater(s.start(), throwsA(isA<EventLoggingConfigException>()
-          .having((e) => e.notShared, 'notShared', isTrue)
-          .having((e) => e.toString(), 'message', contains('has not yet shared'))));
+      await expectLater(
+        s.start(),
+        throwsA(
+          isA<EventLoggingConfigException>()
+              .having((e) => e.notShared, 'notShared', isTrue)
+              .having(
+                (e) => e.toString(),
+                'message',
+                contains('has not yet shared'),
+              ),
+        ),
+      );
     });
 
     test('any other failure → notShared is false', () async {
       getThrows(AtClientException.message('connection refused'));
       final s = service(eventLoggingAtSign: '@logs')..init();
-      await expectLater(s.start(), throwsA(isA<EventLoggingConfigException>()
-          .having((e) => e.notShared, 'notShared', isFalse)
-          .having((e) => e.toString(), 'message', contains('Could not fetch'))));
+      await expectLater(
+        s.start(),
+        throwsA(
+          isA<EventLoggingConfigException>()
+              .having((e) => e.notShared, 'notShared', isFalse)
+              .having(
+                (e) => e.toString(),
+                'message',
+                contains('Could not fetch'),
+              ),
+        ),
+      );
     });
   });
 }
