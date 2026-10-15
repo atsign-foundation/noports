@@ -264,6 +264,7 @@ void main() {
 
       expect(await roundTrip(localPort, 'one atSign'), 'one atSign');
       await until(() => events.any((e) => e['state'] == 'connected'));
+      await until(() => events.any((e) => e['event'] == 'clientAdmitted'));
       expect(
         events.map((e) => e['state']),
         containsAll(['requested', 'connected']),
@@ -362,6 +363,7 @@ void main() {
 
       await expectLater(session.run(), throwsA(anything));
       await settles();
+      expect(events.map((e) => e['event']), contains('clientRejected'));
 
       expect(
         receivedKeys(),

@@ -218,7 +218,8 @@ class PolicyInfoRpcRequestHandler
     );
     AtRpcResp rpcResponse;
     Map<String, dynamic> event;
-    if (fromAtSign.toAtsign() != authCheckRequest.daemonAtsign.toAtsign()) {
+    final Atsign sender = fromAtSign.toAtsign();
+    if (sender != authCheckRequest.daemonAtsign.toAtsign()) {
       logger.warning(
         'Refusing a check from $fromAtSign'
         ' about ${authCheckRequest.daemonAtsign}',
@@ -235,6 +236,7 @@ class PolicyInfoRpcRequestHandler
       );
       event = PolicyEvent.clientRejected(
         policyAtsign: policyAtsign,
+        fromAtsign: sender,
         request: authCheckRequest,
         response: refusal,
       );
@@ -249,11 +251,13 @@ class PolicyInfoRpcRequestHandler
         event = authCheckResponse.authorized
             ? PolicyEvent.clientAdmitted(
                 policyAtsign: policyAtsign,
+                fromAtsign: sender,
                 request: authCheckRequest,
                 response: authCheckResponse,
               )
             : PolicyEvent.clientRejected(
                 policyAtsign: policyAtsign,
+                fromAtsign: sender,
                 request: authCheckRequest,
                 response: authCheckResponse,
               );
@@ -270,6 +274,7 @@ class PolicyInfoRpcRequestHandler
         );
         event = PolicyEvent.policyCheckFailed(
           policyAtsign: policyAtsign,
+          fromAtsign: sender,
           request: authCheckRequest,
           error: '$e',
         );

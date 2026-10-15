@@ -1,5 +1,4 @@
 import 'package:at_client/at_client.dart';
-import 'package:at_commons/atsign.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
@@ -98,6 +97,7 @@ void main() {
       final e = events.single;
       expect(e['event'], PolicyEventType.clientAdmitted.name);
       expect(e['policyAtsign'], '@policy');
+      expect(e['fromAtsign'], daemon);
       expect(e['clientAtsign'], '@client');
       expect(e['daemonAtsign'], daemon);
       expect(e['daemonDeviceName'], 'dev1');
@@ -121,6 +121,7 @@ void main() {
       expect(events, hasLength(1));
       expect(events.single['event'], PolicyEventType.clientRejected.name);
       expect(events.single['message'], 'no rule for @client');
+      expect(events.single['fromAtsign'], daemon);
     });
 
     test(
@@ -134,6 +135,7 @@ void main() {
         expect(events, hasLength(1));
         expect(events.single['event'], PolicyEventType.clientRejected.name);
         expect(events.single['message'], 'A daemon may ask only about itself');
+        expect(events.single['fromAtsign'], '@other');
       },
     );
 
@@ -146,6 +148,7 @@ void main() {
       expect(answerIn(resp).authorized, isFalse);
       expect(events, hasLength(1));
       expect(events.single['event'], PolicyEventType.policyCheckFailed.name);
+      expect(events.single['fromAtsign'], daemon);
       expect(events.single['error'], contains('boom'));
     });
 

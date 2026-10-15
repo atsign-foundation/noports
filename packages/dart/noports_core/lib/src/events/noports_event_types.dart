@@ -142,12 +142,14 @@ enum PolicyEventType {
 abstract class PolicyEvent {
   static Map<String, dynamic> clientAdmitted({
     required Atsign policyAtsign,
+    required Atsign fromAtsign,
     required NPAAuthCheckRequest request,
     required NPAAuthCheckResponse response,
   }) => {
     ..._policyCheckFields(
       PolicyEventType.clientAdmitted,
       policyAtsign,
+      fromAtsign,
       request,
     ),
     "message": response.message,
@@ -156,12 +158,14 @@ abstract class PolicyEvent {
 
   static Map<String, dynamic> clientRejected({
     required Atsign policyAtsign,
+    required Atsign fromAtsign,
     required NPAAuthCheckRequest request,
     required NPAAuthCheckResponse response,
   }) => {
     ..._policyCheckFields(
       PolicyEventType.clientRejected,
       policyAtsign,
+      fromAtsign,
       request,
     ),
     "message": response.message,
@@ -169,12 +173,14 @@ abstract class PolicyEvent {
 
   static Map<String, dynamic> policyCheckFailed({
     required Atsign policyAtsign,
+    required Atsign fromAtsign,
     required NPAAuthCheckRequest request,
     required String error,
   }) => {
     ..._policyCheckFields(
       PolicyEventType.policyCheckFailed,
       policyAtsign,
+      fromAtsign,
       request,
     ),
     "error": error,
@@ -184,11 +190,13 @@ abstract class PolicyEvent {
   static Map<String, dynamic> _policyCheckFields(
     PolicyEventType event,
     Atsign policyAtsign,
+    Atsign fromAtsign,
     NPAAuthCheckRequest request,
   ) => {
     "event": event.name,
     "timestamp": DateTime.now().toUtc().toIso8601String(),
     "policyAtsign": policyAtsign,
+    "fromAtsign": fromAtsign,
     "clientAtsign": request.clientAtsign,
     "daemonAtsign": request.daemonAtsign,
     "daemonDeviceName": request.daemonDeviceName,
