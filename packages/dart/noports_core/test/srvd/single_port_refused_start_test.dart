@@ -258,16 +258,7 @@ void main() {
     bool startSent(String sessionId) => sentToIsolate.any(
         (m) => m.type == 'start' && m.payload.sessionId == sessionId);
 
-    void verifyNoMutex() {
-      verifyNever(() => remote.executeVerb(any()));
-      verifyNever(
-        () => atClient.put(
-          any(),
-          any(),
-          putRequestOptions: any(named: 'putRequestOptions'),
-        ),
-      );
-    }
+    void verifyNoMutex() => verifyNever(() => remote.executeVerb(any()));
 
     Future<void> expectRefusedWithNack(AtNotification request) async {
       recordWhatTheIsolateIsSent();

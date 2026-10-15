@@ -45,13 +45,6 @@ void main() {
       when(() => mockAtClient.getRemoteSecondary()).thenReturn(remote);
       when(() => remote.executeVerb(any())).thenAnswer((_) async => '-1');
 
-      when(
-        () => mockAtClient.put(
-          any(),
-          any(),
-          putRequestOptions: any(named: 'putRequestOptions'),
-        ),
-      ).thenAnswer((_) => Future.value(true));
       Completer<NotificationParams> notificationReceived =
           Completer<NotificationParams>();
       when(
