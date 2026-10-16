@@ -172,8 +172,8 @@ void main_loop() {
       bool has_key = atclient_atnotification_is_key_initialized(message.notification);
       bool has_id = atclient_atnotification_is_id_initialized(message.notification) && message.notification->id != NULL;
       if (is_init) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification value received: %s\n",
-                     message.notification->decrypted_value);
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification received: %s\n",
+                     has_key && message.notification->key != NULL ? message.notification->key : "(no key)");
         if (!has_key || !has_id || strcmp(message.notification->id, "-1") == 0) {
           break;
         }
