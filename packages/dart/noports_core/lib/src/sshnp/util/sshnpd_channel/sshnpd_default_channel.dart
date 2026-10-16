@@ -49,7 +49,8 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
         assertValidMapValue(daemonResponse, 'sessionId', String);
       } catch (e) {
         logger.shout(
-          'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+          'Failed to read the response from ${params.sshnpdAtSign}:'
+          ' ${e.runtimeType}',
         );
         return SshnpdAck.acknowledgedWithErrors;
       }
@@ -66,14 +67,12 @@ mixin SshnpdDefaultPayloadHandler on SshnpdChannel {
           'Failed to verify signature of msg from ${params.sshnpdAtSign}',
         );
         logger.shout('Exception: $e');
-        logger.shout('Notification value: ${notification.value}');
         return SshnpdAck.acknowledgedWithErrors;
       }
 
       logger.info('Verified signature of msg from ${params.sshnpdAtSign}');
 
       ephemeralPrivateKey = daemonResponse['ephemeralPrivateKey'];
-      logger.info('Received ephemeralPrivateKey: $ephemeralPrivateKey');
 
       String? aesKeyC2DEncrypted =
           daemonResponse['sessionAESKey'] ?? daemonResponse['aesKeyC2D'];
