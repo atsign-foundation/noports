@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:npt_flutter/app.dart';
@@ -11,6 +12,17 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
 
 const apiBase = '/api/app/v3';
+
+/// Whether [ActivateUtil] skips verifying the registrar's TLS certificate, for
+/// local testing against a registrar whose certificate the device doesn't
+/// trust.
+///
+/// Set with `--dart-define=NPT_DISABLE_REGISTRAR_TLS_VERIFICATION=true`. It
+/// takes effect only where [kDebugMode] is true, so release builds always
+/// verify.
+const disableRegistrarTlsVerification =
+    kDebugMode &&
+    bool.fromEnvironment('NPT_DISABLE_REGISTRAR_TLS_VERIFICATION');
 
 enum NoPortsActivateApiEndpoints {
   login('$apiBase/authenticate/atsign'),
@@ -26,10 +38,11 @@ class ActivateUtil {
   late final IOClient _http;
 
   ActivateUtil({required this.registrarUrl, required this.apiKey}) {
-    var innerClient = HttpClient();
-    innerClient.badCertificateCallback =
-        (X509Certificate cert, String host, int port) => true;
-    _http = IOClient(innerClient);
+    _http = IOClient(
+      disableRegistrarTlsVerification
+          ? (HttpClient()..badCertificateCallback = (cert, host, port) => true)
+          : null,
+    );
   }
 
   Future<Response> registrarApiRequest(
