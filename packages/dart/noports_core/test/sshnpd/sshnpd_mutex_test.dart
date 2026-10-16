@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
@@ -9,25 +11,33 @@ import 'package:uuid/uuid.dart';
 // Mock classes
 class MockAtClient extends Mock implements AtClient {}
 
+class MockRemoteSecondary extends Mock implements RemoteSecondary {}
+
 class MockAtNotification extends Mock implements AtNotification {}
 
 class FakeAtKey extends Fake implements AtKey {}
 
 class FakePutRequestOptions extends Fake implements PutRequestOptions {}
 
+class FakeVerbBuilder extends Fake implements VerbBuilder {}
+
 void main() {
   group('SshnpdImpl Session Mutex Tests', () {
     late MockAtClient mockAtClient;
+    late MockRemoteSecondary remote;
     late SshnpdImpl sshnpd;
 
     setUpAll(() {
       // Register fallback values for mocktail
       registerFallbackValue(FakeAtKey());
       registerFallbackValue(FakePutRequestOptions());
+      registerFallbackValue(FakeVerbBuilder());
     });
 
     setUp(() {
       mockAtClient = MockAtClient();
+      remote = MockRemoteSecondary();
+      when(() => mockAtClient.getRemoteSecondary()).thenReturn(remote);
       // The constructor composes the daemon's device info, which names the
       // `_apsk` record of the atSign the client runs as.
       when(() => mockAtClient.getCurrentAtSign()).thenReturn('@device');
@@ -144,96 +154,82 @@ void main() {
       },
     );
 
-    test(
-      'tryAcquireSessionMutex should return true when mutex is acquired successfully',
-      () async {
-        // Arrange
-        final mockNotification = MockAtNotification();
-        final sessionId = 'test-session-789';
-        final payload = {
-          'sessionId': sessionId,
-          'host': 'example.com',
-          'port': 22,
-          'direct': true,
-        };
-        final envelope = {
-          'payload': payload,
-          'signature': 'test-signature',
-          'hashingAlgo': 'sha256',
-          'signingAlgo': 'rsa2048',
-        };
+    MockAtNotification nptRequest(String sessionId) {
+      final n = MockAtNotification();
+      when(() => n.value).thenReturn(jsonEncode({
+        'payload': {'sessionId': sessionId, 'direct': true},
+        'signature': 'test-signature',
+        'hashingAlgo': 'sha256',
+        'signingAlgo': 'rsa2048',
+      }));
+      when(() => n.from).thenReturn('@client');
+      return n;
+    }
 
-        when(() => mockNotification.value).thenReturn(jsonEncode(envelope));
-        when(() => mockNotification.from).thenReturn('@client');
+    group('Given no lock for the session', () {
+      test(
+          'when sshnpd receives an npt_request, then it takes the lock on the'
+          ' atServer as an immutable record with a 30 s ttl and no commit,'
+          ' and handles the request', () async {
+        final sessionId = Uuid().v4();
+        when(() => remote.executeVerb(any())).thenAnswer((_) async => '-1');
 
-        // Mock successful mutex acquisition
-        when(
-          () => mockAtClient.put(
-            any(),
-            'lock',
-            putRequestOptions: any(named: 'putRequestOptions'),
-          ),
-        ).thenAnswer((_) async => true);
-
-        // Act
-        final result = await sshnpd.tryAcquireSessionMutex(
-          mockNotification,
-          'ssh_request',
+        expect(
+          await sshnpd.tryAcquireSessionMutex(
+              nptRequest(sessionId), 'npt_request'),
+          isTrue,
         );
+        final lock = verify(() => remote.executeVerb(captureAny()))
+            .captured
+            .single as UpdateVerbBuilder;
+        expect(lock.atKey.toString(),
+            '$sessionId.session_mutexes.sshnp@testdevice');
+        expect(lock.atKey.metadata.immutable, isTrue);
+        expect(lock.atKey.metadata.ttl, 30000);
+        expect(lock.noCommit, isTrue);
+        verifyNever(() => mockAtClient.put(any(), any(),
+            putRequestOptions: any(named: 'putRequestOptions')));
+      });
+    });
 
-        // Assert
-        expect(result, isTrue);
-        verify(
-          () => mockAtClient.put(
-            any(),
-            'lock',
-            putRequestOptions: any(named: 'putRequestOptions'),
-          ),
-        ).called(1);
-      },
-    );
+    group('Given another sshnpd instance holds the session lock', () {
+      test('when sshnpd receives the request, then it does not handle it',
+          () async {
+        when(() => remote.executeVerb(any()))
+            .thenThrow(AtException('Immutable records may not be updated'));
 
-    test(
-      'tryAcquireSessionMutex should return false when mutex acquisition fails due to immutable key',
-      () async {
-        // Arrange
-        final mockNotification = MockAtNotification();
-        final sessionId = 'test-session-conflict';
-        final payload = {
-          'sessionId': sessionId,
-          'host': 'example.com',
-          'port': 22,
-          'direct': true,
-        };
-        final envelope = {
-          'payload': payload,
-          'signature': 'test-signature',
-          'hashingAlgo': 'sha256',
-          'signingAlgo': 'rsa2048',
-        };
-
-        when(() => mockNotification.value).thenReturn(jsonEncode(envelope));
-        when(() => mockNotification.from).thenReturn('@client');
-
-        // Mock failed mutex acquisition (immutable key already exists)
-        when(
-          () => mockAtClient.put(
-            any(),
-            'lock',
-            putRequestOptions: any(named: 'putRequestOptions'),
-          ),
-        ).thenThrow(Exception('Cannot update immutable key'));
-
-        // Act
-        final result = await sshnpd.tryAcquireSessionMutex(
-          mockNotification,
-          'ssh_request',
+        expect(
+          await sshnpd.tryAcquireSessionMutex(
+              nptRequest(Uuid().v4()), 'npt_request'),
+          isFalse,
         );
+      });
+    });
 
-        // Assert
-        expect(result, isFalse);
-      },
-    );
+    group('Given the session lock fails for another reason', () {
+      test(
+          'when sshnpd receives the request, then it handles it anyway and'
+          ' logs the failure at warning', () async {
+        when(() => remote.executeVerb(any()))
+            .thenThrow(AtTimeoutException('no answer from the atServer'));
+        sshnpd.logger.logger.level = Level.ALL;
+        final records = <LogRecord>[];
+        final sub = sshnpd.logger.logger.onRecord.listen(records.add);
+        addTearDown(sub.cancel);
+
+        expect(
+          await sshnpd.tryAcquireSessionMutex(
+              nptRequest(Uuid().v4()), 'npt_request'),
+          isTrue,
+        );
+        expect(
+          records.where((r) =>
+              r.level == Level.WARNING &&
+              r.message.contains('without a session mutex')),
+          hasLength(1),
+        );
+      });
+    });
 
     test(
       'tryAcquireSessionMutex should return true when session ID extraction fails',
@@ -278,12 +274,12 @@ void main() {
         'signingAlgo': 'rsa2048',
       });
 
-      late int puts;
+      late int locks;
 
-      Future<int> mutexPuts(AtNotification n) async {
-        puts = 0;
+      Future<int> mutexLocks(AtNotification n) async {
+        locks = 0;
         await sshnpd.clientRequestNotificationHandler(n);
-        return puts;
+        return locks;
       }
 
       const invalidSessionIds = [
@@ -296,15 +292,9 @@ void main() {
       setUp(() {
         // NOTE: a granted mutex would dispatch the request and start a
         // session, so every request that reaches it is refused there.
-        when(
-          () => mockAtClient.put(
-            any(),
-            'lock',
-            putRequestOptions: any(named: 'putRequestOptions'),
-          ),
-        ).thenAnswer((_) async {
-          puts++;
-          throw Exception('Cannot update immutable key');
+        when(() => remote.executeVerb(any())).thenAnswer((_) async {
+          locks++;
+          throw AtException('Immutable records may not be updated');
         });
       });
 
@@ -314,7 +304,7 @@ void main() {
             messageType,
             envelope({'sessionId': Uuid().v4(), 'direct': true}),
           );
-          expect(await mutexPuts(n), 1);
+          expect(await mutexLocks(n), 1);
         });
 
         test('$messageType with a sessionId which is not a UUID is refused'
@@ -324,7 +314,7 @@ void main() {
               messageType,
               envelope({'sessionId': sessionId, 'direct': true}),
             );
-            expect(await mutexPuts(n), 0, reason: 'sessionId "$sessionId"');
+            expect(await mutexLocks(n), 0, reason: 'sessionId "$sessionId"');
           }
         });
 
@@ -364,18 +354,18 @@ void main() {
           'sshd',
           '8080 22 testuser example.com ${Uuid().v4()}',
         );
-        expect(await mutexPuts(n), 1);
+        expect(await mutexLocks(n), 1);
       });
 
       test('legacy sshd without a sessionId reaches the mutex', () async {
         final n = request('sshd', '8080 22 testuser example.com');
-        expect(await mutexPuts(n), 1);
+        expect(await mutexLocks(n), 1);
       });
 
       test('legacy sshd with a sessionId which is not a UUID is refused'
           ' before the mutex', () async {
         final n = request('sshd', '8080 22 testuser example.com ssh');
-        expect(await mutexPuts(n), 0);
+        expect(await mutexLocks(n), 0);
       });
     });
   });
