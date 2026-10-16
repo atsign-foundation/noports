@@ -1,0 +1,183 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:isolate';
+
+import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:logging/logging.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
+import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
+import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
+import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
+import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
+import 'package:noports_core/src/srvd/isolates/types.dart';
+import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:noports_core/srvd.dart';
+import 'package:noports_core/sshnp_foundation.dart';
+import 'package:test/test.dart';
+import 'package:uuid/uuid.dart';
+
+import 'log_capture.dart';
+import 'noports_harness.dart';
+
+const _alice = NoPortsHarness.clientAtSign;
+const _bob = NoPortsHarness.daemonAtSign;
+
+/// A relay worker made by [create], logging at every level to the records it
+/// returns, with the main isolate's end of its ports; closed after the test.
+({W worker, StreamIterator<dynamic> fromWorker, List<LogRecord> records})
+_worker<W extends RelayWorker>(W Function(SendPort toMain) create) {
+  final handler = AtSignLogger.defaultLoggingHandler;
+  final rootLevel = AtSignLogger.root_level;
+  final toMain = ReceivePort();
+  final worker = create(toMain.sendPort);
+  AtSignLogger.defaultLoggingHandler = handler;
+  AtSignLogger.root_level = rootLevel;
+  addTearDown(() {
+    worker.fromMain.close();
+    toMain.close();
+  });
+  final records = <LogRecord>[];
+  worker.logger.logger.onRecord.listen(records.add);
+  worker.logger.level = 'all';
+  return (worker: worker, fromWorker: StreamIterator(toMain), records: records);
+}
+
+/// What a port-pair worker logs when srvd's main isolate has it start the
+/// session [params] describes.
+Future<List<LogRecord>> _portPairWorkerStarting(
+  SrvdSessionParams params,
+) async {
+  final (:worker, :fromWorker, :records) = _worker(
+    (toMain) => PortPairWorker(
+      toMain: toMain,
+      logTraffic: false,
+      verbose: true,
+      loggingTag: 'request logs',
+      relayAuthDetectWindowMs: 500,
+    ),
+  );
+  addTearDown(() => worker.connector?.close());
+  expect(await fromWorker.moveNext(), isTrue);
+  (fromWorker.current as SendPort).send(IIRequest.create('start', params));
+  expect(await fromWorker.moveNext(), isTrue);
+  expect(
+    fromWorker.current,
+    isA<(int, int)>(),
+    reason: 'the worker starts the session and reports its ports',
+  );
+  return records;
+}
+
+/// What the single-port worker logs when srvd's main isolate has it start
+/// the session [params] describes.
+Future<List<LogRecord>> _singlePortWorkerStarting(
+  SrvdSessionParams params,
+) async {
+  final (:worker, :fromWorker, :records) = _worker(
+    (toMain) => SinglePortWorker(
+      toMain: toMain,
+      logTraffic: false,
+      verbose: true,
+      loggingTag: 'request logs',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+    ),
+  );
+  addTearDown(() => worker.sessions[params.sessionId]?.connector?.close());
+  expect(await fromWorker.moveNext(), isTrue);
+  (fromWorker.current as SendPort).send(IIRequest.create('start', params));
+  final deadline = DateTime.now().add(const Duration(seconds: 10));
+  while (!records.any((r) => r.message.contains(params.sessionId))) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('The single-port worker did not start ${params.sessionId}');
+    }
+    await Future.delayed(const Duration(milliseconds: 20));
+  }
+  return records;
+}
+
+void main() {
+  final capture = LogCapture.install();
+
+  group('Given srvd logging at every level', () {
+    test('when it receives a session request carrying a relay-auth key, then'
+        ' the log names the session and its atSigns, and no log line contains'
+        ' the key', () async {
+      final harness = NoPortsHarness.create();
+      final relay = await harness.startRelay();
+      relay.logger.level = 'all';
+      final alice = await harness.openClient(
+        _alice,
+        namespace: DefaultArgs.namespace,
+      );
+      final sessionId = Uuid().v4();
+      final key = generateAes256Key();
+      final response = alice.notificationService
+          .subscribe(
+            regex: '$sessionId.${Srvd.namespace}@',
+            shouldDecrypt: true,
+          )
+          .where((n) => n.from == NoPortsHarness.relayAtSign)
+          .first
+          .timeout(const Duration(seconds: 10));
+
+      await alice.notificationService.notify(
+        NotificationParams.forUpdate(
+          AtKey()
+            ..key = '${NoPortsHarness.device}.request_ports.${Srvd.namespace}'
+            ..sharedBy = _alice
+            ..sharedWith = NoPortsHarness.relayAtSign
+            ..metadata = (Metadata()
+              ..namespaceAware = false
+              ..ttl = 10000),
+          value: jsonEncode(
+            RelayRequest(
+              sessionId: sessionId,
+              atSignA: _alice,
+              atSignB: _bob,
+              authenticateSocketA: true,
+              authenticateSocketB: true,
+              clientNonce: 'client-nonce',
+              relayAuthMode: RelayAuthMode.escr,
+              relayAuthAesKey: key,
+              only443: false,
+              multipleAcksOk: true,
+              preFetch: [],
+              sendJsonResponse: true,
+            ).toJson(),
+          ),
+        ),
+        checkForFinalDeliveryStatus: false,
+        waitForFinalDeliveryStatus: false,
+      );
+      await response;
+      final params = relay.sessions[sessionId]!.params;
+      expect(params.relayAuthAesKey, key);
+
+      final logs = {
+        'srvd': capture.from(' srvd main '),
+        'its port-pair worker': await _portPairWorkerStarting(params),
+        'its single-port worker': await _singlePortWorkerStarting(params),
+      };
+
+      expect(
+        {
+          for (final MapEntry(key: from, value: records) in logs.entries)
+            from: recordsHoldingKey(records, key),
+        }..removeWhere((_, holding) => holding.isEmpty),
+        isEmpty,
+        reason: 'no line srvd or its workers log holds the relay-auth key',
+      );
+      for (final MapEntry(key: from, value: records) in logs.entries) {
+        expect(
+          records.map((r) => r.message),
+          contains(
+            allOf(contains(sessionId), contains(_alice), contains(_bob)),
+          ),
+          reason: 'the log from $from names the session and its atSigns',
+        );
+      }
+    });
+  });
+}

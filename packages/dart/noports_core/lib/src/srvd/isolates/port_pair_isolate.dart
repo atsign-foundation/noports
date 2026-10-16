@@ -96,7 +96,10 @@ class PortPairWorker extends RelayWorker {
 
   Future<void> startSession(IIRequest req) async {
     srvdSessionParams = req.payload;
-    logger.info('Starting socket connector session for $srvdSessionParams');
+    logger.info(
+      'Starting socket connector session ${srvdSessionParams.sessionId}'
+      ' for ${srvdSessionParams.atSignA} to ${srvdSessionParams.atSignB}',
+    );
 
     final (authVerifierA, authVerifierB) = await createAuthVerifiers(
       srvdSessionParams,

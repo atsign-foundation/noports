@@ -93,7 +93,6 @@ mixin SrvdUtilMixin {
   /// payload-mode session needs.
   SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
     dynamic json = jsonDecode(encodedJson);
-    logger.info('Received session request JSON: $json');
 
     assertValidMapValue(json, 'sessionId', String);
     assertValidMapValue(json, 'atSignA', String);

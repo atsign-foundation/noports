@@ -299,10 +299,7 @@ class SrvdImpl
         return;
       }
 
-      logger.info(
-        '$messageType received from ${n.from}:'
-        ' ${n.value}',
-      );
+      logger.info('$messageType received from ${n.from}');
       switch (messageType) {
         case 'request_ports':
           return await handleRequestPorts(n);
@@ -482,7 +479,10 @@ class SrvdImpl
     AtNotification n,
     SrvdSessionParams sessionParams,
   ) async {
-    logger.info('New session request params: $sessionParams');
+    logger.info(
+      'New session request ${sessionParams.sessionId}'
+      ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}',
+    );
 
     PortPair ports;
     // ignore: unused_local_variable
