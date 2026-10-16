@@ -88,17 +88,126 @@ static int check_with_policy_service(void *ctx, const char *client_atsign, sshnp
   return policy_auth_check(&worker, &monitor_ctx, &params, client_atsign, decision);
 }
 
+bool sshnpd_handle_notification(atclient_monitor_message *message, policy_cache *decisions,
+                                policy_throttle *checked_senders, sshnpd_policy_decision *policy_decision) {
+  bool is_init = atclient_atnotification_is_decrypted_value_initialized(message->notification);
+  bool has_key = atclient_atnotification_is_key_initialized(message->notification);
+  bool has_id = atclient_atnotification_is_id_initialized(message->notification) && message->notification->id != NULL;
+  if (is_init) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification received: %s\n",
+                 has_key && message->notification->key != NULL ? message->notification->key : "(no key)");
+    if (!has_key || !has_id || strcmp(message->notification->id, "-1") == 0) {
+      return false;
+    }
+
+    // Policy service traffic (config pushes replying to our heartbeats,
+    // rpc responses that missed their wait window) is not a session
+    // request - drop it before the auth gate, or the daemon would run an
+    // auth check asking the policy service about the policy service
+    if (params.policy != NULL && policy_is_policy_service_message(message->notification, &params)) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring policy service message: %s\n",
+                   message->notification->key);
+      return false;
+    }
+
+    enum notification_key notification_key = sshnpd_notification_kind(
+        message->notification->key,
+        atclient_atnotification_is_to_initialized(message->notification) ? message->notification->to : NULL,
+        params.device, message->notification->from);
+
+    // Managers are approved without a policy check; everyone else is
+    // referred to the policy service when one is configured
+    bool policy_checked = false;
+    if (!is_manager_atsign(&params, message->notification->from)) {
+      if (params.policy != NULL && message->notification->from != NULL) {
+        const char *from = message->notification->from;
+        policy_gate_result gate = policy_gate(decisions, checked_senders, from, notification_key, policy_now_millis,
+                                              check_with_policy_service, NULL, policy_decision);
+        if (gate == POLICY_GATE_DROP) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                       "Dropping a request from %s, whose last policy check for it was under %d ms ago\n", from,
+                       POLICY_THROTTLE_MS);
+          return false;
+        }
+        if (gate == POLICY_GATE_DENY) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                       "Rejecting request from atSign not authorized by the policy service: %s\n", from);
+          return false;
+        }
+        policy_checked = true;
+      } else {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Rejecting request from unauthorized atSign: %s\n",
+                     message->notification->from == NULL ? "(none)" : message->notification->from);
+        return false;
+      }
+    }
+
+    if (notification_key == NK_NONE) {
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping message: %s names no request handled here\n",
+                   message->notification->key);
+      return false;
+    }
+
+    if (!should_run) {
+      return false;
+    }
+
+    switch (notification_key) {
+    case NK_SSHPUBLICKEY:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
+      handle_sshpublickey(&params, message, authkeys_file, authkeys_filename);
+      break;
+    case NK_PING:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
+      handle_ping(&params, message, ping_response, &worker);
+      break;
+    case NK_SSH_REQUEST:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
+      // permit-open checks (daemon list and policy list) happen inside
+      // the handler, which can tell the client why a request was denied
+      handle_ssh_request(&worker, &params, &is_child_process, message, signingkey,
+                         policy_checked ? policy_decision : NULL);
+      if (is_child_process) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
+        return true;
+      }
+      break;
+    case NK_NPT_REQUEST:
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
+      // No permitopen here... since we need to parse the json first in order to check, it happens inside
+      // handle_npt_request
+      handle_npt_request(&worker, &params, &is_child_process, message, signingkey,
+                         policy_checked ? policy_decision : NULL);
+      if (is_child_process) {
+        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
+        return true;
+      }
+      break;
+    case NK_GRACEFUL_SHUTDOWN:
+#ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
+#warning BINARY COMPILED WITH SHUTDOWN NOTIFICATION ENABLED NOT FOR PRODUCTION USE
+      atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "TRIGGERING GRACEFUL SHUTDOWN\n");
+      should_run = 0;
+#endif
+      break;
+    case NK_NONE:
+      break;
+    }
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping notification (no decryptedvalue): %s\n",
+                 message->notification->id);
+  }
+  return false;
+}
+
 void main_loop() {
   atlogger_log("E2E TESTS", ATLOGGER_LOGGING_LEVEL_INFO, "Monitor .*monitor started\n");
 
   atclient_monitor_message message;
 
-  // The policy service's decision for the request currently being handled;
-  // policy_checked is true only when the decision came from the policy
-  // service (manager atsigns bypass it)
+  // The policy service's decision for the request currently being handled
   sshnpd_policy_decision policy_decision;
   memset(&policy_decision, 0, sizeof(policy_decision));
-  bool policy_checked = false;
 
   policy_cache decisions;
   if (policy_cache_init(&decisions, params.policy_cache_size) != 0) {
@@ -167,122 +276,14 @@ void main_loop() {
                        ? message.notification->from
                        : "(unknown)");
       break;
-    case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION: {
-      bool is_init = atclient_atnotification_is_decrypted_value_initialized(message.notification);
-      bool has_key = atclient_atnotification_is_key_initialized(message.notification);
-      bool has_id = atclient_atnotification_is_id_initialized(message.notification) && message.notification->id != NULL;
-      if (is_init) {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Notification received: %s\n",
-                     has_key && message.notification->key != NULL ? message.notification->key : "(no key)");
-        if (!has_key || !has_id || strcmp(message.notification->id, "-1") == 0) {
-          break;
-        }
-
-        // Policy service traffic (config pushes replying to our heartbeats,
-        // rpc responses that missed their wait window) is not a session
-        // request - drop it before the auth gate, or the daemon would run an
-        // auth check asking the policy service about the policy service
-        if (params.policy != NULL && policy_is_policy_service_message(message.notification, &params)) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Ignoring policy service message: %s\n",
-                       message.notification->key);
-          break;
-        }
-
-        enum notification_key notification_key = sshnpd_notification_kind(
-            message.notification->key,
-            atclient_atnotification_is_to_initialized(message.notification) ? message.notification->to : NULL,
-            params.device, message.notification->from);
-
-        // Managers are approved without a policy check; everyone else is
-        // referred to the policy service when one is configured
-        policy_checked = false;
-        if (!is_manager_atsign(&params, message.notification->from)) {
-          if (params.policy != NULL && message.notification->from != NULL) {
-            const char *from = message.notification->from;
-            policy_gate_result gate = policy_gate(&decisions, &checked_senders, from, notification_key,
-                                                  policy_now_millis, check_with_policy_service, NULL, &policy_decision);
-            if (gate == POLICY_GATE_DROP) {
-              atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                           "Dropping a request from %s, whose last policy check for it was under %d ms ago\n", from,
-                           POLICY_THROTTLE_MS);
-              break;
-            }
-            if (gate == POLICY_GATE_DENY) {
-              atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
-                           "Rejecting request from atSign not authorized by the policy service: %s\n", from);
-              break;
-            }
-            policy_checked = true;
-          } else {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Rejecting request from unauthorized atSign: %s\n",
-                         message.notification->from == NULL ? "(none)" : message.notification->from);
-            break;
-          }
-        }
-
-        if (notification_key == NK_NONE) {
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping message: %s names no request handled here\n",
-                       message.notification->key);
-          break;
-        }
-
-        if (!should_run) {
-          break;
-        }
-
-        switch (notification_key) {
-        case NK_SSHPUBLICKEY:
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
-          handle_sshpublickey(&params, &message, authkeys_file, authkeys_filename);
-          break;
-        case NK_PING:
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");
-          handle_ping(&params, &message, ping_response, &worker);
-          break;
-        case NK_SSH_REQUEST:
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ssh_request\n");
-          // permit-open checks (daemon list and policy list) happen inside
-          // the handler, which can tell the client why a request was denied
-          handle_ssh_request(&worker, &params, &is_child_process, &message, signingkey,
-                             policy_checked ? &policy_decision : NULL);
-          if (is_child_process) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
-            atclient_monitor_message_free(&message);
-            policy_decision_free(&policy_decision);
-            policy_cache_free(&decisions);
-            return;
-          }
-          break;
-        case NK_NPT_REQUEST:
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_npt_request\n");
-          // No permitopen here... since we need to parse the json first in order to check, it happens inside
-          // handle_npt_request
-          handle_npt_request(&worker, &params, &is_child_process, &message, signingkey,
-                             policy_checked ? &policy_decision : NULL);
-          if (is_child_process) {
-            atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Exiting child process\n");
-            atclient_monitor_message_free(&message);
-            policy_decision_free(&policy_decision);
-            policy_cache_free(&decisions);
-            return;
-          }
-          break;
-        case NK_GRACEFUL_SHUTDOWN:
-#ifdef SSHNPD_ENABLE_TESTING_SHUTDOWN_NOTIFICATION
-#warning BINARY COMPILED WITH SHUTDOWN NOTIFICATION ENABLED NOT FOR PRODUCTION USE
-          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "TRIGGERING GRACEFUL SHUTDOWN\n");
-          should_run = 0;
-#endif
-          break;
-        case NK_NONE:
-          break;
-        }
-      } else {
-        atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Skipping notification (no decryptedvalue): %s\n",
-                     message.notification->id);
+    case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION:
+      if (sshnpd_handle_notification(&message, &decisions, &checked_senders, &policy_decision)) {
+        atclient_monitor_message_free(&message);
+        policy_decision_free(&policy_decision);
+        policy_cache_free(&decisions);
+        return;
       }
       break;
-    } // end of case ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION
     } // end of switch
     atclient_monitor_message_free(&message);
     policy_decision_free(&policy_decision); // safe when nothing was allocated
