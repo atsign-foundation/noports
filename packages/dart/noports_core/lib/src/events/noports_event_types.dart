@@ -1,5 +1,6 @@
 import 'package:at_commons/atsign.dart';
 import 'package:socket_connector/socket_connector.dart';
+import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 enum SessionState {
   requested, // daemon receives request from client
@@ -129,5 +130,76 @@ abstract class SessionEvent {
       },
       "stats": stats.toJson(),
     },
+  };
+}
+
+enum PolicyEventType {
+  clientAdmitted, // policy check authorised the client
+  clientRejected, // policy check refused the client
+  policyCheckFailed, // policy check threw; the client was refused
+}
+
+abstract class PolicyEvent {
+  static Map<String, dynamic> clientAdmitted({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.clientAdmitted,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
+    "permitOpen": response.permitOpen,
+  };
+
+  static Map<String, dynamic> clientRejected({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.clientRejected,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
+  };
+
+  static Map<String, dynamic> policyCheckFailed({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required String error,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.policyCheckFailed,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "error": error,
+  };
+
+  /// The fields every policy check event carries.
+  static Map<String, dynamic> _policyCheckFields(
+    PolicyEventType event,
+    Atsign policyAtsign,
+    Atsign fromAtsign,
+    NPAAuthCheckRequest request,
+  ) => {
+    "event": event.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "fromAtsign": fromAtsign,
+    "clientAtsign": request.clientAtsign,
+    "daemonAtsign": request.daemonAtsign,
+    "daemonDeviceName": request.daemonDeviceName,
+    "daemonDeviceGroupName": request.daemonDeviceGroupName,
   };
 }

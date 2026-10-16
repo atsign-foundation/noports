@@ -10,10 +10,13 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 
 final AtSignLogger _logger = AtSignLogger('NPAImpl');
 
-class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements NPA {
+class NPAImpl
+    with AtClientBindings, AtEventLogger, AtEventListener
+    implements NPA {
   @override
   final AtSignLogger logger = _logger;
 
@@ -151,6 +154,9 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
+        onEvent: (event) async {
+          if (elc != null) await logEvent(elc!, event);
+        },
       ),
       allowList: _DaemonsWithRules(handler),
       allowAll: false,
@@ -182,12 +188,27 @@ class PolicyInfoRpcRequestHandler
   final String namespace;
   final NPARequestHandler handler;
 
+  /// Receives each policy event; when null, no events are sent.
+  final Future<void> Function(Map<String, dynamic> event)? onEvent;
+
   PolicyInfoRpcRequestHandler({
     required this.policyAtsign,
     required this.namespace,
     required this.handler,
     required this.atClient,
+    this.onEvent,
   });
+
+  /// Hands [event] to [onEvent]. A failure is logged and swallowed: the event
+  /// log must never change the answer a daemon gets.
+  Future<void> _sendEvent(Map<String, dynamic> event) async {
+    if (onEvent == null) return;
+    try {
+      await onEvent!(event);
+    } catch (e) {
+      logger.warning('Failed to log policy event: $e');
+    }
+  }
 
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
@@ -200,19 +221,28 @@ class PolicyInfoRpcRequestHandler
       request.payload,
     );
     AtRpcResp rpcResponse;
-    if (fromAtSign.toAtsign() != authCheckRequest.daemonAtsign.toAtsign()) {
+    Map<String, dynamic> event;
+    final Atsign sender = fromAtSign.toAtsign();
+    if (sender != authCheckRequest.daemonAtsign.toAtsign()) {
       logger.warning(
         'Refusing a check from $fromAtSign'
         ' about ${authCheckRequest.daemonAtsign}',
       );
+      final refusal = NPAAuthCheckResponse(
+        authorized: false,
+        message: 'A daemon may ask only about itself',
+        permitOpen: [],
+      );
       rpcResponse = AtRpcResp(
         reqId: request.reqId,
         respType: AtRpcRespType.success,
-        payload: NPAAuthCheckResponse(
-          authorized: false,
-          message: 'A daemon may ask only about itself',
-          permitOpen: [],
-        ).toJson(),
+        payload: refusal.toJson(),
+      );
+      event = PolicyEvent.clientRejected(
+        policyAtsign: policyAtsign,
+        fromAtsign: sender,
+        request: authCheckRequest,
+        response: refusal,
       );
     } else {
       try {
@@ -222,6 +252,19 @@ class PolicyInfoRpcRequestHandler
           respType: AtRpcRespType.success,
           payload: authCheckResponse.toJson(),
         );
+        event = authCheckResponse.authorized
+            ? PolicyEvent.clientAdmitted(
+                policyAtsign: policyAtsign,
+                fromAtsign: sender,
+                request: authCheckRequest,
+                response: authCheckResponse,
+              )
+            : PolicyEvent.clientRejected(
+                policyAtsign: policyAtsign,
+                fromAtsign: sender,
+                request: authCheckRequest,
+                response: authCheckResponse,
+              );
       } catch (e, st) {
         logger.shout('Exception: $e : StackTrace : \n$st');
         rpcResponse = AtRpcResp(
@@ -233,8 +276,16 @@ class PolicyInfoRpcRequestHandler
             permitOpen: [],
           ).toJson(),
         );
+        event = PolicyEvent.policyCheckFailed(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          error: '$e',
+        );
       }
     }
+    await _sendEvent(event);
+
     // We will send a 'log' notification to ourselves
     var logKey = AtKey()
       ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
