@@ -55,6 +55,23 @@ void main() {
     expect(server.unhandled, isEmpty);
   });
 
+  test('an update with :nc stores the record and records no commit',
+      () async {
+    final server = FakeAtServer()..addAtSign('@alice');
+    final remote = (await open(server, '@alice')).getRemoteSecondary()!;
+
+    final withNc = await remote.executeCommand(
+        'update:nc:nocommit.test@alice value\n',
+        auth: true);
+    final control = await remote.executeCommand(
+        'update:committed.test@alice value\n',
+        auth: true);
+
+    expect(withNc, 'data:-1');
+    expect(control, matches(RegExp(r'^data:[0-9]+$')));
+    expect(server['@alice'].recordAt('nocommit.test@alice')?.value, 'value');
+  });
+
   test("enroll:update merges metadata into the caller's own enrollment only",
       () async {
     final server = FakeAtServer()..addAtSign('@alice');
