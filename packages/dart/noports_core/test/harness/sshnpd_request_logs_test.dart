@@ -311,7 +311,7 @@ void main() {
       expect(
         {
           for (final c in cases)
-            '${c.type} ${c.outcome}': recordsHoldingKey(c.records, c.key),
+            '${c.type} ${c.outcome}': recordsHoldingKey(capture.records, c.key),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
         reason: 'no record holds the relay-auth key of any request',

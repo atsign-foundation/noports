@@ -133,10 +133,10 @@ void main() {
 
       expect(
         {
-          for (final MapEntry(key: client, value: (:sshnp, :records))
+          for (final MapEntry(key: client, value: (:sshnp, records: _))
               in sent.entries)
             client: recordsHoldingKey(
-              records,
+              capture.records,
               sshnp.srvdChannel.relayAuthAesKey!,
             ),
         }..removeWhere((_, holding) => holding.isEmpty),
@@ -204,7 +204,6 @@ void main() {
         throwsA(isA<SshnpError>()),
         reason: 'the daemon refuses the sshnp session',
       );
-      final sshnpRecords = capture.records.toList();
       final npt = _npt(alice, 22);
       await expectLater(
         npt.run(),
@@ -218,11 +217,8 @@ void main() {
 
       expect(
         {
-          'sshnp': recordsHoldingKey(sshnpRecords, keys['sshnp']!),
-          'npt': recordsHoldingKey(
-            capture.records.skip(sshnpRecords.length),
-            keys['npt']!,
-          ),
+          for (final MapEntry(key: client, value: key) in keys.entries)
+            client: recordsHoldingKey(capture.records, key),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
         reason: 'no record holds the relay-auth key of either request',
