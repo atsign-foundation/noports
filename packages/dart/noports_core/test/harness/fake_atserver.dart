@@ -644,7 +644,7 @@ class FakeConnection {
     final metadata = _mergeMetadata(params, existing?.metadata);
     final record = FakeRecord(params['value']!, metadata);
     atSign._store(key, record);
-    final commitId = atSign._commit(key);
+    final commitId = params['noCommit'] != null ? -1 : atSign._commit(key);
     if (params['forAtSign'] case final forAtSign?
         when '@$forAtSign'.toAtsign() != atSign.atSign) {
       _send(
