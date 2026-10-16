@@ -1,15 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
+    show defaultRelayAuthDetectWindowMs;
+import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -98,8 +103,13 @@ Future<List<LogRecord>> _singlePortWorkerStarting(
 }
 
 /// A session request from the client atSign for [sessionId], carrying
-/// [relayAuthAesKey], as sshnp and npt send it.
-String _relayRequest(String sessionId, String relayAuthAesKey) => jsonEncode(
+/// [relayAuthAesKey], as sshnp and npt send it, or as older clients which
+/// can't take several acknowledgements do unless [multipleAcksOk].
+String _relayRequest(
+  String sessionId,
+  String relayAuthAesKey, {
+  bool multipleAcksOk = true,
+}) => jsonEncode(
   RelayRequest(
     sessionId: sessionId,
     atSignA: _alice,
@@ -110,7 +120,7 @@ String _relayRequest(String sessionId, String relayAuthAesKey) => jsonEncode(
     relayAuthMode: RelayAuthMode.escr,
     relayAuthAesKey: relayAuthAesKey,
     only443: false,
-    multipleAcksOk: true,
+    multipleAcksOk: multipleAcksOk,
     preFetch: [],
     sendJsonResponse: true,
   ).toJson(),
@@ -133,13 +143,44 @@ Future<void> _requestPorts(AtClient client, String value) =>
       waitForFinalDeliveryStatus: false,
     );
 
+class _MockAtClient extends Mock implements AtClient {}
+
+/// An srvd whose atClient fails, which allocates no real ports.
+class _FailingSrvd extends SrvdImpl {
+  _FailingSrvd(AtClient atClient)
+    : super(
+        atClient: atClient,
+        atSign: NoPortsHarness.relayAtSign.toAtsign(),
+        homeDirectory: Directory.current.path,
+        atKeysFilePath: Directory.current.path,
+        managerAtsign: 'open',
+        ipAddress: '127.0.0.1',
+        logTraffic: false,
+        verbose: false,
+        bind443: false,
+        localBindPort443: 443,
+        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration.zero,
+      );
+
+  @override
+  Future<(PortPair, Isolate, SendPort)> spawnNewPortPairIsolate(
+    SrvdSessionParams sessionParams,
+  ) async {
+    final port = ReceivePort();
+    addTearDown(port.close);
+    return ((1, 2), Isolate.current, port.sendPort);
+  }
+}
+
 void main() {
   final capture = LogCapture.install();
 
   group('Given srvd logging at every level,', () {
-    test('when it receives a session request carrying a relay-auth key, then'
-        ' the log names the session and its atSigns, and no log line contains'
-        ' the key.', () async {
+    test('when it receives a session request carrying a relay-auth key,'
+        ' whether it starts the session or its handling fails unexpectedly,'
+        ' then the log names the session and its atSigns, and no log line'
+        ' contains the key.', () async {
       final harness = NoPortsHarness.create();
       final relay = await harness.startRelay();
       relay.logger.level = 'all';
@@ -162,39 +203,70 @@ void main() {
       await response;
       final params = relay.sessions[sessionId]!.params;
       expect(params.relayAuthAesKey, key);
-
+      final starting = capture.records.toList();
       final portPairWorker = await _portPairWorkerStarting(params);
       final singlePortWorker = await _singlePortWorkerStarting(params);
-      final logs = {
-        'srvd': capture.records.toList(),
-        'its port-pair worker': portPairWorker,
-        'its single-port worker': singlePortWorker,
-      };
+
+      final failingSessionId = Uuid().v4();
+      final failingKey = generateAes256Key();
+      final failingFrom = capture.records.length;
+      final atClient = _MockAtClient();
+      when(
+        () => atClient.getCurrentAtSign(),
+      ).thenThrow(StateError('the atClient has no atSign'));
+      await (_FailingSrvd(atClient)..logger.level = 'all').notificationHandler(
+        AtNotification(
+          Uuid().v4(),
+          '${NoPortsHarness.relayAtSign}:${NoPortsHarness.device}'
+              '.request_ports.${Srvd.namespace}$_alice',
+          _alice,
+          NoPortsHarness.relayAtSign,
+          DateTime.now().millisecondsSinceEpoch,
+          'key',
+          true,
+          value: _relayRequest(
+            failingSessionId,
+            failingKey,
+            multipleAcksOk: false,
+          ),
+        ),
+      );
+      final allRecords = [
+        ...capture.records,
+        ...portPairWorker,
+        ...singlePortWorker,
+      ];
 
       expect(
         {
-          for (final MapEntry(key: from, value: records) in logs.entries)
-            from: recordsHoldingKey(records, key),
+          'starting the session': recordsHoldingKey(allRecords, key),
+          'failing unexpectedly': recordsHoldingKey(allRecords, failingKey),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
-        reason: 'no line srvd or its workers log holds the relay-auth key',
+        reason: 'no line srvd or its workers log holds a relay-auth key',
       );
-      for (final MapEntry(key: from, value: records) in logs.entries) {
+      for (final (from, records, session) in [
+        ('srvd starting the session', starting, sessionId),
+        ('its port-pair worker', portPairWorker, sessionId),
+        ('its single-port worker', singlePortWorker, sessionId),
+        (
+          'srvd failing unexpectedly',
+          capture.records.skip(failingFrom).toList(),
+          failingSessionId,
+        ),
+      ]) {
         expect(
           records.map((r) => r.message),
-          contains(
-            allOf(contains(sessionId), contains(_alice), contains(_bob)),
-          ),
+          contains(allOf(contains(session), contains(_alice), contains(_bob))),
           reason: 'the log from $from names the session and its atSigns',
         );
       }
     });
-  });
 
-  group('Given srvd logging at every level', () {
-    test('when it receives a session request cut short partway through its'
-        ' relay-auth key, then the log says it could not read the request from'
-        ' its sender, and no log line contains any of the key', () async {
+    test("when it receives a session request it can't read, cut short"
+        ' partway through its relay-auth key, then the log names the'
+        " request's sender and the error's type, and no log line contains any"
+        ' of the key.', () async {
       final harness = NoPortsHarness.create();
       final relay = await harness.startRelay();
       relay.logger.level = 'all';
@@ -229,58 +301,6 @@ void main() {
           ),
         ),
         reason: "the log names the sender and the error's type",
-      );
-    });
-
-    test('when a relay worker is handed a request it does not handle, carrying'
-        " a session's params, then no log line contains the session's"
-        ' relay-auth key', () async {
-      final key = generateAes256Key();
-      final (:worker, :fromWorker, :records) = _worker(
-        (toMain) => SinglePortWorker(
-          toMain: toMain,
-          logTraffic: false,
-          verbose: true,
-          loggingTag: 'request logs',
-          address: '127.0.0.1',
-          useTLS: false,
-          bindPort: 0,
-        ),
-      );
-      expect(await fromWorker.moveNext(), isTrue);
-
-      (fromWorker.current as SendPort).send(
-        IIRequest.create(
-          'no-such-request',
-          SrvdSessionParams(
-            sessionId: Uuid().v4(),
-            atSignA: _alice,
-            atSignB: _bob,
-            authenticateSocketA: true,
-            authenticateSocketB: true,
-            rvdNonce: 'rvd-nonce',
-            relayAuthMode: RelayAuthMode.escr,
-            relayAuthAesKey: key,
-            only443: true,
-            multipleAcksOk: true,
-            preFetch: [],
-            sendJsonResponse: true,
-          ),
-        ),
-      );
-      await worker.stopped.future.timeout(const Duration(seconds: 10));
-
-      expect(
-        recordsHoldingKey([...records, ...capture.records], key),
-        isEmpty,
-        reason: "no line the worker logs holds the session's relay-auth key",
-      );
-      expect(
-        records.map((r) => r.message),
-        contains(
-          allOf(contains('Received unhandled request'), contains(_alice)),
-        ),
-        reason: 'the worker logs the request it does not handle',
       );
     });
   });
