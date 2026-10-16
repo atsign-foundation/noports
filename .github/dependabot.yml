@@ -31,6 +31,8 @@ updates:
   - package-ecosystem: "pub"
     directories:
       - "/packages/dart/sshnoports/"
+      - "/packages/dart/noports_core/"
+      - "/packages/dart/npt_flutter/"
       - "/apps/admin/admin_api/"
     schedule:
       interval: "daily"
