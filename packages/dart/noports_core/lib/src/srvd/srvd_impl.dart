@@ -312,8 +312,7 @@ class SrvdImpl
           return await handleDiscover(n);
         default:
           logger.warning(
-            'unknown "$messageType" request received from ${n.from}'
-            ' ( ${n.value} )',
+            'unknown "$messageType" request received from ${n.from}',
           );
       }
     } catch (e, st) {
@@ -379,8 +378,7 @@ class SrvdImpl
         break;
       default:
         logger.warning(
-          'unknown "$sessionsMessageType" sessions received from ${n.from}'
-          ' ( ${n.value} )',
+          'unknown "$sessionsMessageType" sessions received from ${n.from}',
         );
     }
   }

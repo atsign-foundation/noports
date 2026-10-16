@@ -69,8 +69,7 @@ mixin SrvdUtilMixin {
         default:
           if (throwIfFalse) {
             throw ArgumentError(
-              'unknown "$messageType" request received from ${n.from}'
-              ' ( ${n.value} )',
+              'unknown "$messageType" request received from ${n.from}',
             );
           }
           return false;

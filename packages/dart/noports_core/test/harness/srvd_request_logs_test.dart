@@ -128,10 +128,14 @@ String _relayRequest(
 
 /// Sends [value] to the relay as [client]'s session request.
 Future<void> _requestPorts(AtClient client, String value) =>
+    _notifyRelay(client, 'request_ports', value);
+
+/// Sends [value] to the relay as [client]'s notification of type [type].
+Future<void> _notifyRelay(AtClient client, String type, String value) =>
     client.notificationService.notify(
       NotificationParams.forUpdate(
         AtKey()
-          ..key = '${NoPortsHarness.device}.request_ports.${Srvd.namespace}'
+          ..key = '${NoPortsHarness.device}.$type.${Srvd.namespace}'
           ..sharedBy = client.getCurrentAtSign()
           ..sharedWith = NoPortsHarness.relayAtSign
           ..metadata = (Metadata()
@@ -301,6 +305,74 @@ void main() {
           ),
         ),
         reason: "the log names the sender and the error's type",
+      );
+    });
+
+    test("when it receives a notification of a type it doesn't handle, then"
+        ' the log names the type and its sender, and no log line contains the'
+        " notification's value.", () async {
+      final harness = NoPortsHarness.create();
+      final relay = await harness.startRelay();
+      relay.logger.level = 'all';
+      final alice = await harness.openClient(
+        _alice,
+        namespace: DefaultArgs.namespace,
+      );
+      final requestValue = generateAes256Key();
+      await _notifyRelay(alice, 'some_request', requestValue);
+      await capture.waitFor(
+        'reading the some_request',
+        (r) => r.message.contains('unknown "some_request"'),
+      );
+
+      final sessionId = Uuid().v4();
+      final response = alice.notificationService
+          .subscribe(
+            regex: '$sessionId.${Srvd.namespace}@',
+            shouldDecrypt: true,
+          )
+          .where((n) => n.from == NoPortsHarness.relayAtSign)
+          .first
+          .timeout(const Duration(seconds: 10));
+      await _requestPorts(alice, _relayRequest(sessionId, generateAes256Key()));
+      await response;
+      final sessionsValue = generateAes256Key();
+      await relay.handleSessionMessages(
+        'other.$sessionId',
+        AtNotification(
+          Uuid().v4(),
+          '${NoPortsHarness.relayAtSign}:other.$sessionId.sessions'
+              '.${Srvd.namespace}$_bob',
+          _bob,
+          NoPortsHarness.relayAtSign,
+          DateTime.now().millisecondsSinceEpoch,
+          'key',
+          true,
+          value: sessionsValue,
+        ),
+      );
+
+      expect(
+        {
+          'an unknown request': recordsHoldingKey(
+            capture.records,
+            requestValue,
+          ),
+          'an unknown sessions message': recordsHoldingKey(
+            capture.records,
+            sessionsValue,
+          ),
+        }..removeWhere((_, holding) => holding.isEmpty),
+        isEmpty,
+        reason: "no line srvd logs holds the notification's value",
+      );
+      expect(
+        capture.records.map((r) => r.message),
+        containsAll([
+          allOf(contains('some_request'), contains(_alice)),
+          allOf(contains('"other"'), contains(_bob)),
+        ]),
+        reason: 'the log names each type and its sender',
       );
     });
   });
