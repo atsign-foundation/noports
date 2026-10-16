@@ -497,9 +497,8 @@ class SshnpdImpl
         // TODO IF $someConditions apply then send a 'nice' error
         // TODO message notification back to the requester
         logger.shout(
-          'Notification ignored from ${notification.from}'
-          ' which is not authorized: ${auth.message}'
-          ' Notification value was ${notification.value}',
+          'Ignoring $messageType from ${notification.from},'
+          ' which is not authorized: ${auth.message}',
         );
 
         return;
@@ -537,48 +536,34 @@ class SshnpdImpl
 
         case 'sshd':
           logger.info(
-            'LEGACY $messageType request received from ${notification.from}'
-            ' ( ${notification.value} )',
+            'LEGACY $messageType request received from ${notification.from}',
           );
           _handleLegacySshRequestNotification(notification, auth);
           break;
 
         case 'ping':
-          logger.info(
-            '$messageType received from ${notification.from}'
-            ' ( ${notification.value} )',
-          );
+          logger.info('$messageType received from ${notification.from}');
           _handlePingNotification(notification);
           break;
 
         case 'ssh_request':
-          logger.info(
-            '$messageType received from ${notification.from}'
-            ' ( ${notification.value} )',
-          );
+          logger.info('$messageType received from ${notification.from}');
           _handleSshRequestNotification(notification, auth);
           break;
 
         case 'npt_request':
-          logger.info(
-            '$messageType received from ${notification.from}'
-            ' ( ${notification.value} )',
-          );
+          logger.info('$messageType received from ${notification.from}');
           _handleNptRequestNotification(notification, auth);
           break;
 
         case 'relay_latency_request':
-          logger.info(
-            '$messageType received from ${notification.from}'
-            ' ( ${notification.value})',
-          );
+          logger.info('$messageType received from ${notification.from}');
           await _handleRelayLatencyCheckRequest(notification);
           break;
 
         default:
           logger.warning(
-            'unknown "$messageType" request received from ${notification.from}'
-            ' ( ${notification.value} )',
+            'unknown "$messageType" request received from ${notification.from}',
           );
       }
     } catch (e, st) {
@@ -879,7 +864,8 @@ class SshnpdImpl
       req = NptSessionRequest.fromJson(params);
     } catch (e) {
       logger.warning(
-        'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+        'Failed to read the npt_request from ${notification.from}:'
+        ' ${e.runtimeType}',
       );
       return;
     }
@@ -1206,7 +1192,8 @@ class SshnpdImpl
       req = SshnpSessionRequest.fromJson(params);
     } catch (e) {
       logger.warning(
-        'Failed to extract parameters from notification value "${notification.value}" with error : $e',
+        'Failed to read the ssh_request from ${notification.from}:'
+        ' ${e.runtimeType}',
       );
       return;
     }
@@ -2348,7 +2335,6 @@ class SshnpdImpl
     } catch (e) {
       logger.shout('Failed to verify signature of msg from $requestingAtsign');
       logger.shout('Exception: $e');
-      logger.shout('Notification value: $envelope');
 
       try {
         // Notify noports client that this session is NOT connected
