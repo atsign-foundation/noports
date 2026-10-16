@@ -74,8 +74,8 @@ _Sshnp _sshnp(AtClient atClient, _SshnpFactory create) {
 }
 
 /// An inline npt from [atClient], the client atSign's, to [remotePort] on
-/// the daemon's host, with its own logger at every level; closed after the
-/// test.
+/// the daemon's host, with its own and its relay channel's loggers at every
+/// level; closed after the test.
 Npt _npt(AtClient atClient, int remotePort) {
   final npt = Npt.create(
     params: NptParams(
@@ -94,7 +94,9 @@ Npt _npt(AtClient atClient, int remotePort) {
     atClient: atClient,
   );
   addTearDown(npt.close);
-  (npt as NptBase).logger.level = 'all';
+  final base = npt as NptBase;
+  base.logger.level = 'all';
+  base.srvdChannel.logger.level = 'all';
   return npt;
 }
 
