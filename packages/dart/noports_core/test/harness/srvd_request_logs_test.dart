@@ -136,10 +136,10 @@ Future<void> _requestPorts(AtClient client, String value) =>
 void main() {
   final capture = LogCapture.install();
 
-  group('Given srvd logging at every level', () {
+  group('Given srvd logging at every level,', () {
     test('when it receives a session request carrying a relay-auth key, then'
         ' the log names the session and its atSigns, and no log line contains'
-        ' the key', () async {
+        ' the key.', () async {
       final harness = NoPortsHarness.create();
       final relay = await harness.startRelay();
       relay.logger.level = 'all';
@@ -189,7 +189,9 @@ void main() {
         );
       }
     });
+  });
 
+  group('Given srvd logging at every level', () {
     test('when it receives a session request cut short partway through its'
         ' relay-auth key, then the log says it could not read the request from'
         ' its sender, and no log line contains any of the key', () async {

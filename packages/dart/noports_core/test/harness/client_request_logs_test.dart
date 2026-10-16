@@ -103,10 +103,10 @@ Npt _npt(AtClient atClient, int remotePort) {
 void main() {
   final capture = LogCapture.install();
 
-  group('Given sshnp logging at every level', () {
+  group('Given sshnp logging at every level,', () {
     test('when it sends its session request to the daemon, then the log says'
         " it sent the request, and no log record contains the request's"
-        ' relay-auth key', () async {
+        ' relay-auth key.', () async {
       final harness = NoPortsHarness.create();
       await harness.startRelay();
       await harness.startDaemon(permitOpen: _refuseAll);
@@ -157,10 +157,10 @@ void main() {
     });
   });
 
-  group('Given npt logging at every level', () {
+  group('Given npt logging at every level,', () {
     test('when it sends its session request to the daemon, then the log says'
         " it sent the request, and no log record contains the request's"
-        ' relay-auth key', () async {
+        ' relay-auth key.', () async {
       final harness = NoPortsHarness.create();
       final echo = await startEchoServer();
       final relay = await harness.startRelay();
@@ -187,9 +187,9 @@ void main() {
     });
   });
 
-  group('Given sshnp or npt logging at every level', () {
+  group('Given sshnp or npt logging at every level,', () {
     test('when it sends its session request to the relay, then no log record'
-        ' contains the relay-auth key', () async {
+        ' contains the relay-auth key.', () async {
       final harness = NoPortsHarness.create();
       final relay = await harness.startRelay();
       await harness.startDaemon(permitOpen: _refuseAll);

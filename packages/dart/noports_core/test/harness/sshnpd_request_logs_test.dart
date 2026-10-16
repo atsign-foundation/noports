@@ -134,12 +134,12 @@ Future<String> _replyAbout(AtClient client, String sessionId) => client
 void main() {
   final capture = LogCapture.install();
 
-  group('Given sshnpd logging at every level', () {
+  group('Given sshnpd logging at every level,', () {
     test('when it receives an npt or ssh session request carrying a relay-auth'
         ' key, whether accepted, refused as unauthorised, with a signature that'
         " doesn't verify, unreadable, or whose handling fails unexpectedly, then"
         " the log names the request's type and sender, and no log record"
-        ' contains the key', () async {
+        ' contains the key.', () async {
       final harness = NoPortsHarness.create(
         atSigns: {
           _alice,
@@ -326,7 +326,7 @@ void main() {
     });
 
     test('when it receives a legacy request, then no log record contains the'
-        " request's private key", () async {
+        " request's private key.", () async {
       final harness = NoPortsHarness.create();
       final daemon = await harness.startDaemon(permitOpen: ['127.0.0.1:1']);
       daemon.logger.level = 'all';
