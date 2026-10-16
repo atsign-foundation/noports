@@ -30,6 +30,10 @@ class DefaultArgs {
   /// an explicit override (`--relay-auth-mode payload`).
   static const RelayAuthMode relayAuthMode = RelayAuthMode.escr;
 
+  /// How long a daemon or relay holds the lock that makes one instance of
+  /// several sharing an atSign handle a session request.
+  static const Duration sessionMutexTtl = Duration(seconds: 30);
+
   /// How long a client should wait for response after pinging a NoPorts daemon
   static const int daemonPingTimeoutSeconds = 20;
   static const Duration daemonPingTimeoutDuration = Duration(
