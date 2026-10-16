@@ -189,5 +189,45 @@ void main() {
         );
       }
     });
+
+    test('when it receives a session request cut short partway through its'
+        ' relay-auth key, then the log says it could not read the request from'
+        ' its sender, and no log line contains any of the key', () async {
+      final harness = NoPortsHarness.create();
+      final relay = await harness.startRelay();
+      relay.logger.level = 'all';
+      final alice = await harness.openClient(
+        _alice,
+        namespace: DefaultArgs.namespace,
+      );
+      final key = generateAes256Key();
+      final request = _relayRequest(Uuid().v4(), key);
+
+      await _requestPorts(
+        alice,
+        request.substring(0, request.indexOf(key) + key.length - 4),
+      );
+      await capture.waitFor(
+        'refusing the request',
+        (r) => r.message.contains('Unable to provide the socket pair'),
+      );
+
+      expect(
+        recordsHoldingKey(capture.records, key),
+        isEmpty,
+        reason: 'no line srvd logs holds any of the relay-auth key',
+      );
+      expect(
+        capture.records.map((r) => r.message),
+        contains(
+          allOf(
+            contains('could not be read'),
+            contains(_alice),
+            contains('FormatException'),
+          ),
+        ),
+        reason: "the log names the sender and the error's type",
+      );
+    });
   });
 }

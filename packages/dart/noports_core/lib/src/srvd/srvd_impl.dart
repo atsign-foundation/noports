@@ -318,7 +318,8 @@ class SrvdImpl
       }
     } catch (e, st) {
       logger.shout(
-        'Exception $e while handling notification $n\nStack Trace:\n$st',
+        'Exception ${e.runtimeType} while handling notification ${n.key}'
+        ' from ${n.from}\nStack Trace:\n$st',
       );
     }
   }
@@ -432,7 +433,10 @@ class SrvdImpl
         return;
       }
     } catch (e) {
-      logger.shout('Unable to provide the socket pair due to: $e');
+      logger.shout(
+        'Unable to provide the socket pair, as the request from ${n.from}'
+        ' could not be read: ${e.runtimeType}',
+      );
       return;
     }
 
