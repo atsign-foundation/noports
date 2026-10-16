@@ -398,6 +398,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get errorAtKeysInvalid => 'Se detectó un archivo atKeys inválido';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'El archivo atKeys no es un JSON válido: $problem en el carácter $position';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch =>
       'El archivo atKeys que subiste no coincide con el Atsign solicitado';
 

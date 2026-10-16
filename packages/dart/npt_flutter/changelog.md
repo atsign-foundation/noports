@@ -1,3 +1,10 @@
+## 1.9.7+34
+
+- FIX: When activating an atSign fails, from the activation dialog or an
+  activation file, the app log names the type of error.
+- FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
+  the position where it stops being valid.
+
 ## 1.9.6+33
 
 - FIX: Two operations that need the app's keys at the same moment no longer fail

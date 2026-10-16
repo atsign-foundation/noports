@@ -115,6 +115,7 @@
   "errorAtKeySaveFailed": "儲存 atKeys 檔案失敗：{error}",
   "errorAtKeysFileProcessFailed": "處理 atKeys 檔案失敗",
   "errorAtKeysInvalid": "偵測到無效的 atKeys 檔案",
+  "errorAtKeysNotJson": "atKeys 檔案不是有效的 JSON：{problem}，位於第 {position} 個字元",
   "errorAtKeysUploadedMismatch": "您上傳的 atKeys 檔案與要求的 Atsign 不符",
   "errorAtServerUnavailable": "無法擷取 atServer 狀態，請確認您有穩定的網路連線。",
   "errorAtServerUnreachable": "無法連線至 atServer，請確認您有穩定的網路連線。",
