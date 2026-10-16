@@ -94,9 +94,8 @@ Npt _npt(AtClient atClient, int remotePort) {
     atClient: atClient,
   );
   addTearDown(npt.close);
-  final base = npt as NptBase;
-  base.logger.level = 'all';
-  base.srvdChannel.logger.level = 'all';
+  (npt as NptBase).logger.level = 'all';
+  (npt as dynamic).srvdChannel.logger.level = 'all';
   return npt;
 }
 

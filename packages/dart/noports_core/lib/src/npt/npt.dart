@@ -113,10 +113,6 @@ abstract class NptBase implements Npt {
 
   final logger = AtSignLogger(' Npt ');
 
-  /// The channel this npt asks its relay for a session over.
-  @visibleForTesting
-  SrvdChannel get srvdChannel;
-
   bool sendControlHeartbeats = false;
 
   NptBase({required this.params, required this.atClient, this.logStream})
@@ -138,7 +134,8 @@ class _NptImpl extends NptBase
   SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
   late final SshnpdDefaultChannel _sshnpdChannel;
 
-  @override
+  /// The channel this npt asks its relay for a session over.
+  @visibleForTesting
   SrvdChannel get srvdChannel => _srvdChannel;
   late final SrvdChannel _srvdChannel;
 
