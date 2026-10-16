@@ -4,8 +4,11 @@ import 'dart:convert';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
+import 'package:noports_core/src/npa/npa_rpcs.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
+import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
@@ -72,6 +75,45 @@ Future<void> _send(AtClient client, String type, String value) =>
       waitForFinalDeliveryStatus: false,
     );
 
+class _MockAtClient extends Mock implements AtClient {}
+
+/// An [AuthChecker] whose every check fails with an error.
+class _FailingAuthChecker implements AuthChecker {
+  @override
+  Future<NPAAuthCheckResponse> mayConnect({required String clientAtsign}) =>
+      Future.error(StateError('the policy service could not be asked'));
+}
+
+/// An sshnpd managed by no one, on an atClient that does nothing, logging at
+/// every level.
+SshnpdImpl _sshnpdOnMockAtClient({
+  AuthChecker? authChecker,
+  Future<void> Function(AtNotification)? notifPreProcessor,
+}) {
+  final atClient = _MockAtClient();
+  when(
+    () => atClient.getCurrentAtSign(),
+  ).thenReturn(NoPortsHarness.daemonAtSign);
+  return SshnpdImpl(
+    atClient: atClient,
+    username: 'harness',
+    homeDirectory: '/home/harness',
+    device: NoPortsHarness.device,
+    managerAtsigns: [],
+    sshClient: SupportedSshClient.openssh,
+    ephemeralPermissions: '',
+    sshAlgorithm: SupportedSshAlgorithm.ed25519,
+    deviceGroup: 'default',
+    version: '1.0.0',
+    permitOpen: ['*:*'],
+    authChecker: authChecker,
+    notifPreProcessor: notifPreProcessor,
+    strict: false,
+    clientKeyCheckInterval: Duration.zero,
+    requireEnrollmentSignature: false,
+  )..logger.level = 'all';
+}
+
 /// The daemon's reply to [client] about [sessionId], waited for up to 10
 /// seconds; call it before sending the request.
 Future<String> _replyAbout(AtClient client, String sessionId) => client
@@ -95,8 +137,9 @@ void main() {
   group('Given sshnpd logging at every level', () {
     test('when it receives an npt or ssh session request carrying a relay-auth'
         ' key, whether accepted, refused as unauthorised, with a signature that'
-        " doesn't verify, or unreadable, then the log names the request's type"
-        ' and sender, and no log record contains the key', () async {
+        " doesn't verify, unreadable, or whose handling fails unexpectedly, then"
+        " the log names the request's type and sender, and no log record"
+        ' contains the key', () async {
       final harness = NoPortsHarness.create(
         atSigns: {
           _alice,
@@ -211,6 +254,43 @@ void main() {
             (r) => r.message.contains('acquired mutex $sessionId'),
           );
         });
+
+        for (final (failing, sshnpd) in [
+          (
+            'its policy check',
+            _sshnpdOnMockAtClient(authChecker: _FailingAuthChecker()),
+          ),
+          (
+            'a notification pre-processor',
+            _sshnpdOnMockAtClient(
+              notifPreProcessor: (_) async =>
+                  throw StateError('the notification could not be read'),
+            ),
+          ),
+        ]) {
+          await receive(
+            'whose handling fails unexpectedly, as $failing throws',
+            _alice,
+            (sessionId, key) => sshnpd.clientRequestNotificationHandler(
+              AtNotification(
+                  Uuid().v4(),
+                  '${NoPortsHarness.daemonAtSign}:$type.${NoPortsHarness.device}'
+                      '.${DefaultArgs.namespace}$_alice',
+                  _alice,
+                  NoPortsHarness.daemonAtSign,
+                  DateTime.now().millisecondsSinceEpoch,
+                  'key',
+                  true,
+                )
+                ..value = jsonEncode({
+                  'payload': payload(sessionId, key),
+                  'signature': 'signature',
+                  'hashingAlgo': 'sha256',
+                  'signingAlgo': 'rsa2048',
+                }),
+            ),
+          );
+        }
       }
 
       expect(
@@ -231,7 +311,7 @@ void main() {
     });
 
     test('when it receives a legacy request, then no log record contains the'
-        " request's content", () async {
+        " request's private key", () async {
       final harness = NoPortsHarness.create();
       final daemon = await harness.startDaemon(permitOpen: ['127.0.0.1:1']);
       daemon.logger.level = 'all';
@@ -260,23 +340,15 @@ void main() {
         contains('Daemon does not permit connections'),
         reason: 'the daemon reads the legacy request and refuses it',
       );
-      final records = capture.records;
       expect(
-        recordsHolding(records, [
-          privateKeyBody,
-          request,
-          username,
-          remoteHost,
-        ]),
+        recordsHolding(capture.records, [privateKeyBody]),
         isEmpty,
-        reason:
-            "no record holds the legacy request's private key, username"
-            ' or host',
+        reason: "no record holds the legacy request's private key",
       );
       expect(
-        records.map((r) => r.message),
-        contains(allOf(contains('sshd'), contains(_alice))),
-        reason: 'the log names the legacy request and its sender',
+        capture.records.map((r) => r.message),
+        contains(contains('Private Key received from $_alice')),
+        reason: 'the daemon read the private key',
       );
     });
   });
