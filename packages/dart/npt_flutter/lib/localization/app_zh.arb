@@ -115,6 +115,7 @@
   "errorAtKeySaveFailed": "保存 atKeys 文件失败：{error}",
   "errorAtKeysFileProcessFailed": "处理 atKeys 文件失败",
   "errorAtKeysInvalid": "检测到无效的 atKeys 文件",
+  "errorAtKeysNotJson": "atKeys 文件不是有效的 JSON：{problem}，位于第 {position} 个字符",
   "errorAtKeysUploadedMismatch": "您上传的 atKeys 文件与请求的 Atsign 不匹配",
   "errorAtServerUnavailable": "无法检索 atserver 状态，请确保您有稳定的互联网连接。",
   "errorAtServerUnreachable": "无法连接到 atServer，请确保您有稳定的互联网连接。",
