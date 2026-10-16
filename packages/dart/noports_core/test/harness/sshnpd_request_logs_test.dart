@@ -366,5 +366,35 @@ void main() {
         reason: 'the daemon read the private key',
       );
     });
+
+    test("when it receives a notification of a type it doesn't handle, then"
+        ' the log names the type and its sender, and no log record contains'
+        " the notification's value.", () async {
+      final harness = NoPortsHarness.create();
+      final daemon = await harness.startDaemon(permitOpen: ['127.0.0.1:1']);
+      daemon.logger.level = 'all';
+      final alice = await harness.openClient(
+        _alice,
+        namespace: DefaultArgs.namespace,
+      );
+      final value = generateAes256Key();
+
+      await _send(alice, 'some_request', value);
+      await capture.waitFor(
+        'reading the some_request',
+        (r) => r.message.contains('unknown "some_request"'),
+      );
+
+      expect(
+        recordsHoldingKey(capture.records, value),
+        isEmpty,
+        reason: "no record holds the notification's value",
+      );
+      expect(
+        capture.records.map((r) => r.message),
+        contains(allOf(contains('some_request'), contains(_alice))),
+        reason: 'the log names the type and its sender',
+      );
+    });
   });
 }
