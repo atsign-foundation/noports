@@ -1,3 +1,8 @@
+## 1.9.7+34
+
+- FIX: When an activation file can't be read, the app log gives the number of
+  the entry at fault, or the line where the file isn't valid YAML.
+
 ## 1.9.6+33
 
 - FIX: Two operations that need the app's keys at the same moment no longer fail
