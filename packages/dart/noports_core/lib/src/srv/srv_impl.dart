@@ -1086,7 +1086,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         if (message != 'connect:no:encrypt') {
           // Encrypted session, we expect params
           if (args.length < 3) {
-            logger.severe('Malformed control message: [$message]');
+            logger.severe('Malformed ${args.first} control message');
             return;
           }
           aesC2D = args[1];
@@ -1278,7 +1278,10 @@ class SrvImplDart implements Srv<SocketConnector> {
                   rethrow;
                 }
               } catch (e) {
-                logger.severe('$e while handling control message: $controlMsg');
+                logger.severe(
+                  '${e.runtimeType} while handling a'
+                  ' ${controlMsg.split(':').first} control message',
+                );
               } finally {
                 rcvBuffer.clear();
               }
@@ -1315,7 +1318,8 @@ class SrvImplDart implements Srv<SocketConnector> {
                           );
                         } catch (e) {
                           logger.severe(
-                            '$e while handling control message: $controlMsg',
+                            '${e.runtimeType} while handling a'
+                            ' ${controlMsg.split(':').first} control message',
                           );
                         }
                       }
