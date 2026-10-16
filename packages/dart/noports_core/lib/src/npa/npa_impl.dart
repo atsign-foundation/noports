@@ -102,10 +102,14 @@ class NPAImpl
   @override
   Future<void> run() async {
     if (eventLoggingAtsign != null) {
-      elc = await getEventLoggingConfig(
-        atSign: eventLoggingAtsign!,
-        namespace: DefaultArgs.eventLoggingNamespace,
-      );
+      try {
+        elc = await getEventLoggingConfig(
+          atSign: eventLoggingAtsign!,
+          namespace: DefaultArgs.eventLoggingNamespace,
+        );
+      } catch (e) {
+        throw EventLoggingConfigException(eventLoggingAtsign!, e);
+      }
       logger.shout(
         'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
       );
