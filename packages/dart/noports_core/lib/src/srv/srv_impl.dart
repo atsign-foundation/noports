@@ -1112,7 +1112,7 @@ class SrvImplDart implements Srv<SocketConnector> {
         logger.info('Received control message: $message');
         break;
       default:
-        logger.shout('Received unknown control message: [$message]');
+        logger.shout('Received unknown ${args.first} control message');
         return;
     }
   }

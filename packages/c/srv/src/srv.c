@@ -435,7 +435,7 @@ int run_srv_daemon_side_multi(srv_params_t *params) {
         pthread_detach(sts_thread);
 
       } else {
-        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown request to control channel: %s\n", requests[i]);
+        atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Unknown %s request to control channel\n", messagetype);
       }
     }
     // Clean buffer for next iteration and free previous requests

@@ -149,6 +149,15 @@ void main() {
         (m) => m.contains('Failed to connect locally'),
       );
 
+      final unknownKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a control message of a type srv does not know, carrying a key and IV',
+        _srvControlChannel(),
+        'conect:${unknownKeys.join(':')}\n',
+        unknownKeys,
+        (m) => m.contains('unknown'),
+      );
+
       expect(
         {
           for (final MapEntry(key: failure, value: keysAndIvs)
@@ -176,6 +185,11 @@ void main() {
               ' $failure',
         );
       }
+      expect(
+        logged['a control message of a type srv does not know, carrying a key and IV'],
+        contains(allOf(contains('unknown'), contains('conect control'))),
+        reason: "the log names the unknown message's type",
+      );
       expect(
         logged['a connect message with a key and no IV'],
         contains(allOf(contains('Malformed'), contains('connect control'))),
