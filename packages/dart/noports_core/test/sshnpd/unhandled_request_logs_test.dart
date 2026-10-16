@@ -104,11 +104,8 @@ void main() {
         }
       }
 
-      List<String> messagesOf(int from) => capture.records
-          .skip(from)
-          .where((r) => r.loggerName == ' sshnpd ')
-          .map((r) => r.message)
-          .toList();
+      List<String> messagesOf(int from) =>
+          capture.records.skip(from).map((r) => r.message).toList();
 
       expect(
         {

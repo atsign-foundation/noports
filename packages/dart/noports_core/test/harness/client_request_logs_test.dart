@@ -125,10 +125,7 @@ void main() {
         );
         sent[client] = (
           sshnp: sshnp,
-          records: capture.records
-              .skip(from)
-              .where((r) => r.loggerName == 'Sshnp')
-              .toList(),
+          records: capture.records.skip(from).toList(),
         );
       }
 
@@ -142,7 +139,7 @@ void main() {
             ),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
-        reason: "no record from sshnp holds its request's relay-auth key",
+        reason: "no record holds the relay-auth key of sshnp's request",
       );
       for (final MapEntry(key: client, value: (:sshnp, :records))
           in sent.entries) {
@@ -174,11 +171,11 @@ void main() {
       await npt.run();
 
       final key = relay.sessions[npt.sessionId]!.params.relayAuthAesKey!;
-      final records = capture.from(' Npt ');
+      final records = capture.records;
       expect(
         recordsHoldingKey(records, key),
         isEmpty,
-        reason: "no record from npt holds its request's relay-auth key",
+        reason: "no record holds the relay-auth key of npt's request",
       );
       expect(
         records.map((r) => r.message),
@@ -205,7 +202,7 @@ void main() {
         throwsA(isA<SshnpError>()),
         reason: 'the daemon refuses the sshnp session',
       );
-      final channelRecords = capture.from(' SrvdChannel ').toList();
+      final sshnpRecords = capture.records.toList();
       final npt = _npt(alice, 22);
       await expectLater(
         npt.run(),
@@ -219,14 +216,14 @@ void main() {
 
       expect(
         {
-          'sshnp': recordsHoldingKey(channelRecords, keys['sshnp']!),
+          'sshnp': recordsHoldingKey(sshnpRecords, keys['sshnp']!),
           'npt': recordsHoldingKey(
-            capture.from(' SrvdChannel ').skip(channelRecords.length),
+            capture.records.skip(sshnpRecords.length),
             keys['npt']!,
           ),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
-        reason: 'no record from the relay channel holds the relay-auth key',
+        reason: 'no record holds the relay-auth key of either request',
       );
       expect(
         relay.sessions[sshnp.sshnp.sessionId]?.params.relayAuthAesKey,

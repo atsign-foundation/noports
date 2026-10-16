@@ -97,6 +97,42 @@ Future<List<LogRecord>> _singlePortWorkerStarting(
   return records;
 }
 
+/// A session request from the client atSign for [sessionId], carrying
+/// [relayAuthAesKey], as sshnp and npt send it.
+String _relayRequest(String sessionId, String relayAuthAesKey) => jsonEncode(
+  RelayRequest(
+    sessionId: sessionId,
+    atSignA: _alice,
+    atSignB: _bob,
+    authenticateSocketA: true,
+    authenticateSocketB: true,
+    clientNonce: 'client-nonce',
+    relayAuthMode: RelayAuthMode.escr,
+    relayAuthAesKey: relayAuthAesKey,
+    only443: false,
+    multipleAcksOk: true,
+    preFetch: [],
+    sendJsonResponse: true,
+  ).toJson(),
+);
+
+/// Sends [value] to the relay as [client]'s session request.
+Future<void> _requestPorts(AtClient client, String value) =>
+    client.notificationService.notify(
+      NotificationParams.forUpdate(
+        AtKey()
+          ..key = '${NoPortsHarness.device}.request_ports.${Srvd.namespace}'
+          ..sharedBy = client.getCurrentAtSign()
+          ..sharedWith = NoPortsHarness.relayAtSign
+          ..metadata = (Metadata()
+            ..namespaceAware = false
+            ..ttl = 10000),
+        value: value,
+      ),
+      checkForFinalDeliveryStatus: false,
+      waitForFinalDeliveryStatus: false,
+    );
+
 void main() {
   final capture = LogCapture.install();
 
@@ -122,43 +158,17 @@ void main() {
           .first
           .timeout(const Duration(seconds: 10));
 
-      await alice.notificationService.notify(
-        NotificationParams.forUpdate(
-          AtKey()
-            ..key = '${NoPortsHarness.device}.request_ports.${Srvd.namespace}'
-            ..sharedBy = _alice
-            ..sharedWith = NoPortsHarness.relayAtSign
-            ..metadata = (Metadata()
-              ..namespaceAware = false
-              ..ttl = 10000),
-          value: jsonEncode(
-            RelayRequest(
-              sessionId: sessionId,
-              atSignA: _alice,
-              atSignB: _bob,
-              authenticateSocketA: true,
-              authenticateSocketB: true,
-              clientNonce: 'client-nonce',
-              relayAuthMode: RelayAuthMode.escr,
-              relayAuthAesKey: key,
-              only443: false,
-              multipleAcksOk: true,
-              preFetch: [],
-              sendJsonResponse: true,
-            ).toJson(),
-          ),
-        ),
-        checkForFinalDeliveryStatus: false,
-        waitForFinalDeliveryStatus: false,
-      );
+      await _requestPorts(alice, _relayRequest(sessionId, key));
       await response;
       final params = relay.sessions[sessionId]!.params;
       expect(params.relayAuthAesKey, key);
 
+      final portPairWorker = await _portPairWorkerStarting(params);
+      final singlePortWorker = await _singlePortWorkerStarting(params);
       final logs = {
-        'srvd': capture.from(' srvd main '),
-        'its port-pair worker': await _portPairWorkerStarting(params),
-        'its single-port worker': await _singlePortWorkerStarting(params),
+        'srvd': capture.records.toList(),
+        'its port-pair worker': portPairWorker,
+        'its single-port worker': singlePortWorker,
       };
 
       expect(

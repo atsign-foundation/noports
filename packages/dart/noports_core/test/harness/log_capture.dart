@@ -11,10 +11,6 @@ class LogCapture implements LoggingHandler {
   @override
   void call(LogRecord record) => records.add(record);
 
-  /// The records from the logger named [loggerName].
-  List<LogRecord> from(String loggerName) =>
-      records.where((r) => r.loggerName == loggerName).toList();
-
   /// Waits up to [timeout] for a record matching [test], failing with [what]
   /// if none comes.
   Future<void> waitFor(
@@ -33,16 +29,23 @@ class LogCapture implements LoggingHandler {
   }
 
   /// A [LogCapture] which is the default handler of every logger the test
-  /// file constructs, emptied before each test. One serves the whole file,
-  /// since some components bind the default handler once per isolate.
+  /// file constructs, each logging at every level unless it sets its own,
+  /// emptied before each test. One serves the whole file, since some
+  /// components bind the default handler once per isolate.
   static LogCapture install() {
     final capture = LogCapture();
-    late LoggingHandler previous;
+    late LoggingHandler previousHandler;
+    late String previousLevel;
     setUpAll(() {
-      previous = AtSignLogger.defaultLoggingHandler;
+      previousHandler = AtSignLogger.defaultLoggingHandler;
+      previousLevel = AtSignLogger.root_level;
       AtSignLogger.defaultLoggingHandler = capture;
+      AtSignLogger.root_level = 'all';
     });
-    tearDownAll(() => AtSignLogger.defaultLoggingHandler = previous);
+    tearDownAll(() {
+      AtSignLogger.defaultLoggingHandler = previousHandler;
+      AtSignLogger.root_level = previousLevel;
+    });
     setUp(capture.records.clear);
     return capture;
   }

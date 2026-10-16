@@ -15,7 +15,6 @@ import 'noports_harness.dart';
 
 const _alice = NoPortsHarness.clientAtSign;
 const _carol = '@carol';
-const _daemonLogger = ' sshnpd ';
 
 /// An npt request for [sessionId] carrying [relayAuthAesKey], to open
 /// 127.0.0.1:22 through a relay nothing listens on.
@@ -148,10 +147,7 @@ void main() {
             outcome: outcome,
             sender: sender,
             key: key,
-            records: capture.records
-                .skip(from)
-                .where((r) => r.loggerName == _daemonLogger)
-                .toList(),
+            records: capture.records.skip(from).toList(),
           ));
         }
 
@@ -212,9 +208,7 @@ void main() {
           await _send(alice, type, jsonEncode(envelope));
           await capture.waitFor(
             'handling the unreadable $type $sessionId',
-            (r) =>
-                r.loggerName == _daemonLogger &&
-                r.message.contains('acquired mutex $sessionId'),
+            (r) => r.message.contains('acquired mutex $sessionId'),
           );
         });
       }
@@ -266,7 +260,7 @@ void main() {
         contains('Daemon does not permit connections'),
         reason: 'the daemon reads the legacy request and refuses it',
       );
-      final records = capture.from(_daemonLogger);
+      final records = capture.records;
       expect(
         recordsHolding(records, [
           privateKeyBody,
