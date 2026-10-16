@@ -1015,7 +1015,8 @@ class SrvImplDart implements Srv<SocketConnector> {
       }
     } catch (e) {
       logger.shout(
-        'Failed to connect to relay ($relayAddress:$streamingPort) with error : $e',
+        'Failed to connect to relay ($relayAddress:$streamingPort)'
+        ' with error : ${e.runtimeType}',
       );
       sc.close();
       return;
@@ -1043,7 +1044,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     } catch (e) {
       logger.shout(
         'Failed to connect locally ($localAddress:$localPort)'
-        ' with error : $e',
+        ' with error : ${e.runtimeType}',
       );
       logger.shout('Closing sideB (relay) socket connection');
       sideB.socket.destroy();

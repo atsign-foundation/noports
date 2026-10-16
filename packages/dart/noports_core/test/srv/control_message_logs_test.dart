@@ -7,13 +7,13 @@ import 'package:test/test.dart';
 
 import '../harness/log_capture.dart';
 
-/// A daemon-side srv whose requested local host can't be resolved.
-class _UnresolvingSrv extends SrvImplDart {
-  _UnresolvingSrv(int relayPort)
+/// A daemon-side srv whose requested local host resolves to the loopback
+/// address when [resolves], and can't be resolved otherwise.
+class _Srv extends SrvImplDart {
+  _Srv(int relayPort, {required super.localPort, required this.resolves})
     : super(
         '127.0.0.1',
         relayPort,
-        localPort: 22,
         localHost: 'requested.host',
         bindLocalPort: false,
         relayAuthenticator: null,
@@ -22,32 +22,45 @@ class _UnresolvingSrv extends SrvImplDart {
         timeout: const Duration(seconds: 30),
       );
 
+  final bool resolves;
+
   @override
-  Future<InternetAddress> resolveRequestedLocalHost() async =>
-      throw SocketException("Failed host lookup: '$localHost'");
+  Future<InternetAddress> resolveRequestedLocalHost() async => resolves
+      ? InternetAddress.loopbackIPv4
+      : throw SocketException("Failed host lookup: '$localHost'");
 }
 
-/// A relay which a daemon-side srv connects its control channel to, giving
-/// the test that channel's socket.
-Future<({ServerSocket relay, Future<Socket> control})> _relay() async {
-  final relay = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-  addTearDown(relay.close);
-  final control = relay.first.then((socket) {
+/// A server on the loopback address which accepts every connection, giving
+/// the test the first; closed after the test.
+Future<({ServerSocket server, Future<Socket> first})> _server() async {
+  final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+  addTearDown(server.close);
+  final first = Completer<Socket>();
+  server.listen((socket) {
     addTearDown(socket.destroy);
-    return socket;
+    if (!first.isCompleted) first.complete(socket);
   });
-  return (relay: relay, control: control);
+  return (server: server, first: first.future);
 }
 
 /// A daemon-side srv logging at every level, its control channel connected
 /// to a relay, with the relay's end of that channel; closed after the test.
-Future<Socket> _srvControlChannel() async {
-  final (:relay, :control) = await _relay();
-  final srv = _UnresolvingSrv(relay.port)..logger.level = 'all';
+/// Its requested host is [localPort] on the loopback address when
+/// [resolves], and can't be resolved otherwise.
+Future<Socket> _srvControlChannel({
+  int localPort = 22,
+  bool resolves = false,
+}) async {
+  final (server: relay, first: control) = await _server();
+  final srv = _Srv(relay.port, localPort: localPort, resolves: resolves)
+    ..logger.level = 'all';
   final sc = await srv.run();
   addTearDown(sc.close);
   return control;
 }
+
+/// [key] with one character replaced by one that isn't base64.
+String _notBase64(String key) => key.replaceRange(10, 11, '*');
 
 void main() {
   final capture = LogCapture.install();
@@ -111,6 +124,31 @@ void main() {
         (m) => m.contains('while handling'),
       );
 
+      final relayKey = _notBase64(generateAes256Key());
+      final relayIv = generateIvBase64();
+      await handle(
+        'a connect message whose key for the relay is not base64',
+        _srvControlChannel(resolves: true),
+        'connect:$relayKey:$relayIv\n',
+        [relayKey, relayIv],
+        (m) => m.contains('Failed to connect to relay'),
+      );
+
+      final (server: requestedHost, first: _) = await _server();
+      final localKeys = [
+        generateAes256Key(),
+        generateIvBase64(),
+        _notBase64(generateAes256Key()),
+        generateIvBase64(),
+      ];
+      await handle(
+        'a connect message whose key for the requested host is not base64',
+        _srvControlChannel(localPort: requestedHost.port, resolves: true),
+        'connect:${localKeys.join(':')}\n',
+        localKeys,
+        (m) => m.contains('Failed to connect locally'),
+      );
+
       expect(
         {
           for (final MapEntry(key: failure, value: keysAndIvs)
@@ -143,6 +181,21 @@ void main() {
         contains(allOf(contains('Malformed'), contains('connect control'))),
         reason: "the log names the malformed message's type",
       );
+      for (final failure in [
+        'a connect message whose key for the relay is not base64',
+        'a connect message whose key for the requested host is not base64',
+      ]) {
+        expect(
+          logged[failure],
+          containsAll([
+            contains('received connect request'),
+            contains('FormatException'),
+          ]),
+          reason:
+              "the log names the message's type and the error's type for"
+              ' $failure',
+        );
+      }
     });
   });
 }
