@@ -476,7 +476,7 @@ class SshnpdImpl
         }
       } catch (e) {
         logger.shout(
-          'Notification pre-processing failed with $e'
+          'Notification pre-processing failed with ${e.runtimeType}'
           ' for ${notification.key} from ${notification.from}',
         );
         return;
@@ -568,7 +568,7 @@ class SshnpdImpl
       }
     } catch (e, st) {
       logger.shout(
-        'Unexpected exception handling client request notification'
+        'Unexpected ${e.runtimeType} handling client request notification'
         ' ${notification.key} from ${notification.from}',
       );
       logger.shout('Stack Trace:\n$st');

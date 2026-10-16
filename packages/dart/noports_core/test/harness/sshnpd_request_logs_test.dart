@@ -255,21 +255,33 @@ void main() {
           );
         });
 
-        for (final (failing, sshnpd) in [
+        String whole(String value, String key) => value;
+        for (final (failing, sshnpd, sent) in [
           (
-            'its policy check',
+            'its policy check throws',
             _sshnpdOnMockAtClient(authChecker: _FailingAuthChecker()),
+            whole,
           ),
           (
-            'a notification pre-processor',
+            'a notification pre-processor throws',
             _sshnpdOnMockAtClient(
               notifPreProcessor: (_) async =>
                   throw StateError('the notification could not be read'),
             ),
+            whole,
+          ),
+          (
+            'a notification pre-processor cannot read it, cut short partway'
+                ' through its key',
+            _sshnpdOnMockAtClient(
+              notifPreProcessor: (n) async => jsonDecode(n.value!),
+            ),
+            (String value, String key) =>
+                value.substring(0, value.indexOf(key) + key.length - 4),
           ),
         ]) {
           await receive(
-            'whose handling fails unexpectedly, as $failing throws',
+            'whose handling fails unexpectedly, as $failing',
             _alice,
             (sessionId, key) => sshnpd.clientRequestNotificationHandler(
               AtNotification(
@@ -282,12 +294,15 @@ void main() {
                   'key',
                   true,
                 )
-                ..value = jsonEncode({
-                  'payload': payload(sessionId, key),
-                  'signature': 'signature',
-                  'hashingAlgo': 'sha256',
-                  'signingAlgo': 'rsa2048',
-                }),
+                ..value = sent(
+                  jsonEncode({
+                    'payload': payload(sessionId, key),
+                    'signature': 'signature',
+                    'hashingAlgo': 'sha256',
+                    'signingAlgo': 'rsa2048',
+                  }),
+                  key,
+                ),
             ),
           );
         }
