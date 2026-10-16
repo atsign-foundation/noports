@@ -9,6 +9,8 @@
   log entry
 * fix: srvd closes a session's ports at once when it can't take the session's
   lock, rather than after 30 seconds
+* fix: sshnp and npt log whether a device's response could be read and
+  verified, not the response itself
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every
