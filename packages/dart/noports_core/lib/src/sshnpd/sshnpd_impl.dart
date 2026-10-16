@@ -1910,7 +1910,7 @@ class SshnpdImpl
       checkForFinalDeliveryStatus: checkForFinalDeliveryStatus,
       waitForFinalDeliveryStatus: waitForFinalDeliveryStatus,
       onSuccess: (notification) {
-        logger.info('SUCCESS:$notification for: $sessionId with value: $value');
+        logger.info('SUCCESS:$notification for: $sessionId');
       },
       onError: (notification) {
         logger.info('ERROR:$notification');
