@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:npt_flutter/app.dart';
@@ -99,20 +99,34 @@ class ActivateUtil {
   }) async {
     try {
       await AtClientMethods.stopCurrentClient();
-      final client = await atsign.activate(
-        cramSecret: cramkey,
-        keys: KeychainAtKeysIo(),
-        preference: await AtClientMethods.loadAtClientPreference(rootDomain),
-      );
+      final client = await activate(atsign, cramkey, rootDomain);
       AtClientMethods.adopt(client);
       return NoPortsOnboardingResult.success(atsign: atsign);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(message: strings.msgResponseTimeOut);
     } catch (e) {
-      App.log('Failed to onboard $atsign from cram key: $e'.loggable);
+      App.log(
+        'Failed to onboard $atsign from cram key: ${e.runtimeType}'.loggable,
+      );
       return NoPortsOnboardingResult.error(
         message: describeOnboardingError(e, strings),
       );
     }
   }
+
+  /// Activates [atsign] with [cramkey] against [rootDomain], writing its keys
+  /// to the keychain, and returns the client the activation opens.
+  @visibleForTesting
+  Future<AtClient> Function(Atsign atsign, String cramkey, String rootDomain)
+  activate = _activateIntoKeychain;
+
+  static Future<AtClient> _activateIntoKeychain(
+    Atsign atsign,
+    String cramkey,
+    String rootDomain,
+  ) async => atsign.activate(
+    cramSecret: cramkey,
+    keys: KeychainAtKeysIo(),
+    preference: await AtClientMethods.loadAtClientPreference(rootDomain),
+  );
 }
