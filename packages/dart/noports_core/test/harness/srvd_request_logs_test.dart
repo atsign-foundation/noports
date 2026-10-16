@@ -229,5 +229,57 @@ void main() {
         reason: "the log names the sender and the error's type",
       );
     });
+
+    test('when a relay worker is handed a request it does not handle, carrying'
+        " a session's params, then no log line contains the session's"
+        ' relay-auth key', () async {
+      final key = generateAes256Key();
+      final (:worker, :fromWorker, :records) = _worker(
+        (toMain) => SinglePortWorker(
+          toMain: toMain,
+          logTraffic: false,
+          verbose: true,
+          loggingTag: 'request logs',
+          address: '127.0.0.1',
+          useTLS: false,
+          bindPort: 0,
+        ),
+      );
+      expect(await fromWorker.moveNext(), isTrue);
+
+      (fromWorker.current as SendPort).send(
+        IIRequest.create(
+          'no-such-request',
+          SrvdSessionParams(
+            sessionId: Uuid().v4(),
+            atSignA: _alice,
+            atSignB: _bob,
+            authenticateSocketA: true,
+            authenticateSocketB: true,
+            rvdNonce: 'rvd-nonce',
+            relayAuthMode: RelayAuthMode.escr,
+            relayAuthAesKey: key,
+            only443: true,
+            multipleAcksOk: true,
+            preFetch: [],
+            sendJsonResponse: true,
+          ),
+        ),
+      );
+      await worker.stopped.future.timeout(const Duration(seconds: 10));
+
+      expect(
+        recordsHoldingKey([...records, ...capture.records], key),
+        isEmpty,
+        reason: "no line the worker logs holds the session's relay-auth key",
+      );
+      expect(
+        records.map((r) => r.message),
+        contains(
+          allOf(contains('Received unhandled request'), contains(_alice)),
+        ),
+        reason: 'the worker logs the request it does not handle',
+      );
+    });
   });
 }

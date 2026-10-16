@@ -35,8 +35,12 @@ class SrvdSessionParams {
     required this.sendJsonResponse,
   });
 
+  /// These params for a log, with [relayAuthAesKey] redacted.
   @override
-  String toString() => toJson().toString();
+  String toString() => {
+    ...toJson(),
+    if (relayAuthAesKey != null) 'relayAuthAesKey': '(redacted)',
+  }.toString();
 
   Map<String, dynamic> toJson() => {
     'sessionId': sessionId,
