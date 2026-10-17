@@ -130,6 +130,7 @@ void main() {
         );
       }
 
+      await capture.untilQuiet();
       expect(
         {
           for (final MapEntry(key: client, value: (:sshnp, records: _))
@@ -170,6 +171,7 @@ void main() {
       );
 
       await npt.run();
+      await capture.untilQuiet();
 
       final key = relay.sessions[npt.sessionId]!.params.relayAuthAesKey!;
       final records = capture.records;
@@ -209,6 +211,7 @@ void main() {
         throwsA(isA<SshnpError>()),
         reason: 'the daemon refuses the npt session',
       );
+      await capture.untilQuiet();
       final keys = {
         'sshnp': sshnp.srvdChannel.relayAuthAesKey!,
         'npt': relay.sessions[npt.sessionId]!.params.relayAuthAesKey!,

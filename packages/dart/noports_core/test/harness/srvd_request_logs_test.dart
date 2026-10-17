@@ -236,6 +236,7 @@ void main() {
           ),
         ),
       );
+      await capture.untilQuiet();
       final allRecords = [
         ...capture.records,
         ...portPairWorker,
@@ -303,6 +304,7 @@ void main() {
         (r) => r.message.contains('Unable to provide the socket pair'),
       );
 
+      await capture.untilQuiet();
       expect(
         recordsHoldingKey(capture.records, key),
         isEmpty,
@@ -365,6 +367,7 @@ void main() {
         ),
       );
 
+      await capture.untilQuiet();
       expect(
         {
           'an unknown request': recordsHoldingKey(

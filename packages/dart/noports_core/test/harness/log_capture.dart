@@ -28,8 +28,8 @@ class LogCapture implements LoggingHandler {
     await pumpEventQueue();
   }
 
-  /// Waits until [quiet] passes with no new record, failing if the log
-  /// hasn't gone quiet within [timeout].
+  /// Waits until [quiet] goes by with no new record, which says nothing of
+  /// whether a handler has finished, and fails if that takes over [timeout].
   Future<void> untilQuiet({
     Duration quiet = const Duration(seconds: 1),
     Duration timeout = const Duration(seconds: 10),

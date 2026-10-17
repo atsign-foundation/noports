@@ -158,6 +158,7 @@ void main() {
         (m) => m.contains('unknown'),
       );
 
+      await capture.untilQuiet();
       expect(
         {
           for (final MapEntry(key: failure, value: keysAndIvs)
