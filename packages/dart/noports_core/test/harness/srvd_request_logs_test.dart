@@ -1,6 +1,7 @@
-/// Goal: no relay-auth key, socket key or IV, or request content reaches a
-/// log record. Non-goals: hiding other error detail, which is logged in full,
-/// and sanitising a third-party component's own error text.
+/// Goal: no relay-auth key, socket key or IV, or whole request reaches a log
+/// record. Non-goals: hiding other error detail, which is logged in full, a
+/// malformed field's value among it, and sanitising a third-party component's
+/// own error text.
 library;
 
 import 'dart:async';
