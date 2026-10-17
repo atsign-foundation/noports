@@ -18,6 +18,7 @@ import 'noports_harness.dart';
 
 const _alice = NoPortsHarness.clientAtSign;
 const _carol = '@carol';
+const _daemonLogger = ' sshnpd ';
 
 /// An npt request for [sessionId] carrying [relayAuthAesKey], to open
 /// 127.0.0.1:22 through a relay nothing listens on.
@@ -334,7 +335,7 @@ void main() {
       );
       for (final c in cases) {
         expect(
-          c.records.map((r) => r.message),
+          messagesFrom(c.records, _daemonLogger),
           contains(allOf(contains(c.type), contains(c.sender))),
           reason: 'the log names the ${c.outcome} ${c.type} and its sender',
         );
@@ -378,7 +379,7 @@ void main() {
         reason: "no record holds the legacy request's private key",
       );
       expect(
-        capture.records.map((r) => r.message),
+        messagesFrom(capture.records, _daemonLogger),
         contains(contains('Private Key received from $_alice')),
         reason: 'the daemon read the private key',
       );
@@ -409,7 +410,7 @@ void main() {
         reason: "no record holds the notification's value",
       );
       expect(
-        capture.records.map((r) => r.message),
+        messagesFrom(capture.records, _daemonLogger),
         contains(allOf(contains('some_request'), contains(_alice))),
         reason: 'the log names the type and its sender',
       );

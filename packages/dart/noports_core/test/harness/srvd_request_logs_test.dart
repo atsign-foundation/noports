@@ -26,6 +26,7 @@ import 'noports_harness.dart';
 
 const _alice = NoPortsHarness.clientAtSign;
 const _bob = NoPortsHarness.daemonAtSign;
+const _relayLogger = ' srvd main ';
 
 /// A relay worker made by [create], logging at every level to the records it
 /// returns, with the main isolate's end of its ports; closed after the test.
@@ -249,18 +250,30 @@ void main() {
         isEmpty,
         reason: 'no line srvd or its workers log holds a relay-auth key',
       );
-      for (final (from, records, session) in [
-        ('srvd starting the session', starting, sessionId),
-        ('its port-pair worker', portPairWorker, sessionId),
-        ('its single-port worker', singlePortWorker, sessionId),
+      for (final (from, messages, session) in [
+        (
+          'srvd starting the session',
+          messagesFrom(starting, _relayLogger),
+          sessionId,
+        ),
+        (
+          'its port-pair worker',
+          [for (final r in portPairWorker) r.message],
+          sessionId,
+        ),
+        (
+          'its single-port worker',
+          [for (final r in singlePortWorker) r.message],
+          sessionId,
+        ),
         (
           'srvd failing unexpectedly',
-          capture.records.skip(failingFrom).toList(),
+          messagesFrom(capture.records.skip(failingFrom), _relayLogger),
           failingSessionId,
         ),
       ]) {
         expect(
-          records.map((r) => r.message),
+          messages,
           contains(allOf(contains(session), contains(_alice), contains(_bob))),
           reason: 'the log from $from names the session and its atSigns',
         );
@@ -296,7 +309,7 @@ void main() {
         reason: 'no line srvd logs holds any of the relay-auth key',
       );
       expect(
-        capture.records.map((r) => r.message),
+        messagesFrom(capture.records, _relayLogger),
         contains(
           allOf(
             contains('could not be read'),
@@ -367,7 +380,7 @@ void main() {
         reason: "no line srvd logs holds the notification's value",
       );
       expect(
-        capture.records.map((r) => r.message),
+        messagesFrom(capture.records, _relayLogger),
         containsAll([
           allOf(contains('some_request'), contains(_alice)),
           allOf(contains('"other"'), contains(_bob)),

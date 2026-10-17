@@ -75,6 +75,13 @@ class LogCapture implements LoggingHandler {
   }
 }
 
+/// The messages of those of [records] that the logger named [loggerName]
+/// wrote.
+List<String> messagesFrom(Iterable<LogRecord> records, String loggerName) => [
+  for (final record in records)
+    if (record.loggerName == loggerName) record.message,
+];
+
 /// The text of each of [records] holding any of [needles].
 List<String> recordsHolding(
   Iterable<LogRecord> records,
