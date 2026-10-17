@@ -1275,7 +1275,8 @@ class SrvImplDart implements Srv<SocketConnector> {
                   await _handleControlMessage(sc, relayAddress, controlMsg);
                 } catch (e, st) {
                   logger.shout(
-                    'Caught (will rethrow) error: $e\nStack Trace:\n$st',
+                    'Caught (will rethrow) error: ${errorForLog(e)}'
+                    '\nStack Trace:\n$st',
                   );
                   rethrow;
                 }

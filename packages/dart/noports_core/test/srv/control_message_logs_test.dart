@@ -15,13 +15,15 @@ import 'package:test/test.dart';
 
 import '../harness/log_capture.dart';
 
-/// A daemon-side srv whose requested local host resolves to the loopback
-/// address when [resolves], and can't be resolved otherwise.
+/// A daemon-side srv whose lookup of its requested local host throws
+/// [lookupError] when given, and otherwise resolves to the loopback address
+/// when [resolves], and can't be resolved when not.
 class _Srv extends SrvImplDart {
   _Srv(
     int relayPort, {
     required super.localPort,
     required this.resolves,
+    this.lookupError,
     super.relayAuthenticator,
   }) : super(
          '127.0.0.1',
@@ -34,11 +36,15 @@ class _Srv extends SrvImplDart {
        );
 
   final bool resolves;
+  final Object? lookupError;
 
   @override
-  Future<InternetAddress> resolveRequestedLocalHost() async => resolves
-      ? InternetAddress.loopbackIPv4
-      : throw SocketException("Failed host lookup: '$localHost'");
+  Future<InternetAddress> resolveRequestedLocalHost() async {
+    if (lookupError != null) throw lookupError!;
+    return resolves
+        ? InternetAddress.loopbackIPv4
+        : throw SocketException("Failed host lookup: '$localHost'");
+  }
 }
 
 /// A server on the loopback address which accepts every connection, giving
@@ -56,16 +62,22 @@ Future<({ServerSocket server, Future<Socket> first})> _server() async {
 
 /// A daemon-side srv logging at every level, its control channel connected
 /// to [relay] or a new relay, with the relay's end of that channel; closed
-/// after the test. Its requested host is [localPort] on the loopback address
-/// when [resolves], and can't be resolved otherwise.
+/// after the test. Its lookup of its requested host throws [lookupError] when
+/// given; otherwise the host is [localPort] on the loopback address when
+/// [resolves], and can't be resolved when not.
 Future<Socket> _srvControlChannel({
   int localPort = 22,
   bool resolves = false,
+  Object? lookupError,
   ({ServerSocket server, Future<Socket> first})? relay,
 }) async {
   final (server: relayServer, first: control) = relay ?? await _server();
-  final srv = _Srv(relayServer.port, localPort: localPort, resolves: resolves)
-    ..logger.level = 'all';
+  final srv = _Srv(
+    relayServer.port,
+    localPort: localPort,
+    resolves: resolves,
+    lookupError: lookupError,
+  )..logger.level = 'all';
   final sc = await srv.run();
   addTearDown(sc.close);
   return control;
@@ -73,6 +85,10 @@ Future<Socket> _srvControlChannel({
 
 /// [key] with its character at offset 10 replaced by one that isn't base64.
 String _notBase64(String key) => key.replaceRange(10, 11, '*');
+
+/// A FormatException at offset 14 of a source holding [socketKey].
+FormatException _holding(String socketKey) =>
+    FormatException('Unexpected character', '{"socketKey":"$socketKey"}', 14);
 
 /// A loopback port nothing listens on.
 Future<int> _closedPort() async {
@@ -141,6 +157,29 @@ void main() {
         _srvControlChannel(),
         'connect:${legacyKeys.join(':')}',
         legacyKeys,
+        (m) => m.contains('while handling'),
+      );
+
+      final socketKey = generateAes256Key();
+      final formatKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message whose requested host lookup throws a'
+            ' FormatException holding a socket key',
+        _srvControlChannel(lookupError: _holding(socketKey)),
+        'connect:${formatKeys.join(':')}\n',
+        [...formatKeys, socketKey],
+        (m) => m.contains('while handling'),
+      );
+
+      final legacySocketKey = generateAes256Key();
+      final legacyFormatKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message from a client older than 5.6.1, without a newline,'
+            ' whose requested host lookup throws a FormatException holding a'
+            ' socket key',
+        _srvControlChannel(lookupError: _holding(legacySocketKey)),
+        'connect:${legacyFormatKeys.join(':')}',
+        [...legacyFormatKeys, legacySocketKey],
         (m) => m.contains('while handling'),
       );
 
@@ -232,6 +271,26 @@ void main() {
           reason:
               "the log names the message's type and gives the error's text"
               ' for $failure',
+        );
+      }
+      for (final failure in [
+        'a connect message whose requested host lookup throws a'
+            ' FormatException holding a socket key',
+        'a connect message from a client older than 5.6.1, without a newline,'
+            ' whose requested host lookup throws a FormatException holding a'
+            ' socket key',
+      ]) {
+        expect(
+          logged[failure],
+          contains(
+            allOf(
+              contains('FormatException: Unexpected character (at offset 14)'),
+              contains('connect control'),
+            ),
+          ),
+          reason:
+              "the log names the message's type and gives the error's type,"
+              ' message and offset for $failure',
         );
       }
       expect(
