@@ -323,6 +323,7 @@ void main() {
         }
       }
 
+      await capture.untilQuiet();
       expect(
         {
           for (final c in cases)
@@ -370,6 +371,7 @@ void main() {
         contains('Daemon does not permit connections'),
         reason: 'the daemon reads the legacy request and refuses it',
       );
+      await capture.untilQuiet();
       expect(
         recordsHolding(capture.records, [privateKeyBody]),
         isEmpty,
@@ -400,6 +402,7 @@ void main() {
         (r) => r.message.contains('unknown "some_request"'),
       );
 
+      await capture.untilQuiet();
       expect(
         recordsHoldingKey(capture.records, value),
         isEmpty,

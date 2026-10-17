@@ -28,6 +28,30 @@ class LogCapture implements LoggingHandler {
     await pumpEventQueue();
   }
 
+  /// Waits until [quiet] passes with no new record, failing if the log
+  /// hasn't gone quiet within [timeout].
+  Future<void> untilQuiet({
+    Duration quiet = const Duration(seconds: 1),
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    var seen = records.length;
+    var since = DateTime.now();
+    while (DateTime.now().difference(since) < quiet) {
+      if (DateTime.now().isAfter(deadline)) {
+        fail(
+          'The log did not go quiet for ${quiet.inMilliseconds}ms within'
+          ' ${timeout.inSeconds}s',
+        );
+      }
+      await Future.delayed(const Duration(milliseconds: 20));
+      if (records.length != seen) {
+        seen = records.length;
+        since = DateTime.now();
+      }
+    }
+  }
+
   /// A [LogCapture] which is the default handler of every logger the test
   /// file constructs, each logging at every level unless it sets its own,
   /// emptied before each test. One serves the whole file, since some
