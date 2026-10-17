@@ -172,7 +172,9 @@ class SshnpDartPureImpl extends SshnpCore
       this,
       sessionRequest.toJson(),
     );
-    logger.info('Sending: $notifyPayload');
+    logger.info(
+      'Sending ssh_request for session $sessionId to ${params.sshnpdAtSign}',
+    );
 
     await notify(
       AtKey()

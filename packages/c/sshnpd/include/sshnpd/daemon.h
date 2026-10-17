@@ -8,6 +8,8 @@ extern "C" {
 #include "atclient/atclient.h"
 #include "atclient/monitor.h"
 #include "sshnpd/params.h"
+#include "sshnpd/policy.h"
+#include "sshnpd/policy_limits.h"
 #include "sshnpd/sshnpd.h"
 #include <signal.h>
 
@@ -69,6 +71,16 @@ int reconnect_atclient();
 int reconnect_monitor();
 void free_atclient_without_disconnect(atclient *atclient);
 int set_worker_hooks();
+
+/**
+ * @brief Handles a notification the monitor read: checks its sender, then
+ * runs the handler for the request it names, deciding with the policy
+ * service through decisions, checked_senders and policy_decision when one is
+ * configured. Returns true in a child process forked to run a session, which
+ * must leave the main loop.
+ */
+bool sshnpd_handle_notification(atclient_monitor_message *message, policy_cache *decisions,
+                                policy_throttle *checked_senders, sshnpd_policy_decision *policy_decision);
 
 // Main daemon loop
 void main_loop();

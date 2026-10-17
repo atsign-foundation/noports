@@ -134,6 +134,9 @@ class _NptImpl extends NptBase
   SshnpdDefaultChannel get sshnpdChannel => _sshnpdChannel;
   late final SshnpdDefaultChannel _sshnpdChannel;
 
+  /// The channel this npt asks its relay for a session over.
+  @visibleForTesting
+  SrvdChannel get srvdChannel => _srvdChannel;
   late final SrvdChannel _srvdChannel;
 
   final Completer _completer = Completer();
@@ -325,7 +328,9 @@ class _NptImpl extends NptBase
       _srvdChannel,
       sessionRequest.toJson(),
     );
-    logger.info('Sending: $notifyPayload');
+    logger.info(
+      'Sending npt_request for session $sessionId to ${params.sshnpdAtSign}',
+    );
 
     await notify(
       AtKey()
