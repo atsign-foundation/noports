@@ -10,11 +10,11 @@
 * fix: srvd closes a session's ports at once when it can't take the session's
   lock, rather than after 30 seconds
 * fix: sshnp, npt, sshnpd and srvd log a session request by its type, session
-  and atSigns, not its content
+  and atSigns, not its keys
 * fix: sshnpd and srvd log a request of a type they don't handle by its type
   and sender, not its value
-* fix: srv logs a control message it can't handle by its type and the error's
-  type, not the message itself
+* fix: srv logs a control message it can't handle by its type and the error,
+  not the message itself
 * fix: sshnp and npt log whether a device's response could be read and
   verified, not the response itself
 * chore: sshnpd logs a session lock it can't take at warning
