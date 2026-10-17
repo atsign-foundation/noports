@@ -86,9 +86,13 @@ Future<Socket> _srvControlChannel({
 /// [key] with its character at offset 10 replaced by one that isn't base64.
 String _notBase64(String key) => key.replaceRange(10, 11, '*');
 
-/// A FormatException at offset 14 of a source holding [socketKey].
-FormatException _holding(String socketKey) =>
-    FormatException('Unexpected character', '{"socketKey":"$socketKey"}', 14);
+/// A FormatException with [message], at [offset] of a source holding
+/// [socketKey].
+FormatException _holding(
+  String socketKey, {
+  String message = 'Unexpected character',
+  int? offset = 14,
+}) => FormatException(message, '{"socketKey":"$socketKey"}', offset);
 
 /// A loopback port nothing listens on.
 Future<int> _closedPort() async {
@@ -180,6 +184,28 @@ void main() {
         _srvControlChannel(lookupError: _holding(legacySocketKey)),
         'connect:${legacyFormatKeys.join(':')}',
         [...legacyFormatKeys, legacySocketKey],
+        (m) => m.contains('while handling'),
+      );
+
+      final noMessageKey = generateAes256Key();
+      final noMessageKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message whose requested host lookup throws a'
+            ' FormatException with no message, holding a socket key',
+        _srvControlChannel(lookupError: _holding(noMessageKey, message: '')),
+        'connect:${noMessageKeys.join(':')}\n',
+        [...noMessageKeys, noMessageKey],
+        (m) => m.contains('while handling'),
+      );
+
+      final noOffsetKey = generateAes256Key();
+      final noOffsetKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message whose requested host lookup throws a'
+            ' FormatException with no offset, holding a socket key',
+        _srvControlChannel(lookupError: _holding(noOffsetKey, offset: null)),
+        'connect:${noOffsetKeys.join(':')}\n',
+        [...noOffsetKeys, noOffsetKey],
         (m) => m.contains('while handling'),
       );
 
@@ -291,6 +317,27 @@ void main() {
           reason:
               "the log names the message's type and gives the error's type,"
               ' message and offset for $failure',
+        );
+      }
+      for (final (failure, given) in [
+        (
+          'a connect message whose requested host lookup throws a'
+              ' FormatException with no message, holding a socket key',
+          'FormatException (at offset 14) while handling a connect control',
+        ),
+        (
+          'a connect message whose requested host lookup throws a'
+              ' FormatException with no offset, holding a socket key',
+          'FormatException: Unexpected character while handling a connect'
+              ' control',
+        ),
+      ]) {
+        expect(
+          logged[failure],
+          contains(contains(given)),
+          reason:
+              "the log gives the error's type with what it has of a message"
+              ' and offset, and nothing for what it lacks, for $failure',
         );
       }
       expect(
