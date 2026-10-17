@@ -6,7 +6,9 @@ library;
 import 'dart:async';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
+import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:test/test.dart';
 
@@ -15,17 +17,20 @@ import '../harness/log_capture.dart';
 /// A daemon-side srv whose requested local host resolves to the loopback
 /// address when [resolves], and can't be resolved otherwise.
 class _Srv extends SrvImplDart {
-  _Srv(int relayPort, {required super.localPort, required this.resolves})
-    : super(
-        '127.0.0.1',
-        relayPort,
-        localHost: 'requested.host',
-        bindLocalPort: false,
-        relayAuthenticator: null,
-        multi: true,
-        detached: false,
-        timeout: const Duration(seconds: 30),
-      );
+  _Srv(
+    int relayPort, {
+    required super.localPort,
+    required this.resolves,
+    super.relayAuthenticator,
+  }) : super(
+         '127.0.0.1',
+         relayPort,
+         localHost: 'requested.host',
+         bindLocalPort: false,
+         multi: true,
+         detached: false,
+         timeout: const Duration(seconds: 30),
+       );
 
   final bool resolves;
 
@@ -271,6 +276,53 @@ void main() {
               ' with its host and port, for $failure',
         );
       }
+    });
+
+    test('when its relay authentication fails on a relay-auth key that'
+        " isn't valid base64, then the log gives the error's message and"
+        ' offset, and no log line contains the key.', () async {
+      final (server: relay, first: control) = await _server();
+      final key = generateAes256Key().replaceRange(32, 33, '*');
+      final signing = RsaKeyPair.generate();
+      final srv = _Srv(
+        relay.port,
+        localPort: 22,
+        resolves: false,
+        relayAuthenticator: RelayAuthenticatorESCR(
+          sessionId: 'relay-auth-logs',
+          relayAuthAesKey: key,
+          publicSigningKeyUri: 'public:signing.sshnp@bob',
+          publicSigningKey: signing.atPublicKey.publicKey,
+          privateSigningKey: signing.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
+          isSideA: false,
+        ),
+      )..logger.level = 'all';
+
+      final running = srv.run();
+      (await control).write('challenge\n');
+      await expectLater(
+        running,
+        throwsA(anything),
+        reason: "srv's relay authentication of its control socket fails",
+      );
+
+      await capture.untilQuiet();
+      expect(
+        recordsHoldingKey(capture.records, key),
+        isEmpty,
+        reason: 'no line srv logs holds the relay-auth key',
+      );
+      expect(
+        [for (final r in capture.records) r.message],
+        contains(
+          allOf(
+            contains('Failed to authenticate control socket'),
+            contains('FormatException: Invalid character (at offset 32)'),
+          ),
+        ),
+        reason: "the log gives the error's message and offset",
+      );
     });
   });
 }

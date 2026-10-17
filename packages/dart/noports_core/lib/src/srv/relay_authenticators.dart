@@ -10,6 +10,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
     show signWithApskKey;
+import 'package:noports_core/src/common/error_text.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 
 /// Clients which are authenticating to a relay may use a [RelayAuthenticator]
@@ -236,7 +237,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                 } catch (e) {
                   if (!completer.isCompleted) {
                     completer.completeError(
-                      'Error during relay authentication: $e',
+                      'Error during relay authentication: ${errorForLog(e)}',
                     );
                   }
                 }
@@ -254,7 +255,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                   await socket.flush();
                 } catch (e) {
                   completer.completeError(
-                    'Error during relay authentication: $e',
+                    'Error during relay authentication: ${errorForLog(e)}',
                   );
                 }
               }
