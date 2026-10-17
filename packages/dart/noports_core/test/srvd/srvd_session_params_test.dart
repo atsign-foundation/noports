@@ -1,7 +1,8 @@
-/// Goal: no relay-auth key, socket key or IV, or whole request reaches a log
-/// record. Non-goals: hiding other error detail, which is logged in full, a
-/// malformed field's value among it, and sanitising a third-party component's
-/// own error text.
+/// Goal: no private key material (a relay-auth key, a socket key or IV, an ssh
+/// private key) reaches a log record. Non-goals: keeping other request content
+/// out, since types, senders, session ids, atSigns, field values and enum names
+/// are logged, and hiding error detail: an error is logged in full, except a
+/// FormatException's source, which is left out whatever it holds.
 library;
 
 import 'package:noports_core/src/common/session_crypto.dart';

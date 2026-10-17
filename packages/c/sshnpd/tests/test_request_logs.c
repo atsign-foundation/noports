@@ -1,5 +1,5 @@
-// Goal: no relay-auth key, socket key or IV, or whole request reaches a log line. Non-goals: hiding other error
-// detail, and sanitising a third-party component's own error text.
+// Goal: no private key material (a relay-auth key, a socket key or IV) reaches a log line. Non-goal: keeping other
+// request content out of the log.
 #include "sshnpd/daemon.h"
 #include "sshnpd/handle_npt_request.h"
 #include "sshnpd/handle_ssh_request.h"
