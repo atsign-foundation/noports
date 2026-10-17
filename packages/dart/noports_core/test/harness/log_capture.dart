@@ -93,7 +93,8 @@ List<String> recordsHolding(
 ];
 
 /// The text of each of [records] holding either half of [key], which finds
-/// the key whether it was logged as it is, JSON-encoded or cut short.
+/// the key logged as it is or JSON-encoded, or cut short where the cut keeps
+/// at least half of it.
 List<String> recordsHoldingKey(Iterable<LogRecord> records, String key) {
   final half = key.length ~/ 2;
   return recordsHolding(records, [key.substring(0, half), key.substring(half)]);

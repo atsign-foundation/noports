@@ -150,7 +150,7 @@ static void print_line(const char *label, const char *logged, const char *at) {
   printf("%s: %.*s\n", label, (int)(line_end == NULL ? strlen(line) : (size_t)(line_end - line)), line);
 }
 
-// Matching either half of the key finds it whole, JSON-encoded or cut short
+// NOTE matching either half finds the key whole or JSON-encoded, or cut short where the cut keeps at least half of it
 static bool holds_key(const char *logged) {
   const char *key = RELAY_AUTH_KEY;
   const size_t half = strlen(key) / 2;
