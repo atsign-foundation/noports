@@ -111,7 +111,7 @@ int main(void) {
 
   char *logged = log_of_control_message("conect:" SOCKET_KEY ":" SOCKET_IV "\n");
   check(!holds_key_or_iv(logged), "case: a control message of a type srv does not know, carrying a key and IV");
-  const char *at = strstr(logged, "control channel");
+  const char *at = strstr(logged, "| Unknown conect request to control channel\n");
   if (at != NULL) {
     const char *line = at;
     while (line > logged && line[-1] != '\n') {
@@ -120,7 +120,7 @@ int main(void) {
     const char *end = strchr(at, '\n');
     printf("matched: %.*s\n", (int)(end == NULL ? strlen(line) : (size_t)(end - line)), line);
   }
-  check(at != NULL && strstr(logged, "conect") != NULL, "reach: the log names the unknown message's type");
+  check(at != NULL, "reach: the log names the unknown message's type");
   free(logged);
 
   if (failures > 0) {
