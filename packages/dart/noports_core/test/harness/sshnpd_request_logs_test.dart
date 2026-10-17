@@ -385,7 +385,7 @@ void main() {
           contains(contains(c.kept)),
           reason:
               "the log gives the error's text, or a FormatException's type,"
-              ' message and offset, for the ${c.outcome} ${c.type}',
+              " message and offset, for the ${c.type} case '${c.outcome}'",
         );
       }
     });
