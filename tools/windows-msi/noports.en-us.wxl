@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overrides for the stock WixUI wording. Any string with the same Id as
+     one in WixToolset.UI.wixext replaces it. -->
+<WixLocalization Culture="en-US" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <String Id="WelcomeDlgTitle" Value="{\WixUI_Font_Bigger}Welcome to NoPorts [ProductVersion]" />
+  <String Id="WelcomeDlgDescription" Value="NoPorts lets you reach this machine over SSH, RDP and other services without opening any inbound ports. This installs the command-line tools, the device daemon as a Windows service, and the NoPorts Configuration app that sets it up. Click Next to continue or Cancel to exit." />
+  <String Id="CustomizeDlgTitle" Value="{\WixUI_Font_Title}What to install" />
+  <String Id="CustomizeDlgDescription" Value="Everything is selected by default. Click an item to read what it does; use the icons to leave something out." />
+  <String Id="VerifyReadyDlgInstallTitle" Value="{\WixUI_Font_Title}Ready to install NoPorts" />
+  <String Id="ExitDialogTitle" Value="{\WixUI_Font_Bigger}NoPorts is installed" />
+  <String Id="ExitDialogDescription" Value="Click Finish to close Setup." />
+</WixLocalization>
