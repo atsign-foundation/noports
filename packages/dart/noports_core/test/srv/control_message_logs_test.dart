@@ -1,3 +1,8 @@
+/// Goal: no relay-auth key, socket key or IV, or request content reaches a
+/// log record. Non-goals: hiding other error detail, which is logged in full,
+/// and sanitising a third-party component's own error text.
+library;
+
 import 'dart:async';
 import 'dart:io';
 
@@ -44,23 +49,32 @@ Future<({ServerSocket server, Future<Socket> first})> _server() async {
 }
 
 /// A daemon-side srv logging at every level, its control channel connected
-/// to a relay, with the relay's end of that channel; closed after the test.
-/// Its requested host is [localPort] on the loopback address when
-/// [resolves], and can't be resolved otherwise.
+/// to [relay] or a new relay, with the relay's end of that channel; closed
+/// after the test. Its requested host is [localPort] on the loopback address
+/// when [resolves], and can't be resolved otherwise.
 Future<Socket> _srvControlChannel({
   int localPort = 22,
   bool resolves = false,
+  ({ServerSocket server, Future<Socket> first})? relay,
 }) async {
-  final (server: relay, first: control) = await _server();
-  final srv = _Srv(relay.port, localPort: localPort, resolves: resolves)
+  final (server: relayServer, first: control) = relay ?? await _server();
+  final srv = _Srv(relayServer.port, localPort: localPort, resolves: resolves)
     ..logger.level = 'all';
   final sc = await srv.run();
   addTearDown(sc.close);
   return control;
 }
 
-/// [key] with one character replaced by one that isn't base64.
+/// [key] with its character at offset 10 replaced by one that isn't base64.
 String _notBase64(String key) => key.replaceRange(10, 11, '*');
+
+/// A loopback port nothing listens on.
+Future<int> _closedPort() async {
+  final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+  final port = server.port;
+  await server.close();
+  return port;
+}
 
 void main() {
   final capture = LogCapture.install();
@@ -149,6 +163,31 @@ void main() {
         (m) => m.contains('Failed to connect locally'),
       );
 
+      final relay = await _server();
+      final refusingRelay = _srvControlChannel(resolves: true, relay: relay)
+          .then((control) async {
+            await relay.server.close();
+            return control;
+          });
+      final refusedRelayKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message whose relay refuses the connection',
+        refusingRelay,
+        'connect:${refusedRelayKeys.join(':')}\n',
+        refusedRelayKeys,
+        (m) => m.contains('Failed to connect to relay'),
+      );
+
+      final requestedPort = await _closedPort();
+      final refusedLocalKeys = [generateAes256Key(), generateIvBase64()];
+      await handle(
+        'a connect message whose requested host refuses the connection',
+        _srvControlChannel(localPort: requestedPort, resolves: true),
+        'connect:${refusedLocalKeys.join(':')}\n',
+        refusedLocalKeys,
+        (m) => m.contains('Failed to connect locally'),
+      );
+
       final unknownKeys = [generateAes256Key(), generateIvBase64()];
       await handle(
         'a control message of a type srv does not know, carrying a key and IV',
@@ -179,11 +218,14 @@ void main() {
         expect(
           logged[failure],
           contains(
-            allOf(contains('SocketException'), contains('connect control')),
+            allOf(
+              contains("SocketException: Failed host lookup: 'requested.host'"),
+              contains('connect control'),
+            ),
           ),
           reason:
-              "the log names the message's type and the error's type for"
-              ' $failure',
+              "the log names the message's type and gives the error's text"
+              ' for $failure',
         );
       }
       expect(
@@ -204,11 +246,29 @@ void main() {
           logged[failure],
           containsAll([
             contains('received connect request'),
-            contains('FormatException'),
+            contains('FormatException: Invalid character (at offset 10)'),
           ]),
           reason:
-              "the log names the message's type and the error's type for"
-              ' $failure',
+              "the log names the message's type and gives the error's type,"
+              ' message and offset for $failure',
+        );
+      }
+      for (final failure in [
+        'a connect message whose relay refuses the connection',
+        'a connect message whose requested host refuses the connection',
+      ]) {
+        expect(
+          logged[failure],
+          containsAll([
+            contains('received connect request'),
+            allOf(
+              contains('SocketException: Connection refused (OS Error: '),
+              contains('), address = 127.0.0.1, port = '),
+            ),
+          ]),
+          reason:
+              "the log names the message's type and gives the error's text,"
+              ' with its host and port, for $failure',
         );
       }
     });

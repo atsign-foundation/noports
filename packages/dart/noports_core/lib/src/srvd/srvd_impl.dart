@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
+import 'package:noports_core/src/common/error_text.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
@@ -317,7 +318,7 @@ class SrvdImpl
       }
     } catch (e, st) {
       logger.shout(
-        'Exception ${e.runtimeType} while handling notification ${n.key}'
+        'Exception ${errorForLog(e)} while handling notification ${n.key}'
         ' from ${n.from}\nStack Trace:\n$st',
       );
     }
@@ -433,7 +434,7 @@ class SrvdImpl
     } catch (e) {
       logger.shout(
         'Unable to provide the socket pair, as the request from ${n.from}'
-        ' could not be read: ${e.runtimeType}',
+        ' could not be read: ${errorForLog(e)}',
       );
       return;
     }

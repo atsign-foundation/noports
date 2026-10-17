@@ -1,3 +1,8 @@
+/// Goal: no relay-auth key, socket key or IV, or request content reaches a
+/// log record. Non-goals: hiding other error detail, which is logged in full,
+/// and sanitising a third-party component's own error text.
+library;
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -174,6 +179,7 @@ void main() {
               String outcome,
               String sender,
               String key,
+              String? kept,
               List<LogRecord> records,
             })
           >[];
@@ -185,16 +191,17 @@ void main() {
         Future<void> receive(
           String outcome,
           String sender,
-          Future<void> Function(String sessionId, String key) send,
+          Future<String?> Function(String sessionId, String key) send,
         ) async {
           final key = generateAes256Key();
           final from = capture.records.length;
-          await send(Uuid().v4(), key);
+          final kept = await send(Uuid().v4(), key);
           cases.add((
             type: type,
             outcome: outcome,
             sender: sender,
             key: key,
+            kept: kept,
             records: capture.records.skip(from).toList(),
           ));
         }
@@ -211,6 +218,7 @@ void main() {
             contains('Failed to start up the daemon side'),
             reason: 'the daemon accepts the $type and tries to start it',
           );
+          return null;
         });
 
         await receive('refused as unauthorised', _carol, (
@@ -230,6 +238,7 @@ void main() {
             'refusing the $type from $_carol',
             (_) => capture.records.where(refusal).length > refusals,
           );
+          return null;
         });
 
         await receive("with a signature that doesn't verify", _alice, (
@@ -247,6 +256,7 @@ void main() {
             contains('Signature not verified'),
             reason: 'the daemon checks the $type signature and refuses it',
           );
+          return null;
         });
 
         await receive('unreadable', _alice, (sessionId, key) async {
@@ -255,28 +265,49 @@ void main() {
           )..remove('signature');
           await _send(alice, type, jsonEncode(envelope));
           await capture.waitFor(
-            'handling the unreadable $type $sessionId',
-            (r) => r.message.contains('acquired mutex $sessionId'),
+            'reading the unreadable $type $sessionId',
+            (r) => r.message.contains('Failed to read the $type from'),
           );
+          return 'Invalid argument(s): Parameter signature should be a String'
+              ' but is actually a Null with value null';
         });
 
         String whole(String value, String key) => value;
-        for (final (failing, sshnpdFor, sent)
+        final stopped = StoppedException(
+          'the client for ${NoPortsHarness.daemonAtSign} stopped before'
+          ' request 1 was sent',
+        );
+        for (final (failing, sshnpdFor, sent, kept)
             in <
               (
                 String,
                 SshnpdImpl Function(String key),
                 String Function(String, String),
+                String Function(String sent),
               )
             >[
               (
-                'its policy check throws an error quoting the key',
+                'its policy check fails',
+                (_) => _sshnpdOnMockAtClient(
+                  authChecker: _FailingAuthChecker(stopped),
+                ),
+                whole,
+                (_) => '$stopped',
+              ),
+              (
+                'its policy check throws a FormatException whose source holds'
+                    ' the key',
                 (key) => _sshnpdOnMockAtClient(
                   authChecker: _FailingAuthChecker(
-                    StateError('the policy service could not be asked: $key'),
+                    FormatException(
+                      'Unexpected character',
+                      '{"relayAuthAesKey":"$key"}',
+                      20,
+                    ),
                   ),
                 ),
                 whole,
+                (_) => 'FormatException: Unexpected character (at offset 20)',
               ),
               (
                 'a notification pre-processor throws',
@@ -285,6 +316,7 @@ void main() {
                       throw StateError('the notification could not be read'),
                 ),
                 whole,
+                (_) => 'Bad state: the notification could not be read',
               ),
               (
                 'a notification pre-processor cannot read it, cut short partway'
@@ -294,32 +326,39 @@ void main() {
                 ),
                 (String value, String key) =>
                     value.substring(0, value.indexOf(key) + key.length - 4),
+                (sent) =>
+                    'FormatException: Unterminated string'
+                    ' (at offset ${sent.length})',
               ),
             ]) {
           await receive(
             'whose handling fails unexpectedly, as $failing',
             _alice,
-            (sessionId, key) => sshnpdFor(key).clientRequestNotificationHandler(
-              AtNotification(
+            (sessionId, key) async {
+              final value = sent(
+                jsonEncode({
+                  'payload': payload(sessionId, key),
+                  'signature': 'signature',
+                  'hashingAlgo': 'sha256',
+                  'signingAlgo': 'rsa2048',
+                }),
+                key,
+              );
+              await sshnpdFor(key).clientRequestNotificationHandler(
+                AtNotification(
                   Uuid().v4(),
-                  '${NoPortsHarness.daemonAtSign}:$type.${NoPortsHarness.device}'
+                  '${NoPortsHarness.daemonAtSign}:$type'
+                      '.${NoPortsHarness.device}'
                       '.${DefaultArgs.namespace}$_alice',
                   _alice,
                   NoPortsHarness.daemonAtSign,
                   DateTime.now().millisecondsSinceEpoch,
                   'key',
                   true,
-                )
-                ..value = sent(
-                  jsonEncode({
-                    'payload': payload(sessionId, key),
-                    'signature': 'signature',
-                    'hashingAlgo': 'sha256',
-                    'signingAlgo': 'rsa2048',
-                  }),
-                  key,
-                ),
-            ),
+                )..value = value,
+              );
+              return kept(value);
+            },
           );
         }
       }
@@ -338,6 +377,15 @@ void main() {
           messagesFrom(c.records, _daemonLogger),
           contains(allOf(contains(c.type), contains(c.sender))),
           reason: 'the log names the ${c.outcome} ${c.type} and its sender',
+        );
+      }
+      for (final c in cases.where((c) => c.kept != null)) {
+        expect(
+          messagesFrom(c.records, _daemonLogger),
+          contains(contains(c.kept)),
+          reason:
+              "the log gives the error's text, or a FormatException's type,"
+              ' message and offset, for the ${c.outcome} ${c.type}',
         );
       }
     });

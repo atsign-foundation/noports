@@ -1,3 +1,8 @@
+/// Goal: no relay-auth key, socket key or IV, or request content reaches a
+/// log record. Non-goals: hiding other error detail, which is logged in full,
+/// and sanitising a third-party component's own error text.
+library;
+
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
 import 'package:noports_core/npt.dart';

@@ -1,3 +1,8 @@
+/// Goal: no relay-auth key, socket key or IV, or request content reaches a
+/// log record. Non-goals: hiding other error detail, which is logged in full,
+/// and sanitising a third-party component's own error text.
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -222,30 +227,67 @@ void main() {
       final portPairWorker = await _portPairWorkerStarting(params, capture);
       final singlePortWorker = await _singlePortWorkerStarting(params, capture);
 
-      final failingSessionId = Uuid().v4();
-      final failingKey = generateAes256Key();
-      final failingFrom = capture.records.length;
-      final atClient = _MockAtClient();
-      when(
-        () => atClient.getCurrentAtSign(),
-      ).thenThrow(StateError('the atClient has no atSign: $failingKey'));
-      await (_FailingSrvd(atClient)..logger.level = 'all').notificationHandler(
-        AtNotification(
-          Uuid().v4(),
-          '${NoPortsHarness.relayAtSign}:${NoPortsHarness.device}'
-              '.request_ports.${Srvd.namespace}$_alice',
-          _alice,
-          NoPortsHarness.relayAtSign,
-          DateTime.now().millisecondsSinceEpoch,
-          'key',
-          true,
-          value: _relayRequest(
-            failingSessionId,
-            failingKey,
-            multipleAcksOk: false,
+      final failures =
+          <
+            ({
+              String outcome,
+              String sessionId,
+              String key,
+              String kept,
+              List<LogRecord> records,
+            })
+          >[];
+      for (final (outcome, stub, kept)
+          in <(String, void Function(When<String?>, String key), String)>[
+            (
+              'its atClient has no atSign',
+              (atSign, _) => atSign.thenReturn(null),
+              'Null check operator used on a null value',
+            ),
+            (
+              'its atClient throws a FormatException whose source holds the'
+                  ' key',
+              (atSign, key) => atSign.thenThrow(
+                FormatException(
+                  'Unexpected character',
+                  '{"relayAuthAesKey":"$key"}',
+                  20,
+                ),
+              ),
+              'FormatException: Unexpected character (at offset 20)',
+            ),
+          ]) {
+        final failingSessionId = Uuid().v4();
+        final failingKey = generateAes256Key();
+        final from = capture.records.length;
+        final atClient = _MockAtClient();
+        stub(when(() => atClient.getCurrentAtSign()), failingKey);
+        final srvd = _FailingSrvd(atClient)..logger.level = 'all';
+        await srvd.notificationHandler(
+          AtNotification(
+            Uuid().v4(),
+            '${NoPortsHarness.relayAtSign}:${NoPortsHarness.device}'
+                '.request_ports.${Srvd.namespace}$_alice',
+            _alice,
+            NoPortsHarness.relayAtSign,
+            DateTime.now().millisecondsSinceEpoch,
+            'key',
+            true,
+            value: _relayRequest(
+              failingSessionId,
+              failingKey,
+              multipleAcksOk: false,
+            ),
           ),
-        ),
-      );
+        );
+        failures.add((
+          outcome: outcome,
+          sessionId: failingSessionId,
+          key: failingKey,
+          kept: kept,
+          records: capture.records.skip(from).toList(),
+        ));
+      }
       await capture.untilQuiet();
       final allRecords = [
         ...capture.records,
@@ -256,7 +298,11 @@ void main() {
       expect(
         {
           'starting the session': recordsHoldingKey(allRecords, key),
-          'failing unexpectedly': recordsHoldingKey(allRecords, failingKey),
+          for (final f in failures)
+            'failing unexpectedly, as ${f.outcome}': recordsHoldingKey(
+              allRecords,
+              f.key,
+            ),
         }..removeWhere((_, holding) => holding.isEmpty),
         isEmpty,
         reason: 'no line srvd or its workers log holds a relay-auth key',
@@ -277,16 +323,28 @@ void main() {
           [for (final r in singlePortWorker) r.message],
           sessionId,
         ),
-        (
-          'srvd failing unexpectedly',
-          messagesFrom(capture.records.skip(failingFrom), _relayLogger),
-          failingSessionId,
-        ),
+        for (final f in failures)
+          (
+            'srvd failing unexpectedly, as ${f.outcome}',
+            messagesFrom(f.records, _relayLogger),
+            f.sessionId,
+          ),
       ]) {
         expect(
           messages,
           contains(allOf(contains(session), contains(_alice), contains(_bob))),
           reason: 'the log from $from names the session and its atSigns',
+        );
+      }
+      for (final f in failures) {
+        expect(
+          messagesFrom(f.records, _relayLogger),
+          contains(
+            allOf(contains(f.kept), contains('while handling notification')),
+          ),
+          reason:
+              "the log gives the error's text, or a FormatException's type,"
+              ' message and offset, when ${f.outcome}',
         );
       }
     });
@@ -304,11 +362,9 @@ void main() {
       );
       final key = generateAes256Key();
       final request = _relayRequest(Uuid().v4(), key);
+      final cut = request.substring(0, request.indexOf(key) + key.length - 4);
 
-      await _requestPorts(
-        alice,
-        request.substring(0, request.indexOf(key) + key.length - 4),
-      );
+      await _requestPorts(alice, cut);
       await capture.waitFor(
         'refusing the request',
         (r) => r.message.contains('Unable to provide the socket pair'),
@@ -326,10 +382,14 @@ void main() {
           allOf(
             contains('could not be read'),
             contains(_alice),
-            contains('FormatException'),
+            contains(
+              'FormatException: Unterminated string (at offset ${cut.length})',
+            ),
           ),
         ),
-        reason: "the log names the sender and the error's type",
+        reason:
+            "the log names the sender and gives the error's type, message and"
+            ' offset',
       );
     });
 

@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/src/common/error_text.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:at_commons/at_commons.dart' as at_commons;
@@ -1016,7 +1017,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     } catch (e) {
       logger.shout(
         'Failed to connect to relay ($relayAddress:$streamingPort)'
-        ' with error : ${e.runtimeType}',
+        ' with error : ${errorForLog(e)}',
       );
       sc.close();
       return;
@@ -1044,7 +1045,7 @@ class SrvImplDart implements Srv<SocketConnector> {
     } catch (e) {
       logger.shout(
         'Failed to connect locally ($localAddress:$localPort)'
-        ' with error : ${e.runtimeType}',
+        ' with error : ${errorForLog(e)}',
       );
       logger.shout('Closing sideB (relay) socket connection');
       sideB.socket.destroy();
@@ -1280,7 +1281,7 @@ class SrvImplDart implements Srv<SocketConnector> {
                 }
               } catch (e) {
                 logger.severe(
-                  '${e.runtimeType} while handling a'
+                  '${errorForLog(e)} while handling a'
                   ' ${controlMsg.split(':').first} control message',
                 );
               } finally {
@@ -1319,7 +1320,7 @@ class SrvImplDart implements Srv<SocketConnector> {
                           );
                         } catch (e) {
                           logger.severe(
-                            '${e.runtimeType} while handling a'
+                            '${errorForLog(e)} while handling a'
                             ' ${controlMsg.split(':').first} control message',
                           );
                         }

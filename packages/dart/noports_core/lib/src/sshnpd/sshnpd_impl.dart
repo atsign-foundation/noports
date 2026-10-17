@@ -11,6 +11,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:file/local.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/error_text.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
@@ -476,8 +477,8 @@ class SshnpdImpl
         }
       } catch (e) {
         logger.shout(
-          'Notification pre-processing failed with ${e.runtimeType}'
-          ' for ${notification.key} from ${notification.from}',
+          'Notification pre-processing failed for ${notification.key}'
+          ' from ${notification.from}: ${errorForLog(e)}',
         );
         return;
       }
@@ -568,8 +569,8 @@ class SshnpdImpl
       }
     } catch (e, st) {
       logger.shout(
-        'Unexpected ${e.runtimeType} handling client request notification'
-        ' ${notification.key} from ${notification.from}',
+        'Unexpected error handling client request notification'
+        ' ${notification.key} from ${notification.from}: ${errorForLog(e)}',
       );
       logger.shout('Stack Trace:\n$st');
     }
@@ -866,7 +867,7 @@ class SshnpdImpl
     } catch (e) {
       logger.warning(
         'Failed to read the npt_request from ${notification.from}:'
-        ' ${e.runtimeType}',
+        ' ${errorForLog(e)}',
       );
       return;
     }
@@ -1194,7 +1195,7 @@ class SshnpdImpl
     } catch (e) {
       logger.warning(
         'Failed to read the ssh_request from ${notification.from}:'
-        ' ${e.runtimeType}',
+        ' ${errorForLog(e)}',
       );
       return;
     }

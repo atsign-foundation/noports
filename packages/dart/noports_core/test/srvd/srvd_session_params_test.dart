@@ -1,3 +1,8 @@
+/// Goal: no relay-auth key, socket key or IV, or request content reaches a
+/// log record. Non-goals: hiding other error detail, which is logged in full,
+/// and sanitising a third-party component's own error text.
+library;
+
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
