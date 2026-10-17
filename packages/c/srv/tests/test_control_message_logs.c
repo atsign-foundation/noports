@@ -15,7 +15,7 @@
 
 #define SCENARIO                                                                                                       \
   "Given srv logging at every level, when handling a control message fails, then the log names the message's type "    \
-  "and the error's type, and no log line contains a socket key or IV."
+  "and gives the error, and no log line contains a socket key or IV."
 #define SOCKET_KEY "c29ja2V0LWtleS1mb3ItY29udHJvbC1sb2ctY2hlY2s="
 #define SOCKET_IV "c29ja2V0LWl2LWNoZWNrIQ=="
 

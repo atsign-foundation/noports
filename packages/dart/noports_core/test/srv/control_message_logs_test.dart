@@ -86,7 +86,7 @@ void main() {
 
   group('Given srv logging at every level,', () {
     test('when handling a control message fails, then the log names the'
-        " message's type and the error's type, and no log line contains a"
+        " message's type and gives the error, and no log line contains a"
         ' socket key or IV.', () async {
       final keysSent = <String, List<String>>{};
       final logged = <String, List<String>>{};
