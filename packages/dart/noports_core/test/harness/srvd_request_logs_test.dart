@@ -31,7 +31,10 @@ const _relayLogger = ' srvd main ';
 /// A relay worker made by [create], logging at every level to the records it
 /// returns, with the main isolate's end of its ports; closed after the test.
 ({W worker, StreamIterator<dynamic> fromWorker, List<LogRecord> records})
-_worker<W extends RelayWorker>(W Function(SendPort toMain) create) {
+_worker<W extends RelayWorker>(
+  W Function(SendPort toMain) create,
+  LogCapture capture,
+) {
   final handler = AtSignLogger.defaultLoggingHandler;
   final rootLevel = AtSignLogger.root_level;
   final toMain = ReceivePort();
@@ -43,7 +46,10 @@ _worker<W extends RelayWorker>(W Function(SendPort toMain) create) {
     toMain.close();
   });
   final records = <LogRecord>[];
-  worker.logger.logger.onRecord.listen(records.add);
+  worker.logger.logger.onRecord.listen((record) {
+    records.add(record);
+    capture.records.add(record);
+  });
   worker.logger.level = 'all';
   return (worker: worker, fromWorker: StreamIterator(toMain), records: records);
 }
@@ -52,6 +58,7 @@ _worker<W extends RelayWorker>(W Function(SendPort toMain) create) {
 /// session [params] describes.
 Future<List<LogRecord>> _portPairWorkerStarting(
   SrvdSessionParams params,
+  LogCapture capture,
 ) async {
   final (:worker, :fromWorker, :records) = _worker(
     (toMain) => PortPairWorker(
@@ -61,6 +68,7 @@ Future<List<LogRecord>> _portPairWorkerStarting(
       loggingTag: 'request logs',
       relayAuthDetectWindowMs: 500,
     ),
+    capture,
   );
   addTearDown(() => worker.connector?.close());
   expect(await fromWorker.moveNext(), isTrue);
@@ -78,6 +86,7 @@ Future<List<LogRecord>> _portPairWorkerStarting(
 /// the session [params] describes.
 Future<List<LogRecord>> _singlePortWorkerStarting(
   SrvdSessionParams params,
+  LogCapture capture,
 ) async {
   final (:worker, :fromWorker, :records) = _worker(
     (toMain) => SinglePortWorker(
@@ -89,6 +98,7 @@ Future<List<LogRecord>> _singlePortWorkerStarting(
       useTLS: false,
       bindPort: 0,
     ),
+    capture,
   );
   addTearDown(() => worker.sessions[params.sessionId]?.connector?.close());
   expect(await fromWorker.moveNext(), isTrue);
@@ -209,8 +219,8 @@ void main() {
       final params = relay.sessions[sessionId]!.params;
       expect(params.relayAuthAesKey, key);
       final starting = capture.records.toList();
-      final portPairWorker = await _portPairWorkerStarting(params);
-      final singlePortWorker = await _singlePortWorkerStarting(params);
+      final portPairWorker = await _portPairWorkerStarting(params, capture);
+      final singlePortWorker = await _singlePortWorkerStarting(params, capture);
 
       final failingSessionId = Uuid().v4();
       final failingKey = generateAes256Key();
@@ -218,7 +228,7 @@ void main() {
       final atClient = _MockAtClient();
       when(
         () => atClient.getCurrentAtSign(),
-      ).thenThrow(StateError('the atClient has no atSign'));
+      ).thenThrow(StateError('the atClient has no atSign: $failingKey'));
       await (_FailingSrvd(atClient)..logger.level = 'all').notificationHandler(
         AtNotification(
           Uuid().v4(),
@@ -352,8 +362,7 @@ void main() {
       await _requestPorts(alice, _relayRequest(sessionId, generateAes256Key()));
       await response;
       final sessionsValue = generateAes256Key();
-      await relay.handleSessionMessages(
-        'other.$sessionId',
+      await relay.notificationHandler(
         AtNotification(
           Uuid().v4(),
           '${NoPortsHarness.relayAtSign}:other.$sessionId.sessions'
@@ -386,7 +395,7 @@ void main() {
         messagesFrom(capture.records, _relayLogger),
         containsAll([
           allOf(contains('some_request'), contains(_alice)),
-          allOf(contains('"other"'), contains(_bob)),
+          allOf(contains('other.$sessionId'), contains(_bob)),
         ]),
         reason: 'the log names each type and its sender',
       );
