@@ -97,14 +97,22 @@ static char *log_of_request(request_handler *handler, const char *value) {
   return logged_since(start);
 }
 
-// Hands the daemon's notification handling an npt request from @alice, who
-// manages nothing here, and returns what the daemon logged meanwhile; the
-// caller frees it
-static char *log_of_notification(const char *value) {
+// Hands the daemon's notification handling an npt request from @alice to
+// @daemon, with @alice a manager when alice_manages and the notification
+// carrying an id when with_id, and returns what the daemon logged meanwhile;
+// the caller frees it
+static char *log_of_notification(const char *value, bool alice_manages, bool with_id) {
   long start = ftell(log_capture);
 
   apply_default_values_to_sshnpd_params(&params);
   params.device = "mydevice";
+  char *managers[] = {"@alice"};
+  if (alice_manages) {
+    params.manager_list = managers;
+    params.manager_list_len = 1;
+  }
+  should_run = 1;
+  atclient_init(&worker);
   policy_cache decisions;
   policy_cache_init(&decisions, 0);
   policy_throttle checked_senders;
@@ -115,12 +123,16 @@ static char *log_of_notification(const char *value) {
   atclient_atnotification notification;
   atclient_monitor_message message;
   notification_from_alice(&notification, &message, value);
-  atclient_atnotification_set_id(&notification, "notification-id");
+  if (with_id) {
+    atclient_atnotification_set_id(&notification, "notification-id");
+  }
+  atclient_atnotification_set_to(&notification, "@daemon");
   atclient_atnotification_set_key(&notification, "@daemon:npt_request.mydevice.sshnp@alice");
 
   sshnpd_handle_notification(&message, &decisions, &checked_senders, &decision);
 
   atclient_atnotification_free(&notification);
+  atclient_free(&worker);
   policy_decision_free(&decision);
   policy_cache_free(&decisions);
   return logged_since(start);
@@ -175,10 +187,23 @@ int main(void) {
 
   printf("%s\n", SCENARIO);
 
-  char *logged = log_of_notification(NPT_REQUEST);
+  char *logged = log_of_notification(NPT_REQUEST, false, true);
   check(!holds_key(logged), "case: the daemon's notification handling, given an npt request");
   check(shows_line(logged, "Rejecting request from unauthorized atSign: @alice"),
         "reach: the daemon read the notification and checked its sender");
+  free(logged);
+
+  logged = log_of_notification(NPT_REQUEST, true, true);
+  check(!holds_key(logged), "case: the daemon's notification handling, given a manager's npt request");
+  check(shows_line(logged, "Executing handle_npt_request"), "reach: the daemon handed the npt request to its handler");
+  check(shows_line(logged, "Failed to get public key"), "reach: the handler reached the request's signature check");
+  free(logged);
+
+  logged = log_of_notification(NPT_REQUEST, true, false);
+  check(!holds_key(logged), "case: the daemon's notification handling, given a manager's npt request with no id");
+  check(shows_line(logged, "Notification received: @daemon:npt_request.mydevice.sshnp@alice"),
+        "reach: the daemon read the notification");
+  check(strstr(logged, "Executing handle_npt_request") == NULL, "reach: the daemon handed nothing to a handler");
   free(logged);
 
   logged = log_of_request(handle_npt_request, NPT_REQUEST);
