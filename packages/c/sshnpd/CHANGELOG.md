@@ -23,6 +23,7 @@
 - fix: deny a request the policy service hasn't answered within 30 seconds
   of asking, however often it acknowledges
 - fix: keep the monitor connection when a notification can't be decrypted
+- fix: log a session request's notification key, not its content, at debug
 
 ## 1.1.1
 

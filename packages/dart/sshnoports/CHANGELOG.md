@@ -9,6 +9,12 @@
   log entry
 * fix: srvd closes a session's ports at once when it can't take the session's
   lock, rather than after 30 seconds
+* fix: sshnp, npt, sshnpd and srvd log a session request by its type, session
+  and atSigns, not its content
+* fix: sshnpd and srvd log a notification type they don't handle by its type
+  and sender, not its value
+* fix: srv logs a control message it can't handle by its type and the error's
+  type, not the message itself
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every
