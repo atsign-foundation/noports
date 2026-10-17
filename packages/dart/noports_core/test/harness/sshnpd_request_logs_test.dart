@@ -385,7 +385,7 @@ void main() {
       );
     });
 
-    test("when it receives a notification of a type it doesn't handle, then"
+    test("when it receives a client request of a type it doesn't handle, then"
         ' the log names the type and its sender, and no log record contains'
         " the notification's value.", () async {
       final harness = NoPortsHarness.create();

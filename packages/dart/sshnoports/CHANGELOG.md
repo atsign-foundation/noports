@@ -11,7 +11,7 @@
   lock, rather than after 30 seconds
 * fix: sshnp, npt, sshnpd and srvd log a session request by its type, session
   and atSigns, not its content
-* fix: sshnpd and srvd log a notification type they don't handle by its type
+* fix: sshnpd and srvd log a request of a type they don't handle by its type
   and sender, not its value
 * fix: srv logs a control message it can't handle by its type and the error's
   type, not the message itself
