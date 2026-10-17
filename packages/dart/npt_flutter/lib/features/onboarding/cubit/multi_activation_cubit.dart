@@ -68,6 +68,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
   /// so a retry doesn't re-prompt for the folder.
   String? _backupDirectory;
 
+  /// Sets the folder the .atKeys backups go to, so [activateAll] doesn't ask.
+  @visibleForTesting
+  set backupDirectory(String directory) => _backupDirectory = directory;
+
+  NoPortsOnboardingUtil? _onboardingUtil;
+
   /// Read the activation file and update the state with the content of the file and the upload state.
   Future<void> processFile(String filePath, String fileName) async {
     try {
@@ -168,12 +174,11 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     final strings = AppLocalizations.of(context)!;
 
     // Only ask once per activation file - a retry reuses the same folder.
-    final String? defaultDir = await _defaultAtKeysDir();
     String? selectedDirectory =
         _backupDirectory ??
         await FilePicker.getDirectoryPath(
           dialogTitle: strings.activationAtsignFileStorageLocation,
-          initialDirectory: defaultDir,
+          initialDirectory: await _defaultAtKeysDir(),
         );
 
     if (selectedDirectory == null) {
@@ -194,9 +199,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       state.fileContent.entries,
     );
 
-    final onboardingUtil = await NoPortsOnboardingUtil.create(
-      App.navState.currentContext!,
-    );
+    _onboardingUtil = null;
 
     emit(state.copyWith(isActivating: true));
 
@@ -222,7 +225,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         // abort the whole file.
         AtSignServerState? status;
         try {
-          status = (await onboardingUtil.checkAtServer(entry.atsign)).state;
+          status = await atServerState(entry.atsign);
         } catch (e) {
           App.log('Error checking status of ${entry.atsign}: $e'.loggable);
           status = null;
@@ -263,13 +266,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
           Atsign atsign = entry.atsign;
           String cramSecret = entry.activationKey;
 
-          // The atServer says this atsign is in teapot, so any keys we still
-          // hold for it locally are from a previous life of the atsign (it was
-          // reset on the registrar). Activation refuses to overwrite them, so
-          // drop them first.
-          await NoPortsOnboardingUtil.discardStaleKeys(atsign);
-
-          await _activateIntoKeychain(atsign, cramSecret);
+          await activateIntoKeychain(atsign, cramSecret);
 
           await backUpActivatedAtsigns(selectedDirectory, atsign);
           currentEntries[i] = entry.copyWith(
@@ -277,7 +274,9 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
           );
           App.log('Successfully activated ${entry.atsign}'.loggable);
         } catch (e) {
-          App.log('Exception activating ${entry.atsign}: $e'.loggable);
+          App.log(
+            'Exception activating ${entry.atsign}: ${e.runtimeType}'.loggable,
+          );
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
             failureReason: describeOnboardingError(e, strings),
@@ -313,11 +312,26 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
+  /// Where [atsign] stands with its atServer.
+  @visibleForTesting
+  Future<AtSignServerState> atServerState(Atsign atsign) async {
+    _onboardingUtil ??= await NoPortsOnboardingUtil.create(
+      App.navState.currentContext!,
+    );
+    return (await _onboardingUtil!.checkAtServer(atsign)).state;
+  }
+
   /// Activates [atsign] with [cramSecret], leaving its keys in the keychain
   /// and nothing else behind: bulk activation never keeps a client for these
   /// atsigns, so the one the activation opens is stopped at once and the
   /// storage it opened on is deleted.
-  Future<void> _activateIntoKeychain(Atsign atsign, String cramSecret) async {
+  ///
+  /// The atServer has said [atsign] is in teapot, so any keys still held for
+  /// it locally are from a previous life of the atsign (it was reset on the
+  /// registrar). Activation refuses to overwrite them, so they go first.
+  @visibleForTesting
+  Future<void> activateIntoKeychain(Atsign atsign, String cramSecret) async {
+    await NoPortsOnboardingUtil.discardStaleKeys(atsign);
     final scratch = await Directory.systemTemp.createTemp('npt-activate-');
     try {
       final preference = await AtClientMethods.loadAtClientPreference(

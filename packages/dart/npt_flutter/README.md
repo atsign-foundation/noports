@@ -102,6 +102,24 @@ Run tests with coverage:
 flutter test --coverage
 ```
 
+### Testing Against a Local Registrar
+
+To test activation against a registrar whose TLS certificate the device doesn't
+trust, run a debug build that skips verifying it:
+
+```bash
+flutter run --dart-define=NPT_DISABLE_REGISTRAR_TLS_VERIFICATION=true
+```
+
+The app takes the registrar's host from the root domain, as listed in
+`onboarding_util.dart` (`my.atsign.com` for `root.atsign.org`), so point that
+host at the local registrar, for example in `/etc/hosts`. Release builds always
+verify. The test of this switch runs only with the same define:
+
+```bash
+flutter test --dart-define=NPT_DISABLE_REGISTRAR_TLS_VERIFICATION=true test/features/onboarding/util/activate_util_tls_test.dart
+```
+
 ### Test Structure
 
 ```

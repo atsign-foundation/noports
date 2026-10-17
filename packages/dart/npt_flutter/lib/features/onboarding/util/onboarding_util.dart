@@ -290,13 +290,34 @@ class NoPortsOnboardingUtil {
         message: strings.errorAuthenticationTimedOut,
       );
     } catch (e) {
-      // A bad atKeys file is only one of the ways this fails - report what
-      // actually went wrong rather than blaming the file every time.
-      App.log('atKeys sign in failed for $atsign: $e'.loggable);
-      return NoPortsOnboardingResult.error(
-        message: describeOnboardingError(e, strings),
-      );
+      return atKeysLoginFailure(atsign, e, strings);
     }
+  }
+
+  /// Logs a failed sign-in from an atKeys file and returns its result.
+  ///
+  /// A file that isn't valid JSON is described by what is wrong and where, as
+  /// a 1-based character position, never by its text; any other failure is
+  /// described as [describeOnboardingError] describes it.
+  @visibleForTesting
+  static NoPortsOnboardingResult atKeysLoginFailure(
+    Atsign atsign,
+    Object error,
+    AppLocalizations strings,
+  ) {
+    final String? unparseable = switch (error) {
+      FormatException(:final String source, :final message, :final offset?)
+          when source.trimLeft().startsWith('{') =>
+        strings.errorAtKeysNotJson(offset + 1, message),
+      FormatException() => strings.errorAtKeysInvalid,
+      _ => null,
+    };
+    App.log(
+      'atKeys sign in failed for $atsign: ${unparseable ?? error}'.loggable,
+    );
+    return NoPortsOnboardingResult.error(
+      message: unparseable ?? describeOnboardingError(error, strings),
+    );
   }
 
   /// Copies the keys a file sign in opened on into the keychain, unless it
