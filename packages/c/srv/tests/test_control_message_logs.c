@@ -1,3 +1,5 @@
+// Goal: no relay-auth key, socket key or IV, or request content reaches a log line. Non-goals: hiding other error
+// detail, which is logged in full, and sanitising a library's own error text.
 #include <arpa/inet.h>
 #include <atlogger/atlogger.h>
 #include <netinet/in.h>
