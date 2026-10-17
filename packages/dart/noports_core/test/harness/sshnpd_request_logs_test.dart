@@ -77,11 +77,15 @@ Future<void> _send(AtClient client, String type, String value) =>
 
 class _MockAtClient extends Mock implements AtClient {}
 
-/// An [AuthChecker] whose every check fails with an error.
+/// An [AuthChecker] whose every check fails with [error].
 class _FailingAuthChecker implements AuthChecker {
+  _FailingAuthChecker(this.error);
+
+  final Object error;
+
   @override
   Future<NPAAuthCheckResponse> mayConnect({required String clientAtsign}) =>
-      Future.error(StateError('the policy service could not be asked'));
+      Future.error(error);
 }
 
 /// An sshnpd managed by no one, on an atClient that does nothing, logging at
@@ -256,34 +260,45 @@ void main() {
         });
 
         String whole(String value, String key) => value;
-        for (final (failing, sshnpd, sent) in [
-          (
-            'its policy check throws',
-            _sshnpdOnMockAtClient(authChecker: _FailingAuthChecker()),
-            whole,
-          ),
-          (
-            'a notification pre-processor throws',
-            _sshnpdOnMockAtClient(
-              notifPreProcessor: (_) async =>
-                  throw StateError('the notification could not be read'),
-            ),
-            whole,
-          ),
-          (
-            'a notification pre-processor cannot read it, cut short partway'
-                ' through its key',
-            _sshnpdOnMockAtClient(
-              notifPreProcessor: (n) async => jsonDecode(n.value!),
-            ),
-            (String value, String key) =>
-                value.substring(0, value.indexOf(key) + key.length - 4),
-          ),
-        ]) {
+        for (final (failing, sshnpdFor, sent)
+            in <
+              (
+                String,
+                SshnpdImpl Function(String key),
+                String Function(String, String),
+              )
+            >[
+              (
+                'its policy check throws an error quoting the key',
+                (key) => _sshnpdOnMockAtClient(
+                  authChecker: _FailingAuthChecker(
+                    StateError('the policy service could not be asked: $key'),
+                  ),
+                ),
+                whole,
+              ),
+              (
+                'a notification pre-processor throws',
+                (_) => _sshnpdOnMockAtClient(
+                  notifPreProcessor: (_) async =>
+                      throw StateError('the notification could not be read'),
+                ),
+                whole,
+              ),
+              (
+                'a notification pre-processor cannot read it, cut short partway'
+                    ' through its key',
+                (_) => _sshnpdOnMockAtClient(
+                  notifPreProcessor: (n) async => jsonDecode(n.value!),
+                ),
+                (String value, String key) =>
+                    value.substring(0, value.indexOf(key) + key.length - 4),
+              ),
+            ]) {
           await receive(
             'whose handling fails unexpectedly, as $failing',
             _alice,
-            (sessionId, key) => sshnpd.clientRequestNotificationHandler(
+            (sessionId, key) => sshnpdFor(key).clientRequestNotificationHandler(
               AtNotification(
                   Uuid().v4(),
                   '${NoPortsHarness.daemonAtSign}:$type.${NoPortsHarness.device}'
