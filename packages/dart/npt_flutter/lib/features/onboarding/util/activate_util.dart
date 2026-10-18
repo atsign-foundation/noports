@@ -24,6 +24,9 @@ const disableRegistrarTlsVerification =
     kDebugMode &&
     bool.fromEnvironment('NPT_DISABLE_REGISTRAR_TLS_VERIFICATION');
 
+/// How long [ActivateUtil] waits for the registrar to answer a request.
+const registrarTimeout = Duration(seconds: 30);
+
 enum NoPortsActivateApiEndpoints {
   login('$apiBase/authenticate/atsign'),
   validate('$apiBase/authenticate/atsign/activate');
@@ -35,30 +38,43 @@ enum NoPortsActivateApiEndpoints {
 class ActivateUtil {
   final String registrarUrl;
   final String apiKey;
-  late final IOClient _http;
+  late final Client _http;
 
-  ActivateUtil({required this.registrarUrl, required this.apiKey}) {
-    _http = IOClient(
-      disableRegistrarTlsVerification
-          ? (HttpClient()..badCertificateCallback = (cert, host, port) => true)
-          : null,
-    );
+  /// Talks to the registrar at [registrarUrl] with [apiKey]; [client], for
+  /// tests, replaces the connection to it.
+  ActivateUtil({
+    required this.registrarUrl,
+    required this.apiKey,
+    Client? client,
+  }) {
+    _http =
+        client ??
+        IOClient(
+          disableRegistrarTlsVerification
+              ? (HttpClient()
+                  ..badCertificateCallback = (cert, host, port) => true)
+              : null,
+        );
   }
 
+  /// Posts [data] to the registrar's [endpoint], failing with a
+  /// `TimeoutException` when no answer arrives within [registrarTimeout].
   Future<Response> registrarApiRequest(
     NoPortsActivateApiEndpoints endpoint,
     Map<String, String?> data,
   ) async {
     Uri url = Uri.https(registrarUrl, endpoint.path);
 
-    return _http.post(
-      url,
-      body: jsonEncode(data),
-      headers: <String, String>{
-        'Authorization': apiKey,
-        'Content-Type': 'application/json',
-      },
-    );
+    return _http
+        .post(
+          url,
+          body: jsonEncode(data),
+          headers: <String, String>{
+            'Authorization': apiKey,
+            'Content-Type': 'application/json',
+          },
+        )
+        .timeout(registrarTimeout);
   }
 
   Future<({String? cramkey, String? errorMessage})> verifyActivation({
