@@ -27,6 +27,20 @@ const disableRegistrarTlsVerification =
 /// How long [ActivateUtil] waits for the registrar to answer a request.
 const registrarTimeout = Duration(seconds: 30);
 
+/// The `message` text the registrar put in [body], or null when [body] is not
+/// a JSON object whose `message` is text that isn't blank.
+String? registrarMessage(String body) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(body);
+  } on FormatException {
+    return null;
+  }
+  if (decoded is! Map) return null;
+  final message = decoded['message'];
+  return message is String && message.trim().isNotEmpty ? message : null;
+}
+
 enum NoPortsActivateApiEndpoints {
   login('$apiBase/authenticate/atsign'),
   validate('$apiBase/authenticate/atsign/activate');
@@ -77,6 +91,10 @@ class ActivateUtil {
         .timeout(registrarTimeout);
   }
 
+  /// Asks the registrar to verify [otp] for [atsign]: the CRAM key when it
+  /// does, otherwise the registrar's [registrarMessage], which is null when it
+  /// gave none. Throws when the request fails or times out, or when a reply
+  /// accepting it can't be read.
   Future<({String? cramkey, String? errorMessage})> verifyActivation({
     required Atsign atsign,
     required String otp,
@@ -86,19 +104,11 @@ class ActivateUtil {
       'otp': otp,
     });
     if (res.statusCode != 200) {
-      String errorMessage;
-      try {
-        final Map<String, dynamic> payload = jsonDecode(res.body);
-        errorMessage = payload["message"]?.toString() ?? res.body;
-      } catch (_) {
-        errorMessage = res.body;
-      }
-      return (errorMessage: errorMessage, cramkey: null);
+      return (errorMessage: registrarMessage(res.body), cramkey: null);
     }
     var payload = jsonDecode(res.body);
     if (payload["message"] != "Verified") {
-      // The toString is for typesafety & to prevent unexpected crashes
-      return (errorMessage: payload["message"].toString(), cramkey: null);
+      return (errorMessage: registrarMessage(res.body), cramkey: null);
     }
     String cramkey = payload["cramkey"]?.split(':').last ?? '';
     return (cramkey: cramkey, errorMessage: null);

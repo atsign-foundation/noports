@@ -4,6 +4,9 @@
   activation file, the app log names the type of error.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
+- FIX: The activation dialog no longer stays on its spinner when the registrar
+  fails or doesn't answer: after an error, or 30 seconds without an answer, it
+  says the request failed and closes or returns to the PIN step.
 
 ## 1.9.6+33
 
