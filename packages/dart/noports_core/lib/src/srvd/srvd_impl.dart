@@ -299,10 +299,7 @@ class SrvdImpl
         return;
       }
 
-      logger.info(
-        '$messageType received from ${n.from}:'
-        ' ${n.value}',
-      );
+      logger.info('$messageType received from ${n.from}');
       switch (messageType) {
         case 'request_ports':
           return await handleRequestPorts(n);
@@ -315,13 +312,13 @@ class SrvdImpl
           return await handleDiscover(n);
         default:
           logger.warning(
-            'unknown "$messageType" request received from ${n.from}'
-            ' ( ${n.value} )',
+            'unknown "$messageType" request received from ${n.from}',
           );
       }
     } catch (e, st) {
       logger.shout(
-        'Exception $e while handling notification $n\nStack Trace:\n$st',
+        'Exception $e while handling notification ${n.key}'
+        ' from ${n.from}\nStack Trace:\n$st',
       );
     }
   }
@@ -381,8 +378,7 @@ class SrvdImpl
         break;
       default:
         logger.warning(
-          'unknown "$sessionsMessageType" sessions received from ${n.from}'
-          ' ( ${n.value} )',
+          'unknown "$sessionsMessageType" sessions received from ${n.from}',
         );
     }
   }
@@ -482,7 +478,10 @@ class SrvdImpl
     AtNotification n,
     SrvdSessionParams sessionParams,
   ) async {
-    logger.info('New session request params: $sessionParams');
+    logger.info(
+      'New session request ${sessionParams.sessionId}'
+      ' for ${sessionParams.atSignA} to ${sessionParams.atSignB}',
+    );
 
     PortPair ports;
     // ignore: unused_local_variable
