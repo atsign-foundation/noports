@@ -9,6 +9,9 @@
 - FIX: A refused activation key says the key was rejected, rather than that the
   atServer couldn't be reached. at_auth is now 4.0.0-rc7 and at_lookup
   3.7.0-rc4.
+- FIX: The activation dialog no longer stays on its spinner when the registrar
+  fails or doesn't answer: after an error, or 30 seconds without an answer, it
+  says the request failed and closes or returns to the PIN step.
 
 ## 1.9.6+33
 
