@@ -21,7 +21,8 @@ typedef NptFactory =
     Npt Function({required AtClient atClient, required NptParams params});
 
 class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
-  /// Matches the retry cadence of the npt binary - see `sshnoports/bin/npt.dart`
+  /// Matches the retry cadence of the npt binary - see
+  /// `sshnoports/bin/npt.dart`
   static const defaultRetryDelay = Duration(seconds: 5);
 
   /// How long to wait between keep-alive attempts. Injectable so that tests
@@ -204,7 +205,13 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     /// covers the bloc being closed underneath us, e.g. the app quitting
     /// part way through a retry.
     while (!emit.isDone) {
-      var failure = await _runSession(emit, profile, atClient, atsign, settings);
+      var failure = await _runSession(
+        emit,
+        profile,
+        atClient,
+        atsign,
+        settings,
+      );
 
       if (_stopRequested || emit.isDone) break;
 
