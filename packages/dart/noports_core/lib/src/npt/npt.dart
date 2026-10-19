@@ -325,7 +325,9 @@ class _NptImpl extends NptBase
       _srvdChannel,
       sessionRequest.toJson(),
     );
-    logger.info('Sending: $notifyPayload');
+    logger.info(
+      'Sending npt_request for session $sessionId to ${params.sshnpdAtSign}',
+    );
 
     await notify(
       AtKey()

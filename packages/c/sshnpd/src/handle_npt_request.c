@@ -40,13 +40,6 @@ void handle_npt_request(atclient *atclient, sshnpd_params *params, bool *is_chil
   }
   // allocated: envelope
 
-  // log envelope
-  if (atlogger_get_logging_level() >= ATLOGGER_LOGGING_LEVEL_DEBUG) {
-    char *envelope_str = cJSON_Print(envelope);
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Received envelope: %s\n", envelope_str);
-    free(envelope_str);
-  }
-
   char *requesting_atsign = message->notification->from;
   res = verify_envelope_signature_from(envelope, requesting_atsign, atclient);
   if (res != 0) {

@@ -230,7 +230,10 @@ class SinglePortWorker extends RelayWorker {
 
   Future<void> startSession(IIRequest req) async {
     SrvdSessionParams params = req.payload;
-    logger.info('Starting socket connector session for $params');
+    logger.info(
+      'Starting socket connector session ${params.sessionId}'
+      ' for ${params.atSignA} to ${params.atSignB}',
+    );
 
     // NOTE a start for a live id is refused without telling main, since
     // main's record of that id is the live session's.
