@@ -2,6 +2,8 @@
 
 - FIX: When activating an atSign fails, from the activation dialog or an
   activation file, the app log names the type of error.
+- FIX: When an activation file can't be read, the app log gives the number of
+  the entry at fault, or the line where the file isn't valid YAML.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
 - FIX: The activation dialog no longer stays on its spinner when the registrar

@@ -90,10 +90,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       App.log('uploaded activation file content successfully'.loggable);
     } catch (e) {
       emit(state.copyWith(uploadState: MultiActivationFileUploadState.error));
-      App.log('Error processing activation file: $e'.loggable);
+      App.log('Error processing activation file: ${_describe(e)}'.loggable);
     }
     return;
   }
+
+  /// What is wrong with an activation file, in words that hold none of its
+  /// content.
+  static String _describe(Object error) => switch (error) {
+    YamlException(:final span?) =>
+      'not valid YAML at line ${span.start.line + 1}',
+    FormatException(:final message) => message,
+    _ => '${error.runtimeType}',
+  };
 
   /// Get the activation file path from the file picker.
   Future<void> getFilePickerPath() async {
