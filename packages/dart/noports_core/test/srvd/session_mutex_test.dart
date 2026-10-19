@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
@@ -101,6 +102,7 @@ void main() {
   AtNotification requestPorts(
     String sessionId, {
     required bool multipleAcksOk,
+    String? relayAuthAesKey,
   }) => AtNotification(
     'notif-id',
     '@relay:device.request_ports.sshrvd@alice',
@@ -119,6 +121,7 @@ void main() {
       'relayAuthMode': RelayAuthMode.escr.name,
       'only443': false,
       'multipleAcksOk': multipleAcksOk,
+      'relayAuthAesKey': ?relayAuthAesKey,
     }),
   );
 
@@ -216,5 +219,50 @@ void main() {
         expect(answered(id), isTrue);
       },
     );
+  });
+
+  group('Given srvd logging at every level,', () {
+    test('when it receives a session request carrying a relay-auth key,'
+        ' whether it starts the session or its handling fails unexpectedly,'
+        ' then the log names the session and its atSigns, and no log line'
+        ' contains the key.', () async {
+      final logged = <String>[];
+      srvd.logger.logger.onRecord.listen((r) => logged.add(r.message));
+      srvd.logger.level = 'all';
+      final (started, failed) = (Uuid().v4(), Uuid().v4());
+      final keys = {started: generateAes256Key(), failed: generateAes256Key()};
+
+      await srvd.notificationHandler(
+        requestPorts(
+          started,
+          multipleAcksOk: true,
+          relayAuthAesKey: keys[started],
+        ),
+      );
+      when(() => atClient.getCurrentAtSign()).thenReturn(null);
+      await srvd.notificationHandler(
+        requestPorts(
+          failed,
+          multipleAcksOk: false,
+          relayAuthAesKey: keys[failed],
+        ),
+      );
+      await pumpEventQueue();
+
+      expect(answered(started), isTrue, reason: 'srvd starts one session');
+      expect(answered(failed), isFalse, reason: 'the other fails unexpectedly');
+      for (final MapEntry(key: id, value: key) in keys.entries) {
+        expect(
+          logged.where((line) => line.contains(key)),
+          isEmpty,
+          reason: 'no line srvd logs holds the relay-auth key of $id',
+        );
+        expect(
+          logged,
+          contains(allOf(contains(id), contains('@alice'), contains('@bob'))),
+          reason: 'the log names session $id and its atSigns',
+        );
+      }
+    });
   });
 }
