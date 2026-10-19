@@ -115,6 +115,7 @@
    "errorAtKeySaveFailed": "Failed to save the atKeys file: {error}",
    "errorAtKeysFileProcessFailed": "Failed to process the atKeys file",
    "errorAtKeysInvalid": "Invalid atKeys file detected",
+   "errorAtKeysNotJson": "The atKeys file isn't valid JSON: {problem} at character {position}",
    "errorAtKeysUploadedMismatch": "The atKeys file you uploaded did not match the Atsign requested",
    "errorAtServerUnavailable": "Failed to retrieve the atserver status, make sure you have a stable internet connection.",
    "errorAtServerUnreachable": "Unable to connect to the atServer, make sure you have a stable internet connection.",
