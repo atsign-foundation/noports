@@ -40,6 +40,10 @@ static bool file_contains(const char *needle) {
     return false;
   }
   char *buf = malloc(size + 1);
+  if (buf == NULL) {
+    fclose(f);
+    return false;
+  }
   fread(buf, 1, size, f);
   buf[size] = '\0';
   fclose(f);
