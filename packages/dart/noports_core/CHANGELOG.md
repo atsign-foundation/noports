@@ -1,5 +1,10 @@
 # 6.16.0
 
+- fix: `Npt.done` now completes when startup fails, instead of never
+  completing. `run` and `runInline` close the session on their way out when
+  they throw, so callers may always await `done` without having to call
+  `close` themselves first. A caller that awaited `done` after a failed
+  startup previously waited forever. See #2789.
 - build: depends on the at_client_sdk release candidates: at_client
   3.15.0-rc6, at_auth 4.0.0-rc5, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc3 and at_onboarding_cli 2.0.0-rc6, plus at_commons 5.21.0 and

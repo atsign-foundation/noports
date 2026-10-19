@@ -6,6 +6,11 @@
   the entry at fault, or the line where the file isn't valid YAML.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
+- FIX: Tunnels reconnect automatically after the daemon's device reboots,
+  instead of leaving the profile stuck on "starting" until the app is
+  relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a
+  successful connection.
 
 ## 1.9.6+33
 
