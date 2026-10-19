@@ -6,6 +6,9 @@
   the entry at fault, or the line where the file isn't valid YAML.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
+- FIX: A refused activation key says the key was rejected, rather than that the
+  atServer couldn't be reached. at_auth is now 4.0.0-rc7 and at_lookup
+  3.7.0-rc4.
 
 ## 1.9.6+33
 
