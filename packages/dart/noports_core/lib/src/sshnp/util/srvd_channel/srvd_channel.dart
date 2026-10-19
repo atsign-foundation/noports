@@ -464,9 +464,7 @@ abstract class SrvdChannel<T>
 
     rvdRequestValue = jsonEncode(message.toJson());
 
-    logger.info(
-      'Sending notification to srvd with key $rvdRequestKey and value $rvdRequestValue',
-    );
+    logger.info('Sending notification to srvd with key $rvdRequestKey');
     await notify(
       rvdRequestKey,
       rvdRequestValue,
