@@ -440,7 +440,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorCramAuthFailed =>
-      'A chave de ativação foi rejeitada pelo atServer. Este ficheiro de ativação pode já ter sido usado.';
+      'A chave de ativação foi rejeitada pelo atServer. Pode já ter sido usada.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -1565,7 +1565,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get errorCramAuthFailed =>
-      'A chave de ativação foi rejeitada pelo atServer. Este arquivo de ativação pode já ter sido usado.';
+      'A chave de ativação foi rejeitada pelo atServer. Pode já ter sido usada.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {

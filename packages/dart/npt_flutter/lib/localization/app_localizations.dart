@@ -878,7 +878,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorCramAuthFailed.
   ///
   /// In en, this message translates to:
-  /// **'The activation key was rejected by the atServer. This activation file may have already been used.'**
+  /// **'The activation key was rejected by the atServer. It may have already been used.'**
   String get errorCramAuthFailed;
 
   /// No description provided for @errorDuringStartupWithDetails.
