@@ -7,6 +7,9 @@
 * feat: sshnpd and srvd take their session locks with at_client's server
   mutex, so on an atServer from c3.16.3 or p3.16.5 the locks leave no commit
   log entry
+* feat: at_activate list shows the key expiry each enrollment asked for, and
+  with an atServer from c3.16.4 or p3.16.5, list, fetch, approve and
+  auto_approve show when each enrollment expires
 * fix: srvd closes a session's ports at once when it can't take the session's
   lock, rather than after 30 seconds
 * fix: sshnp, npt, sshnpd and srvd log a session request by its type and
@@ -17,11 +20,20 @@
   not the message itself
 * fix: sshnp and npt log whether a device's response could be read and
   verified, not the response itself
+* fix: logs write control characters, bidirectional formatting characters and
+  line separators in a message as visible escapes, and indent a message's
+  later lines
+* fix: an atKeys file that isn't valid JSON is reported with the position
+  where it stops being valid, and a field that isn't valid base64 with its
+  name and position
+* fix: when an atServer refuses an activation, at_activate reports its reason
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every
   sshnpd instance handles every session request, and srvd answers no session
   from those clients
+* build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
+  at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
 
 ## v5.18.1
 
