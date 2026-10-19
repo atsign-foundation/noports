@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -54,11 +55,16 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
     void Function(Object, StackTrace)? usageCallback,
   }) async {
     try {
-      var p = await NPAParams.fromArgs(args);
+      final NPAParams p;
+      try {
+        p = await NPAParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('Unable to find .atKeys file: ${p.atKeysFilePath}');
       }
 
       AtSignLogger.root_level = 'SHOUT';
@@ -84,7 +90,7 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
       }
 
       return sshnpa;
-    } catch (e, s) {
+    } on ArgumentError catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
     }
@@ -93,10 +99,14 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
   @override
   Future<void> run() async {
     if (eventLoggingAtsign != null) {
-      elc = await getEventLoggingConfig(
-        atSign: eventLoggingAtsign!,
-        namespace: DefaultArgs.eventLoggingNamespace,
-      );
+      try {
+        elc = await getEventLoggingConfig(
+          atSign: eventLoggingAtsign!,
+          namespace: DefaultArgs.eventLoggingNamespace,
+        );
+      } catch (e) {
+        throw EventLoggingConfigException(eventLoggingAtsign!, e);
+      }
       logger.shout(
         'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
       );
@@ -108,7 +118,9 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
       (AtNotification n) async {
         if (n.value == null) return;
 
-        if (elc != null && !_sharedElcWith.contains(n.from)) {
+        if (elc != null &&
+            !_sharedElcWith.contains(n.from) &&
+            handler.hasRulesFor(n.from.toAtsign())) {
           try {
             logger.info('Sharing event logging config with ${n.from}');
             await shareEventLoggingConfigWithAtsigns(
@@ -140,8 +152,8 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
         handler: handler,
         atClient: atClient,
       ),
-      allowList: {},
-      allowAll: true,
+      allowList: _DaemonsWithRules(handler),
+      allowAll: false,
       isClient: false,
       isServer: true,
       enableRequestMutex: true,
@@ -188,24 +200,40 @@ class PolicyInfoRpcRequestHandler
       request.payload,
     );
     AtRpcResp rpcResponse;
-    try {
-      var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: authCheckResponse.toJson(),
+    if (fromAtSign.toAtsign() != authCheckRequest.daemonAtsign.toAtsign()) {
+      logger.warning(
+        'Refusing a check from $fromAtSign'
+        ' about ${authCheckRequest.daemonAtsign}',
       );
-    } catch (e, st) {
-      logger.shout('Exception: $e : StackTrace : \n$st');
       rpcResponse = AtRpcResp(
         reqId: request.reqId,
         respType: AtRpcRespType.success,
         payload: NPAAuthCheckResponse(
           authorized: false,
-          message: 'Exception: $e',
+          message: 'A daemon may ask only about itself',
           permitOpen: [],
         ).toJson(),
       );
+    } else {
+      try {
+        var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
+        rpcResponse = AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: authCheckResponse.toJson(),
+        );
+      } catch (e, st) {
+        logger.shout('Exception: $e : StackTrace : \n$st');
+        rpcResponse = AtRpcResp(
+          reqId: request.reqId,
+          respType: AtRpcRespType.success,
+          payload: NPAAuthCheckResponse(
+            authorized: false,
+            message: 'Exception: $e',
+            permitOpen: [],
+          ).toJson(),
+        );
+      }
     }
     // We will send a 'log' notification to ourselves
     var logKey = AtKey()
@@ -236,4 +264,45 @@ class PolicyInfoRpcRequestHandler
   Future<void> handleResponse(AtRpcResp response) {
     throw UnimplementedError();
   }
+}
+
+/// The daemons [handler] has rules for, as the allow list [AtRpc] checks each
+/// request's sender against; it answers only whether it holds an atSign.
+class _DaemonsWithRules extends SetBase<String> {
+  _DaemonsWithRules(this.handler);
+
+  final NPARequestHandler handler;
+
+  @override
+  bool contains(Object? element) {
+    final atSign = element is String ? canonicalAtsign(element) : null;
+    return atSign != null && handler.hasRulesFor(atSign);
+  }
+
+  @override
+  String? lookup(Object? element) =>
+      contains(element) ? element as String : null;
+
+  @override
+  Iterator<String> get iterator =>
+      throw UnsupportedError('The daemons with rules are not listed');
+
+  @override
+  int get length =>
+      throw UnsupportedError('The daemons with rules are not counted');
+
+  @override
+  bool add(String value) =>
+      throw UnsupportedError('The daemons with rules come from the rules');
+
+  @override
+  bool remove(Object? value) =>
+      throw UnsupportedError('The daemons with rules come from the rules');
+
+  @override
+  Set<String> toSet() =>
+      throw UnsupportedError('The daemons with rules are not listed');
+
+  @override
+  String toString() => 'daemons with policy rules';
 }

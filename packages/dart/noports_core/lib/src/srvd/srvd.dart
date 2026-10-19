@@ -48,6 +48,11 @@ abstract interface class Srvd {
 
   Future<void> run();
 
+  /// Stops what [init] and [run] started: cancels the notification
+  /// subscriptions and ends every relay isolate, closing their ports and the
+  /// sessions they carry. The [atClient] stays open for whoever owns it.
+  Future<void> stop();
+
   Future<void> lookup(IIRequest msg, SendPort toSpawned);
 
   Future<(PortPair, Isolate, SendPort)> spawnNewPortPairIsolate(

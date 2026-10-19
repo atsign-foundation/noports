@@ -55,8 +55,8 @@ class _SppWidgetState extends State<SppWidget> {
   @override
   Widget build(BuildContext context) {
     final AuthorisationHubController controller = widget.controller;
-    final SppData? spp = controller.spp;
-    final bool hasLiveSpp = spp != null && spp.expiry.isAfter(DateTime.now());
+    final DateTime? expiry = controller.spp?.expiry;
+    final bool hasLiveSpp = expiry != null && expiry.isAfter(DateTime.now());
 
     return SizedBox(
       width: kSppLength * (_fieldWidth + _fieldPadding) + _fieldPadding * 2,
@@ -71,7 +71,7 @@ class _SppWidgetState extends State<SppWidget> {
             children: <Widget>[
               if (hasLiveSpp) ...<Widget>[
                 SppExpiration(
-                  expiryTime: spp.expiry,
+                  expiryTime: expiry,
                   onExpiry: () {
                     _pinController.clear();
                     _lastAppliedSpp = null;

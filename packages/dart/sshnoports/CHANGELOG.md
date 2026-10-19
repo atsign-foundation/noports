@@ -2,6 +2,126 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.2
+
+* feat: sshnpd and srvd take their session locks with at_client's server
+  mutex, so on an atServer from c3.16.3 or p3.16.5 the locks leave no commit
+  log entry
+* feat: at_activate list shows the key expiry each enrollment asked for, and
+  with an atServer from c3.16.4 or p3.16.5, list, fetch, approve and
+  auto_approve show when each enrollment expires
+* fix: srvd closes a session's ports at once when it can't take the session's
+  lock, rather than after 30 seconds
+* fix: sshnp, npt, sshnpd and srvd log a session request by its type and
+  atSigns, not its keys
+* fix: sshnpd and srvd log a request of a type they don't handle by its type
+  and sender, not its value
+* fix: srv logs a control message it can't handle by its type and the error,
+  not the message itself
+* fix: sshnp and npt log whether a device's response could be read and
+  verified, not the response itself
+* fix: logs write control characters, bidirectional formatting characters and
+  line separators in a message as visible escapes, and indent a message's
+  later lines
+* fix: an atKeys file that isn't valid JSON is reported with the position
+  where it stops being valid, and a field that isn't valid base64 with its
+  name and position
+* fix: when an atServer refuses an activation, at_activate reports its reason
+* chore: sshnpd logs a session lock it can't take at warning
+* chore: load-balanced sshnpd instances, and srvd serving clients older than
+  v5.11.2, need their atServer at p3.13.0 or later; on an older one every
+  sshnpd instance handles every session request, and srvd answers no session
+  from those clients
+* build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
+  at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
+
+## v5.18.1
+
+* fix: atSigns whose RSA PKAM key is 1024 bits authenticate again
+* fix: data that NoPorts v5.0.0 to v5.6.1 and the v5.7.0 pre-releases wrote,
+  such as policy groups saved by those releases' np_admin, is read decrypted
+  again
+* fix: a policy service answers a request it can't parse with a refusal and
+  keeps running
+* chore: a policy service needs its atServer at p3.13.0 or later; on an older
+  one it answers no requests
+* chore: on an atServer from c3.16.3 or p3.16.5, the policy service's
+  per-request lock leaves no commit log entry
+* build: at_client 3.15.0-rc7, at_auth 4.0.0-rc6 and at_onboarding_cli
+  2.0.0-rc7
+
+## v5.18.0
+
+* feat: `npt --debug` logs everything at FINEST
+* feat: `noports activate`, run again after an interruption, waits on the
+  enrollment request it already submitted rather than submitting another
+* feat: `at_activate` has new `decrypt` and `version` commands, a
+  `--posture` option for `onboard` and `enroll`, and `--key-exchange` for
+  `enroll`; `--hashingAlgoType` is accepted but ignored
+* chore: `at_activate` with no command still runs `onboard`, but warns
+  that the form is deprecated, so write `at_activate onboard -a <atSign>`
+* feat: the keyfile `at_activate onboard` or `enroll` creates is owner-only
+  (0600), so a daemon running as a different user can't read it until you
+  change its permissions. Released versions can still read the keyfiles it
+  writes by default. When it rewrites a keyfile it keeps the old one as
+  `.bak` (or `.pre-v1` if it was in the old format), and the rewritten
+  keyfile gets the default file mode
+* feat: a daemon started before its atSign is activated exits at once with
+  the atServer's reason, rather than waiting about 20 seconds
+* fix: sshnpd refuses a session request whose session id isn't a UUID, and
+  removing a session's ephemeral key no longer removes other
+  `authorized_keys` lines
+* fix: srvd accepts an ESCR-authenticated socket only when it is signed by
+  the atSign of the side it claims
+* feat: srvd accepts ESCR relay authentication signed with ML-DSA-65 as
+  well as RSA, and a client or daemon whose enrollment holds signing keys of
+  its own can now use ESCR
+* feat: srvd ends a tunnel once the client's or daemon's enrollment is
+  revoked, superseded, deleted or expired, for each side that authenticated
+  with ESCR, checking every 5 minutes by default; `--signing-key-check-secs`
+  sets how often (0 turns it off)
+* feat: srvd looks up signing keys straight from each key's atServer over
+  HTTPS, so one slow or unresponsive atServer no longer holds up other
+  sessions; srvd now connects out to atServers itself
+* feat: sshnp and npt sign each session request with the client's
+  enrollment key, and sshnpd ends a signed session once that enrollment is
+  revoked, superseded, deleted or expired, checking every 10 seconds by
+  default; `--client-key-check-secs` sets how often (0 turns it off), and
+  `--require-enrollment-signature` refuses requests from clients that don't
+  sign this way. A session that outlives a restart of sshnpd is no longer
+  checked. sshnpd looks the key up straight from the client's atServer over
+  HTTPS, so it needs outbound access to that atServer for the check
+* fix: `srvd --manager` accepts session requests only from the manager
+  itself
+* fix: a long-running srvd no longer keeps a receive port open for every
+  session it has relayed
+* fix: srvd refuses a port 443 session request it can't serve (payload
+  mode, or a side that won't authenticate) as soon as it arrives
+* fix: sshnpd no longer leaves a session's ephemeral key in
+  `authorized_keys`, or drops a new session's key, when sessions start and
+  end at the same moment
+* fix: `npp_atserver` keeps running when a notification can't be read
+* test: more test coverage for policy service
+* fix: sshnp and npt act on the first response from the relay they asked,
+  and ignore later responses and any from another atSign
+* fix: sshnpd discards malformed policy configs
+* fix: regex consistency
+* fix: srvd takes a session's event logging config only from the session's
+  daemon
+* fix: sshnp and npt act on the daemon's first response and ignore any later
+  ones
+* fix: `--list-devices` credits each heartbeat to the daemon that sent it,
+  and skips malformed ones
+* feat: npevents adds the sending atSign to each event it prints
+* fix: sessions work when the client, daemon and relay share an atSign
+* test: the in-process harness runs every role as one atSign
+* fix: policy services answer only daemons that have rules, and each only
+  about itself
+* fix: `--list-devices` lists a daemon on the client's own atSign
+* build: built on the at_client_sdk release candidates: at_client
+  3.15.0-rc6, at_onboarding_cli 2.0.0-rc6, at_cli_commons 3.1.2-rc3 and
+  at_auth 4.0.0-rc5, plus at_commons 5.21.0 and at_utils 3.4.2
+
 ## v5.17.0
 
 * feat: `srv`/`srvd` tunnel traffic now runs through `at_chops`'s

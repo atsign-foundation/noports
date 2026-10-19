@@ -1,4 +1,5 @@
 #include "sshnpd/policy.h"
+#include "sshnpd/policy_limits.h"
 #include "sshnpd/sshnpd.h"
 #include <atclient/atkey.h>
 #include <atclient/json.h>
@@ -13,11 +14,6 @@
 
 #define LOGGER_TAG "POLICY"
 
-// How long to wait for the policy service before denying; an ack from the
-// policy service resets the clock (it means the request was received and is
-// being worked on)
-#define POLICY_TIMEOUT_MS 10000
-
 // The rpc request notification expires if undelivered after this long
 #define POLICY_REQUEST_EXPIRY_MS 30000
 
@@ -27,12 +23,6 @@
 // AtRpc namespaces: requests/responses travel as
 // <type>.<reqId>.auth_checks.__rpcs[.sshnp]@atsign
 #define POLICY_RPC_INFIX ".auth_checks.__rpcs"
-
-static int64_t now_millis(void) {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (int64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
-}
 
 // Compare two atsigns, tolerating a missing leading '@' on either side
 static bool atsign_equals(const char *a, const char *b) {
@@ -270,8 +260,9 @@ int policy_auth_check(atclient *worker, atclient *monitor, const sshnpd_params *
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Sent auth check for %s to policy service %s (reqId %lld)\n",
                client_atsign, params->policy, (long long)req_id);
 
-  int64_t deadline = now_millis() + POLICY_TIMEOUT_MS;
-  while (now_millis() < deadline) {
+  const int64_t started = policy_now_millis();
+  int64_t last_progress = started;
+  while (policy_now_millis() < policy_wait_deadline(started, last_progress)) {
     atclient_monitor_message message;
     atclient_monitor_message_init(&message);
     int read_res = atclient_monitor_read(monitor, worker, &message, NULL);
@@ -290,7 +281,7 @@ int policy_auth_check(atclient *worker, atclient *monitor, const sshnpd_params *
                                         sizeof(resp_type)) == 0) {
           if (strcmp(resp_type, "ack") == 0) {
             // Request received and being worked on - restart the clock
-            deadline = now_millis() + POLICY_TIMEOUT_MS;
+            last_progress = policy_now_millis();
             atclient_monitor_message_free(&message);
             continue;
           }

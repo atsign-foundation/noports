@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:noports_core/npa.dart'
+    show NPAAuthCheckRequest, NPAAuthCheckResponse;
 import 'package:npt_flutter/app.dart';
 
 class PolicyLogEntry {
@@ -25,9 +28,14 @@ class PolicyLogEntry {
     this.policyPayload,
   });
 
+  /// Whether [notification] is a policy service's record of a decision,
+  /// rather than a daemon's heartbeat.
+  static bool isPolicyLog(AtNotification notification) =>
+      notification.key.contains('logs.policy.sshnp');
+
   factory PolicyLogEntry.fromNotification(AtNotification notification) {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(
-      notification.epochMillis ?? DateTime.now().millisecondsSinceEpoch,
+      notification.epochMillis,
     );
 
     String deviceName = '';
@@ -36,45 +44,34 @@ class PolicyLogEntry {
     String type = 'heartbeat';
     String? policyPayload;
 
-    if (notification.key.contains('logs.policy.sshnp')) {
+    if (isPolicyLog(notification)) {
       type = 'policy request';
       policyPayload = notification.value;
 
       if (notification.value != null && notification.value!.isNotEmpty) {
         try {
           final Map<String, dynamic> data = jsonDecode(notification.value!);
+          final payload = data['payload'] as Map<String, dynamic>;
+          final request = NPAAuthCheckRequest.fromJson(
+            AtRpcReq.fromJson(payload['request']).payload,
+          );
+          final response = NPAAuthCheckResponse.fromJson(
+            AtRpcResp.fromJson(payload['response']).payload,
+          );
 
-          final payload = data['payload'];
-          if (payload is Map<String, dynamic>) {
-            final request = payload['request'];
-            if (request is Map<String, dynamic>) {
-              final requestPayload = request['payload'];
-              if (requestPayload is Map<String, dynamic>) {
-                deviceName = requestPayload['daemonDeviceName'] ?? 'unknown';
-                deviceGroup = requestPayload['daemonDeviceGroupName'] ?? '';
-                final clientAtsign =
-                    requestPayload['clientAtsign'] ?? 'unknown';
-                final daemonAtsign =
-                    requestPayload['daemonAtsign'] ?? 'unknown';
-                allowedServices = 'Request: $clientAtsign → $daemonAtsign';
-              }
-            }
-            final response = payload['response'];
-            if (response is Map<String, dynamic>) {
-              final responsePayload = response['payload'];
-              if (responsePayload is Map<String, dynamic>) {
-                final authorized = responsePayload['authorized'] ?? false;
-                final message = responsePayload['message'] ?? '';
-                final permitOpen = responsePayload['permitOpen'];
-                String authStatus = authorized ? 'AUTHORIZED' : 'DENIED';
-                String permits = '';
-                if (permitOpen is List && permitOpen.isNotEmpty) {
-                  permits = ' - Permit: ${permitOpen.join(', ')}';
-                }
-                allowedServices = '$allowedServices ($authStatus$permits)';
-              }
-            }
+          deviceName = request.daemonDeviceName;
+          deviceGroup = request.daemonDeviceGroupName;
+          var authStatus = response.authorized ? 'AUTHORIZED' : 'DENIED';
+          final reason = response.message?.trim() ?? '';
+          if (!response.authorized && reason.isNotEmpty) {
+            authStatus = '$authStatus: $reason';
           }
+          final permits = response.permitOpen.isEmpty
+              ? ''
+              : ' - Permit: ${response.permitOpen.join(', ')}';
+          allowedServices =
+              'Request: ${request.clientAtsign} → ${request.daemonAtsign} '
+              '($authStatus$permits)';
         } catch (e) {
           App.log(
             '[ERROR] PolicyLogEntry.fromNotification: Failed to parse policy log payload: $e'
@@ -126,6 +123,7 @@ class PolicyLogEntry {
 
 class PolicyLogMonitorService {
   static PolicyLogMonitorService? _instance;
+  final AtClient? _atClient;
   StreamSubscription<AtNotification>? _subscription;
   final StreamController<PolicyLogEntry> _logStreamController =
       StreamController<PolicyLogEntry>.broadcast();
@@ -136,7 +134,15 @@ class PolicyLogMonitorService {
     return _instance ??= PolicyLogMonitorService._();
   }
 
-  PolicyLogMonitorService._();
+  PolicyLogMonitorService._({AtClient? atClient}) : _atClient = atClient;
+
+  /// A service of its own, monitoring through [atClient] instead of the
+  /// current client.
+  @visibleForTesting
+  PolicyLogMonitorService.withAtClient(AtClient atClient)
+    : this._(atClient: atClient);
+
+  AtClient get _client => _atClient ?? AtClientManager.getInstance().atClient;
 
   Stream<PolicyLogEntry> get logStream => _logStreamController.stream;
   List<PolicyLogEntry> get logs => List.unmodifiable(_logs);
@@ -152,7 +158,7 @@ class PolicyLogMonitorService {
     }
 
     try {
-      final AtClient atClient = AtClientManager.getInstance().atClient;
+      final AtClient atClient = _client;
 
       final deviceRegexParts = deviceNames
           .map((device) => '$device\\.devices\\.policy\\.sshnp')
@@ -171,15 +177,7 @@ class PolicyLogMonitorService {
       _subscription = notificationService
           .subscribe(regex: monitorRegex, shouldDecrypt: true)
           .listen(
-            (notification) {
-              final logEntry = PolicyLogEntry.fromNotification(notification);
-              _logs.insert(0, logEntry);
-
-              if (_logs.length > 100) {
-                _logs.removeRange(100, _logs.length);
-              }
-              _logStreamController.add(logEntry);
-            },
+            (notification) => _onNotification(notification, atClient),
             onError: (error) {
               App.log(
                 '[ERROR] PolicyLogMonitorService.startMonitoring stream error: $error'
@@ -214,7 +212,7 @@ class PolicyLogMonitorService {
     }
 
     try {
-      final AtClient atClient = AtClientManager.getInstance().atClient;
+      final AtClient atClient = _client;
 
       const deviceRegex = r'[^:]*\.devices\.policy\.sshnp';
       const policyLogRegex = 'logs\\.policy\\.sshnp';
@@ -226,16 +224,7 @@ class PolicyLogMonitorService {
       _subscription = notificationService
           .subscribe(regex: monitorRegex, shouldDecrypt: true)
           .listen(
-            (notification) {
-              final logEntry = PolicyLogEntry.fromNotification(notification);
-              _logs.insert(0, logEntry);
-
-              if (_logs.length > 100) {
-                _logs.removeRange(100, _logs.length);
-              }
-
-              _logStreamController.add(logEntry);
-            },
+            (notification) => _onNotification(notification, atClient),
             onError: (error) {
               App.log(
                 '[ERROR] PolicyLogMonitorService.startGlobalMonitoring stream error: $error'
@@ -266,6 +255,30 @@ class PolicyLogMonitorService {
       _subscription = null;
       _isMonitoring = false;
     }
+  }
+
+  void _onNotification(AtNotification notification, AtClient atClient) {
+    if (PolicyLogEntry.isPolicyLog(notification) &&
+        !_isFromSelf(notification, atClient)) {
+      App.log(
+        '[WARNING] PolicyLogMonitorService ignored policy log'
+                ' ${notification.key} from ${notification.from}'
+            .loggable,
+      );
+      return;
+    }
+    final logEntry = PolicyLogEntry.fromNotification(notification);
+    _logs.insert(0, logEntry);
+
+    if (_logs.length > 100) {
+      _logs.removeRange(100, _logs.length);
+    }
+    _logStreamController.add(logEntry);
+  }
+
+  bool _isFromSelf(AtNotification notification, AtClient atClient) {
+    final self = atClient.getCurrentAtSign();
+    return self != null && notification.from.toAtsign() == self.toAtsign();
   }
 
   Future<void> stopMonitoring() async {

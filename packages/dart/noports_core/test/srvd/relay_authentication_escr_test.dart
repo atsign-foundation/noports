@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:at_auth/at_auth.dart'
+    show ApskSigningKey, KeyEntryStatus, apskAdvertisement;
 import 'package:at_chops/at_chops.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
@@ -21,24 +25,18 @@ void main() {
     late String wrongAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
-    late AtEncryptionKeyPair wrongKP;
+    late RsaKeyPair signingKP;
+    late RsaKeyPair wrongKP;
     late RelayAuthVerifyHelper helper;
-    late String wrongChallenge = AtChopsUtil.generateSymmetricKey(
-      EncryptionKeyType.aes256,
-    ).key;
+    late String wrongChallenge = AESKey.generate(32).key;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
-      wrongKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+      wrongKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
 
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
-      wrongAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
+      wrongAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
@@ -53,6 +51,52 @@ void main() {
       ).thenAnswer((_) => Future.value(signingKP.atPublicKey.publicKey));
     });
 
+    /// A helper for [relaySessionId] that serves [signingKP]'s public key for
+    /// any key URI, so the only thing that can refuse is the check under test.
+    MockRelayAuthVerifyHelper sessionHelper({bool active = true}) {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(relaySessionId))
+          .thenAnswer((_) async => active);
+      when(() => h.getRelayAuthAesKey(relaySessionId))
+          .thenAnswer((_) async => relayAuthAesKey);
+      when(() => h.lookup(relaySessionId, any()))
+          .thenAnswer((_) async => signingKP.atPublicKey.publicKey);
+      return h;
+    }
+
+    /// Builds a response as [RelayAuthenticatorESCR] does, but from a signed
+    /// payload the test chooses, so one field can be wrong and the rest valid.
+    Future<String> escrResponse(
+      Object? payload, {
+      String signingAlgo = 'rsa2048',
+      String? signingKeyUri,
+    }) async {
+      final envelope = {
+        'p': payload,
+        's': rsaSignString(
+          jsonEncode(payload),
+          privateKey: signingKP.atPrivateKey.privateKey,
+        ),
+        'ha': 'sha256',
+        'sa': signingAlgo,
+        'sk': signingKeyUri ?? publicSigningKeyUri,
+      };
+      final iv = generateIv();
+      final encrypted = await aesEncryptString(
+        base64Encode(jsonEncode(envelope).codeUnits),
+        key: relayAuthAesKey,
+        iv: iv,
+      );
+      return '$relaySessionId:'
+          '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
+    }
+
+    Matcher refusedWith(RAVEReason reason, String message) => throwsA(
+          isA<RAVE>()
+              .having((e) => e.reason, 'reason', reason)
+              .having((e) => e.message, 'message', contains(message)),
+        );
+
     test('all is well', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
         sessionId: relaySessionId,
@@ -60,6 +104,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: false,
       );
       RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
@@ -98,6 +143,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: wrongKP.atPublicKey.publicKey,
         privateSigningKey: wrongKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       );
 
@@ -124,6 +170,58 @@ void main() {
       expect(verifier.isSideA, true);
     });
 
+    for (final label in ['rsa2048', 'rsa4096', 'ecc_secp256r1']) {
+      test('signing algorithm $label', () async {
+        final checkedHelper = sessionHelper();
+        final verifier = RelayAuthVerifierESCR(
+          'test signing algorithm $label',
+          checkedHelper,
+        );
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingAlgo: label,
+        );
+
+        if (label == 'rsa2048') {
+          expect(await verifier.verifyChallengeResponse(response), true);
+          return;
+        }
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          throwsA(
+            isA<RAVE>().having(
+              (e) => e.reason,
+              'reason',
+              RAVEReason.signatureVerificationFailed,
+            ),
+          ),
+        );
+        verifyNever(() => checkedHelper.lookup(any(), any()));
+      });
+    }
+
+    test('an envelope naming no key is refused when two keys could have'
+        ' signed it', () async {
+      final checkedHelper = sessionHelper();
+      when(() => checkedHelper.lookup(relaySessionId, any())).thenAnswer(
+        (_) async => jsonEncode(apskAdvertisement(keys: [
+          for (final kp in [signingKP, wrongKP])
+            ApskSigningKey.forPublicKey(
+              alg: SigningAlgoType.rsa2048,
+              pub: kp.atPublicKey.publicKey,
+            ),
+        ])),
+      );
+      final verifier = RelayAuthVerifierESCR('two keys', checkedHelper);
+
+      await expectLater(
+        verifier.verifyChallengeResponse(await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        )),
+        refusedWith(RAVEReason.signatureVerificationFailed, 'names no key'),
+      );
+    });
+
     test('wrong AES key', () async {
       RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
         sessionId: relaySessionId,
@@ -131,6 +229,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: true,
       );
 
@@ -164,6 +263,7 @@ void main() {
         publicSigningKeyUri: publicSigningKeyUri,
         publicSigningKey: signingKP.atPublicKey.publicKey,
         privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
         isSideA: false,
       );
 
@@ -226,7 +326,7 @@ void main() {
       } catch (e, st) {
         expect(e.toString(), contains('Error during socket authentication:'
             ' RelayAuthVerifierException: malformedChallengeResponse :'
-            ' Too much data from client (more than 4096 bytes)'));
+            ' Too much data from client (more than 16384 bytes)'));
         print('Caught $e as expected\n$st');
         somethingThrown = true;
       }
@@ -237,6 +337,249 @@ void main() {
       expect(verifier.sessionId, null);
       expect(verifier.isSideA, null);
     });
+
+    test('is single-use: verifying a second response throws', () async {
+      RelayAuthenticatorESCR authenticator = RelayAuthenticatorESCR(
+        sessionId: relaySessionId,
+        relayAuthAesKey: relayAuthAesKey,
+        publicSigningKeyUri: publicSigningKeyUri,
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
+        isSideA: false,
+      );
+      RelayAuthVerifierESCR verifier = RelayAuthVerifierESCR(
+        'single-use',
+        helper,
+      );
+
+      // First use is fine.
+      final verified = await verifier.verifyChallengeResponse(
+        await authenticator.responseToChallenge(verifier.challenge),
+      );
+      expect(verified, true);
+
+      // A second use would reuse this verifier's (already issued) challenge
+      // across connections, so it must be refused.
+      await expectLater(
+        verifier.verifyChallengeResponse(
+          await authenticator.responseToChallenge(verifier.challenge),
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('a signature over another session id is refused', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test other session', h);
+      final response = await escrResponse({
+        'sid': Uuid().v4(),
+        'c': verifier.challenge,
+        'side': 'a',
+      });
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(
+          RAVEReason.dataMismatch,
+          'does not match expected sessionId',
+        ),
+      );
+      verifyNever(() => h.lookup(any(), any()));
+    });
+
+    for (final uri in [
+      'public:signing_publickey@alice',
+      '_apsk.my_enrollment_id.a.__e.evil@alice',
+    ]) {
+      test('a signing key outside the per-enrollment namespace is refused'
+          ' ($uri)', () async {
+        final h = sessionHelper();
+        final verifier = RelayAuthVerifierESCR('test namespace', h);
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingKeyUri: uri,
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.signatureVerificationFailed,
+            'is not in the per-enrollment data namespace',
+          ),
+        );
+        verifyNever(() => h.lookup(any(), any()));
+      });
+    }
+
+    // NOTE the signer is taken from after the key's last '@', but the lookup
+    // parses the whole key, so any other shape could make them disagree.
+    for (final uri in [
+      '_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@mallory.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@eve:z.a.__e@alice',
+      'cached:public:_apsk.my_enrollment_id.a.__e@alice',
+      'public:_apsk.my_enrollment_id.a.__e@alice:x',
+    ]) {
+      test('a signing key not shaped like an enrollment key is refused ($uri)',
+          () async {
+        final h = sessionHelper();
+        final verifier = RelayAuthVerifierESCR('test key shape', h);
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+          signingKeyUri: uri,
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.signatureVerificationFailed,
+            'is not of the form',
+          ),
+        );
+        verifyNever(() => h.lookup(any(), any()));
+      });
+    }
+
+    test('a signing key spelling its atSign with dots is refused', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test dotted atSign', h);
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        signingKeyUri: 'public:_apsk.my_enrollment_id.a.__e@al.ice',
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(
+          RAVEReason.signatureVerificationFailed,
+          'spells its atSign other than as @alice',
+        ),
+      );
+      verifyNever(() => h.lookup(any(), any()));
+    });
+
+    test('a public signing key URI, as clients send it, is accepted', () async {
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test public uri', h);
+      final uri = 'public:_apsk.${Uuid().v4()}.a.__e@alice';
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        signingKeyUri: uri,
+      );
+
+      expect(await verifier.verifyChallengeResponse(response), true);
+      expect(verifier.atSign, '@alice');
+      verify(() => h.lookup(relaySessionId, uri)).called(1);
+    });
+
+    test('a response for a session that is not active is refused', () async {
+      final h = sessionHelper(active: false);
+      final verifier = RelayAuthVerifierESCR('test inactive session', h);
+      final response = await escrResponse(
+        {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        refusedWith(RAVEReason.sessionNotActive, 'is not active'),
+      );
+      verifyNever(() => h.getRelayAuthAesKey(any()));
+    });
+
+    for (final side in ['c', null]) {
+      test('a side other than "a" or "b" is refused (${side ?? 'absent'})',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test side', sessionHelper());
+        final response = await escrResponse({
+          'sid': relaySessionId,
+          'c': verifier.challenge,
+          if (side != null) 'side': side,
+        });
+
+        await expectLater(
+          verifier.verifyChallengeResponse(response),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'must be either "a" or "b"',
+          ),
+        );
+        expect(verifier.isSideA, isNull);
+      });
+    }
+
+    for (final payload in [null, 'not a map']) {
+      test('a signed payload that is not a map is refused ($payload)',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test payload', sessionHelper());
+
+        await expectLater(
+          verifier.verifyChallengeResponse(await escrResponse(payload)),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'does not contain signedPayload',
+          ),
+        );
+      });
+    }
+
+    for (final (label, reshape) in [
+      ('a trailing field', (String r) => '$r:extra'),
+      ('no separator', (String r) => r.replaceFirst(':', '')),
+    ]) {
+      test('a response that is not <sid>:<payload> is refused ($label)',
+          () async {
+        final verifier = RelayAuthVerifierESCR('test shape', sessionHelper());
+        final response = await escrResponse(
+          {'sid': relaySessionId, 'c': verifier.challenge, 'side': 'a'},
+        );
+
+        await expectLater(
+          verifier.verifyChallengeResponse(reshape(response)),
+          refusedWith(
+            RAVEReason.malformedChallengeResponse,
+            'Expected <sid>:<payload>',
+          ),
+        );
+      });
+    }
+
+    String b64(String s) => base64Encode(utf8.encode(s));
+    for (final (label, authPayload64, reason, message) in [
+      (
+        'not base64',
+        '!!!',
+        RAVEReason.malformedChallengeResponse,
+        'base64Decode',
+      ),
+      (
+        'not JSON',
+        b64('not json'),
+        RAVEReason.jsonDecodeFailed,
+        'Unable to decode',
+      ),
+      (
+        'no iv',
+        b64('{"e":"x"}'),
+        RAVEReason.malformedChallengeResponse,
+        'No iv',
+      ),
+      (
+        'no e',
+        b64('{"iv":"x"}'),
+        RAVEReason.malformedChallengeResponse,
+        'No envelopeEncrypted',
+      ),
+    ]) {
+      test('a malformed encrypted envelope is refused ($label)', () async {
+        final verifier = RelayAuthVerifierESCR('test envelope', sessionHelper());
+
+        await expectLater(
+          verifier.verifyChallengeResponse('$relaySessionId:$authPayload64'),
+          refusedWith(reason, message),
+        );
+      });
+    }
   });
 
   group('post-auth fast-path ordering', () {
@@ -248,15 +591,13 @@ void main() {
     late String relayAuthAesKey;
     late String relaySessionId;
     late String publicSigningKeyUri;
-    late AtEncryptionKeyPair signingKP;
+    late RsaKeyPair signingKP;
     late RelayAuthVerifyHelper helper;
 
     setUpAll(() {
-      signingKP = AtChopsUtil.generateAtEncryptionKeyPair(keySize: 2048);
+      signingKP = RsaKeyPair.generate(keySize: 2048);
       publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
-      relayAuthAesKey = AtChopsUtil.generateSymmetricKey(
-        EncryptionKeyType.aes256,
-      ).key;
+      relayAuthAesKey = AESKey.generate(32).key;
       relaySessionId = Uuid().v4();
 
       helper = MockRelayAuthVerifyHelper();
@@ -302,6 +643,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
 
@@ -346,6 +688,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
         final verifier = RelayAuthVerifierESCR(
@@ -393,6 +736,7 @@ void main() {
           publicSigningKeyUri: publicSigningKeyUri,
           publicSigningKey: signingKP.atPublicKey.publicKey,
           privateSigningKey: signingKP.atPrivateKey.privateKey,
+          signingAlgo: SigningAlgoType.rsa2048,
           isSideA: false,
         );
         final verifier = RelayAuthVerifierESCR(
@@ -480,5 +824,249 @@ void main() {
         );
       },
     );
+  });
+
+  group('Relay authentication signed with a post-quantum key', () {
+    const uri = '_apsk.my_enrollment_id.a.__e@alice';
+    final sessionId = Uuid().v4();
+    final aesKey = AESKey.generate(32).key;
+    final rsa = RsaKeyPair.generate();
+    late MlDsa65KeyPair mlDsa;
+    late MlDsa65KeyPair otherMlDsa;
+
+    setUpAll(() async {
+      mlDsa = await MlDsa65KeyPair.generate();
+      otherMlDsa = await MlDsa65KeyPair.generate();
+    });
+
+    /// An `_apsk` advertisement of [keys], each active unless [retired].
+    String advertising(
+      Map<SigningAlgoType, List<String>> keys, {
+      Set<String> retired = const {},
+    }) =>
+        jsonEncode(apskAdvertisement(keys: [
+          for (final MapEntry(key: alg, value: pubs) in keys.entries)
+            for (final pub in pubs)
+              ApskSigningKey.forPublicKey(
+                alg: alg,
+                pub: pub,
+                status: retired.contains(pub)
+                    ? KeyEntryStatus.retired
+                    : KeyEntryStatus.active,
+              ),
+        ]));
+
+    /// [response], `<sessionId>:<payload>`, with its envelope's fields
+    /// replaced by [fields].
+    Future<String> rewritten(
+      String response,
+      Map<String, Object?> fields,
+    ) async {
+      final colon = response.indexOf(':');
+      final outer = jsonDecode(
+        utf8.decode(base64Decode(response.substring(colon + 1))),
+      );
+      final iv = InitialisationVector(base64Decode(outer['iv']));
+      final envelope = jsonDecode(utf8.decode(base64Decode(
+        await aesDecryptString(outer['e'], key: aesKey, iv: iv),
+      )))
+        ..addAll(fields);
+      final payload = base64Encode(utf8.encode(jsonEncode({
+        'iv': outer['iv'],
+        'e': await aesEncryptString(
+          base64Encode(utf8.encode(jsonEncode(envelope))),
+          key: aesKey,
+          iv: iv,
+        ),
+      })));
+      return '${response.substring(0, colon)}:$payload';
+    }
+
+    /// Verifies a response signed with [privateKey] under [algo], naming
+    /// [publicKey]'s kid, by a relay that fetches [apsk]. Any [fields] replace
+    /// the response's own.
+    Future<bool> verify(
+      String apsk, {
+      required SigningAlgoType algo,
+      required String publicKey,
+      required String privateKey,
+      Map<String, Object?> fields = const {},
+    }) async {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(sessionId)).thenAnswer((_) async => true);
+      when(() => h.getRelayAuthAesKey(sessionId)).thenAnswer((_) async => aesKey);
+      when(() => h.lookup(sessionId, uri)).thenAnswer((_) async => apsk);
+      final verifier = RelayAuthVerifierESCR('post-quantum', h);
+      return verifier.verifyChallengeResponse(await rewritten(
+        await RelayAuthenticatorESCR(
+          sessionId: sessionId,
+          relayAuthAesKey: aesKey,
+          publicSigningKeyUri: uri,
+          publicSigningKey: publicKey,
+          privateSigningKey: privateKey,
+          signingAlgo: algo,
+          isSideA: true,
+        ).responseToChallenge(verifier.challenge),
+        fields,
+      ));
+    }
+
+    Matcher refused(String message) => throwsA(isA<RAVE>()
+        .having((e) => e.reason, 'reason',
+            RAVEReason.signatureVerificationFailed)
+        .having((e) => e.message, 'message', contains(message)));
+
+    test('an ML-DSA signature verifies against its advertised key', () async {
+      expect(
+        await verify(
+          advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        true,
+      );
+    });
+
+    test('an RSA signature is refused while an ML-DSA key is offered',
+        () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.rsa2048: [rsa.atPublicKey.publicKey],
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        refused('advertises mldsa65'),
+      );
+    });
+
+    test('an RSA signature verifies once the ML-DSA key is retired', () async {
+      expect(
+        await verify(
+          advertising(
+            {
+              SigningAlgoType.rsa2048: [rsa.atPublicKey.publicKey],
+              SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+            },
+            retired: {mlDsa.atPublicKey.publicKey},
+          ),
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        true,
+      );
+    });
+
+    test('an ML-DSA signature is refused against a bare RSA key', () async {
+      await expectLater(
+        verify(
+          rsa.atPublicKey.publicKey,
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        refused('advertises rsa2048'),
+      );
+    });
+
+    test('a signature naming a key the advertisement lacks is refused',
+        () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.mldsa65: [otherMlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: mlDsa.atPrivateKey.privateKey,
+        ),
+        refused('does not advertise'),
+      );
+    });
+
+    test('a signature naming its key with something other than a string is'
+        ' refused', () async {
+      await expectLater(
+        verify(
+          rsa.atPublicKey.publicKey,
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+          fields: {'kid': 7},
+        ),
+        refused('is not a string'),
+      );
+    });
+
+    test('an ML-DSA response fits what the single-port relay reads from a'
+        ' socket before it authenticates', () async {
+      final h = MockRelayAuthVerifyHelper();
+      when(() => h.isSessionActive(sessionId)).thenAnswer((_) async => true);
+      when(() => h.getRelayAuthAesKey(sessionId)).thenAnswer((_) async => aesKey);
+      when(() => h.lookup(sessionId, uri)).thenAnswer((_) async => advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }));
+      final verifier = RelayAuthVerifierESCR('single-port', h);
+      final response = await RelayAuthenticatorESCR(
+        sessionId: sessionId,
+        relayAuthAesKey: aesKey,
+        publicSigningKeyUri: uri,
+        publicSigningKey: mlDsa.atPublicKey.publicKey,
+        privateSigningKey: mlDsa.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.mldsa65,
+        isSideA: true,
+      ).responseToChallenge(verifier.challenge);
+      final socket = MockSocket();
+      when(() => socket.flush()).thenAnswer((_) async {});
+      when(() => socket.listen(
+            any(),
+            onError: any(named: 'onError'),
+            onDone: any(named: 'onDone'),
+          )).thenAnswer((invocation) {
+        final void Function(Uint8List) onData =
+            invocation.positionalArguments[0];
+        onData(Uint8List.fromList(utf8.encode('$response\n')));
+        return MockStreamSubscription<Uint8List>();
+      });
+
+      final (authenticated, _) = await verifier.verifySocketAuth(socket);
+
+      expect(response.length, greaterThan(4096),
+          reason: 'larger than the limit a relay used to read');
+      expect(authenticated, true);
+    });
+
+    test('a bare _apsk that is not base64 is refused', () async {
+      await expectLater(
+        verify(
+          'not base64!',
+          algo: SigningAlgoType.rsa2048,
+          publicKey: rsa.atPublicKey.publicKey,
+          privateKey: rsa.atPrivateKey.privateKey,
+        ),
+        refused('not base64'),
+      );
+    });
+
+    test('an ML-DSA signature by another key is refused', () async {
+      await expectLater(
+        verify(
+          advertising({
+            SigningAlgoType.mldsa65: [mlDsa.atPublicKey.publicKey],
+          }),
+          algo: SigningAlgoType.mldsa65,
+          publicKey: mlDsa.atPublicKey.publicKey,
+          privateKey: otherMlDsa.atPrivateKey.privateKey,
+        ),
+        refused('Signatures did not match'),
+      );
+    });
   });
 }

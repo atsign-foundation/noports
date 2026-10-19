@@ -809,6 +809,12 @@ abstract class AppLocalizations {
   /// **'Invalid atKeys file detected'**
   String get errorAtKeysInvalid;
 
+  /// No description provided for @errorAtKeysNotJson.
+  ///
+  /// In en, this message translates to:
+  /// **'The atKeys file isn\'t valid JSON: {problem} at character {position}'**
+  String errorAtKeysNotJson(Object position, Object problem);
+
   /// No description provided for @errorAtKeysUploadedMismatch.
   ///
   /// In en, this message translates to:
@@ -994,6 +1000,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'File Saved'**
   String get fileSaved;
+
+  /// No description provided for @fileSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save file'**
+  String get fileSaveFailed;
 
   /// No description provided for @findOtp.
   ///

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:npt_flutter/app.dart';
@@ -12,6 +12,17 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
 
 const apiBase = '/api/app/v3';
+
+/// Whether [ActivateUtil] skips verifying the registrar's TLS certificate, for
+/// local testing against a registrar whose certificate the device doesn't
+/// trust.
+///
+/// Set with `--dart-define=NPT_DISABLE_REGISTRAR_TLS_VERIFICATION=true`. It
+/// takes effect only where [kDebugMode] is true, so release builds always
+/// verify.
+const disableRegistrarTlsVerification =
+    kDebugMode &&
+    bool.fromEnvironment('NPT_DISABLE_REGISTRAR_TLS_VERIFICATION');
 
 enum NoPortsActivateApiEndpoints {
   login('$apiBase/authenticate/atsign'),
@@ -27,10 +38,11 @@ class ActivateUtil {
   late final IOClient _http;
 
   ActivateUtil({required this.registrarUrl, required this.apiKey}) {
-    var innerClient = HttpClient();
-    innerClient.badCertificateCallback =
-        (X509Certificate cert, String host, int port) => true;
-    _http = IOClient(innerClient);
+    _http = IOClient(
+      disableRegistrarTlsVerification
+          ? (HttpClient()..badCertificateCallback = (cert, host, port) => true)
+          : null,
+    );
   }
 
   Future<Response> registrarApiRequest(
@@ -77,8 +89,8 @@ class ActivateUtil {
   }
 
   /// Activates an atsign from teapot using a CRAM key obtained via
-  /// [verifyActivation], then sets up the AtClient for the newly-activated
-  /// atsign.
+  /// [verifyActivation], writes its keys to the keychain and adopts the
+  /// client the activation opens.
   Future<NoPortsOnboardingResult> onboardFromCramKey({
     required Atsign atsign,
     required String cramkey,
@@ -86,26 +98,35 @@ class ActivateUtil {
     required AppLocalizations strings,
   }) async {
     try {
-      var request = AtOnboardingRequest(atsign)
-        ..rootDomain = AtRootDomain.parse(rootDomain);
-
-      var response = await AuthService().onboard(request, cramkey);
-
-      if (!response.isSuccessful) {
-        return NoPortsOnboardingResult.error(
-          message: strings.errorAuthenticationFailed,
-        );
-      }
-
-      await AtClientMethods.activateFromAuthResponse(response, rootDomain);
+      await AtClientMethods.stopCurrentClient();
+      final client = await activate(atsign, cramkey, rootDomain);
+      AtClientMethods.adopt(client);
       return NoPortsOnboardingResult.success(atsign: atsign);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(message: strings.msgResponseTimeOut);
     } catch (e) {
-      App.log('Failed to onboard $atsign from cram key: $e'.loggable);
+      App.log(
+        'Failed to onboard $atsign from cram key: ${e.runtimeType}'.loggable,
+      );
       return NoPortsOnboardingResult.error(
         message: describeOnboardingError(e, strings),
       );
     }
   }
+
+  /// Activates [atsign] with [cramkey] against [rootDomain], writing its keys
+  /// to the keychain, and returns the client the activation opens.
+  @visibleForTesting
+  Future<AtClient> Function(Atsign atsign, String cramkey, String rootDomain)
+  activate = _activateIntoKeychain;
+
+  static Future<AtClient> _activateIntoKeychain(
+    Atsign atsign,
+    String cramkey,
+    String rootDomain,
+  ) async => atsign.activate(
+    cramSecret: cramkey,
+    keys: KeychainAtKeysIo(),
+    preference: await AtClientMethods.loadAtClientPreference(rootDomain),
+  );
 }

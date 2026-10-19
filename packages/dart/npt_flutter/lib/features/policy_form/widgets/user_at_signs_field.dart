@@ -1,4 +1,4 @@
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 

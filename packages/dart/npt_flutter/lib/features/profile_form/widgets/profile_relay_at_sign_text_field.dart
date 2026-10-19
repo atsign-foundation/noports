@@ -1,9 +1,10 @@
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class ProfileRelayAtsignTextField extends StatefulWidget {
@@ -46,16 +47,17 @@ class _ProfileRelayAtsignTextFieldState
             ),
             validator: FormValidator.validateEmptyRelayField,
             onChanged: (value) {
-              value = value.toAtsign();
+              final atsign = value.toAtsignOrNull();
+              if (atsign == null) return;
               controller.value = TextEditingValue(
-                text: value,
-                selection: TextSelection.collapsed(offset: value.length),
+                text: atsign,
+                selection: TextSelection.collapsed(offset: atsign.length),
               );
               var bloc = context.read<ProfileBloc>();
               bloc.add(
                 ProfileEditEvent(
                   profile: (bloc.state as ProfileLoadedState).profile.copyWith(
-                    relayAtsign: value.toAtsign(),
+                    relayAtsign: atsign,
                   ),
                 ),
               );

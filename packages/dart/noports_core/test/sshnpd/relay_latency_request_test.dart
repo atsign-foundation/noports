@@ -80,6 +80,8 @@ void main() {
         version: '1.0.0',
         permitOpen: ['*:*'],
         strict: false,
+        clientKeyCheckInterval: Duration.zero,
+        requireEnrollmentSignature: false,
       );
     });
 

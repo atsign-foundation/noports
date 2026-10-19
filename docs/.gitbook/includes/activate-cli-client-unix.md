@@ -9,7 +9,7 @@ If you've activated your **client** atSign on another device already, this step 
 This command activates your atSign and prompts you to enter an OTP. This is only done during the setup of a brand new atsign.
 
 ```
-~/.local/bin/at_activate -a @<REPLACE>_client
+~/.local/bin/at_activate onboard -a @<REPLACE>_client
 ```
 
 ### Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders

@@ -1,7 +1,10 @@
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/cubit/multi_activation_cubit.dart';
 import 'package:npt_flutter/features/onboarding/model/multi_activation_file_content.dart';
 
@@ -155,14 +158,136 @@ void main() {
   });
 
   group('onboardTimeout', () {
-    test('is far below the 5 minute AtAuth onboarding poll default', () {
+    test('is far below the 5 minute provisioning budget default', () {
       // A file of dud atsigns used to sit on the activating screen for
-      // 5 minutes each because AtAuth polled for provisioning that was never
-      // coming.
+      // 5 minutes each because activation polled for provisioning that was
+      // never coming.
       expect(
         MultiActivationCubit.onboardTimeout,
         lessThan(const Duration(minutes: 5)),
       );
     });
   });
+
+  group('Given the bulk-activation dialog and a chosen activation file', () {
+    const key = '0123456789abcdef0123456789abcdef';
+    late MultiActivationCubit cubit;
+    late Directory tempDir;
+
+    setUp(() {
+      cubit = MultiActivationCubit();
+      tempDir = Directory.systemTemp.createTempSync('multi_activation_test');
+    });
+
+    tearDown(() {
+      cubit.close();
+      tempDir.deleteSync(recursive: true);
+    });
+
+    /// Uploads an activation file holding [content], returning the app log.
+    Future<List<String>> upload(WidgetTester tester, String content) async {
+      final logs = await _pumpAppLog(tester);
+      final file = File('${tempDir.path}/activation.yaml')
+        ..writeAsStringSync(content);
+      await tester.runAsync(
+        () => cubit.processFile(file.path, 'activation.yaml'),
+      );
+      return [for (final entry in logs.logs) entry.loggable.toString()];
+    }
+
+    testWidgets('when an entry lacks its activation_key part, then the upload'
+        ' is refused, the app log says which entry could not be read by its'
+        ' position, and no app log line contains the key', (tester) async {
+      final log = await upload(
+        tester,
+        'atsigns:\n'
+        '  - "@one_jttest:activation_key:${'a' * 32}"\n'
+        '  - "@two_jttest:$key"\n',
+      );
+
+      expect(cubit.state.uploadState, MultiActivationFileUploadState.error);
+      expect(
+        log,
+        contains(contains('entry 2')),
+        reason: 'the log names the entry that could not be read',
+      );
+      expect(
+        log.where((line) => line.contains(key)),
+        isEmpty,
+        reason: 'no app log line may hold an activation key',
+      );
+    });
+
+    testWidgets("when an entry isn't text, then the upload is refused and the"
+        ' app log says which entry could not be read by its position',
+        (tester) async {
+      final log = await upload(
+        tester,
+        'atsigns:\n'
+        '  - "@one_jttest:activation_key:$key"\n'
+        '  - 42\n',
+      );
+
+      expect(cubit.state.uploadState, MultiActivationFileUploadState.error);
+      expect(
+        log,
+        contains(contains('entry 2')),
+        reason: 'the log names the entry that could not be read',
+      );
+    });
+
+    testWidgets("when the file isn't valid YAML on an entry's line, then the"
+        " upload is refused, the app log says the file isn't valid YAML and"
+        " gives the line number, and no app log line contains that line's"
+        ' text', (tester) async {
+      final log = await upload(
+        tester,
+        'atsigns:\n'
+        '  - @one_jttest:activation_key:$key\n',
+      );
+
+      expect(cubit.state.uploadState, MultiActivationFileUploadState.error);
+      expect(
+        log,
+        contains(allOf(contains('YAML'), contains('line 2'))),
+        reason: "the log says the file isn't valid YAML, and where",
+      );
+      expect(
+        log.where((line) => line.contains(key)),
+        isEmpty,
+        reason: 'no app log line may hold an activation key',
+      );
+    });
+
+    testWidgets('when every entry is well formed, then the upload succeeds as'
+        ' before', (tester) async {
+      final log = await upload(
+        tester,
+        'atsigns:\n'
+        '  - "@one_jttest:activation_key:$key"\n',
+      );
+
+      expect(cubit.state.uploadState, MultiActivationFileUploadState.success);
+      expect(cubit.state.fileContent.entries.single.activationKey, key);
+      expect(
+        log,
+        contains('uploaded activation file content successfully'),
+      );
+    });
+  });
+}
+
+/// Provides the app log [App.log] writes to, and returns it.
+Future<LogsCubit> _pumpAppLog(WidgetTester tester) async {
+  final logs = LogsCubit();
+  await tester.pumpWidget(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => EnableLoggingCubit()),
+        BlocProvider.value(value: logs),
+      ],
+      child: MaterialApp(navigatorKey: App.navState, home: const SizedBox()),
+    ),
+  );
+  return logs;
 }

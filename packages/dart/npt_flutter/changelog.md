@@ -1,7 +1,44 @@
+## 1.9.7+34
+
+- FIX: When activating an atSign fails, from the activation dialog or an
+  activation file, the app log names the type of error.
+- FIX: When an activation file can't be read, the app log gives the number of
+  the entry at fault, or the line where the file isn't valid YAML.
+- FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
+  the position where it stops being valid.
+- FIX: Tunnels reconnect automatically after the daemon's device reboots,
+  instead of leaving the profile stuck on "starting" until the app is
+  relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a
+  successful connection.
+
+## 1.9.6+33
+
+- FIX: Two operations that need the app's keys at the same moment no longer fail
+  with "Self encryption key is not set for current atSign". at_client_flutter is
+  now 2.0.0-rc5, bringing at_client 3.15.0-rc6.
+- FIX: An atSign field shows an error for an atSign longer than 55 characters,
+  the most an atSign can have, and Sign in and Next go ahead only once the
+  atSign field holds a valid atSign.
+- FIX: Connections act on the device's first response and ignore any later ones,
+  and act on the first response from the relay they asked, ignoring any later
+  responses.
+- FIX: Connections work when the device or the relay shares the app's atSign.
+
 ## 1.9.5+32
 
-- FIX: Tunnels reconnect automatically after the daemon's device reboots, instead of leaving the profile stuck on "starting" until the app is relaunched.
-- FIX: Keep-alive retry now covers startup failures too, not just drops after a successful connection.
+- FEAT: A dot beside the atSign shows whether its atServer connection is online, offline or refused, with the reason in its tooltip.
+- FEAT: Onboarding errors say what went wrong, rather than reporting a generic authentication failure.
+- FEAT: Connections use the stronger ESCR relay authentication wherever the relay and the device support it.
+- REFACTOR: Sign-in, activation and enrollment run through at_client. A pending enrollment request expires when the atServer says it has, rather than 48 hours after the app sent it.
+- REFACTOR: at_client_flutter is the app's only direct atSign dependency, now 2.0.0-rc4. It brings at_client 3.15.0-rc5, with its fixes for upgrading from the at_client 3.14.0 that 1.9.4+31 shipped, and at_auth 4.0.0-rc4.
+- FIX: atSigns saved by 1.9.3 or earlier sign in.
+- FIX: Stopping a connection also ends the sessions already open through it.
+- FIX: The policy log's summary shows why a request was denied, wrapping onto up to four lines rather than being cut off after one.
+- FIX: A demo profile download that fails, or takes more than 30 seconds, says the import failed instead of leaving the progress indicator up for good.
+- FIX: Exporting profiles says "File Saved" only once the file has been written, and says when it could not be saved.
+- FIX: Switching to another atSign signs in the way the sign-in page does: a revoked or still-pending enrollment is picked up again, any other failure says what went wrong, and a switch that doesn't sign in ends on the sign-in page instead of silently leaving the app with no connection. It also uses that atSign's own root domain rather than the current one's.
+- FIX: An atSign that has never saved settings gets the default settings, instead of a "Profile failed to load" error on the Settings page. A settings load that does fail is logged with its stack trace.
 
 ## 1.9.4+31
 

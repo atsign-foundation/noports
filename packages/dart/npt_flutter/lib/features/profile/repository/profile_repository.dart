@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/util/constants.dart';
@@ -20,7 +20,7 @@ class ProfileRepository {
   Future<Iterable<String>?> getProfileUuids() async {
     AtClient atClient = _client;
 
-    String namespace = Constants.namespace ?? '';
+    String namespace = Constants.namespace;
     List<AtKey> keys;
     try {
       keys = await atClient.getAtKeys(
