@@ -188,23 +188,23 @@ class PolicyInfoRpcRequestHandler
   final String namespace;
   final NPARequestHandler handler;
 
-  /// Receives each policy event; when null, no events are sent.
-  final Future<void> Function(Map<String, dynamic> event)? onEvent;
+  /// Receives each policy event.
+  final Future<void> Function(Map<String, dynamic> event) onEvent;
 
   PolicyInfoRpcRequestHandler({
     required this.policyAtsign,
     required this.namespace,
     required this.handler,
     required this.atClient,
-    this.onEvent,
+    required this.onEvent,
   });
 
-  /// Hands [event] to [onEvent]. A failure is logged and swallowed: the event
-  /// log must never change the answer a daemon gets.
-  Future<void> _sendEvent(Map<String, dynamic> event) async {
-    if (onEvent == null) return;
+  /// Builds an event with [build] and hands it to [onEvent]. A failure in
+  /// either is logged and swallowed: the event log must never change the
+  /// answer a daemon gets.
+  Future<void> _sendEvent(Map<String, dynamic> Function() build) async {
     try {
-      await onEvent!(event);
+      await onEvent(build());
     } catch (e) {
       logger.warning('Failed to log policy event: $e');
     }
@@ -220,71 +220,73 @@ class PolicyInfoRpcRequestHandler
     NPAAuthCheckRequest authCheckRequest = NPAAuthCheckRequest.fromJson(
       request.payload,
     );
-    AtRpcResp rpcResponse;
-    Map<String, dynamic> event;
     final Atsign sender = fromAtSign.toAtsign();
-    if (sender != authCheckRequest.daemonAtsign.toAtsign()) {
+    final bool aboutItself = sender == authCheckRequest.daemonAtsign.toAtsign();
+    NPAAuthCheckResponse answer;
+    String? failure;
+    if (!aboutItself) {
       logger.warning(
         'Refusing a check from $fromAtSign'
         ' about ${authCheckRequest.daemonAtsign}',
       );
-      final refusal = NPAAuthCheckResponse(
+      answer = NPAAuthCheckResponse(
         authorized: false,
         message: 'A daemon may ask only about itself',
         permitOpen: [],
       );
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: refusal.toJson(),
-      );
-      event = PolicyEvent.clientRejected(
-        policyAtsign: policyAtsign,
-        fromAtsign: sender,
-        request: authCheckRequest,
-        response: refusal,
-      );
     } else {
       try {
-        var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-        rpcResponse = AtRpcResp(
-          reqId: request.reqId,
-          respType: AtRpcRespType.success,
-          payload: authCheckResponse.toJson(),
-        );
-        event = authCheckResponse.authorized
-            ? PolicyEvent.clientAdmitted(
-                policyAtsign: policyAtsign,
-                fromAtsign: sender,
-                request: authCheckRequest,
-                response: authCheckResponse,
-              )
-            : PolicyEvent.clientRejected(
-                policyAtsign: policyAtsign,
-                fromAtsign: sender,
-                request: authCheckRequest,
-                response: authCheckResponse,
-              );
+        answer = await handler.doAuthCheck(authCheckRequest);
       } catch (e, st) {
         logger.shout('Exception: $e : StackTrace : \n$st');
-        rpcResponse = AtRpcResp(
-          reqId: request.reqId,
-          respType: AtRpcRespType.success,
-          payload: NPAAuthCheckResponse(
-            authorized: false,
-            message: 'Exception: $e',
-            permitOpen: [],
-          ).toJson(),
-        );
-        event = PolicyEvent.policyCheckFailed(
-          policyAtsign: policyAtsign,
-          fromAtsign: sender,
-          request: authCheckRequest,
-          error: '$e',
+        failure = '$e';
+        answer = NPAAuthCheckResponse(
+          authorized: false,
+          message: 'Exception: $e',
+          permitOpen: [],
         );
       }
     }
-    await _sendEvent(event);
+    final AtRpcResp rpcResponse = AtRpcResp(
+      reqId: request.reqId,
+      respType: AtRpcRespType.success,
+      payload: answer.toJson(),
+    );
+
+    // The answer is settled before the event is built, so building or
+    // sending the event can never change it.
+    await _sendEvent(() {
+      final String? error = failure;
+      if (!aboutItself) {
+        return PolicyEvent.requestRefused(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      } else if (error != null) {
+        return PolicyEvent.policyCheckFailed(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          error: error,
+        );
+      } else if (answer.authorized) {
+        return PolicyEvent.clientAdmitted(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      } else {
+        return PolicyEvent.clientRejected(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      }
+    });
 
     // We will send a 'log' notification to ourselves
     var logKey = AtKey()

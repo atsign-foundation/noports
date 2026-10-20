@@ -137,9 +137,17 @@ enum PolicyEventType {
   clientAdmitted, // policy check authorised the client
   clientRejected, // policy check refused the client
   policyCheckFailed, // policy check threw; the client was refused
+  requestRefused, // a daemon asked about another daemon; nothing was checked
 }
 
+/// The events a policy service sends to its event logging Atsign: one for
+/// each auth check it answers. Every event carries `event` (a
+/// [PolicyEventType] name), `timestamp` (UTC), `policyAtsign`, `fromAtsign`
+/// (the Atsign that sent the check) and the request's `clientAtsign`,
+/// `daemonAtsign`, `daemonDeviceName` and `daemonDeviceGroupName`.
 abstract class PolicyEvent {
+  /// The policy check authorised the client, with the answer's `message` and
+  /// `permitOpen`.
   static Map<String, dynamic> clientAdmitted({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
@@ -156,6 +164,7 @@ abstract class PolicyEvent {
     "permitOpen": response.permitOpen,
   };
 
+  /// The policy check refused the client, with the answer's `message`.
   static Map<String, dynamic> clientRejected({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
@@ -171,6 +180,7 @@ abstract class PolicyEvent {
     "message": response.message,
   };
 
+  /// The policy check threw, so the client was refused; `error` says why.
   static Map<String, dynamic> policyCheckFailed({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
@@ -184,6 +194,24 @@ abstract class PolicyEvent {
       request,
     ),
     "error": error,
+  };
+
+  /// A daemon asked about a different daemon, so the request was refused
+  /// without a policy check and no client was evaluated. `fromAtsign` is the
+  /// daemon that asked; `daemonAtsign` is the one it asked about.
+  static Map<String, dynamic> requestRefused({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.requestRefused,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
   };
 
   /// The fields every policy check event carries.

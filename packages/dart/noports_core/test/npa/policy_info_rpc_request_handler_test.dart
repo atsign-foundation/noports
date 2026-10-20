@@ -1,7 +1,6 @@
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
@@ -95,7 +94,7 @@ void main() {
 
       expect(events, hasLength(1));
       final e = events.single;
-      expect(e['event'], PolicyEventType.clientAdmitted.name);
+      expect(e['event'], 'clientAdmitted');
       expect(e['policyAtsign'], '@policy');
       expect(e['fromAtsign'], daemon);
       expect(e['clientAtsign'], '@client');
@@ -104,7 +103,8 @@ void main() {
       expect(e['daemonDeviceGroupName'], 'group1');
       expect(e['message'], 'ok');
       expect(e['permitOpen'], ['localhost:22']);
-      expect(e['timestamp'], isA<String>());
+      expect(e['timestamp'], endsWith('Z'));
+      expect(DateTime.parse(e['timestamp']).isUtc, isTrue);
     });
 
     test('a refused client is logged as clientRejected', () async {
@@ -119,13 +119,13 @@ void main() {
       await h.handleRequest(requestAbout(daemon), daemon);
 
       expect(events, hasLength(1));
-      expect(events.single['event'], PolicyEventType.clientRejected.name);
+      expect(events.single['event'], 'clientRejected');
       expect(events.single['message'], 'no rule for @client');
       expect(events.single['fromAtsign'], daemon);
     });
 
     test(
-      'a daemon asking about another daemon is logged as clientRejected',
+      'a daemon asking about another daemon is logged as requestRefused',
       () async {
         final h = handlerFor(() => fail('the policy check must not run'));
 
@@ -133,9 +133,10 @@ void main() {
 
         expect(answerIn(resp).authorized, isFalse);
         expect(events, hasLength(1));
-        expect(events.single['event'], PolicyEventType.clientRejected.name);
+        expect(events.single['event'], 'requestRefused');
         expect(events.single['message'], 'A daemon may ask only about itself');
         expect(events.single['fromAtsign'], '@other');
+        expect(events.single['daemonAtsign'], daemon);
       },
     );
 
@@ -147,7 +148,7 @@ void main() {
 
       expect(answerIn(resp).authorized, isFalse);
       expect(events, hasLength(1));
-      expect(events.single['event'], PolicyEventType.policyCheckFailed.name);
+      expect(events.single['event'], 'policyCheckFailed');
       expect(events.single['fromAtsign'], daemon);
       expect(events.single['error'], contains('boom'));
     });
@@ -165,26 +166,6 @@ void main() {
       final resp = await h.handleRequest(requestAbout(daemon), daemon);
 
       expect(answerIn(resp).authorized, isTrue);
-    });
-
-    test('no events are sent when there is no onEvent', () async {
-      final h = PolicyInfoRpcRequestHandler(
-        policyAtsign: '@policy'.toAtsign(),
-        namespace: 'sshnp',
-        handler: FakeRequestHandler(
-          () async => NPAAuthCheckResponse(
-            authorized: true,
-            message: 'ok',
-            permitOpen: [],
-          ),
-        ),
-        atClient: atClient,
-      );
-
-      final resp = await h.handleRequest(requestAbout(daemon), daemon);
-
-      expect(answerIn(resp).authorized, isTrue);
-      expect(events, isEmpty);
     });
   });
 }
