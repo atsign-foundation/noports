@@ -295,9 +295,6 @@ cJSON *extract_envelope_from_notification(atclient_monitor_message *message) {
   memcpy(decrypted_json, message->notification->decrypted_value, strlen(message->notification->decrypted_value));
   *(decrypted_json + strlen(message->notification->decrypted_value)) = '\0';
 
-  // log the decrypted json
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Decrypted json: %s\n", decrypted_json);
-
   // Parse it to cJSON*
   cJSON *envelope = cJSON_Parse(decrypted_json);
   free(decrypted_json);

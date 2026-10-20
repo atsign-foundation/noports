@@ -13,15 +13,25 @@ class MultiActivationFileContent {
   /// It contains a list of atsigns and their corresponding activation keys [ActivationKeyPair], as well as the name of the activation file [fileName].
   MultiActivationFileContent({required this.entries, required this.fileName});
 
-  /// Parse from YAML data
+  /// Parse from YAML data.
+  ///
+  /// Throws a [FormatException] naming the position of an entry it can't
+  /// read, and none of the entry's text.
   factory MultiActivationFileContent.fromYaml(
     Map<dynamic, dynamic> yaml,
     String fileName,
   ) {
-    final atsignsList = (yaml['atsigns'] as List<dynamic>).cast<String>();
-    final entries = atsignsList
-        .map((entry) => ActivationKeyPair.parse(entry))
-        .toList();
+    final atsignsList = yaml['atsigns'] as List<dynamic>;
+    final entries = <ActivationKeyPair>[];
+    for (final (index, entry) in atsignsList.indexed) {
+      try {
+        entries.add(ActivationKeyPair.parse(entry as String));
+      } catch (_) {
+        throw FormatException(
+          'Activation file entry ${index + 1} could not be read',
+        );
+      }
+    }
     App.log('Parsed ${entries.length} entries from YAML'.loggable);
     return MultiActivationFileContent(entries: entries, fileName: fileName);
   }

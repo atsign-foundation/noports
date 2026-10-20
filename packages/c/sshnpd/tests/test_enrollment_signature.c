@@ -87,6 +87,10 @@ static const char *SK = "public:_apsk.alice-enrollment.a.__e@alice";
 
 static char *advertisement(const char *keys_json) {
   char *ad = malloc(4096);
+  if (ad == NULL) {
+    fprintf(stderr, "Failed to allocate an advertisement\n");
+    exit(1);
+  }
   snprintf(ad, 4096, "{\"v\":1,\"keys\":%s}", keys_json);
   return ad;
 }

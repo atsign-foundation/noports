@@ -22,6 +22,10 @@ There are four test packs, each with its own entrypoint under `bin/`:
 | policy | `bin/policy_tests.dart` | VE |
 | revocation | `bin/revocation_tests.dart` | EE |
 
+`bin/watch_notifications.dart` isn't a pack: it prints what one atSign
+receives, for the hand check in
+[../single_atsign/README.md](../single_atsign/README.md).
+
 The examples below use the core pack; relay and policy take the same
 arguments. The revocation pack starts its own relay and daemons, so it takes
 fewer; [lib/revocation_tests/README.md](lib/revocation_tests/README.md) says

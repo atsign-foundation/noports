@@ -115,6 +115,7 @@
   "errorAtKeySaveFailed": "Error al guardar el archivo atKeys: {error}",
   "errorAtKeysFileProcessFailed": "Error al procesar el archivo atKeys",
   "errorAtKeysInvalid": "Se detectó un archivo atKeys inválido",
+  "errorAtKeysNotJson": "El archivo atKeys no es un JSON válido: {problem} en el carácter {position}",
   "errorAtKeysUploadedMismatch": "El archivo atKeys que subiste no coincide con el Atsign solicitado",
   "errorAtServerUnavailable": "No se pudo recuperar el estado del atServer, asegúrate de tener una conexión a internet estable.",
   "errorAtServerUnreachable": "No se puede conectar al atServer, asegúrate de tener una conexión a internet estable.",
