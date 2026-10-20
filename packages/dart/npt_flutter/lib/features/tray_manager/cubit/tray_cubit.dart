@@ -134,18 +134,21 @@ class TrayCubit extends LoggingCubit<TrayState> {
         : <ProfileGroup>[];
     var folderMenuItems = starredFolders.map((folder) {
       var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
-      var runningCount = uuids.where(running.containsKey).length;
+      // Counts only what Start all starts, not the connections it skips
+      var startable = uuids.where(folder.startsWithAll).toList();
+      var startableRunning = startable.where(running.containsKey).length;
+      var anyRunning = uuids.any(running.containsKey);
       var waiting = uuids.any(ProfileStartQueue.isWaiting);
-      var statusIcon = runningCount > 0 ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
+      var statusIcon = anyRunning ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
       return MenuItem(
-        label: '$statusIcon ${folder.name} ($runningCount/${uuids.length})',
+        label: '$statusIcon ${folder.name} ($startableRunning/${startable.length})',
         onClick: (_) {
           var context = App.navState.currentContext;
           if (context == null) return;
-          if (runningCount > 0 || waiting) {
+          if (anyRunning || waiting) {
             ProfileGroupActions.stopAll(context, uuids);
           } else {
-            ProfileGroupActions.startAll(context, uuids.where(folder.startsWithAll));
+            ProfileGroupActions.startAll(context, startable);
             // Show the main window on Windows only when initiating a connection
             if (Platform.isWindows) windowManager.show();
           }
