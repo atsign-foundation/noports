@@ -22,7 +22,7 @@ dependencies:
   # Daemon schema, defaults and onboarding
   noports_core:
     path: ../noports_core
-  at_onboarding_cli: ^1.14.2
+  at_onboarding_cli: ^2.0.0-rc7
   at_utils: ^3.4.0
 
   # Config file editing (comment preserving)

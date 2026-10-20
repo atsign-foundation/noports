@@ -1,10 +1,14 @@
 import 'dart:io';
 
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-import 'package:noports_config/platform/atsigns.dart';
+import 'package:at_client/at_client.dart'
+    show AtsignLifecycle, FileAtKeysIo, PendingEnrollment;
+import 'package:at_commons/at_commons.dart' show AtRootDomain, Atsign;
+import 'package:at_onboarding_cli/at_onboarding_cli.dart'
+    show AtOnboardingPreference;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
+import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
 
 enum EnrollmentStep {
@@ -76,10 +80,9 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   EnrollmentCubit({
     required this.rootDomain,
     DaemonPaths? paths,
-    AtOnboardingService Function(String atsign, AtOnboardingPreference pref)?
-    serviceFactory,
+    this.retryInterval = const Duration(seconds: 10),
+    this.maxRetries = 180,
   }) : _paths = paths,
-       _serviceFactory = serviceFactory ?? AtOnboardingServiceImpl.new,
        super(const EnrollmentState());
 
   /// Must match what `sshnpd` enrolls as; the approve command in the docs
@@ -87,10 +90,15 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   static const appName = 'noports';
   static const namespaces = {'sshnp': 'rw', 'sshrvd': 'rw'};
 
+  /// As written in sshnpd.yaml, e.g. `root.atsign.org` or
+  /// `proxy:host:port`.
   final String rootDomain;
+  final Duration retryInterval;
+
+  /// Consecutive failures to reach the atServer tolerated while waiting;
+  /// the wait for a person to approve has no bound of its own.
+  final int maxRetries;
   final DaemonPaths? _paths;
-  final AtOnboardingService Function(String, AtOnboardingPreference)
-  _serviceFactory;
   bool _cancelled = false;
 
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
@@ -124,37 +132,61 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     );
 
     final dest = paths.keysFileFor(atsign);
-    AtOnboardingService? svc;
     try {
-      if (await dest.exists()) {
-        throw StateError(
-          'Keys for $atsign already exist at ${dest.path}. Not overwriting them. '
-          'Use that file, or move it away first if this device really needs new keys.',
-        );
-      }
       await dest.parent.create(recursive: true);
-      final pref = AtOnboardingPreference()
-        ..rootDomain = rootDomain
+      final root = AtRootDomain.parse(rootDomain);
+      final preference = AtOnboardingPreference()
+        ..rootDomain = root.rootDomain
+        ..rootPort = root.rootPort
         ..atKeysFilePath = dest.path
         ..appName = appName
         ..deviceName = device;
-      svc = _serviceFactory(atsign, pref);
+      final keys = FileAtKeysIo(filePath: (_) => dest.path);
+      final at = Atsign(atsign);
 
-      final er = await svc.sendEnrollRequest(appName, device, code, namespaces);
+      // A keyfile holding a request submitted earlier for this app and
+      // device is resumed rather than repeated. Any other existing keyfile
+      // is left alone: never overwrite a device's keys.
+      PendingEnrollment? pending = await at.resumeEnrollment(
+        app: appName,
+        device: device,
+        keys: keys,
+        preference: preference,
+        lookUps: preference.lookUps,
+      );
+      if (pending == null && await dest.exists()) {
+        throw StateError(
+          'Keys for $atsign already exist at ${dest.path}. Not overwriting '
+          'them. Use that file, or move it away first if this device really '
+          'needs new keys.',
+        );
+      }
+      pending ??= await at.enroll(
+        otp: code,
+        app: appName,
+        device: device,
+        namespaces: namespaces,
+        keys: keys,
+        preference: preference,
+        lookUps: preference.lookUps,
+      );
       if (_cancelled) return;
       emit(
         state.copyWith(
           step: EnrollmentStep.awaitingApproval,
-          enrollmentId: er.enrollmentId,
+          enrollmentId: pending.enrollmentId,
         ),
       );
 
-      // Poll for up to ~30 minutes; the user has to go and approve it.
-      await svc.awaitApproval(er, logProgress: false, maxRetries: 180);
+      // Approval completes the keys in the file; no client is opened since
+      // the daemon, not this app, is what will use them.
+      await pending.awaitApproval(
+        retryInterval: retryInterval,
+        maxRetries: maxRetries,
+      );
       if (_cancelled) return;
 
       emit(state.copyWith(step: EnrollmentStep.creatingKeys));
-      await svc.createAtKeysFile(er, atKeysFile: dest, allowOverwrite: false);
       await KeysRepository.restrictPermissions(dest);
       emit(state.copyWith(step: EnrollmentStep.done, keysFile: dest));
     } catch (e) {
@@ -162,10 +194,6 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       emit(
         state.copyWith(step: EnrollmentStep.enterDetails, error: _describe(e)),
       );
-    } finally {
-      try {
-        await svc?.close();
-      } catch (_) {}
     }
   }
 
