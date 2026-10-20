@@ -520,10 +520,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fileImported => 'Arquivo Importado';
 
   @override
-  String get fileSaveFailed => 'Falha ao salvar o arquivo';
+  String get fileSaved => 'Arquivo Salvo';
 
   @override
-  String get fileSaved => 'Arquivo Salvo';
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
   String get findOtp =>
@@ -1768,10 +1768,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get fileImported => 'Arquivo Importado';
 
   @override
-  String get fileSaveFailed => 'Falha ao salvar o arquivo';
+  String get fileSaved => 'Arquivo Salvo';
 
   @override
-  String get fileSaved => 'Arquivo Salvo';
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
   String get findOtp =>

@@ -513,10 +513,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fileImported => 'File Imported';
 
   @override
-  String get fileSaveFailed => 'Failed to save file';
+  String get fileSaved => 'File Saved';
 
   @override
-  String get fileSaved => 'File Saved';
+  String get fileSaveFailed => 'Failed to save file';
 
   @override
   String get findOtp =>

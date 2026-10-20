@@ -522,10 +522,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fileImported => 'Archivo Importado';
 
   @override
-  String get fileSaveFailed => 'Error al guardar el archivo';
+  String get fileSaved => 'Archivo Guardado';
 
   @override
-  String get fileSaved => 'Archivo Guardado';
+  String get fileSaveFailed => 'Error al guardar el archivo';
 
   @override
   String get findOtp =>
