@@ -69,8 +69,9 @@ final class ProfileListFilterState extends Loggable {
   int Function(ProfileGroup a, ProfileGroup b)? get folderOrder {
     if (!reordered) return null;
     return (ProfileGroup a, ProfileGroup b) {
-      if (favoritesFirst && a.favorite != b.favorite)
+      if (favoritesFirst && a.favorite != b.favorite) {
         return a.favorite ? -1 : 1;
+      }
       final String nameA = a.name.toLowerCase();
       final String nameB = b.name.toLowerCase();
       return switch (sortMode) {
