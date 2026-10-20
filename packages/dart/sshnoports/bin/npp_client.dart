@@ -60,10 +60,11 @@ Future<void> main(List<String> args) async {
   }
   final AtOnboardingPreference atOnboardingPreference = generateAtOnboardingPreference(nppCLIParams);
   final AtOnboardingService atOnboardingService = AtOnboardingServiceImpl(nppCLIParams.atSign, atOnboardingPreference);
-  final bool authSuccess = await atOnboardingService.authenticate();
-  if(!authSuccess) {
-    print('Auth Success: $authSuccess');
-    return;
+  if (!await atOnboardingService.authenticate()) {
+    stderr.writeln('Error: ${nppCLIParams.atSign} could not be opened: '
+        '${atOnboardingService.atClient == null ? 'the atServer refused it' : 'its atServer could not be reached'}'
+        '${nppCLIParams.verbose ? '' : '; run with -v for the reason'}');
+    exit(1);
   }
 
   final AtClient atClient = atOnboardingService.atClient!;
@@ -767,7 +768,7 @@ AtOnboardingPreference generateAtOnboardingPreference(
   ..atKeysFilePath = nppCLIParams.atKeysFilePath;
 
   if(nppCLIParams.storagePath != null) {
-    atOnboardingPreference.hiveStoragePath = nppCLIParams.storagePath;
+    atOnboardingPreference.storagePath = nppCLIParams.storagePath;
   }
 
   return atOnboardingPreference;

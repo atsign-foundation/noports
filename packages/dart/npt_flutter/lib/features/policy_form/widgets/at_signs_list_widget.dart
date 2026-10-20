@@ -1,8 +1,9 @@
-import 'package:at_commons/atsign.dart';
+import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class AtsignsListWidget extends StatefulWidget {
@@ -65,8 +66,8 @@ class _AtsignsListWidgetState extends State<AtsignsListWidget> {
   }
 
   void _addAtsign() {
-    final input = _addController.text.trim().toAtsign();
-    if (input.isEmpty) return;
+    final input = _addController.text.trim().toAtsignOrNull();
+    if (input == null) return;
 
     if (!_localAtsigns.contains(input)) {
       setState(() {

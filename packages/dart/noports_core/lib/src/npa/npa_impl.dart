@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,10 +10,13 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 
 final AtSignLogger _logger = AtSignLogger('NPAImpl');
 
-class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements NPA {
+class NPAImpl
+    with AtClientBindings, AtEventLogger, AtEventListener
+    implements NPA {
   @override
   final AtSignLogger logger = _logger;
 
@@ -54,11 +58,16 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
     void Function(Object, StackTrace)? usageCallback,
   }) async {
     try {
-      var p = await NPAParams.fromArgs(args);
+      final NPAParams p;
+      try {
+        p = await NPAParams.fromArgs(args);
+      } on FormatException catch (e) {
+        throw ArgumentError(e.message);
+      }
 
       // Check atKeyFile selected exists
       if (!await File(p.atKeysFilePath).exists()) {
-        throw ('\n Unable to find .atKeys file : ${p.atKeysFilePath}');
+        throw ArgumentError('Unable to find .atKeys file: ${p.atKeysFilePath}');
       }
 
       AtSignLogger.root_level = 'SHOUT';
@@ -84,7 +93,7 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
       }
 
       return sshnpa;
-    } catch (e, s) {
+    } on ArgumentError catch (e, s) {
       usageCallback?.call(e, s);
       rethrow;
     }
@@ -93,10 +102,14 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
   @override
   Future<void> run() async {
     if (eventLoggingAtsign != null) {
-      elc = await getEventLoggingConfig(
-        atSign: eventLoggingAtsign!,
-        namespace: DefaultArgs.eventLoggingNamespace,
-      );
+      try {
+        elc = await getEventLoggingConfig(
+          atSign: eventLoggingAtsign!,
+          namespace: DefaultArgs.eventLoggingNamespace,
+        );
+      } catch (e) {
+        throw EventLoggingConfigException(eventLoggingAtsign!, e);
+      }
       logger.shout(
         'Fetched AtEventLogger config $elc from $eventLoggingAtsign',
       );
@@ -108,7 +121,9 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
       (AtNotification n) async {
         if (n.value == null) return;
 
-        if (elc != null && !_sharedElcWith.contains(n.from)) {
+        if (elc != null &&
+            !_sharedElcWith.contains(n.from) &&
+            handler.hasRulesFor(n.from.toAtsign())) {
           try {
             logger.info('Sharing event logging config with ${n.from}');
             await shareEventLoggingConfigWithAtsigns(
@@ -139,9 +154,12 @@ class NPAImpl with AtClientBindings, AtEventLogger, AtEventListener implements N
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
+        onEvent: (event) async {
+          if (elc != null) await logEvent(elc!, event);
+        },
       ),
-      allowList: {},
-      allowAll: true,
+      allowList: _DaemonsWithRules(handler),
+      allowAll: false,
       isClient: false,
       isServer: true,
       enableRequestMutex: true,
@@ -170,12 +188,27 @@ class PolicyInfoRpcRequestHandler
   final String namespace;
   final NPARequestHandler handler;
 
+  /// Receives each policy event.
+  final Future<void> Function(Map<String, dynamic> event) onEvent;
+
   PolicyInfoRpcRequestHandler({
     required this.policyAtsign,
     required this.namespace,
     required this.handler,
     required this.atClient,
+    required this.onEvent,
   });
+
+  /// Builds an event with [build] and hands it to [onEvent]. A failure in
+  /// either is logged and swallowed: the event log must never change the
+  /// answer a daemon gets.
+  Future<void> _sendEvent(Map<String, dynamic> Function() build) async {
+    try {
+      await onEvent(build());
+    } catch (e) {
+      logger.warning('Failed to log policy event: $e');
+    }
+  }
 
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
@@ -187,26 +220,74 @@ class PolicyInfoRpcRequestHandler
     NPAAuthCheckRequest authCheckRequest = NPAAuthCheckRequest.fromJson(
       request.payload,
     );
-    AtRpcResp rpcResponse;
-    try {
-      var authCheckResponse = await handler.doAuthCheck(authCheckRequest);
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: authCheckResponse.toJson(),
+    final Atsign sender = fromAtSign.toAtsign();
+    final bool aboutItself = sender == authCheckRequest.daemonAtsign.toAtsign();
+    NPAAuthCheckResponse answer;
+    String? failure;
+    if (!aboutItself) {
+      logger.warning(
+        'Refusing a check from $fromAtSign'
+        ' about ${authCheckRequest.daemonAtsign}',
       );
-    } catch (e, st) {
-      logger.shout('Exception: $e : StackTrace : \n$st');
-      rpcResponse = AtRpcResp(
-        reqId: request.reqId,
-        respType: AtRpcRespType.success,
-        payload: NPAAuthCheckResponse(
+      answer = NPAAuthCheckResponse(
+        authorized: false,
+        message: 'A daemon may ask only about itself',
+        permitOpen: [],
+      );
+    } else {
+      try {
+        answer = await handler.doAuthCheck(authCheckRequest);
+      } catch (e, st) {
+        logger.shout('Exception: $e : StackTrace : \n$st');
+        failure = '$e';
+        answer = NPAAuthCheckResponse(
           authorized: false,
           message: 'Exception: $e',
           permitOpen: [],
-        ).toJson(),
-      );
+        );
+      }
     }
+    final AtRpcResp rpcResponse = AtRpcResp(
+      reqId: request.reqId,
+      respType: AtRpcRespType.success,
+      payload: answer.toJson(),
+    );
+
+    // The answer is settled before the event is built, so building or
+    // sending the event can never change it.
+    await _sendEvent(() {
+      final String? error = failure;
+      if (!aboutItself) {
+        return PolicyEvent.requestRefused(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      } else if (error != null) {
+        return PolicyEvent.policyCheckFailed(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          error: error,
+        );
+      } else if (answer.authorized) {
+        return PolicyEvent.clientAdmitted(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      } else {
+        return PolicyEvent.clientRejected(
+          policyAtsign: policyAtsign,
+          fromAtsign: sender,
+          request: authCheckRequest,
+          response: answer,
+        );
+      }
+    });
+
     // We will send a 'log' notification to ourselves
     var logKey = AtKey()
       ..key = '${DateTime.now().millisecondsSinceEpoch}.logs.policy'
@@ -236,4 +317,45 @@ class PolicyInfoRpcRequestHandler
   Future<void> handleResponse(AtRpcResp response) {
     throw UnimplementedError();
   }
+}
+
+/// The daemons [handler] has rules for, as the allow list [AtRpc] checks each
+/// request's sender against; it answers only whether it holds an atSign.
+class _DaemonsWithRules extends SetBase<String> {
+  _DaemonsWithRules(this.handler);
+
+  final NPARequestHandler handler;
+
+  @override
+  bool contains(Object? element) {
+    final atSign = element is String ? canonicalAtsign(element) : null;
+    return atSign != null && handler.hasRulesFor(atSign);
+  }
+
+  @override
+  String? lookup(Object? element) =>
+      contains(element) ? element as String : null;
+
+  @override
+  Iterator<String> get iterator =>
+      throw UnsupportedError('The daemons with rules are not listed');
+
+  @override
+  int get length =>
+      throw UnsupportedError('The daemons with rules are not counted');
+
+  @override
+  bool add(String value) =>
+      throw UnsupportedError('The daemons with rules come from the rules');
+
+  @override
+  bool remove(Object? value) =>
+      throw UnsupportedError('The daemons with rules come from the rules');
+
+  @override
+  Set<String> toSet() =>
+      throw UnsupportedError('The daemons with rules are not listed');
+
+  @override
+  String toString() => 'daemons with policy rules';
 }

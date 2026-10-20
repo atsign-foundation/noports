@@ -33,7 +33,20 @@ import 'package:npe2e/utils.dart';
 const String remoteUsername = 'atsign';
 const String coreTestsApkamApp = 'npe2e_core';
 
+/// Runs the core tests, revoking the run's APKAM enrollments however it ends.
 Future<void> coreTests(CoreTestsParams params) async {
+  final ApkamRevocations revocations = ApkamRevocations();
+  try {
+    await _coreTests(params, revocations);
+  } finally {
+    await revocations.revokeAll();
+  }
+}
+
+Future<void> _coreTests(
+  CoreTestsParams params,
+  ApkamRevocations revocations,
+) async {
   final Stopwatch overallStopwatch = Stopwatch()..start();
 
   final List<NoPortsVersion> clientVersions = params.clientVersions
@@ -128,12 +141,20 @@ Future<void> coreTests(CoreTestsParams params) async {
           cb.binaryType == ClientBinaryType.at_activate &&
           cb.noPortsVersion.version == 'current',
     );
+    final List<ApkamAtsign> apkamAtsigns = [
+      (which: 'client', atsign: params.clientAtsign),
+      (which: 'daemon', atsign: params.daemonAtsign),
+    ];
+    revocations.add(
+      atActivateClientBinary: atActivateClientBinary,
+      atsigns: apkamAtsigns,
+      rootDomain: params.rootDomain,
+      testRunId: testRunId,
+      apkamApp: coreTestsApkamApp,
+    );
     return setUpApkamKeysParallel(
       atActivateClientBinary: atActivateClientBinary,
-      atsigns: [
-        (which: 'client', atsign: params.clientAtsign),
-        (which: 'daemon', atsign: params.daemonAtsign),
-      ],
+      atsigns: apkamAtsigns,
       rootDomain: params.rootDomain,
       apkamKeysDirectory: apkamKeysDirectory,
       testRunId: testRunId,

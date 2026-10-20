@@ -50,7 +50,7 @@ When installing a device, ensure you are installing the NoPorts daemon service f
 
     First time activation
     ```
-    at_activate.exe -a "@<REPLACE>_np"
+    at_activate.exe onboard -a "@<REPLACE>_np"
     ```
 
     Enrolling existing keys onto another device
@@ -98,7 +98,7 @@ After finishing the install you'll have to make sure to activate and approve you
 
 Activate
 ```
-at_activate.exe -a "@<REPLACE>_np"
+at_activate.exe onboard -a "@<REPLACE>_np"
 ```
 
 Approve Enrollment

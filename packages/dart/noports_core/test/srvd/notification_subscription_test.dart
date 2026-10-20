@@ -4,7 +4,10 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
+    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
@@ -15,11 +18,16 @@ class FakeNotificationParams extends Fake implements NotificationParams {}
 
 class FakeAtKey extends Fake implements AtKey {}
 
+class FakeVerbBuilder extends Fake implements VerbBuilder {}
+
+class MockRemoteSecondary extends Mock implements RemoteSecondary {}
+
 void main() {
   group('A group of test related notifications received from sshnp', () {
     test('A test to verify srvd notification returns local ports', () async {
       registerFallbackValue(FakeNotificationParams());
       registerFallbackValue(FakeAtKey());
+      registerFallbackValue(FakeVerbBuilder());
 
       String clientAtsign = '@alice';
       String daemonAtsign = '@bob';
@@ -33,14 +41,10 @@ void main() {
       when(
         () => mockAtClient.notificationService,
       ).thenReturn(mockNotificationService);
+      final remote = MockRemoteSecondary();
+      when(() => mockAtClient.getRemoteSecondary()).thenReturn(remote);
+      when(() => remote.executeVerb(any())).thenAnswer((_) async => '-1');
 
-      when(
-        () => mockAtClient.put(
-          any(),
-          any(),
-          putRequestOptions: any(named: 'putRequestOptions'),
-        ),
-      ).thenAnswer((_) => Future.value(true));
       Completer<NotificationParams> notificationReceived =
           Completer<NotificationParams>();
       when(
@@ -58,7 +62,7 @@ void main() {
           ..notificationStatusEnum = NotificationStatusEnum.delivered;
       });
 
-      when(() => mockAtClient.get(any(that: FakeAtKeyMatcher()))).thenAnswer(
+      when(() => mockAtClient.get(any(that: FakeAtKeyMatcher()), getRequestOptions: any(named: 'getRequestOptions'))).thenAnswer(
         (_) async => Future.value(AtValue()..value = 'dummy-public-key'),
       );
 
@@ -73,6 +77,8 @@ void main() {
         verbose: false,
         bind443: false,
         localBindPort443: 443,
+        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+        signingKeyCheckInterval: Duration.zero,
       );
 
       // Create a stream controller to simulate the notification received from the sshnp
@@ -202,6 +208,8 @@ void main() {
           verbose: false,
           bind443: bind443,
           localBindPort443: localBindPort443,
+          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+          signingKeyCheckInterval: Duration.zero,
         );
       }
 

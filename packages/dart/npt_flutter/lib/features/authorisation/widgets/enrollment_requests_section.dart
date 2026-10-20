@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:at_auth/at_auth.dart' show ServerEnrollmentRequest;
 import 'package:at_client_flutter/at_client_flutter.dart'
     show
         AuthorisationFeedbackOverlay,
         AuthorisationSectionHeader,
+        Enrollment,
         EnrollmentRequestCard,
         EnrollmentStatus;
 import 'package:flutter/material.dart';
@@ -26,10 +26,7 @@ class _EnrollmentRequestsSectionState extends State<EnrollmentRequestsSection> {
   OverlayEntry? _overlayEntry;
   Timer? _overlayTimer;
 
-  void _showFeedbackOverlay(
-    ServerEnrollmentRequest request,
-    EnrollmentStatus status,
-  ) {
+  void _showFeedbackOverlay(Enrollment request, EnrollmentStatus status) {
     _removeOverlay();
     final OverlayEntry entry = OverlayEntry(
       builder: (BuildContext overlayContext) {
@@ -63,8 +60,8 @@ class _EnrollmentRequestsSectionState extends State<EnrollmentRequestsSection> {
   }
 
   Future<void> _decide(
-    ServerEnrollmentRequest request,
-    Future<String?> Function(ServerEnrollmentRequest) decision,
+    Enrollment request,
+    Future<String?> Function(Enrollment) decision,
     EnrollmentStatus outcome,
   ) async {
     final String? error = await decision(request);
@@ -139,7 +136,7 @@ class _EnrollmentRequestsSectionState extends State<EnrollmentRequestsSection> {
     return ListView.builder(
       itemCount: controller.pending.length,
       itemBuilder: (BuildContext context, int index) {
-        final ServerEnrollmentRequest request = controller.pending[index];
+        final Enrollment request = controller.pending[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: EnrollmentRequestCard(

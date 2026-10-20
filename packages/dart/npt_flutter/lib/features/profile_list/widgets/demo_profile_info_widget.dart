@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
+import 'package:npt_flutter/widgets/progress_indicator_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../util/export.dart';
@@ -50,18 +53,17 @@ class DemoProfileInfoWidget extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              // Show a progress indicator before fetching the demo profile
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) =>
-                    const Center(child: CircularProgressIndicator()),
-              );
-              final content = await Export.getDemoProfile();
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pop(); // Dismiss the progress indicator
+              final String content;
+              try {
+                content = await runWithProgressIndicator(
+                  context,
+                  Export.getDemoProfile,
+                );
+              } catch (e) {
+                App.log('Could not load the demo profile: $e'.loggable);
+                CustomSnackBar.error(content: strings.profileImportFailed);
+                return;
+              }
               Export.convertExternalDataSourceToProfile(
                 fileType: ExportableProfileFiletype.json,
                 contents: content,

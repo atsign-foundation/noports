@@ -5,6 +5,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/admin.dart';
+import 'package:noports_core/src/common/validation_utils.dart';
 
 class PolicyServiceWithAtClient extends PolicyServiceInMem
     with AtClientBindings {
@@ -19,33 +20,36 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
   Future<void> init() async {
     await super.init();
 
-    subscribe(regex: r'.*\.groups\.policy\.sshnp', shouldDecrypt: true).listen((
-      AtNotification n,
-    ) {
-      String groupId = n.key.split(':')[1].split('.').first;
-      logger.info(
-        'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
-      );
-      if (n.operation == 'delete') {
-        groups.remove(groupId);
-      } else {
-        UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
-        groups[groupId] = g;
-      }
-    });
+    subscribe(regex: r'.*\.groups\.policy\.sshnp@', shouldDecrypt: true).listen(
+      (n) => _handleNotification(n, 'group change', (n) {
+        String groupId = n.key.split(':')[1].split('.').first;
+        logger.info(
+          'Received ${n.operation} notification for group ${n.key} - ID is $groupId',
+        );
+        if (n.operation == 'delete') {
+          groups.remove(groupId);
+        } else {
+          UserGroup g = UserGroup.fromJson(jsonDecode(n.value!));
+          groups[groupId] = g;
+        }
+      }),
+    );
 
-    subscribe(regex: r'.*\.logs\.policy\.sshnp', shouldDecrypt: true).listen((
-      AtNotification n,
-    ) {
-      logger.info(
-        'Received policy log notification from ${jsonDecode(n.value!)['daemon']}',
-      );
-      // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
-      onPolicyLogEvent(n.value!);
-    });
+    subscribe(regex: r'.*\.logs\.policy\.sshnp@', shouldDecrypt: true).listen(
+      (n) => _handleNotification(n, 'policy log', (n) async {
+        logger.info(
+          'Received policy log notification from ${jsonDecode(n.value!)['daemon']}',
+        );
+        // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
+        await onPolicyLogEvent(n.value!);
+      }),
+    );
 
-    subscribe(regex: r'.*\.devices\.policy\.sshnp', shouldDecrypt: true).listen(
-      (AtNotification n) {
+    subscribe(
+      regex: r'.*\.devices\.policy\.sshnp@',
+      shouldDecrypt: true,
+    ).listen((n) async {
+      try {
         logger.info('Received device heartbeat from ${n.from}');
         // TODO Make a PolicyLogEvent and use PolicyLogEvent.fromJson()
         final v = jsonDecode(n.value!);
@@ -53,9 +57,13 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
         e['timestamp'] = n.epochMillis;
         e['daemon'] = n.from;
         e['payload'] = v;
-        onDaemonEvent(jsonEncode(e));
-      },
-    );
+        await onDaemonEvent(jsonEncode(e));
+      } catch (e) {
+        logger.warning(
+          'Exception handling device heartbeat ${n.key} from ${n.from}: $e',
+        );
+      }
+    });
 
     logger.info('Loading groups via AtClient');
     // Fetch all the groups
@@ -74,6 +82,23 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       groups[g.id!] = g;
     }
     logger.shout('Load complete');
+  }
+
+  /// shared boilerplate
+  Future<void> _handleNotification(
+    AtNotification n,
+    String kind,
+    FutureOr<void> Function(AtNotification) handler,
+  ) async {
+    if (n.from.toAtsign() != atClient.getCurrentAtSign()!.toAtsign()) {
+      logger.shout('Ignoring $kind ${n.key} from ${n.from}');
+      return;
+    }
+    try {
+      await handler(n);
+    } catch (e) {
+      logger.warning('Exception handling $kind ${n.key} from ${n.from}: $e');
+    }
   }
 
   String _groupKey(String id) {
@@ -150,6 +175,14 @@ class PolicyServiceInMem implements PolicyService {
   @override
   final Map<String, UserGroup> groups = {};
 
+  final CanonicalAtsigns _canonical = CanonicalAtsigns();
+
+  /// Whether any group's daemon atSigns list [daemonAtsign].
+  bool hasRulesFor(Atsign daemonAtsign) => groups.values.any(
+        (group) => group.daemonAtSigns
+            .any((atSign) => _canonical.of(atSign) == daemonAtsign),
+      );
+
   @override
   final List<dynamic> logEvents = [];
 
@@ -178,7 +211,6 @@ class PolicyServiceInMem implements PolicyService {
 
   Future<void> onPolicyLogEvent(json) async {
     final pe = jsonDecode(json);
-    logEvents.add(pe);
     final e = {
       'timestamp': pe['timestamp'],
       'type': 'PolicyCheck',
@@ -191,6 +223,7 @@ class PolicyServiceInMem implements PolicyService {
       'message': pe['payload']['response']['payload']['message'],
       'permitOpen': pe['payload']['response']['payload']['permitOpen'],
     };
+    logEvents.add(pe);
     esc.add(jsonEncode(e));
   }
 
@@ -249,10 +282,11 @@ class PolicyServiceInMem implements PolicyService {
   @override
   Future<List<UserGroup>> getGroupsForUser(String atSign) async {
     List<UserGroup> l = [];
+    final asked = canonicalAtsign(atSign);
 
     for (String groupId in groups.keys) {
       UserGroup g = groups[groupId]!;
-      if (g.userAtSigns.contains(atSign)) {
+      if (asked != null && g.userAtSigns.any((user) => _canonical.of(user) == asked)) {
         l.add(g);
       }
     }

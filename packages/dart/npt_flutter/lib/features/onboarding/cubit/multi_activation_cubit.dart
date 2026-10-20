@@ -1,10 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:io';
 
-import 'package:at_auth/at_auth.dart';
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_lookup/at_lookup.dart';
-import 'package:at_server_status/at_server_status.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +12,7 @@ import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/widgets/activation_dialog_initial.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/util/at_client_methods.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
@@ -61,14 +59,20 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
 
   /// Bulk activation only ever onboards atsigns we have just confirmed are up
   /// and sitting in teapot, so there is no newly-registered atsign to wait for
-  /// provisioning. Without this, `AtAuth` falls back to
-  /// `AtNetworkTimeouts.defaultOnboardingTimeout` (5 minutes) per atsign, and a
-  /// file full of dud atsigns stalls the dialog for 5 minutes each.
+  /// provisioning. Without this, activation polls for provisioning for five
+  /// minutes per atsign, and a file full of dud atsigns stalls the dialog for
+  /// 5 minutes each.
   static const Duration onboardTimeout = Duration(seconds: 90);
 
   /// Where the .atKeys backups go. Remembered from the first [activateAll] run
   /// so a retry doesn't re-prompt for the folder.
   String? _backupDirectory;
+
+  /// Sets the folder the .atKeys backups go to, so [activateAll] doesn't ask.
+  @visibleForTesting
+  set backupDirectory(String directory) => _backupDirectory = directory;
+
+  NoPortsOnboardingUtil? _onboardingUtil;
 
   /// Read the activation file and update the state with the content of the file and the upload state.
   Future<void> processFile(String filePath, String fileName) async {
@@ -86,10 +90,19 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       App.log('uploaded activation file content successfully'.loggable);
     } catch (e) {
       emit(state.copyWith(uploadState: MultiActivationFileUploadState.error));
-      App.log('Error processing activation file: $e'.loggable);
+      App.log('Error processing activation file: ${_describe(e)}'.loggable);
     }
     return;
   }
+
+  /// What is wrong with an activation file, in words that hold none of its
+  /// content.
+  static String _describe(Object error) => switch (error) {
+    YamlException(:final span?) =>
+      'not valid YAML at line ${span.start.line + 1}',
+    FormatException(:final message) => message,
+    _ => '${error.runtimeType}',
+  };
 
   /// Get the activation file path from the file picker.
   Future<void> getFilePickerPath() async {
@@ -170,15 +183,15 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     final strings = AppLocalizations.of(context)!;
 
     // Only ask once per activation file - a retry reuses the same folder.
-    final String? defaultDir = await _defaultAtKeysDir();
     String? selectedDirectory =
         _backupDirectory ??
         await FilePicker.getDirectoryPath(
           dialogTitle: strings.activationAtsignFileStorageLocation,
-          initialDirectory: defaultDir,
+          initialDirectory: await _defaultAtKeysDir(),
         );
 
     if (selectedDirectory == null) {
+      if (!context.mounted) return;
       Navigator.of(context).pop();
       showDialog(
         context: context,
@@ -195,9 +208,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       state.fileContent.entries,
     );
 
-    final onboardingUtil = await NoPortsOnboardingUtil.create(
-      App.navState.currentContext!,
-    );
+    _onboardingUtil = null;
 
     emit(state.copyWith(isActivating: true));
 
@@ -218,18 +229,18 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         // A retry only re-runs the entries that are still waiting.
         if (entry.activationKeyStatus != ActivationKeyStatus.waiting) continue;
 
-        //1. Ask the atServer where this atsign stands. AtStatusImpl swallows
-        // its own errors, but guard anyway - one bad atsign must not abort the
-        // whole file.
-        AtSignStatus? status;
+        //1. Ask the atServer where this atsign stands. The check reports its
+        // own failures as states, but guard anyway - one bad atsign must not
+        // abort the whole file.
+        AtSignServerState? status;
         try {
-          status = (await onboardingUtil.atServerStatus(entry.atsign)).status();
+          status = await atServerState(entry.atsign);
         } catch (e) {
           App.log('Error checking status of ${entry.atsign}: $e'.loggable);
           status = null;
         }
 
-        if (status == AtSignStatus.activated) {
+        if (status == AtSignServerState.activated) {
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.alreadyActivated,
           );
@@ -239,16 +250,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         }
 
         // Nothing to onboard against: the atsign isn't in the atDirectory, or
-        // its atServer is down. Fail it now instead of letting AtAuth poll for
-        // provisioning that is never coming.
-        if (status != AtSignStatus.teapot) {
+        // its atServer is down. Fail it now instead of letting activation poll
+        // for provisioning that is never coming.
+        if (status != AtSignServerState.notActivated) {
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
-            failureReason: await _unreachableReason(
-              onboardingUtil,
-              entry.atsign,
-              strings,
-            ),
+            failureReason: _unreachableReason(status, strings),
           );
           publish();
           App.log(
@@ -265,49 +272,20 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         App.log('Activating atsign ${entry.atsign}...'.loggable);
 
         try {
-          // A fresh AuthService() per atsign: AtAuthImpl caches atLookUp/atChops
-          // internally, so reusing one instance across atsigns would
-          // authenticate the second atsign against the first one's lookup.
           Atsign atsign = entry.atsign;
           String cramSecret = entry.activationKey;
 
-          // The atServer says this atsign is in teapot, so any keys we still
-          // hold for it locally are from a previous life of the atsign (it was
-          // reset on the registrar). AtAuth.onboard refuses to run at all while
-          // they exist, so drop them first.
-          await NoPortsOnboardingUtil.discardStaleKeys(atsign);
+          await activateIntoKeychain(atsign, cramSecret);
 
-          var onboardingRequest = AtOnboardingRequest(atsign)
-            ..rootDomain = AtRootDomain.parse('root.atsign.org');
-
-          var response = await AuthService().onboard(
-            onboardingRequest,
-            cramSecret,
-            timeout: onboardTimeout,
+          await backUpActivatedAtsigns(selectedDirectory, atsign);
+          currentEntries[i] = entry.copyWith(
+            activationKeyStatus: ActivationKeyStatus.activated,
           );
-
-          // Bulk activation never brings up an AtClient for these atsigns, so
-          // each iteration must close its own authenticated lookup - nothing
-          // else owns it.
-          await (response.atLookUp as AtLookupImpl?)?.close();
-
-          // 6. Update Result
-          if (response.isSuccessful) {
-            await backUpActivatedAtsigns(selectedDirectory, atsign);
-            currentEntries[i] = entry.copyWith(
-              activationKeyStatus: ActivationKeyStatus.activated,
-            );
-            App.log('Successfully activated ${entry.atsign}'.loggable);
-          } else {
-            // Change to show that it failed to activate.`
-            currentEntries[i] = entry.copyWith(
-              activationKeyStatus: ActivationKeyStatus.failed,
-              failureReason: strings.errorAuthenticatinFailed,
-            );
-            App.log('Failed to activate ${entry.atsign}'.loggable);
-          }
+          App.log('Successfully activated ${entry.atsign}'.loggable);
         } catch (e) {
-          App.log('Exception activating ${entry.atsign}: $e'.loggable);
+          App.log(
+            'Exception activating ${entry.atsign}: ${e.runtimeType}'.loggable,
+          );
           currentEntries[i] = entry.copyWith(
             activationKeyStatus: ActivationKeyStatus.failed,
             failureReason: describeOnboardingError(e, strings),
@@ -343,32 +321,58 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     }
   }
 
-  /// Says why an atsign the atServer wouldn't talk to is unreachable.
+  /// Where [atsign] stands with its atServer.
+  @visibleForTesting
+  Future<AtSignServerState> atServerState(Atsign atsign) async {
+    _onboardingUtil ??= await NoPortsOnboardingUtil.create(
+      App.navState.currentContext!,
+    );
+    return (await _onboardingUtil!.checkAtServer(atsign)).state;
+  }
+
+  /// Activates [atsign] with [cramSecret], leaving its keys in the keychain
+  /// and nothing else behind: bulk activation never keeps a client for these
+  /// atsigns, so the one the activation opens is stopped at once and the
+  /// storage it opened on is deleted.
   ///
-  /// `AtStatusImpl` swallows the atDirectory exception and reports both "this
-  /// atsign has no atDirectory entry" and "the atDirectory is unreachable" as
-  /// [AtSignStatus.unavailable], which are very different things for a tester
-  /// staring at a failed row. Ask the atDirectory directly - it only happens on
-  /// the failure path, and it answers in a couple of hundred milliseconds.
-  Future<String> _unreachableReason(
-    NoPortsOnboardingUtil onboardingUtil,
-    Atsign atsign,
-    AppLocalizations strings,
-  ) async {
+  /// The atServer has said [atsign] is in teapot, so any keys still held for
+  /// it locally are from a previous life of the atsign (it was reset on the
+  /// registrar). Activation refuses to overwrite them, so they go first.
+  @visibleForTesting
+  Future<void> activateIntoKeychain(Atsign atsign, String cramSecret) async {
+    await NoPortsOnboardingUtil.discardStaleKeys(atsign);
+    final scratch = await Directory.systemTemp.createTemp('npt-activate-');
     try {
-      await CacheableSecondaryAddressFinder(
-        onboardingUtil.rootDomain,
-        64,
-      ).findSecondary(atsign);
-      // The atDirectory knows this atsign, so its atServer is down or still
-      // being provisioned.
-      return strings.errorAtsignUnavailable;
-    } on SecondaryNotFoundException {
-      return strings.errorAtsignNotExist;
-    } catch (_) {
-      return strings.errorAtServerUnavailable;
+      final preference = await AtClientMethods.loadAtClientPreference(
+        'root.atsign.org',
+      )
+        ..hiveStoragePath = scratch.path
+        ..commitLogPath = scratch.path;
+      final client = await atsign.activate(
+        cramSecret: cramSecret,
+        keys: KeychainAtKeysIo(),
+        preference: preference,
+        provisioningBudget: onboardTimeout,
+      );
+      await client.stop();
+    } finally {
+      if (await scratch.exists()) await scratch.delete(recursive: true);
     }
   }
+
+  /// Says why an atsign that cannot be activated now is out of reach, from
+  /// the [state] the atServer check reported; null when the check itself
+  /// failed.
+  String _unreachableReason(
+    AtSignServerState? state,
+    AppLocalizations strings,
+  ) => switch (state) {
+    AtSignServerState.notInDirectory => strings.errorAtsignNotExist,
+    // The atDirectory knows this atsign, so its atServer is down or still
+    // being provisioned.
+    AtSignServerState.atServerUnreachable => strings.errorAtsignUnavailable,
+    _ => strings.errorAtServerUnavailable,
+  };
 
 
   /// Check if any Atsign has a failed activation status.
@@ -445,8 +449,8 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
     String fileLocation,
     Atsign atsign,
   ) async {
-    // AuthService().onboard defaults to writing through KeychainAtKeysIo, so
-    // the freshly-activated keys are already in the keychain at this point.
+    // Activation wrote the keys through KeychainAtKeysIo, so the
+    // freshly-activated keys are already in the keychain at this point.
     final atKeys = await KeychainStorage().getAtsign(atsign);
     if (atKeys == null) return;
 

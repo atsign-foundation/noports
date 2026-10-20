@@ -156,7 +156,93 @@ Future<File> setUpApkamKeyForAtsign({
     );
   }
 
+  // NOTE at_activate writes keyfiles owner-only, and the containers that mount
+  // this one run as a different user.
+  final ProcessResult chmodProcess = await runCommand('chmod', [
+    '644',
+    apkamKeysPath,
+  ]);
+  if (chmodProcess.exitCode != 0) {
+    throw Exception(
+      'Error making $apkamKeysPath readable: ${chmodProcess.stderr}',
+    );
+  }
+
   return apkamKeysFile;
+}
+
+/// Revokes the enrollment [setUpApkamKeyForAtsign] makes for each of
+/// [atsigns] in this run. A failure is reported rather than thrown, so it
+/// cannot mask the run's own result.
+Future<void> revokeApkamKeys({
+  required final ClientBinary atActivateClientBinary,
+  required final List<ApkamAtsign> atsigns,
+  required final String rootDomain,
+  required final String testRunId,
+  required final String apkamApp,
+}) async {
+  for (final ApkamAtsign entry in atsigns) {
+    final String apkamDeviceName = getApkamDeviceName(
+      which: entry.which,
+      testRunId: testRunId,
+    );
+    final ProcessResult revokeProcess = await runCommand(
+      atActivateClientBinary.file.path,
+      [
+        'revoke',
+        '-a',
+        entry.atsign,
+        '-r',
+        rootDomain,
+        '--arx',
+        apkamApp,
+        '--drx',
+        apkamDeviceName,
+      ],
+    );
+    if (revokeProcess.exitCode == 0) {
+      print('Revoked $apkamApp $apkamDeviceName for ${entry.atsign}');
+    } else {
+      print(
+        'Warning: could not revoke $apkamApp $apkamDeviceName for '
+        '${entry.atsign}: ${revokeProcess.stderr}',
+      );
+    }
+  }
+}
+
+/// The enrollments a run has made, to revoke once it is over: each carries
+/// sshnp and sshrvd access for its atSign, so none should outlive the run.
+class ApkamRevocations {
+  final List<Future<void> Function()> _revocations = [];
+
+  /// Registers the enrollments [setUpApkamKeys] is about to make for
+  /// [atsigns], before it makes them, so a setup that fails part way is
+  /// revoked too.
+  void add({
+    required final ClientBinary atActivateClientBinary,
+    required final List<ApkamAtsign> atsigns,
+    required final String rootDomain,
+    required final String testRunId,
+    required final String apkamApp,
+  }) {
+    _revocations.add(
+      () => revokeApkamKeys(
+        atActivateClientBinary: atActivateClientBinary,
+        atsigns: atsigns,
+        rootDomain: rootDomain,
+        testRunId: testRunId,
+        apkamApp: apkamApp,
+      ),
+    );
+  }
+
+  /// Revokes every enrollment registered with [add].
+  Future<void> revokeAll() async {
+    for (final Future<void> Function() revoke in _revocations) {
+      await revoke();
+    }
+  }
 }
 
 Future<Map<String, File>> setUpApkamKeys({

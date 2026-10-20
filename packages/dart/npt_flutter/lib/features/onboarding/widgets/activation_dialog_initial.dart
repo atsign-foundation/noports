@@ -32,22 +32,24 @@ class ActivationDialogInitial extends StatelessWidget {
               >(
                 selector: (state) => state.uploadState,
                 builder: (context, state) {
-                  return Column(
-                    spacing: Sizes.p10,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const FileBasedActivation(),
-                      gapH4,
+                  return Form(
+                    child: Column(
+                      spacing: Sizes.p10,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FileBasedActivation(),
+                        gapH4,
 
-                      if (state != MultiActivationFileUploadState.success) ...[
-                        const OrDivider(),
-                        const ManualActivation(),
+                        if (state != MultiActivationFileUploadState.success) ...[
+                          const OrDivider(),
+                          const ManualActivation(),
+                        ],
+                        const Divider(color: AppColor.dividerColorAlt),
+                        state == MultiActivationFileUploadState.idle
+                            ? const ManualActivationDialogButtons()
+                            : const MultiActivationDialogButtons(),
                       ],
-                      const Divider(color: AppColor.dividerColorAlt),
-                      state == MultiActivationFileUploadState.idle
-                          ? const ManualActivationDialogButtons()
-                          : const MultiActivationDialogButtons(),
-                    ],
+                    ),
                   );
                 },
               ),

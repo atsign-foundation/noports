@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:at_client/at_client.dart';
-import 'package:at_server_status/at_server_status.dart';
+import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' show Response;
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
@@ -21,6 +21,11 @@ class ActivateAtsignDialog extends StatefulWidget {
   final String rootDomain;
   final bool waitForTeapot;
   final NoPortsOnboardingUtil onboardingUtil;
+
+  /// Talks to the registrar in place of one built from [registrarUrl] and
+  /// [apiKey], for tests.
+  final ActivateUtil? activateUtil;
+
   const ActivateAtsignDialog({
     super.key,
     required this.atsign,
@@ -29,6 +34,7 @@ class ActivateAtsignDialog extends StatefulWidget {
     required this.registrarUrl,
     required this.waitForTeapot,
     required this.onboardingUtil,
+    this.activateUtil,
   });
 
   @override
@@ -57,10 +63,9 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
   @override
   void initState() {
     super.initState();
-    util = ActivateUtil(
-      registrarUrl: widget.registrarUrl,
-      apiKey: widget.apiKey,
-    );
+    util =
+        widget.activateUtil ??
+        ActivateUtil(registrarUrl: widget.registrarUrl, apiKey: widget.apiKey);
     _getPinCode();
   }
 
@@ -140,13 +145,37 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
   }
 
   Future<void> _getPinCode() async {
-    var res = await util.registrarApiRequest(
-      NoPortsActivateApiEndpoints.login,
-      {'atsign': widget.atsign},
-    );
+    final Response res;
+    final bool sent;
+    try {
+      res = await util.registrarApiRequest(NoPortsActivateApiEndpoints.login, {
+        'atsign': widget.atsign,
+      });
+      sent =
+          res.statusCode == 200 &&
+          jsonDecode(res.body)["message"] == "Sent Successfully";
+    } catch (e) {
+      App.log(
+        'Requesting an activation PIN for ${widget.atsign} failed: '
+                '${e.runtimeType}'
+            .loggable,
+      );
+      if (!mounted) return;
+      if (!_isOpen) return;
+      if (status == ActivationStatus.preparing) {
+        Navigator.of(context).pop(
+          NoPortsOnboardingResult.error(message: strings.errorOtpRequestFailed),
+        );
+        return;
+      }
+      _showPinRequestFailed();
+      return;
+    }
 
-    if (res.statusCode == 200 &&
-        jsonDecode(res.body)["message"] == "Sent Successfully") {
+    if (!mounted) return;
+    if (!_isOpen) return;
+    if (sent && status == ActivationStatus.activating) return;
+    if (sent) {
       setState(() {
         status = ActivationStatus.otpWait;
       });
@@ -155,30 +184,48 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
         pinFocusNode.requestFocus();
       }
     } else {
-      if (!mounted) return;
       if (status == ActivationStatus.preparing) {
-        String apiMessage;
-        try {
-          apiMessage = jsonDecode(res.body)["message"]?.toString() ?? res.body;
-        } catch (_) {
-          apiMessage = res.body;
-        }
+        final apiMessage = registrarMessage(res.body);
         final String userMessage =
-            apiMessage.toLowerCase().contains('unauthorized')
-                ? strings.errorOtpRequestFailed
-                : apiMessage;
+            apiMessage == null ||
+                apiMessage.toLowerCase().contains('unauthorized')
+            ? strings.errorOtpRequestFailed
+            : apiMessage;
         Navigator.of(context).pop(
           NoPortsOnboardingResult.error(message: userMessage),
         );
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(strings.errorOtpRequestFailed),
-        ),
-      );
+      _showPinRequestFailed();
     }
+  }
+
+  /// Whether this dialog is still open, though another route may cover it. It
+  /// stays mounted while it animates closed, so a reply arriving then must not
+  /// act on it. Nothing may cover it while it is preparing, since closing it
+  /// then pops whichever route is on top.
+  bool get _isOpen => ModalRoute.of(context)?.isActive ?? false;
+
+  void _showPinRequestFailed() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(strings.errorOtpRequestFailed),
+      ),
+    );
+  }
+
+  /// Shows [message] and returns to the PIN step with the PIN cleared.
+  void _returnToPinStep(String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(message)),
+      );
+    setState(() {
+      pinController.clear();
+      status = ActivationStatus.otpWait;
+    });
   }
 
   Widget get cancelButton => TextButton(
@@ -212,34 +259,31 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             // 1. If the atsign is not in teapot, it will (assuming success)
             //    start activating the atsign as if you hit "Activate" in the dashboard
             // 2. It will trigger the email/text OTP
-            var (:cramkey, :errorMessage) = await util.verifyActivation(
-              atsign: widget.atsign,
-              otp: pinController.text.toUpperCase(),
-            );
+            final ({String? cramkey, String? errorMessage}) verified;
+            try {
+              verified = await util.verifyActivation(
+                atsign: widget.atsign,
+                otp: pinController.text.toUpperCase(),
+              );
+            } catch (e) {
+              App.log(
+                'Verifying the activation PIN for ${widget.atsign} failed: '
+                        '${e.runtimeType}'
+                    .loggable,
+              );
+              if (!mounted) return;
+              _returnToPinStep(strings.errorOtpVerificationFailed);
+              return;
+            }
+            final (:cramkey, :errorMessage) = verified;
 
             if (!mounted) return;
 
             if (cramkey == null) {
               App.log('OTP verification failed: $errorMessage'.loggable);
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(
-                      errorMessage?.isNotEmpty ?? false
-                          ? errorMessage!
-                          : strings.errorOtpVerificationFailed,
-                    ),
-                  ),
-                );
-              setState(() {
-                pinController.dispose();
-                pinController = TextEditingController();
-                pinFocusNode.dispose();
-                pinFocusNode = FocusNode();
-                status = ActivationStatus.otpWait;
-              });
+              _returnToPinStep(
+                errorMessage ?? strings.errorOtpVerificationFailed,
+              );
               return;
             }
 
@@ -248,13 +292,13 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
             if (widget.waitForTeapot) {
               int round = 1;
               getStatus() async {
-                return (await widget.onboardingUtil.atServerStatus(
+                return (await widget.onboardingUtil.checkAtServer(
                   widget.atsign,
-                )).status();
+                )).state;
               }
 
-              AtSignStatus? atsignStatus = await getStatus();
-              while (atsignStatus != AtSignStatus.teapot) {
+              AtSignServerState atsignStatus = await getStatus();
+              while (atsignStatus != AtSignServerState.notActivated) {
                 // 6 * 5 = 30 seconds
                 // 12 * 5 = 60 seconds
                 if (!mounted || round > 12) {
@@ -267,7 +311,7 @@ class _ActivateAtsignDialogState extends State<ActivateAtsignDialog> {
 
               // If the Atsign is still not in teapot after the waiting period
               // Then return an error
-              if (atsignStatus != AtSignStatus.teapot) {
+              if (atsignStatus != AtSignServerState.notActivated) {
                 if (mounted) {
                   Navigator.of(context).pop(
                     NoPortsOnboardingResult.error(

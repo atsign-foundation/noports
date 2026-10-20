@@ -64,6 +64,10 @@ typedef struct {
   char *session_aes_iv_c2d_string;
   char *session_aes_key_d2c_string;
   char *session_aes_iv_d2c_string;
+
+  // When not -1, srv also writes SRV_COMPLETION_STRING here once it has
+  // reached the relay, for a parent that keeps srv's stderr as its log
+  int ready_fd;
 } srv_params_t;
 
 /**

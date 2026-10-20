@@ -1,0 +1,13 @@
+name: verify_tls_verification
+description: |
+  Fails if a tracked file sets npt_flutter's define that turns off registrar TLS
+  verification, if the define is read other than once behind kDebugMode, or if
+  non-test Dart code sets a certificate callback other than the registrar
+  client's, gated on it.
+
+runs:
+  using: composite
+  steps:
+    - name: Check the registrar TLS switch and certificate callbacks
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/check.sh"

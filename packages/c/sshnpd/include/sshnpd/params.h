@@ -23,6 +23,7 @@ typedef struct {
   char *normalized_manager_buf;
 
   char *policy;
+  size_t policy_cache_size;
 
   size_t permitopen_len;
   char **permitopen_hosts;
@@ -42,6 +43,12 @@ typedef struct {
 
   char *key_file;
   char *storage_path;
+  // How often (seconds) to check the enrollment each signed session's
+  // client signed its request with; 0 turns the checks off
+  int client_key_check_secs;
+  // Refuse requests not signed with the client's enrollment key, or whose
+  // signature can't be checked
+  bool require_enrollment_signature;
 } sshnpd_params;
 
 void apply_default_values_to_sshnpd_params(sshnpd_params *params);

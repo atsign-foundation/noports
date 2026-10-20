@@ -16,6 +16,7 @@ int manager_list_test();
 int manager_list_trailing_comma_test();
 int manager_list_filter_device_atsign_test();
 int manager_list_filter_device_atsign_error_logged_test();
+int client_key_check_params_test();
 
 int main() {
   int ret = 0;
@@ -60,6 +61,10 @@ int main() {
     printf("manager_list_filter_device_atsign_error_logged_test failed\n");
     ret++;
   }
+  if (client_key_check_params_test()) {
+    printf("client_key_check_params_test failed\n");
+    ret++;
+  }
 
   printf("Tests failed: %d\n", ret);
   return ret;
@@ -90,6 +95,9 @@ int default_values_test() {
     ret = 1;
   }
   if (params->local_sshd_port != 22) {
+    ret = 1;
+  }
+  if (params->client_key_check_secs != 10 || params->require_enrollment_signature) {
     ret = 1;
   }
 
@@ -228,42 +236,49 @@ int manager_list_test() {
   apply_default_values_to_sshnpd_params(params);
   int ret = parse_sshnpd_params(params, 7, argv);
   if (ret != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
 
   if (params->manager_list_len != 3) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[0], "@foo") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[1], "@bar") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
   if (strcmp(params->manager_list[2], "@baz") != 0) {
+    free(manager_str);
     free(params);
     return 1;
   }
 
+  free(manager_str);
   free(params);
   return 0;
 }
 
 int permit_open_parse_test() {
   int ret = 0;
+  int failures = 0;
 
-  // FIXME: bus error
   char **permitopen_hosts = NULL;
   uint16_t *permitopen_ports = NULL;
   size_t permitopen_len;
   ret = parse_permitopen(strdup("*:*"), &permitopen_hosts, &permitopen_ports, &permitopen_len, false);
 
   if (ret != 0 || permitopen_len != 1 || strcmp(permitopen_hosts[0], "*") != 0 || permitopen_ports[0] != 0) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 1 failed\n");
   }
 
   char **permitopen_hosts2 = NULL;
@@ -272,17 +287,18 @@ int permit_open_parse_test() {
   ret = parse_permitopen(strdup("localhost:*"), &permitopen_hosts2, &permitopen_ports2, &permitopen_len2, false);
 
   if (ret != 0 || permitopen_len2 != 1 || strcmp(permitopen_hosts2[0], "localhost") != 0 || permitopen_ports2[0] != 0) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 2 failed\n");
   }
 
-  return 0;
   char **permitopen_hosts3 = NULL;
   uint16_t *permitopen_ports3 = NULL;
   size_t permitopen_len3;
   ret = parse_permitopen(strdup("*:22"), &permitopen_hosts3, &permitopen_ports3, &permitopen_len3, false);
 
   if (ret != 0 || permitopen_len3 != 1 || strcmp(permitopen_hosts3[0], "*") != 0 || permitopen_ports3[0] != 22) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 3 failed\n");
   }
 
   char **permitopen_hosts4 = NULL;
@@ -292,7 +308,8 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len4 != 1 || strcmp(permitopen_hosts4[0], "localhost") != 0 ||
       permitopen_ports4[0] != 22) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 4 failed\n");
   }
 
   char **permitopen_hosts5 = NULL;
@@ -303,7 +320,8 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len5 != 2 || strcmp(permitopen_hosts5[0], "localhost") != 0 ||
       permitopen_ports5[0] != 22 || strcmp(permitopen_hosts5[1], "foo.bar.com") != 0 || permitopen_ports5[1] != 3389) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 5 failed\n");
   }
 
   char **permitopen_hosts6 = NULL;
@@ -314,7 +332,8 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len6 != 2 || strcmp(permitopen_hosts6[0], "localhost") != 0 ||
       permitopen_ports6[0] != 22 || strcmp(permitopen_hosts6[1], "foo.bar.com") != 0 || permitopen_ports6[1] != 3389) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 6 failed\n");
   }
 
   char **permitopen_hosts7 = NULL;
@@ -325,7 +344,8 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len7 != 2 || strcmp(permitopen_hosts7[0], "localhost") != 0 ||
       permitopen_ports7[0] != 22 || strcmp(permitopen_hosts7[1], "foo.bar.com") != 0 || permitopen_ports7[1] != 3389) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 7 failed\n");
   }
 
   char **permitopen_hosts8 = NULL;
@@ -336,7 +356,8 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len8 != 2 || strcmp(permitopen_hosts8[0], "localhost") != 0 ||
       permitopen_ports8[0] != 22 || strcmp(permitopen_hosts8[1], "foo.bar.com") != 0 || permitopen_ports8[1] != 3389) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 8 failed\n");
   }
 
   char **permitopen_hosts9 = NULL;
@@ -347,9 +368,10 @@ int permit_open_parse_test() {
 
   if (ret != 0 || permitopen_len9 != 2 || strcmp(permitopen_hosts9[0], "localhost") != 0 ||
       permitopen_ports9[0] != 22 || strcmp(permitopen_hosts9[1], "foo.bar.com") != 0 || permitopen_ports9[1] != 3399) {
-    ret = 1;
+    failures++;
+    printf("permit_open case 9 failed\n");
   }
-  return 0;
+  return failures;
 }
 
 int device_lower_test() {
@@ -361,6 +383,7 @@ int device_lower_test() {
   size_t device_name_literal_len = strlen(device_name_literal);
   char *device_name = malloc(sizeof(char) * (device_name_literal_len + 1));
   if (device_name == NULL) {
+    free(params);
     return 1;
   }
   memcpy(device_name, device_name_literal, device_name_literal_len);
@@ -600,4 +623,45 @@ int manager_list_filter_device_atsign_error_logged_test() {
   }
 
   return 0;
+}
+
+// Parses --client-key-check-secs value (when not NULL) and, when require,
+// --require-enrollment-signature, returning what parse_sshnpd_params does
+static int parse_client_key_check(const char *value, bool require, sshnpd_params *params) {
+  const char *argv[8] = {"sshnpd", "-a", "@atsign", "-m", "@manager"};
+  int argc = 5;
+  if (value != NULL) {
+    argv[argc++] = "--client-key-check-secs";
+    argv[argc++] = value;
+  }
+  if (require) {
+    argv[argc++] = "--require-enrollment-signature";
+  }
+  apply_default_values_to_sshnpd_params(params);
+  return parse_sshnpd_params(params, argc, argv);
+}
+
+int client_key_check_params_test() {
+  int ret = 0;
+  sshnpd_params params;
+
+  if (parse_client_key_check("30", true, &params) != 0 || params.client_key_check_secs != 30 ||
+      !params.require_enrollment_signature) {
+    printf("--client-key-check-secs 30 --require-enrollment-signature was not read\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("0", false, &params) != 0 || params.client_key_check_secs != 0 ||
+      params.require_enrollment_signature) {
+    printf("--client-key-check-secs 0 was not accepted\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("-1", false, &params) == 0) {
+    printf("--client-key-check-secs -1 was accepted\n");
+    ret = 1;
+  }
+  if (parse_client_key_check("86401", false, &params) == 0) {
+    printf("--client-key-check-secs 86401 was accepted\n");
+    ret = 1;
+  }
+  return ret;
 }

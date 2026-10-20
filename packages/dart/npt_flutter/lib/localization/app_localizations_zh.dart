@@ -375,6 +375,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAtKeysInvalid => '检测到无效的 atKeys 文件';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'atKeys 文件不是有效的 JSON：$problem，位于第 $position 个字符';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch => '您上传的 atKeys 文件与请求的 Atsign 不匹配';
 
   @override
@@ -476,6 +481,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get fileSaved => '文件已保存';
+
+  @override
+  String get fileSaveFailed => '保存文件失败';
 
   @override
   String get findOtp =>
@@ -1530,6 +1538,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAtKeysInvalid => '检测到无效的 atKeys 文件';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'atKeys 文件不是有效的 JSON：$problem，位于第 $position 个字符';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch => '您上传的 atKeys 文件与请求的 Atsign 不匹配';
 
   @override
@@ -1631,6 +1644,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get fileSaved => '文件已保存';
+
+  @override
+  String get fileSaveFailed => '保存文件失败';
 
   @override
   String get findOtp =>
@@ -2686,6 +2702,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAtKeysInvalid => '偵測到無效的 atKeys 檔案';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'atKeys 檔案不是有效的 JSON：$problem，位於第 $position 個字元';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch => '您上傳的 atKeys 檔案與要求的 Atsign 不符';
 
   @override
@@ -2786,6 +2807,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get fileSaved => '檔案已儲存';
+
+  @override
+  String get fileSaveFailed => '儲存檔案失敗';
 
   @override
   String get findOtp =>

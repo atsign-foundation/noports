@@ -74,7 +74,7 @@ We will now activate the device address—you only need to activate the device a
 {% tab title="Linux" %}
 Now that you have at\_activate installed, you can invoke the command with the name of the address you would like to activate:
 
-<pre class="language-bash"><code class="lang-bash"><strong>./at_activate -a @my_noports_device
+<pre class="language-bash"><code class="lang-bash"><strong>./at_activate onboard -a @my_noports_device
 </strong></code></pre>
 {% endtab %}
 
@@ -82,7 +82,7 @@ Now that you have at\_activate installed, you can invoke the command with the na
 Now that you have at\_activate installed, you can invoke the command with the name of the address you would like to activate:
 
 ```bash
-./at_activate -a @my_noports_device
+./at_activate onboard -a @my_noports_device
 ```
 {% endtab %}
 {% endtabs %}

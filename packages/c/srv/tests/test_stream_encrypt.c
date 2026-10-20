@@ -53,6 +53,12 @@ int main() {
   // and then decrypt, recording middle point and final output
   unsigned char *c = malloc(sizeof(char));
   unsigned char *o = malloc(sizeof(char));
+  if (c == NULL || o == NULL) {
+    printf("Failed to allocate the byte buffers\n");
+    free(c);
+    free(o);
+    return 1;
+  }
   printf("iterating through %lu bytes\n", len1);
   for (size_t i = 0; i < len1; i++) {
     *c = input1[i];

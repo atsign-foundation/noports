@@ -70,6 +70,9 @@ enroll() {
   # verify atKeys file created
   if test -f "$keysFileName"; then
     logInfo "keys file HAS been created at $keysFileName"
+    # NOTE at_activate writes keyfiles owner-only, and the containers that
+    # mount this one run as a different user.
+    chmod 644 "$keysFileName" || return $?
     return 0
   else
     logErrorAndReport "keys file has NOT been created at $keysFileName"

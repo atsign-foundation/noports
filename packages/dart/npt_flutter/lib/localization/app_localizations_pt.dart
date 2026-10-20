@@ -395,6 +395,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorAtKeysInvalid => 'Arquivo atKeys inválido detectado';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'O arquivo atKeys não é um JSON válido: $problem no caractere $position';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch =>
       'O arquivo atKeys que você carregou não corresponde ao Atsign solicitado';
 
@@ -510,6 +515,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get fileSaved => 'Arquivo Salvo';
+
+  @override
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
   String get findOtp =>
@@ -1629,6 +1637,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get errorAtKeysInvalid => 'Arquivo atKeys inválido detectado';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'O arquivo atKeys não é um JSON válido: $problem no caractere $position';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch =>
       'O arquivo atKeys que você carregou não corresponde ao Atsign solicitado';
 
@@ -1744,6 +1757,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get fileSaved => 'Arquivo Salvo';
+
+  @override
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
   String get findOtp =>

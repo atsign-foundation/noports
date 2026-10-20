@@ -37,6 +37,7 @@ class ManualActivationDialogButtons extends StatelessWidget {
                     FormValidator.validateRequiredAtsignField(state.atsign) ==
                         null
                     ? () async {
+                        if (!Form.of(context).validate()) return;
                         Navigator.of(context).pop(true);
                         final util = await NoPortsOnboardingUtil.create(
                           context,

@@ -7,6 +7,10 @@ import 'package:noports_core/src/npa/npa_impl.dart';
 import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 abstract class NPARequestHandler {
+  /// Whether any rule names [daemonAtsign]; the policy service deals only
+  /// with daemons for which this is true.
+  bool hasRulesFor(Atsign daemonAtsign);
+
   Future<NPAAuthCheckResponse> doAuthCheck(
     NPAAuthCheckRequest authCheckRequest,
   );

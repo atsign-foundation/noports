@@ -18,5 +18,6 @@ class AppColor {
   static const errorColorAlt = Color(0xFFFFEEEE);
   static const outlinePaddingColor = Color(0xFFEAEAEA);
   static const textFieldBorderColor = Color(0xFFD9D9D9);
+  static const warningColor = Color(0xFFE5A100);
   static const greyColor = Color(0xFFE2E2E2);
 }

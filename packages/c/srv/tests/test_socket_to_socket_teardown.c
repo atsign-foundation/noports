@@ -82,7 +82,7 @@ static int accept_with_recv_timeout(int listener) {
 // Send msg into `from` and expect it to come out of `to` via the bridge
 static int expect_bridged(int from, int to, const char *msg) {
   size_t len = strlen(msg);
-  char buffer[64];
+  char buffer[64] = {0};
 
   if (send(from, msg, len, 0) != (ssize_t)len) {
     printf("send failed\n");
