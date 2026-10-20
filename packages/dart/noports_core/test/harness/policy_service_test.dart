@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -29,6 +31,14 @@ class _Rules implements NPARequestHandler {
       permitOpen: ['localhost:22'],
     );
   }
+}
+
+/// Records every log line, so a test can check what was logged.
+class _CapturingLoggingHandler implements LoggingHandler {
+  final List<LogRecord> records = <LogRecord>[];
+
+  @override
+  void call(LogRecord record) => records.add(record);
 }
 
 void main() {
@@ -234,6 +244,60 @@ void main() {
 
       expect(configSharesWith(other), 1,
           reason: 'an earlier heartbeat without rules left nothing behind');
+    });
+  });
+
+  group('Given a policy service @policy with no event-logging atSign', () {
+    const policy = '@policy';
+    const daemon = '@daemon';
+
+    final logs = _CapturingLoggingHandler();
+    late LoggingHandler previousHandler;
+    late NoPortsHarness harness;
+
+    setUpAll(() {
+      previousHandler = AtSignLogger.defaultLoggingHandler;
+      AtSignLogger.defaultLoggingHandler = logs;
+    });
+
+    tearDownAll(() => AtSignLogger.defaultLoggingHandler = previousHandler);
+
+    setUp(() async {
+      logs.records.clear();
+      harness = NoPortsHarness.create(atSigns: {policy, daemon});
+      await NPAImpl(
+        atClient:
+            await harness.openClient(policy, namespace: DefaultArgs.namespace),
+        homeDirectory: harness.home.path,
+        handler: _Rules({daemon.toAtsign()}),
+        eventLoggingAtsign: null,
+      ).run();
+    });
+
+    test(
+        'when @daemon asks about one of its clients, then the service answers,'
+        ' and logs nothing at warning or above', () async {
+      final rpc = AtRpcClient(
+        serverAtsign: policy,
+        atClient:
+            await harness.openClient(daemon, namespace: DefaultArgs.namespace),
+        baseNameSpace: DefaultArgs.namespace,
+        domainNameSpace: 'auth_checks',
+      );
+
+      final answer = await rpc.call(NPAAuthCheckRequest(
+        daemonAtsign: daemon,
+        daemonDeviceName: 'device',
+        daemonDeviceGroupName: 'default',
+        clientAtsign: '@alice',
+      ).toJson()).timeout(const Duration(seconds: 2));
+
+      expect(answer['authorized'], isTrue);
+      expect(
+          logs.records
+              .where((r) => r.level >= Level.WARNING)
+              .map((r) => r.message),
+          isEmpty);
     });
   });
 }
