@@ -147,7 +147,9 @@ for 240 seconds, with sessions opened 40 and 90 seconds after launching the
 watcher, counted 56 notifications each. Per 20 seconds that was 1, 21, 1, 2,
 21, 2, 1, 2, 1, 1, 2, 1 in the first run and 1, 20, 2, 2, 20, 3, 1, 1, 2, 1, 1,
 2 in the second. Each session brought 18: 12 session messages and 6 on the
-events topic. The other 20 were `statsNotification`s.
+events topic. The other 20 were `statsNotification`s. With the policy service
+also logging each policy check to the events topic, a session brings 19, 7 of
+them on that topic.
 
 ## Tear down
 
