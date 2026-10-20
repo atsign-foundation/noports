@@ -500,6 +500,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -514,10 +520,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fileImported => 'Arquivo Importado';
 
   @override
-  String get fileSaved => 'Arquivo Salvo';
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
-  String get fileSaveFailed => 'Falha ao salvar o arquivo';
+  String get fileSaved => 'Arquivo Salvo';
 
   @override
   String get findOtp =>
@@ -1742,6 +1748,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -1756,10 +1768,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get fileImported => 'Arquivo Importado';
 
   @override
-  String get fileSaved => 'Arquivo Salvo';
+  String get fileSaveFailed => 'Falha ao salvar o arquivo';
 
   @override
-  String get fileSaveFailed => 'Falha ao salvar o arquivo';
+  String get fileSaved => 'Arquivo Salvo';
 
   @override
   String get findOtp =>

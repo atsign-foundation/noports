@@ -502,6 +502,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fastest => 'Más rápido';
 
   @override
+  String get favoriteAdd => 'Añadir a favoritos';
+
+  @override
+  String get favoriteRemove => 'Quitar de favoritos';
+
+  @override
   String get feedback => 'Comentarios';
 
   @override
@@ -516,10 +522,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fileImported => 'Archivo Importado';
 
   @override
-  String get fileSaved => 'Archivo Guardado';
+  String get fileSaveFailed => 'Error al guardar el archivo';
 
   @override
-  String get fileSaveFailed => 'Error al guardar el archivo';
+  String get fileSaved => 'Archivo Guardado';
 
   @override
   String get findOtp =>

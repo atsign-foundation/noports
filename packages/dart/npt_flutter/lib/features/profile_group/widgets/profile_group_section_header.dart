@@ -99,6 +99,9 @@ class ProfileGroupSectionHeader extends StatelessWidget {
             child: group == null
                 ? null
                 : IconButton(
+                    tooltip: group!.favorite
+                        ? strings.favoriteRemove
+                        : strings.favoriteAdd,
                     onPressed: () => context.read<ProfileGroupBloc>().add(
                       ProfileGroupSetFavoriteEvent(
                         groupId: group!.uuid,

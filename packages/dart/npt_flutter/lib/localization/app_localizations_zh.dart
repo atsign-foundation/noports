@@ -468,6 +468,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -480,10 +486,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileImported => '文件已导入';
 
   @override
-  String get fileSaved => '文件已保存';
+  String get fileSaveFailed => '保存文件失败';
 
   @override
-  String get fileSaveFailed => '保存文件失败';
+  String get fileSaved => '文件已保存';
 
   @override
   String get findOtp =>
@@ -1631,6 +1637,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -1643,10 +1655,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get fileImported => '文件已导入';
 
   @override
-  String get fileSaved => '文件已保存';
+  String get fileSaveFailed => '保存文件失败';
 
   @override
-  String get fileSaveFailed => '保存文件失败';
+  String get fileSaved => '文件已保存';
 
   @override
   String get findOtp =>
@@ -2794,6 +2806,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '加入最愛';
+
+  @override
+  String get favoriteRemove => '從最愛中移除';
+
+  @override
   String get feedback => '意見反應';
 
   @override
@@ -2806,10 +2824,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get fileImported => '檔案已匯入';
 
   @override
-  String get fileSaved => '檔案已儲存';
+  String get fileSaveFailed => '儲存檔案失敗';
 
   @override
-  String get fileSaveFailed => '儲存檔案失敗';
+  String get fileSaved => '檔案已儲存';
 
   @override
   String get findOtp =>

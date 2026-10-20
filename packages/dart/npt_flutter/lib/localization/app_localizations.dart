@@ -971,6 +971,18 @@ abstract class AppLocalizations {
   /// **'Fastest'**
   String get fastest;
 
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get favoriteRemove;
+
   /// No description provided for @feedback.
   ///
   /// In en, this message translates to:
@@ -995,17 +1007,17 @@ abstract class AppLocalizations {
   /// **'File Imported'**
   String get fileImported;
 
-  /// No description provided for @fileSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'File Saved'**
-  String get fileSaved;
-
   /// No description provided for @fileSaveFailed.
   ///
   /// In en, this message translates to:
   /// **'Failed to save file'**
   String get fileSaveFailed;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'File Saved'**
+  String get fileSaved;
 
   /// No description provided for @findOtp.
   ///
