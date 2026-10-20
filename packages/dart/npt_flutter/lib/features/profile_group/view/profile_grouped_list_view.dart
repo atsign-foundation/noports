@@ -13,6 +13,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_snack_bar.dart';
+import 'package:npt_flutter/widgets/spinner.dart';
 
 /// Renders the loaded profile uuids as a flat list, or as custom folders
 /// followed by an ungrouped section once any folder exists.
@@ -95,6 +96,11 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
         }
       },
       builder: (BuildContext context, ProfileGroupState groupState) {
+        if (groupState is ProfileGroupsLoading) {
+          // Waits for the folders instead of showing every connection
+          // ungrouped and then regrouping them once they load.
+          return const Center(child: Spinner());
+        }
         if (groupState is! ProfileGroupsLoaded) {
           return _buildPlain(
             widget.arrange?.call(widget.profiles) ?? widget.profiles,
