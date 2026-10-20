@@ -13,6 +13,7 @@ import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/constants.dart';
+import 'package:npt_flutter/util/name_sort.dart';
 import 'package:npt_flutter/util/profile_status.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -130,7 +131,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     var running = profilesRunningState.socketConnectors;
     var starredFolders = profileGroupState is ProfileGroupsLoaded
         ? (profileGroupState.groups.where((folder) => folder.favorite).toList()
-            ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase())))
+            ..sort((a, b) => nameSortKey(a.name).compareTo(nameSortKey(b.name))))
         : <ProfileGroup>[];
     var folderMenuItems = starredFolders.map((folder) {
       var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
@@ -215,7 +216,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
             ));
           }),
     );
-    favMenuItems.sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
+    favMenuItems.sort((a, b) => nameSortKey(a.$1).compareTo(nameSortKey(b.$1)));
 
     /// PERF: We should conditionally call setContextMenu if there was a state
     /// change which resulted in an actual change to the favorites list.

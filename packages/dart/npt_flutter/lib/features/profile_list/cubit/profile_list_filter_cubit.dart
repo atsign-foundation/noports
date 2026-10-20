@@ -5,6 +5,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
 import 'package:npt_flutter/features/settings/models/settings.dart';
+import 'package:npt_flutter/util/name_sort.dart';
 
 part 'profile_list_filter_state.dart';
 

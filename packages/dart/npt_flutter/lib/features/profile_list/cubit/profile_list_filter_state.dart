@@ -72,8 +72,8 @@ final class ProfileListFilterState extends Loggable {
       if (favoritesFirst && a.favorite != b.favorite) {
         return a.favorite ? -1 : 1;
       }
-      final String nameA = a.name.toLowerCase();
-      final String nameB = b.name.toLowerCase();
+      final String nameA = nameSortKey(a.name);
+      final String nameB = nameSortKey(b.name);
       return switch (sortMode) {
         ProfileSortMode.manual => 0,
         ProfileSortMode.nameAscending => nameA.compareTo(nameB),
@@ -92,7 +92,7 @@ final class ProfileListFilterState extends Loggable {
     };
     final Map<String, String> names = <String, String>{
       for (final String uuid in shown)
-        uuid: profiles[uuid]?.displayName.toLowerCase() ?? '',
+        uuid: nameSortKey(profiles[uuid]?.displayName ?? ''),
     };
     shown.sort((String a, String b) {
       if (favoritesFirst) {
