@@ -1,9 +1,9 @@
-import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/atsign_text.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
 class ProfileDeviceAtsignTextField extends StatefulWidget {
@@ -55,14 +55,15 @@ class _ProfileDeviceAtsignTextFieldState
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: FormValidator.validateRequiredAtsignField,
                 onChanged: (value) {
-                  value = value.toAtsign();
+                  final atsign = value.toAtsignOrNull();
+                  if (atsign == null) return;
                   setState(() {});
 
                   var bloc = context.read<ProfileBloc>();
                   bloc.add(
                     ProfileEditEvent(
                       profile: (bloc.state as ProfileLoadedState).profile
-                          .copyWith(sshnpdAtsign: value.toAtsign()),
+                          .copyWith(sshnpdAtsign: atsign),
                     ),
                   );
                 },

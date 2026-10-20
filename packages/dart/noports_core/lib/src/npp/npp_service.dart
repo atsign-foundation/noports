@@ -11,6 +11,10 @@ class NppRequestHandler implements NPARequestHandler {
   });
 
   @override
+  bool hasRulesFor(Atsign daemonAtsign) =>
+      nppCache.hasServiceACLsForDaemon(daemonAtsign);
+
+  @override
   Future<NPAAuthCheckResponse> doAuthCheck(NPAAuthCheckRequest authCheckRequest) async {
     final String clientAtSign = authCheckRequest.clientAtsign;
     final String daemonAtSign = authCheckRequest.daemonAtsign;
@@ -105,7 +109,7 @@ class NppService {
       handler: handler,
       atClient: atClient,
       homeDirectory: homeDir,
-      eventLoggingAtsign: eventLoggingAtSign as Atsign?);
+      eventLoggingAtsign: eventLoggingAtSign?.toAtsign());
 
     managerRpcListener = AtRpc(
       atClient: atClient,

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:at_client/at_client.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -151,7 +153,9 @@ class SshnpDartPureImpl extends SshnpCore
       host: srvdChannel.rvdHost,
       port: srvdChannel.daemonPort,
       authenticateToRvd: params.authenticateDeviceToRvd,
-      relayAuthMode: params.relayAuthMode,
+      relayAuthMode: srvdChannel.daemonRelayAuthMode(
+        daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+      ),
       relayAuthAesKey: srvdChannel.relayAuthAesKey,
       clientNonce: srvdChannel.clientNonce,
       rvdNonce: srvdChannel.rvdNonce,
@@ -163,11 +167,14 @@ class SshnpDartPureImpl extends SshnpCore
           ? params.srvdAtSign.toAtsign()
           : null,
     );
-    final notifyPayload = signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapRequest(
       atClient,
+      this,
       sessionRequest.toJson(),
     );
-    logger.info('Sending: $notifyPayload');
+    logger.info(
+      'Sending ssh_request for session $sessionId to ${params.sshnpdAtSign}',
+    );
 
     await notify(
       AtKey()

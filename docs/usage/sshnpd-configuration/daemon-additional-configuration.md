@@ -76,3 +76,13 @@ Directory for local storage.
 Comma separated-list of host:port to which the daemon will permit a connection from an authorized client. Hosts may be dns names or ip addresses.
 
 (Defaults to "localhost:22,localhost:3389")
+
+### --client-key-check-secs
+
+How often, in seconds, to check that the enrollment each client signed its session request with is still valid. The daemon ends a session once that enrollment is revoked, superseded, deleted or expires. Only signed requests are checked (see `--require-enrollment-signature`), and only while the daemon that started the session keeps running. 0 turns the check off.
+
+(Defaults to "10")
+
+### --\[no-]require-enrollment-signature
+
+Refuse session requests that aren't signed with the client's enrollment key, or whose signature can't be checked because the client's atServer can't be reached. Older clients, and clients whose enrollment holds no signing key, don't sign them.

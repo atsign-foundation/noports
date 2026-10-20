@@ -177,12 +177,27 @@ Future<void> main(List<String> args) async {
               throw ArgumentError('Env var REMOTE_AUTH_ESCR_IS_SIDE_A'
                   ' must be "true" or "false"');
             }
+            // NOTE absent means rsa2048, which is what a daemon or client
+            // that predates this variable signs with.
+            final signingAlgoName =
+                Platform.environment['REMOTE_AUTH_ESCR_SIGNING_ALGO'] ??
+                    SigningAlgoType.rsa2048.name;
+            final signingAlgo = SigningAlgoType.values
+                .where((a) => a.name == signingAlgoName)
+                .where(escrSigningAlgorithms.contains)
+                .firstOrNull;
+            if (signingAlgo == null) {
+              throw ArgumentError('REMOTE_AUTH_ESCR_SIGNING_ALGO must be one'
+                  ' of ${escrSigningAlgorithms.map((a) => a.name)}'
+                  ', not $signingAlgoName');
+            }
             relayAuthenticator = RelayAuthenticatorESCR(
               sessionId: sessionId,
               relayAuthAesKey: relayAuthAesKey,
               publicSigningKeyUri: publicSigningKeyUri,
               publicSigningKey: publicSigningKey,
               privateSigningKey: privateSigningKey,
+              signingAlgo: signingAlgo,
               isSideA: isSideA == 'true',
             );
             break;

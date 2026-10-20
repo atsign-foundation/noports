@@ -6,6 +6,8 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/enrollment_signature.dart'
+    show signAndWrapRequest;
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_exec_channel.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -52,6 +54,8 @@ abstract interface class Npt {
   /// - Return the SocketConnector created by Npt
   Future<SocketConnector> runInline({int? localRvPort});
 
+  /// Ends this session, closing the tunnel [runInline] started, if any, and
+  /// completing [done].
   Future<void> close();
 
   Future get done;
@@ -134,6 +138,8 @@ class _NptImpl extends NptBase
 
   final Completer _completer = Completer();
 
+  SocketConnector? _inlineConnector;
+
   @override
   Future get done => _completer.future;
 
@@ -166,6 +172,7 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
+    _inlineConnector?.close();
     if (!_completer.isCompleted) {
       _completer.complete();
     }
@@ -177,6 +184,12 @@ class _NptImpl extends NptBase
     if (!isSafeToInitialize) return;
 
     logger.info('Initializing $runtimeType');
+
+    try {
+      await loadEnvelopeSigningKey(atClient);
+    } catch (e) {
+      logger.warning('Could not load the envelope signing key: $e');
+    }
 
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
@@ -192,9 +205,11 @@ class _NptImpl extends NptBase
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
-    if (params.relayAuthMode == RelayAuthMode.escr) {
-      requiredFeatures.add(DaemonFeature.supportsRamEscr);
-    }
+    // We deliberately do NOT require DaemonFeature.supportsRamEscr: a daemon that
+    // cannot do ESCR uses legacy on its own side and the relay reconciles it,
+    // even under an explicit --relay-auth-mode escr. The one unreconcilable case
+    // (explicit ESCR + non-auto-detecting relay + non-ESCR daemon) is rejected
+    // below. See sshnp_core.initialize for detail.
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -240,6 +255,34 @@ class _NptImpl extends NptBase
 
     sendProgress('Required daemon features are supported');
 
+    // Reject an explicit --relay-auth-mode escr this session cannot honour (a
+    // non-auto-detecting relay + a non-ESCR daemon can never agree). Every other
+    // explicit-ESCR case degrades gracefully. See sshnp_core.initialize.
+    if (SrvdChannel.escrRequestedButUnreconcilable(
+      explicitEscr: params.relayAuthModeExplicit &&
+          params.relayAuthMode == RelayAuthMode.escr,
+      only443: params.only443,
+      authenticateDeviceToRvd: params.authenticateDeviceToRvd,
+      autoDetect: _srvdChannel.autoDetectsRelayAuth,
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+    )) {
+      throw SshnpError(
+        'This session requires ESCR relay auth on the device daemon (either'
+        ' --only-port 443, or --relay-auth-mode escr through a relay that does'
+        ' not auto-detect), but the daemon does not support ESCR. Upgrade the'
+        ' daemon, or retry without --only-port 443 / --relay-auth-mode escr.',
+      );
+    }
+
+    // The daemon ping has now resolved, so we know which relay-auth mode each
+    // side will use. Tell the relay definitively (before the daemon session
+    // request, sent from _preRun) so it can skip the auto-detect window; if
+    // this loses the race to the daemon's socket, the relay just auto-detects.
+    // No-op against a relay that doesn't auto-detect.
+    await _srvdChannel.sendDefinitiveAuthModes(
+      daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+    );
+
     completeInitialization();
   }
 
@@ -260,7 +303,9 @@ class _NptImpl extends NptBase
       rvdHost: _srvdChannel.rvdHost,
       rvdPort: _srvdChannel.daemonPort,
       authenticateToRvd: params.authenticateDeviceToRvd,
-      relayAuthMode: params.relayAuthMode,
+      relayAuthMode: _srvdChannel.daemonRelayAuthMode(
+        daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
+      ),
       relayAuthAesKey: _srvdChannel.relayAuthAesKey,
       clientNonce: _srvdChannel.clientNonce,
       rvdNonce: _srvdChannel.rvdNonce,
@@ -275,11 +320,14 @@ class _NptImpl extends NptBase
           ? params.srvdAtSign.toAtsign()
           : null,
     );
-    final notifyPayload = signAndWrapAndJsonEncode(
+    final notifyPayload = await signAndWrapRequest(
       atClient,
+      _srvdChannel,
       sessionRequest.toJson(),
     );
-    logger.info('Sending: $notifyPayload');
+    logger.info(
+      'Sending npt_request for session $sessionId to ${params.sshnpdAtSign}',
+    );
 
     await notify(
       AtKey()
@@ -384,10 +432,13 @@ class _NptImpl extends NptBase
           : null,
     );
 
+    _inlineConnector = sc;
     unawaited(
       sc.done.then((_) {
         logger.info('SocketConnector done');
-        _completer.complete();
+        if (!_completer.isCompleted) {
+          _completer.complete();
+        }
       }),
     );
 

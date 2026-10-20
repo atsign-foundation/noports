@@ -9,6 +9,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "98.0.0"
+  alfred:
+    dependency: "direct overridden"
+    description:
+      path: "."
+      ref: cc-directory-4-windows
+      resolved-ref: "8ecf0437cb91d591d5b1e1547e662438d5f65351"
+      url: "https://github.com/atsign-foundation/alfred"
+    source: git
+    version: "1.1.2+1"
   analyzer:
     dependency: transitive
     description:
@@ -53,10 +62,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "92cdf7958b44a665380a1fb44ae1ec6253a83550494df480d7f9b47fb5732689"
+      sha256: f1614a44868a23c1764ffb3c50683844a267e2ef6b2af2cebc99ca0bf77847a8
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.1"
+    version: "4.0.0-rc7"
   at_base2e15:
     dependency: transitive
     description:
@@ -69,74 +78,58 @@ packages:
     dependency: transitive
     description:
       name: at_chops
-      sha256: "71d55c906177443995d175a5d33784243abd21ed0456f3463b16e3f803eb0db9"
+      sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.7.0"
   at_cli_commons:
     dependency: "direct main"
     description:
       name: at_cli_commons
-      sha256: f6653791ac37df5097dd39433a62b3372c4c644cd03729e599eb4c85990c9431
+      sha256: "8fcdff091fc1d91827f24d503973aad5613fa217f676909a7468c82fc9ebe7a2"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.1"
+    version: "3.1.2-rc3"
   at_client:
     dependency: "direct main"
     description:
       name: at_client
-      sha256: ef6490ce6a001fc38095bf6d53c1e98af1d9cb1242a87c9944890dfb9f9220d4
+      sha256: "1f145ac75cc95b58d3081d002266a6f92d9d1ffdca35052eae95525aa32a894a"
       url: "https://pub.dev"
     source: hosted
-    version: "3.11.0"
+    version: "3.15.0-rc8"
   at_commons:
     dependency: transitive
     description:
       name: at_commons
-      sha256: a8a07fff913a36524b95757ff72fcde448ae461b1647c8e8aee3276395452ae7
+      sha256: b75a38fb93a48131289dea0e744fa8584c86dd4eb3fdff1575c804ab00b4b3c4
       url: "https://pub.dev"
     source: hosted
-    version: "5.8.0"
+    version: "5.21.0"
   at_lookup:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: f3e88bfd5144cd5dce845adf3fa89aeb79c97a0e79f8c61aafd4a266ec3b1095
+      sha256: "9da3ffe89632c08610a2cfe8b9aa2ee195bedbe85f45a0b209d50dc46e4a109e"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.0"
+    version: "3.7.0-rc4"
   at_onboarding_cli:
     dependency: "direct main"
     description:
       name: at_onboarding_cli
-      sha256: "40b9b40ff88bbfba50412bbc6fe4d5991958e6ccab9a1f434bba0eaa9af115b9"
+      sha256: a2ae1fa1cca5c95df9d63393ff8c6fc96933c83e4815ce7a012dbcee8478b263
       url: "https://pub.dev"
     source: hosted
-    version: "1.15.0"
+    version: "2.0.0-rc8"
   at_persistence_secondary_server:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: d9e960975b43b9f14e1729d0925e9bc2bda3c173a8e6e465547d053ccc862c82
+      sha256: "1b54e89012c462c59bc6a2ed715565903a73409a01542e406a601e6551a61560"
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.4"
-  at_persistence_spec:
-    dependency: transitive
-    description:
-      name: at_persistence_spec
-      sha256: "2b8a414f53ae2368023862cda0b6c2ccef3a3876acc355ea064654df434aedbd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
-  at_server_status:
-    dependency: transitive
-    description:
-      name: at_server_status
-      sha256: bbce2d6226b5a381a5462ba99afc6e6d677043263a4eb659a731d0f51465bc54
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
+    version: "5.3.0"
   at_utf7:
     dependency: transitive
     description:
@@ -149,10 +142,10 @@ packages:
     dependency: "direct main"
     description:
       name: at_utils
-      sha256: e974616a816e9f6f3b186f33efea823f345d193b6ea9b42f08d28f35848c4de1
+      sha256: cabffe142a20a666f38a2fea5099acd862313f1e1b98501f4c7999ab8de4eb7d
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.0"
+    version: "3.5.0"
   better_cryptography:
     dependency: transitive
     description:
@@ -265,14 +258,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
-  dart_periphery:
-    dependency: transitive
-    description:
-      name: dart_periphery
-      sha256: "1c933dae787d65e6e66ee89db4a58ed74dc9213b83cea10c344585a256ca498a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.20"
   dartssh2:
     dependency: transitive
     description:
@@ -461,10 +446,18 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
+      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "1.0.6"
+  mime_type:
+    dependency: transitive
+    description:
+      name: mime_type
+      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   mutex:
     dependency: transitive
     description:
@@ -495,7 +488,7 @@ packages:
       path: "../../packages/dart/noports_core"
       relative: true
     source: path
-    version: "6.12.1"
+    version: "6.16.0"
   openssh_ed25519:
     dependency: transitive
     description:
@@ -536,14 +529,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  platform:
-    dependency: transitive
-    description:
-      name: platform
-      sha256: "5d6b1b0036a5f331ebc77c850ebc8506cbc1e9416c27e59b439f917a902a4984"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.6"
   pointycastle:
     dependency: "direct overridden"
     description:
@@ -568,14 +553,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  process:
+  pqcrypto:
     dependency: transitive
     description:
-      name: process
-      sha256: c6248e4526673988586e8c00bb22a49210c258dc91df5227d5da9748ecf79744
+      name: pqcrypto
+      sha256: fa8bd7eac5ccb4389f4003715a79b1b601ca9439cb81d1174a1e06da75306b39
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.5"
+    version: "0.3.1"
   pub_semver:
     dependency: transitive
     description:
@@ -584,6 +569,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  queue:
+    dependency: transitive
+    description:
+      name: queue
+      sha256: "9bc29632072f4dac6cd0056acbb63361f654e2def9ceb4b08cfe0f9cf5618409"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.0"
   rfc_6901:
     dependency: transitive
     description:
@@ -628,10 +621,10 @@ packages:
     dependency: transitive
     description:
       name: socket_connector
-      sha256: "490312b9f28ad54a9ee18fc258befa8c720148822676bf086a961f7e72a2dda4"
+      sha256: c29616a23f237666ee8945d01efa1fe7049444c139d0a48fb71f71cf53448891
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.6.1"
   source_map_stack_trace:
     dependency: transitive
     description:
@@ -656,6 +649,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.2"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.4"
   stack_trace:
     dependency: transitive
     description:

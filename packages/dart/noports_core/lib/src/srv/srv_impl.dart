@@ -3,23 +3,29 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:at_chops/at_chops.dart';
+import 'package:at_chops/at_chops_ffi.dart';
 import 'package:at_utils/at_utils.dart';
-import 'package:cryptography/cryptography.dart';
-import 'package:cryptography/dart.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/sshnp.dart';
+import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:at_commons/at_commons.dart' as at_commons;
 
+import 'aes_ctr_transformer.dart';
+
 const newLineCodeUnit = 10;
 
-@visibleForTesting
 class SrvImplExec implements Srv<Process> {
   static final AtSignLogger logger = AtSignLogger('SrvImplExec');
+
+  final Completer<void> _exited = Completer<void>();
+
+  /// Completes once the srv process [run] started has exited, which a
+  /// detached process reports only by closing its stdout.
+  Future<void> get exited => _exited.future;
 
   @override
   final String streamingHost;
@@ -166,7 +172,9 @@ class SrvImplExec implements Srv<Process> {
           }
         }
       }
-    }, onError: (e) {});
+    }, onError: (e) {}, onDone: () {
+      if (!_exited.isCompleted) _exited.complete();
+    });
     p.stderr.listen(
       (List<int> l) {
         var allLines = utf8.decode(l).trim();
@@ -188,7 +196,12 @@ class SrvImplExec implements Srv<Process> {
       },
     );
 
-    await rvPortBound.future.timeout(Duration(seconds: 15));
+    try {
+      await rvPortBound.future.timeout(Duration(seconds: 15));
+    } catch (_) {
+      p.kill();
+      rethrow;
+    }
 
     await Future.delayed(Duration(milliseconds: 100));
 
@@ -269,42 +282,12 @@ class SrvImplInline implements Srv<SSHSocket> {
     // Only used on client side, so we know to use C2D for the encrypter
     // and D2C for the decrypter (or C2D for backwards compatibility)
     if (aesC2D != null && ivC2D != null) {
-      final DartAesCtr algorithm = DartAesCtr.with256bits(
-        macAlgorithm: Hmac.sha256(),
-      );
-      final SecretKey sessionAESKeyC2D = SecretKey(base64Decode(aesC2D!));
-      final List<int> sessionIVC2D = base64Decode(ivC2D!);
-
-      encrypter = (Stream<List<int>> stream) {
-        return algorithm.encryptStream(
-          stream,
-          secretKey: sessionAESKeyC2D,
-          nonce: sessionIVC2D,
-          onMac: (mac) {},
-        );
-      };
-      if (aesD2C == null) {
-        // backwards compatibility - use the same AES & IV
-        decrypter = (Stream<List<int>> stream) {
-          return algorithm.decryptStream(
-            stream,
-            secretKey: sessionAESKeyC2D,
-            nonce: sessionIVC2D,
-            mac: Mac.empty,
-          );
-        };
-      } else {
-        final SecretKey sessionAESKeyD2C = SecretKey(base64Decode(aesD2C!));
-        final List<int> sessionIVD2C = base64Decode(ivD2C!);
-        decrypter = (Stream<List<int>> stream) {
-          return algorithm.decryptStream(
-            stream,
-            secretKey: sessionAESKeyD2C,
-            nonce: sessionIVD2C,
-            mac: Mac.empty,
-          );
-        };
-      }
+      encrypter = createAesCtrTransformer(aesC2D!, ivC2D!);
+      // Backwards compatibility: without a D2C key, both directions share the
+      // C2D key and IV.
+      decrypter = aesD2C == null
+          ? createAesCtrTransformer(aesC2D!, ivC2D!)
+          : createAesCtrTransformer(aesD2C!, ivD2C!);
     }
 
     try {
@@ -358,6 +341,10 @@ class WrappedSSHSocket implements SSHSocket {
   late StreamSink<List<int>> _sink;
   late Stream<Uint8List> _stream;
 
+  /// The plaintext sink [encrypter] reads from; closing it lets an FFI-backed
+  /// [encrypter] see its source's `onDone` and dispose, instead of leaking.
+  StreamController<Uint8List>? _plaintextSink;
+
   Future<void> Function() onClose;
   void Function() onDestroy;
 
@@ -373,6 +360,7 @@ class WrappedSSHSocket implements SSHSocket {
       _sink = underlyingSink;
     } else {
       StreamController<Uint8List> sc = StreamController<Uint8List>();
+      _plaintextSink = sc;
       Stream<List<int>> encrypted = encrypter!(sc.stream);
       encrypted.listen(underlyingSink.add);
       _sink = sc;
@@ -387,11 +375,13 @@ class WrappedSSHSocket implements SSHSocket {
 
   @override
   Future<void> close() async {
+    await _plaintextSink?.close();
     await onClose();
   }
 
   @override
   void destroy() {
+    unawaited(_plaintextSink?.close());
     onDestroy();
   }
 
@@ -486,39 +476,13 @@ class SrvImplDart implements Srv<SocketConnector> {
     twinKeys = (aesD2C != null);
   }
 
-  DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
-    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> iv = base64Decode(ivBase64);
+  // CTR encryption and decryption are the same transform, so both of these
+  // are the same call; they stay separate for the sake of the call sites.
+  DataTransformer createEncrypter(String aesKeyBase64, String ivBase64) =>
+      createAesCtrTransformer(aesKeyBase64, ivBase64);
 
-    return (Stream<List<int>> stream) {
-      return algorithm.encryptStream(
-        stream,
-        secretKey: aesKey,
-        nonce: iv,
-        onMac: (mac) {},
-      );
-    };
-  }
-
-  DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) {
-    final DartAesCtr algorithm = DartAesCtr.with256bits(
-      macAlgorithm: MacAlgorithm.empty,
-    );
-    final SecretKey aesKey = SecretKey(base64Decode(aesKeyBase64));
-    final List<int> iv = base64Decode(ivBase64);
-
-    return (Stream<List<int>> stream) {
-      return algorithm.decryptStream(
-        stream,
-        secretKey: aesKey,
-        nonce: iv,
-        mac: Mac.empty,
-      );
-    };
-  }
+  DataTransformer createDecrypter(String aesKeyBase64, String ivBase64) =>
+      createAesCtrTransformer(aesKeyBase64, ivBase64);
 
   @override
   Future<SocketConnector> run() async {
@@ -595,17 +559,6 @@ class SrvImplDart implements Srv<SocketConnector> {
     required InternetAddress relayAddress,
     required Duration timeout,
   }) async {
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
-    if (aesC2D != null && ivC2D != null) {
-      encrypter = createEncrypter(aesC2D!, ivC2D!);
-      if (aesD2C == null) {
-        // Backwards compatibility - use the same key & iv
-        decrypter = createDecrypter(aesC2D!, ivC2D!);
-      } else {
-        decrypter = createDecrypter(aesD2C!, ivD2C!);
-      }
-    }
     // client side
     InternetAddress localAddress = await resolveRequestedLocalHost();
     SocketConnector sc = await SocketConnector.serverToSocket(
@@ -615,12 +568,21 @@ class SrvImplDart implements Srv<SocketConnector> {
       portB: streamingPort,
       verbose: Platform.environment['SRV_TRACE'] == 'true',
       logger: ioSinkForLogger(logger),
-      transformAtoB: encrypter,
-      transformBtoA: decrypter,
       multi: multi,
       timeout: timeout,
       beforeJoining: (Side sideA, Side sideB) async {
         logger.info('beforeJoining called');
+        // One connection per call to this function, so it's safe to
+        // construct the transformer pair here rather than hoisting it.
+        if (aesC2D != null && ivC2D != null) {
+          setAesCtrTransformer(sideA, aesC2D!, ivC2D!);
+          if (aesD2C == null) {
+            // Backwards compatibility - use the same key & iv
+            setAesCtrTransformer(sideB, aesC2D!, ivC2D!);
+          } else {
+            setAesCtrTransformer(sideB, aesD2C!, ivD2C!);
+          }
+        }
         // Authenticate the sideB socket (to the rvd)
         if (relayAuthenticator != null) {
           logger.info(
@@ -905,30 +867,22 @@ class SrvImplDart implements Srv<SocketConnector> {
               sideB.stream = authenticatedStream;
             }
           }
-          String socketAESKeyC2D = AtChopsUtil.generateSymmetricKey(
-            EncryptionKeyType.aes256,
-          ).key;
-          String socketIVC2D = base64Encode(
-            AtChopsUtil.generateRandomIV(16).ivBytes,
-          );
+          String socketAESKeyC2D = generateAes256Key();
+          String socketIVC2D = generateIvBase64();
 
           String socketAESKeyD2C, socketIVD2C;
 
           if (twinKeys) {
-            socketAESKeyD2C = AtChopsUtil.generateSymmetricKey(
-              EncryptionKeyType.aes256,
-            ).key;
-            socketIVD2C = base64Encode(
-              AtChopsUtil.generateRandomIV(16).ivBytes,
-            );
+            socketAESKeyD2C = generateAes256Key();
+            socketIVD2C = generateIvBase64();
           } else {
             // Backwards compatibility
             socketAESKeyD2C = socketAESKeyC2D;
             socketIVD2C = socketIVC2D;
           }
 
-          sideA.transformer = createEncrypter(socketAESKeyC2D, socketIVC2D);
-          sideB.transformer = createDecrypter(socketAESKeyD2C, socketIVD2C);
+          setAesCtrTransformer(sideA, socketAESKeyC2D, socketIVC2D);
+          setAesCtrTransformer(sideB, socketAESKeyD2C, socketIVD2C);
 
           logger.info(
             '_runClientSideMulti (_clientSideEncryptedSocket)'
@@ -976,10 +930,12 @@ class SrvImplDart implements Srv<SocketConnector> {
 
   Future<void> _handleMultiConnectRequest(
     SocketConnector sc,
-    InternetAddress relayAddress,
-    DataTransformer? encrypter,
-    DataTransformer? decrypter,
-  ) async {
+    InternetAddress relayAddress, {
+    String? aesC2D,
+    String? ivC2D,
+    String? aesD2C,
+    String? ivD2C,
+  }) async {
     logger.info(
       '_runDaemonSideMulti'
       ' control channel received connect request - '
@@ -1001,8 +957,15 @@ class SrvImplDart implements Srv<SocketConnector> {
         Side candidateSideB = Side(
           await Socket.connect(relayAddress, streamingPort),
           false,
-          transformer: decrypter,
         );
+        // One connection per call to this function, so it's safe to
+        // construct the transformer here rather than hoisting it. Goes
+        // through setAesCtrTransformer (not a bare DataTransformer) so a
+        // libcrypto host gets the ChunkTransformer, whose disposal
+        // socket_connector's _closeSide actually calls.
+        if (aesC2D != null && ivC2D != null) {
+          setAesCtrTransformer(candidateSideB, aesC2D, ivC2D);
+        }
         unawaited(
           candidateSideB.socket.done
               .then((v) => logger.info('relay socket done'))
@@ -1069,7 +1032,14 @@ class SrvImplDart implements Srv<SocketConnector> {
 
     try {
       sideASocketActual = await Socket.connect(localAddress, localPort);
-      sideA = Side(sideASocketActual, true, transformer: encrypter);
+      sideA = Side(sideASocketActual, true);
+      if (aesC2D != null && ivC2D != null) {
+        if (aesD2C == null) {
+          setAesCtrTransformer(sideA, aesC2D, ivC2D);
+        } else {
+          setAesCtrTransformer(sideA, aesD2C, ivD2C!);
+        }
+      }
     } catch (e) {
       logger.shout(
         'Failed to connect locally ($localAddress:$localPort)'
@@ -1107,46 +1077,41 @@ class SrvImplDart implements Srv<SocketConnector> {
   ) async {
     message = message.trim();
     List<String> args = message.split(":");
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
+    String? aesC2D;
+    String? ivC2D;
+    String? aesD2C;
+    String? ivD2C;
     switch (args.first) {
       case 'connect':
-        if (message == 'connect:no:encrypt') {
-          // unencrypted session
-          encrypter = null;
-          decrypter = null;
-        } else {
+        if (message != 'connect:no:encrypt') {
           // Encrypted session, we expect params
           if (args.length < 3) {
-            logger.severe('Malformed control message: [$message]');
+            logger.severe('Malformed ${args.first} control message');
             return;
           }
-          String aesC2D = args[1];
-          String ivC2D = args[2];
-          decrypter = createDecrypter(aesC2D, ivC2D);
-          if (args.length == 3) {
-            // we only have one key & iv
-            encrypter = createEncrypter(aesC2D, ivC2D);
-          } else {
+          aesC2D = args[1];
+          ivC2D = args[2];
+          if (args.length != 3) {
             // we have two keys & ivs
-            String aesD2C = args[3];
-            String ivD2C = args[4];
-            encrypter = createEncrypter(aesD2C, ivD2C);
+            aesD2C = args[3];
+            ivD2C = args[4];
           }
         }
 
         await _handleMultiConnectRequest(
           sc,
           relayAddress,
-          encrypter,
-          decrypter,
+          aesC2D: aesC2D,
+          ivC2D: ivC2D,
+          aesD2C: aesD2C,
+          ivD2C: ivD2C,
         );
         break;
       case 'heartbeat':
         logger.info('Received control message: $message');
         break;
       default:
-        logger.shout('Received unknown control message: [$message]');
+        logger.shout('Received unknown ${args.first} control message');
         return;
     }
   }
@@ -1313,7 +1278,10 @@ class SrvImplDart implements Srv<SocketConnector> {
                   rethrow;
                 }
               } catch (e) {
-                logger.severe('$e while handling control message: $controlMsg');
+                logger.severe(
+                  '$e while handling a'
+                  ' ${controlMsg.split(':').first} control message',
+                );
               } finally {
                 rcvBuffer.clear();
               }
@@ -1350,7 +1318,8 @@ class SrvImplDart implements Srv<SocketConnector> {
                           );
                         } catch (e) {
                           logger.severe(
-                            '$e while handling control message: $controlMsg',
+                            '$e while handling a'
+                            ' ${controlMsg.split(':').first} control message',
                           );
                         }
                       }
@@ -1396,16 +1365,6 @@ class SrvImplDart implements Srv<SocketConnector> {
   Future<SocketConnector> _runDaemonSideSingle({
     required InternetAddress relayAddress,
   }) async {
-    DataTransformer? encrypter;
-    DataTransformer? decrypter;
-    if (aesC2D != null && ivC2D != null) {
-      decrypter = createDecrypter(aesC2D!, ivC2D!);
-      if (aesD2C == null) {
-        encrypter = createEncrypter(aesC2D!, ivC2D!);
-      } else {
-        encrypter = createEncrypter(aesD2C!, ivD2C!);
-      }
-    }
     InternetAddress localAddress = await resolveRequestedLocalHost();
 
     bool verbose = Platform.environment['SRV_TRACE'] == 'true';
@@ -1421,7 +1380,16 @@ class SrvImplDart implements Srv<SocketConnector> {
       );
     }
     Socket sideASocket = await Socket.connect(localAddress, localPort);
-    Side sideA = Side(sideASocket, true, transformer: encrypter);
+    Side sideA = Side(sideASocket, true);
+    // One connection per call to this function, so it's safe to construct
+    // the transformer pair here rather than hoisting it.
+    if (aesC2D != null && ivC2D != null) {
+      if (aesD2C == null) {
+        setAesCtrTransformer(sideA, aesC2D!, ivC2D!);
+      } else {
+        setAesCtrTransformer(sideA, aesD2C!, ivD2C!);
+      }
+    }
     unawaited(
       socketConnector.handleSingleConnection(sideA).catchError((err) {
         logSink.writeln(
@@ -1436,7 +1404,10 @@ class SrvImplDart implements Srv<SocketConnector> {
       );
     }
     Socket sideBSocket = await Socket.connect(relayAddress, streamingPort);
-    Side sideB = Side(sideBSocket, false, transformer: decrypter);
+    Side sideB = Side(sideBSocket, false);
+    if (aesC2D != null && ivC2D != null) {
+      setAesCtrTransformer(sideB, aesC2D!, ivC2D!);
+    }
 
     // Authenticate the sideB socket (to the rvd)
     if (relayAuthenticator != null) {
@@ -1472,6 +1443,41 @@ class SrvImplDart implements Srv<SocketConnector> {
     }
 
     return socketConnector;
+  }
+}
+
+/// Sets [side]'s transformer to AES-CTR over ([aesKeyBase64], [ivBase64]),
+/// preferring [createAesCtrChunkTransformer]'s mutex-free path and falling
+/// back to [createAesCtrTransformer]'s [DataTransformer] only when libcrypto
+/// isn't available. Never leaves both unset: that would silently relay this
+/// side's data unencrypted, with no error anywhere.
+///
+/// Callers must construct one transformer per connection — the cipher a
+/// [ChunkTransformer] or [DataTransformer] closes over holds a keystream
+/// position, so two connections sharing one would each get half a keystream.
+void setAesCtrTransformer(
+  Side side,
+  String aesKeyBase64,
+  String ivBase64, {
+  @visibleForTesting
+  AesCtrFfiCipher? Function(AESKey, InitialisationVector) cipherFactory =
+      AtPqc.aesCtrStreamCipher,
+}) {
+  final ChunkTransformer? chunkTransformer = createAesCtrChunkTransformer(
+    aesKeyBase64,
+    ivBase64,
+    // ignore: invalid_use_of_visible_for_testing_member
+    cipherFactory: cipherFactory,
+  );
+  if (chunkTransformer != null) {
+    side.chunkTransformer = chunkTransformer;
+  } else {
+    side.transformer = createAesCtrTransformer(
+      aesKeyBase64,
+      ivBase64,
+      // ignore: invalid_use_of_visible_for_testing_member
+      cipherFactory: cipherFactory,
+    );
   }
 }
 

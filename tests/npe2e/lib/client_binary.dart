@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:npe2e/noports_version.dart';
 
-enum ClientBinaryType { sshnp, npt, srv, npp_client, at_activate }
+enum ClientBinaryType { sshnp, npt, srv, npp_client, at_activate, srvd }
 
 class ClientBinary {
   final NoPortsVersion noPortsVersion;
@@ -31,5 +31,7 @@ String getDartSourcePath(ClientBinaryType binaryType) {
       return 'packages/dart/sshnoports/bin/npp_client.dart';
     case ClientBinaryType.at_activate:
       return 'packages/dart/sshnoports/bin/at_activate.dart';
+    case ClientBinaryType.srvd:
+      return 'packages/dart/sshnoports/bin/srvd.dart';
   }
 }

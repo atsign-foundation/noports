@@ -46,6 +46,8 @@ As an alternative to defining a list of managers a policy manager can be used, a
 sshnpd ... -p @alice_policy ...
 ```
 
+The policy manager needs rules for this daemon's atSign. A policy service doesn't answer a daemon it has no rules for, so each of that daemon's checks waits about 10 seconds and is then denied.
+
 ### 3. -d, --device
 
 The device name. This is used to associate multiple devices with the same atSign. By default the value is `default` so unless you want that as the device name you will need to include this parameter. For example:

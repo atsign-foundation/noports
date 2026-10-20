@@ -37,7 +37,7 @@ You will activate both the client atSign _**and**_ the device atSign on your cli
 
 (1) Run the at\_activate command for the client atSign
 
-<pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate -a @&#x3C;REPLACE>_client
+<pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate onboard -a @&#x3C;REPLACE>_client
 </strong></code></pre>
 
 (2) Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders
@@ -54,7 +54,7 @@ Once you receive the message, enter the pin into the application and press enter
 
 1\) Run the at\_activate command for the device atSign
 
-<pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate -a @&#x3C;REPLACE>_device
+<pre class="language-bash"><code class="lang-bash"><strong>~/.local/bin/at_activate onboard -a @&#x3C;REPLACE>_device
 </strong></code></pre>
 
 2\) Enter the One Time Password (OTP) & Check your SPAM/PROMOTIONS folders

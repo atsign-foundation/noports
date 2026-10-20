@@ -1,17 +1,16 @@
 import 'dart:async';
 
-import 'package:at_auth/at_auth.dart'
-    show AtEnrollment, EnrollmentRequestDecision, Otp, ServerEnrollmentRequest;
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:npt_flutter/features/authorisation/models/authorisation_page_section.dart';
 
 class AuthorisationHubController extends ChangeNotifier {
-  AuthorisationHubController({FlutterEnrollmentService? service})
-    : _service = service ?? FlutterEnrollmentService();
+  AuthorisationHubController({AtClient? client, KeychainStorage? keychain})
+    : _client = client,
+      _keychain = keychain ?? KeychainStorage();
 
-  final FlutterEnrollmentService _service;
-  final AtEnrollment _atEnrollment = AtEnrollment.create();
+  final AtClient? _client;
+  final KeychainStorage _keychain;
 
   AuthorisationPageSection _section = AuthorisationPageSection.requests;
 
@@ -19,7 +18,7 @@ class AuthorisationHubController extends ChangeNotifier {
   bool _managerKeyChecked = false;
   String? _managerKeyError;
 
-  Otp? _otp;
+  Passcode? _otp;
   bool _otpLoading = false;
   String? _otpError;
 
@@ -28,12 +27,12 @@ class AuthorisationHubController extends ChangeNotifier {
   String? _sppFetchError;
   String? _sppSaveError;
 
-  List<ServerEnrollmentRequest> _pending = const <ServerEnrollmentRequest>[];
+  List<Enrollment> _pending = const <Enrollment>[];
   bool _pendingLoading = false;
   String? _pendingError;
-  StreamSubscription<ServerEnrollmentRequest>? _pendingSubscription;
+  StreamSubscription<Enrollment>? _pendingSubscription;
 
-  List<ServerEnrollmentRequest> _approved = const <ServerEnrollmentRequest>[];
+  List<Enrollment> _approved = const <Enrollment>[];
   bool _approvedLoading = false;
   String? _approvedError;
 
@@ -45,7 +44,7 @@ class AuthorisationHubController extends ChangeNotifier {
   bool get managerKeyChecked => _managerKeyChecked;
   String? get managerKeyError => _managerKeyError;
 
-  Otp? get otp => _otp;
+  Passcode? get otp => _otp;
   bool get otpLoading => _otpLoading;
   String? get otpError => _otpError;
 
@@ -54,16 +53,19 @@ class AuthorisationHubController extends ChangeNotifier {
   String? get sppFetchError => _sppFetchError;
   String? get sppSaveError => _sppSaveError;
 
-  List<ServerEnrollmentRequest> get pending => _pending;
+  List<Enrollment> get pending => _pending;
   bool get pendingLoading => _pendingLoading;
   String? get pendingError => _pendingError;
 
-  List<ServerEnrollmentRequest> get approved => _approved;
+  List<Enrollment> get approved => _approved;
   bool get approvedLoading => _approvedLoading;
   String? get approvedError => _approvedError;
 
-  String get _atSign =>
-      AtClientManager.getInstance().atClient.getCurrentAtSign()!;
+  AtClient get client => _client ?? AtClientManager.getInstance().atClient;
+
+  Enrollments get _enrollments => client.enrollments;
+
+  String get _atSign => client.getCurrentAtSign()!;
 
   void _notify() {
     if (_disposed) return;
@@ -97,25 +99,30 @@ class AuthorisationHubController extends ChangeNotifier {
   }
 
   void _subscribeToNewRequests() {
-    _pendingSubscription ??= _service
-        .getEnrollments(statusFilters: <EnrollmentStatus>[
-          EnrollmentStatus.pending,
-        ])
-        .listen((ServerEnrollmentRequest request) {
-          if (_pending.any(
-            (ServerEnrollmentRequest r) =>
-                r.enrollmentId == request.enrollmentId,
-          )) {
-            return;
-          }
-          _pending = <ServerEnrollmentRequest>[..._pending, request];
-          _notify();
-        }, onError: (Object e) => unawaited(loadPendingRequests()));
+    _pendingSubscription ??= _enrollments.requests.listen((
+      Enrollment request,
+    ) {
+      if (_pending.any(
+        (Enrollment r) => r.enrollmentId == request.enrollmentId,
+      )) {
+        return;
+      }
+      _pending = <Enrollment>[..._pending, request];
+      _notify();
+    }, onError: (Object e) => unawaited(loadPendingRequests()));
   }
 
+  /// Whether the keys this client authenticates with may decide enrollments:
+  /// the roster can be read at all, and an approved enrollment on it holds
+  /// `__manage`.
   Future<void> checkManagerKey() async {
     try {
-      _isManagerKey = await _service.isManagerKey();
+      final List<Enrollment> enrollments = await _enrollments.list();
+      _isManagerKey = enrollments.any(
+        (Enrollment e) =>
+            e.status == EnrollmentStatus.approved.name &&
+            e.namespace?['__manage'] == 'rw',
+      );
       _managerKeyError = null;
     } catch (e) {
       _isManagerKey = true;
@@ -138,7 +145,7 @@ class AuthorisationHubController extends ChangeNotifier {
     _notify();
 
     try {
-      _otp = await _service.generateOtp();
+      _otp = await _enrollments.otp();
       _otpError = null;
     } catch (e) {
       _otp = null;
@@ -151,7 +158,7 @@ class AuthorisationHubController extends ChangeNotifier {
 
   Future<void> loadSpp() async {
     try {
-      _spp = await _service.getActiveSpp();
+      _spp = await _keychain.getActiveSpp(_atSign);
       _sppFetchError = null;
     } catch (e) {
       _spp = null;
@@ -167,7 +174,8 @@ class AuthorisationHubController extends ChangeNotifier {
     _notify();
 
     try {
-      final Otp saved = await _service.setSpp(spp: value, sppExpiry: expiry);
+      final Passcode saved = await _enrollments.spp(value, expiry: expiry);
+      await _keychain.saveSpp(_atSign, saved);
       _spp = SppData(value: saved.value, expiry: saved.expiry);
       _otp = saved;
       _otpError = null;
@@ -184,12 +192,10 @@ class AuthorisationHubController extends ChangeNotifier {
     _notify();
 
     try {
-      _pending = await _service.list(<EnrollmentStatus>[
-        EnrollmentStatus.pending,
-      ], AtClientManager.getInstance().atClient.getRemoteSecondary()!.atLookUp);
+      _pending = await _enrollments.pending();
       _pendingError = null;
     } catch (e) {
-      _pending = const <ServerEnrollmentRequest>[];
+      _pending = const <Enrollment>[];
       _pendingError = e.toString();
     } finally {
       _pendingLoading = false;
@@ -202,12 +208,12 @@ class AuthorisationHubController extends ChangeNotifier {
     _notify();
 
     try {
-      _approved = await _service.list(<EnrollmentStatus>[
-        EnrollmentStatus.approved,
-      ], AtClientManager.getInstance().atClient.getRemoteSecondary()!.atLookUp);
+      _approved = await _enrollments.list(
+        statuses: <EnrollmentStatus>[EnrollmentStatus.approved],
+      );
       _approvedError = null;
     } catch (e) {
-      _approved = const <ServerEnrollmentRequest>[];
+      _approved = const <Enrollment>[];
       _approvedError = e.toString();
     } finally {
       _approvedLoading = false;
@@ -215,21 +221,9 @@ class AuthorisationHubController extends ChangeNotifier {
     }
   }
 
-  Future<String?> approveRequest(ServerEnrollmentRequest request) async {
-    final String? symmetricKey = request.encryptedAPKAMSymmetricKey;
-    if (symmetricKey == null || symmetricKey.isEmpty) {
-      return 'This request is missing its encrypted APKAM symmetric key and cannot be approved.';
-    }
-
+  Future<String?> approveRequest(Enrollment request) async {
     try {
-      await _atEnrollment.approve(
-        EnrollmentRequestDecision.approved(
-          enrollmentId: request.enrollmentId,
-          apkamSymmetricKey: AtBytes.fromString(symmetricKey),
-          atSign: _atSign,
-        ),
-        AtClientManager.getInstance().atClient.getRemoteSecondary()!.atLookUp,
-      );
+      await _enrollments.approve(request.enrollmentId!);
       _removePending(request);
       return null;
     } catch (e) {
@@ -237,12 +231,9 @@ class AuthorisationHubController extends ChangeNotifier {
     }
   }
 
-  Future<String?> denyRequest(ServerEnrollmentRequest request) async {
+  Future<String?> denyRequest(Enrollment request) async {
     try {
-      await _atEnrollment.deny(
-        EnrollmentRequestDecision.denied(request.enrollmentId, _atSign),
-        AtClientManager.getInstance().atClient.getRemoteSecondary()!.atLookUp,
-      );
+      await _enrollments.deny(request.enrollmentId!);
       _removePending(request);
       return null;
     } catch (e) {
@@ -250,17 +241,11 @@ class AuthorisationHubController extends ChangeNotifier {
     }
   }
 
-  Future<String?> revokeRequest(ServerEnrollmentRequest request) async {
+  Future<String?> revokeRequest(Enrollment request) async {
     try {
-      await _atEnrollment.revoke(
-        EnrollmentRequestDecision.revoked(request.enrollmentId, _atSign),
-        AtClientManager.getInstance().atClient.getRemoteSecondary()!.atLookUp,
-      );
+      await _enrollments.revoke(request.enrollmentId!);
       _approved = _approved
-          .where(
-            (ServerEnrollmentRequest r) =>
-                r.enrollmentId != request.enrollmentId,
-          )
+          .where((Enrollment r) => r.enrollmentId != request.enrollmentId)
           .toList();
       _notify();
       return null;
@@ -269,12 +254,9 @@ class AuthorisationHubController extends ChangeNotifier {
     }
   }
 
-  void _removePending(ServerEnrollmentRequest request) {
+  void _removePending(Enrollment request) {
     _pending = _pending
-        .where(
-          (ServerEnrollmentRequest r) =>
-              r.enrollmentId != request.enrollmentId,
-        )
+        .where((Enrollment r) => r.enrollmentId != request.enrollmentId)
         .toList();
     _notify();
   }
@@ -291,7 +273,6 @@ class AuthorisationHubController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     unawaited(_pendingSubscription?.cancel());
-    unawaited(_service.dispose());
     super.dispose();
   }
 }

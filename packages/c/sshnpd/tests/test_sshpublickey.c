@@ -40,6 +40,10 @@ static bool file_contains(const char *needle) {
     return false;
   }
   char *buf = malloc(size + 1);
+  if (buf == NULL) {
+    fprintf(stderr, "Failed to allocate a buffer for %s\n", authkeys_path);
+    exit(1);
+  }
   fread(buf, 1, size, f);
   buf[size] = '\0';
   fclose(f);

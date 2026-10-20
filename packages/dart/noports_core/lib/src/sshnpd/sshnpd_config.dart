@@ -219,7 +219,7 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
     EnumOption(
       enumParser: EnumParser(SupportedSshClient.values),
       argName: 'ssh-client',
-      configKey: '/ssh/client',
+      configKey: '/ssh/ssh-client',
       mandatory: false,
       defaultsTo: DefaultSshnpdArgs.sshClient,
       helpText: 'What to use for outbound ssh connections.',
@@ -298,6 +298,38 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       configKey: '/runtime/clear-cached-pks',
       helpText: 'Clear cached public keys',
       hide: true,
+      defaultsTo: false,
+      group: runtimeGroup,
+    ),
+  ),
+
+  clientKeyCheckSecs(
+    IntOption(
+      argName: 'client-key-check-secs',
+      configKey: '/runtime/client-key-check-secs',
+      mandatory: false,
+      defaultsTo: DefaultSshnpdArgs.clientKeyCheckSecs,
+      helpText: 'How often (seconds) to check that the enrollment each'
+          ' client signed its session request with is still valid. A session'
+          ' is ended once that enrollment is revoked, superseded, deleted or'
+          ' expires. Only signed requests are checked (see'
+          ' --require-enrollment-signature), and only while this daemon'
+          ' runs. 0 turns the check off.',
+      min: 0,
+      max: 86400,
+      group: runtimeGroup,
+    ),
+  ),
+
+  requireEnrollmentSignature(
+    FlagOption(
+      argName: 'require-enrollment-signature',
+      configKey: '/runtime/require-enrollment-signature',
+      helpText: 'Refuse session requests that aren\'t signed with the client\'s'
+          ' enrollment key, or whose signature can\'t be checked because the'
+          ' client\'s atServer can\'t be reached. Older clients, and clients'
+          ' whose enrollment holds no signing key, don\'t sign them.',
+      hide: false,
       defaultsTo: false,
       group: runtimeGroup,
     ),

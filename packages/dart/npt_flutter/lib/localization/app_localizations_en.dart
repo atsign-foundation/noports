@@ -389,6 +389,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorAtKeysInvalid => 'Invalid atKeys file detected';
 
   @override
+  String errorAtKeysNotJson(Object position, Object problem) {
+    return 'The atKeys file isn\'t valid JSON: $problem at character $position';
+  }
+
+  @override
   String get errorAtKeysUploadedMismatch =>
       'The atKeys file you uploaded did not match the Atsign requested';
 
@@ -503,6 +508,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fileSaved => 'File Saved';
+
+  @override
+  String get fileSaveFailed => 'Failed to save file';
 
   @override
   String get findOtp =>

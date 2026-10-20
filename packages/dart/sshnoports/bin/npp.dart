@@ -5,11 +5,13 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/version.dart' as binaries_version;
 import 'package:path/path.dart' as path;
+
 
 late AtSignLogger logger;
 
@@ -94,6 +96,16 @@ Future<void> main(List<String> args) async {
       .toSet();
   }
 
+  // 3e. --event-logging-atsign
+  if (nppParams.eventLoggingAtSign != null) {
+    try {
+      nppParams.eventLoggingAtSign!.toAtsign();
+    } on InvalidAtSignException catch (e) {
+      stderr.writeln('Invalid --event-logging-atsign: ${e.message}');
+      exit(1);
+    }
+  }
+
 
   // 4. Set up AtClient instance
   final AtClient atClient;
@@ -174,10 +186,15 @@ Future<void> main(List<String> args) async {
     nppCache: nppCache,
     nppOperationHooks: nppOperationHooks,
     binariesVersion: binaries_version.packageVersion,
+    eventLoggingAtSign: nppParams.eventLoggingAtSign,
   );
   nppService.init();
-
-  await nppService.start();
+  try {
+    await nppService.start();
+  } on EventLoggingConfigException catch (e) {
+    stderr.writeln(e);
+    exit(1);
+  }
 }
 
 /// Generate policy cache by fetching AtKeys from the atServer.

@@ -1,0 +1,38 @@
+
+# Arduino Libraries
+
+This directory contains the shared Arduino libraries used by packages in this
+repository.
+
+| Library | Description | Include |
+|---|---|---|
+| **NoPorts** | NoPorts daemon (sshnpd) — secure tunneling via atProtocol | `#include <NoPorts.h>` |
+
+> **Note:** The `at_client` library (atSDK for ESP32) has moved to its own
+> repository: [github.com/atsign-foundation/at_client_arduino](https://github.com/atsign-foundation/at_client_arduino).
+> NoPorts depends on it — see below for installation instructions.
+
+## Usage
+
+### Arduino IDE
+
+1. Install `at_client` first — download from [at_client_arduino releases](https://github.com/atsign-foundation/at_client_arduino/releases)
+   or search for **at_client** in the Arduino Library Manager.
+2. Copy the NoPorts library to your Arduino libraries directory:
+
+       cp -r lib/NoPorts ~/Documents/Arduino/libraries/
+
+### PlatformIO
+
+Add both libraries to your project's `platformio.ini`:
+
+    [env:esp32dev]
+    platform = espressif32
+    board = esp32dev
+    framework = arduino
+    lib_extra_dirs = ../../lib
+    lib_deps =
+      atsign-foundation/at_client
+      NoPorts
+
+See `packages/NoPorts/` for a complete reference project.

@@ -5,3 +5,4 @@ export 'src/npa/npa_impl.dart';
 export 'src/npa/npa_params.dart';
 export 'src/npa/npa_rpcs.dart';
 export 'src/common/types.dart';
+export 'src/npa/event_logging_config_exception.dart';

@@ -1,0 +1,13 @@
+{
+  "name": "NoPorts CYD (ESP32) – Factory Reset",
+  "version": "1.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "erase_before_install": true,
+      "parts": [
+        { "path": "merged-cyd2usb.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

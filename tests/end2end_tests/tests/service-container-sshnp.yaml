@@ -1,9 +1,0 @@
-  container-sshnp:
-    container_name: sshnp
-    volumes:
-      - ../contexts/sshnp:/mount
-    networks:
-      - sshnp
-    # auto added:
-    # - image
-    # - depends_on: (sshnpd + runtime service)

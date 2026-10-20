@@ -27,8 +27,8 @@ can find various bits of interest:
       for NoPorts as a shared library which is used by the other Dart packages
     - [sshnoports/](./packages/dart/sshnoports) - contains the Dart CLI binaries
       for NoPorts (sshnp, npt, sshnpd, srvd)
-    - [sshnp_flutter/](./packages/dart/sshnp_flutter/) - contains the Flutter
-      Desktop app for SSHNP
+    - [npt_flutter/](./packages/dart/npt_flutter/) - contains NoPorts Desktop,
+      the Flutter desktop app
   - [c/](./packages/c/) - contains the C implementation of NoPorts
   - [python/](./packages/python/) - contains the Python implementation of
     NoPorts (this is deprecated, we recommend that you use the C version

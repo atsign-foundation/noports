@@ -26,6 +26,8 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/handler_commons.h>
+#include <sshnpd/client_sessions.h>
+#include <sshnpd/public_lookup.h>
 #include <sshnpd/run_srv_process.h>
 #include <srv/params.h>
 #include <srv/srv.h>
@@ -51,17 +53,15 @@ static void exit_handler(int sig) {
   (void)ignored;
   should_run = 0;
 }
-static void child_exit_handler(int sig) {
-  (void)sig;
-  // SIGCHLD is not queued: several children exiting close together coalesce
-  // into a single delivery, so reap in a loop or zombies accumulate until PID
-  // exhaustion. Only async-signal-safe calls here - waitpid is safe, atlogger
-  // (stdio + locks) is not, so no logging. errno is saved/restored so a signal
-  // landing mid-syscall on the main thread doesn't clobber its errno.
-  int saved_errno = errno;
-  while (waitpid(-1, NULL, WNOHANG) > 0) {
-  }
-  errno = saved_errno;
+
+static pid_t start_key_check(const char *signing_key, void *ctx) {
+  (void)ctx;
+  return public_lookup_worker_start("key-check", signing_key, NULL);
+}
+
+static int signal_process(pid_t pid, int sig, void *ctx) {
+  (void)ctx;
+  return kill(pid, sig);
 }
 
 static void free_if_not_null(void *ptr) {
@@ -84,8 +84,16 @@ int main(int argc, char **argv) {
     if (parse_srv_params(&srv_params, argc - 1, (const char **)(argv + 1), NULL) != 0) {
       return 1;
     }
+    const char *ready_fd = getenv("SRV_READY_FD");
+    if (ready_fd != NULL) {
+      srv_params.ready_fd = atoi(ready_fd);
+      unsetenv("SRV_READY_FD");
+    }
     atlogger_set_logging_level(INFO);
     return run_srv(&srv_params);
+  }
+  if (argc >= 2 && strcmp(argv[1], PUBLIC_LOOKUP_WORKER_FLAG) == 0) {
+    return public_lookup_worker_main(argc, (const char **)argv);
   }
 
   int res = 0;
@@ -109,7 +117,6 @@ int main(int argc, char **argv) {
 
   // Catch sigint and pass to the handler
   signal(SIGINT, exit_handler);
-  signal(SIGCHLD, child_exit_handler);
 
   // 1.  Load default values
   apply_default_values_to_sshnpd_params(&params);
@@ -304,6 +311,13 @@ int main(int argc, char **argv) {
   }
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using root_host: \"%s\" and root_port: %d\n", root_host, root_port);
 
+  // 6.b Look clients' signing keys up where their atServers are found, and
+  // keep checking the keys of the sessions they sign
+  public_lookup_directory lookup_directory = {root_host, root_port, via_atserver_proxy, "https"};
+  public_lookup_worker_init(&lookup_directory);
+  client_sessions_ops session_ops = {start_key_check, signal_process, NULL};
+  client_sessions_init((unsigned int)params.client_key_check_secs, &session_ops);
+
   // 7.a Initialize the monitor atclient
   atclient_monitor_init(&monitor_ctx);
   res = atcommons_memlist_add(&memlist, &monitor_ctx, false, atclient_monitor_free);
@@ -495,17 +509,21 @@ int main(int argc, char **argv) {
       atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
       int get_res = atclient_get_public_key(&worker, &sk_key, &existing, NULL);
       atlogger_set_logging_level(log_level);
-      if (get_res == 0 && existing != NULL) {
+      if (get_res == 0 && !public_signing_key_needs_publishing(existing, atkeys.pkam_public_key_base64)) {
         atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Public signing key already published at %s\n",
                      signing_key_uri);
-        free(existing);
       } else {
+        if (get_res == 0 && existing != NULL) {
+          atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
+                       "%s holds a key other than this daemon's - republishing\n", signing_key_uri);
+        }
         res = atclient_put_public_key(&worker, &sk_key, atkeys.pkam_public_key_base64, NULL, NULL);
         if (res == 0) {
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Published public signing key at %s\n",
                        signing_key_uri);
         }
       }
+      free(existing);
     }
     if (res != 0) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
