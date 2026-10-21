@@ -58,4 +58,9 @@ abstract class NPA {
 
   /// Starts the sshnpa service
   Future<void> run();
+
+  /// Sends [event] to the event logging Atsign, or does nothing when there
+  /// is none. A failure to send is logged, never thrown: the event log must
+  /// never stop the policy service.
+  Future<void> sendEvent(Map<String, dynamic> event);
 }
