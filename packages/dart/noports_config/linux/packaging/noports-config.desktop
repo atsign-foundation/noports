@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=NoPorts Configuration
+GenericName=NoPorts daemon settings
+Comment=Configure the NoPorts daemon (sshnpd), enroll this device and control the service
+Exec=noports-config
+Icon=noports-config
+Terminal=false
+Categories=Network;Settings;System;
+Keywords=NoPorts;sshnpd;atsign;remote access;
+StartupWMClass=noports_config
