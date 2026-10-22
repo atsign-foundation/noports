@@ -52,13 +52,22 @@ void main() {
     });
 
     test('names a rejected CRAM secret', () {
-      final error = AtException(
-        'Cram authentication failed. Please check the cram key and try again',
-      );
-      expect(
-        describeOnboardingError(error, strings),
-        equals(strings.errorCramAuthFailed),
-      );
+      for (final error in [
+        UnAuthenticatedException(
+          'Cram authentication failed for @alice: Auth failed:'
+          ' error:AT0401-Exception: Authentication Failed',
+        ),
+        AtException(
+          'Cram authentication failed. Please check the cram key and try'
+          ' again (or) contact support@atsign.com',
+        ),
+      ]) {
+        expect(
+          describeOnboardingError(error, strings),
+          equals(strings.errorCramAuthFailed),
+          reason: 'at_auth refuses a CRAM secret with "${error.message}"',
+        );
+      }
     });
 
     test('names an atsign missing from the atDirectory', () {

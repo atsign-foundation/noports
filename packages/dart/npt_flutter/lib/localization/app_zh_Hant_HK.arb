@@ -126,7 +126,7 @@
   "errorAuthenticatinFailed": "身分驗證失敗。",
   "errorAuthenticationFailed": "身分驗證失敗。請檢查您的詳細資訊，然後重試。",
   "errorAuthenticationTimedOut": "身分驗證逾時。",
-  "errorCramAuthFailed": "啟動金鑰被 atServer 拒絕。此啟動檔案可能已被使用。",
+  "errorCramAuthFailed": "啟動金鑰被 atServer 拒絕。該金鑰可能已被使用。",
   "errorDuringStartupWithDetails": "啟動期間發生錯誤：{errorMessage}",
   "errorEnrollmentRevoked": "您的註冊已被撤銷。請重新登入以申請新的註冊。",
   "errorOnboardingWithDetails": "引導失敗：{details}",

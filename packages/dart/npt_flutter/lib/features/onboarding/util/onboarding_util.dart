@@ -294,11 +294,19 @@ class NoPortsOnboardingUtil {
     }
   }
 
+  /// The reason and 1-based position in at_auth's message for an atKeys file
+  /// that isn't valid JSON, taken after the last " is not valid JSON: " so
+  /// that text in the file's path can't stand in for them.
+  static final _notValidJson = RegExp(
+    r'^[\s\S]* is not valid JSON: (.+) \(at character (\d+)\)$',
+  );
+
   /// Logs a failed sign-in from an atKeys file and returns its result.
   ///
   /// A file that isn't valid JSON is described by what is wrong and where, as
-  /// a 1-based character position, never by its text; any other failure is
-  /// described as [describeOnboardingError] describes it.
+  /// a 1-based character position, never by its text; any other
+  /// [FormatException] as an invalid atKeys file; and any other failure as
+  /// [describeOnboardingError] describes it.
   @visibleForTesting
   static NoPortsOnboardingResult atKeysLoginFailure(
     Atsign atsign,
@@ -306,10 +314,15 @@ class NoPortsOnboardingUtil {
     AppLocalizations strings,
   ) {
     final String? unparseable = switch (error) {
-      FormatException(:final String source, :final message, :final offset?)
-          when source.trimLeft().startsWith('{') =>
-        strings.errorAtKeysNotJson(offset + 1, message),
-      FormatException() => strings.errorAtKeysInvalid,
+      FormatException(:final message) => switch (_notValidJson.firstMatch(
+        message,
+      )) {
+        final notJson? => strings.errorAtKeysNotJson(
+          int.parse(notJson.group(2)!),
+          notJson.group(1)!,
+        ),
+        null => strings.errorAtKeysInvalid,
+      },
       _ => null,
     };
     App.log(

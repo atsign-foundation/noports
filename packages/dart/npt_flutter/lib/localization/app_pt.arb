@@ -126,7 +126,7 @@
   "errorAuthenticatinFailed": "Falha na autenticação.",
   "errorAuthenticationFailed": "Falha na autenticação. Por favor, verifique os seus detalhes e tente novamente.",
   "errorAuthenticationTimedOut": "Tempo limite de autenticação excedido.",
-  "errorCramAuthFailed": "A chave de ativação foi rejeitada pelo atServer. Este ficheiro de ativação pode já ter sido usado.",
+  "errorCramAuthFailed": "A chave de ativação foi rejeitada pelo atServer. Pode já ter sido usada.",
   "errorDuringStartupWithDetails": "Erro durante a inicialização: {errorMessage}",
   "errorEnrollmentRevoked": "A sua inscrição foi revogada. Por favor, inicie sessão novamente para solicitar uma nova inscrição.",
   "errorOnboardingWithDetails": "Falha na integração: {details}",

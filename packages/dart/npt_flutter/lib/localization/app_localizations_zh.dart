@@ -413,7 +413,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
-  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。该密钥可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -1466,7 +1466,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
-  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。该密钥可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -2519,7 +2519,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身分驗證逾時。';
 
   @override
-  String get errorCramAuthFailed => '啟動金鑰被 atServer 拒絕。此啟動檔案可能已被使用。';
+  String get errorCramAuthFailed => '啟動金鑰被 atServer 拒絕。該金鑰可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {

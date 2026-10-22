@@ -442,7 +442,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorCramAuthFailed =>
-      'La clave de activación fue rechazada por el atServer. Es posible que este archivo de activación ya se haya utilizado.';
+      'La clave de activación fue rechazada por el atServer. Es posible que ya se haya utilizado.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
