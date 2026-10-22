@@ -142,6 +142,16 @@ class NPAImpl
     );
   }
 
+  @override
+  Future<void> sendEvent(Map<String, dynamic> event) async {
+    if (elc == null) return;
+    try {
+      await logEvent(elc!, event);
+    } catch (e) {
+      logger.warning('Failed to log event ${event['event']}: $e');
+    }
+  }
+
   late final AtRpc _policyInfoRpcServer;
 
   void _startPolicyInfoRpcServer() {
@@ -154,9 +164,7 @@ class NPAImpl
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
-        onEvent: (event) async {
-          if (elc != null) await logEvent(elc!, event);
-        },
+        onEvent: sendEvent,
       ),
       allowList: _DaemonsWithRules(handler),
       allowAll: false,
