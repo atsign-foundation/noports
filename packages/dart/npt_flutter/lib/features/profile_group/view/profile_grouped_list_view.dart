@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,22 +18,18 @@ import 'package:npt_flutter/widgets/spinner.dart';
 class ProfileGroupedListView extends StatefulWidget {
   final List<String> profiles;
 
-  /// Filters and sorts the connections of each section; null keeps the
-  /// manual order.
+  /// Null keeps the manual order.
   final List<String> Function(List<String> uuids)? arrange;
   final bool searching;
   final bool Function(ProfileGroup folder)? folderMatches;
   final int Function(ProfileGroup a, ProfileGroup b)? compareFolders;
 
-  /// False while sorted by name or searching.
   final bool reorderable;
 
-  /// Connections can still be dragged into another folder when not
-  /// [reorderable]; the order they are shown in is kept.
+  /// Rows can still move to another folder when not [reorderable].
   final bool movable;
 
-  /// Shown when the sort puts a drop somewhere else than where it was
-  /// released, which would otherwise look like a bug.
+  /// Shown when the sort puts a drop elsewhere than where it was released.
   final String? sortedDropMessage;
 
   const ProfileGroupedListView({
@@ -63,10 +57,9 @@ class _DragSession {
   final int oldIndex;
   final bool isFolder;
 
-  /// The selection travelling with a dragged row; empty for a folder drag.
   final List<String> movedIds;
 
-  /// Released, and applied if it moved; only the drop animation is left.
+  /// Released; only the drop animation is left.
   bool dropped = false;
 
   _DragSession({
@@ -97,8 +90,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
       },
       builder: (BuildContext context, ProfileGroupState groupState) {
         if (groupState is ProfileGroupsLoading) {
-          // Waits for the folders instead of showing every connection
-          // ungrouped and then regrouping them once they load.
+          // Avoids listing every connection ungrouped until the folders load.
           return const Center(child: Spinner());
         }
         if (groupState is! ProfileGroupsLoaded) {
@@ -117,7 +109,6 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     return ProfileGroupLayout.build(
       data: data,
       loaded: widget.profiles,
-      // Saved with the folders, so it survives signing out.
       collapsed: <String>{
         for (final ProfileGroup group in data.groups)
           if (group.collapsed) group.uuid,
@@ -151,8 +142,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     // Item count must stay fixed during a drag or it gets cancelled, so the
     // empty ungrouped header stays in the list and only shows on a drag.
     final bool rowDragging = _drag != null && !_drag!.isFolder;
-    // One drag at a time: a press on a grip during a drag or its drop
-    // animation would make the list cancel it.
+    // A press on a grip during a drag or its drop animation would cancel it.
     final bool dragEnabled = _drag == null;
 
     Widget buildEntry(BuildContext context, int index) {
@@ -171,9 +161,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
             uuids: section.uuids,
             group: group,
             collapsed: layout.collapsed.contains(section.id),
-            // While searching every folder is open, and whenever the order
-            // shown isn't the manual one moving would save it, so
-            // collapsing and moving are off.
+            // Folders stay open while searching and move only in manual order.
             onToggleCollapsed: widget.searching
                 ? null
                 : () => context.read<ProfileGroupBloc>().add(
@@ -264,9 +252,8 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     });
   }
 
-  /// Fires on pointer release, before the drop animation. The drop is applied
-  /// here: autoscroll can still move the gap during the animation, and the
-  /// list then reports a different move or none at all.
+  /// Fires on release. The drop is applied here because autoscroll can still
+  /// move the gap during the drop animation.
   void _onReorderEnd(int insertIndex) {
     final _DragSession? session = _drag;
     if (session == null) return;
@@ -281,8 +268,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     );
   }
 
-  /// Fires once the drop animation ends. Also receives screen reader moves,
-  /// which arrive without a drag session and are ignored during one.
+  /// Fires after the drop animation. Screen reader moves arrive here too.
   void _onReorderItem(ProfileGroupLayout layout, int oldIndex, int newIndex) {
     final _DragSession? session = _drag;
     if (session == null) {
@@ -380,9 +366,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
     );
   }
 
-  /// While the list is sorted, a drop only moves connections into another
-  /// folder, at the end of its manual order. A drop in its own section, or of
-  /// a folder, changes nothing.
+  /// While sorted, a drop only moves connections to the end of another folder.
   ProfileGroupEvent? _intoFolder(
     ProfileGroupEvent event,
     ProfileGroupData data,
@@ -418,8 +402,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
   Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
     final _DragSession? session = _drag;
     final int count = session?.movedIds.length ?? 0;
-    // The proxy goes away at the end of every drag, including the ones the
-    // list never reports, so the session can't outlive it.
+    // The proxy goes away after every drag, even ones the list never reports.
     return _OnDispose(
       onDispose: () {
         if (identical(_drag, session)) _endDrag();
@@ -429,7 +412,7 @@ class _ProfileGroupedListViewState extends State<ProfileGroupedListView> {
         builder: (BuildContext context, Widget? child) {
           final double t = Curves.easeInOut.transform(animation.value);
           return IgnorePointer(
-            child: Material(elevation: lerpDouble(0, 6, t)!, child: child),
+            child: Material(elevation: 6 * t, child: child),
           );
         },
         child: count > 1

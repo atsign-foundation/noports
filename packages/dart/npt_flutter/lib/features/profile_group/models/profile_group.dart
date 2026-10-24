@@ -5,13 +5,11 @@ final class ProfileGroup extends Loggable {
   final String name;
   final List<String> profileIds;
 
-  /// Starred: listed in the tray menu, where it starts or stops the folder.
   final bool favorite;
 
   final bool collapsed;
 
-  /// Connections Start all leaves out. Stored as exclusions so that a
-  /// connection added to the folder is started by default.
+  /// Stored as exclusions, so a connection added later starts by default.
   final List<String> skippedByStartAll;
 
   const ProfileGroup({
@@ -42,7 +40,6 @@ final class ProfileGroup extends Loggable {
 
   bool containsProfile(String profileId) => profileIds.contains(profileId);
 
-  /// Whether Start all starts [profileId], a member of this folder.
   bool startsWithAll(String profileId) =>
       !skippedByStartAll.contains(profileId);
 
@@ -129,7 +126,6 @@ final class ProfileGroupData extends Loggable {
   final List<ProfileGroup> groups;
   final List<String> ungrouped;
 
-  /// The "No folder" section is collapsed.
   final bool ungroupedCollapsed;
 
   const ProfileGroupData({
@@ -331,8 +327,7 @@ final class ProfileGroupData extends Loggable {
   static const String _ungroupedKey = 'ungrouped';
   static const String _ungroupedCollapsedKey = 'ungroupedCollapsed';
 
-  /// Tolerates malformed blobs: groups without a uuid are dropped, and the
-  /// legacy `sortByType` field is ignored.
+  /// Drops groups without a uuid and ignores the legacy `sortByType` field.
   factory ProfileGroupData.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawGroups = json[_groupsKey] is List
         ? json[_groupsKey] as List<dynamic>

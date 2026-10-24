@@ -85,7 +85,7 @@ class _ProfileListViewState extends State<ProfileListView> {
               final ProfilesSelectedCubit selected = context
                   .read<ProfilesSelectedCubit>();
               if (selected.state.selected.any(filter.hides)) {
-                selected.retain(
+                selected.selectOnly(
                   selected.state.selected.where((id) => !filter.hides(id)),
                 );
               }
@@ -137,9 +137,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                           isFullProfile
                               ? const Row(
                                   children: [
-                                    // Takes the free space, so the buttons
-                                    // stay right and the search only shrinks
-                                    // when space runs out.
+                                    // Shrinks the search before the buttons.
                                     Expanded(
                                       child: Row(
                                         children: [
@@ -218,8 +216,7 @@ class _ProfileListViewState extends State<ProfileListView> {
   }
 }
 
-/// Settings the user saved, as opposed to the defaults a failed load falls
-/// back to.
+/// Not the defaults a failed load falls back to.
 bool _isUserSettings(SettingsState state) =>
     state is SettingsLoadedState && state is! SettingsFailedLoad;
 
@@ -241,7 +238,6 @@ class _FilteredList extends StatelessWidget {
                 !filter.anyFolderMatches &&
                 profiles.every(filter.settled) &&
                 !profiles.any(filter.matches);
-            // Kept mounted under the message so folders stay collapsed.
             return Stack(
               fit: StackFit.expand,
               children: <Widget>[

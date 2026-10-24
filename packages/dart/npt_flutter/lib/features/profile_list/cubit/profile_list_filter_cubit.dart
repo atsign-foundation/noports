@@ -9,8 +9,7 @@ import 'package:npt_flutter/util/name_sort.dart';
 
 part 'profile_list_filter_state.dart';
 
-/// Search and sort applied to the connections list. Not logged: it changes on
-/// every keystroke.
+/// Not a LoggingCubit: the query changes on every keystroke.
 class ProfileListFilterCubit extends Cubit<ProfileListFilterState> {
   final ProfileCacheCubit _cache;
   final Map<String, StreamSubscription<ProfileState>> _followed =
@@ -50,8 +49,7 @@ class ProfileListFilterCubit extends Cubit<ProfileListFilterState> {
     _follow();
   }
 
-  /// Loads and follows the listed profiles while searching or sorting by name
-  /// needs their details. Rows only load the profiles they show.
+  /// Sorting by name or searching needs every profile, not just those shown.
   void _follow() {
     final Set<String> wanted = state.needsProfiles
         ? _uuids.toSet()

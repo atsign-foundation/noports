@@ -36,8 +36,7 @@ class Export {
   static const profilesKey = 'profiles';
   static const favoriteKey = 'favorite';
 
-  /// Exportable json for [profiles], marking the ones in the user's favorites
-  /// so an import can restore them.
+  /// Marks the user's favorites so an import can restore them.
   static List<Map<String, dynamic>> exportableProfiles(
     Iterable<Profile> profiles,
   ) {

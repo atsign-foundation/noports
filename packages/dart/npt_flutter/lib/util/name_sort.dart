@@ -29,8 +29,7 @@ final Map<int, String> _foldByRune = <int, String>{
     for (final int rune in fold.key.runes) rune: fold.value,
 };
 
-/// [name] lowercased and without accents, so that "Écran" sorts with the E's
-/// rather than after Z.
+/// Lowercase without accents, so "Écran" sorts with the E's.
 String nameSortKey(String name) {
   final StringBuffer key = StringBuffer();
   for (final int rune in name.toLowerCase().runes) {

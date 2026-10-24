@@ -4,14 +4,13 @@ import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
-/// The folder chosen in the form, applied on submit. Null is "No folder".
+/// Null is "No folder".
 class ProfileFormFolderCubit extends Cubit<String?> {
   ProfileFormFolderCubit(super.initialState);
 
   void choose(String? groupId) => emit(groupId);
 }
 
-/// Hidden until there is a folder to choose.
 class ProfileFolderSelector extends StatelessWidget {
   static const String _noFolder = '';
 
@@ -47,8 +46,7 @@ class ProfileFolderSelector extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: DropdownMenu<String>(
-                  // Rebuilt when the folder is renamed or deleted, e.g. by a
-                  // sync: the menu only reads its selection once.
+                  // Rebuilt on a rename: DropdownMenu reads its selection once.
                   key: ValueKey<String>(
                     'ProfileFolderSelector-${folder?.uuid}-${folder?.name}',
                   ),

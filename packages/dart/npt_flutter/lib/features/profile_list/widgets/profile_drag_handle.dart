@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Drag grip for a row or folder header. A null [index] renders an empty
-/// slot of the same [width] so items that can't be dragged still line up.
+/// A null [index] keeps an empty slot of the same [width], so rows line up.
 class ProfileDragHandle extends StatelessWidget {
   static const double width = Sizes.p24;
 

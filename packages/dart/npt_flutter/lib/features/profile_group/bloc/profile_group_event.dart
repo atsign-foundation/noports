@@ -108,8 +108,7 @@ final class ProfileGroupRemoveProfilesEvent extends ProfileGroupEvent {
   }
 }
 
-/// Places [profileIds] into folder [groupId] (null means ungrouped) at
-/// [sectionOrder], after a drag-and-drop.
+/// Places [profileIds] into [groupId] (null means ungrouped) at [sectionOrder].
 final class ProfileGroupPlaceProfilesEvent extends ProfileGroupEvent {
   final List<String> profileIds;
   final String? groupId;
@@ -130,7 +129,6 @@ final class ProfileGroupPlaceProfilesEvent extends ProfileGroupEvent {
   }
 }
 
-/// Reorders folders to follow [groupIds].
 final class ProfileGroupReorderFoldersEvent extends ProfileGroupEvent {
   final List<String> groupIds;
   const ProfileGroupReorderFoldersEvent(this.groupIds);
@@ -162,8 +160,7 @@ final class ProfileGroupSetFavoriteEvent extends ProfileGroupEvent {
   }
 }
 
-/// Collapses or expands folder [groupId], or the "No folder" section when
-/// [groupId] is null.
+/// A null [groupId] is the "No folder" section.
 final class ProfileGroupSetCollapsedEvent extends ProfileGroupEvent {
   final String? groupId;
   final bool collapsed;
@@ -182,7 +179,6 @@ final class ProfileGroupSetCollapsedEvent extends ProfileGroupEvent {
   }
 }
 
-/// Sets which members of folder [groupId] Start all leaves out.
 final class ProfileGroupSetSkippedByStartAllEvent extends ProfileGroupEvent {
   final String groupId;
   final List<String> skipped;

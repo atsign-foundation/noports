@@ -14,8 +14,7 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileGroupActions {
-  /// The ungrouped section as the connections list currently shows it, so
-  /// moved-out profiles land at the end. Null if it isn't available yet.
+  /// The ungrouped section as shown, or null before it has loaded.
   static List<String>? visibleUngrouped(BuildContext context) {
     final ProfileGroupState groups = context.read<ProfileGroupBloc>().state;
     final ProfileListState profiles = context.read<ProfileListBloc>().state;
@@ -25,8 +24,6 @@ class ProfileGroupActions {
     return groups.data.resolveUngrouped(profiles.profiles);
   }
 
-  /// Starts one connection at a time: started together, several of them can
-  /// time out waiting for their device to answer.
   static void startAll(BuildContext context, Iterable<String> uuids) {
     ProfileStartQueue.add(context.read<ProfileCacheCubit>(), uuids);
   }
@@ -42,7 +39,6 @@ class ProfileGroupActions {
     }
   }
 
-  /// Asks which connections of [group] Start all starts, and saves it.
   static Future<void> chooseStartAll(
     BuildContext context,
     ProfileGroup group,
@@ -71,7 +67,7 @@ class ProfileGroupActions {
       ),
     );
     if (skipped == null) return;
-    // Unchecked while waiting for an earlier Start all: not started either.
+    // Unchecked ones still waiting from an earlier Start all don't start.
     ProfileStartQueue.remove(skipped.where(ProfileStartQueue.isWaiting));
     // Re-read here, not before the dialog, in case a sync changed it.
     final ProfileGroupState state = bloc.state;

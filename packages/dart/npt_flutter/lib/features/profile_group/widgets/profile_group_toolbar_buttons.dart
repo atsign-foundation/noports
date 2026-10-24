@@ -7,8 +7,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Retry button shown only when folders failed to load. Flexible, so it must
-/// sit in a Row.
+/// Shown only when folders failed to load. Flexible, so it must sit in a Row.
 class ProfileGroupLoadRetryButton extends StatelessWidget {
   const ProfileGroupLoadRetryButton({super.key});
 

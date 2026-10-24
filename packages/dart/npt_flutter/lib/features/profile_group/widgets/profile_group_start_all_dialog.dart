@@ -5,8 +5,7 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
-/// Lets the user choose which connections of a folder Start all starts.
-/// Pops with the ones to skip, or null on cancel.
+/// Pops with the connections to skip, or null on cancel.
 class ProfileGroupStartAllDialog extends StatefulWidget {
   final List<String> uuids;
   final Set<String> skipped;
@@ -83,7 +82,6 @@ class _ProfileGroupStartAllDialogState
         ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: AppColor.primaryColor),
-          // Start all would have nothing to start.
           onPressed: _checked.isEmpty
               ? null
               : () => Navigator.of(context).pop(

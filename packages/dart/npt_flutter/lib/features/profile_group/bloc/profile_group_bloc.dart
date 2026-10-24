@@ -11,16 +11,13 @@ class ProfileGroupBloc
     extends LoggingBloc<ProfileGroupEvent, ProfileGroupState> {
   final ProfileGroupRepository _repo;
 
-  /// False after a failed save, so the next save retries even if the data
-  /// hasn't changed.
+  /// False after a failed save, so the next save retries unchanged data.
   bool _persisted = true;
 
-  /// Bumped on every load and sign out, so a load still waiting on a sync
-  /// doesn't emit once it has been superseded.
+  /// Bumped on load and sign out, so a superseded load doesn't emit.
   int _session = 0;
 
-  /// Puts in flight, and every save so far, so a refresh that raced a local
-  /// edit is dropped instead of reverting it.
+  /// A refresh that raced a save is dropped instead of reverting it.
   int _saving = 0;
   int _saves = 0;
 
@@ -76,7 +73,6 @@ class ProfileGroupBloc
     if (data == null) {
       emit(const ProfileGroupsFailedLoad());
       if (!synced) {
-        // Loads again on its own once sync catches up.
         _repo.watchSync(() {
           if (!isClosed && state is ProfileGroupsFailedLoad) {
             add(const ProfileGroupLoadEvent());

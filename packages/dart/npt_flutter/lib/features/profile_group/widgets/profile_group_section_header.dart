@@ -28,7 +28,7 @@ class ProfileGroupSectionHeader extends StatelessWidget {
   final int? reorderIndex;
   final bool dragEnabled;
 
-  /// Move the folder one place up or down. Null disables the menu item.
+  /// Null disables the menu item.
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
 
@@ -135,8 +135,6 @@ class ProfileGroupSectionHeader extends StatelessWidget {
   }
 }
 
-/// Start all starts the connections the folder doesn't skip, one at a time;
-/// Stop all also cancels the ones still waiting.
 class _StartStopButtons extends StatelessWidget {
   final List<String> uuids;
   final ProfileGroup? group;

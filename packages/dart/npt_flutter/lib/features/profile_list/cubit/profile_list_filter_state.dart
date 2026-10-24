@@ -5,13 +5,10 @@ final class ProfileListFilterState extends Loggable {
   final ProfileSortMode sortMode;
   final bool favoritesFirst;
 
-  /// Loaded profiles, followed only while searching or sorting by name.
   final Map<String, Profile> profiles;
 
-  /// Followed profiles that failed to load.
   final Set<String> failed;
 
-  /// Folders, so a search can also match their names.
   final List<ProfileGroup> folders;
 
   const ProfileListFilterState({
@@ -29,11 +26,9 @@ final class ProfileListFilterState extends Loggable {
 
   bool get isDefault => !searching && !reordered;
 
-  /// The shown order differs from the manual one.
   bool get reordered => sortMode != ProfileSortMode.manual || favoritesFirst;
 
-  /// Drags reorder the list. With favorites first, what is shown becomes the
-  /// manual order, and starred items stay pinned on top.
+  /// With favorites first, drags still reorder and starred items stay on top.
   bool get manualOrder => !searching && sortMode == ProfileSortMode.manual;
 
   bool settled(String uuid) =>
@@ -65,7 +60,7 @@ final class ProfileListFilterState extends Loggable {
 
   String get _needle => query.trim().toLowerCase();
 
-  /// How folders are sorted, or null to keep their manual order.
+  /// Null keeps the manual order.
   int Function(ProfileGroup a, ProfileGroup b)? get folderOrder {
     if (!reordered) return null;
     return (ProfileGroup a, ProfileGroup b) {
@@ -82,8 +77,7 @@ final class ProfileListFilterState extends Loggable {
     };
   }
 
-  /// Filters [uuids] by the query and sorts them, keeping the given order
-  /// between equal entries.
+  /// Filters [uuids] by the query, then sorts them, keeping ties in order.
   List<String> apply(Iterable<String> uuids, Set<String> favorites) {
     final List<String> shown = uuids.where(matches).toList();
     if (!reordered) return shown;

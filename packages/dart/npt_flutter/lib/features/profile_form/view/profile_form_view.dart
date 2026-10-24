@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -12,18 +12,12 @@ class ProfileFormView extends StatelessWidget {
   final String uuid;
   final Profile? copyFrom;
   final String? groupId;
-  const ProfileFormView(
-    this.uuid, {
-    super.key,
-    this.copyFrom,
-    this.groupId,
-  });
+  const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.groupId});
 
-  /// Moves the profile to the folder chosen in the form, if it changed.
   void _applyFolder(BuildContext context) {
-    final String? chosen = context.read<ProfileFormFolderCubit>().state;
-    final ProfileGroupBloc groupBloc = context.read<ProfileGroupBloc>();
-    final ProfileGroupState groups = groupBloc.state;
+    final chosen = context.read<ProfileFormFolderCubit>().state;
+    final groupBloc = context.read<ProfileGroupBloc>();
+    final groups = groupBloc.state;
     if (groups is! ProfileGroupsLoaded) return;
     if (groups.data.groupForProfile(uuid)?.uuid == chosen) return;
     groupBloc.add(
@@ -52,9 +46,7 @@ class ProfileFormView extends StatelessWidget {
         ),
         BlocProvider<ProfileFormFolderCubit>(
           create: (BuildContext context) {
-            final ProfileGroupState groups = context
-                .read<ProfileGroupBloc>()
-                .state;
+            final groups = context.read<ProfileGroupBloc>().state;
             return ProfileFormFolderCubit(
               groupId ??
                   (groups is ProfileGroupsLoaded

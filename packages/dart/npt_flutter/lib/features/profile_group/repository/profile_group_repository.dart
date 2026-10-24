@@ -48,9 +48,7 @@ class ProfileGroupRepository {
     }
   }
 
-  /// Waits for the local copy to catch up with the atServer, so a device
-  /// doesn't show, then save over, folders edited elsewhere. Returns false if
-  /// that takes longer than [timeout].
+  /// False if the local copy hasn't caught up with the atServer by [timeout].
   Future<bool> waitForSync({
     Duration timeout = const Duration(seconds: 30),
   }) async {
@@ -65,9 +63,8 @@ class ProfileGroupRepository {
     return true;
   }
 
-  /// Calls [onSynced] after every sync round, which may have pulled a newer
-  /// copy of the folders, or with [caughtUpOnly] only after a successful round
-  /// that left nothing to push. Replaces any previous watch.
+  /// Calls [onSynced] after each sync round, or with [caughtUpOnly] only once
+  /// nothing is left to push.
   void watchSync(void Function() onSynced, {bool caughtUpOnly = false}) {
     stopWatching();
     try {
@@ -119,8 +116,7 @@ class _SyncRoundListener extends SyncProgressListener {
       }
       return;
     }
-    // A round that pulled the folders and then failed reports them nowhere,
-    // so every finished round triggers a re-read.
+    // A failed round may still have pulled the folders, so every round counts.
     if (status == SyncStatus.success || status == SyncStatus.failure) {
       onSynced();
     }

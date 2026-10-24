@@ -135,7 +135,6 @@ class TrayCubit extends LoggingCubit<TrayState> {
         : <ProfileGroup>[];
     var folderMenuItems = starredFolders.map((folder) {
       var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
-      // Counts only what Start all starts, not the connections it skips
       var startable = uuids.where(folder.startsWithAll).toList();
       var startableRunning = startable.where(running.containsKey).length;
       var anyRunning = uuids.any(running.containsKey);

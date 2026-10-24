@@ -28,7 +28,7 @@ sealed class ProfileListEntry {
 
   ProfileGroupSection get section;
 
-  /// ReorderableListView requires a key per item; tests also key off it.
+  /// ReorderableListView needs a key per item.
   Key get key;
 }
 
@@ -61,7 +61,6 @@ class ProfileGroupLayout {
 
   final bool showHeaders;
 
-  /// The collapsed sections [entries] was built with; drops resolve against it.
   final Set<String> collapsed;
 
   const ProfileGroupLayout._(
@@ -71,10 +70,8 @@ class ProfileGroupLayout {
     this.collapsed,
   );
 
-  /// [arrange] filters and sorts each section's connections. While
-  /// [searching], folders without a match are left out unless
-  /// [folderMatches], and none is collapsed. [compareFolders] sorts the
-  /// folders, keeping the manual order between equal ones.
+  /// While [searching], folders without a match are left out unless
+  /// [folderMatches], and none is collapsed.
   factory ProfileGroupLayout.build({
     required ProfileGroupData data,
     required List<String> loaded,
@@ -167,9 +164,8 @@ class ProfileGroupLayout {
         if (ids.contains(uuid)) uuid,
   ];
 
-  /// Maps a drop from `ReorderableListView.onReorderItem` to the bloc event
-  /// that applies it, or null if nothing changes. [stepFolders] is for screen
-  /// reader moves, which shift one entry: a folder then moves one place.
+  /// Maps a drop to the bloc event that applies it, or null if nothing changes.
+  /// [stepFolders] moves a folder one place, as screen reader moves do.
   ProfileGroupEvent? resolveDrop({
     required int oldIndex,
     required int newIndex,

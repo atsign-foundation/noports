@@ -85,9 +85,7 @@ class ProfileListSortButton extends StatelessWidget {
   }
 }
 
-/// Names the sort in use, so an order other than the manual one doesn't look
-/// like a bug. Removing it goes back to the manual order. Flexible, so it
-/// must sit in a Row.
+/// Flexible, so it must sit in a Row.
 class ProfileListSortChip extends StatelessWidget {
   const ProfileListSortChip({super.key});
 
