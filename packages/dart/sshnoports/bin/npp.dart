@@ -187,6 +187,7 @@ Future<void> main(List<String> args) async {
     nppOperationHooks: nppOperationHooks,
     binariesVersion: binaries_version.packageVersion,
     eventLoggingAtSign: nppParams.eventLoggingAtSign,
+    persistenceMethod: nppParams.persistenceMethod,
   );
   nppService.init();
   try {

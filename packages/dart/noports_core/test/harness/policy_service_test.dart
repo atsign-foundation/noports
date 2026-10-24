@@ -6,6 +6,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/npp.dart' show Client, NppCache, NppService;
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
@@ -297,6 +298,91 @@ void main() {
           logs.records
               .where((r) => r.level >= Level.WARNING)
               .map((r) => r.message),
+          isEmpty);
+    });
+  });
+
+  group('Given an npp policy service @policy whose rules hold one client', () {
+    const policy = '@policy';
+    const events = '@events';
+
+    late NoPortsHarness harness;
+    late List<Map<String, dynamic>> received;
+
+    setUp(() async {
+      harness = NoPortsHarness.create(atSigns: {policy, events});
+      received = [];
+
+      final listener = AtEventListenerService(
+        atClient:
+            await harness.openClient(events, namespace: DefaultArgs.namespace),
+      );
+      final elc = await listener.getOrCreateConfig(
+        namespace: DefaultArgs.eventLoggingNamespace,
+        ttln: 60 * 60 * 1000,
+      );
+      await listener.shareEventLoggingConfigWithAtsigns(
+        config: elc,
+        atSigns: [policy.toAtsign()],
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      listener
+          .getJsonStream(elc)
+          .listen((json) => received.add(jsonDecode(json)));
+    });
+
+    /// Starts [policy]'s npp service, as npp.dart does after loading its
+    /// rules from files.
+    Future<void> start({required String? eventLoggingAtSign}) async {
+      final npp = NppService(
+        atClient:
+            await harness.openClient(policy, namespace: DefaultArgs.namespace),
+        nppCache: NppCache()..putClient(Client(name: 'Alice', atSign: '@alice')),
+        managerAllowList: {policy},
+        binariesVersion: '1.2.3',
+        persistenceMethod: 'file',
+        homeDirectory: harness.home.path,
+        eventLoggingAtSign: eventLoggingAtSign,
+      )..init();
+      await npp.start();
+    }
+
+    test(
+        'when it starts with @events as its event logging Atsign, then @events'
+        ' receives one rulesLoaded event from @policy counting its rules',
+        () async {
+      await start(eventLoggingAtSign: events);
+      for (var i = 0; i < 50 && received.isEmpty; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      expect(received, hasLength(1));
+      final event = received.single;
+      expect(event['event'], 'rulesLoaded');
+      expect(event['sender'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['timestamp'], endsWith('Z'));
+      expect(event['persistenceMethod'], 'file');
+      expect(event['binariesVersion'], '1.2.3');
+      expect(event['rules'], {
+        'clients': 1,
+        'clientGroups': 0,
+        'clientGroupMembers': 0,
+        'daemons': 0,
+        'services': 0,
+        'serviceACLs': 0,
+      });
+    });
+
+    test(
+        'when it starts with no event logging Atsign, then it sends @events'
+        ' nothing', () async {
+      await start(eventLoggingAtSign: null);
+      await Future.delayed(const Duration(seconds: 1));
+
+      expect(received, isEmpty);
+      expect(
+          harness.server[events].received.where((n) => n.from == policy),
           isEmpty);
     });
   });

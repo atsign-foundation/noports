@@ -2,6 +2,7 @@ import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
 
 class NppRequestHandler implements NPARequestHandler {
   final NppCache nppCache;
@@ -79,6 +80,7 @@ class NppService {
   final String domainNamespace;
   final String? homeDirectory;
   final NppOperationHooks? nppOperationHooks;
+  final String? persistenceMethod; // where the rules were loaded from: 'atserver', 'file' or 'none'
 
   // instantiated from init()
   late NPA npa; // responds to policy requests
@@ -92,8 +94,9 @@ class NppService {
     this.eventLoggingAtSign,
     this.baseNamespace = NppServiceDefaults.baseNamespace,
     this.domainNamespace = NppServiceDefaults.domainNamespace,
-    this.homeDirectory,
     this.nppOperationHooks,
+    this.homeDirectory,
+    this.persistenceMethod,
   });
 
   void init() {
@@ -128,8 +131,24 @@ class NppService {
       domainNameSpace: domainNamespace);
   }
 
+  /// Starts answering policy checks, tells the event logging Atsign which
+  /// rules were loaded, then starts the manager RPC. The event is sent first
+  /// so that no manager RPC can change the rules before they are counted.
   Future<void> start() async {
     await npa.run();
+    await npa.sendEvent(PolicyEvent.rulesLoaded(
+      policyAtsign: npa.policyAtsign,
+      persistenceMethod: persistenceMethod,
+      binariesVersion: binariesVersion,
+      rules: {
+        'clients': nppCache.clients.length,
+        'clientGroups': nppCache.clientGroups.length,
+        'clientGroupMembers': nppCache.clientGroupMembers.length,
+        'daemons': nppCache.daemons.length,
+        'services': nppCache.services.length,
+        'serviceACLs': nppCache.serviceACLs.length,
+      },
+    ));
     managerRpcListener.start();
   }
 }

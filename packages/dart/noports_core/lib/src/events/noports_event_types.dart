@@ -138,12 +138,14 @@ enum PolicyEventType {
   clientRejected, // policy check refused the client
   policyCheckFailed, // policy check threw; the client was refused
   requestRefused, // a daemon asked about another daemon; nothing was checked
+  rulesLoaded, // the policy service loaded its rules and is answering checks
 }
 
 /// The events a policy service sends to its event logging Atsign: one for
-/// each auth check it answers. Every event carries `event` (a
-/// [PolicyEventType] name), `timestamp` (UTC), `policyAtsign`, `fromAtsign`
-/// (the Atsign that sent the check) and the request's `clientAtsign`,
+/// each auth check it answers, and [rulesLoaded] once it has started. Every
+/// event carries `event` (a [PolicyEventType] name), `timestamp` (UTC) and
+/// `policyAtsign`. Each auth check event also carries `fromAtsign` (the
+/// Atsign that sent the check) and the request's `clientAtsign`,
 /// `daemonAtsign`, `daemonDeviceName` and `daemonDeviceGroupName`.
 abstract class PolicyEvent {
   /// The policy check authorised the client, with the answer's `message` and
@@ -212,6 +214,23 @@ abstract class PolicyEvent {
       request,
     ),
     "message": response.message,
+  };
+
+  /// The policy service has loaded its rules and is answering checks.
+  /// `persistenceMethod` is where the rules came from, and `rules` counts
+  /// each kind of rule it holds; the rules themselves are not sent.
+  static Map<String, dynamic> rulesLoaded({
+    required Atsign policyAtsign,
+    required String? persistenceMethod,
+    required String binariesVersion,
+    required Map<String, int> rules,
+  }) => {
+    "event": PolicyEventType.rulesLoaded.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "persistenceMethod": persistenceMethod,
+    "binariesVersion": binariesVersion,
+    "rules": rules,
   };
 
   /// The fields every policy check event carries.
