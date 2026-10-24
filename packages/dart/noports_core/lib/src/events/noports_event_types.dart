@@ -133,6 +133,7 @@ abstract class SessionEvent {
   };
 }
 
+/// The `event` field of every [PolicyEvent].
 enum PolicyEventType {
   clientAdmitted, // policy check authorised the client
   clientRejected, // policy check refused the client

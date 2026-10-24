@@ -261,8 +261,6 @@ class PolicyInfoRpcRequestHandler
       payload: answer.toJson(),
     );
 
-    // The answer is settled before the event is built, so building or
-    // sending the event can never change it.
     await _sendEvent(() {
       final String? error = failure;
       if (!aboutItself) {

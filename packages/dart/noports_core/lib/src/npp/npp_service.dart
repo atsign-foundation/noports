@@ -94,8 +94,8 @@ class NppService {
     this.eventLoggingAtSign,
     this.baseNamespace = NppServiceDefaults.baseNamespace,
     this.domainNamespace = NppServiceDefaults.domainNamespace,
-    this.nppOperationHooks,
     this.homeDirectory,
+    this.nppOperationHooks,
     this.persistenceMethod,
   });
 
