@@ -493,6 +493,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fastest => 'Fastest';
 
   @override
+  String get favoriteAdd => 'Add to favorites';
+
+  @override
+  String get favoriteRemove => 'Remove from favorites';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -523,7 +529,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupAdd => 'Add Group';
 
   @override
+  String get groupAddConnection => 'Add connection';
+
+  @override
+  String get groupChooseStartAll => 'Choose connections to start';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Start all starts the checked connections, one after another.';
+
+  @override
+  String get groupCollapse => 'Collapse';
+
+  @override
+  String get groupDeleteFolder => 'Delete folder';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'This folder will be deleted. The connections inside it will be kept.';
+
+  @override
+  String get groupExpand => 'Expand';
+
+  @override
+  String get groupFolderName => 'Folder name';
+
+  @override
+  String get groupFolderNameRequired => 'Please enter a folder name';
+
+  @override
+  String get groupLoadFailedRetry => 'Folders failed to load. Retry';
+
+  @override
+  String get groupMoveDown => 'Move down';
+
+  @override
+  String get groupMoveTo => 'Move to';
+
+  @override
+  String get groupMoveToFolder => 'Move to folder';
+
+  @override
+  String get groupMoveUp => 'Move up';
+
+  @override
   String get groupName => 'Group Name';
+
+  @override
+  String get groupNewFolder => 'New folder';
+
+  @override
+  String get groupNoFolder => 'No folder';
+
+  @override
+  String get groupRename => 'Rename';
+
+  @override
+  String get groupRenameFolder => 'Rename folder';
+
+  @override
+  String get groupStartAll => 'Start all';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Start $count of $total';
+  }
+
+  @override
+  String get groupStopAll => 'Stop all';
 
   @override
   String get import => 'Import';
@@ -745,6 +818,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileFailedUnknownMessage => 'No reason provided';
 
   @override
+  String get profileFolder => 'Folder';
+
+  @override
+  String get profileFolderDescription =>
+      'The folder this connection is listed in.';
+
+  @override
   String get profileImportDialogTitle => 'Choose Import Method';
 
   @override
@@ -784,6 +864,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'The following profile(s) are connected:';
 
   @override
+  String get profileSearchClear => 'Clear search';
+
+  @override
+  String get profileSearchHint => 'Search connections';
+
+  @override
+  String get profileSearchNoResults => 'No connections match your search';
+
+  @override
+  String get profileSortByNameMessage =>
+      'The list is sorted by name, so items are placed by name';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favorites first';
+
+  @override
+  String get profileSortManual => 'Manual order';
+
+  @override
+  String get profileSortNameAscending => 'Name, A to Z';
+
+  @override
+  String get profileSortNameDescending => 'Name, Z to A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Starred items stay on top while Favorites first is on';
+
+  @override
+  String get profileSortReset => 'Back to manual order';
+
+  @override
+  String get profileSortTooltip => 'Sort';
+
+  @override
   String get profileStatusFailedLoad => 'Failed to load';
 
   @override
@@ -800,6 +915,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Loading';
+
+  @override
+  String get profileStatusQueued => 'Waiting to start';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Waits for the connections before it to start. Click to start it now.';
 
   @override
   String get profileStatusStarted => 'Connected';

@@ -7,11 +7,13 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/constants.dart';
+import 'package:npt_flutter/util/name_sort.dart';
 import 'package:npt_flutter/util/profile_status.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -101,6 +103,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     ProfilesRunningState? profilesRunningState,
     OnboardingState? onboardingState,
     ProfileState? profileState,
+    ProfileGroupState? profileGroupState,
   }) async {
     var context = App.navState.currentContext;
     if (context == null) return;
@@ -113,6 +116,8 @@ class TrayCubit extends LoggingCubit<TrayState> {
     favoriteState ??= context.read<FavoriteBloc>().state;
     profileListState ??= context.read<ProfileListBloc>().state;
     onboardingState ??= context.read<OnboardingCubit>().state;
+    profileGroupState ??= context.read<ProfileGroupBloc>().state;
+    profilesRunningState ??= context.read<ProfilesRunningCubit>().state;
     var showSettings = onboardingState.status == OnboardingStatus.onboarded;
 
     await init;
@@ -120,6 +125,36 @@ class TrayCubit extends LoggingCubit<TrayState> {
     // Guard against empty values
     if (favoriteState is! FavoritesLoaded) return;
     if (profileListState is! ProfileListLoaded) return;
+
+    /// Starred folders first, then starred connections, each sorted by name
+    var loadedProfiles = profileListState.profiles.toSet();
+    var running = profilesRunningState.socketConnectors;
+    var starredFolders = profileGroupState is ProfileGroupsLoaded
+        ? (profileGroupState.groups.where((folder) => folder.favorite).toList()
+            ..sort((a, b) => nameSortKey(a.name).compareTo(nameSortKey(b.name))))
+        : <ProfileGroup>[];
+    var folderMenuItems = starredFolders.map((folder) {
+      var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
+      var startable = uuids.where(folder.startsWithAll).toList();
+      var startableRunning = startable.where(running.containsKey).length;
+      var anyRunning = uuids.any(running.containsKey);
+      var waiting = uuids.any(ProfileStartQueue.isWaiting);
+      var statusIcon = anyRunning ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
+      return MenuItem(
+        label: '$statusIcon ${folder.name} ($startableRunning/${startable.length})',
+        onClick: (_) {
+          var context = App.navState.currentContext;
+          if (context == null) return;
+          if (anyRunning || waiting) {
+            ProfileGroupActions.stopAll(context, uuids);
+          } else {
+            ProfileGroupActions.startAll(context, startable);
+            // Show the main window on Windows only when initiating a connection
+            if (Platform.isWindows) windowManager.show();
+          }
+        },
+      );
+    }).toList();
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
@@ -160,7 +195,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
               statusIcon = ProfileStatus.off.emoji;
             }
             var label = '$statusIcon $displayName';
-            return MenuItem(
+            return (displayName ?? '', MenuItem(
               label: label,
               toolTip: status,
               onClick: (_) {
@@ -177,9 +212,10 @@ class TrayCubit extends LoggingCubit<TrayState> {
                   windowManager.show();
                 }
               },
-            );
+            ));
           }),
     );
+    favMenuItems.sort((a, b) => nameSortKey(a.$1).compareTo(nameSortKey(b.$1)));
 
     /// PERF: We should conditionally call setContextMenu if there was a state
     /// change which resulted in an actual change to the favorites list.
@@ -189,7 +225,8 @@ class TrayCubit extends LoggingCubit<TrayState> {
     await trayManager.setContextMenu(
       Menu(
         items: [
-          ...favMenuItems,
+          ...folderMenuItems,
+          ...favMenuItems.map((item) => item.$2),
           MenuItem.separator(),
           _getMenuItem(TrayAction.showDashboard, localizations),
           if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),

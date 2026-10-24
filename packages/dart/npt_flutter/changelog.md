@@ -1,5 +1,11 @@
 ## 1.9.7+34
 
+- FEAT: Connection folders, saved with the atSign and ordered by drag and drop.
+- FEAT: A folder's Start all starts the chosen connections one at a time.
+- FEAT: Starred folders in the menu bar menu.
+- FEAT: Search and sort connections, with favorites first.
+- FEAT: A Folder field in the connection form.
+- FEAT: Exported profiles keep their favorites.
 - FIX: When activating an atSign fails, from the activation dialog or an
   activation file, the app log names the type of error.
 - FIX: When an activation file can't be read, the app log gives the number of

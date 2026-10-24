@@ -10,11 +10,13 @@ Future<bool> preSignout() async {
   final context = App.navState.currentContext;
   // We need to do the following before "signing out"
   // - Wipe all application state
+  ProfileStartQueue.clear();
   context?.read<ProfilesRunningCubit>().stopAllAndClear();
   context?.read<ProfileCacheCubit>().clear();
   context?.read<ProfilesSelectedCubit>().deselectAll();
   context?.read<FavoriteBloc>().clearAll();
   context?.read<ProfileListBloc>().clearAll();
+  context?.read<ProfileGroupBloc>().clearAll();
   context?.read<SettingsBloc>().clear();
   context?.read<OnboardingCubit>().setStatus(OnboardingStatus.offboarded);
   // - Reset the tray icon
