@@ -19,12 +19,17 @@ class ProfileFormView extends StatelessWidget {
     final groupBloc = context.read<ProfileGroupBloc>();
     final groups = groupBloc.state;
     if (groups is! ProfileGroupsLoaded) return;
-    if (groups.data.groupForProfile(uuid)?.uuid == chosen) return;
+    final newName = chosen.newName;
+    if (newName != null) {
+      groupBloc.add(ProfileGroupCreateEvent(name: newName, profileIds: [uuid]));
+      return;
+    }
+    if (groups.data.groupForProfile(uuid)?.uuid == chosen.groupId) return;
     groupBloc.add(
       ProfileGroupMoveProfilesEvent(
         profileIds: [uuid],
-        groupId: chosen,
-        visibleUngrouped: chosen == null
+        groupId: chosen.groupId,
+        visibleUngrouped: chosen.groupId == null
             ? ProfileGroupActions.visibleUngrouped(context)
             : null,
       ),
