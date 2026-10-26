@@ -16,14 +16,19 @@
 # ---------------------------------------------------------------------------
 # Stage 1: build firmware
 # ---------------------------------------------------------------------------
-FROM --platform=linux/amd64 python:3.11-slim AS builder
+# Using Python 3.14 as espressif32@55.3.312 specifies Python 3.10 - 3.14
+FROM python:3.14-slim@sha256:35caba83af2fe6da9a5d922f9b0156f21d1246a48278c58a08bd253303ba42e8 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir platformio esptool
+# Install uv and use it to install pinned Python dependencies for platformio
+# and esptool
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+COPY tools/pylock.toml .
+RUN uv pip install --system --require-hashes -r pylock.toml
 
 # ---------------------------------------------------------------------------
 # Vendor ESP Web Tools (the browser-side flasher) at a pinned, checksum-verified
@@ -90,7 +95,7 @@ RUN BOOT=$(find /root/.platformio/packages -name "boot_app0.bin" | head -1) && \
 # ---------------------------------------------------------------------------
 # Stage 2: minimal nginx web server
 # ---------------------------------------------------------------------------
-FROM nginx:1.28-alpine
+FROM nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY packages/NoPorts_PoE/web/nginx.conf /etc/nginx/conf.d/noports.conf
