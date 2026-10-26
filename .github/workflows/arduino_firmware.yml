@@ -81,7 +81,7 @@ jobs:
       # uv used with lock file to ensure dependencies pinned to hashes
       # esptool pinned to 4.x: v5 renamed merge_bin and changed CLI flags
       - name: Install PlatformIO + esptool
-        run: uv pip install --require-hashes -r tools/pylock.toml
+        run: uv pip install --require-hashes -r packages/arduino/tools/pylock.toml
 
       - name: Cache PlatformIO packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
