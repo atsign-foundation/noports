@@ -1,6 +1,6 @@
 [project]
 name = "NoportsArduino"
-version = "1.0.0"
+version = "1.0.1"
 description = "NoPorts Arduino Python Dependencies (for lock file)"
 authors = ["Chris Swan <@cpswan>"]
 requires-python = ">= 3.10"
