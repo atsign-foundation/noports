@@ -123,14 +123,21 @@ jobs:
           fi
           ls -la "$OUT"
 
+      - name: Sanitise GitHub ref
+        shell: bash
+        run: |
+          # Replaces both / and \ with -
+          SAFE_REF=$(echo "${{ github.ref_name }}" | tr '/\\' '--')
+          echo "SAFE_REF=$SAFE_REF" >> "$GITHUB_ENV"
+
       - name: Generate SBOM
         uses: sbomify/github-action@57ca9ba7de2232b073a3799bc8c0dc002e6777b9 # v26.10.2
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'azZJvaqsyGMC'
           LOCK_FILE: '${{ matrix.project }}/platformio.ini'
-          COMPONENT_VERSION: ${{ matrix.name }}-${{github.ref_name}}-gha${{github.run_number}}
-          OUTPUT_FILE: '${{ runner.temp }}/assets/${{ matrix.name }}-${{github.ref_name}}-sbom.cdx.json'
+          COMPONENT_VERSION: ${{ matrix.name }}-${SAFE_REF}-gha${{github.run_number}}
+          OUTPUT_FILE: '${{ runner.temp }}/assets/${{ matrix.name }}-${SAFE_REF}-sbom.cdx.json'
           AUGMENT: true
           ENRICH: true
           UPLOAD: true
