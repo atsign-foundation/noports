@@ -8,3 +8,7 @@ dependencies = [
     "platformio==6.2.0",
     "esptool==4.12.0", # pinned to 4.x: v5 renamed merge_bin and changed CLI flags
 ]
+[tool.uv]
+environments = [
+    "sys_platform == 'linux'",
+]
