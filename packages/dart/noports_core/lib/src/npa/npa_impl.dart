@@ -152,6 +152,17 @@ class NPAImpl
     }
   }
 
+  @override
+  Future<void> flushEvents({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    try {
+      await closeEventLogger().timeout(timeout);
+    } on TimeoutException {
+      logger.shout('Gave up waiting for events to be sent after $timeout');
+    }
+  }
+
   late final AtRpc _policyInfoRpcServer;
 
   void _startPolicyInfoRpcServer() {

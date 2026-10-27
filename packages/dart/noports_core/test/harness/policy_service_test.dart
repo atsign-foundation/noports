@@ -399,8 +399,9 @@ void main() {
     }
 
     /// Starts [policy]'s npp service, as npp.dart does after loading its
-    /// rules from files, recording everything its NPAImpl logs in [npaLogs].
-    Future<void> start({required String? eventLoggingAtSign}) async {
+    /// rules from files, recording everything its NPAImpl logs in [npaLogs],
+    /// and returns it.
+    Future<NppService> start({required String? eventLoggingAtSign}) async {
       final npp = NppService(
         atClient:
             await harness.openClient(policy, namespace: DefaultArgs.namespace),
@@ -416,6 +417,7 @@ void main() {
       npaLogger = npp.npa.logger.logger..level = Level.ALL;
       npaLogSubscription = npaLogger!.onRecord.listen(npaLogs.add);
       await npp.start();
+      return npp;
     }
 
     test(
@@ -461,6 +463,29 @@ void main() {
               .where((r) => r.level >= Level.WARNING)
               .map((r) => r.message),
           isEmpty);
+    });
+
+    test(
+        'when its policy service flushes its events, then every event it had'
+        ' sent has reached @events, and an event sent afterwards is dropped'
+        ' with a log line rather than thrown', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      for (var i = 1; i <= 5; i++) {
+        await npp.npa.sendEvent({'event': 'test$i'});
+      }
+
+      await npp.npa.flushEvents();
+
+      expect(harness.server[events].received.where((n) => n.from == policy),
+          hasLength(6),
+          reason: 'rulesLoaded and the five test events, with no waiting');
+
+      await npp.npa.sendEvent({'event': 'late'});
+      expect(
+          npaLogs
+              .where((r) => r.level >= Level.SHOUT)
+              .map((r) => r.message),
+          contains(startsWith('Failed to log event late')));
     });
   });
 }
