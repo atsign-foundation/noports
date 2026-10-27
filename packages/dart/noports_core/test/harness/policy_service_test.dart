@@ -322,6 +322,7 @@ void main() {
     final npaLogs = <LogRecord>[];
     Logger? npaLogger;
     StreamSubscription<LogRecord>? npaLogSubscription;
+    NppService? startedNpp;
 
     setUp(() async {
       harness = NoPortsHarness.create(atSigns: {policy, events});
@@ -347,6 +348,8 @@ void main() {
     });
 
     tearDown(() async {
+      await startedNpp?.stop(reason: 'test ended');
+      startedNpp = null;
       await npaLogSubscription?.cancel();
       npaLogger?.level = Level.SHOUT;
     });
@@ -420,6 +423,14 @@ void main() {
       return npp;
     }
 
+    /// How many events [policy] has sent @events, as @events's atServer
+    /// holds them. The shared key notification that @policy's first encrypted
+    /// send brings is left out: it isn't an event.
+    int eventsSent() => harness.server[events].received
+        .where((n) => n.from == policy)
+        .where((n) => n.key.contains('.${DefaultArgs.eventLoggingNamespace}@'))
+        .length;
+
     test(
         'when it starts with @events as its event logging Atsign, then @events'
         ' receives one rulesLoaded event from @policy counting its rules',
@@ -451,7 +462,7 @@ void main() {
         'when it starts with no event logging Atsign, then it sends @events'
         ' nothing, and its policy service logs nothing at warning or above',
         () async {
-      await start(eventLoggingAtSign: null);
+      final npp = await start(eventLoggingAtSign: null);
       await Future.delayed(const Duration(seconds: 1));
 
       expect(received, isEmpty);
@@ -463,6 +474,7 @@ void main() {
               .where((r) => r.level >= Level.WARNING)
               .map((r) => r.message),
           isEmpty);
+      expect(npp.heartbeatRunning, isFalse);
     });
 
     test(
@@ -476,8 +488,7 @@ void main() {
 
       await npp.npa.flushEvents();
 
-      expect(harness.server[events].received.where((n) => n.from == policy),
-          hasLength(6),
+      expect(eventsSent(), 6,
           reason: 'rulesLoaded and the five test events, with no waiting');
 
       await npp.npa.sendEvent({'event': 'late'});
@@ -486,6 +497,61 @@ void main() {
               .where((r) => r.level >= Level.SHOUT)
               .map((r) => r.message),
           contains(startsWith('Failed to log event late')));
+    });
+
+    test(
+        'when it starts with @events as its event logging Atsign, then its'
+        ' heartbeat runs, and a heartbeat carries the interval and the rule'
+        ' counts at the time', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      expect(npp.heartbeatRunning, isTrue);
+      for (var i = 2; i <= 7; i++) {
+        npp.nppCache.putDaemon(Daemon(atSign: '@daemon$i'));
+      }
+
+      await npp.sendHeartbeat();
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      final heartbeat = received.singleWhere((e) => e['event'] == 'heartbeat');
+      expect(heartbeat['sender'], policy);
+      expect(heartbeat['policyAtsign'], policy);
+      expect(heartbeat['timestamp'], endsWith('Z'));
+      expect(heartbeat['interval'], 60);
+      expect(heartbeat['rules'], {
+        'clients': 2,
+        'clientGroups': 3,
+        'clientGroupMembers': 6,
+        'daemons': 7,
+        'services': 4,
+        'serviceACLs': 5,
+      });
+    });
+
+    test(
+        'when it stops, then its heartbeat stops, and stopped, with the reason'
+        ' and uptime, has reached @events without waiting; stopping again'
+        ' sends nothing more', () async {
+      final npp = await start(eventLoggingAtSign: events);
+
+      await npp.stop(reason: 'SIGTERM');
+      await npp.stop(reason: 'SIGINT');
+
+      expect(npp.heartbeatRunning, isFalse);
+      expect(eventsSent(), 2, reason: 'rulesLoaded, then one stopped');
+      expect(
+          npaLogs
+              .map((r) => r.message)
+              .where((m) => m.startsWith('Failed to log event')),
+          isEmpty,
+          reason: 'the second stop() does nothing, not a failed send');
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      expect(received.map((e) => e['event']), ['rulesLoaded', 'stopped']);
+      expect(received.last['reason'], 'SIGTERM');
+      expect(received.last['uptime'], greaterThanOrEqualTo(0));
     });
   });
 }
