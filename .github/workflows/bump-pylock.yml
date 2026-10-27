@@ -1,0 +1,39 @@
+name: Bump pylock.toml
+on:
+  pull_request:
+    paths:
+      - 'packages/arduino/tools/pyproject.toml'
+
+permissions:
+  pull-requests: write
+  
+jobs:
+  bump_pylock:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout this repo
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.ref }}
+        token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      with:
+        working-directory: packages/arduino/tools
+        activate-environment: true
+
+    - name: Bump patch version and lock file
+      working-directory: packages/arduino/tools
+      run: |
+        git config --global user.name 'library-action[bot]'
+        git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        uv version --bump patch
+        uv lock
+        uv export -o pylock.toml
+        git add pyproject.toml pylock.toml
+        git commit -m "build(deps): Bump pyproject.toml version and pylock.toml"
+        git push

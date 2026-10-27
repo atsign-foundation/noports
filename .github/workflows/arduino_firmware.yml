@@ -70,11 +70,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          working-directory: ${{ matrix.project }}
+          activate-environment: true
+
+      # uv used with lock file to ensure dependencies pinned to hashes
       # esptool pinned to 4.x: v5 renamed merge_bin and changed CLI flags
       - name: Install PlatformIO + esptool
-        run: pip install platformio "esptool==4.8.1"
+        run: uv pip install --require-hashes -r packages/arduino/tools/pylock.toml
 
       - name: Cache PlatformIO packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
