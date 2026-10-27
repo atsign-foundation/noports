@@ -148,7 +148,7 @@ class NPAImpl
     try {
       await logEvent(elc!, event);
     } catch (e) {
-      logger.warning('Failed to log event ${event['event']}: $e');
+      logger.shout('Failed to log event ${event['event']}: $e');
     }
   }
 

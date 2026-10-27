@@ -6,7 +6,16 @@ import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
-import 'package:noports_core/npp.dart' show Client, NppCache, NppService;
+import 'package:noports_core/npp.dart'
+    show
+        Client,
+        ClientGroup,
+        ClientGroupMember,
+        Daemon,
+        NppCache,
+        NppService,
+        Service,
+        ServiceACL;
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
@@ -302,16 +311,22 @@ void main() {
     });
   });
 
-  group('Given an npp policy service @policy whose rules hold one client', () {
+  group(
+      'Given an npp policy service @policy whose rules hold a different number'
+      ' of each kind', () {
     const policy = '@policy';
     const events = '@events';
 
     late NoPortsHarness harness;
     late List<Map<String, dynamic>> received;
+    final npaLogs = <LogRecord>[];
+    Logger? npaLogger;
+    StreamSubscription<LogRecord>? npaLogSubscription;
 
     setUp(() async {
       harness = NoPortsHarness.create(atSigns: {policy, events});
       received = [];
+      npaLogs.clear();
 
       final listener = AtEventListenerService(
         atClient:
@@ -331,19 +346,75 @@ void main() {
           .listen((json) => received.add(jsonDecode(json)));
     });
 
+    tearDown(() async {
+      await npaLogSubscription?.cancel();
+      npaLogger?.level = Level.SHOUT;
+    });
+
+    /// Rules holding a different number of each kind, so a count reported
+    /// under the wrong name shows up: 2 clients, 3 client groups, 6 client
+    /// group members, 1 daemon, 4 services and 5 service ACLs.
+    NppCache rulesOfEachKind() {
+      final rules = NppCache();
+      final clients = [
+        Client(name: 'Alice', atSign: '@alice'),
+        Client(name: 'Bob', atSign: '@bob'),
+      ];
+      final groups = [
+        ClientGroup(name: 'g1'),
+        ClientGroup(name: 'g2'),
+        ClientGroup(name: 'g3'),
+      ];
+      for (final client in clients) {
+        rules.putClient(client);
+      }
+      for (final group in groups) {
+        rules.putClientGroup(group);
+      }
+      for (final client in clients) {
+        for (final group in groups) {
+          rules.putClientGroupMember(ClientGroupMember(
+              clientId: client.id!, clientGroupId: group.id!));
+        }
+      }
+      final daemon = Daemon(atSign: '@daemon');
+      rules.putDaemon(daemon);
+      final services = [
+        for (var i = 1; i <= 4; i++)
+          Service(
+              daemonId: daemon.id!,
+              deviceName: 'device$i',
+              deviceGroupName: '__none__'),
+      ];
+      for (final service in services) {
+        rules.putService(service);
+      }
+      for (var i = 1; i <= 5; i++) {
+        rules.putServiceACL(ServiceACL(
+            serviceId: services.first.id!,
+            clientGroupId: groups.first.id!,
+            permitOpen: 'localhost:$i'));
+      }
+      return rules;
+    }
+
     /// Starts [policy]'s npp service, as npp.dart does after loading its
-    /// rules from files.
+    /// rules from files, recording everything its NPAImpl logs in [npaLogs].
     Future<void> start({required String? eventLoggingAtSign}) async {
       final npp = NppService(
         atClient:
             await harness.openClient(policy, namespace: DefaultArgs.namespace),
-        nppCache: NppCache()..putClient(Client(name: 'Alice', atSign: '@alice')),
+        nppCache: rulesOfEachKind(),
         managerAllowList: {policy},
         binariesVersion: '1.2.3',
         persistenceMethod: 'file',
         homeDirectory: harness.home.path,
         eventLoggingAtSign: eventLoggingAtSign,
       )..init();
+      // NOTE NPAImpl's logger is set to SHOUT, so it is lowered here to see
+      // its warnings; every NPAImpl shares it, so tearDown restores it
+      npaLogger = npp.npa.logger.logger..level = Level.ALL;
+      npaLogSubscription = npaLogger!.onRecord.listen(npaLogs.add);
       await npp.start();
     }
 
@@ -365,24 +436,30 @@ void main() {
       expect(event['persistenceMethod'], 'file');
       expect(event['binariesVersion'], '1.2.3');
       expect(event['rules'], {
-        'clients': 1,
-        'clientGroups': 0,
-        'clientGroupMembers': 0,
-        'daemons': 0,
-        'services': 0,
-        'serviceACLs': 0,
+        'clients': 2,
+        'clientGroups': 3,
+        'clientGroupMembers': 6,
+        'daemons': 1,
+        'services': 4,
+        'serviceACLs': 5,
       });
     });
 
     test(
         'when it starts with no event logging Atsign, then it sends @events'
-        ' nothing', () async {
+        ' nothing, and its policy service logs nothing at warning or above',
+        () async {
       await start(eventLoggingAtSign: null);
       await Future.delayed(const Duration(seconds: 1));
 
       expect(received, isEmpty);
       expect(
           harness.server[events].received.where((n) => n.from == policy),
+          isEmpty);
+      expect(
+          npaLogs
+              .where((r) => r.level >= Level.WARNING)
+              .map((r) => r.message),
           isEmpty);
     });
   });
