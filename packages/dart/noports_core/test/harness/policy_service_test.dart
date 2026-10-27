@@ -415,6 +415,7 @@ void main() {
         homeDirectory: harness.home.path,
         eventLoggingAtSign: eventLoggingAtSign,
       )..init();
+      startedNpp = npp;
       // NOTE NPAImpl's logger is set to SHOUT, so it is lowered here to see
       // its warnings; every NPAImpl shares it, so tearDown restores it
       npaLogger = npp.npa.logger.logger..level = Level.ALL;
@@ -459,11 +460,13 @@ void main() {
     });
 
     test(
-        'when it starts with no event logging Atsign, then it sends @events'
-        ' nothing, and its policy service logs nothing at warning or above',
+        'when it starts and stops with no event logging Atsign, then it sends'
+        ' @events nothing, and its policy service logs nothing at warning or'
+        ' above',
         () async {
       final npp = await start(eventLoggingAtSign: null);
       await Future.delayed(const Duration(seconds: 1));
+      await npp.stop(reason: 'SIGINT');
 
       expect(received, isEmpty);
       expect(
