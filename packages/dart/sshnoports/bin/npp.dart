@@ -196,6 +196,19 @@ Future<void> main(List<String> args) async {
     stderr.writeln(e);
     exit(1);
   }
+
+  // 6. On SIGINT, and SIGTERM where Dart can watch it, tell the event logging
+  // Atsign npp is stopping, and wait for that to reach our atServer, before
+  // exiting. A second signal exits at once, since stop() does nothing twice.
+  Future<void> stopAndExit(ProcessSignal signal) async {
+    await nppService.stop(reason: signal.toString());
+    exit(1);
+  }
+
+  ProcessSignal.sigint.watch().listen(stopAndExit);
+  if (!Platform.isWindows) {
+    ProcessSignal.sigterm.watch().listen(stopAndExit);
+  }
 }
 
 /// Generate policy cache by fetching AtKeys from the atServer.
