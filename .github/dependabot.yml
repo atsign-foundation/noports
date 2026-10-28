@@ -43,6 +43,9 @@ updates:
       default-days: 7
       exclude:
       - "at_*"
+    ignore:
+      # NOTE at_lookup 3.7.0 needs at_client 4.0.0
+      - dependency-name: "at_lookup"
     groups:
       pub:
         patterns:
