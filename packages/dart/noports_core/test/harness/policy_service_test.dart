@@ -466,6 +466,8 @@ void main() {
         () async {
       final npp = await start(eventLoggingAtSign: null);
       await Future.delayed(const Duration(seconds: 1));
+      expect(npp.heartbeatRunning, isFalse,
+          reason: 'no event logging Atsign, so no heartbeat timer');
       await npp.stop(reason: 'SIGINT');
 
       expect(received, isEmpty);
@@ -477,7 +479,6 @@ void main() {
               .where((r) => r.level >= Level.WARNING)
               .map((r) => r.message),
           isEmpty);
-      expect(npp.heartbeatRunning, isFalse);
     });
 
     test(
@@ -537,6 +538,7 @@ void main() {
         ' and uptime, has reached @events without waiting; stopping again'
         ' sends nothing more', () async {
       final npp = await start(eventLoggingAtSign: events);
+      await Future.delayed(const Duration(milliseconds: 1100));
 
       await npp.stop(reason: 'SIGTERM');
       await npp.stop(reason: 'SIGINT');
@@ -554,7 +556,9 @@ void main() {
       }
       expect(received.map((e) => e['event']), ['rulesLoaded', 'stopped']);
       expect(received.last['reason'], 'SIGTERM');
-      expect(received.last['uptime'], greaterThanOrEqualTo(0));
+      expect(received.last['uptime'],
+          allOf(greaterThanOrEqualTo(1), lessThan(1000)),
+          reason: 'it ran just over a second, so whole seconds, not 0 or ms');
     });
   });
 }
