@@ -10,6 +10,7 @@ import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/cli_menu_helper.dart';
 import 'package:noports_core/npa.dart';
+import 'package:path/path.dart' as path;
 
 
 late AtSignLogger logger;
@@ -58,16 +59,15 @@ Future<void> main(List<String> args) async {
   if (nppCLIParams.verbose) {
     AtSignLogger.root_level = 'info';
   }
-  final AtOnboardingPreference atOnboardingPreference = generateAtOnboardingPreference(nppCLIParams);
-  final AtOnboardingService atOnboardingService = AtOnboardingServiceImpl(nppCLIParams.atSign, atOnboardingPreference);
-  if (!await atOnboardingService.authenticate()) {
+  final AtClient? opened = await openNppClient(nppCLIParams);
+  if (opened == null || !opened.connection.current.isOnline) {
     stderr.writeln('Error: ${nppCLIParams.atSign} could not be opened: '
-        '${atOnboardingService.atClient == null ? 'the atServer refused it' : 'its atServer could not be reached'}'
+        '${opened == null ? 'the atServer refused it' : 'its atServer could not be reached'}'
         '${nppCLIParams.verbose ? '' : '; run with -v for the reason'}');
     exit(1);
   }
 
-  final AtClient atClient = atOnboardingService.atClient!;
+  final AtClient atClient = opened;
 
   final NppClient nppClient = NppClient(
     atClient: atClient,
@@ -759,17 +759,41 @@ String showMenuAndGetSelection() {
   return (result.index + 1).toString();
 }
 
-AtOnboardingPreference generateAtOnboardingPreference(
-  NPPCLIParams nppCLIParams
-) {
-  final AtOnboardingPreference atOnboardingPreference = AtOnboardingPreference()
-  ..rootDomain = nppCLIParams.rootServer.split(':')[0]
-  ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1])
-  ..atKeysFilePath = nppCLIParams.atKeysFilePath;
-
-  if(nppCLIParams.storagePath != null) {
-    atOnboardingPreference.storagePath = nppCLIParams.storagePath;
+/// Opens the atSign [nppCLIParams] names from its keyfile, as the manager's
+/// current client, or returns null when its atServer refuses it.
+Future<AtClient?> openNppClient(NPPCLIParams nppCLIParams) async {
+  final atSign = nppCLIParams.atSign.toAtsign();
+  final preference = AtClientPreference()
+    ..rootDomain = nppCLIParams.rootServer.split(':')[0]
+    ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1]);
+  // NOTE open refuses while a client for the atSign is live in this process
+  for (final live in AtClientImpl.liveClientsFor(atSign)) {
+    await live.stop();
   }
-
-  return atOnboardingPreference;
+  final AtClient client;
+  try {
+    client = await Atsign(atSign).open(
+      keys: CliKeys.fileFor(atSign, path: nppCLIParams.atKeysFilePath),
+      preference: preference,
+      storage: HiveAtClientStorage(
+        atSign: atSign,
+        storagePath: nppCLIParams.storagePath ??
+            path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
+                'at_onboarding_cli', 'storage', atSign, 'hive'),
+        closedByClient: true,
+      ),
+      lookUps: preference.rootDomain.startsWith('proxy:')
+          ? proxyLookUps()
+          : secureSocketLookUps(),
+      secondaryAddressFinder: CacheableSecondaryAddressFinder(
+        preference.rootDomain,
+        preference.rootPort,
+      ),
+    );
+  } on AtOpenRefusedException catch (e) {
+    AtSignLogger(' npp_client ').warning(e.message);
+    return null;
+  }
+  AtClientManager.getInstance().use(client);
+  return client;
 }
