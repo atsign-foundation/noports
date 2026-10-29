@@ -56,6 +56,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(InMemoryAtKeysIo());
     registerFallbackValue(AtClientPreference());
+    registerFallbackValue(InMemoryAtClientStorage(atSign: '@fallback'));
   });
 
   setUp(() {
