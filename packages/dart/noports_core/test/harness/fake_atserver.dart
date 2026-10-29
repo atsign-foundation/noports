@@ -7,6 +7,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_cli_commons/at_cli_commons.dart' hide StringBuffer;
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_lookup/at_lookup_io.dart';
+import 'package:cryptography/dart.dart' show DartSha256;
 import 'package:uuid/uuid.dart';
 
 /// An atServer for every atSign in a test, on in-memory sockets in this
@@ -268,6 +269,16 @@ class FakeEnrollment {
     ..defaultSelfEncryptionKey = AtBytes.fromString(atSign.selfEncryptionKey)
     // ignore: deprecated_member_use
     ..enrollmentId = id;
+
+  /// The links stored on this enrollment's `_apsk` record, by kid; empty
+  /// when it has none.
+  Map<String, Object?> get apskLinks {
+    final appMetadata = atSign.recordAt(_apskKey)?.metadata['appMetadata'];
+    final links = appMetadata is Map ? appMetadata['apskLinks'] : null;
+    return links is Map ? Map<String, Object?>.from(links) : {};
+  }
+
+  String get _apskKey => 'public:_apsk.$id.a.__e${atSign.atSign}';
 
   /// Revokes this enrollment: its live connections close at once, and its
   /// `<id>.a.__e` records move to `<id>.r.__e`, so its published signing key
@@ -944,10 +955,97 @@ class FakeConnection {
         ]..sort();
         return _data(jsonEncode(
             {'lastRevokedAt': revoked.lastOrNull?.toIso8601String()}));
+      case 'link':
+        return _enrollLink(body);
     }
     atSign.server.unhandled.add(command);
     throw _VerbError('AT0003', 'fake atServer has no handler for: $command');
   }
+
+  /// `enroll:link`, as an atServer answers it: the links stored on the keys
+  /// an approved enrollment's `_apsk` lists, one per kid, all or none.
+  ///
+  /// Checks each link's structure and never its signature, and replaces a
+  /// stored link only when the request's `expect` equals it. The caller is
+  /// the enrollment itself, or one that may approve it.
+  void _enrollLink(Map<String, dynamic> body) {
+    final id = (body['enrollmentId'] as String?)?.trim().toLowerCase();
+    final target = atSign.enrollments[id];
+    if (target == null) {
+      throw _VerbError('AT0011', 'enroll:link: enrollment $id does not exist');
+    }
+    final caller = enrollment!;
+    if (caller != target && !_mayApprove(caller, target)) {
+      throw _VerbError('AT0009', 'Failed to link enrollment id: $id');
+    }
+    if (target.status != 'approved') {
+      throw _VerbError('AT0011', 'enroll:link: enrollment $id is'
+          ' ${target.status}, and only an approved enrollment takes links');
+    }
+    final record = atSign.recordAt(target._apskKey);
+    final listed = _listedKeys(record?.value);
+    final stored = target.apskLinks;
+    final requested = body['links'];
+    if (requested is! Map) {
+      throw _VerbError('AT0022', 'enroll:link: links are mandatory');
+    }
+    final written = <String, Object?>{};
+    for (final MapEntry(key: kid, value: request) in requested.entries) {
+      final key = listed[kid];
+      if (key == null || _sameKeyMaterial(key.pub, target.apkamPublicKey)) {
+        throw _VerbError('AT0022', 'enroll:link: $id advertises no key $kid'
+            ' that can take a link; an authentication key takes none');
+      }
+      if (!_isPaddedBase64(key.pub)) {
+        throw _VerbError('AT0022', 'enroll:link: the key $kid is not spelt'
+            ' in padded standard base64, so it takes no link');
+      }
+      final link = request is Map ? request['link'] : null;
+      if (utf8.encode(jsonEncode(link)).length > _maxLinkBytes) {
+        throw _VerbError(
+            'AT0022', 'enroll:link: the link for $kid is over $_maxLinkBytes'
+            ' bytes encoded');
+      }
+      final payload = _payloadOf(link);
+      final named = payload?['enrollmentId'];
+      if (payload == null ||
+          named is! String ||
+          named.trim().toLowerCase() != id ||
+          payload['kid'] != kid ||
+          payload['alg'] != key.alg ||
+          payload['pub'] != key.pub) {
+        throw _VerbError('AT0022', 'enroll:link: the link for $kid does not'
+            ' name enrollment $id and that key');
+      }
+      if (!_jsonEquals((request as Map)['expect'], stored[kid])) {
+        throw _VerbError('AT0032', 'enroll:link: the link stored for $kid is'
+            ' not the one this request expects; read it again');
+      }
+      written[kid] = link;
+    }
+    if (record == null) {
+      throw _VerbError('AT0011', 'Internal server exception');
+    }
+    final metadata = record.metadata;
+    final appMetadata = metadata['appMetadata'];
+    metadata['appMetadata'] = {
+      'providerId': 'legacy',
+      if (appMetadata is Map) ...appMetadata,
+      'apskLinks': {...stored, ...written},
+    };
+    _data(jsonEncode({'enrollmentId': id, 'linked': written.keys.toList()}));
+  }
+
+  /// Whether [caller] may approve [target]: it holds `__manage` itself, and
+  /// every namespace [target] holds at that access or wider.
+  bool _mayApprove(FakeEnrollment caller, FakeEnrollment target) =>
+      caller.status == 'approved' &&
+      caller.namespaces.containsKey('__manage') &&
+      target.namespaces.isNotEmpty &&
+      target.namespaces.entries.every((held) {
+        final access = _accessFor(caller, held.key);
+        return access != null && access.contains(held.value);
+      });
 
   void _enrollFetch(Map<String, dynamic> body) {
     final id = (body['enrollmentId'] as String?)?.trim().toLowerCase();
@@ -1220,6 +1318,101 @@ class FakeConnection {
   void _plainError(String code, String description) =>
       _socket.serverSends('error:$code:$description\n$_prompt');
 }
+
+/// The longest link `enroll:link` stores, measured on its JSON encoding.
+const _maxLinkBytes = 16 * 1024;
+
+/// The keys an `_apsk` value lists by kid, as an atServer reads it: a bare
+/// value is one rsa2048 key under its kid, and the list form each entry
+/// with a string kid, alg and pub, less any kid listed twice.
+Map<String, ({String alg, String pub})> _listedKeys(String? value) {
+  final text = value?.trim() ?? '';
+  if (text.isEmpty) return const {};
+  if (!text.startsWith('{')) {
+    final kid = _kidOf(text);
+    return kid == null ? const {} : {kid: (alg: 'rsa2048', pub: text)};
+  }
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(text);
+  } on FormatException {
+    return const {};
+  }
+  final entries = decoded is Map ? decoded['keys'] : null;
+  if (entries is! List) return const {};
+  final keys = <String, ({String alg, String pub})>{};
+  final repeated = <String>{};
+  for (final entry in entries) {
+    if (entry is! Map) continue;
+    final (kid, alg, pub) = (entry['kid'], entry['alg'], entry['pub']);
+    if (kid is! String || alg is! String || pub is! String) continue;
+    if (keys.containsKey(kid)) repeated.add(kid);
+    keys[kid] = (alg: alg, pub: pub);
+  }
+  return keys..removeWhere((kid, _) => repeated.contains(kid));
+}
+
+/// The kid of the base64 public key [pub]: the first 8 bytes of its
+/// SHA-256, in hex; null when [pub] is not base64.
+String? _kidOf(String pub) {
+  try {
+    return const DartSha256()
+        .hashSync(base64Decode(pub))
+        .bytes
+        .take(8)
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+  } on FormatException {
+    return null;
+  }
+}
+
+/// The payload [link] signs: base64url JSON on a chain link, an object on a
+/// root link; null when it carries neither.
+Map<String, dynamic>? _payloadOf(Object? link) {
+  if (link is! Map) return null;
+  final payload = link['payload'];
+  if (payload is Map) return Map<String, dynamic>.from(payload);
+  if (payload is! String) return null;
+  try {
+    final decoded = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(payload))));
+    return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+  } on FormatException {
+    return null;
+  }
+}
+
+/// Whether [pub] is non-empty, padded standard base64 that encodes back to
+/// itself.
+bool _isPaddedBase64(String pub) {
+  try {
+    return pub.isNotEmpty && base64Encode(base64Decode(pub)) == pub;
+  } on FormatException {
+    return false;
+  }
+}
+
+/// Whether two base64 spellings decode to the same bytes, or, where either
+/// does not decode, are the same trimmed text.
+bool _sameKeyMaterial(String a, String b) {
+  try {
+    final (x, y) = (base64Decode(a.trim()), base64Decode(b.trim()));
+    return x.length == y.length &&
+        Iterable.generate(x.length).every((i) => x[i] == y[i]);
+  } on FormatException {
+    return a.trim() == b.trim();
+  }
+}
+
+/// Whether two decoded JSON values are equal, maps compared by key.
+bool _jsonEquals(Object? a, Object? b) => switch ((a, b)) {
+      (Map a, Map b) => a.length == b.length &&
+          a.keys.every((k) => b.containsKey(k) && _jsonEquals(a[k], b[k])),
+      (List a, List b) => a.length == b.length &&
+          Iterable.generate(a.length).every((i) => _jsonEquals(a[i], b[i])),
+      _ => a == b,
+    };
 
 class _VerbError implements Exception {
   _VerbError(this.code, this.description, {this.plain = false});
