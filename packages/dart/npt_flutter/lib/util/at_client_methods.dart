@@ -11,7 +11,6 @@ class AtClientMethods {
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
       ..hiveStoragePath = dir.path
-      ..commitLogPath = dir.path
       ..isLocalStoreRequired = true;
   }
 

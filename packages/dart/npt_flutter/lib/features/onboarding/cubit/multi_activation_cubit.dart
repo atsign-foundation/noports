@@ -346,8 +346,7 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
       final preference = await AtClientMethods.loadAtClientPreference(
         'root.atsign.org',
       )
-        ..hiveStoragePath = scratch.path
-        ..commitLogPath = scratch.path;
+        ..hiveStoragePath = scratch.path;
       final client = await atsign.activate(
         cramSecret: cramSecret,
         keys: KeychainAtKeysIo(),
