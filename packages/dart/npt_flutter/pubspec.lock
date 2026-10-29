@@ -50,13 +50,14 @@ packages:
     source: hosted
     version: "2.13.1"
   at_auth:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_auth
-      sha256: "347036e8a471abab346fbcbaa3290a4eb406d401dfae1f38b57ac76d3a828b7f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.0-rc6"
+      path: "packages/at_auth"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "4.0.0"
   at_base2e15:
     dependency: transitive
     description:
@@ -66,69 +67,85 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_chops
-      sha256: b6650f4a3107b754dd845ebb8169601bb57e2c10782f8107e478211de23852a8
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.7.0"
+      path: "packages/at_chops"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "3.7.1"
   at_cli_commons:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_cli_commons
-      sha256: "8fcdff091fc1d91827f24d503973aad5613fa217f676909a7468c82fc9ebe7a2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.2-rc3"
+      path: "packages/at_cli_commons"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "4.0.0"
   at_client:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_client
-      sha256: d760a2fc2bf25968e21469d228b47cfac1ff3c49cc66dfd8fc2fb7c2da884288
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.15.0-rc7"
+      path: "packages/at_client"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "4.0.0"
+  at_client_cli:
+    dependency: "direct overridden"
+    description:
+      path: "packages/at_client_cli"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "1.0.0"
   at_client_flutter:
     dependency: "direct main"
     description:
-      name: at_client_flutter
-      sha256: ed2e270e42342914cfc36d57eec39e5942f6940bf3f54cd34e6d1bffb4f7882c
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0-rc6"
+      path: "packages/at_client_flutter"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "2.0.0"
   at_commons:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_commons
-      sha256: b75a38fb93a48131289dea0e744fa8584c86dd4eb3fdff1575c804ab00b4b3c4
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.21.0"
+      path: "packages/at_commons"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "5.25.0"
   at_lookup:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_lookup
-      sha256: "9da3ffe89632c08610a2cfe8b9aa2ee195bedbe85f45a0b209d50dc46e4a109e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.7.0-rc4"
+      path: "packages/at_lookup"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "4.0.0"
   at_onboarding_cli:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_onboarding_cli
-      sha256: "6d3050df56043bf0a23e9889f1ebdbe7a494050e92bbb7b16bb1d11fb4fe3839"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0-rc7"
+      path: "packages/at_onboarding_cli"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "2.0.0"
   at_persistence_secondary_server:
     dependency: transitive
     description:
       name: at_persistence_secondary_server
-      sha256: "1b54e89012c462c59bc6a2ed715565903a73409a01542e406a601e6551a61560"
+      sha256: "04b825f36ca2024795b26c70cdd6095607f6f019e9c54e4fb8a1ef2a5cf4371c"
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.0"
+    version: "5.4.0"
   at_utf7:
     dependency: transitive
     description:
@@ -138,13 +155,14 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: at_utils
-      sha256: "7b0d8594fa7d2c1003cc63d19941098d5ed34c227082cef406cf5161481ed4b7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.4.2"
+      path: "packages/at_utils"
+      ref: gkc-v4-ga
+      resolved-ref: d29cbab8e06764182ad60439603168344808e0e7
+      url: "https://github.com/atsign-foundation/at_client_sdk.git"
+    source: git
+    version: "4.0.0"
   better_cryptography:
     dependency: transitive
     description:
@@ -692,14 +710,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  internet_connection_checker:
-    dependency: transitive
-    description:
-      name: internet_connection_checker
-      sha256: "1c683e63e89c9ac66a40748b1b20889fd9804980da732bf2b58d6d5456c8e876"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0+1"
   intl:
     dependency: "direct main"
     description:

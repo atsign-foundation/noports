@@ -37,7 +37,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  at_client_flutter: ^2.0.0-rc6
+  at_client_flutter: ^2.0.0
   desktop_drop: ^0.7.0
   device_info_plus: ^12.4.0
   dotted_border: ^3.1.0
@@ -86,6 +86,56 @@ dev_dependencies:
   msix: ^3.16.8
 
 dependency_overrides:
+  at_auth:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_auth
+  at_chops:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_chops
+  at_cli_commons:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_cli_commons
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_client
+  at_client_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_client_cli
+  at_client_flutter:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_client_flutter
+  at_commons:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_commons
+  at_lookup:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_lookup
+  at_onboarding_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_onboarding_cli
+  at_utils:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_utils
   file: 7.0.1
   pointycastle: ^4.0.0
   phosphor_flutter:
