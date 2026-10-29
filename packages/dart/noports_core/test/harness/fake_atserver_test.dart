@@ -24,6 +24,7 @@ void main() {
         ..fetchOfflineNotifications = false,
       storage: InMemoryAtClientStorage(atSign: atSign),
       lookUps: server.lookUps,
+      secondaryAddressFinder: server.addressFinder,
       serviceFactory: server.serviceFactory,
     );
     addTearDown(client.stop);
@@ -142,6 +143,7 @@ void main() {
         ..fetchOfflineNotifications = false,
       storage: InMemoryAtClientStorage(atSign: '@alice'),
       lookUps: server.lookUps,
+      secondaryAddressFinder: server.addressFinder,
       serviceFactory: server.serviceFactory,
     );
     addTearDown(client.stop);

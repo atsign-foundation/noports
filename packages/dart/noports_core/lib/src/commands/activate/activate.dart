@@ -20,13 +20,16 @@ class ActivateFlows {
     required String cramSecret,
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
-    AtClientStorage? storage,
+    required AtClientStorage storage,
   }) =>
       atsign.activate(
           cramSecret: cramSecret,
           keys: keys,
           preference: preference,
-          storage: storage);
+          storage: storage,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 
   /// The enrollment submitted earlier from [keys] for [app] on [device] and
   /// not yet decided, or null when there is none.
@@ -38,7 +41,13 @@ class ActivateFlows {
     required AtClientPreference preference,
   }) =>
       atsign.resumeEnrollment(
-          app: app, device: device, keys: keys, preference: preference);
+          app: app,
+          device: device,
+          keys: keys,
+          preference: preference,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 
   /// Submits the enrollment, filing its keys in [keys] as pending; the
   /// request's `client` waits for the decision. A store that refuses a new
@@ -58,7 +67,10 @@ class ActivateFlows {
           device: device,
           namespaces: namespaces,
           keys: keys,
-          preference: preference);
+          preference: preference,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 }
 
 class Activate {
