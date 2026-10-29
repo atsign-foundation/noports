@@ -429,6 +429,7 @@ Future<AtClient> createPolicyAtClient({
   required String rootDomain,
   required Directory storageDirectory,
 }) async {
+  final canonical = atsign.toAtsign();
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
   final AtClientPreference preference = AtClientPreference()
     ..namespace = 'sshnp'
@@ -437,14 +438,14 @@ Future<AtClient> createPolicyAtClient({
     ..rootPort = parsedRootDomain.rootPort;
 
   // NOTE open refuses while a client for the atSign is live in this process
-  for (final live in AtClientImpl.liveClientsFor(atsign.toAtsign())) {
+  for (final live in AtClientImpl.liveClientsFor(canonical)) {
     await live.stop();
   }
-  final client = await Atsign(atsign).open(
+  final client = await Atsign(canonical).open(
     keys: FileAtKeysIo(filePath: (_) => apkamKeysFile.path, passPhrase: ''),
     preference: preference,
     storage: HiveAtClientStorage(
-      atSign: atsign,
+      atSign: canonical,
       storagePath: storageDirectory.path,
       closedByClient: true,
     ),
