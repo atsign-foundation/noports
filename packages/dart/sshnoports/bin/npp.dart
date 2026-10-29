@@ -81,7 +81,7 @@ Future<void> main(List<String> args) async {
   } else {
     AtSignLogger.root_level = 'SHOUT';
   }
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
   logger = AtSignLogger('npp');
 
   // 3d. Sanitize managerAllowList

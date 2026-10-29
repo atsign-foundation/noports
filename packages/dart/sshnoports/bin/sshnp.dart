@@ -26,7 +26,7 @@ const String _description =
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   ExtendedArgParser parser = ExtendedArgParser(
     usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,

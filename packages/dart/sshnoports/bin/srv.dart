@@ -5,6 +5,7 @@ import 'package:noports_core/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:args/args.dart';
 import 'package:at_utils/at_logger.dart';
+import 'package:at_utils/at_utils_io.dart' show StdErrLoggingHandler;
 import 'package:logging/logging.dart';
 import 'package:noports_core/srv.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -285,7 +286,7 @@ class TmpFileLoggingHandler implements LoggingHandler {
         mode: FileMode.writeOnlyAppend);
     if (logToStderr) {
       try {
-        AtSignLogger.stdErrLoggingHandler.call(record);
+        StdErrLoggingHandler().call(record);
       } catch (e) {
         f.writeAsStringSync('********** Failed to log to stderr: $e',
             mode: FileMode.writeOnlyAppend);

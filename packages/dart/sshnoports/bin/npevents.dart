@@ -24,7 +24,7 @@ const String _description =
 ///
 /// Listens for NoPorts session events, writes to stdout
 void main(List<String> args) async {
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   ArgParser parser = CLIBase.createArgsParser(
       namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);

@@ -15,7 +15,7 @@ const String _description =
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SEVERE';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
   late final Sshnpd sshnpd;
 
   try {

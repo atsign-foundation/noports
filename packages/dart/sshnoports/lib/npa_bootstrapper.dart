@@ -12,7 +12,7 @@ Future<void> run(
   List<String> commandLineArgs,
 ) async {
   AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
   late final NPA sshnpa;
 
   try {

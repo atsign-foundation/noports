@@ -26,7 +26,7 @@ void main(List<String> args) async {
   const int neverTimeoutDays = 365;
 
   AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   Directory? storageDir;
 

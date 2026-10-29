@@ -66,7 +66,7 @@ void main(List<String> args) async {
   if (p.verbose) {
     AtSignLogger.root_level = 'INFO';
   }
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   logger = AtSignLogger(' npp ');
   final AtClient atClient;
