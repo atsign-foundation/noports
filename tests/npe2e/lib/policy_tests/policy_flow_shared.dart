@@ -449,9 +449,7 @@ Future<AtClient> createPolicyAtClient({
       storagePath: storageDirectory.path,
       closedByClient: true,
     ),
-    lookUps: preference.rootDomain.startsWith('proxy:')
-        ? proxyLookUps()
-        : secureSocketLookUps(),
+    lookUps: lookUpsFor(preference.rootDomain),
     secondaryAddressFinder: CacheableSecondaryAddressFinder(
       preference.rootDomain,
       preference.rootPort,

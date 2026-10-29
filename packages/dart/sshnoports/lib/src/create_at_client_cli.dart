@@ -48,9 +48,7 @@ Future<AtClient> createAtClientCli({
         closedByClient: true,
       ),
       serviceFactory: atServiceFactory,
-      lookUps: preference.rootDomain.startsWith('proxy:')
-          ? proxyLookUps()
-          : secureSocketLookUps(),
+      lookUps: lookUpsFor(preference.rootDomain),
       secondaryAddressFinder: CacheableSecondaryAddressFinder(
         preference.rootDomain,
         preference.rootPort,

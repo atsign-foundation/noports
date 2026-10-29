@@ -782,9 +782,7 @@ Future<AtClient?> openNppClient(NPPCLIParams nppCLIParams) async {
                 'at_onboarding_cli', 'storage', atSign, 'hive'),
         closedByClient: true,
       ),
-      lookUps: preference.rootDomain.startsWith('proxy:')
-          ? proxyLookUps()
-          : secureSocketLookUps(),
+      lookUps: lookUpsFor(preference.rootDomain),
       secondaryAddressFinder: CacheableSecondaryAddressFinder(
         preference.rootDomain,
         preference.rootPort,
