@@ -10,9 +10,6 @@ import 'package:test/test.dart';
 
 class MockActivateFlows extends Mock implements ActivateFlows {}
 
-class MockAtOnboardingPreference extends Mock
-    implements AtOnboardingPreference {}
-
 class MockAtClient extends Mock implements AtClient {}
 
 class MockPendingEnrollment extends Mock implements PendingEnrollment {}

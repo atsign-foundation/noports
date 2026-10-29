@@ -108,9 +108,17 @@ class Activate {
           path.join(getHomeDirectory(throwIfNull: true)!, '.atsign', 'keys',
               '${_params.atsign}_key.atKeys'));
 
-  AtOnboardingPreference _preference() => AtOnboardingPreference()
+  AtClientPreference _preference() => AtClientPreference()
     ..rootDomain = _params.rootDomain
     ..namespace = _params.appName;
+
+  /// The atSign's store under `~/.atsign/at_onboarding_cli/storage`, which
+  /// the client closes when it stops.
+  AtClientStorage _storage() => HiveAtClientStorage(
+      atSign: _params.atsign,
+      storagePath: path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
+          'at_onboarding_cli', 'storage', _params.atsign, 'hive'),
+      closedByClient: true);
 
   /// Activates a newly registered atSign with its CRAM secret, writing its
   /// keys to the keyfile. The client the activation opens is stopped at
@@ -131,7 +139,7 @@ class Activate {
           cramSecret: _params.cramSecret!,
           keys: _keys(),
           preference: preference,
-          storage: preference.storageFor(_params.atsign));
+          storage: _storage());
       await client.stop();
     } catch (e) {
       logger.shout('Activation Failed: $e');
@@ -186,8 +194,7 @@ class Activate {
     }
     logger.info('Waiting for approval of enrollment ${pending.enrollmentId}');
     try {
-      final client = await pending.client(preference,
-          storage: preference.storageFor(_params.atsign));
+      final client = await pending.client(preference, storage: _storage());
       await client.stop();
     } on AtEnrollmentException catch (e) {
       logger.shout('Enrollment not approved: ${e.message}');
