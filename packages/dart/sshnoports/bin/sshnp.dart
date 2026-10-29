@@ -9,7 +9,6 @@ import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
 
 // atPlatform packages
-import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';

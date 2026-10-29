@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_client/at_client.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/docker_instance.dart';

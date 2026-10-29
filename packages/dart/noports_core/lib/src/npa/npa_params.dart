@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_client/at_client.dart';
 
 class NPAParams {
   final String policyAtsign;

@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_commons/at_commons.dart' show AtException;
-import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npa.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';

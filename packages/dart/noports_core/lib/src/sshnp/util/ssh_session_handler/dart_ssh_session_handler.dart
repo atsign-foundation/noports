@@ -4,7 +4,6 @@ import 'dart:async';
 // internal Dart stream at a later time
 import 'dart:io' show ServerSocket;
 
-import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/sshnp_foundation.dart';

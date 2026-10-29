@@ -1,5 +1,4 @@
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_client/at_client.dart';
 import 'package:config/config.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';

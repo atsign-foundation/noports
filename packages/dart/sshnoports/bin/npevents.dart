@@ -7,7 +7,6 @@ import 'package:args/args.dart';
 
 // atPlatform packages
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_client/at_client.dart';
 import 'package:noports_core/events.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/sshnp_foundation.dart';

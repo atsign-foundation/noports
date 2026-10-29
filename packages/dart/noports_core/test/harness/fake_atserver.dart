@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client_cli/at_client_cli.dart' hide StringBuffer;
-import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_lookup/at_lookup_io.dart';
 import 'package:cryptography/dart.dart' show DartSha256;
 import 'package:uuid/uuid.dart';

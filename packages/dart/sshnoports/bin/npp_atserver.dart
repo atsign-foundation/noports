@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:at_client/at_client.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
