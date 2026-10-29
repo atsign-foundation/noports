@@ -1,3 +1,12 @@
+# 7.0.0
+
+- **BREAKING CHANGE** build: depends on the at_client 4.0.0 set: at_client
+  4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
+  at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the
+  at_client types in noports_core's API are at_client 4's
+- **BREAKING CHANGE** refactor: `ActivateFlows.activate` requires a
+  `storage`
+
 # 6.16.0
 
 - build: depends on the at_client_sdk release candidates: at_client
