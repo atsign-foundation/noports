@@ -432,27 +432,35 @@ Future<AtClient> createPolicyAtClient({
   required Directory storageDirectory,
 }) async {
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
-  final AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = storageDirectory.path
+  final AtClientPreference preference = AtClientPreference()
     ..namespace = 'sshnp'
-    ..downloadPath = path.join(storageDirectory.path, 'downloads')
-    // ignore: deprecated_member_use
-    ..isLocalStoreRequired = true
-    ..commitLogPath = path.join(storageDirectory.path, 'commitLog')
     ..fetchOfflineNotifications = false
-    ..atKeysFilePath = apkamKeysFile.path
-    ..passPhrase = ''
     ..rootDomain = parsedRootDomain.rootDomain
     ..rootPort = parsedRootDomain.rootPort;
 
-  final onboardingService = AtOnboardingServiceImpl(
-    atsign,
-    atOnboardingConfig,
-    atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+  // NOTE open refuses while a client for the atSign is live in this process
+  for (final live in AtClientImpl.liveClientsFor(atsign.toAtsign())) {
+    await live.stop();
+  }
+  final client = await Atsign(atsign).open(
+    keys: FileAtKeysIo(filePath: (_) => apkamKeysFile.path, passPhrase: ''),
+    preference: preference,
+    storage: HiveAtClientStorage(
+      atSign: atsign,
+      storagePath: storageDirectory.path,
+      closedByClient: true,
+    ),
+    lookUps: preference.rootDomain.startsWith('proxy:')
+        ? proxyLookUps()
+        : secureSocketLookUps(),
+    secondaryAddressFinder: CacheableSecondaryAddressFinder(
+      preference.rootDomain,
+      preference.rootPort,
+    ),
+    serviceFactory: ServiceFactoryWithNoOpSyncService(),
   );
-
-  await onboardingService.authenticate();
-  return AtClientManager.getInstance().atClient;
+  AtClientManager.getInstance().use(client);
+  return client;
 }
 
 Future<PolicyTestResult> runPolicyFlow({
