@@ -96,11 +96,6 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk.git
       ref: gkc-v4-ga
       path: packages/at_chops
-  at_cli_commons:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      ref: gkc-v4-ga
-      path: packages/at_cli_commons
   at_client:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk.git
@@ -126,11 +121,6 @@ dependency_overrides:
       url: https://github.com/atsign-foundation/at_client_sdk.git
       ref: gkc-v4-ga
       path: packages/at_lookup
-  at_onboarding_cli:
-    git:
-      url: https://github.com/atsign-foundation/at_client_sdk.git
-      ref: gkc-v4-ga
-      path: packages/at_onboarding_cli
   at_utils:
     git:
       url: https://github.com/atsign-foundation/at_client_sdk.git

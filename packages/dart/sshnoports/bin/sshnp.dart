@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 // other packages
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
 

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_cli_commons/at_cli_commons.dart' show getHomeDirectory;
+import 'package:at_client_cli/at_client_cli.dart' show getHomeDirectory;
 import 'package:npe2e/apkam_setup.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/client_binary_utils.dart';
