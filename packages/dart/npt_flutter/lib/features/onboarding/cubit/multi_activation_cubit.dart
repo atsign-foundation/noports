@@ -347,17 +347,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         'root.atsign.org',
       )
         ..hiveStoragePath = scratch.path;
-      final client = await atsign.activate(
+      final client = await const AtsignFlows().activate(
+        atsign,
         cramSecret: cramSecret,
         keys: KeychainAtKeysIo(),
         preference: preference,
         provisioningBudget: onboardTimeout,
-        storage: await storageOrDefault(atsign, preference),
-        lookUps: secureSocketLookUps(),
-        secondaryAddressFinder: CacheableSecondaryAddressFinder(
-          preference.rootDomain,
-          preference.rootPort,
-        ),
       );
       await client.stop();
     } finally {
