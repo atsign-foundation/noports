@@ -4,9 +4,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_cli_commons/at_cli_commons.dart' hide StringBuffer;
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_lookup/at_lookup.dart';
+import 'package:at_lookup/at_lookup_io.dart';
 import 'package:uuid/uuid.dart';
 
 /// An atServer for every atSign in a test, on in-memory sockets in this
@@ -47,7 +47,6 @@ class FakeAtServer {
         required AtRootDomain rootDomain,
         required AtAuthenticator? authenticator,
         SecondaryAddressFinder? secondaryAddressFinder,
-        Map<String, dynamic> clientConfig = const {},
       }) =>
           AtLookUp.withSecureSocket(
             atSign: atSign,
@@ -56,10 +55,8 @@ class FakeAtServer {
             // NOTE this server's own: the caller's would ask the real
             // atDirectory.
             secondaryAddressFinder: addressFinder,
-            clientConfig: clientConfig,
             transport: AtLookupTransport(
-              secureSocketConfig: SecureSocketConfig(),
-              socketFactory: _FakeSocketFactory(this),
+              transportFactory: _FakeTransportFactory(this),
             ),
           );
 
@@ -1272,6 +1269,9 @@ class _FakeSocket implements SecureSocket {
       );
 
   @override
+  Stream<R> cast<R>() => _inbound.stream.cast<R>();
+
+  @override
   void write(Object? object) => _record('$object');
 
   @override
@@ -1325,19 +1325,18 @@ class _FakeSocket implements SecureSocket {
       );
 }
 
-class _FakeSocketFactory extends AtLookupSecureSocketFactory {
-  _FakeSocketFactory(this._server);
+class _FakeTransportFactory implements AtTransportFactory {
+  _FakeTransportFactory(this._server);
 
   final FakeAtServer _server;
 
   @override
-  Future<SecureSocket> createSocket(
+  Future<AtTransport> connect(
     String host,
-    String port,
-    SecureSocketConfig socketConfig, {
+    String port, {
     Duration? timeout,
   }) async =>
-      _server._connect(host, port)._socket;
+      SecureSocketTransport(_server._connect(host, port)._socket);
 }
 
 /// A [FakeAtServer]'s public records served over HTTP, as one process sees
