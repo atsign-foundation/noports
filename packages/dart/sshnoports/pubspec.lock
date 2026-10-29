@@ -54,7 +54,7 @@ packages:
     description:
       path: "packages/at_auth"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "4.0.0"
@@ -71,7 +71,7 @@ packages:
     description:
       path: "packages/at_chops"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "3.7.1"
@@ -80,7 +80,7 @@ packages:
     description:
       path: "packages/at_client"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "4.0.0"
@@ -89,7 +89,7 @@ packages:
     description:
       path: "packages/at_client_cli"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "1.0.0"
@@ -98,7 +98,7 @@ packages:
     description:
       path: "packages/at_commons"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "5.25.0"
@@ -107,7 +107,7 @@ packages:
     description:
       path: "packages/at_lookup"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "4.0.0"
@@ -132,7 +132,7 @@ packages:
     description:
       path: "packages/at_utils"
       ref: gkc-v4-ga
-      resolved-ref: f229c1e87331987ca49d3aac90f7a0c0125cc997
+      resolved-ref: d339c1fe260daa49333fe38afc265af4d50efae3
       url: "https://github.com/atsign-foundation/at_client_sdk.git"
     source: git
     version: "4.0.0"
