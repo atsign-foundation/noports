@@ -74,7 +74,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           working-directory: ${{ matrix.project }}
           activate-environment: true
@@ -132,7 +132,7 @@ jobs:
           echo "safe_ref=$SAFE_REF" >> "$GITHUB_OUTPUT"
 
       - name: Generate SBOM
-        uses: sbomify/github-action@57ca9ba7de2232b073a3799bc8c0dc002e6777b9 # v26.10.2
+        uses: sbomify/github-action@85b58947b8cab7e68f7f191f0ba871307cbdfb6a # v26.10.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'azZJvaqsyGMC'

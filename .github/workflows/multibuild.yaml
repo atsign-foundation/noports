@@ -397,7 +397,7 @@ jobs:
         with:
           path: tarballs/
       - name: Generate SBOM
-        uses: sbomify/github-action@fc7f05256cca65c26c8010da5faf3203e9477e5c # v26.9.0
+        uses: sbomify/github-action@85b58947b8cab7e68f7f191f0ba871307cbdfb6a # v26.10.0
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: '-93khk8pUi'
