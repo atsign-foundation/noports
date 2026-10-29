@@ -102,7 +102,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   Future<void> init() async {
     PendingEnrollment? pending;
     try {
-      pending = await atsign.resumeEnrollment(
+      pending = await const AtsignFlows().resumeEnrollment(
+        atsign,
         app: Constants.namespace,
         device: await _enrollmentDeviceName(),
         keys: KeychainAtKeysIo(),
@@ -175,6 +176,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       final client = await pending.client(
         atClientPreference,
         retryInterval: _kApprovalRetryInterval,
+        storage: await storageOrDefault(atsign, atClientPreference),
       );
       AtClientMethods.adopt(client);
       await onApproved();
@@ -220,7 +222,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('Device Name: $deviceName'.loggable);
 
     try {
-      final pending = await atsign.enroll(
+      final pending = await const AtsignFlows().enroll(
+        atsign,
         otp: otp,
         app: Constants.namespace,
         device: deviceName,
