@@ -352,6 +352,12 @@ class MultiActivationCubit extends Cubit<MultiActivationState> {
         keys: KeychainAtKeysIo(),
         preference: preference,
         provisioningBudget: onboardTimeout,
+        storage: await storageOrDefault(atsign, preference),
+        lookUps: secureSocketLookUps(),
+        secondaryAddressFinder: CacheableSecondaryAddressFinder(
+          preference.rootDomain,
+          preference.rootPort,
+        ),
       );
       await client.stop();
     } finally {
