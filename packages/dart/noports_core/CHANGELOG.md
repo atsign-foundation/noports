@@ -103,6 +103,8 @@
 - fix: `--list-devices` lists a daemon on the client's own atSign
 - feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign
+- feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
 
 # 6.15.0
 

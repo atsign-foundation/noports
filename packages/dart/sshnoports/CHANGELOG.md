@@ -34,6 +34,8 @@
   from those clients
 * feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
+* feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
 * build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
   at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
 
