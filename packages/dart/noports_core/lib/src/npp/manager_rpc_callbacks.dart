@@ -2,6 +2,8 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/events/noports_event_types.dart';
+import 'package:at_commons/atsign.dart';
 import 'package:noports_core/src/version.dart' as core_version;
 
 /// Callbacks for handling policy manager RPC requests
@@ -11,6 +13,10 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   final NppOperationHooks? nppOperationHooks;
   final String binariesVersion;
   final NPARequestHandler handler;
+  final Atsign policyAtsign;
+
+  /// Receives each policy event.
+  final Future<void> Function(Map<String, dynamic> event) onEvent;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
   ManagerRpcCallbacks({
@@ -18,6 +24,8 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     required this.nppCache,
     required this.binariesVersion,
     required this.handler,
+    required this.policyAtsign,
+    required this.onEvent,
     this.nppOperationHooks,
   });
 
@@ -35,16 +43,85 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     return (maxId + 1).toString();
   }
 
+  /// Builds an event with [build] and hands it to [onEvent]. A failure in
+  /// either is logged and swallowed: the event log must never change the
+  /// answer a manager gets.
+  Future<void> _sendEvent(Map<String, dynamic> Function() build) async {
+    try {
+      await onEvent(build());
+    } catch (e) {
+      logger.warning('Failed to log policy event: $e');
+    }
+  }
+
+  /// Answers [request], telling the event logging Atsign about each sender
+  /// refused and each attempt to put or delete a rule. `fromAtsign` in those
+  /// events is [fromAtSign], which AtRpc takes from the notification, never
+  /// from the payload. Reads change nothing, so they aren't logged.
   @override
   Future<AtRpcResp> handleRequest(AtRpcReq request, String fromAtSign) async {
     final int reqId = request.reqId;
     if (fromAtSign != atClient.getCurrentAtSign()) {
+      await _sendEvent(() => PolicyEvent.managerRequestRefused(
+        policyAtsign: policyAtsign,
+        fromAtsign: fromAtSign.toAtsign(),
+        reqId: reqId,
+      ));
       return AtRpcResp(
           reqId: reqId,
           respType: AtRpcRespType.error,
           message: 'Unauthorized atSign',
           payload: {'success': false});
     }
+    final Object? operation = request.payload['operation'];
+    final Map<String, dynamic> rule = {};
+    if (operation != 'put' && operation != 'delete') {
+      return _handleRequest(request, fromAtSign, rule);
+    }
+
+    Future<void> logChange(String? error) => _sendEvent(() {
+      final String? target = request.payload['target']?.toString();
+      if (error == null) {
+        return PolicyEvent.ruleChanged(
+          policyAtsign: policyAtsign,
+          fromAtsign: fromAtSign.toAtsign(),
+          reqId: reqId,
+          operation: operation as String,
+          target: target,
+          rule: rule,
+        );
+      }
+      return PolicyEvent.ruleChangeFailed(
+        policyAtsign: policyAtsign,
+        fromAtsign: fromAtSign.toAtsign(),
+        reqId: reqId,
+        operation: operation as String,
+        target: target,
+        rule: rule,
+        error: error,
+      );
+    });
+
+    final AtRpcResp response;
+    try {
+      response = await _handleRequest(request, fromAtSign, rule);
+    } catch (e) {
+      await logChange('$e');
+      rethrow;
+    }
+    await logChange(
+        response.respType == AtRpcRespType.error ? response.message : null);
+    return response;
+  }
+
+  /// Carries out [request]. [rule] receives the rule a put or delete acts on;
+  /// it is per request, since manager RPCs aren't handled one at a time.
+  Future<AtRpcResp> _handleRequest(
+    AtRpcReq request,
+    String fromAtSign,
+    Map<String, dynamic> rule,
+  ) async {
+    final int reqId = request.reqId;
     final Map<String, dynamic> requestPayload = request.payload;
     final Map<String, dynamic> responsePayload = {};
     if (!requestPayload.containsKey('operation')) {
@@ -73,9 +150,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       case 'simulate': {
         logger.info('Received simulate request from $fromAtSign');
         try {
-          final NPAAuthCheckRequest authCheckRequest = 
+          final NPAAuthCheckRequest authCheckRequest =
             NPAAuthCheckRequest.fromJson(requestPayload);
-          final NPAAuthCheckResponse authCheckResponse = 
+          final NPAAuthCheckResponse authCheckResponse =
             await handler.doAuthCheck(authCheckRequest);
          responsePayload.addAll(authCheckResponse.toJson());
           success = true;
@@ -182,6 +259,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
             client.id ??= _generateId(nppCache.clients);
+            rule.addAll(client.toJson());
             if (nppOperationHooks?.prePutClient != null) {
               try {
                 await nppOperationHooks!.prePutClient!(client);
@@ -217,6 +295,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
             clientGroup.id ??= _generateId(nppCache.clientGroups);
+            rule.addAll(clientGroup.toJson());
             if (nppOperationHooks?.prePutClientGroup != null) {
               try {
                 await nppOperationHooks!.prePutClientGroup!(clientGroup);
@@ -257,6 +336,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
                 ClientGroupMember.fromJson(valueAsMap);
             clientGroupMember.id ??=
                 _generateId(nppCache.clientGroupMembers);
+            rule.addAll(clientGroupMember.toJson());
             if (nppOperationHooks?.prePutClientGroupMember != null) {
               try {
                 await nppOperationHooks!
@@ -296,6 +376,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
             daemon.id ??= _generateId(nppCache.daemons);
+            rule.addAll(daemon.toJson());
             if (nppOperationHooks?.prePutDaemon != null) {
               try {
                 await nppOperationHooks!.prePutDaemon!(daemon);
@@ -331,6 +412,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
             service.id ??= _generateId(nppCache.services);
+            rule.addAll(service.toJson());
             if (nppOperationHooks?.prePutService != null) {
               try {
                 await nppOperationHooks!.prePutService!(service);
@@ -367,6 +449,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
             serviceACL.id ??= _generateId(nppCache.serviceACLs);
+            rule.addAll(serviceACL.toJson());
             if (nppOperationHooks?.prePutServiceACL != null) {
               try {
                 await nppOperationHooks!.prePutServiceACL!(serviceACL);
@@ -420,6 +503,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         switch(target) {
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
+            rule.addAll(nppCache.getClientById(clientId).toJson());
             success = nppCache.deleteClient(clientId);
             responsePayload['success'] = success;
             if (success) {
@@ -431,6 +515,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
+            rule.addAll(nppCache.getClientGroupById(clientGroupId).toJson());
             success = nppCache.deleteClientGroup(clientGroupId);
             responsePayload['success'] = success;
             if (success) {
@@ -442,6 +527,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroupMember': {
             final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
+            rule.addAll(nppCache.getClientGroupMemberById(clientGroupMemberId).toJson());
             success = nppCache.deleteClientGroupMember(clientGroupMemberId);
             responsePayload['success'] = success;
             if (success) {
@@ -453,6 +539,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
+            rule.addAll(nppCache.getDaemonById(daemonId).toJson());
             success = nppCache.deleteDaemon(daemonId);
             responsePayload['success'] = success;
             if (success) {
@@ -464,6 +551,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
+            rule.addAll(nppCache.getServiceById(serviceId).toJson());
             success = nppCache.deleteService(serviceId);
             responsePayload['success'] = success;
             if (success) {
@@ -475,6 +563,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
+            rule.addAll(nppCache.getServiceACLById(serviceACLId).toJson());
             success = nppCache.deleteServiceACL(serviceACLId);
             responsePayload['success'] = success;
             if (success) {
