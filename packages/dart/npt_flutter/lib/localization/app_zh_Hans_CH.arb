@@ -126,7 +126,7 @@
   "errorAuthenticatinFailed": "身份验证失败。",
   "errorAuthenticationFailed": "身份验证失败。请检查您的详细信息，然后重试。",
   "errorAuthenticationTimedOut": "身份验证超时。",
-  "errorCramAuthFailed": "激活密钥被 atServer 拒绝。此激活文件可能已被使用。",
+  "errorCramAuthFailed": "激活密钥被 atServer 拒绝。该密钥可能已被使用。",
   "errorDuringStartupWithDetails": "启动期间出错：{errorMessage}",
   "errorEnrollmentRevoked": "您的注册已被撤销。请重新登录以申请新的注册。",
   "errorOnboardingWithDetails": "引导失败：{details}",

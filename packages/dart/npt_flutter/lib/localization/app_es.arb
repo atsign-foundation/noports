@@ -126,7 +126,7 @@
   "errorAuthenticatinFailed": "Autenticación fallida.",
   "errorAuthenticationFailed": "Autenticación fallida. Por favor, verifica tus datos e intenta de nuevo.",
   "errorAuthenticationTimedOut": "La autenticación ha expirado.",
-  "errorCramAuthFailed": "La clave de activación fue rechazada por el atServer. Es posible que este archivo de activación ya se haya utilizado.",
+  "errorCramAuthFailed": "La clave de activación fue rechazada por el atServer. Es posible que ya se haya utilizado.",
   "errorDuringStartupWithDetails": "Error durante el inicio: {errorMessage}",
   "errorEnrollmentRevoked": "Tu inscripción ha sido revocada. Por favor, inicia sesión nuevamente para solicitar una nueva inscripción.",
   "errorOnboardingWithDetails": "La integración falló: {details}",

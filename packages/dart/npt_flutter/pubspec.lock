@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: at_auth
-      sha256: "347036e8a471abab346fbcbaa3290a4eb406d401dfae1f38b57ac76d3a828b7f"
+      sha256: f1614a44868a23c1764ffb3c50683844a267e2ef6b2af2cebc99ca0bf77847a8
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0-rc6"
+    version: "4.0.0-rc7"
   at_base2e15:
     dependency: transitive
     description:
