@@ -2,8 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/events.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/npp.dart'
+    show
+        Client,
+        ClientGroup,
+        ClientGroupMember,
+        Daemon,
+        NppCache,
+        NppService,
+        Service,
+        ServiceACL;
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 
@@ -29,6 +41,14 @@ class _Rules implements NPARequestHandler {
       permitOpen: ['localhost:22'],
     );
   }
+}
+
+/// Records every log line, so a test can check what was logged.
+class _CapturingLoggingHandler implements LoggingHandler {
+  final List<LogRecord> records = <LogRecord>[];
+
+  @override
+  void call(LogRecord record) => records.add(record);
 }
 
 void main() {
@@ -234,6 +254,311 @@ void main() {
 
       expect(configSharesWith(other), 1,
           reason: 'an earlier heartbeat without rules left nothing behind');
+    });
+  });
+
+  group('Given a policy service @policy with no event-logging atSign', () {
+    const policy = '@policy';
+    const daemon = '@daemon';
+
+    final logs = _CapturingLoggingHandler();
+    late LoggingHandler previousHandler;
+    late NoPortsHarness harness;
+
+    setUpAll(() {
+      previousHandler = AtSignLogger.defaultLoggingHandler;
+      AtSignLogger.defaultLoggingHandler = logs;
+    });
+
+    tearDownAll(() => AtSignLogger.defaultLoggingHandler = previousHandler);
+
+    setUp(() async {
+      logs.records.clear();
+      harness = NoPortsHarness.create(atSigns: {policy, daemon});
+      await NPAImpl(
+        atClient:
+            await harness.openClient(policy, namespace: DefaultArgs.namespace),
+        homeDirectory: harness.home.path,
+        handler: _Rules({daemon.toAtsign()}),
+        eventLoggingAtsign: null,
+      ).run();
+    });
+
+    test(
+        'when @daemon asks about one of its clients, then the service answers,'
+        ' and logs nothing at warning or above', () async {
+      final rpc = AtRpcClient(
+        serverAtsign: policy,
+        atClient:
+            await harness.openClient(daemon, namespace: DefaultArgs.namespace),
+        baseNameSpace: DefaultArgs.namespace,
+        domainNameSpace: 'auth_checks',
+      );
+
+      final answer = await rpc.call(NPAAuthCheckRequest(
+        daemonAtsign: daemon,
+        daemonDeviceName: 'device',
+        daemonDeviceGroupName: 'default',
+        clientAtsign: '@alice',
+      ).toJson()).timeout(const Duration(seconds: 2));
+
+      expect(answer['authorized'], isTrue);
+      expect(
+          logs.records
+              .where((r) => r.level >= Level.WARNING)
+              .map((r) => r.message),
+          isEmpty);
+    });
+  });
+
+  group(
+      'Given an npp policy service @policy whose rules hold a different number'
+      ' of each kind', () {
+    const policy = '@policy';
+    const events = '@events';
+
+    late NoPortsHarness harness;
+    late List<Map<String, dynamic>> received;
+    final npaLogs = <LogRecord>[];
+    Logger? npaLogger;
+    StreamSubscription<LogRecord>? npaLogSubscription;
+    NppService? startedNpp;
+
+    setUp(() async {
+      harness = NoPortsHarness.create(atSigns: {policy, events});
+      received = [];
+      npaLogs.clear();
+
+      final listener = AtEventListenerService(
+        atClient:
+            await harness.openClient(events, namespace: DefaultArgs.namespace),
+      );
+      final elc = await listener.getOrCreateConfig(
+        namespace: DefaultArgs.eventLoggingNamespace,
+        ttln: 60 * 60 * 1000,
+      );
+      await listener.shareEventLoggingConfigWithAtsigns(
+        config: elc,
+        atSigns: [policy.toAtsign()],
+        namespace: DefaultArgs.eventLoggingNamespace,
+      );
+      listener
+          .getJsonStream(elc)
+          .listen((json) => received.add(jsonDecode(json)));
+    });
+
+    tearDown(() async {
+      await startedNpp?.stop(reason: 'test ended');
+      startedNpp = null;
+      await npaLogSubscription?.cancel();
+      npaLogger?.level = Level.SHOUT;
+    });
+
+    /// Rules holding a different number of each kind, so a count reported
+    /// under the wrong name shows up: 2 clients, 3 client groups, 6 client
+    /// group members, 1 daemon, 4 services and 5 service ACLs.
+    NppCache rulesOfEachKind() {
+      final rules = NppCache();
+      final clients = [
+        Client(name: 'Alice', atSign: '@alice'),
+        Client(name: 'Bob', atSign: '@bob'),
+      ];
+      final groups = [
+        ClientGroup(name: 'g1'),
+        ClientGroup(name: 'g2'),
+        ClientGroup(name: 'g3'),
+      ];
+      for (final client in clients) {
+        rules.putClient(client);
+      }
+      for (final group in groups) {
+        rules.putClientGroup(group);
+      }
+      for (final client in clients) {
+        for (final group in groups) {
+          rules.putClientGroupMember(ClientGroupMember(
+              clientId: client.id!, clientGroupId: group.id!));
+        }
+      }
+      final daemon = Daemon(atSign: '@daemon');
+      rules.putDaemon(daemon);
+      final services = [
+        for (var i = 1; i <= 4; i++)
+          Service(
+              daemonId: daemon.id!,
+              deviceName: 'device$i',
+              deviceGroupName: '__none__'),
+      ];
+      for (final service in services) {
+        rules.putService(service);
+      }
+      for (var i = 1; i <= 5; i++) {
+        rules.putServiceACL(ServiceACL(
+            serviceId: services.first.id!,
+            clientGroupId: groups.first.id!,
+            permitOpen: 'localhost:$i'));
+      }
+      return rules;
+    }
+
+    /// Starts [policy]'s npp service, as npp.dart does after loading its
+    /// rules from files, recording everything its NPAImpl logs in [npaLogs],
+    /// and returns it.
+    Future<NppService> start({required String? eventLoggingAtSign}) async {
+      final npp = NppService(
+        atClient:
+            await harness.openClient(policy, namespace: DefaultArgs.namespace),
+        nppCache: rulesOfEachKind(),
+        managerAllowList: {policy},
+        binariesVersion: '1.2.3',
+        persistenceMethod: 'file',
+        homeDirectory: harness.home.path,
+        eventLoggingAtSign: eventLoggingAtSign,
+      )..init();
+      startedNpp = npp;
+      // NOTE NPAImpl's logger is set to SHOUT, so it is lowered here to see
+      // its warnings; every NPAImpl shares it, so tearDown restores it
+      npaLogger = npp.npa.logger.logger..level = Level.ALL;
+      npaLogSubscription = npaLogger!.onRecord.listen(npaLogs.add);
+      await npp.start();
+      return npp;
+    }
+
+    /// How many events [policy] has sent @events, as @events's atServer
+    /// holds them. The shared key notification that @policy's first encrypted
+    /// send brings is left out: it isn't an event.
+    int eventsSent() => harness.server[events].received
+        .where((n) => n.from == policy)
+        .where((n) => n.key.contains('.${DefaultArgs.eventLoggingNamespace}@'))
+        .length;
+
+    test(
+        'when it starts with @events as its event logging Atsign, then @events'
+        ' receives one rulesLoaded event from @policy counting its rules',
+        () async {
+      await start(eventLoggingAtSign: events);
+      for (var i = 0; i < 50 && received.isEmpty; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      expect(received, hasLength(1));
+      final event = received.single;
+      expect(event['event'], 'rulesLoaded');
+      expect(event['sender'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['timestamp'], endsWith('Z'));
+      expect(event['persistenceMethod'], 'file');
+      expect(event['binariesVersion'], '1.2.3');
+      expect(event['rules'], {
+        'clients': 2,
+        'clientGroups': 3,
+        'clientGroupMembers': 6,
+        'daemons': 1,
+        'services': 4,
+        'serviceACLs': 5,
+      });
+    });
+
+    test(
+        'when it starts and stops with no event logging Atsign, then it sends'
+        ' @events nothing, and its policy service logs nothing at warning or'
+        ' above',
+        () async {
+      final npp = await start(eventLoggingAtSign: null);
+      await Future.delayed(const Duration(seconds: 1));
+      expect(npp.heartbeatRunning, isFalse,
+          reason: 'no event logging Atsign, so no heartbeat timer');
+      await npp.stop(reason: 'SIGINT');
+
+      expect(received, isEmpty);
+      expect(
+          harness.server[events].received.where((n) => n.from == policy),
+          isEmpty);
+      expect(
+          npaLogs
+              .where((r) => r.level >= Level.WARNING)
+              .map((r) => r.message),
+          isEmpty);
+    });
+
+    test(
+        'when its policy service flushes its events, then every event it had'
+        ' sent has reached @events, and an event sent afterwards is dropped'
+        ' with a log line rather than thrown', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      for (var i = 1; i <= 5; i++) {
+        await npp.npa.sendEvent({'event': 'test$i'});
+      }
+
+      await npp.npa.flushEvents();
+
+      expect(eventsSent(), 6,
+          reason: 'rulesLoaded and the five test events, with no waiting');
+
+      await npp.npa.sendEvent({'event': 'late'});
+      expect(
+          npaLogs
+              .where((r) => r.level >= Level.SHOUT)
+              .map((r) => r.message),
+          contains(startsWith('Failed to log event late')));
+    });
+
+    test(
+        'when it starts with @events as its event logging Atsign, then its'
+        ' heartbeat runs, and a heartbeat carries the interval and the rule'
+        ' counts at the time', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      expect(npp.heartbeatRunning, isTrue);
+      for (var i = 2; i <= 7; i++) {
+        npp.nppCache.putDaemon(Daemon(atSign: '@daemon$i'));
+      }
+
+      await npp.sendHeartbeat();
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      final heartbeat = received.singleWhere((e) => e['event'] == 'heartbeat');
+      expect(heartbeat['sender'], policy);
+      expect(heartbeat['policyAtsign'], policy);
+      expect(heartbeat['timestamp'], endsWith('Z'));
+      expect(heartbeat['interval'], 60);
+      expect(heartbeat['rules'], {
+        'clients': 2,
+        'clientGroups': 3,
+        'clientGroupMembers': 6,
+        'daemons': 7,
+        'services': 4,
+        'serviceACLs': 5,
+      });
+    });
+
+    test(
+        'when it stops, then its heartbeat stops, and stopped, with the reason'
+        ' and uptime, has reached @events without waiting; stopping again'
+        ' sends nothing more', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      await Future.delayed(const Duration(milliseconds: 1100));
+
+      await npp.stop(reason: 'SIGTERM');
+      await npp.stop(reason: 'SIGINT');
+
+      expect(npp.heartbeatRunning, isFalse);
+      expect(eventsSent(), 2, reason: 'rulesLoaded, then one stopped');
+      expect(
+          npaLogs
+              .map((r) => r.message)
+              .where((m) => m.startsWith('Failed to log event')),
+          isEmpty,
+          reason: 'the second stop() does nothing, not a failed send');
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      expect(received.map((e) => e['event']), ['rulesLoaded', 'stopped']);
+      expect(received.last['reason'], 'SIGTERM');
+      expect(received.last['uptime'],
+          allOf(greaterThanOrEqualTo(1), lessThan(1000)),
+          reason: 'it ran just over a second, so whole seconds, not 0 or ms');
     });
   });
 }

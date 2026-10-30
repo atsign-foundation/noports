@@ -11,6 +11,7 @@ on:
      - 'packages/arduino/**'
   push:
     tags: ["a*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -68,13 +69,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          working-directory: ${{ matrix.project }}
+          activate-environment: true
+
+      # uv used with lock file to ensure dependencies pinned to hashes
       # esptool pinned to 4.x: v5 renamed merge_bin and changed CLI flags
       - name: Install PlatformIO + esptool
-        run: pip install platformio "esptool==4.8.1"
+        run: uv pip install --require-hashes -r packages/arduino/tools/pylock.toml
 
       - name: Cache PlatformIO packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -115,11 +123,34 @@ jobs:
           fi
           ls -la "$OUT"
 
+      - name: Sanitise GitHub ref
+        id: sanitise
+        shell: bash
+        run: |
+          # Replaces both / and \ with -
+          SAFE_REF=$(echo "${{ github.ref_name }}" | tr '/\\' '--')
+          echo "safe_ref=$SAFE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SBOM
+        uses: sbomify/github-action@8c7c788536683c75ad0e87876e75c743942038cc # v26.10.1
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: 'azZJvaqsyGMC'
+          LOCK_FILE: '${{ matrix.project }}/platformio.ini'
+          COMPONENT_VERSION: ${{ matrix.name }}-${{steps.sanitise.outputs.safe_ref}}-gha${{github.run_number}}
+          OUTPUT_FILE: '${{ runner.temp }}/assets/${{ matrix.name }}-${{steps.sanitise.outputs.safe_ref}}-sbom.cdx.json'
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: true
+
+
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.name }}
-          path: ${{ runner.temp }}/assets/*.factory.bin
+          path: |
+            ${{ runner.temp }}/assets/*.factory.bin
+            ${{ runner.temp }}/assets/*sbom.cdx.json
           if-no-files-found: error
 
   release:
@@ -145,7 +176,7 @@ jobs:
 
       - name: Generate checksums
         working-directory: assets
-        run: sha256sum *.factory.bin > SHA256SUMS
+        run: sha256sum *.factory.bin *sbom.cdx.json > SHA256SUMS
 
       - name: Create or update release
         env:
@@ -156,7 +187,7 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --verify-tag --generate-notes --title "$TAG" --latest=false
           fi
-          gh release upload "$TAG" assets/*.factory.bin assets/SHA256SUMS --clobber
+          gh release upload "$TAG" assets/*.factory.bin assets/*sbom.cdx.json assets/SHA256SUMS --clobber
 
       - id: hash
         name: Pass artifact hashes for SLSA provenance

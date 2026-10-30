@@ -21,13 +21,17 @@ void main() {
     when(() => atClient.getCurrentAtSign()).thenReturn('@policy');
   });
 
-  NppService service({String? eventLoggingAtSign}) => NppService(
+  NppService service({
+    String? eventLoggingAtSign,
+    Duration heartbeatInterval = NppServiceDefaults.heartbeatInterval,
+  }) => NppService(
     atClient: atClient,
     nppCache: NppCache(),
     managerAllowList: {'@policy'},
     binariesVersion: '0.0.0',
     homeDirectory: Directory.systemTemp.path,
     eventLoggingAtSign: eventLoggingAtSign,
+    heartbeatInterval: heartbeatInterval,
   );
 
   group('NppService event logging Atsign', () {
@@ -45,6 +49,26 @@ void main() {
       expect(
         () => service(eventLoggingAtSign: '@a@b').init(),
         throwsA(isA<InvalidAtSignException>()),
+      );
+    });
+  });
+
+  group('NppService heartbeat interval', () {
+    test('defaults to 60 s', () {
+      expect(service().heartbeatInterval, const Duration(seconds: 60));
+    });
+
+    test('is refused under 30 s', () {
+      expect(
+        () => service(heartbeatInterval: const Duration(seconds: 29)).init(),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('is accepted at 30 s', () {
+      expect(
+        () => service(heartbeatInterval: const Duration(seconds: 30)).init(),
+        returnsNormally,
       );
     });
   });
