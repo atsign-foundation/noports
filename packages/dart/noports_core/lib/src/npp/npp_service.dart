@@ -139,6 +139,8 @@ class NppService {
         nppOperationHooks: nppOperationHooks,
         binariesVersion: binariesVersion,
         handler: handler,
+        policyAtsign: npa.policyAtsign,
+        onEvent: npa.sendEvent,
       ),
       isClient: false,
       isServer: true,
