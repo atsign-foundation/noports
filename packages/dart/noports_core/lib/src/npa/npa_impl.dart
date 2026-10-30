@@ -142,6 +142,27 @@ class NPAImpl
     );
   }
 
+  @override
+  Future<void> sendEvent(Map<String, dynamic> event) async {
+    if (elc == null) return;
+    try {
+      await logEvent(elc!, event);
+    } catch (e) {
+      logger.shout('Failed to log event ${event['event']}: $e');
+    }
+  }
+
+  @override
+  Future<void> flushEvents({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    try {
+      await closeEventLogger().timeout(timeout);
+    } on TimeoutException {
+      logger.shout('Gave up waiting for events to be sent after $timeout');
+    }
+  }
+
   late final AtRpc _policyInfoRpcServer;
 
   void _startPolicyInfoRpcServer() {
@@ -154,9 +175,7 @@ class NPAImpl
         namespace: DefaultArgs.namespace,
         handler: handler,
         atClient: atClient,
-        onEvent: (event) async {
-          if (elc != null) await logEvent(elc!, event);
-        },
+        onEvent: sendEvent,
       ),
       allowList: _DaemonsWithRules(handler),
       allowAll: false,
@@ -253,8 +272,6 @@ class PolicyInfoRpcRequestHandler
       payload: answer.toJson(),
     );
 
-    // The answer is settled before the event is built, so building or
-    // sending the event can never change it.
     await _sendEvent(() {
       final String? error = failure;
       if (!aboutItself) {

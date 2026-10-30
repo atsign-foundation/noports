@@ -66,7 +66,7 @@ jobs:
         with:
           ref: npt-release-${{github.run_number}}
       - name: Generate SBOM
-        uses: sbomify/github-action@fc7f05256cca65c26c8010da5faf3203e9477e5c # v26.9.0
+        uses: sbomify/github-action@8c7c788536683c75ad0e87876e75c743942038cc # v26.10.1
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: 'xUUCaZd4OWr1'

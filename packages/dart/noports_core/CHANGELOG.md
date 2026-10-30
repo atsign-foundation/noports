@@ -21,6 +21,8 @@
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
 - **BREAKING CHANGE** fix: `NPARequestHandler` implementations must add
   `hasRulesFor`
+- **BREAKING CHANGE** feat: `NPA` implementations must add `sendEvent` and
+  `flushEvents`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
@@ -99,6 +101,8 @@
 - fix: policy services answer only daemons that have rules, and each only
   about itself
 - fix: `--list-devices` lists a daemon on the client's own atSign
+- feat: npp logs rulesLoaded, heartbeat and stopped events to the event
+  logging Atsign
 
 # 6.15.0
 

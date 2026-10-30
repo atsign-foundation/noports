@@ -133,18 +133,24 @@ abstract class SessionEvent {
   };
 }
 
+/// The `event` field of every [PolicyEvent].
 enum PolicyEventType {
   clientAdmitted, // policy check authorised the client
   clientRejected, // policy check refused the client
   policyCheckFailed, // policy check threw; the client was refused
   requestRefused, // a daemon asked about another daemon; nothing was checked
+  rulesLoaded, // the policy service loaded its rules and is answering checks
+  heartbeat, // the policy service is still running and answering checks
+  stopped, // the policy service is shutting down
 }
 
 /// The events a policy service sends to its event logging Atsign: one for
-/// each auth check it answers. Every event carries `event` (a
-/// [PolicyEventType] name), `timestamp` (UTC), `policyAtsign`, `fromAtsign`
-/// (the Atsign that sent the check) and the request's `clientAtsign`,
-/// `daemonAtsign`, `daemonDeviceName` and `daemonDeviceGroupName`.
+/// each auth check it answers, and [rulesLoaded], [heartbeat] and [stopped]
+/// for its own lifecycle. Every event carries `event` (a [PolicyEventType]
+/// name), `timestamp` (UTC) and `policyAtsign`. Each auth check event also
+/// carries `fromAtsign` (the Atsign that sent the check) and the request's
+/// `clientAtsign`, `daemonAtsign`, `daemonDeviceName` and
+/// `daemonDeviceGroupName`.
 abstract class PolicyEvent {
   /// The policy check authorised the client, with the answer's `message` and
   /// `permitOpen`.
@@ -212,6 +218,52 @@ abstract class PolicyEvent {
       request,
     ),
     "message": response.message,
+  };
+
+  /// The policy service has loaded its rules and is answering checks.
+  /// `persistenceMethod` is where the rules came from, and `rules` counts
+  /// each kind of rule it holds; the rules themselves are not sent.
+  static Map<String, dynamic> rulesLoaded({
+    required Atsign policyAtsign,
+    required String? persistenceMethod,
+    required String binariesVersion,
+    required Map<String, int> rules,
+  }) => {
+    "event": PolicyEventType.rulesLoaded.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "persistenceMethod": persistenceMethod,
+    "binariesVersion": binariesVersion,
+    "rules": rules,
+  };
+
+  /// The policy service is still running and answering checks. `interval` is
+  /// how many seconds apart its heartbeats are, and `rules` counts each kind
+  /// of rule it holds now.
+  static Map<String, dynamic> heartbeat({
+    required Atsign policyAtsign,
+    required Duration interval,
+    required Map<String, int> rules,
+  }) => {
+    "event": PolicyEventType.heartbeat.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "interval": interval.inSeconds,
+    "rules": rules,
+  };
+
+  /// The policy service is shutting down. `reason` says why (e.g. `SIGINT`),
+  /// and `uptime` is how many seconds it ran.
+  static Map<String, dynamic> stopped({
+    required Atsign policyAtsign,
+    required String reason,
+    required Duration uptime,
+  }) => {
+    "event": PolicyEventType.stopped.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "reason": reason,
+    "uptime": uptime.inSeconds,
   };
 
   /// The fields every policy check event carries.
