@@ -142,6 +142,9 @@ enum PolicyEventType {
   rulesLoaded, // the policy service loaded its rules and is answering checks
   heartbeat, // the policy service is still running and answering checks
   stopped, // the policy service is shutting down
+  ruleChanged, // a manager RPC put or deleted a rule
+  ruleChangeFailed, // a manager RPC failed to put or delete a rule
+  managerRequestRefused, // an Atsign other than this service sent a manager RPC
 }
 
 /// The events a policy service sends to its event logging Atsign: one for
@@ -151,6 +154,8 @@ enum PolicyEventType {
 /// carries `fromAtsign` (the Atsign that sent the check) and the request's
 /// `clientAtsign`, `daemonAtsign`, `daemonDeviceName` and
 /// `daemonDeviceGroupName`.
+/// Each manager RPC event also carries `fromAtsign` (the Atsign that sent the
+/// request) and the request's `reqId`.
 abstract class PolicyEvent {
   /// The policy check authorised the client, with the answer's `message` and
   /// `permitOpen`.
@@ -266,6 +271,65 @@ abstract class PolicyEvent {
     "uptime": uptime.inSeconds,
   };
 
+  /// A manager RPC changed a rule. `operation` is `put` or `delete`, `target`
+  /// is the kind of rule, and `rule` is the rule as stored, or as it was just
+  /// before it was deleted.
+  static Map<String, dynamic> ruleChanged({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+    required String operation,
+    required String? target,
+    required Map<String, dynamic> rule,
+  }) => {
+    ..._managerRequestFields(
+      PolicyEventType.ruleChanged,
+      policyAtsign,
+      fromAtsign,
+      reqId,
+    ),
+    "operation": operation,
+    "target": target,
+    "rule": rule,
+  };
+
+  /// A manager RPC failed to change a rule; `error` says why. `rule` is empty
+  /// if the request failed before a rule was read from it.
+  static Map<String, dynamic> ruleChangeFailed({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+    required String operation,
+    required String? target,
+    required Map<String, dynamic> rule,
+    required String error,
+  }) => {
+    ..._managerRequestFields(
+      PolicyEventType.ruleChangeFailed,
+      policyAtsign,
+      fromAtsign,
+      reqId,
+    ),
+    "operation": operation,
+    "target": target,
+    "rule": rule,
+    "error": error,
+  };
+
+  /// An Atsign on the manager allow list sent a manager RPC, and was refused
+  /// because it isn't this policy service's own Atsign. Nothing from the
+  /// request is repeated, since that Atsign wrote it.
+  static Map<String, dynamic> managerRequestRefused({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+  }) => _managerRequestFields(
+    PolicyEventType.managerRequestRefused,
+    policyAtsign,
+    fromAtsign,
+    reqId,
+  );
+
   /// The fields every policy check event carries.
   static Map<String, dynamic> _policyCheckFields(
     PolicyEventType event,
@@ -281,5 +345,19 @@ abstract class PolicyEvent {
     "daemonAtsign": request.daemonAtsign,
     "daemonDeviceName": request.daemonDeviceName,
     "daemonDeviceGroupName": request.daemonDeviceGroupName,
+  };
+
+  /// The fields every manager RPC event carries.
+  static Map<String, dynamic> _managerRequestFields(
+    PolicyEventType event,
+    Atsign policyAtsign,
+    Atsign fromAtsign,
+    int reqId,
+  ) => {
+    "event": event.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "fromAtsign": fromAtsign,
+    "reqId": reqId,
   };
 }
