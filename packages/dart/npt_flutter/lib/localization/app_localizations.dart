@@ -971,6 +971,18 @@ abstract class AppLocalizations {
   /// **'Fastest'**
   String get fastest;
 
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get favoriteRemove;
+
   /// No description provided for @feedback.
   ///
   /// In en, this message translates to:
@@ -1025,11 +1037,137 @@ abstract class AppLocalizations {
   /// **'Add Group'**
   String get groupAdd;
 
+  /// No description provided for @groupAddConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add connection'**
+  String get groupAddConnection;
+
+  /// No description provided for @groupChooseStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose connections to start'**
+  String get groupChooseStartAll;
+
+  /// No description provided for @groupChooseStartAllDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all starts the checked connections, one after another.'**
+  String get groupChooseStartAllDescription;
+
+  /// No description provided for @groupCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get groupCollapse;
+
+  /// No description provided for @groupDeleteFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get groupDeleteFolder;
+
+  /// No description provided for @groupDeleteFolderMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder will be deleted. The connections inside it will be kept.'**
+  String get groupDeleteFolderMessage;
+
+  /// No description provided for @groupExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get groupExpand;
+
+  /// No description provided for @groupFolderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get groupFolderName;
+
+  /// No description provided for @groupFolderNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a folder name'**
+  String get groupFolderNameRequired;
+
+  /// No description provided for @groupLoadFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders failed to load. Retry'**
+  String get groupLoadFailedRetry;
+
+  /// No description provided for @groupMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get groupMoveDown;
+
+  /// No description provided for @groupMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get groupMoveTo;
+
+  /// No description provided for @groupMoveToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get groupMoveToFolder;
+
+  /// No description provided for @groupMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get groupMoveUp;
+
   /// No description provided for @groupName.
   ///
   /// In en, this message translates to:
   /// **'Group Name'**
   String get groupName;
+
+  /// No description provided for @groupNewFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get groupNewFolder;
+
+  /// No description provided for @groupNoFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get groupNoFolder;
+
+  /// No description provided for @groupRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get groupRename;
+
+  /// No description provided for @groupRenameFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get groupRenameFolder;
+
+  /// No description provided for @groupStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all'**
+  String get groupStartAll;
+
+  /// No description provided for @groupStartSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {count} of {total}'**
+  String groupStartSome(Object count, Object total);
+
+  /// No description provided for @groupStopAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop all'**
+  String get groupStopAll;
 
   /// No description provided for @import.
   ///
@@ -1445,6 +1583,18 @@ abstract class AppLocalizations {
   /// **'No reason provided'**
   String get profileFailedUnknownMessage;
 
+  /// No description provided for @profileFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get profileFolder;
+
+  /// No description provided for @profileFolderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder this connection is listed in.'**
+  String get profileFolderDescription;
+
   /// No description provided for @profileImportDialogTitle.
   ///
   /// In en, this message translates to:
@@ -1511,6 +1661,72 @@ abstract class AppLocalizations {
   /// **'The following profile(s) are connected:'**
   String get profileRunningCloseMsgStart;
 
+  /// No description provided for @profileSearchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get profileSearchClear;
+
+  /// No description provided for @profileSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search connections'**
+  String get profileSearchHint;
+
+  /// No description provided for @profileSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No connections match your search'**
+  String get profileSearchNoResults;
+
+  /// No description provided for @profileSortByNameMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The list is sorted by name, so items are placed by name'**
+  String get profileSortByNameMessage;
+
+  /// No description provided for @profileSortFavoritesFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites first'**
+  String get profileSortFavoritesFirst;
+
+  /// No description provided for @profileSortManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual order'**
+  String get profileSortManual;
+
+  /// No description provided for @profileSortNameAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, A to Z'**
+  String get profileSortNameAscending;
+
+  /// No description provided for @profileSortNameDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, Z to A'**
+  String get profileSortNameDescending;
+
+  /// No description provided for @profileSortPinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred items stay on top while Favorites first is on'**
+  String get profileSortPinnedMessage;
+
+  /// No description provided for @profileSortReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to manual order'**
+  String get profileSortReset;
+
+  /// No description provided for @profileSortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get profileSortTooltip;
+
   /// No description provided for @profileStatusFailedLoad.
   ///
   /// In en, this message translates to:
@@ -1546,6 +1762,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading'**
   String get profileStatusLoading;
+
+  /// No description provided for @profileStatusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to start'**
+  String get profileStatusQueued;
+
+  /// No description provided for @profileStatusQueuedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waits for the connections before it to start. Click to start it now.'**
+  String get profileStatusQueuedMessage;
 
   /// No description provided for @profileStatusStarted.
   ///

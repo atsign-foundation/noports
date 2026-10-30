@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
+import 'package:npt_flutter/features/profile_group/profile_group.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -10,18 +11,56 @@ import 'package:npt_flutter/widgets/custom_card.dart';
 class ProfileFormView extends StatelessWidget {
   final String uuid;
   final Profile? copyFrom;
-  const ProfileFormView(this.uuid, {super.key, this.copyFrom});
+  final String? groupId;
+  const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.groupId});
+
+  void _applyFolder(BuildContext context) {
+    final chosen = context.read<ProfileFormFolderCubit>().state;
+    final groupBloc = context.read<ProfileGroupBloc>();
+    final groups = groupBloc.state;
+    if (groups is! ProfileGroupsLoaded) return;
+    final newName = chosen.newName;
+    if (newName != null) {
+      groupBloc.add(ProfileGroupCreateEvent(name: newName, profileIds: [uuid]));
+      return;
+    }
+    if (groups.data.groupForProfile(uuid)?.uuid == chosen.groupId) return;
+    groupBloc.add(
+      ProfileGroupMoveProfilesEvent(
+        profileIds: [uuid],
+        groupId: chosen.groupId,
+        visibleUngrouped: chosen.groupId == null
+            ? ProfileGroupActions.visibleUngrouped(context)
+            : null,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final GlobalKey<FormState> formkey = GlobalKey<FormState>();
     final deviceSize = MediaQuery.of(context).size;
-    return BlocProvider<ProfileBloc>(
-      create: (BuildContext context) =>
-          /// Local copy of the profile which is used by the form
-          ProfileBloc(context.read<ProfileRepository>(), uuid)
-            ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ProfileBloc>(
+          create: (BuildContext context) =>
+              /// Local copy of the profile which is used by the form
+              ProfileBloc(context.read<ProfileRepository>(), uuid)
+                ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+        ),
+        BlocProvider<ProfileFormFolderCubit>(
+          create: (BuildContext context) {
+            final groups = context.read<ProfileGroupBloc>().state;
+            return ProfileFormFolderCubit(
+              groupId ??
+                  (groups is ProfileGroupsLoaded
+                      ? groups.data.groupForProfile(uuid)?.uuid
+                      : null),
+            );
+          },
+        ),
+      ],
       child: Padding(
         padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100),
         child: Stack(
@@ -41,6 +80,7 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
+                            const ProfileFolderSelector(),
                             gapH10,
                             const Padding(
                               padding: EdgeInsets.symmetric(
@@ -140,6 +180,7 @@ class ProfileFormView extends StatelessWidget {
                                                       .profile,
                                             ),
                                           );
+                                      _applyFolder(context);
                                     },
                                     child: Text(strings.submit),
                                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../styles/sizes.dart';
@@ -26,6 +27,9 @@ class ProfileFavoriteButton extends StatelessWidget {
               return profile.isInFavorites(state.favorites);
             },
             builder: (BuildContext context, bool isFavorited) => IconButton(
+              tooltip: isFavorited
+                  ? AppLocalizations.of(context)!.favoriteRemove
+                  : AppLocalizations.of(context)!.favoriteAdd,
               onPressed: () {
                 if (isFavorited) {
                   context.read<FavoriteBloc>().add(

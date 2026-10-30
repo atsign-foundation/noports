@@ -60,61 +60,73 @@ class ProfileHeaderView extends StatelessWidget {
                     vertical: Sizes.p8,
                     horizontal: Sizes.p10,
                   ),
-                  child: switch (viewLayout) {
-                    null => const Center(child: Spinner()),
-                    PreferredViewLayout.minimal => Row(
-                      children: [
-                        const ProfileSelectAllBox(),
-                        gapW10,
-                        Expanded(
-                          flex: 3,
-                          child: ProfileHeaderColumn(
-                            title: strings.profileName,
+                  // Same width as the row grip, so the columns line up.
+                  child: Row(
+                    children: <Widget>[
+                      const SizedBox(width: ProfileDragHandle.width),
+                      Expanded(
+                        child: switch (viewLayout) {
+                          null => const Center(child: Spinner()),
+                          PreferredViewLayout.minimal => Row(
+                            children: [
+                              const ProfileSelectAllBox(),
+                              gapW10,
+                              Expanded(
+                                flex: 3,
+                                child: ProfileHeaderColumn(
+                                  title: strings.profileName,
+                                ),
+                              ),
+                              gapW10,
+                              Expanded(
+                                flex: 3,
+                                child: ProfileHeaderColumn(
+                                  title: strings.status,
+                                ),
+                              ),
+                              const Spacer(),
+                              const SizedBox(width: Sizes.p80),
+                            ],
                           ),
-                        ),
-                        gapW10,
-                        Expanded(
-                          flex: 3,
-                          child: ProfileHeaderColumn(title: strings.status),
-                        ),
-                        const Spacer(),
-                        const SizedBox(width: Sizes.p80),
-                      ],
-                    ),
-                    PreferredViewLayout.sshStyle => Row(
-                      children: [
-                        const ProfileSelectAllBox(),
-                        gapW10,
-                        Expanded(
-                          flex: 2,
-                          child: ProfileHeaderColumn(
-                            title: strings.profileName,
+                          PreferredViewLayout.sshStyle => Row(
+                            children: [
+                              const ProfileSelectAllBox(),
+                              gapW10,
+                              Expanded(
+                                flex: 2,
+                                child: ProfileHeaderColumn(
+                                  title: strings.profileName,
+                                ),
+                              ),
+                              gapW10,
+                              Expanded(
+                                flex: 2,
+                                child: ProfileHeaderColumn(
+                                  title: strings.deviceName,
+                                ),
+                              ),
+                              gapW10,
+                              Expanded(
+                                flex: 2,
+                                child: ProfileHeaderColumn(
+                                  title: strings.serviceMapping,
+                                ),
+                              ),
+                              gapW10,
+                              Expanded(
+                                flex: 2,
+                                child: ProfileHeaderColumn(
+                                  title: strings.status,
+                                ),
+                              ),
+                              gapW10,
+                              const SizedBox(width: Sizes.p80),
+                            ],
                           ),
-                        ),
-                        gapW10,
-                        Expanded(
-                          flex: 2,
-                          child: ProfileHeaderColumn(
-                            title: strings.deviceName,
-                          ),
-                        ),
-                        gapW10,
-                        Expanded(
-                          flex: 2,
-                          child: ProfileHeaderColumn(
-                            title: strings.serviceMapping,
-                          ),
-                        ),
-                        gapW10,
-                        Expanded(
-                          flex: 2,
-                          child: ProfileHeaderColumn(title: strings.status),
-                        ),
-                        gapW10,
-                        const SizedBox(width: Sizes.p80),
-                      ],
-                    ),
-                  },
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             );

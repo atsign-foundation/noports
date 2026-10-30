@@ -8,19 +8,25 @@ class ProfileSelectAllBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ProfileListFilterState filter = context
+        .watch<ProfileListFilterCubit>()
+        .state;
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
+        // While searching, only the connections shown are selected.
+        final List<String>? shown = list is ProfileListLoaded
+            ? list.profiles.where(filter.matches).toList()
+            : null;
         return BlocSelector<
           ProfilesSelectedCubit,
           ProfilesSelectedState,
           (bool, bool)?
         >(
           selector: (ProfilesSelectedState state) {
-            if (list is! ProfileListLoaded) return null;
+            if (shown == null) return null;
             // one - whether all elements are selected or not
             var allChecked =
-                list.profiles.isNotEmpty &&
-                state.selected.containsAll(list.profiles);
+                shown.isNotEmpty && state.selected.containsAll(shown);
             // two - whether some elements are selected or not
             var anyChecked = state.selected.isNotEmpty;
             return (allChecked, anyChecked);
@@ -45,7 +51,11 @@ class ProfileSelectAllBox extends StatelessWidget {
                     context.read<ProfilesSelectedCubit>().deselectAll();
                   case true: // None checked transitions to true with tristate: true
                   case false: // Some checked transitions to false with tristate: true
-                    context.read<ProfilesSelectedCubit>().selectAll();
+                    final ProfilesSelectedCubit selected = context
+                        .read<ProfilesSelectedCubit>();
+                    filter.searching
+                        ? selected.selectOnly(shown!)
+                        : selected.selectAll();
                 }
               },
             );

@@ -500,6 +500,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -530,7 +536,75 @@ class AppLocalizationsPt extends AppLocalizations {
   String get groupAdd => 'Adicionar Grupo';
 
   @override
+  String get groupAddConnection => 'Adicionar conexão';
+
+  @override
+  String get groupChooseStartAll => 'Escolher ligações a iniciar';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Iniciar todos inicia as ligações marcadas, uma após a outra.';
+
+  @override
+  String get groupCollapse => 'Recolher';
+
+  @override
+  String get groupDeleteFolder => 'Excluir pasta';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get groupExpand => 'Expandir';
+
+  @override
+  String get groupFolderName => 'Nome da pasta';
+
+  @override
+  String get groupFolderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get groupLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get groupMoveDown => 'Mover para baixo';
+
+  @override
+  String get groupMoveTo => 'Mover para';
+
+  @override
+  String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get groupMoveUp => 'Mover para cima';
+
+  @override
   String get groupName => 'Nome do Grupo';
+
+  @override
+  String get groupNewFolder => 'Nova pasta';
+
+  @override
+  String get groupNoFolder => 'Sem pasta';
+
+  @override
+  String get groupRename => 'Renomear';
+
+  @override
+  String get groupRenameFolder => 'Renomear pasta';
+
+  @override
+  String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get groupStopAll => 'Parar todos';
 
   @override
   String get import => 'Importar';
@@ -757,6 +831,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta ligação aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -796,6 +876,42 @@ class AppLocalizationsPt extends AppLocalizations {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -812,6 +928,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Em espera';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda que as ligações anteriores iniciem. Clique para a iniciar agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';
@@ -1625,6 +1748,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -1655,7 +1784,75 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get groupAdd => 'Adicionar Grupo';
 
   @override
+  String get groupAddConnection => 'Adicionar conexão';
+
+  @override
+  String get groupChooseStartAll => 'Escolher conexões a iniciar';
+
+  @override
+  String get groupChooseStartAllDescription =>
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
+
+  @override
+  String get groupCollapse => 'Recolher';
+
+  @override
+  String get groupDeleteFolder => 'Excluir pasta';
+
+  @override
+  String get groupDeleteFolderMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get groupExpand => 'Expandir';
+
+  @override
+  String get groupFolderName => 'Nome da pasta';
+
+  @override
+  String get groupFolderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get groupLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get groupMoveDown => 'Mover para baixo';
+
+  @override
+  String get groupMoveTo => 'Mover para';
+
+  @override
+  String get groupMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get groupMoveUp => 'Mover para cima';
+
+  @override
   String get groupName => 'Nome do Grupo';
+
+  @override
+  String get groupNewFolder => 'Nova pasta';
+
+  @override
+  String get groupNoFolder => 'Sem pasta';
+
+  @override
+  String get groupRename => 'Renomear';
+
+  @override
+  String get groupRenameFolder => 'Renomear pasta';
+
+  @override
+  String get groupStartAll => 'Iniciar todos';
+
+  @override
+  String groupStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get groupStopAll => 'Parar todos';
 
   @override
   String get import => 'Importar';
@@ -1882,6 +2079,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta conexão aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -1921,6 +2124,42 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortPinnedMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -1937,6 +2176,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Aguardando';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda as conexões anteriores iniciarem. Clique para iniciá-la agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';

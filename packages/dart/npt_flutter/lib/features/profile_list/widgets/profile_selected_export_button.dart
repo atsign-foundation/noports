@@ -30,10 +30,7 @@ class ProfileSelectedExportButton extends StatelessWidget {
             var repo = context.read<ProfileRepository>();
             var futureExportableProfileList = repo
                 .getProfiles(selected)
-                .then(
-                  (profiles) =>
-                      profiles.map((profile) => profile.toExportableJson()),
-                );
+                .then(Export.exportableProfiles);
             showDialog(
               context: context,
               builder: (BuildContext context) => MultiSelectDialog(
