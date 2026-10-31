@@ -1,0 +1,57 @@
+# Debian and RPM packaging for the NoPorts Configuration app, built by
+# multibuild.yaml next to the `noports` package and published to
+# apt.noports.com / rpm.noports.com by the noports-apt and noports-rpm repos.
+#
+# Environment expected: VERSION (x.y.z), ARCH (amd64|arm64 for nfpm),
+# RPM_KEY_FILE (path to the signing key, or empty for unsigned test builds).
+# Before running nfpm, copy `build/linux/<x64|arm64>/release/bundle` to
+# `build/pkg/bundle` (nfpm does not expand variables in a tree source).
+name: "noports-config"
+arch: ${ARCH}
+platform: "linux"
+version: ${VERSION}
+section: "net"
+priority: "optional"
+maintainer: "Chris Swan <chris@atsign.com>"
+description: |
+  Desktop app to configure the NoPorts daemon (sshnpd):
+    enroll this device, choose who may connect, start and stop the service.
+vendor: "Atsign"
+homepage: "https://noports.com"
+license: "BSD-3-Clause"
+depends:
+  - noports
+contents:
+  # Whole Flutter bundle (executable, lib/*.so, data/), kept together.
+  - src: ./build/pkg/bundle
+    dst: /usr/lib/noports-config
+    type: tree
+  - src: /usr/lib/noports-config/noports_config
+    dst: /usr/bin/noports-config
+    type: symlink
+  - src: ./linux/packaging/noports-config.desktop
+    dst: /usr/share/applications/noports-config.desktop
+  - src: ./linux/packaging/noports-config.png
+    dst: /usr/share/icons/hicolor/256x256/apps/noports-config.png
+  - src: ../sshnoports/LICENSE
+    dst: /usr/share/doc/noports-config/copyright
+overrides:
+  deb:
+    depends:
+      - noports
+      - libgtk-3-0
+      - libglib2.0-0
+      # file_picker shells out to one of these for the import dialog
+      - zenity | kdialog | qarma
+      # pkexec prompts for config writes and systemctl
+      - polkitd | policykit-1
+  rpm:
+    depends:
+      - noports
+      - gtk3
+      - glib2
+      - zenity
+      - polkit
+rpm:
+  signature:
+    key_file: ${RPM_KEY_FILE}
