@@ -7,7 +7,7 @@ import 'package:npe2e/core_tests/tests/npt_to_port_22.dart';
 import 'package:npe2e/core_tests/tests/npt_to_port_22_no_encrypt_traffic.dart';
 import 'package:npe2e/print_test_utils.dart';
 import 'package:path/path.dart' as path;
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:npe2e/apkam_setup.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/client_binary_utils.dart';

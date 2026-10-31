@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/commands/activate/activate.dart';
@@ -9,9 +8,6 @@ import 'package:noports_core/src/commands/activate/activate_params.dart';
 import 'package:test/test.dart';
 
 class MockActivateFlows extends Mock implements ActivateFlows {}
-
-class MockAtOnboardingPreference extends Mock
-    implements AtOnboardingPreference {}
 
 class MockAtClient extends Mock implements AtClient {}
 
@@ -59,6 +55,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(InMemoryAtKeysIo());
     registerFallbackValue(AtClientPreference());
+    registerFallbackValue(InMemoryAtClientStorage(atSign: '@fallback'));
   });
 
   setUp(() {

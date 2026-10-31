@@ -100,6 +100,7 @@ class NoPortsHarness {
         ..fetchOfflineNotifications = false,
       storage: InMemoryAtClientStorage(atSign: atSign),
       lookUps: server.lookUps,
+      secondaryAddressFinder: server.addressFinder,
       serviceFactory: server.serviceFactory,
     );
     _clients.add(client);

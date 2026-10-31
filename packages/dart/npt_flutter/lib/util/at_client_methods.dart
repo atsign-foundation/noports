@@ -11,7 +11,6 @@ class AtClientMethods {
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
       ..hiveStoragePath = dir.path
-      ..commitLogPath = dir.path
       ..isLocalStoreRequired = true;
   }
 
@@ -46,7 +45,8 @@ class AtClientMethods {
     required String rootDomain,
   }) async {
     await stopCurrentClient();
-    final client = await atsign.open(
+    final client = await const AtsignFlows().open(
+      atsign,
       keys: keys,
       preference: await loadAtClientPreference(rootDomain),
     );

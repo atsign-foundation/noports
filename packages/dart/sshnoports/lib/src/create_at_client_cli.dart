@@ -1,8 +1,6 @@
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/utils.dart';
-import 'package:path/path.dart' as path;
 
 /// Opens [atsign] from its keyfile, waits for it to come online, and makes it
 /// the manager's current client.
@@ -26,13 +24,9 @@ Future<AtClient> createAtClientCli({
   atsign = AtUtils.fixAtSign(atsign);
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
 
-  final AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..storagePath = storagePath
+  final AtClientPreference preference = AtClientPreference()
     ..namespace = namespace
-    ..downloadPath = path.normalize('$storagePath/downloads')
     ..fetchOfflineNotifications = false
-    ..atKeysFilePath = atKeysFilePath
-    ..passPhrase = passPhrase
     ..rootDomain = parsedRootDomain.rootDomain
     ..rootPort = parsedRootDomain.rootPort;
 
@@ -46,10 +40,18 @@ Future<AtClient> createAtClientCli({
     client = await Atsign(atsign).open(
       keys:
           FileAtKeysIo(filePath: (_) => atKeysFilePath, passPhrase: passPhrase),
-      preference: atOnboardingConfig,
-      storage: atOnboardingConfig.storageFor(atsign),
+      preference: preference,
+      storage: HiveAtClientStorage(
+        atSign: atsign,
+        storagePath: storagePath,
+        closedByClient: true,
+      ),
       serviceFactory: atServiceFactory,
-      lookUps: atOnboardingConfig.lookUps,
+      lookUps: lookUpsFor(preference.rootDomain),
+      secondaryAddressFinder: CacheableSecondaryAddressFinder(
+        preference.rootDomain,
+        preference.rootPort,
+      ),
     );
   } on AtOpenRefusedException catch (e) {
     if (e.state.cause == AtConnectionCause.noAtServer) {

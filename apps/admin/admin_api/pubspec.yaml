@@ -10,15 +10,50 @@ environment:
 # Add regular dependencies here.
 dependencies:
   alfred: 1.1.2+1
-  at_client: ^3.15.0-rc8
+  at_client: ^4.0.0
   json_annotation: 4.11.0
-  at_cli_commons: ^3.1.2-rc3
+  at_client_cli: ^1.0.0
   args: 2.7.0
   meta: 1.18.2
   noports_core:
     path: ../../../packages/dart/noports_core
 
 dependency_overrides:
+  at_auth:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_auth
+  at_chops:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_chops
+  at_client:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_client
+  at_client_cli:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_client_cli
+  at_commons:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_commons
+  at_lookup:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_lookup
+  at_utils:
+    git:
+      url: https://github.com/atsign-foundation/at_client_sdk.git
+      ref: gkc-v4-ga
+      path: packages/at_utils
   pointycastle: ^4.0.0
   alfred:
     git:

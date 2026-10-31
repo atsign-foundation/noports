@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
-import 'package:at_lookup/at_lookup.dart'
-    show SecondaryAddress, SecondaryAddressFinder;
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:test/test.dart';

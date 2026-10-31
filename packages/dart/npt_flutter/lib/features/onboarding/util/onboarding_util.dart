@@ -306,9 +306,8 @@ class NoPortsOnboardingUtil {
     AppLocalizations strings,
   ) {
     final String? unparseable = switch (error) {
-      FormatException(:final String source, :final message, :final offset?)
-          when source.trimLeft().startsWith('{') =>
-        strings.errorAtKeysNotJson(offset + 1, message),
+      AtKeysFormatException(:final reason, :final position?) =>
+        strings.errorAtKeysNotJson(position, reason),
       FormatException() => strings.errorAtKeysInvalid,
       _ => null,
     };

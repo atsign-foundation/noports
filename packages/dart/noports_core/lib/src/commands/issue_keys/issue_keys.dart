@@ -13,9 +13,10 @@ import 'package:at_client/at_client.dart'
         AtClient;
 import 'package:at_commons/at_commons.dart' show AtBytes;
 import 'package:at_commons/atsign.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart'
+import 'package:at_client_cli/at_client_cli.dart'
     show requestEnrollmentOtp, createAtClient;
 import 'package:at_utils/at_logger.dart';
+import 'package:at_utils/at_utils_io.dart' show CLILoggingHandler;
 import 'package:chalkdart/chalk.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/commands/issue_keys/issue_keys_params.dart';

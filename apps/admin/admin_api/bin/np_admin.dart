@@ -5,7 +5,7 @@ import 'package:admin_api/src/version.dart' as admin;
 import 'package:alfred/alfred.dart';
 import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
 import 'package:args/args.dart';
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/utils.dart';
 import 'package:noports_core/version.dart' as core;

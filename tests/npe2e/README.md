@@ -227,6 +227,6 @@ Notes when interpreting a failure:
   reachable from the containers. Confirm it's up and started with
   `-i vip.ve.atsign.zone` (not `-i 127.0.0.1`).
 - **`Failed to compile current binary for at_activate: ... Couldn't resolve the
-  package 'at_onboarding_cli'`.** `dart pub get` hasn't been run for
+  package 'at_client_cli'`.** `dart pub get` hasn't been run for
   `packages/dart/sshnoports` (no `.dart_tool/package_config.json`). Run
   `melos bootstrap` from the repo root.

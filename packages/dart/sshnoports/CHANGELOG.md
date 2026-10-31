@@ -34,8 +34,11 @@
   from those clients
 * feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
-* build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
-  at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
+* feat: at_activate is at_client_cli's at_activate: its --help reports
+  at_client_cli's version, and --arx and --drx match app and device names
+  whatever their case
+* build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
+  and at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0
 
 ## v5.18.1
 
