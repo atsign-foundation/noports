@@ -106,7 +106,7 @@ packages:
     source: hosted
     version: "5.21.0"
   at_lookup:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_lookup
       sha256: "9da3ffe89632c08610a2cfe8b9aa2ee195bedbe85f45a0b209d50dc46e4a109e"
