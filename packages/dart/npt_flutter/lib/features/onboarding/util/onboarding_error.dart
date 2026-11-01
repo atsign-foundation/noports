@@ -46,8 +46,7 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
     return strings.errorAtsignNotExist;
   }
 
-  if (error is RootServerConnectivityException ||
-      error is AtConnectException) {
+  if (error is RootServerConnectivityException || error is AtConnectException) {
     return strings.errorAtServerUnreachable;
   }
 
@@ -62,8 +61,8 @@ bool isEnrollmentExpired(Object error) =>
     error is AtEnrollmentException && error.message.contains('AT0028');
 
 /// Whether [error] ended an enrollment wait because the atServer has revoked
-/// the request (AT0027): approved, then withdrawn by a manager. Reported as
-/// a denial until now, which it is not, since the way on is a new request.
+/// the request (AT0027): approved, then withdrawn by a manager, so the way on
+/// is a new request rather than a report of denial.
 bool isEnrollmentRevoked(Object error) =>
     error is AtEnrollmentException && error.message.contains('AT0027');
 

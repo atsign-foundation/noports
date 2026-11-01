@@ -9,6 +9,9 @@
 - FIX: The activation dialog no longer stays on its spinner when the registrar
   fails or doesn't answer: after an error, or 30 seconds without an answer, it
   says the request failed and closes or returns to the PIN step.
+- FIX: The enrollment dialog no longer waits forever on a request the manager
+  has revoked or removed: a revoked request returns to the OTP prompt and says
+  so, and the waiting screen has a Cancel that returns to the OTP prompt.
 
 ## 1.9.6+33
 
