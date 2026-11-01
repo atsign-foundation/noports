@@ -76,7 +76,11 @@ void main() {
       registerFallbackValue(Duration(minutes: 1));
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
 
-      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
+      stubEncryptionKeys(
+        mockAtClient,
+        RsaKeyPair.generate(),
+        apkamKeyPair: RsaKeyPair.generate(),
+      );
       stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
