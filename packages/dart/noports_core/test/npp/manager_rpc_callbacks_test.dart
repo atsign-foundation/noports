@@ -97,6 +97,8 @@ void main() {
           expect(events[1]['target'], target);
           expect(events[1]['rule'], rule);
           expect(events[1]['reqId'], 6);
+          expect(events[1]['fromAtsign'], policy);
+          expect(events[1]['policyAtsign'], policy);
         },
       );
     });
@@ -109,7 +111,11 @@ void main() {
       cache.putClient(Client(name: 'Alice', atSign: '@alice'));
       await expectLater(
         callbacks().handleRequest(
-          req({'operation': 'put', 'target': 'Client', 'value': alice}),
+          req({
+            'operation': 'put',
+            'target': 'Client',
+            'value': alice,
+          }, reqId: 7),
           policy,
         ),
         throwsA(isA<Exception>()),
@@ -120,6 +126,11 @@ void main() {
       expect(events.single['operation'], 'put');
       expect(events.single['rule']['atSign'], '@alice');
       expect(events.single['error'], contains('already exists'));
+      expect(events.single['target'], 'Client');
+      expect(events.single['reqId'], 7);
+      expect(events.single['fromAtsign'], policy);
+      expect(events.single['policyAtsign'], policy);
+      expect(events.single['timestamp'], endsWith('Z'));
     });
 
     test('a delete of an unknown id still throws, and logs ruleChangeFailed'
@@ -139,6 +150,7 @@ void main() {
       expect(events.single['event'], 'ruleChangeFailed');
       expect(events.single['operation'], 'delete');
       expect(events.single['rule'], isEmpty);
+      expect(events.single['target'], 'Client');
     });
 
     test(
@@ -151,7 +163,11 @@ void main() {
         );
 
         final response = await c.handleRequest(
-          req({'operation': 'put', 'target': 'Client', 'value': alice}),
+          req({
+            'operation': 'put',
+            'target': 'Client',
+            'value': alice,
+          }, reqId: 8),
           policy,
         );
 
@@ -159,6 +175,12 @@ void main() {
         expect(cache.clients, isEmpty);
         expect(events.single['event'], 'ruleChangeFailed');
         expect(events.single['error'], contains('disk full'));
+        expect(events.single['operation'], 'put');
+        expect(events.single['target'], 'Client');
+        expect(events.single['rule']['atSign'], '@alice');
+        expect(events.single['reqId'], 8);
+        expect(events.single['fromAtsign'], policy);
+        expect(events.single['policyAtsign'], policy);
       },
     );
 
@@ -197,6 +219,7 @@ void main() {
     expect(events.single['reqId'], 3);
     expect(events.single.keys, isNot(contains('rule')));
     expect(events.single.keys, isNot(contains('target')));
+    expect(events.single.keys, isNot(contains('operation')));
   });
 
   test('reads log nothing', () async {
