@@ -46,7 +46,8 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
     return strings.errorAtsignNotExist;
   }
 
-  if (error is RootServerConnectivityException || error is AtConnectException) {
+  if (error is RootServerConnectivityException ||
+      error is AtConnectException) {
     return strings.errorAtServerUnreachable;
   }
 
