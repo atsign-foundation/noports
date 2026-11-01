@@ -317,8 +317,8 @@ abstract class PolicyEvent {
   };
 
   /// An Atsign on the manager allow list sent a manager RPC, and was refused
-  /// because it isn't this policy service's own Atsign. Nothing from the
-  /// request is repeated, since that Atsign wrote it.
+  /// because it isn't this policy service's own Atsign. Only `reqId` is
+  /// repeated from the request; that Atsign chose it, so it may not be unique.
   static Map<String, dynamic> managerRequestRefused({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
