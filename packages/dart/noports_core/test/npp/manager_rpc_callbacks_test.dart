@@ -1,5 +1,4 @@
 import 'package:at_client/at_client.dart';
-import 'package:at_commons/atsign.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
@@ -201,7 +200,7 @@ void main() {
   });
 
   test('another Atsign is refused, changes nothing, and logs'
-      ' managerRequestRefused without repeating its request', () async {
+      ' managerRequestRefused repeating only its reqId', () async {
     final response = await callbacks().handleRequest(
       req({
         'operation': 'put',
