@@ -27,7 +27,7 @@ void main() {
       final keychain = _Keychain();
       final dialog = await _open(tester, pending, keychain);
 
-      pending.refuse(
+      await pending.refuse(
         AtEnrollmentException(
           'Enrollment e1 was refused for a reason this wait cannot resolve: '
           'Failed connecting to @alice. '
@@ -65,9 +65,9 @@ void main() {
       final keychain = _Keychain();
       final dialog = await _open(tester, pending, keychain);
 
-      pending.refuse(
+      await pending.refuse(
         AtEnrollmentException('The enrollment: e1 is denied'),
-        discardingFrom: keychain,
+        removesKeys: true,
       );
       await _settle(tester);
 
@@ -99,12 +99,12 @@ void main() {
       final keychain = _Keychain();
       final dialog = await _open(tester, pending, keychain);
 
-      pending.refuse(
+      await pending.refuse(
         AtEnrollmentException(
           'Enrollment e1 has expired or does not exist: '
           'error:AT0028-enrollment_id: e1 is expired or invalid',
         ),
-        discardingFrom: keychain,
+        removesKeys: true,
       );
       await _settle(tester);
 
@@ -142,7 +142,7 @@ void main() {
         final keychain = _Keychain();
         final dialog = await _open(tester, pending, keychain);
 
-        pending.refuse(error);
+        await pending.refuse(error);
         await _settle(tester);
 
         expect(
@@ -193,7 +193,7 @@ void main() {
           reason: 'a confirmation asks first',
         );
 
-        pending.refuse(error, discardingFrom: discards ? keychain : null);
+        await pending.refuse(error, removesKeys: discards);
         await _settle(tester);
         await tester.pump(const Duration(seconds: 3));
         await _settle(tester);
@@ -780,7 +780,7 @@ void main() {
 
       keychain.entries['@alice'] = _approvedKeys();
       pending.approved = true;
-      pending.refuse(AtTimeoutException('Timed out'));
+      await pending.refuse(AtTimeoutException('Timed out'));
       await _settle(tester);
 
       expect(dialog.closed, isTrue, reason: 'the dialog closes');
@@ -952,13 +952,20 @@ Future<void> _confirmCancel(WidgetTester tester) async {
   await _settle(tester);
 }
 
-/// A request awaiting a decision the test makes. [stop] and [cancel] end the
-/// wait as `PendingEnrollment.stop` and `PendingEnrollment.cancel` do, a
-/// cancel ending the wait once [waitEnds] completes, as `client()` does
-/// after stopping a client it opened, and returning once [keysDropped]
-/// completes; a wait started after either ends at once.
+/// A request awaiting a decision the test makes, filed in [keychain] as
+/// `PendingEnrollment` files it.
+///
+/// [stop] and [cancel] end the wait as `PendingEnrollment.stop` and
+/// `PendingEnrollment.cancel` do, a cancel ending the wait once [waitEnds]
+/// completes, as `client()` does after stopping a client it opened, then
+/// removing the request's pending keys from [keychain] once [keysDropped]
+/// completes; a wait started after either ends at once. A wait refuses a
+/// request [keychain] holds no pending keys for, as `awaitApproval` does.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
+
+  /// Where the request is filed; [_open] files it in the dialog's keychain.
+  _Keychain? keychain;
   var _waiting = false;
   var waits = 0;
   var stops = 0;
@@ -986,6 +993,16 @@ class _Pending extends Fake implements PendingEnrollment {
   }) {
     if (cancels > 0) return Future.error(_cancelled());
     if (stops > 0) return Future.error(_stopped());
+    final filed = keychain?.entries['@alice'];
+    if (keychain != null &&
+        !(filed?.pendingEnrollmentIds.contains(enrollmentId) ?? false)) {
+      return Future.error(
+        AtEnrollmentException(
+          '@alice holds nothing pending for enrollment e1: it was already'
+          ' completed, or removed after a denial',
+        ),
+      );
+    }
     waits++;
     _waiting = true;
     return _decision.future;
@@ -1014,6 +1031,24 @@ class _Pending extends Fake implements PendingEnrollment {
       cancelFailures--;
       throw StateError('the keychain refused the update');
     }
+    await _removeKeys();
+  }
+
+  /// Removes the request's pending keys from [keychain] in one update, as
+  /// `PendingEnrollment` does after a cancel, a denial or an expiry.
+  Future<void> _removeKeys() async {
+    final keychain = this.keychain;
+    if (keychain == null) return;
+    await KeychainAtKeysIo(keychainStorage: keychain).update(
+      '@alice'.toAtsign(),
+      (stored) {
+        if (!stored.pendingEnrollmentIds.contains(enrollmentId)) return false;
+        stored
+          ..discardEnrollment(enrollmentId)
+          ..unfileLegacyEnrollment(enrollmentId);
+        return true;
+      },
+    );
   }
 
   AtEnrollmentCancelledException _cancelled() => AtEnrollmentCancelledException(
@@ -1028,10 +1063,14 @@ class _Pending extends Fake implements PendingEnrollment {
   void approve(AtClient client) => _decision.complete(client);
 
   /// Ends the wait with [error], first removing the request's pending keys
-  /// from [discardingFrom], as `PendingEnrollment` does on a denial or an
-  /// expiry.
-  void refuse(Object error, {_Keychain? discardingFrom}) {
-    discardingFrom?.entries['@alice']?.discardEnrollment(enrollmentId);
+  /// when [removesKeys], as `PendingEnrollment` does on a denial or an
+  /// expiry, where a failure to remove them is logged rather than thrown.
+  Future<void> refuse(Object error, {bool removesKeys = false}) async {
+    if (removesKeys) {
+      try {
+        await _removeKeys();
+      } catch (_) {}
+    }
     _decision.completeError(error);
   }
 }
@@ -1214,6 +1253,7 @@ Future<_Dialog> _open(
   bool waiting = true,
 }) async {
   final dialog = _Dialog();
+  pending.keychain ??= keychain;
   unawaited(
     showDialog<NoPortsOnboardingResult>(
       context: App.navState.currentContext!,
