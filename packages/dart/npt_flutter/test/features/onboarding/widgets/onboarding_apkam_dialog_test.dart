@@ -15,9 +15,10 @@ import 'package:npt_flutter/util/at_client_methods.dart';
 void main() {
   setUp(() => AtClientManager.getInstance().reset());
 
-  group('Given the enrollment dialog is waiting for a manager to decide a'
-      ' request', () {
-    testWidgets('when the atServer reports the request revoked, then the'
+  group('The enrollment dialog keeps a request until it is decided or the'
+      ' user abandons it', () {
+    testWidgets('A revoked request asks for a new OTP:'
+        ' when the atServer reports the request revoked, then the'
         ' dialog asks for a new OTP and says the request was revoked', (
       tester,
     ) async {
@@ -54,7 +55,8 @@ void main() {
       );
     });
 
-    testWidgets('when the atServer reports the request denied, then its keys'
+    testWidgets('A denied request is reported as denied:'
+        ' when the atServer reports the request denied, then its keys'
         ' leave the keychain and the dialog closes saying it was denied', (
       tester,
     ) async {
@@ -88,7 +90,8 @@ void main() {
       );
     });
 
-    testWidgets('when the atServer reports the request expired, then its keys'
+    testWidgets('An expired request asks for a new OTP:'
+        ' when the atServer reports the request expired, then its keys'
         ' leave the keychain and the dialog asks for a new OTP, saying the'
         ' request expired', (tester) async {
       await _pumpApp(tester);
@@ -129,7 +132,8 @@ void main() {
         ),
       ),
     ]) {
-      testWidgets('when the wait ends because $why, then the request\'s keys'
+      testWidgets('A wait that ends without a decision keeps the request:'
+          ' when the wait ends because $why, then the request\'s keys'
           ' stay and the dialog closes with the error, not as denied', (
         tester,
       ) async {
@@ -173,7 +177,8 @@ void main() {
         true,
       ),
     ]) {
-      testWidgets('when the wait ends because $how while Cancel is being'
+      testWidgets('A wait that ends while Cancel is being confirmed closes the confirmation:'
+          ' when the wait ends because $how while Cancel is being'
           ' confirmed, then the confirmation closes and the dialog closes'
           ' with what ended the wait', (tester) async {
         await _pumpApp(tester);
@@ -212,7 +217,8 @@ void main() {
       });
     }
 
-    testWidgets('when the user presses Cancel, then a confirmation names the'
+    testWidgets('Cancel asks first:'
+        ' when the user presses Cancel, then a confirmation names the'
         ' request and says what abandoning it means, and the wait goes on', (
       tester,
     ) async {
@@ -255,7 +261,8 @@ void main() {
         (tester) => tester.sendKeyEvent(LogicalKeyboardKey.escape),
       ),
     ]) {
-      testWidgets('when the user $how, then the confirmation closes and the'
+      testWidgets('A declined Cancel changes nothing:'
+          ' when the user $how, then the confirmation closes and the'
           ' wait goes on', (tester) async {
         await _pumpApp(tester);
         final pending = _Pending();
@@ -287,7 +294,8 @@ void main() {
       });
     }
 
-    testWidgets('when a confirmed Cancel is still removing the keys, then'
+    testWidgets('Cancel is not offered again while one is in progress:'
+        ' when a confirmed Cancel is still removing the keys, then'
         ' Cancel is not offered again', (tester) async {
       await _pumpApp(tester);
       final pending = _Pending();
@@ -312,7 +320,8 @@ void main() {
       await _settle(tester);
     });
 
-    testWidgets('when a confirmed Cancel cannot remove the keys, then the'
+    testWidgets('A confirmed Cancel that cannot remove the keys says so, and Cancel retries:'
+        ' when a confirmed Cancel cannot remove the keys, then the'
         ' dialog says so and keeps them, and Cancel then retries without'
         ' asking again', (tester) async {
       await _pumpApp(tester);
@@ -356,7 +365,8 @@ void main() {
       );
     });
 
-    testWidgets('when the user leaves after a Cancel that could not remove the'
+    testWidgets('Leaving after a Cancel that could not remove the keys keeps the request:'
+        ' when the user leaves after a Cancel that could not remove the'
         ' keys, then the keys stay and the dialog waits on the request again'
         ' when it next opens', (tester) async {
       await _pumpApp(tester);
@@ -386,7 +396,8 @@ void main() {
       expect(resumed.waits, 1, reason: 'the next dialog waits on the request');
     });
 
-    testWidgets('when the approval arrives while Cancel is being confirmed,'
+    testWidgets('An approval landing while Cancel is being confirmed signs in:'
+        ' when the approval arrives while Cancel is being confirmed,'
         ' then the confirmation closes, nothing is cancelled and the approved'
         ' client is adopted', (tester) async {
       await _pumpApp(tester);
@@ -425,7 +436,8 @@ void main() {
       );
     });
 
-    testWidgets('when the user confirms Cancel, then the wait is cancelled,'
+    testWidgets('A confirmed Cancel abandons the request:'
+        ' when the user confirms Cancel, then the wait is cancelled,'
         ' which drops its pending keys, and the dialog then asks for a new OTP'
         ' and tells the user to deny the request in the Authenticator, with'
         ' nothing adopted', (tester) async {
@@ -482,7 +494,8 @@ void main() {
       );
     });
 
-    testWidgets('when an approval lands and a Cancel press arrives before the'
+    testWidgets('A Cancel press after the approval opened the client does nothing:'
+        ' when an approval lands and a Cancel press arrives before the'
         ' screen changes, then the wait is not cancelled and the approved'
         ' client is the one the app uses', (tester) async {
       await _pumpApp(tester);
@@ -529,7 +542,8 @@ void main() {
         (tester) async => Navigator.of(App.navState.currentContext!).pop(),
       ),
     ]) {
-      testWidgets('when the user $how, then the wait is stopped, not'
+      testWidgets('Leaving the waiting screen keeps the request:'
+          ' when the user $how, then the wait is stopped, not'
           ' cancelled, its pending keys stay and nothing is adopted', (
         tester,
       ) async {
@@ -558,7 +572,8 @@ void main() {
       });
     }
 
-    testWidgets('when Cancel lands after the approval is written but before'
+    testWidgets('A confirmed Cancel after the approval was written lets the approval stand:'
+        ' when Cancel lands after the approval is written but before'
         ' the client opens, then the approval stands and the approved client'
         ' is the one the app uses', (tester) async {
       await _pumpApp(tester);
@@ -608,7 +623,8 @@ void main() {
       );
     });
 
-    testWidgets('when the user leaves after the approval is written but'
+    testWidgets('Leaving after the approval was written keeps the approved keys:'
+        ' when the user leaves after the approval is written but'
         ' before the client opens, then the wait is stopped, the approved keys'
         ' stay and nothing is adopted', (tester) async {
       await _pumpApp(tester);
@@ -638,7 +654,8 @@ void main() {
       );
     });
 
-    testWidgets('when Cancel lands after the approval is written and the'
+    testWidgets('A confirmed Cancel after the approval was written lets the approval stand:'
+        ' when Cancel lands after the approval is written and the'
         ' approved client cannot be opened, then the dialog closes with the'
         ' error and nothing is adopted', (tester) async {
       await _pumpApp(tester);
@@ -673,7 +690,8 @@ void main() {
       );
     });
 
-    testWidgets('when the dialog is closed while the approved client opens'
+    testWidgets('A confirmed Cancel after the approval was written lets the approval stand:'
+        ' when the dialog is closed while the approved client opens'
         ' after a Cancel, then that client is stopped and nothing is adopted', (
       tester,
     ) async {
@@ -724,7 +742,8 @@ void main() {
         (keychain) => keychain.readError = StateError('unreadable'),
       ),
     ]) {
-      testWidgets('when Cancel lands while the keychain holds $held for the'
+      testWidgets('A confirmed Cancel abandons the request:'
+          ' when Cancel lands while the keychain holds $held for the'
           ' atSign, then no client is opened and the dialog asks for a new'
           ' OTP, telling the user to deny the request', (tester) async {
         await _pumpApp(tester);
@@ -758,7 +777,8 @@ void main() {
       });
     }
 
-    testWidgets('when the approval is written and the client then fails to'
+    testWidgets('An approval written before the client fails to open keeps the approved keys:'
+        ' when the approval is written and the client then fails to'
         ' open, then the approved keys stay and the dialog closes with the'
         ' error', (tester) async {
       await _pumpApp(tester);
@@ -785,7 +805,8 @@ void main() {
       );
     });
 
-    testWidgets('when a new request is filed for the atSign while a Cancel'
+    testWidgets('A request filed while a Cancel settles is left alone:'
+        ' when a new request is filed for the atSign while a Cancel'
         " the user has since left settles, then the new request's keys are"
         ' left alone', (tester) async {
       await _pumpApp(tester);
@@ -811,14 +832,13 @@ void main() {
       );
       expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
     });
-  });
 
-  group('Given the enrollment dialog is looking for a request to resume', () {
     for (final (found, resumes) in <(String, bool)>[
       ('one', true),
       ('none', false),
     ]) {
-      testWidgets('when the dialog is closed before the lookup finds $found,'
+      testWidgets('Leaving while the dialog looks for a request to resume keeps it:'
+          ' when the dialog is closed before the lookup finds $found,'
           ' then any request found is stopped, not cancelled, its keys stay'
           ' and nothing is adopted', (
         tester,
@@ -859,7 +879,8 @@ void main() {
       });
     }
 
-    testWidgets('when the keychain holds a request this device sent, then the'
+    testWidgets('A restart resumes the wait:'
+        ' when the keychain holds a request this device sent, then the'
         ' dialog waits on it without asking for an OTP, and sends no new'
         ' request', (tester) async {
       await _pumpApp(tester);
@@ -880,10 +901,9 @@ void main() {
       );
       expect(flows.enrolls, 0, reason: 'no new request is sent');
     });
-  });
 
-  group('Given the enrollment dialog is sending a request', () {
-    testWidgets('when the user leaves before the atServer has answered, then'
+    testWidgets('Leaving while the request is still being sent keeps it:'
+        ' when the user leaves before the atServer has answered, then'
         " the request's wait is stopped once it is in, never started, and its"
         ' keys stay', (tester) async {
       await _pumpApp(tester);
