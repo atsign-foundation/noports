@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
@@ -73,6 +72,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// The enrollment being waited on, while one is.
   PendingEnrollment? _pending;
 
+  /// The cancel of the wait in flight, once one is asked for.
+  Future<void>? _cancelling;
+
   @override
   void initState() {
     super.initState();
@@ -83,9 +85,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   @override
   void dispose() {
-    final pending = _pending;
-    _pending = null;
-    if (pending != null) unawaited(_cancel(pending));
+    _cancelWait();
     pinController.dispose();
     super.dispose();
   }
@@ -165,32 +165,86 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     });
   }
 
-  /// Stops waiting on [_pending], then asks for a new OTP, saying the request
-  /// is still pending on the atServer and should be denied.
-  Future<void> _onCancelPressed() async {
+  /// Cancels the wait on [_pending], if there is one; [_afterCancel] settles
+  /// how it ends.
+  void _cancelWait() {
     final pending = _pending;
     if (pending == null) return;
     _pending = null;
-    await _cancel(pending);
+    App.log(
+      'Cancelling the wait for enrollment ${pending.enrollmentId}'.loggable,
+    );
+    _cancelling = pending.cancel();
+  }
+
+  /// Settles a wait [_cancelWait] ended, once the cancel has dropped the
+  /// request's pending keys. An approval written before the cancel stands,
+  /// and opens the app's client while the dialog is open. Otherwise what is
+  /// left of the request's keychain entry is dropped, and the dialog asks for
+  /// a new OTP, saying the request is still pending and should be denied.
+  Future<void> _afterCancel(PendingEnrollment pending) async {
+    await _cancelling;
+    if (await _approvalStands(pending)) {
+      if (mounted) await _openApproved();
+      return;
+    }
+    await _discard(pending);
     if (!mounted) return;
     _askForNewOtp(AppLocalizations.of(context)!.cancelledRequestStillPending);
   }
 
-  /// Ends the wait on [pending], which drops its pending keys, then drops
-  /// what is left of its keychain entry.
-  Future<void> _cancel(PendingEnrollment pending) async {
-    App.log(
-      'Cancelling the wait for enrollment ${pending.enrollmentId}'.loggable,
-    );
-    await pending.cancel();
-    await _discard(pending);
+  /// Whether the keychain holds a live credential for [pending]: an approval
+  /// written before its wait was cancelled.
+  Future<bool> _approvalStands(PendingEnrollment pending) async {
+    try {
+      final keys = await KeychainAtKeysIo(
+        keychainStorage: _keychain,
+      ).read(atsign);
+      return keys.holdsAuthenticationMaterial &&
+          keys.enrollmentToAuthenticateAs() == pending.enrollmentId;
+    } on Exception catch (e) {
+      App.log(
+        'Could not read the keys of enrollment ${pending.enrollmentId}: $e'
+            .loggable,
+      );
+      return false;
+    }
+  }
+
+  /// Opens the app's client on the keys an approval wrote before its wait was
+  /// cancelled, and adopts it unless the dialog has closed meanwhile.
+  Future<void> _openApproved() async {
+    final AtClient client;
+    try {
+      client = await widget.flows.open(
+        atsign,
+        keys: KeychainAtKeysIo(keychainStorage: _keychain),
+        preference: atClientPreference,
+      );
+    } catch (e, st) {
+      App.log('Error opening the approved enrollment: $e'.loggable);
+      App.log(st.toString().loggable);
+      if (!mounted) return;
+      Navigator.of(context).pop(
+        NoPortsOnboardingResult.error(
+          message: describeOnboardingError(e, AppLocalizations.of(context)!),
+        ),
+      );
+      return;
+    }
+    if (!mounted) {
+      await client.stop();
+      return;
+    }
+    AtClientMethods.adopt(client);
+    await onApproved();
   }
 
   /// Waits for [pending] to be approved, then opens the app's client on the
   /// keys the approval completed. On any other end (denial, expiry,
   /// revocation, timeout, error) what the enrollment left in the keychain is
   /// dropped, so the app doesn't keep resuming a dead enrollment; a cancelled
-  /// wait is left to [_cancel].
+  /// wait is settled by [_afterCancel].
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     _pending = pending;
     setState(() {
@@ -208,7 +262,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       AtClientMethods.adopt(client);
       await onApproved();
     } on AtEnrollmentCancelledException {
-      return;
+      await _afterCancel(pending);
     } catch (e, st) {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
@@ -505,7 +559,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                   onboardingStatus: onboardingStatus,
                   context: context,
                   title: strings.cancel,
-                  onPressed: _onCancelPressed,
+                  onPressed: _cancelWait,
                 ),
               ),
             ],

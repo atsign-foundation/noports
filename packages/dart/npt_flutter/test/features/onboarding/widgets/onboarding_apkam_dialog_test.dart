@@ -171,6 +171,197 @@ void main() {
         reason: 'nothing is adopted',
       );
     });
+
+    testWidgets('when Cancel lands after the approval is written but before'
+        ' the client opens, then the approval stands and the approved client'
+        ' is the one the app uses', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      final client = _Client();
+      flows.onOpen = () async => client;
+      final dialog = await _open(tester, pending, keychain, flows: flows);
+
+      keychain.entries['@alice'] = _approvedKeys();
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+
+      expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
+      expect(flows.opens, 1, reason: 'a client is opened on the approved keys');
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        same(client),
+        reason: 'the client opened on the approved keys is adopted',
+      );
+      expect(
+        keychain.writes,
+        0,
+        reason: 'the approved keys stay as the approval wrote them',
+      );
+      expect(
+        find.text(_strings.cancelledRequestStillPending),
+        findsNothing,
+        reason: 'the request is not reported as still pending',
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await _settle(tester);
+      expect(
+        dialog.result?.status,
+        NoPortsOnboardingResultStatus.success,
+        reason: 'the dialog closes as approved',
+      );
+    });
+
+    testWidgets('when the dialog is closed after the approval is written but'
+        ' before the client opens, then the approved keys stay and nothing is'
+        ' adopted', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      final dialog = await _open(tester, pending, keychain, flows: flows);
+
+      keychain.entries['@alice'] = _approvedKeys();
+      Navigator.of(App.navState.currentContext!).pop();
+      await _settle(tester);
+
+      expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+      expect(
+        pending.cancels,
+        1,
+        reason: "closing the dialog cancels the request's wait",
+      );
+      expect(flows.opens, 0, reason: 'nothing opens once the dialog is closed');
+      expect(
+        keychain.writes,
+        0,
+        reason: 'the approved keys stay as the approval wrote them',
+      );
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        isNull,
+        reason: 'nothing is adopted',
+      );
+    });
+
+    testWidgets('when Cancel lands after the approval is written and the'
+        ' approved client cannot be opened, then the dialog closes with the'
+        ' error and nothing is adopted', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      flows.onOpen = () async => throw AtTimeoutException('Timed out');
+      final dialog = await _open(tester, pending, keychain, flows: flows);
+
+      keychain.entries['@alice'] = _approvedKeys();
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+
+      expect(flows.opens, 1, reason: 'a client is opened on the approved keys');
+      expect(dialog.closed, isTrue, reason: 'the dialog closes');
+      expect(dialog.result?.status, NoPortsOnboardingResultStatus.error);
+      expect(
+        dialog.result?.message,
+        _strings.errorAuthenticationTimedOut,
+        reason: 'the dialog closes with what went wrong',
+      );
+      expect(
+        keychain.writes,
+        0,
+        reason: 'the approved keys stay as the approval wrote them',
+      );
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        isNull,
+        reason: 'nothing is adopted',
+      );
+    });
+
+    testWidgets('when the dialog is closed while the approved client opens'
+        ' after a Cancel, then that client is stopped and nothing is adopted', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      final opening = Completer<AtClient>();
+      flows.onOpen = () => opening.future;
+      final client = _Client();
+      await _open(tester, pending, keychain, flows: flows);
+
+      keychain.entries['@alice'] = _approvedKeys();
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+      expect(
+        flows.opens,
+        1,
+        reason: 'a client is opening on the approved keys',
+      );
+      Navigator.of(App.navState.currentContext!).pop();
+      await _settle(tester);
+      opening.complete(client);
+      await _settle(tester);
+
+      expect(
+        client.stops,
+        1,
+        reason: 'a client that opens after the dialog closed is stopped',
+      );
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        isNull,
+        reason: 'nothing is adopted',
+      );
+    });
+
+    for (final (held, keys) in <(String, AtKeys? Function())>[
+      (
+        "another enrollment's live keys",
+        () => _approvedKeys(enrollmentId: 'e0'),
+      ),
+      ('no keys', () => null),
+    ]) {
+      testWidgets('when Cancel lands while the keychain holds $held for the'
+          ' atSign, then no client is opened and the dialog asks for a new'
+          ' OTP, telling the user to deny the request', (tester) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final flows = _Flows(pending);
+        flows.onOpen = () async => _Client();
+        await _open(tester, pending, keychain, flows: flows);
+
+        final stored = keys();
+        if (stored == null) {
+          keychain.entries.remove('@alice');
+        } else {
+          keychain.entries['@alice'] = stored;
+        }
+        await tester.tap(_cancelButton);
+        await _settle(tester);
+
+        expect(flows.opens, 0, reason: 'no client is opened');
+        _expectOtpPrompt(tester);
+        expect(
+          find.text(_strings.cancelledRequestStillPending),
+          findsOneWidget,
+          reason: 'the OTP prompt tells the user to deny the cancelled request',
+        );
+        expect(
+          keychain.writes,
+          0,
+          reason: "the keychain's other keys are left alone",
+        );
+        expect(
+          AtClientMethods.currentClientOrNull(),
+          isNull,
+          reason: 'nothing is adopted',
+        );
+      });
+    }
   });
 }
 
@@ -217,11 +408,29 @@ class _Pending extends Fake implements PendingEnrollment {
   void refuse(Object error) => _decision.completeError(error);
 }
 
-/// Resumes [pending], as if this device had submitted it before.
+/// Resumes [pending], as if this device had submitted it before, and opens
+/// a client with [onOpen], counting the [opens].
 class _Flows extends Fake implements AtsignFlows {
   _Flows(this.pending);
 
   final PendingEnrollment pending;
+  Future<AtClient> Function() onOpen = () => Completer<AtClient>().future;
+  var opens = 0;
+
+  @override
+  Future<AtClient> open(
+    String atSign, {
+    required AtKeysIo keys,
+    required AtClientPreference preference,
+    String? namespace,
+    AtClientStorage? storage,
+    AtLookUpFactory? lookUps,
+    AtServiceFactory? serviceFactory,
+    Duration? connectBudget,
+  }) {
+    opens++;
+    return onOpen();
+  }
 
   @override
   Future<PendingEnrollment?> resumeEnrollment(
@@ -235,18 +444,49 @@ class _Flows extends Fake implements AtsignFlows {
 }
 
 /// A keychain holding an entry for @alice with nothing live in it, as a
-/// request awaiting a decision leaves it.
+/// request awaiting a decision leaves it. [writes] counts the updates and
+/// removals made through it.
 class _Keychain extends Fake implements KeychainStorage {
   final entries = <String, AtKeys>{'@alice': AtKeys()};
+  var writes = 0;
 
   @override
   Future<AtKeys?> getAtsign(String atSign) async => entries[atSign];
 
   @override
+  Future<T> writing<T>(Future<T> Function() action) => action();
+
+  @override
+  Future<void> updateAtKeysInKeychain({
+    required String atSign,
+    required AtKeys keys,
+    void Function(AtKeys existing)? assureUpdate,
+    bool requireExisting = false,
+  }) async {
+    writes++;
+    entries[atSign] = keys;
+  }
+
+  @override
   Future<void> removeAtsignFromKeychain(String atSign) async {
+    writes++;
     entries.remove(atSign);
   }
 }
+
+/// Keys an approval of [enrollmentId] has completed, in the shape an rsa2048
+/// request is filed in: the APKAM keypair in the flat fields, and the
+/// enrollment's snapshot.
+AtKeys _approvedKeys({String enrollmentId = 'e1'}) =>
+    AtKeys.legacy(
+      apkamPublicKey: 'cHVibGlj',
+      apkamPrivateKey: 'cHJpdmF0ZQ==',
+      enrollmentId: enrollmentId,
+    )..recordEnrollmentSnapshot(
+      enrollmentId,
+      appName: 'noports',
+      deviceName: 'testdevice',
+    );
 
 class _Client extends Fake implements AtClient {
   var stops = 0;
@@ -266,13 +506,14 @@ class _Dialog {
   NoPortsOnboardingResult? result;
 }
 
-/// Opens the dialog on [pending], with its keys in [keychain], and returns
-/// once it is waiting for the decision.
+/// Opens the dialog on [pending], with its keys in [keychain] and its verbs
+/// in [flows], and returns once it is waiting for the decision.
 Future<_Dialog> _open(
   WidgetTester tester,
   _Pending pending,
-  _Keychain keychain,
-) async {
+  _Keychain keychain, {
+  _Flows? flows,
+}) async {
   final dialog = _Dialog();
   unawaited(
     showDialog<NoPortsOnboardingResult>(
@@ -282,7 +523,7 @@ Future<_Dialog> _open(
         atsign: '@alice'.toAtsign(),
         // ignore: deprecated_member_use
         atClientPreference: AtClientPreference()..hiveStoragePath = 'unused',
-        flows: _Flows(pending),
+        flows: flows ?? _Flows(pending),
         deviceName: () async => 'test device',
         keychain: keychain,
       ),
