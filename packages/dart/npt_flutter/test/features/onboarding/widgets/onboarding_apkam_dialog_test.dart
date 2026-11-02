@@ -161,6 +161,57 @@ void main() {
       });
     }
 
+    for (final (how, error, discards) in <(String, Exception, bool)>[
+      (
+        'the atServer cannot be reached',
+        AtTimeoutException('Timed out'),
+        false,
+      ),
+      (
+        'the request is denied',
+        AtEnrollmentException('The enrollment: e1 is denied'),
+        true,
+      ),
+    ]) {
+      testWidgets('when the wait ends because $how while Cancel is being'
+          ' confirmed, then the confirmation closes and the dialog closes'
+          ' with what ended the wait', (tester) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final dialog = await _open(tester, pending, keychain);
+        await tester.tap(_cancelButton);
+        await _settle(tester);
+        expect(
+          find.text(_strings.abandonRequestTitle),
+          findsOneWidget,
+          reason: 'a confirmation asks first',
+        );
+
+        pending.refuse(error, discardingFrom: discards ? keychain : null);
+        await _settle(tester);
+        await tester.pump(const Duration(seconds: 3));
+        await _settle(tester);
+
+        expect(
+          find.text(_strings.abandonRequestTitle),
+          findsNothing,
+          reason:
+              'a wait that ends while Cancel is being confirmed closes the'
+              ' confirmation',
+        );
+        expect(pending.cancels, 0, reason: 'nothing is cancelled');
+        expect(dialog.closed, isTrue, reason: 'the dialog closes');
+        expect(
+          dialog.result?.message,
+          discards
+              ? _strings.enrollRequestDenied
+              : describeOnboardingError(error, _strings),
+          reason: 'the dialog closes with what ended the wait',
+        );
+      });
+    }
+
     testWidgets('when the user presses Cancel, then a confirmation names the'
         ' request and says what abandoning it means, and the wait goes on', (
       tester,

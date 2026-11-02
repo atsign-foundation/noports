@@ -349,6 +349,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       _pending = null;
+      _closeConfirmation();
       final revoked = isEnrollmentRevoked(e);
       if (pending.approved || !revoked && await _stillPending(pending)) {
         _closeWithError(e);

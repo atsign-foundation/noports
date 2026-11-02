@@ -91,6 +91,12 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     Then the confirmation closes, nothing is cancelled, and the dialog signs in with that client
 
   @race
+  Scenario: A wait that ends while Cancel is being confirmed closes the confirmation
+    Given the Cancel confirmation showing
+    When the wait ends without an approval
+    Then the confirmation closes, nothing is cancelled, and the dialog reacts to how the wait ended
+
+  @race
   Scenario: A confirmed Cancel after the approval was written lets the approval stand
     Given the confirmation, and the approval of e1 written to the keychain just before cancel runs
     When the user confirms
