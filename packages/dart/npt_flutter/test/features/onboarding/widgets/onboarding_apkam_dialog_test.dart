@@ -611,6 +611,11 @@ void main() {
         );
         expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
         expect(
+          keychain.reads,
+          0,
+          reason: 'a stopped wait reads nothing from the keychain',
+        );
+        expect(
           AtClientMethods.currentClientOrNull(),
           isNull,
           reason: 'nothing is adopted',
@@ -1185,9 +1190,11 @@ class _Flows extends Fake implements AtsignFlows {
 /// A keychain holding an entry for @alice with nothing live in it, as a
 /// request awaiting a decision leaves it. [writes] counts the updates and
 /// removals made through it, [removalsOutsideWriteSection] the removals made
-/// outside [writing], and a [readError] is thrown by every read.
+/// outside [writing], [reads] counts the reads, and a [readError] is thrown
+/// by every read.
 class _Keychain extends Fake implements KeychainStorage {
   final entries = <String, AtKeys>{'@alice': _pendingKeys()};
+  var reads = 0;
   var writes = 0;
   var removalsOutsideWriteSection = 0;
   var _writeSections = 0;
@@ -1195,6 +1202,7 @@ class _Keychain extends Fake implements KeychainStorage {
 
   @override
   Future<AtKeys?> getAtsign(String atSign) async {
+    reads++;
     if (readError case final error?) throw error;
     return entries[atSign];
   }
