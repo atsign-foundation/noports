@@ -56,6 +56,7 @@
   "backupKeyDialogTitle": "Por favor, selecione um arquivo para exportar para:",
   "backupYourKey": "Backup da sua Chave",
   "cancel": "Cancelar",
+  "cancelledRequestStillPending": "Cancelado. A solicitação continua pendente, por isso negue-a em Solicitações no Authenticator.",
   "confirm": "Confirmar",
   "connectUriProtocolDescription": "Esta configuração inicia automaticamente o aplicativo apropriado após uma conexão ser estabelecida, com base no protocolo selecionado. Se nenhum protocolo for selecionado, nenhum aplicativo será iniciado. Selecione o protocolo a ser usado para a conexão.",
   "connectUriProtocolNone": "Nenhum",

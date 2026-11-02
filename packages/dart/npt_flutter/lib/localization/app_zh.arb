@@ -56,6 +56,7 @@
   "backupKeyDialogTitle": "请选择要导出到的文件：",
   "backupYourKey": "备份您的密钥",
   "cancel": "取消",
+  "cancelledRequestStillPending": "已取消。该请求仍待处理，请在 Authenticator 的“请求”中拒绝它。",
   "confirm": "确认",
   "connectUriProtocolDescription": "此设置会在建立连接后，根据所选协议自动启动相应的应用程序。如果未选择协议，则不会启动任何应用程序。选择用于连接的协议。",
   "connectUriProtocolNone": "无",

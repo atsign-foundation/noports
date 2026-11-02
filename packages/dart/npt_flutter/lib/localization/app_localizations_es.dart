@@ -204,6 +204,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get cancelledRequestStillPending =>
+      'Cancelado. La solicitud sigue pendiente, así que recházala en Solicitudes en el Authenticator.';
+
+  @override
   String get confirm => 'Confirmar';
 
   @override

@@ -200,6 +200,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get cancelledRequestStillPending =>
+      'Cancelled. The request is still pending, so please deny it under Requests in the Authenticator.';
+
+  @override
   String get confirm => 'Confirm';
 
   @override

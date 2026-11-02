@@ -202,6 +202,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cancel => 'Cancelar';
 
   @override
+  String get cancelledRequestStillPending =>
+      'Cancelado. A solicitação continua pendente, por isso negue-a em Solicitações no Authenticator.';
+
+  @override
   String get confirm => 'Confirmar';
 
   @override
@@ -1325,6 +1329,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get cancel => 'Cancelar';
+
+  @override
+  String get cancelledRequestStillPending =>
+      'Cancelado. A solicitação continua pendente, então negue-a em Solicitações no Authenticator.';
 
   @override
   String get confirm => 'Confirmar';

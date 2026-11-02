@@ -455,6 +455,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @cancelledRequestStillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled. The request is still pending, so please deny it under Requests in the Authenticator.'**
+  String get cancelledRequestStillPending;
+
   /// No description provided for @confirm.
   ///
   /// In en, this message translates to:
