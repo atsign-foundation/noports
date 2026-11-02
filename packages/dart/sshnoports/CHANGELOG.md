@@ -40,6 +40,11 @@
 * feat(BREAKING CHANGE): np_admin and npevents take the root domain only as
   `-r` or `--root-server`, not `-d` or `--legacy-root-domain`, and
   at_activate no longer accepts `--hashingAlgoType`, which it ignored
+* feat: npt, npevents and np_admin, given an atKeys file that holds only an
+  enrollment request, wait for its approval and then run, rather than
+  failing; a denial or expiry ends them
+* fix: after an enrollment request expires, the next at_activate or noports
+  activate run submits a new request rather than resuming the expired one
 * build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
   and at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0
 
