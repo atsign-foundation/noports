@@ -155,7 +155,11 @@ enum PolicyEventType {
 /// `clientAtsign`, `daemonAtsign`, `daemonDeviceName` and
 /// `daemonDeviceGroupName`.
 /// Each manager RPC event also carries `fromAtsign` (the Atsign that sent the
-/// request) and the request's `reqId`.
+/// request) and the request's `reqId`. Only the policy service's own Atsign
+/// may change rules, so on [ruleChanged] and [ruleChangeFailed] `fromAtsign`
+/// is always `policyAtsign`; it doesn't say which manager made the change.
+/// These events are sent when a request finishes, so they come in finish
+/// order, which for concurrent requests may not be the order the rules changed.
 abstract class PolicyEvent {
   /// The policy check authorised the client, with the answer's `message` and
   /// `permitOpen`.
@@ -319,6 +323,8 @@ abstract class PolicyEvent {
   /// An Atsign on the manager allow list sent a manager RPC, and was refused
   /// because it isn't this policy service's own Atsign. Only `reqId` is
   /// repeated from the request; that Atsign chose it, so it may not be unique.
+  /// One is sent for every refused request, reads included, so the manager
+  /// allow list is the only limit on how many.
   static Map<String, dynamic> managerRequestRefused({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
