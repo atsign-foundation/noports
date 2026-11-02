@@ -443,12 +443,15 @@ void main() {
         WidgetTester tester, {
         required Profile profile,
         required FakeNpt Function() createNpt,
+        Duration retryDelay = const Duration(milliseconds: 10),
+        Duration maxRetryDelay = const Duration(milliseconds: 40),
       }) async {
         final bloc = ProfileBloc(
           mockRepository,
           testUuid,
           getAtClient: FakeAtClient.new,
-          retryDelay: const Duration(milliseconds: 10),
+          retryDelay: retryDelay,
+          maxRetryDelay: maxRetryDelay,
           createNpt: ({required atClient, required params}) {
             final npt = createNpt();
             attempts.add(npt);
@@ -505,27 +508,30 @@ void main() {
         expect(condition(), isTrue, reason: reason);
       }
 
-      testWidgets('startup failure without keep-alive fails and closes the npt', (
-        tester,
-      ) async {
-        final bloc = await pumpLoadedBloc(
-          tester,
-          profile: testProfile,
-          createNpt: () =>
-              FakeNpt(startupError: TimeoutException('feature check timed out')),
-        );
+      testWidgets(
+        'startup failure without keep-alive fails and closes the npt',
+        (tester) async {
+          final bloc = await pumpLoadedBloc(
+            tester,
+            profile: testProfile,
+            createNpt: () => FakeNpt(
+              startupError: TimeoutException('feature check timed out'),
+            ),
+          );
 
-        bloc.add(const ProfileStartEvent());
-        await pumpUntil(tester, () => bloc.state is ProfileFailedStart);
+          bloc.add(const ProfileStartEvent());
+          await pumpUntil(tester, () => bloc.state is ProfileFailedStart);
 
-        expect(attempts, hasLength(1));
-        expect(
-          attempts.single.closeCalled,
-          isTrue,
-          reason: 'npt must be closed on the failure path, otherwise nothing '
-              'ever completes its done future',
-        );
-      });
+          expect(attempts, hasLength(1));
+          expect(
+            attempts.single.closeCalled,
+            isTrue,
+            reason:
+                'npt must be closed on the failure path, otherwise nothing '
+                'ever completes its done future',
+          );
+        },
+      );
 
       testWidgets('successful start caches the connector and stops cleanly', (
         tester,
@@ -564,8 +570,9 @@ void main() {
         final bloc = await pumpLoadedBloc(
           tester,
           profile: testProfile.copyWith(keepAlive: true),
-          createNpt: () =>
-              FakeNpt(startupError: TimeoutException('feature check timed out')),
+          createNpt: () => FakeNpt(
+            startupError: TimeoutException('feature check timed out'),
+          ),
         );
 
         bloc.add(const ProfileStartEvent());
@@ -606,6 +613,141 @@ void main() {
           attempts,
           hasLength(attemptsAtStop),
           reason: 'no further attempts may be made after a stop',
+        );
+      });
+
+      testWidgets('session drop with keep-alive reconnects', (tester) async {
+        final bloc = await pumpLoadedBloc(
+          tester,
+          profile: testProfile.copyWith(keepAlive: true),
+          createNpt: FakeNpt.new,
+        );
+
+        bloc.add(const ProfileStartEvent());
+        await pumpUntil(tester, () => bloc.state is ProfileStarted);
+
+        // What a real Npt does when its SocketConnector ends
+        await attempts.single.close();
+        await pumpUntil(
+          tester,
+          () => attempts.length == 2 && bloc.state is ProfileStarted,
+          reason: 'keep-alive must re-establish a session that dropped',
+        );
+        expect(
+          attempts.first.connector!.closed,
+          isTrue,
+          reason: 'the dropped session must be torn down before the retry',
+        );
+
+        bloc.add(const ProfileStopEvent());
+        await pumpUntil(tester, () => bloc.state is ProfileLoaded);
+        await tester.pump(connectorGracePeriod * 2);
+      });
+
+      testWidgets('stop during the retry backoff takes effect at once', (
+        tester,
+      ) async {
+        final bloc = await pumpLoadedBloc(
+          tester,
+          profile: testProfile.copyWith(keepAlive: true),
+          createNpt: () => FakeNpt(
+            startupError: TimeoutException('feature check timed out'),
+          ),
+          // Far longer than pumpUntil can ever advance the clock, so reaching
+          // ProfileLoaded proves the stop cut the wait short
+          retryDelay: const Duration(minutes: 10),
+          maxRetryDelay: const Duration(minutes: 10),
+        );
+
+        bloc.add(const ProfileStartEvent());
+        await pumpUntil(tester, () => attempts.isNotEmpty);
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(bloc.state, isA<ProfileStarting>());
+
+        bloc.add(const ProfileStopEvent());
+        await pumpUntil(tester, () => bloc.state is ProfileLoaded);
+        expect(attempts, hasLength(1));
+      });
+
+      testWidgets(
+        'stop while a startup that succeeds is in flight closes its connector',
+        (tester) async {
+          final bloc = await pumpLoadedBloc(
+            tester,
+            profile: testProfile.copyWith(keepAlive: true),
+            createNpt: () =>
+                FakeNpt(startupDelay: const Duration(milliseconds: 50)),
+          );
+
+          bloc.add(const ProfileStartEvent());
+          await pumpUntil(tester, () => attempts.isNotEmpty);
+          bloc.add(const ProfileStopEvent());
+          await pumpUntil(tester, () => bloc.state is ProfileLoaded);
+
+          final connector = attempts.single.connector;
+          expect(connector, isNotNull);
+          expect(
+            connector!.closed,
+            isTrue,
+            reason:
+                'a connector that was never cached has nobody else to '
+                'close it',
+          );
+          expect(
+            runningCubit.state.socketConnectors,
+            isNot(contains(testUuid)),
+          );
+          await tester.pump(connectorGracePeriod * 2);
+        },
+      );
+
+      testWidgets('clearing the profile cache stops a keep-alive loop', (
+        tester,
+      ) async {
+        final bloc = await pumpLoadedBloc(
+          tester,
+          profile: testProfile.copyWith(keepAlive: true),
+          createNpt: () => FakeNpt(
+            startupError: TimeoutException('feature check timed out'),
+          ),
+        );
+        final cache = ProfileCacheCubit(
+          mockRepository,
+          createBloc: (_, _) => bloc,
+        );
+        addTearDown(cache.close);
+        expect(cache.getProfileBloc(testUuid), same(bloc));
+
+        bloc.add(const ProfileStartEvent());
+        await pumpUntil(tester, () => attempts.length >= 2);
+
+        // What sign-out does
+        cache.clear();
+        await pumpUntil(tester, () => bloc.state is ProfileLoaded);
+
+        final attemptsAtClear = attempts.length;
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(
+          attempts,
+          hasLength(attemptsAtClear),
+          reason: 'a signed-out profile must not keep retrying',
+        );
+      });
+    });
+
+    group('retryDelayAfter', () {
+      test('doubles per consecutive failure up to the ceiling', () {
+        final bloc = ProfileBloc(
+          mockRepository,
+          testUuid,
+          retryDelay: const Duration(seconds: 5),
+          maxRetryDelay: const Duration(minutes: 1),
+        );
+        addTearDown(bloc.close);
+
+        expect(
+          [0, 1, 2, 3, 4, 5, 50].map(bloc.retryDelayAfter).toList(),
+          [5, 5, 10, 20, 40, 60, 60].map((s) => Duration(seconds: s)).toList(),
         );
       });
     });

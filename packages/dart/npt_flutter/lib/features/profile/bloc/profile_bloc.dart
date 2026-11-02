@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_core/npt.dart';
 import 'package:npt_flutter/app.dart';
@@ -25,9 +26,15 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   /// `sshnoports/bin/npt.dart`
   static const defaultRetryDelay = Duration(seconds: 5);
 
+  /// Ceiling for the keep-alive backoff - see [retryDelayAfter].
+  static const defaultMaxRetryDelay = Duration(minutes: 1);
+
   /// How long to wait between keep-alive attempts. Injectable so that tests
   /// don't have to spend it.
   final Duration retryDelay;
+
+  /// The longest [retryDelayAfter] will grow to. Injectable for tests.
+  final Duration maxRetryDelay;
 
   final String uuid;
   final ProfileRepository _repo;
@@ -42,6 +49,10 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   /// Set by [_onStop] to break [_onStart]'s keep-alive loop.
   bool _stopRequested = false;
 
+  /// Pending while the keep-alive loop waits to retry. [_onStop] completes it
+  /// so that a stop doesn't have to sit out the rest of the backoff.
+  Completer<void>? _retryWake;
+
   static AtClient _currentAtClient() => AtClientManager.getInstance().atClient;
 
   ProfileBloc(
@@ -50,6 +61,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     NptFactory createNpt = Npt.create,
     AtClient Function() getAtClient = _currentAtClient,
     this.retryDelay = defaultRetryDelay,
+    this.maxRetryDelay = defaultMaxRetryDelay,
   }) : _createNpt = createNpt,
        _getAtClient = getAtClient,
        super(ProfileInitial(uuid)) {
@@ -204,6 +216,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     /// that [emit] stays valid for the lifetime of the session. [emit.isDone]
     /// covers the bloc being closed underneath us, e.g. the app quitting
     /// part way through a retry.
+    var consecutiveFailures = 0;
     while (!emit.isDone) {
       var failure = await _runSession(
         emit,
@@ -223,6 +236,10 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         break;
       }
 
+      // A session which established and later dropped starts the backoff
+      // afresh; repeated startup failures back off, so that a daemon which is
+      // gone for good isn't hammered every few seconds indefinitely
+      consecutiveFailures = failure == null ? 0 : consecutiveFailures + 1;
       emit(
         ProfileStarting(
           uuid,
@@ -230,7 +247,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
           status: failure ?? strings.connectionClosed,
         ),
       );
-      await Future.delayed(retryDelay);
+      await _waitBeforeRetry(retryDelayAfter(consecutiveFailures));
       if (_stopRequested || emit.isDone) break;
       emit(
         ProfileStarting(
@@ -321,6 +338,33 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     }
   }
 
+  /// How long to wait before the next keep-alive attempt, given how many
+  /// attempts in a row have failed to establish a session: [retryDelay] after a
+  /// session that ended normally, then doubling per failure up to
+  /// [maxRetryDelay].
+  @visibleForTesting
+  Duration retryDelayAfter(int consecutiveFailures) {
+    var delay = retryDelay;
+    for (var i = 1; i < consecutiveFailures && delay < maxRetryDelay; i++) {
+      delay *= 2;
+    }
+    return delay < maxRetryDelay ? delay : maxRetryDelay;
+  }
+
+  /// Waits for [delay], or until [_onStop] wakes us.
+  Future<void> _waitBeforeRetry(Duration delay) async {
+    final wake = _retryWake = Completer<void>();
+    final timer = Timer(delay, () {
+      if (!wake.isCompleted) wake.complete();
+    });
+    try {
+      await wake.future;
+    } finally {
+      timer.cancel();
+      _retryWake = null;
+    }
+  }
+
   void _failStart(
     Emitter<ProfileState> emit,
     Profile profile, {
@@ -340,6 +384,10 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     var profile = (state as ProfileLoadedState).profile;
     _stopRequested = true;
     emit(ProfileStopping(uuid, profile: profile));
+
+    // Cut short a keep-alive backoff that is under way
+    final wake = _retryWake;
+    if (wake != null && !wake.isCompleted) wake.complete();
 
     // Releases [_runSession]'s `await npt.done` for a running session. Mid
     // startup it cannot abort the in-flight call, so the loop instead exits

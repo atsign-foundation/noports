@@ -14,6 +14,11 @@
   relaunched.
 - FIX: Keep-alive retry now covers startup failures too, not just drops after a
   successful connection.
+- FIX: Keep-alive backs off when a tunnel keeps failing to start, from 5
+  seconds up to a minute between attempts, and stopping takes effect at once
+  rather than after the wait.
+- FIX: Signing out stops every profile, including ones still connecting or
+  waiting to retry, instead of leaving them retrying in the background.
 
 ## 1.9.6+33
 
