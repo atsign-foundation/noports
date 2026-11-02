@@ -149,33 +149,41 @@ void main() {
       );
     });
 
-    testWidgets('when the dialog is closed while waiting, then the wait is'
-        ' cancelled and nothing is adopted', (tester) async {
-      await _pumpApp(tester);
-      final pending = _Pending();
-      final keychain = _Keychain();
-      final dialog = await _open(tester, pending, keychain);
+    for (final (how, leave) in <(String, Future<void> Function(WidgetTester))>[
+      ('chooses Back', (tester) => tester.tap(_backButton)),
+      (
+        'closes the dialog',
+        (tester) async => Navigator.of(App.navState.currentContext!).pop(),
+      ),
+    ]) {
+      testWidgets('when the user $how, then the wait is stopped, not'
+          ' cancelled, its pending keys stay and nothing is adopted', (
+        tester,
+      ) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final dialog = await _open(tester, pending, keychain);
 
-      Navigator.of(App.navState.currentContext!).pop();
-      await _settle(tester);
+        await leave(tester);
+        await _settle(tester);
 
-      expect(dialog.closed, isTrue, reason: 'the dialog has closed');
-      expect(
-        pending.cancels,
-        1,
-        reason: "closing the dialog cancels the request's wait",
-      );
-      expect(
-        keychain.entries,
-        isNot(contains('@alice')),
-        reason: 'the keys the request left in the keychain are dropped',
-      );
-      expect(
-        AtClientMethods.currentClientOrNull(),
-        isNull,
-        reason: 'nothing is adopted',
-      );
-    });
+        expect(pending.stops, 1, reason: "leaving stops the request's wait");
+        expect(pending.cancels, 0, reason: 'leaving does not cancel it');
+        expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+        expect(
+          keychain.entries,
+          contains('@alice'),
+          reason: "the request's pending keys stay in the keychain",
+        );
+        expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+        expect(
+          AtClientMethods.currentClientOrNull(),
+          isNull,
+          reason: 'nothing is adopted',
+        );
+      });
+    }
 
     testWidgets('when Cancel lands after the approval is written but before'
         ' the client opens, then the approval stands and the approved client'
@@ -219,9 +227,9 @@ void main() {
       );
     });
 
-    testWidgets('when the dialog is closed after the approval is written but'
-        ' before the client opens, then the approved keys stay and nothing is'
-        ' adopted', (tester) async {
+    testWidgets('when the user leaves after the approval is written but'
+        ' before the client opens, then the wait is stopped, the approved keys'
+        ' stay and nothing is adopted', (tester) async {
       await _pumpApp(tester);
       final pending = _Pending();
       final keychain = _Keychain();
@@ -233,12 +241,9 @@ void main() {
       Navigator.of(App.navState.currentContext!).pop();
       await _settle(tester);
 
+      expect(pending.stops, 1, reason: "leaving stops the request's wait");
+      expect(pending.cancels, 0, reason: 'leaving does not cancel it');
       expect(dialog.closed, isTrue, reason: 'the dialog has closed');
-      expect(
-        pending.cancels,
-        1,
-        reason: "closing the dialog cancels the request's wait",
-      );
       expect(flows.opens, 0, reason: 'nothing opens once the dialog is closed');
       expect(
         keychain.writes,
@@ -399,8 +404,8 @@ void main() {
       );
     });
 
-    testWidgets('when a new request is filed for the atSign while the cancel'
-        " of a closed dialog's wait settles, then the new request's keys are"
+    testWidgets('when a new request is filed for the atSign while a Cancel'
+        " the user has since left settles, then the new request's keys are"
         ' left alone', (tester) async {
       await _pumpApp(tester);
       final pending = _Pending();
@@ -409,13 +414,15 @@ void main() {
       final keychain = _Keychain();
       await _open(tester, pending, keychain);
 
+      await tester.tap(_cancelButton);
+      await _settle(tester);
       Navigator.of(App.navState.currentContext!).pop();
       await _settle(tester);
       keychain.entries['@alice'] = AtKeys()..recordEnrollmentSnapshot('e2');
       keysDropped.complete();
       await _settle(tester);
 
-      expect(pending.cancels, 1, reason: "closing the dialog cancels the wait");
+      expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
       expect(
         keychain.entries['@alice']?.enrollmentIds,
         contains('e2'),
@@ -431,7 +438,8 @@ void main() {
       ('none', false),
     ]) {
       testWidgets('when the dialog is closed before the lookup finds $found,'
-          ' then any request found is cancelled and nothing is adopted', (
+          ' then any request found is stopped, not cancelled, its keys stay'
+          ' and nothing is adopted', (
         tester,
       ) async {
         await _pumpApp(tester);
@@ -453,12 +461,15 @@ void main() {
         lookup.complete(resumes ? pending : null);
         await _settle(tester);
 
-        expect(dialog.closed, isTrue, reason: 'the dialog has closed');
         expect(
-          pending.cancels,
+          pending.stops,
           resumes ? 1 : 0,
-          reason: 'a request found after the dialog closed is cancelled',
+          reason: 'a request found after the dialog closed is stopped',
         );
+        expect(pending.cancels, 0, reason: 'nothing is cancelled');
+        expect(pending.waits, 0, reason: 'no wait starts once the dialog closed');
+        expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+        expect(keychain.writes, 0, reason: 'the keychain is left as it is');
         expect(
           AtClientMethods.currentClientOrNull(),
           isNull,
@@ -466,6 +477,64 @@ void main() {
         );
       });
     }
+
+    testWidgets('when the keychain holds a request this device sent, then the'
+        ' dialog waits on it without asking for an OTP, and sends no new'
+        ' request', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final flows = _Flows(pending);
+      await _open(tester, pending, _Keychain(), flows: flows, waiting: false);
+
+      expect(
+        find.byKey(const Key('activating')),
+        findsOneWidget,
+        reason: 'the dialog shows it is waiting for approval',
+      );
+      expect(pending.waits, 1, reason: 'the dialog waits on the request found');
+      expect(
+        find.byKey(const Key('otp')),
+        findsNothing,
+        reason: 'no OTP is asked for',
+      );
+      expect(flows.enrolls, 0, reason: 'no new request is sent');
+    });
+  });
+
+  group('Given the enrollment dialog is sending a request', () {
+    testWidgets('when the user leaves before the atServer has answered, then'
+        " the request's wait is stopped once it is in, never started, and its"
+        ' keys stay', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending)..resumed = Future.value(null);
+      final submitted = Completer<PendingEnrollment>();
+      flows.submitted = submitted.future;
+      final dialog = await _open(
+        tester,
+        pending,
+        keychain,
+        flows: flows,
+        waiting: false,
+      );
+      await tester.enterText(find.byType(EditableText), 'ABC123');
+      await _settle(tester);
+      await tester.tap(find.widgetWithText(FilledButton, _strings.submitOtp));
+      await _settle(tester);
+      expect(flows.enrolls, 1, reason: 'the request is being sent');
+
+      await tester.tap(_backButton);
+      await _settle(tester);
+      submitted.complete(pending);
+      await _settle(tester);
+
+      expect(pending.stops, 1, reason: "leaving stops the request's wait");
+      expect(pending.cancels, 0, reason: 'leaving does not cancel it');
+      expect(pending.waits, 0, reason: 'no wait starts once the dialog closed');
+      expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+      expect(keychain.writes, 0, reason: 'the keychain is left as it is');
+    });
   });
 }
 
@@ -474,12 +543,17 @@ AppLocalizations get _strings =>
 
 Finder get _cancelButton => find.widgetWithText(FilledButton, _strings.cancel);
 
-/// A request awaiting a decision the test makes. [cancel] ends the wait as
-/// `PendingEnrollment.cancel` does, returning once [keysDropped] completes,
-/// and a wait started after it ends at once.
+Finder get _backButton => find.widgetWithText(FilledButton, _strings.back);
+
+/// A request awaiting a decision the test makes. [stop] and [cancel] end the
+/// wait as `PendingEnrollment.stop` and `PendingEnrollment.cancel` do, a
+/// cancel returning once [keysDropped] completes, and a wait started after
+/// either ends at once.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
   var _waiting = false;
+  var waits = 0;
+  var stops = 0;
   var cancels = 0;
   Future<void> keysDropped = Future.value();
 
@@ -499,8 +573,18 @@ class _Pending extends Fake implements PendingEnrollment {
     Duration? connectBudget,
   }) {
     if (cancels > 0) return Future.error(_cancelled());
+    if (stops > 0) return Future.error(_stopped());
+    waits++;
     _waiting = true;
     return _decision.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+    if (_waiting && !_decision.isCompleted) {
+      _decision.completeError(_stopped());
+    }
   }
 
   @override
@@ -516,22 +600,50 @@ class _Pending extends Fake implements PendingEnrollment {
     'the wait for enrollment e1 of @alice was cancelled',
   );
 
+  StoppedException _stopped() => StoppedException(
+    'the wait for enrollment e1 of @alice was stopped; the request stays in'
+    ' its key store, for resumeEnrollment',
+  );
+
   void approve(AtClient client) => _decision.complete(client);
 
   void refuse(Object error) => _decision.completeError(error);
 }
 
-/// Resumes [pending], as if this device had submitted it before, and opens
-/// a client with [onOpen], counting the [opens].
+/// Resumes [pending], as if this device had submitted it before, submits
+/// requests, counting the [enrolls], and opens a client with [onOpen],
+/// counting the [opens].
 class _Flows extends Fake implements AtsignFlows {
   _Flows(this.pending);
 
   final PendingEnrollment pending;
   Future<AtClient> Function() onOpen = () => Completer<AtClient>().future;
   var opens = 0;
+  var enrolls = 0;
 
   /// What the lookup for a request to resume finds, [pending] by default.
   Future<PendingEnrollment?>? resumed;
+
+  /// What submitting a request returns, [pending] by default.
+  Future<PendingEnrollment>? submitted;
+
+  @override
+  Future<PendingEnrollment> enroll(
+    String atSign, {
+    required String otp,
+    required String app,
+    required String device,
+    required Map<String, String> namespaces,
+    required WrittenAtKeysIo keys,
+    required AtClientPreference preference,
+    SigningAlgoType? signingAlgo,
+    EnrollmentKeyExchangeMode? keyExchangeMode,
+    Duration? apkamKeysExpiry,
+    AtLookUpFactory? lookUps,
+  }) {
+    enrolls++;
+    return submitted ?? Future.value(pending);
+  }
 
   @override
   Future<AtClient> open(

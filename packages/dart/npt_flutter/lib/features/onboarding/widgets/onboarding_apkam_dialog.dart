@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
@@ -85,9 +86,23 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   @override
   void dispose() {
-    _cancelWait();
+    final pending = _pending;
+    if (pending != null) unawaited(_stop(pending));
     pinController.dispose();
     super.dispose();
+  }
+
+  /// Stops the wait on [pending] and keeps the request, so the next sign-in
+  /// waits on it again.
+  Future<void> _stop(PendingEnrollment pending) async {
+    try {
+      await pending.stop();
+    } catch (e) {
+      App.log(
+        'Could not stop the wait for enrollment ${pending.enrollmentId}: $e'
+            .loggable,
+      );
+    }
   }
 
   /// The device name an enrollment is submitted under: the device's own name
@@ -233,14 +248,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// revocation, timeout, error) what the enrollment left in the keychain is
   /// dropped, so the app doesn't keep resuming a dead enrollment, unless the
   /// approval was written before the end, when the keys stay and the dialog
-  /// closes with the error; a cancelled wait is settled by [_afterCancel].
+  /// closes with the error; a cancelled wait is settled by [_afterCancel],
+  /// and a wait stopped by leaving the dialog keeps the request.
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
-    _pending = pending;
     if (!mounted) {
-      _cancelWait();
-      await _afterCancel(pending);
+      await _stop(pending);
       return;
     }
+    _pending = pending;
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
     });
@@ -257,6 +272,12 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       await onApproved();
     } on AtEnrollmentCancelledException {
       await _afterCancel(pending);
+    } on StoppedException {
+      App.log(
+        'Stopped the wait for enrollment ${pending.enrollmentId}; the request '
+                'stays for the next sign-in'
+            .loggable,
+      );
     } catch (e, st) {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
@@ -472,7 +493,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                           ),
                           gapH8,
                           PopButton(
-                            onboardingStatus: onboardingStatus,
                             context: context,
                             title: strings.back,
                           ),
@@ -557,14 +577,16 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                 ],
               ),
               gapH24,
-              Align(
-                alignment: Alignment.centerLeft,
-                child: PopButton(
-                  onboardingStatus: onboardingStatus,
-                  context: context,
-                  title: strings.cancel,
-                  onPressed: _cancelWait,
-                ),
+              Row(
+                children: [
+                  PopButton(context: context, title: strings.back),
+                  gapW8,
+                  PopButton(
+                    context: context,
+                    title: strings.cancel,
+                    onPressed: _cancelWait,
+                  ),
+                ],
               ),
             ],
           ),
@@ -584,7 +606,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
               gapW8,
               PopButton(
-                onboardingStatus: onboardingStatus,
                 context: context,
                 title: strings.done,
               ),
@@ -606,7 +627,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
               gapW8,
               PopButton(
-                onboardingStatus: onboardingStatus,
                 context: context,
                 title: strings.done,
               ),
@@ -645,18 +665,15 @@ Future<String> platformDeviceName() async {
 class PopButton extends StatelessWidget {
   const PopButton({
     super.key,
-    required this.onboardingStatus,
     required this.context,
     required this.title,
     this.onPressed,
   });
 
-  final OnboardingStatus onboardingStatus;
   final BuildContext context;
   final String title;
 
-  /// What the button does instead of popping. Without it the button is
-  /// disabled while approval is pending.
+  /// What the button does instead of popping.
   final VoidCallback? onPressed;
   @override
   Widget build(BuildContext context) {
@@ -671,13 +688,7 @@ class PopButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(Sizes.p8),
         ),
       ),
-      onPressed:
-          onPressed ??
-          (onboardingStatus != OnboardingStatus.pendingApproval
-              ? () {
-                  Navigator.of(context).pop();
-                }
-              : null),
+      onPressed: onPressed ?? () => Navigator.of(context).pop(),
       child: Text(title),
     );
   }
