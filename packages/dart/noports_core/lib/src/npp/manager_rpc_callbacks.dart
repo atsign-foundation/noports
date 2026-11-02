@@ -109,7 +109,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       rethrow;
     }
     await logChange(
-        response.respType == AtRpcRespType.error ? response.message : null);
+        response.respType == AtRpcRespType.error
+            ? response.message ?? 'no message'
+            : null);
     return response;
   }
 
