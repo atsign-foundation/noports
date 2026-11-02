@@ -112,7 +112,7 @@ packages:
     source: git
     version: "5.25.0"
   at_lookup:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       path: "packages/at_lookup"
       ref: gkc-v4-newdev-fixes
