@@ -9,6 +9,20 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isto abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é necessário um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'A abandonar a solicitação...';
+
+  @override
   String get activate => 'Ativar';
 
   @override
@@ -200,10 +214,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cancel => 'Cancelar';
-
-  @override
-  String get cancelledRequestStillPending =>
-      'Cancelado. A solicitação continua pendente, por isso negue-a em Solicitações no Authenticator.';
 
   @override
   String get confirm => 'Confirmar';
@@ -559,6 +569,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Payload JSON copiado para a área de transferência';
 
   @override
+  String get keepWaiting => 'Continuar a aguardar';
+
+  @override
   String get keys => 'Enviar atKeys';
 
   @override
@@ -869,6 +882,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -1138,6 +1156,20 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isso abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é preciso um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'Abandonando a solicitação...';
+
+  @override
   String get activate => 'Ativar';
 
   @override
@@ -1329,10 +1361,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get cancel => 'Cancelar';
-
-  @override
-  String get cancelledRequestStillPending =>
-      'Cancelado. A solicitação continua pendente, então negue-a em Solicitações no Authenticator.';
 
   @override
   String get confirm => 'Confirmar';
@@ -1688,6 +1716,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Payload JSON copiado para a área de transferência';
 
   @override
+  String get keepWaiting => 'Continuar aguardando';
+
+  @override
   String get keys => 'Enviar atKeys';
 
   @override
@@ -1996,6 +2027,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get removeAtsign => 'Remover Atsign';
+
+  @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
 
   @override
   String get requestExpired =>

@@ -20,6 +20,7 @@ enum OnboardingStatus {
   otpRequired,
   validatingOtp,
   pendingApproval,
+  cancelling,
   success,
   denied,
 }
@@ -73,8 +74,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// The enrollment being waited on, while one is.
   PendingEnrollment? _pending;
 
-  /// The cancel of the wait in flight, once one is asked for.
-  Future<void>? _cancelling;
+  /// Completes once the wait on [_pending] has ended, however it ended.
+  Future<void>? _waitEnded;
+
+  /// The Cancel confirmation while it is showing.
+  BuildContext? _confirming;
 
   @override
   void initState() {
@@ -181,32 +185,87 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     });
   }
 
-  /// Cancels the wait on [_pending], if there is one; [_afterCancel] settles
-  /// how it ends.
-  void _cancelWait() {
+  /// Abandons the request being waited on once the user confirms it.
+  ///
+  /// The outcome is settled once both the cancel and the wait have ended. An
+  /// approval written before the cancel stands, and opens the app's client
+  /// while the dialog is open. Otherwise what is left of the request's
+  /// keychain entry is dropped, and the dialog asks for a new OTP, saying the
+  /// request was abandoned and should be denied.
+  Future<void> _onCancel() async {
     final pending = _pending;
-    if (pending == null) return;
-    _pending = null;
+    if (pending == null || !await _confirmAbandon(pending)) return;
+    if (!mounted) return;
+    setState(() {
+      onboardingStatus = OnboardingStatus.cancelling;
+    });
     App.log(
       'Cancelling the wait for enrollment ${pending.enrollmentId}'.loggable,
     );
-    _cancelling = pending.cancel();
-  }
-
-  /// Settles a wait [_cancelWait] ended, once the cancel has dropped the
-  /// request's pending keys. An approval written before the cancel stands,
-  /// and opens the app's client while the dialog is open. Otherwise what is
-  /// left of the request's keychain entry is dropped, and the dialog asks for
-  /// a new OTP, saying the request is still pending and should be denied.
-  Future<void> _afterCancel(PendingEnrollment pending) async {
-    await _cancelling;
+    try {
+      await pending.cancel();
+    } catch (e) {
+      App.log(
+        'Could not remove the pending keys of enrollment '
+                '${pending.enrollmentId}: $e'
+            .loggable,
+      );
+      if (mounted) {
+        setState(() {
+          onboardingStatus = OnboardingStatus.pendingApproval;
+        });
+      }
+      return;
+    }
+    await _waitEnded;
+    _pending = null;
     if (pending.approved) {
       if (mounted) await _openApproved();
       return;
     }
     await _discard(pending);
     if (!mounted) return;
-    _askForNewOtp(AppLocalizations.of(context)!.cancelledRequestStillPending);
+    _askForNewOtp(
+      AppLocalizations.of(context)!.requestAbandoned(pending.enrollmentId),
+    );
+  }
+
+  /// Whether the user confirms abandoning [pending]; dismissing the
+  /// confirmation counts as no.
+  Future<bool> _confirmAbandon(PendingEnrollment pending) async {
+    final strings = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      routeSettings: const RouteSettings(name: 'Abandon enrollment request'),
+      builder: (context) {
+        _confirming = context;
+        return AlertDialog(
+          title: Text(strings.abandonRequestTitle),
+          content: Text(
+            strings.abandonRequestBody(atsign.toString(), pending.enrollmentId),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(strings.keepWaiting),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(strings.abandonRequest),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() => _confirming = null);
+    return confirmed ?? false;
+  }
+
+  /// Closes the Cancel confirmation, if it is showing, as declined.
+  void _closeConfirmation() {
+    final confirming = _confirming;
+    if (confirming != null && confirming.mounted) {
+      Navigator.of(confirming).pop(false);
+    }
   }
 
   /// Opens the app's client on the keys an approval wrote before its wait was
@@ -248,36 +307,37 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// revocation, timeout, error) what the enrollment left in the keychain is
   /// dropped, so the app doesn't keep resuming a dead enrollment, unless the
   /// approval was written before the end, when the keys stay and the dialog
-  /// closes with the error; a cancelled wait is settled by [_afterCancel],
-  /// and a wait stopped by leaving the dialog keeps the request.
+  /// closes with the error; a cancelled wait is settled by [_onCancel], and a
+  /// wait stopped by leaving the dialog keeps the request.
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     if (!mounted) {
       await _stop(pending);
       return;
     }
     _pending = pending;
+    final ended = Completer<void>();
+    _waitEnded = ended.future;
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
     });
 
+    final AtClient client;
     try {
       await AtClientMethods.stopCurrentClient();
-      final client = await pending.client(
+      client = await pending.client(
         atClientPreference,
         retryInterval: _kApprovalRetryInterval,
         storage: await storageOrDefault(atsign, atClientPreference),
       );
-      _pending = null;
-      AtClientMethods.adopt(client);
-      await onApproved();
     } on AtEnrollmentCancelledException {
-      await _afterCancel(pending);
+      return;
     } on StoppedException {
       App.log(
         'Stopped the wait for enrollment ${pending.enrollmentId}; the request '
                 'stays for the next sign-in'
             .loggable,
       );
+      return;
     } catch (e, st) {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
@@ -296,7 +356,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       } else {
         await onDenied();
       }
+      return;
+    } finally {
+      ended.complete();
     }
+    _pending = null;
+    _closeConfirmation();
+    AtClientMethods.adopt(client);
+    await onApproved();
   }
 
   /// Drops what [pending] left in the keychain: just this enrollment's
@@ -584,10 +651,23 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                   PopButton(
                     context: context,
                     title: strings.cancel,
-                    onPressed: _cancelWait,
+                    onPressed: _onCancel,
                   ),
                 ],
               ),
+            ],
+          ),
+          OnboardingStatus.cancelling => Row(
+            key: const Key('cancelling'),
+            children: [
+              Expanded(
+                child: Text(
+                  strings.abandoningRequest,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              gapW8,
+              const CircularProgressIndicator(),
             ],
           ),
           OnboardingStatus.success => Column(

@@ -9,6 +9,20 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -189,10 +203,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cancel => '取消';
-
-  @override
-  String get cancelledRequestStillPending =>
-      '已取消。该请求仍待处理，请在 Authenticator 的“请求”中拒绝它。';
 
   @override
   String get confirm => '确认';
@@ -524,6 +534,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
 
   @override
+  String get keepWaiting => '继续等待';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -812,6 +825,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get removeAtsign => '删除 Atsign';
+
+  @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
 
   @override
   String get requestExpired => '原始请求已过期。请再次提交';
@@ -1066,6 +1084,20 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   AppLocalizationsZhHansCh() : super('zh_Hans_CH');
 
   @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -1246,10 +1278,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get cancel => '取消';
-
-  @override
-  String get cancelledRequestStillPending =>
-      '已取消。该请求仍待处理，请在 Authenticator 的“请求”中拒绝它。';
 
   @override
   String get confirm => '确认';
@@ -1581,6 +1609,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
 
   @override
+  String get keepWaiting => '继续等待';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -1871,6 +1902,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -2123,6 +2159,20 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   AppLocalizationsZhHantHk() : super('zh_Hant_HK');
 
   @override
+  String get abandonRequest => '放棄';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '這將放棄 $atsign 的註冊 $enrollmentId。如需重試，需要從 $atsign 的另一個註冊取得新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放棄此請求？';
+
+  @override
+  String get abandoningRequest => '正在放棄請求...';
+
+  @override
   String get activate => '啟動';
 
   @override
@@ -2303,10 +2353,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get cancel => '取消';
-
-  @override
-  String get cancelledRequestStillPending =>
-      '已取消。該請求仍待處理，請在 Authenticator 的「請求」中拒絕它。';
 
   @override
   String get confirm => '確認';
@@ -2638,6 +2684,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get jsonPayloadCopiedToClipboard => 'JSON 承載已複製到剪貼簿';
 
   @override
+  String get keepWaiting => '繼續等待';
+
+  @override
   String get keys => '上傳 atKeys';
 
   @override
@@ -2925,6 +2974,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get removeAtsign => '移除 Atsign';
+
+  @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放棄註冊 $enrollmentId。如需重試，請輸入來自另一個註冊的新 OTP，並在 Authenticator 的「請求」中拒絕 $enrollmentId。';
+  }
 
   @override
   String get requestExpired => '原始請求已過期。請再次提交';

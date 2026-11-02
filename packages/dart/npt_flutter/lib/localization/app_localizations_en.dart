@@ -9,6 +9,20 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get abandonRequest => 'Abandon';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'This abandons enrollment $enrollmentId of $atsign. Trying again needs a new OTP from another enrollment of $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandon this request?';
+
+  @override
+  String get abandoningRequest => 'Abandoning the request...';
+
+  @override
   String get activate => 'Activate';
 
   @override
@@ -198,10 +212,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
-
-  @override
-  String get cancelledRequestStillPending =>
-      'Cancelled. The request is still pending, so please deny it under Requests in the Authenticator.';
 
   @override
   String get confirm => 'Confirm';
@@ -551,6 +561,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jsonPayloadCopiedToClipboard => 'JSON payload copied to clipboard';
 
   @override
+  String get keepWaiting => 'Keep waiting';
+
+  @override
   String get keys => 'Upload atKeys';
 
   @override
@@ -855,6 +868,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeAtsign => 'Remove Atsign';
+
+  @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Enrollment $enrollmentId abandoned. To try again, enter a new OTP from another enrollment, and deny $enrollmentId under Requests in the Authenticator.';
+  }
 
   @override
   String get requestExpired =>

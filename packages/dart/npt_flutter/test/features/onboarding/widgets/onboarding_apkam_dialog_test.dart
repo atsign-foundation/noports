@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
@@ -52,7 +53,146 @@ void main() {
       );
     });
 
-    testWidgets('when the user presses Cancel, then the wait is cancelled,'
+    testWidgets('when the user presses Cancel, then a confirmation names the'
+        ' request and says what abandoning it means, and the wait goes on', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      await _open(tester, pending, keychain);
+
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+
+      expect(
+        find.text(_strings.abandonRequestTitle),
+        findsOneWidget,
+        reason: 'a confirmation asks first',
+      );
+      expect(
+        find.text(_strings.abandonRequestBody('@alice', 'e1')),
+        findsOneWidget,
+        reason:
+            'it names the request, and says trying again needs a new OTP from'
+            ' another enrollment',
+      );
+      expect(pending.cancels, 0, reason: 'nothing is cancelled before a yes');
+      expect(
+        find.byKey(const Key('activating')),
+        findsOneWidget,
+        reason: 'the dialog is still waiting',
+      );
+      expect(keychain.writes, 0, reason: 'the keychain is left as it is');
+    });
+
+    for (final (how, decline) in <(String, Future<void> Function(WidgetTester))>[
+      (
+        'chooses Keep waiting',
+        (tester) => tester.tap(find.text(_strings.keepWaiting)),
+      ),
+      (
+        'dismisses the confirmation',
+        (tester) => tester.sendKeyEvent(LogicalKeyboardKey.escape),
+      ),
+    ]) {
+      testWidgets('when the user $how, then the confirmation closes and the'
+          ' wait goes on', (tester) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        await _open(tester, pending, keychain);
+        await tester.tap(_cancelButton);
+        await _settle(tester);
+
+        await decline(tester);
+        await _settle(tester);
+
+        expect(
+          find.text(_strings.abandonRequestTitle),
+          findsNothing,
+          reason: 'the confirmation has closed',
+        );
+        expect(pending.cancels, 0, reason: 'nothing is cancelled');
+        expect(keychain.writes, 0, reason: 'the keychain is left as it is');
+        final client = _Client();
+        pending.approve(client);
+        await _settle(tester);
+        expect(
+          AtClientMethods.currentClientOrNull(),
+          same(client),
+          reason: 'the wait went on, and its approval is adopted',
+        );
+        await tester.pump(const Duration(seconds: 3));
+        await _settle(tester);
+      });
+    }
+
+    testWidgets('when a confirmed Cancel is still removing the keys, then'
+        ' Cancel is not offered again', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keysDropped = Completer<void>();
+      pending.keysDropped = keysDropped.future;
+      await _open(tester, pending, _Keychain());
+
+      await _confirmCancel(tester);
+
+      expect(
+        find.byKey(const Key('cancelling')),
+        findsOneWidget,
+        reason: 'the dialog says the request is being abandoned',
+      );
+      expect(
+        _cancelButton,
+        findsNothing,
+        reason: 'Cancel is not offered while one is in progress',
+      );
+      expect(pending.cancels, 1, reason: 'cancel has run once');
+      keysDropped.complete();
+      await _settle(tester);
+    });
+
+    testWidgets('when the approval arrives while Cancel is being confirmed,'
+        ' then the confirmation closes, nothing is cancelled and the approved'
+        ' client is adopted', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final dialog = await _open(tester, pending, _Keychain());
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+      expect(
+        find.text(_strings.abandonRequestTitle),
+        findsOneWidget,
+        reason: 'a confirmation asks first',
+      );
+
+      final client = _Client();
+      pending.approve(client);
+      await _settle(tester);
+
+      expect(
+        find.text(_strings.abandonRequestTitle),
+        findsNothing,
+        reason: 'the approval closes the confirmation',
+      );
+      expect(pending.cancels, 0, reason: 'nothing is cancelled');
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        same(client),
+        reason: 'the approved client is adopted',
+      );
+      expect(client.stops, 0, reason: 'the approved client keeps running');
+      await tester.pump(const Duration(seconds: 3));
+      await _settle(tester);
+      expect(
+        dialog.result?.status,
+        NoPortsOnboardingResultStatus.success,
+        reason: 'the dialog closes as approved',
+      );
+    });
+
+    testWidgets('when the user confirms Cancel, then the wait is cancelled,'
         ' which drops its pending keys, and the dialog then asks for a new OTP'
         ' and tells the user to deny the request in the Authenticator, with'
         ' nothing adopted', (tester) async {
@@ -63,7 +203,7 @@ void main() {
       final keychain = _Keychain();
       final dialog = await _open(tester, pending, keychain);
 
-      await tester.tap(_cancelButton);
+      await _confirmCancel(tester);
       await _settle(tester);
 
       expect(
@@ -88,7 +228,7 @@ void main() {
       expect(dialog.closed, isFalse, reason: 'the dialog stays open');
       _expectOtpPrompt(tester);
       expect(
-        find.text(_strings.cancelledRequestStillPending),
+        find.text(_strings.requestAbandoned('e1')),
         findsOneWidget,
         reason: 'the OTP prompt tells the user to deny the cancelled request',
       );
@@ -194,14 +334,22 @@ void main() {
       final flows = _Flows(pending);
       final client = _Client();
       flows.onOpen = () async => client;
+      final waitEnds = Completer<void>();
+      pending.waitEnds = waitEnds.future;
       final dialog = await _open(tester, pending, keychain, flows: flows);
 
       keychain.entries['@alice'] = _approvedKeys();
       pending.approved = true;
-      await tester.tap(_cancelButton);
-      await _settle(tester);
+      await _confirmCancel(tester);
 
       expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
+      expect(
+        flows.opens,
+        0,
+        reason: 'no client opens on the approved keys before the wait has ended',
+      );
+      waitEnds.complete();
+      await _settle(tester);
       expect(flows.opens, 1, reason: 'a client is opened on the approved keys');
       expect(
         AtClientMethods.currentClientOrNull(),
@@ -214,7 +362,7 @@ void main() {
         reason: 'the approved keys stay as the approval wrote them',
       );
       expect(
-        find.text(_strings.cancelledRequestStillPending),
+        find.text(_strings.requestAbandoned('e1')),
         findsNothing,
         reason: 'the request is not reported as still pending',
       );
@@ -269,7 +417,7 @@ void main() {
 
       keychain.entries['@alice'] = _approvedKeys();
       pending.approved = true;
-      await tester.tap(_cancelButton);
+      await _confirmCancel(tester);
       await _settle(tester);
 
       expect(flows.opens, 1, reason: 'a client is opened on the approved keys');
@@ -307,7 +455,7 @@ void main() {
 
       keychain.entries['@alice'] = _approvedKeys();
       pending.approved = true;
-      await tester.tap(_cancelButton);
+      await _confirmCancel(tester);
       await _settle(tester);
       expect(
         flows.opens,
@@ -354,13 +502,13 @@ void main() {
         await _open(tester, pending, keychain, flows: flows);
 
         arrange(keychain);
-        await tester.tap(_cancelButton);
+        await _confirmCancel(tester);
         await _settle(tester);
 
         expect(flows.opens, 0, reason: 'no client is opened');
         _expectOtpPrompt(tester);
         expect(
-          find.text(_strings.cancelledRequestStillPending),
+          find.text(_strings.requestAbandoned('e1')),
           findsOneWidget,
           reason: 'the OTP prompt tells the user to deny the cancelled request',
         );
@@ -414,7 +562,7 @@ void main() {
       final keychain = _Keychain();
       await _open(tester, pending, keychain);
 
-      await tester.tap(_cancelButton);
+      await _confirmCancel(tester);
       await _settle(tester);
       Navigator.of(App.navState.currentContext!).pop();
       await _settle(tester);
@@ -545,16 +693,26 @@ Finder get _cancelButton => find.widgetWithText(FilledButton, _strings.cancel);
 
 Finder get _backButton => find.widgetWithText(FilledButton, _strings.back);
 
+/// Presses Cancel on the waiting screen and confirms it.
+Future<void> _confirmCancel(WidgetTester tester) async {
+  await tester.tap(_cancelButton);
+  await _settle(tester);
+  await tester.tap(find.text(_strings.abandonRequest));
+  await _settle(tester);
+}
+
 /// A request awaiting a decision the test makes. [stop] and [cancel] end the
 /// wait as `PendingEnrollment.stop` and `PendingEnrollment.cancel` do, a
-/// cancel returning once [keysDropped] completes, and a wait started after
-/// either ends at once.
+/// cancel ending the wait once [waitEnds] completes, as `client()` does
+/// after stopping a client it opened, and returning once [keysDropped]
+/// completes; a wait started after either ends at once.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
   var _waiting = false;
   var waits = 0;
   var stops = 0;
   var cancels = 0;
+  Future<void> waitEnds = Future.value();
   Future<void> keysDropped = Future.value();
 
   @override
@@ -591,7 +749,11 @@ class _Pending extends Fake implements PendingEnrollment {
   Future<void> cancel() async {
     cancels++;
     if (_waiting && !_decision.isCompleted) {
-      _decision.completeError(_cancelled());
+      unawaited(
+        waitEnds.then((_) {
+          if (!_decision.isCompleted) _decision.completeError(_cancelled());
+        }),
+      );
     }
     await keysDropped;
   }

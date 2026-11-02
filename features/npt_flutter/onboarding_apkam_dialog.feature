@@ -52,3 +52,48 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     Given the keychain holds e1, sent from this device for NoPorts and awaiting approval
     When the dialog opens for that atSign
     Then it waits on e1 without asking for an OTP, and sends no new request
+
+  Scenario: Cancel asks first
+    Given the dialog waiting for approval of e1
+    When the user chooses Cancel
+    Then a confirmation names e1 and the atSign, and says this abandons the request and that trying again needs a new OTP from another enrollment; the wait goes on and the keys stay
+
+  Scenario: A declined Cancel changes nothing
+    Given that confirmation
+    When the user chooses Keep waiting, or dismisses the confirmation
+    Then it closes, the wait goes on, and the keys stay
+
+  Scenario: A confirmed Cancel abandons the request
+    Given that confirmation
+    When the user confirms
+    Then the wait is cancelled, e1's pending keys leave the keychain, and the OTP prompt says e1 was abandoned, that a new OTP from another enrollment is needed, and to deny e1 in the Authenticator; nothing is signed in
+
+  @race
+  Scenario: Cancel is not offered again while one is in progress
+    Given a confirmed Cancel whose removal of the keys has not finished
+    When the user looks for Cancel
+    Then it is not offered, and cancel has run once
+
+  @race
+  Scenario: An approval landing while Cancel is being confirmed signs in
+    Given the Cancel confirmation showing
+    When the approval arrives and the client opens
+    Then the confirmation closes, nothing is cancelled, and the dialog signs in with that client
+
+  @race
+  Scenario: A confirmed Cancel after the approval was written lets the approval stand
+    Given the confirmation, and the approval of e1 written to the keychain just before cancel runs
+    When the user confirms
+    Then once the wait has ended, the dialog opens a client on the approved keys and signs in with it; the approved keys stay as written and no OTP is asked for
+
+  @race
+  Scenario: A Cancel press after the approval opened the client does nothing
+    Given the approval of e1 has arrived and its client has opened
+    When a Cancel press arrives before the screen changes
+    Then nothing is cancelled, and the dialog signs in with the approved client
+
+  @race
+  Scenario: A request filed while a Cancel settles is left alone
+    Given a confirmed Cancel of e1 still removing its keys, the dialog since left, and request e2 filed in the keychain for the atSign
+    When e1's Cancel finishes
+    Then e2's keys are left alone
