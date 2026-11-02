@@ -25,15 +25,30 @@ enum OnboardingStatus {
   denied,
 }
 
+/// Enrolls this device with [atsign] by quoting an OTP, waits for a manager
+/// to approve the request, and adopts the client the approval opens.
 class OnboardingApkamDialog extends StatefulWidget {
   const OnboardingApkamDialog({
     required this.atsign,
     required this.atClientPreference,
+    this.flows = const AtsignFlows(),
+    this.deviceName = platformDeviceName,
+    this.keychain,
     super.key,
   });
 
   final Atsign atsign;
   final AtClientPreference atClientPreference;
+
+  /// The verbs that submit and resume the request; a test stands in for them.
+  final AtsignFlows flows;
+
+  /// This device's name as the platform reports it; a test stands in for it.
+  final Future<String> Function() deviceName;
+
+  /// The keychain the request's keys are filed in, the platform's by default;
+  /// a test stands in for it.
+  final KeychainStorage? keychain;
 
   @override
   OnboardingApkamDialogState createState() => OnboardingApkamDialogState();
@@ -42,6 +57,7 @@ class OnboardingApkamDialog extends StatefulWidget {
 class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   Atsign get atsign => widget.atsign;
   AtClientPreference get atClientPreference => widget.atClientPreference;
+  late final KeychainStorage _keychain = widget.keychain ?? KeychainStorage();
 
   static const _kPinLength = 6;
   static const _kApprovalRetryInterval = Duration(seconds: 10);
@@ -88,36 +104,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await handshake?.close();
   }
 
-  Future<String> getDeviceName() async {
-    final deviceInfo = DeviceInfoPlugin();
-
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return '${androidInfo.manufacturer} ${androidInfo.model}';
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return '${iosInfo.name} (${iosInfo.model})';
-    } else if (Platform.isMacOS) {
-      final macInfo = await deviceInfo.macOsInfo;
-      return macInfo.computerName;
-    } else if (Platform.isWindows) {
-      final windowsInfo = await deviceInfo.windowsInfo;
-      return windowsInfo.computerName;
-    } else if (Platform.isLinux) {
-      final linuxInfo = await deviceInfo.linuxInfo;
-      return linuxInfo.name;
-    } else {
-      return 'Unknown Device';
-    }
-  }
-
   /// The device name an enrollment is submitted under: the device's own name
   /// with anything but letters and digits removed, since the atServer takes
   /// no spaces or special characters. Deterministic, so a restart can find
   /// the enrollment it submitted.
   Future<String> _enrollmentDeviceName() async {
     final regExp = RegExp(r'[^a-zA-Z0-9]');
-    return (await getDeviceName()).replaceAll(regExp, '');
+    return (await widget.deviceName()).replaceAll(regExp, '');
   }
 
   /// Picks up an enrollment this device submitted and never completed, whose
@@ -126,11 +119,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   Future<void> init() async {
     PendingEnrollment? pending;
     try {
-      pending = await const AtsignFlows().resumeEnrollment(
+      pending = await widget.flows.resumeEnrollment(
         atsign,
         app: Constants.namespace,
         device: await _enrollmentDeviceName(),
-        keys: KeychainAtKeysIo(),
+        keys: KeychainAtKeysIo(keychainStorage: _keychain),
         preference: atClientPreference,
       );
     } catch (e) {
@@ -252,7 +245,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// Drops what [pending] left in the keychain: the whole entry when it holds
   /// no credential of its own, otherwise just this enrollment's material.
   Future<void> _discard(PendingEnrollment pending) async {
-    final keychain = KeychainAtKeysIo();
+    final keychain = KeychainAtKeysIo(keychainStorage: _keychain);
     try {
       final keys = await keychain.read(atsign);
       if (keys.holdsAuthenticationMaterial) {
@@ -261,7 +254,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           return true;
         });
       } else {
-        await KeychainStorage().removeAtsignFromKeychain(atsign);
+        await _keychain.removeAtsignFromKeychain(atsign);
       }
     } catch (e) {
       App.log('Could not drop enrollment ${pending.enrollmentId}: $e'.loggable);
@@ -279,13 +272,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('Device Name: $deviceName'.loggable);
 
     try {
-      final pending = await const AtsignFlows().enroll(
+      final pending = await widget.flows.enroll(
         atsign,
         otp: otp,
         app: Constants.namespace,
         device: deviceName,
         namespaces: {Constants.namespace: 'rw', "sshnp": 'rw', 'sshrvd': 'rw'},
-        keys: KeychainAtKeysIo(),
+        keys: KeychainAtKeysIo(keychainStorage: _keychain),
         preference: atClientPreference,
       );
       App.log('Enrollment ${pending.enrollmentId} submitted'.loggable);
@@ -581,6 +574,30 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         },
       ),
     );
+  }
+}
+
+/// This device's name as the platform reports it.
+Future<String> platformDeviceName() async {
+  final deviceInfo = DeviceInfoPlugin();
+
+  if (Platform.isAndroid) {
+    final androidInfo = await deviceInfo.androidInfo;
+    return '${androidInfo.manufacturer} ${androidInfo.model}';
+  } else if (Platform.isIOS) {
+    final iosInfo = await deviceInfo.iosInfo;
+    return '${iosInfo.name} (${iosInfo.model})';
+  } else if (Platform.isMacOS) {
+    final macInfo = await deviceInfo.macOsInfo;
+    return macInfo.computerName;
+  } else if (Platform.isWindows) {
+    final windowsInfo = await deviceInfo.windowsInfo;
+    return windowsInfo.computerName;
+  } else if (Platform.isLinux) {
+    final linuxInfo = await deviceInfo.linuxInfo;
+    return linuxInfo.name;
+  } else {
+    return 'Unknown Device';
   }
 }
 
