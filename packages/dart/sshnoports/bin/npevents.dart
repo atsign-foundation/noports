@@ -25,8 +25,7 @@ const String _description =
 void main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
-  ArgParser parser = CLIBase.createArgsParser(
-      namespace: DefaultArgs.namespace, addLegacyRootDomainArg: false);
+  ArgParser parser = CLIBase.createArgsParser(namespace: DefaultArgs.namespace);
   parser.addFlag('version', negatable: false, help: 'Print version');
   parser.addFlag('debug', help: 'maximum debug verbosity ');
   parser.addOption('logging-atsigns',
