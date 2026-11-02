@@ -165,6 +165,48 @@ void main() {
       });
     }
 
+    for (final (state, arrange) in <(String, void Function(_Keychain))>[
+      (
+        'holds no entry for the atSign',
+        (keychain) => keychain.entries.remove('@alice'),
+      ),
+    ]) {
+      testWidgets('A wait that ends without a decision keeps the request:'
+          ' when the atServer cannot be reached and the keychain $state,'
+          ' then the dialog closes with the error, not as denied', (
+        tester,
+      ) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final dialog = await _open(tester, pending, keychain);
+        arrange(keychain);
+        final filed = keychain.entries['@alice'];
+        final error = AtTimeoutException('Timed out');
+
+        await pending.refuse(error);
+        await _settle(tester);
+
+        expect(
+          find.byKey(const Key('denied')),
+          findsNothing,
+          reason: 'the request is not reported as denied',
+        );
+        expect(dialog.closed, isTrue, reason: 'the dialog closes');
+        expect(
+          dialog.result?.message,
+          describeOnboardingError(error, _strings),
+          reason: 'the dialog closes with what went wrong',
+        );
+        expect(
+          keychain.entries['@alice'],
+          same(filed),
+          reason: 'the keychain is left as it is',
+        );
+        expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+      });
+    }
+
     for (final (how, error, discards) in <(String, Exception, bool)>[
       (
         'the atServer cannot be reached',

@@ -351,7 +351,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       _pending = null;
       _closeConfirmation();
       final revoked = isEnrollmentRevoked(e);
-      if (pending.approved || !revoked && await _stillPending(pending)) {
+      if (pending.approved || !revoked && !await _keysRemoved(pending)) {
         _closeWithError(e);
         return;
       }
@@ -375,21 +375,21 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await onApproved();
   }
 
-  /// Whether the keychain still holds [pending] awaiting a decision. A
-  /// keychain that cannot be read counts as still holding it, so a request is
-  /// never given up on a failed read.
-  Future<bool> _stillPending(PendingEnrollment pending) async {
+  /// Whether the wait has removed [pending]'s keys from the keychain entry
+  /// they were filed in, as it does on a denial or an expiry. An entry that
+  /// is absent, or a keychain that cannot be read, shows no such removal, so
+  /// a request is never given up on a guess.
+  Future<bool> _keysRemoved(PendingEnrollment pending) async {
     try {
       final keys = await _keychain.getAtsign(atsign);
-      return keys?.pendingEnrollmentIds.contains(pending.enrollmentId) ?? false;
-    } on AtKeyException {
-      return false;
+      return keys != null &&
+          !keys.pendingEnrollmentIds.contains(pending.enrollmentId);
     } catch (e) {
       App.log(
         'Could not read the keys of enrollment ${pending.enrollmentId}: $e'
             .loggable,
       );
-      return true;
+      return false;
     }
   }
 
