@@ -11,10 +11,7 @@ import 'package:noports_core/utils.dart' show DefaultArgs;
 /// other NoPorts programs on the same atSign; it never syncs.
 Future<void> main(List<String> args) async {
   final ArgParser parser =
-      CLIBase.createArgsParser(
-          namespace: DefaultArgs.namespace,
-          addLegacyRootDomainArg: false,
-        )
+      CLIBase.createArgsParser(namespace: DefaultArgs.namespace)
         ..addOption('seconds', defaultsTo: '120', help: 'How long to watch')
         ..addOption('interval', defaultsTo: '10', help: 'Seconds per count');
   final ArgResults parsed = parser.parse(args);
