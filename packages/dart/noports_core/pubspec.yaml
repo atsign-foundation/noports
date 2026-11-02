@@ -33,7 +33,8 @@ dependencies:
   config: ^0.8.0
   yaml: ^3.1.3
   at_onboarding_cli: ^2.0.0-rc7
-  at_lookup: ^3.7.0-rc3
+  # NOTE at_lookup 3.7.0 needs at_client 4.0.0
+  at_lookup: 3.7.0-rc4
 
 dependency_overrides:
   pointycastle: ^4.0.0
@@ -43,6 +44,8 @@ dev_dependencies:
   analyzer: '>=13.3.0 <14.5.0'
   build_runner: ^2.4.12
   json_serializable: ^6.8.0
+  # NOTE json_serializable 6.15.0 does not compile against source_helper 1.4.0
+  source_helper: '>=1.3.0 <1.4.0'
   build_version: ^2.1.1
   lints: ^4.0.0
   mocktail: ^1.0.1

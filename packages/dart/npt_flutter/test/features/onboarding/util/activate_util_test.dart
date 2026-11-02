@@ -1,7 +1,11 @@
-import 'package:at_client_flutter/at_client_flutter.dart';
+import 'dart:async';
+
+import 'package:at_client_flutter/at_client_flutter.dart' hide Response;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' show Response;
+import 'package:http/testing.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/activate_util.dart';
@@ -39,6 +43,44 @@ void main() {
         [for (final e in logs.logs) e.loggable.toString()],
         contains(contains('Failed to onboard @alice')),
         reason: 'the log says the activation failed',
+      );
+    });
+  });
+
+  group('Given the registrar client', () {
+    testWidgets("when the registrar doesn't answer a request, then the request"
+        ' fails with a TimeoutException after 30 seconds, and not before', (
+      tester,
+    ) async {
+      final util = ActivateUtil(
+        registrarUrl: 'unused',
+        apiKey: 'unused',
+        client: MockClient((_) => Completer<Response>().future),
+      );
+
+      Object? outcome;
+      unawaited(
+        util
+            .registrarApiRequest(NoPortsActivateApiEndpoints.login, {
+              'atsign': '@alice',
+            })
+            .then<void>(
+              (response) {
+                outcome = response;
+              },
+              onError: (Object e) {
+                outcome = e;
+              },
+            ),
+      );
+
+      await tester.pump(const Duration(seconds: 29));
+      expect(outcome, isNull, reason: 'the request still waits at 29 seconds');
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        outcome,
+        isA<TimeoutException>(),
+        reason: 'the request gives up at 30 seconds',
       );
     });
   });

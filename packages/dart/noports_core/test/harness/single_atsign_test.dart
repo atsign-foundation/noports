@@ -68,6 +68,7 @@ void main() {
       '@a:ack.<n>.auth_checks.__rpcs.sshnp@a',
       '@a:success.<n>.auth_checks.__rpcs.sshnp@a',
       '@a:<n>.logs.policy.sshnp@a',
+      '@a:<topic>@a',
     ];
 
     /// What [a] receives for one npt session, with the daemon's policy check
@@ -263,6 +264,7 @@ void main() {
 
       expect(await roundTrip(localPort, 'one atSign'), 'one atSign');
       await until(() => events.any((e) => e['state'] == 'connected'));
+      await until(() => events.any((e) => e['event'] == 'clientAdmitted'));
       expect(
         events.map((e) => e['state']),
         containsAll(['requested', 'connected']),
@@ -361,6 +363,7 @@ void main() {
 
       await expectLater(session.run(), throwsA(anything));
       await settles();
+      expect(events.map((e) => e['event']), contains('clientRejected'));
 
       expect(
         receivedKeys(),

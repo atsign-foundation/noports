@@ -109,10 +109,10 @@ packages:
     dependency: transitive
     description:
       name: at_lookup
-      sha256: cbeaa08500a2dbeaa3b5a5e66d6fdd62a1654bac66d46ac3ac976f04c6d5ecee
+      sha256: "9da3ffe89632c08610a2cfe8b9aa2ee195bedbe85f45a0b209d50dc46e4a109e"
       url: "https://pub.dev"
     source: hosted
-    version: "3.7.0-rc3"
+    version: "3.7.0-rc4"
   at_onboarding_cli:
     dependency: transitive
     description:
