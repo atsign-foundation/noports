@@ -56,6 +56,7 @@
   "backupKeyDialogTitle": "請選取要匯出到的檔案：",
   "backupYourKey": "備份您的金鑰",
   "cancel": "取消",
+  "cancelledRequestStillPending": "已取消。該請求仍待處理，請在 Authenticator 的「請求」中拒絕它。",
   "confirm": "確認",
   "connectUriProtocolDescription": "此設定會根據所選的通訊協定，在建立連線後自動啟動適當的應用程式。如果未選取通訊協定，則不會啟動任何應用程式。選取用於連線的通訊協定。",
   "connectUriProtocolNone": "無",

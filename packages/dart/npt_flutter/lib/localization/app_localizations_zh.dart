@@ -191,6 +191,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
+  String get cancelledRequestStillPending =>
+      '已取消。该请求仍待处理，请在 Authenticator 的“请求”中拒绝它。';
+
+  @override
   String get confirm => '确认';
 
   @override
@@ -1244,6 +1248,10 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get cancel => '取消';
 
   @override
+  String get cancelledRequestStillPending =>
+      '已取消。该请求仍待处理，请在 Authenticator 的“请求”中拒绝它。';
+
+  @override
   String get confirm => '确认';
 
   @override
@@ -2295,6 +2303,10 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get cancel => '取消';
+
+  @override
+  String get cancelledRequestStillPending =>
+      '已取消。該請求仍待處理，請在 Authenticator 的「請求」中拒絕它。';
 
   @override
   String get confirm => '確認';

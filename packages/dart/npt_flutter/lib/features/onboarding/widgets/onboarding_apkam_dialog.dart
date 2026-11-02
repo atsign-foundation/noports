@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
-import 'package:at_lookup/at_lookup.dart' show AtLookupMuxable;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
@@ -74,15 +73,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// The enrollment being waited on, while one is.
   PendingEnrollment? _pending;
 
-  /// The connection the enrollment in flight runs on: its submission, the
-  /// approval handshake, then the client's own. Closing it is how a wait is
-  /// abandoned, since the poll has no other way to stop.
-  AtLookupMuxable? _handshake;
-
-  /// Counts the waits started, so an abandoned wait can tell its outcome is
-  /// no longer wanted.
-  int _waits = 0;
-
   @override
   void initState() {
     super.initState();
@@ -93,15 +83,11 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
 
   @override
   void dispose() {
+    final pending = _pending;
+    _pending = null;
+    if (pending != null) unawaited(_cancel(pending));
     pinController.dispose();
-    unawaited(_closeHandshake());
     super.dispose();
-  }
-
-  Future<void> _closeHandshake() async {
-    final handshake = _handshake;
-    _handshake = null;
-    await handshake?.close();
   }
 
   /// The device name an enrollment is submitted under: the device's own name
@@ -132,7 +118,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('Pending enroll request: ${pending?.enrollmentId}'.loggable);
 
     if (pending == null) {
-      await _closeHandshake();
       setState(() {
         onboardingStatus = OnboardingStatus.otpRequired;
       });
@@ -180,27 +165,33 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     });
   }
 
-  /// Stops waiting on [_pending]: closes the connection the poll runs on,
-  /// drops what the enrollment left in the keychain, and asks for a new OTP.
-  /// The poll ends once its retry budget is spent on the closed connection,
-  /// and [_waitForApprovalAndFinish] ignores how it ends.
-  Future<void> _abandon() async {
+  /// Stops waiting on [_pending], then asks for a new OTP, saying the request
+  /// is still pending on the atServer and should be denied.
+  Future<void> _onCancelPressed() async {
     final pending = _pending;
     if (pending == null) return;
-    _waits++;
     _pending = null;
-    App.log('Abandoning enrollment ${pending.enrollmentId}'.loggable);
-    await _closeHandshake();
+    await _cancel(pending);
+    if (!mounted) return;
+    _askForNewOtp(AppLocalizations.of(context)!.cancelledRequestStillPending);
+  }
+
+  /// Ends the wait on [pending], which drops its pending keys, then drops
+  /// what is left of its keychain entry.
+  Future<void> _cancel(PendingEnrollment pending) async {
+    App.log(
+      'Cancelling the wait for enrollment ${pending.enrollmentId}'.loggable,
+    );
+    await pending.cancel();
     await _discard(pending);
-    _askForNewOtp(null);
   }
 
   /// Waits for [pending] to be approved, then opens the app's client on the
-  /// keys the approval completed. On any failure (denial, expiry, revocation,
-  /// timeout, error) what the enrollment left in the keychain is dropped, so
-  /// the app doesn't keep resuming a dead enrollment.
+  /// keys the approval completed. On any other end (denial, expiry,
+  /// revocation, timeout, error) what the enrollment left in the keychain is
+  /// dropped, so the app doesn't keep resuming a dead enrollment; a cancelled
+  /// wait is left to [_cancel].
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
-    final wait = ++_waits;
     _pending = pending;
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
@@ -213,22 +204,15 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         retryInterval: _kApprovalRetryInterval,
         storage: await storageOrDefault(atsign, atClientPreference),
       );
-      if (wait != _waits) {
-        // Abandoned as the approval landed: nothing adopts the client.
-        await client.stop();
-        return;
-      }
-      // The client took the handshake connection over.
-      _handshake = null;
       _pending = null;
       AtClientMethods.adopt(client);
       await onApproved();
+    } on AtEnrollmentCancelledException {
+      return;
     } catch (e, st) {
-      if (wait != _waits) return;
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       _pending = null;
-      await _closeHandshake();
       await _discard(pending);
       if (!mounted) return;
       final strings = AppLocalizations.of(context)!;
@@ -286,7 +270,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     } on AtException catch (e, st) {
       App.log('AtException - Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
-      await _closeHandshake();
       if (mounted) {
         setState(() {
           _enrollmentError = e.message;
@@ -297,7 +280,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     } catch (e, st) {
       App.log('Error enrolling: $e'.loggable);
       App.log(st.toString().loggable);
-      await _closeHandshake();
+
       if (mounted) {
         final strings = AppLocalizations.of(context)!;
         final String message = e.toString().contains('AT0022')
@@ -522,7 +505,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
                   onboardingStatus: onboardingStatus,
                   context: context,
                   title: strings.cancel,
-                  onPressed: _abandon,
+                  onPressed: _onCancelPressed,
                 ),
               ),
             ],
