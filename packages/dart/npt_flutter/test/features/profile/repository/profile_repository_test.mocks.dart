@@ -401,60 +401,6 @@ class MockAtClient extends _i1.Mock implements _i9.AtClient {
           as _i10.Future<List<String>>);
 
   @override
-  _i10.Future<bool> notify(
-    _i7.AtKey? key,
-    String? value,
-    _i7.OperationEnum? operation, {
-    _i7.MessageTypeEnum? messageType,
-    _i7.PriorityEnum? priority,
-    _i7.StrategyEnum? strategy,
-    int? latestN,
-    String? notifier,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(
-              #notify,
-              [key, value, operation],
-              {
-                #messageType: messageType,
-                #priority: priority,
-                #strategy: strategy,
-                #latestN: latestN,
-                #notifier: notifier,
-              },
-            ),
-            returnValue: _i10.Future<bool>.value(false),
-          )
-          as _i10.Future<bool>);
-
-  @override
-  _i10.Future<String?> notifyChange(
-    _i3.NotificationParams? notificationParams,
-  ) =>
-      (super.noSuchMethod(
-            Invocation.method(#notifyChange, [notificationParams]),
-            returnValue: _i10.Future<String?>.value(),
-          )
-          as _i10.Future<String?>);
-
-  @override
-  _i10.Future<String> notifyAll(
-    _i7.AtKey? atKey,
-    String? value,
-    _i7.OperationEnum? operation,
-  ) =>
-      (super.noSuchMethod(
-            Invocation.method(#notifyAll, [atKey, value, operation]),
-            returnValue: _i10.Future<String>.value(
-              _i12.dummyValue<String>(
-                this,
-                Invocation.method(#notifyAll, [atKey, value, operation]),
-              ),
-            ),
-          )
-          as _i10.Future<String>);
-
-  @override
   _i10.Future<String> notifyStatus(String? notificationId) =>
       (super.noSuchMethod(
             Invocation.method(#notifyStatus, [notificationId]),
@@ -493,23 +439,6 @@ class MockAtClient extends _i1.Mock implements _i9.AtClient {
           as _i10.Future<String>);
 
   @override
-  _i10.Future<void> startMonitor(
-    String? privateKey,
-    Function? acceptStream, {
-    String? regex,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(
-              #startMonitor,
-              [privateKey, acceptStream],
-              {#regex: regex},
-            ),
-            returnValue: _i10.Future<void>.value(),
-            returnValueForMissingStub: _i10.Future<void>.value(),
-          )
-          as _i10.Future<void>);
-
-  @override
   _i10.Future<_i6.AtResponse> setSPP(String? otp, {Duration? expiry}) =>
       (super.noSuchMethod(
             Invocation.method(#setSPP, [otp], {#expiry: expiry}),
@@ -531,28 +460,6 @@ class MockAtClient extends _i1.Mock implements _i9.AtClient {
             ),
           )
           as _i10.Future<_i6.AtResponse>);
-
-  @override
-  _i10.Future<void> startCompactionJob({
-    Duration? commitLogCompactionDuration,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#startCompactionJob, [], {
-              #commitLogCompactionDuration: commitLogCompactionDuration,
-            }),
-            returnValue: _i10.Future<void>.value(),
-            returnValueForMissingStub: _i10.Future<void>.value(),
-          )
-          as _i10.Future<void>);
-
-  @override
-  _i10.Future<void> stopCompactionJob() =>
-      (super.noSuchMethod(
-            Invocation.method(#stopCompactionJob, []),
-            returnValue: _i10.Future<void>.value(),
-            returnValueForMissingStub: _i10.Future<void>.value(),
-          )
-          as _i10.Future<void>);
 
   @override
   _i10.Future<_i8.AtCollection<T>> collection<T>(
@@ -608,28 +515,6 @@ class MockAtClientManager extends _i1.Mock implements _i16.AtClientManager {
             returnValue: _FakeAtClient_7(this, Invocation.getter(#atClient)),
           )
           as _i9.AtClient);
-
-  @override
-  _i2.SyncService get syncService =>
-      (super.noSuchMethod(
-            Invocation.getter(#syncService),
-            returnValue: _FakeSyncService_0(
-              this,
-              Invocation.getter(#syncService),
-            ),
-          )
-          as _i2.SyncService);
-
-  @override
-  _i3.NotificationService get notificationService =>
-      (super.noSuchMethod(
-            Invocation.getter(#notificationService),
-            returnValue: _FakeNotificationService_1(
-              this,
-              Invocation.getter(#notificationService),
-            ),
-          )
-          as _i3.NotificationService);
 
   @override
   void use(_i9.AtClient? client) => super.noSuchMethod(

@@ -10,8 +10,7 @@ class AtClientMethods {
     return AtClientPreference()
       ..rootDomain = rootDomain
       ..namespace = Constants.namespace
-      ..hiveStoragePath = dir.path
-      ..isLocalStoreRequired = true;
+      ..hiveStoragePath = dir.path;
   }
 
   /// The client the app is using, or null before one has been adopted.
