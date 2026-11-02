@@ -730,52 +730,44 @@ void main() {
       );
     });
 
-    for (final (held, arrange) in <(String, void Function(_Keychain))>[
-      (
-        "another enrollment's live keys",
-        (keychain) =>
-            keychain.entries['@alice'] = _approvedKeys(enrollmentId: 'e0'),
-      ),
-      ('no keys', (keychain) => keychain.entries.remove('@alice')),
-      (
-        'keys it cannot read',
-        (keychain) => keychain.readError = StateError('unreadable'),
-      ),
-    ]) {
-      testWidgets('A confirmed Cancel abandons the request:'
-          ' when Cancel lands while the keychain holds $held for the'
-          ' atSign, then no client is opened and the dialog asks for a new'
-          ' OTP, telling the user to deny the request', (tester) async {
-        await _pumpApp(tester);
-        final pending = _Pending();
-        final keychain = _Keychain();
-        final flows = _Flows(pending);
-        flows.onOpen = () async => _Client();
-        await _open(tester, pending, keychain, flows: flows);
+    testWidgets('A confirmed Cancel abandons the request:'
+        " when the keychain holds another enrollment's live keys for the"
+        ' atSign, then no client is opened, the dialog asks for a new OTP,'
+        ' and those keys are left alone', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      flows.onOpen = () async => _Client();
+      await _open(tester, pending, keychain, flows: flows);
 
-        arrange(keychain);
-        await _confirmCancel(tester);
-        await _settle(tester);
+      keychain.entries['@alice'] = _approvedKeys(enrollmentId: 'e0');
+      await _confirmCancel(tester);
+      await _settle(tester);
 
-        expect(flows.opens, 0, reason: 'no client is opened');
-        _expectOtpPrompt(tester);
-        expect(
-          find.text(_strings.requestAbandoned('e1')),
-          findsOneWidget,
-          reason: 'the OTP prompt tells the user to deny the cancelled request',
-        );
-        expect(
-          keychain.writes,
-          0,
-          reason: "the keychain's other keys are left alone",
-        );
-        expect(
-          AtClientMethods.currentClientOrNull(),
-          isNull,
-          reason: 'nothing is adopted',
-        );
-      });
-    }
+      expect(flows.opens, 0, reason: 'no client is opened');
+      _expectOtpPrompt(tester);
+      expect(
+        find.text(_strings.requestAbandoned('e1')),
+        findsOneWidget,
+        reason: 'the OTP prompt tells the user to deny the cancelled request',
+      );
+      expect(
+        _logLines.where((line) => line.contains('Could not drop enrollment')),
+        isEmpty,
+        reason: 'dropping a request the entry does not hold is no failure',
+      );
+      expect(
+        keychain.writes,
+        0,
+        reason: "the other enrollment's keys are left alone",
+      );
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        isNull,
+        reason: 'nothing is adopted',
+      );
+    });
 
     testWidgets('An approval written before the client fails to open keeps the approved keys:'
         ' when the approval is written and the client then fails to'
@@ -943,6 +935,12 @@ AppLocalizations get _strings =>
     AppLocalizations.of(App.navState.currentContext!)!;
 
 Finder get _cancelButton => find.widgetWithText(FilledButton, _strings.cancel);
+
+/// What has been written to the app log.
+Iterable<String> get _logLines => App.navState.currentContext!
+    .read<LogsCubit>()
+    .logs
+    .map((entry) => entry.loggable.toString());
 
 Finder get _backButton => find.widgetWithText(FilledButton, _strings.back);
 

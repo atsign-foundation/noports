@@ -404,6 +404,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         final keys = await keychain.read(atsign);
         if (keys.holdsAuthenticationMaterial) {
           await keychain.update(atsign, (keys) {
+            if (!keys.enrollmentIds.contains(pending.enrollmentId)) {
+              return false;
+            }
             keys.discardEnrollment(pending.enrollmentId);
             return true;
           });
