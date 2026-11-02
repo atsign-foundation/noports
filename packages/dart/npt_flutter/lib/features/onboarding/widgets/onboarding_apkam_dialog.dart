@@ -20,7 +20,11 @@ enum OnboardingStatus {
   otpRequired,
   validatingOtp,
   pendingApproval,
+
+  /// A confirmed Cancel is removing the request's pending keys.
   cancelling,
+
+  /// A confirmed Cancel could not remove the request's pending keys.
   cancelFailed,
   success,
   denied,
@@ -78,8 +82,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// Completes once the wait on [_pending] has ended, however it ended.
   Future<void>? _waitEnded;
 
-  /// The Cancel confirmation while it is showing.
-  BuildContext? _confirming;
+  /// The Cancel confirmation's route while it is showing.
+  Route<Object?>? _confirmation;
 
   @override
   void initState() {
@@ -196,6 +200,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// request was abandoned and should be denied.
   Future<void> _onCancel() async {
     final pending = _pending;
+    final waitEnded = _waitEnded;
     if (pending == null) return;
     final retrying = onboardingStatus == OnboardingStatus.cancelFailed;
     if (!retrying && !await _confirmAbandon(pending)) return;
@@ -221,7 +226,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       }
       return;
     }
-    await _waitEnded;
+    await waitEnded;
     _pending = null;
     if (pending.approved) {
       if (mounted) await _openApproved();
@@ -242,7 +247,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       context: context,
       routeSettings: const RouteSettings(name: 'Abandon enrollment request'),
       builder: (context) {
-        _confirming = context;
+        _confirmation = ModalRoute.of(context);
         return AlertDialog(
           title: Text(strings.abandonRequestTitle),
           content: Text(
@@ -260,15 +265,16 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
           ],
         );
       },
-    ).whenComplete(() => _confirming = null);
+    ).whenComplete(() => _confirmation = null);
     return confirmed ?? false;
   }
 
-  /// Closes the Cancel confirmation, if it is showing, as declined.
+  /// Removes the Cancel confirmation's own route, if it is showing, which
+  /// counts as declined.
   void _closeConfirmation() {
-    final confirming = _confirming;
-    if (confirming != null && confirming.mounted) {
-      Navigator.of(confirming).pop(false);
+    final confirmation = _confirmation;
+    if (confirmation != null && confirmation.isActive) {
+      confirmation.navigator?.removeRoute(confirmation);
     }
   }
 
