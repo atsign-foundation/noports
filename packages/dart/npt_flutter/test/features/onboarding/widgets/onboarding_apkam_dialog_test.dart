@@ -170,6 +170,10 @@ void main() {
         'holds no entry for the atSign',
         (keychain) => keychain.entries.remove('@alice'),
       ),
+      (
+        'cannot be read',
+        (keychain) => keychain.readError = StateError('unreadable'),
+      ),
     ]) {
       testWidgets('A wait that ends without a decision keeps the request:'
           ' when the atServer cannot be reached and the keychain $state,'
