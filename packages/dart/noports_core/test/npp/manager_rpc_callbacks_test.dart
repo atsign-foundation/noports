@@ -35,7 +35,7 @@ void main() {
   AtRpcReq req(Map<String, dynamic> payload, {int reqId = 1}) =>
       AtRpcReq(reqId: reqId, payload: payload);
 
-  group('each kind of rule', () {
+  group('Given each kind of rule', () {
     const kinds = <String, (String, Map<String, dynamic>)>{
       'Client': ('clientId', {'name': 'Alice', 'atSign': '@alice'}),
       'ClientGroup': ('clientGroupId', {'name': 'g1'}),
@@ -58,7 +58,7 @@ void main() {
       final (idKey, value) = kind;
 
       test(
-        '$target: put and delete each log ruleChanged with the rule',
+        'when a $target is put and deleted, then each logs ruleChanged with the rule',
         () async {
           final c = callbacks();
           final put = await c.handleRequest(
@@ -103,57 +103,62 @@ void main() {
     });
   });
 
-  group('a failed change', () {
+  group('Given a change that fails', () {
     const alice = {'name': 'Alice', 'atSign': '@alice'};
 
-    test('a duplicate put still throws, and logs ruleChangeFailed', () async {
-      cache.putClient(Client(name: 'Alice', atSign: '@alice'));
-      await expectLater(
-        callbacks().handleRequest(
-          req({
-            'operation': 'put',
-            'target': 'Client',
-            'value': alice,
-          }, reqId: 7),
-          policy,
-        ),
-        throwsA(isA<Exception>()),
-      );
+    test(
+      'when a put is a duplicate, then it still throws and logs ruleChangeFailed',
+      () async {
+        cache.putClient(Client(name: 'Alice', atSign: '@alice'));
+        await expectLater(
+          callbacks().handleRequest(
+            req({
+              'operation': 'put',
+              'target': 'Client',
+              'value': alice,
+            }, reqId: 7),
+            policy,
+          ),
+          throwsA(isA<Exception>()),
+        );
 
-      expect(cache.clients, hasLength(1));
-      expect(events.single['event'], 'ruleChangeFailed');
-      expect(events.single['operation'], 'put');
-      expect(events.single['rule']['atSign'], '@alice');
-      expect(events.single['error'], contains('already exists'));
-      expect(events.single['target'], 'Client');
-      expect(events.single['reqId'], 7);
-      expect(events.single['fromAtsign'], policy);
-      expect(events.single['policyAtsign'], policy);
-      expect(events.single['timestamp'], endsWith('Z'));
-    });
-
-    test('a delete of an unknown id still throws, and logs ruleChangeFailed'
-        ' with no rule', () async {
-      await expectLater(
-        callbacks().handleRequest(
-          req({
-            'operation': 'delete',
-            'target': 'Client',
-            'value': {'clientId': '9'},
-          }),
-          policy,
-        ),
-        throwsA(isA<StateError>()),
-      );
-
-      expect(events.single['event'], 'ruleChangeFailed');
-      expect(events.single['operation'], 'delete');
-      expect(events.single['rule'], isEmpty);
-      expect(events.single['target'], 'Client');
-    });
+        expect(cache.clients, hasLength(1));
+        expect(events.single['event'], 'ruleChangeFailed');
+        expect(events.single['operation'], 'put');
+        expect(events.single['rule']['atSign'], '@alice');
+        expect(events.single['error'], contains('already exists'));
+        expect(events.single['target'], 'Client');
+        expect(events.single['reqId'], 7);
+        expect(events.single['fromAtsign'], policy);
+        expect(events.single['policyAtsign'], policy);
+        expect(events.single['timestamp'], endsWith('Z'));
+      },
+    );
 
     test(
-      'a failed pre-put hook logs ruleChangeFailed and stores nothing',
+      'when a delete names an unknown id, then it still throws and logs ruleChangeFailed with no rule',
+      () async {
+        await expectLater(
+          callbacks().handleRequest(
+            req({
+              'operation': 'delete',
+              'target': 'Client',
+              'value': {'clientId': '9'},
+            }),
+            policy,
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        expect(events.single['event'], 'ruleChangeFailed');
+        expect(events.single['operation'], 'delete');
+        expect(events.single['rule'], isEmpty);
+        expect(events.single['target'], 'Client');
+      },
+    );
+
+    test(
+      'when the pre-put hook fails, then it logs ruleChangeFailed and stores nothing',
       () async {
         final c = callbacks(
           hooks: NppOperationHooks(
@@ -183,7 +188,7 @@ void main() {
       },
     );
 
-    test('an unknown target logs ruleChangeFailed', () async {
+    test('when the target is unknown, then it logs ruleChangeFailed', () async {
       final response = await callbacks().handleRequest(
         req({
           'operation': 'put',
@@ -199,29 +204,31 @@ void main() {
     });
   });
 
-  test('another Atsign is refused, changes nothing, and logs'
-      ' managerRequestRefused repeating only its reqId', () async {
-    final response = await callbacks().handleRequest(
-      req({
-        'operation': 'put',
-        'target': 'Client',
-        'value': {'name': 'Mallory', 'atSign': '@mallory'},
-      }, reqId: 3),
-      '@mallory',
-    );
+  test(
+    'Given a manager, when another Atsign sends a put, then it is refused, changes nothing and logs managerRequestRefused repeating only its reqId',
+    () async {
+      final response = await callbacks().handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Mallory', 'atSign': '@mallory'},
+        }, reqId: 3),
+        '@mallory',
+      );
 
-    expect(response.respType, AtRpcRespType.error);
-    expect(cache.clients, isEmpty);
-    expect(events.single['event'], 'managerRequestRefused');
-    expect(events.single['fromAtsign'], '@mallory');
-    expect(events.single['policyAtsign'], policy);
-    expect(events.single['reqId'], 3);
-    expect(events.single.keys, isNot(contains('rule')));
-    expect(events.single.keys, isNot(contains('target')));
-    expect(events.single.keys, isNot(contains('operation')));
-  });
+      expect(response.respType, AtRpcRespType.error);
+      expect(cache.clients, isEmpty);
+      expect(events.single['event'], 'managerRequestRefused');
+      expect(events.single['fromAtsign'], '@mallory');
+      expect(events.single['policyAtsign'], policy);
+      expect(events.single['reqId'], 3);
+      expect(events.single.keys, isNot(contains('rule')));
+      expect(events.single.keys, isNot(contains('target')));
+      expect(events.single.keys, isNot(contains('operation')));
+    },
+  );
 
-  test('reads log nothing', () async {
+  test('Given a manager, when it reads, then nothing is logged', () async {
     final c = callbacks();
     await c.handleRequest(req({'operation': 'ping'}), policy);
     await c.handleRequest(
@@ -242,47 +249,53 @@ void main() {
     expect(events, isEmpty);
   });
 
-  test('a payload cannot forge an event\'s fields', () async {
-    await callbacks().handleRequest(
-      req({
-        'operation': 'put',
-        'target': 'Client',
-        'fromAtsign': '@mallory',
-        'policyAtsign': '@mallory',
-        'event': 'forged',
-        'value': {
-          'name': 'Alice',
-          'atSign': '@alice',
-          'event': 'forged',
+  test(
+    'Given a manager, when a payload carries event fields, then it cannot forge them',
+    () async {
+      await callbacks().handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
           'fromAtsign': '@mallory',
-        },
-      }),
-      policy,
-    );
+          'policyAtsign': '@mallory',
+          'event': 'forged',
+          'value': {
+            'name': 'Alice',
+            'atSign': '@alice',
+            'event': 'forged',
+            'fromAtsign': '@mallory',
+          },
+        }),
+        policy,
+      );
 
-    final event = events.single;
-    expect(event['event'], 'ruleChanged');
-    expect(event['fromAtsign'], policy);
-    expect(event['policyAtsign'], policy);
-    expect(event['rule'], {'id': '1', 'name': 'Alice', 'atSign': '@alice'});
-  });
+      final event = events.single;
+      expect(event['event'], 'ruleChanged');
+      expect(event['fromAtsign'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['rule'], {'id': '1', 'name': 'Alice', 'atSign': '@alice'});
+    },
+  );
 
-  test('a failing event log does not change the answer', () async {
-    final response =
-        await callbacks(
-          onEvent: (_) async => throw Exception('no event log'),
-        ).handleRequest(
-          req({
-            'operation': 'put',
-            'target': 'Client',
-            'value': {'name': 'Alice', 'atSign': '@alice'},
-          }),
-          policy,
-        );
+  test(
+    'Given a manager, when the event log fails, then a put still succeeds',
+    () async {
+      final response =
+          await callbacks(
+            onEvent: (_) async => throw Exception('no event log'),
+          ).handleRequest(
+            req({
+              'operation': 'put',
+              'target': 'Client',
+              'value': {'name': 'Alice', 'atSign': '@alice'},
+            }),
+            policy,
+          );
 
-    expect(response.respType, AtRpcRespType.success);
-    expect(cache.clients, hasLength(1));
-  });
+      expect(response.respType, AtRpcRespType.success);
+      expect(cache.clients, hasLength(1));
+    },
+  );
 
   group('Given an event log that always fails', () {
     Future<void> failing(Map<String, dynamic> _) async =>
