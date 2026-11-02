@@ -316,6 +316,7 @@ void main() {
       'Given an npp policy service @policy whose rules hold a different number'
       ' of each kind', () {
     const policy = '@policy';
+    const other = '@other';
     const events = '@events';
 
     late NoPortsHarness harness;
@@ -326,7 +327,7 @@ void main() {
     NppService? startedNpp;
 
     setUp(() async {
-      harness = NoPortsHarness.create(atSigns: {policy, events});
+      harness = NoPortsHarness.create(atSigns: {policy, other, events});
       received = [];
       npaLogs.clear();
 
@@ -410,7 +411,7 @@ void main() {
         atClient:
             await harness.openClient(policy, namespace: DefaultArgs.namespace),
         nppCache: rulesOfEachKind(),
-        managerAllowList: {policy},
+        managerAllowList: {policy, other},
         binariesVersion: '1.2.3',
         persistenceMethod: 'file',
         homeDirectory: harness.home.path,
@@ -587,6 +588,41 @@ void main() {
       expect(event['operation'], 'put');
       expect(event['target'], 'Client');
       expect(event['rule'], {'id': '3', 'name': 'Carol', 'atSign': '@carol'});
+    });
+
+    test(
+        'when @other, on the manager allow list, sends a put through AtRpc with'
+        ' a forged fromAtsign, then it is refused and @events receives'
+        ' managerRequestRefused naming @other', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      final rpc = AtRpcClient(
+        serverAtsign: policy,
+        atClient:
+            await harness.openClient(other, namespace: DefaultArgs.namespace),
+        baseNameSpace: npp.baseNamespace,
+        domainNameSpace: npp.domainNamespace,
+      );
+
+      await expectLater(
+          rpc.call({
+            ...NppDataOperation.putClient(
+                    Client(name: 'Mallory', atSign: '@mallory'))
+                .atRpcPayload,
+            'fromAtsign': policy,
+          }),
+          throwsA(contains('Unauthorized atSign')));
+
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      final event =
+          received.singleWhere((e) => e['event'] == 'managerRequestRefused');
+      expect(event['sender'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['fromAtsign'], other);
+      expect(event['reqId'], isA<int>());
+      expect(event.keys, isNot(contains('rule')));
+      expect(npp.nppCache.clients, hasLength(2));
     });
   });
 }
