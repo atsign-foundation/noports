@@ -64,9 +64,13 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required Duration ttln,
     int maxTries = 3,
     String? cryptoProviderId,
+    String? sealToNamespace,
   }) async {
     if (cryptoProviderId != null) {
       throw UnimplementedError('StubbedSshnpdChannel drops cryptoProviderId');
+    }
+    if (sealToNamespace != null) {
+      throw UnimplementedError('StubbedSshnpdChannel drops sealToNamespace');
     }
     return _notify.call(
       atKey,
