@@ -11,10 +11,14 @@
   says the request failed and closes or returns to the PIN step.
 - CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
   activating and enrolling keep using the app's existing local store.
-- FIX: The enrollment dialog's waiting screen has a Cancel, which stops the
-  wait and returns to the OTP prompt, asking for the old request to be denied
-  in the Authenticator. A request the manager revokes returns to the OTP prompt
-  and says so, instead of being reported as denied.
+- FIX: The enrollment dialog keeps a request until it is approved, denied or
+  expires. Leaving the waiting screen or quitting the app keeps it, and the
+  next sign-in through the Authenticator waits on it again. Cancel asks first,
+  then abandons the request and returns to the OTP prompt, which says a new
+  OTP from another enrollment is needed and asks for the old request to be
+  denied in the Authenticator. A request the manager revokes returns to the
+  OTP prompt and says so. A wait that ends because the atServer can't be
+  reached keeps the request instead of reporting it denied.
 
 ## 1.9.6+33
 
