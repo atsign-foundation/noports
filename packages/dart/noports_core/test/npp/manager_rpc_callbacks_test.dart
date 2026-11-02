@@ -283,4 +283,47 @@ void main() {
     expect(response.respType, AtRpcRespType.success);
     expect(cache.clients, hasLength(1));
   });
+
+  group('Given an event log that always fails', () {
+    Future<void> failing(Map<String, dynamic> _) async =>
+        throw Exception('no event log');
+
+    test('when another Atsign sends a put, then it is still refused', () async {
+      final response = await callbacks(onEvent: failing).handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Mallory', 'atSign': '@mallory'},
+        }),
+        '@mallory',
+      );
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(response.message, 'Unauthorized atSign');
+      expect(cache.clients, isEmpty);
+    });
+
+    test('when a duplicate put throws, then the original exception reaches the'
+        ' caller', () async {
+      cache.putClient(Client(name: 'Alice', atSign: '@alice'));
+
+      await expectLater(
+        callbacks(onEvent: failing).handleRequest(
+          req({
+            'operation': 'put',
+            'target': 'Client',
+            'value': {'name': 'Alice', 'atSign': '@alice'},
+          }),
+          policy,
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (e) => '$e',
+            'message',
+            contains('already exists'),
+          ),
+        ),
+      );
+    });
+  });
 }
