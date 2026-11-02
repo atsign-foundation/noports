@@ -1621,13 +1621,11 @@ class _FakeServiceFactory extends ServiceFactoryWithNoOpSyncService {
 
   @override
   Future<NotificationService> notificationService(
-    AtClient atClient,
-    AtClientManager atClientManager, {
+    AtClient atClient, {
     SecondaryAddressFinder? secondaryAddressFinder,
   }) =>
       super.notificationService(
         atClient,
-        atClientManager,
         secondaryAddressFinder: _server.addressFinder,
       );
 }
