@@ -98,6 +98,11 @@ void main() {
         reason: 'the keys the request left in the keychain are dropped',
       );
       expect(
+        keychain.removalsOutsideWriteSection,
+        0,
+        reason: 'the entry is removed in the write section that read it',
+      );
+      expect(
         AtClientMethods.currentClientOrNull(),
         isNull,
         reason: 'nothing is adopted',
@@ -317,12 +322,17 @@ void main() {
       );
     });
 
-    for (final (held, keys) in <(String, AtKeys? Function())>[
+    for (final (held, arrange) in <(String, void Function(_Keychain))>[
       (
         "another enrollment's live keys",
-        () => _approvedKeys(enrollmentId: 'e0'),
+        (keychain) =>
+            keychain.entries['@alice'] = _approvedKeys(enrollmentId: 'e0'),
       ),
-      ('no keys', () => null),
+      ('no keys', (keychain) => keychain.entries.remove('@alice')),
+      (
+        'keys it cannot read',
+        (keychain) => keychain.readError = StateError('unreadable'),
+      ),
     ]) {
       testWidgets('when Cancel lands while the keychain holds $held for the'
           ' atSign, then no client is opened and the dialog asks for a new'
@@ -334,12 +344,7 @@ void main() {
         flows.onOpen = () async => _Client();
         await _open(tester, pending, keychain, flows: flows);
 
-        final stored = keys();
-        if (stored == null) {
-          keychain.entries.remove('@alice');
-        } else {
-          keychain.entries['@alice'] = stored;
-        }
+        arrange(keychain);
         await tester.tap(_cancelButton);
         await _settle(tester);
 
@@ -362,6 +367,100 @@ void main() {
         );
       });
     }
+
+    testWidgets('when the approval is written and the client then fails to'
+        ' open, then the approved keys stay and the dialog closes with the'
+        ' error', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final dialog = await _open(tester, pending, keychain);
+
+      keychain.entries['@alice'] = _approvedKeys();
+      pending.refuse(AtTimeoutException('Timed out'));
+      await _settle(tester);
+
+      expect(dialog.closed, isTrue, reason: 'the dialog closes');
+      expect(dialog.result?.status, NoPortsOnboardingResultStatus.error);
+      expect(
+        dialog.result?.message,
+        _strings.errorAuthenticationTimedOut,
+        reason: 'the dialog closes with what went wrong, not as denied',
+      );
+      expect(
+        keychain.writes,
+        0,
+        reason: 'the approved keys stay as the approval wrote them',
+      );
+    });
+
+    testWidgets('when a new request is filed for the atSign while the cancel'
+        " of a closed dialog's wait settles, then the new request's keys are"
+        ' left alone', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keysDropped = Completer<void>();
+      pending.keysDropped = keysDropped.future;
+      final keychain = _Keychain();
+      await _open(tester, pending, keychain);
+
+      Navigator.of(App.navState.currentContext!).pop();
+      await _settle(tester);
+      keychain.entries['@alice'] = AtKeys()..recordEnrollmentSnapshot('e2');
+      keysDropped.complete();
+      await _settle(tester);
+
+      expect(pending.cancels, 1, reason: "closing the dialog cancels the wait");
+      expect(
+        keychain.entries['@alice']?.enrollmentIds,
+        contains('e2'),
+        reason: "the new request's keys are left alone",
+      );
+      expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+    });
+  });
+
+  group('Given the enrollment dialog is looking for a request to resume', () {
+    for (final (found, resumes) in <(String, bool)>[
+      ('one', true),
+      ('none', false),
+    ]) {
+      testWidgets('when the dialog is closed before the lookup finds $found,'
+          ' then any request found is cancelled and nothing is adopted', (
+        tester,
+      ) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final flows = _Flows(pending);
+        final lookup = Completer<PendingEnrollment?>();
+        flows.resumed = lookup.future;
+        final dialog = await _open(
+          tester,
+          pending,
+          keychain,
+          flows: flows,
+          waiting: false,
+        );
+
+        Navigator.of(App.navState.currentContext!).pop();
+        await _settle(tester);
+        lookup.complete(resumes ? pending : null);
+        await _settle(tester);
+
+        expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+        expect(
+          pending.cancels,
+          resumes ? 1 : 0,
+          reason: 'a request found after the dialog closed is cancelled',
+        );
+        expect(
+          AtClientMethods.currentClientOrNull(),
+          isNull,
+          reason: 'nothing is adopted',
+        );
+      });
+    }
   });
 }
 
@@ -371,9 +470,11 @@ AppLocalizations get _strings =>
 Finder get _cancelButton => find.widgetWithText(FilledButton, _strings.cancel);
 
 /// A request awaiting a decision the test makes. [cancel] ends the wait as
-/// `PendingEnrollment.cancel` does, returning once [keysDropped] completes.
+/// `PendingEnrollment.cancel` does, returning once [keysDropped] completes,
+/// and a wait started after it ends at once.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
+  var _waiting = false;
   var cancels = 0;
   Future<void> keysDropped = Future.value();
 
@@ -388,20 +489,24 @@ class _Pending extends Fake implements PendingEnrollment {
     Duration? retryInterval,
     int? maxRetries,
     Duration? connectBudget,
-  }) => _decision.future;
+  }) {
+    if (cancels > 0) return Future.error(_cancelled());
+    _waiting = true;
+    return _decision.future;
+  }
 
   @override
   Future<void> cancel() async {
     cancels++;
-    if (!_decision.isCompleted) {
-      _decision.completeError(
-        AtEnrollmentCancelledException(
-          'the wait for enrollment e1 of @alice was cancelled',
-        ),
-      );
+    if (_waiting && !_decision.isCompleted) {
+      _decision.completeError(_cancelled());
     }
     await keysDropped;
   }
+
+  AtEnrollmentCancelledException _cancelled() => AtEnrollmentCancelledException(
+    'the wait for enrollment e1 of @alice was cancelled',
+  );
 
   void approve(AtClient client) => _decision.complete(client);
 
@@ -416,6 +521,9 @@ class _Flows extends Fake implements AtsignFlows {
   final PendingEnrollment pending;
   Future<AtClient> Function() onOpen = () => Completer<AtClient>().future;
   var opens = 0;
+
+  /// What the lookup for a request to resume finds, [pending] by default.
+  Future<PendingEnrollment?>? resumed;
 
   @override
   Future<AtClient> open(
@@ -440,21 +548,35 @@ class _Flows extends Fake implements AtsignFlows {
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
     AtLookUpFactory? lookUps,
-  }) async => pending;
+  }) => resumed ?? Future.value(pending);
 }
 
 /// A keychain holding an entry for @alice with nothing live in it, as a
 /// request awaiting a decision leaves it. [writes] counts the updates and
-/// removals made through it.
+/// removals made through it, [removalsOutsideWriteSection] the removals made
+/// outside [writing], and a [readError] is thrown by every read.
 class _Keychain extends Fake implements KeychainStorage {
   final entries = <String, AtKeys>{'@alice': AtKeys()};
   var writes = 0;
+  var removalsOutsideWriteSection = 0;
+  var _writeSections = 0;
+  Object? readError;
 
   @override
-  Future<AtKeys?> getAtsign(String atSign) async => entries[atSign];
+  Future<AtKeys?> getAtsign(String atSign) async {
+    if (readError case final error?) throw error;
+    return entries[atSign];
+  }
 
   @override
-  Future<T> writing<T>(Future<T> Function() action) => action();
+  Future<T> writing<T>(Future<T> Function() action) async {
+    _writeSections++;
+    try {
+      return await action();
+    } finally {
+      _writeSections--;
+    }
+  }
 
   @override
   Future<void> updateAtKeysInKeychain({
@@ -469,6 +591,7 @@ class _Keychain extends Fake implements KeychainStorage {
 
   @override
   Future<void> removeAtsignFromKeychain(String atSign) async {
+    if (_writeSections == 0) removalsOutsideWriteSection++;
     writes++;
     entries.remove(atSign);
   }
@@ -507,12 +630,13 @@ class _Dialog {
 }
 
 /// Opens the dialog on [pending], with its keys in [keychain] and its verbs
-/// in [flows], and returns once it is waiting for the decision.
+/// in [flows], and returns once it is [waiting] for the decision.
 Future<_Dialog> _open(
   WidgetTester tester,
   _Pending pending,
   _Keychain keychain, {
   _Flows? flows,
+  bool waiting = true,
 }) async {
   final dialog = _Dialog();
   unawaited(
@@ -533,11 +657,13 @@ Future<_Dialog> _open(
     }),
   );
   await _settle(tester);
-  expect(
-    find.byKey(const Key('activating')),
-    findsOneWidget,
-    reason: 'the dialog is waiting for the decision',
-  );
+  if (waiting) {
+    expect(
+      find.byKey(const Key('activating')),
+      findsOneWidget,
+      reason: 'the dialog is waiting for the decision',
+    );
+  }
   return dialog;
 }
 

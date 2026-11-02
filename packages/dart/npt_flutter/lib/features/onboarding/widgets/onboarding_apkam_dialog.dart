@@ -118,6 +118,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     App.log('Pending enroll request: ${pending?.enrollmentId}'.loggable);
 
     if (pending == null) {
+      if (!mounted) return;
       setState(() {
         onboardingStatus = OnboardingStatus.otpRequired;
       });
@@ -202,7 +203,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       ).read(atsign);
       return keys.holdsAuthenticationMaterial &&
           keys.enrollmentToAuthenticateAs() == pending.enrollmentId;
-    } on Exception catch (e) {
+    } catch (e) {
       App.log(
         'Could not read the keys of enrollment ${pending.enrollmentId}: $e'
             .loggable,
@@ -224,12 +225,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     } catch (e, st) {
       App.log('Error opening the approved enrollment: $e'.loggable);
       App.log(st.toString().loggable);
-      if (!mounted) return;
-      Navigator.of(context).pop(
-        NoPortsOnboardingResult.error(
-          message: describeOnboardingError(e, AppLocalizations.of(context)!),
-        ),
-      );
+      _closeWithError(e);
       return;
     }
     if (!mounted) {
@@ -240,13 +236,29 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     await onApproved();
   }
 
+  /// Closes the dialog with what [error] says went wrong.
+  void _closeWithError(Object error) {
+    if (!mounted) return;
+    Navigator.of(context).pop(
+      NoPortsOnboardingResult.error(
+        message: describeOnboardingError(error, AppLocalizations.of(context)!),
+      ),
+    );
+  }
+
   /// Waits for [pending] to be approved, then opens the app's client on the
   /// keys the approval completed. On any other end (denial, expiry,
   /// revocation, timeout, error) what the enrollment left in the keychain is
-  /// dropped, so the app doesn't keep resuming a dead enrollment; a cancelled
-  /// wait is settled by [_afterCancel].
+  /// dropped, so the app doesn't keep resuming a dead enrollment, unless the
+  /// approval was written before the end, when the keys stay and the dialog
+  /// closes with the error; a cancelled wait is settled by [_afterCancel].
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     _pending = pending;
+    if (!mounted) {
+      _cancelWait();
+      await _afterCancel(pending);
+      return;
+    }
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
     });
@@ -267,6 +279,10 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       _pending = null;
+      if (await _approvalStands(pending)) {
+        _closeWithError(e);
+        return;
+      }
       await _discard(pending);
       if (!mounted) return;
       final strings = AppLocalizations.of(context)!;
@@ -280,20 +296,26 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     }
   }
 
-  /// Drops what [pending] left in the keychain: the whole entry when it holds
-  /// no credential of its own, otherwise just this enrollment's material.
+  /// Drops what [pending] left in the keychain: just this enrollment's
+  /// material when the entry holds a credential, otherwise the whole entry,
+  /// unless it holds another request filed meanwhile. The read and the write
+  /// are one step under the keychain's write lock.
   Future<void> _discard(PendingEnrollment pending) async {
     final keychain = KeychainAtKeysIo(keychainStorage: _keychain);
     try {
-      final keys = await keychain.read(atsign);
-      if (keys.holdsAuthenticationMaterial) {
-        await keychain.update(atsign, (keys) {
-          keys.discardEnrollment(pending.enrollmentId);
-          return true;
-        });
-      } else {
-        await _keychain.removeAtsignFromKeychain(atsign);
-      }
+      await _keychain.writing(() async {
+        final keys = await keychain.read(atsign);
+        if (keys.holdsAuthenticationMaterial) {
+          await keychain.update(atsign, (keys) {
+            keys.discardEnrollment(pending.enrollmentId);
+            return true;
+          });
+        } else if (keys.enrollmentIds.every(
+          (id) => id == pending.enrollmentId,
+        )) {
+          await _keychain.removeAtsignFromKeychain(atsign);
+        }
+      });
     } catch (e) {
       App.log('Could not drop enrollment ${pending.enrollmentId}: $e'.loggable);
     }
