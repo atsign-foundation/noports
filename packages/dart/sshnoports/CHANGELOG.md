@@ -37,6 +37,9 @@
 * feat: at_activate is at_client_cli's at_activate: its --help reports
   at_client_cli's version, and --arx and --drx match app and device names
   whatever their case
+* feat(BREAKING CHANGE): np_admin and npevents take the root domain only as
+  `-r` or `--root-server`, not `-d` or `--legacy-root-domain`, and
+  at_activate no longer accepts `--hashingAlgoType`, which it ignored
 * build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
   and at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0
 
