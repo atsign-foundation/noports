@@ -189,6 +189,7 @@ void main() {
       final dialog = await _open(tester, pending, keychain, flows: flows);
 
       keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
       await tester.tap(_cancelButton);
       await _settle(tester);
 
@@ -228,6 +229,7 @@ void main() {
       final dialog = await _open(tester, pending, keychain, flows: flows);
 
       keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
       Navigator.of(App.navState.currentContext!).pop();
       await _settle(tester);
 
@@ -261,6 +263,7 @@ void main() {
       final dialog = await _open(tester, pending, keychain, flows: flows);
 
       keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
       await tester.tap(_cancelButton);
       await _settle(tester);
 
@@ -298,6 +301,7 @@ void main() {
       await _open(tester, pending, keychain, flows: flows);
 
       keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
       await tester.tap(_cancelButton);
       await _settle(tester);
       expect(
@@ -377,6 +381,7 @@ void main() {
       final dialog = await _open(tester, pending, keychain);
 
       keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
       pending.refuse(AtTimeoutException('Timed out'));
       await _settle(tester);
 
@@ -477,6 +482,9 @@ class _Pending extends Fake implements PendingEnrollment {
   var _waiting = false;
   var cancels = 0;
   Future<void> keysDropped = Future.value();
+
+  @override
+  bool approved = false;
 
   @override
   String get enrollmentId => 'e1';

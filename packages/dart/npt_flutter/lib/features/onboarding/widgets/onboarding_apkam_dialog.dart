@@ -185,31 +185,13 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// a new OTP, saying the request is still pending and should be denied.
   Future<void> _afterCancel(PendingEnrollment pending) async {
     await _cancelling;
-    if (await _approvalStands(pending)) {
+    if (pending.approved) {
       if (mounted) await _openApproved();
       return;
     }
     await _discard(pending);
     if (!mounted) return;
     _askForNewOtp(AppLocalizations.of(context)!.cancelledRequestStillPending);
-  }
-
-  /// Whether the keychain holds a live credential for [pending]: an approval
-  /// written before its wait was cancelled.
-  Future<bool> _approvalStands(PendingEnrollment pending) async {
-    try {
-      final keys = await KeychainAtKeysIo(
-        keychainStorage: _keychain,
-      ).read(atsign);
-      return keys.holdsAuthenticationMaterial &&
-          keys.enrollmentToAuthenticateAs() == pending.enrollmentId;
-    } catch (e) {
-      App.log(
-        'Could not read the keys of enrollment ${pending.enrollmentId}: $e'
-            .loggable,
-      );
-      return false;
-    }
   }
 
   /// Opens the app's client on the keys an approval wrote before its wait was
@@ -279,7 +261,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       _pending = null;
-      if (await _approvalStands(pending)) {
+      if (pending.approved) {
         _closeWithError(e);
         return;
       }
