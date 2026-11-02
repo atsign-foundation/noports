@@ -1010,8 +1010,9 @@ Future<void> _confirmCancel(WidgetTester tester) async {
 /// `PendingEnrollment.cancel` do, a cancel ending the wait once [waitEnds]
 /// completes, as `client()` does after stopping a client it opened, then
 /// removing the request's pending keys from [keychain] once [keysDropped]
-/// completes; a wait started after either ends at once. A wait refuses a
-/// request [keychain] holds no pending keys for, as `awaitApproval` does.
+/// completes; each returns only once the wait in flight has ended, and a
+/// wait started after either ends at once. A wait refuses a request
+/// [keychain] holds no pending keys for, as `awaitApproval` does.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
 
@@ -1065,6 +1066,7 @@ class _Pending extends Fake implements PendingEnrollment {
     if (_waiting && !_decision.isCompleted) {
       _decision.completeError(_stopped());
     }
+    await _waitEnded();
   }
 
   @override
@@ -1077,13 +1079,22 @@ class _Pending extends Fake implements PendingEnrollment {
         }),
       );
     }
-    await keysDropped;
-    if (cancelFailures > 0) {
-      cancelFailures--;
-      throw StateError('the keychain refused the update');
+    try {
+      await keysDropped;
+      if (cancelFailures > 0) {
+        cancelFailures--;
+        throw StateError('the keychain refused the update');
+      }
+      await _removeKeys();
+    } finally {
+      await _waitEnded();
     }
-    await _removeKeys();
   }
+
+  /// Completes once the wait in flight, if there is one, has ended.
+  Future<void> _waitEnded() => _waiting
+      ? _decision.future.then<void>((_) {}, onError: (_) {})
+      : Future.value();
 
   /// Removes the request's pending keys from [keychain] in one update, as
   /// `PendingEnrollment` does after a cancel, a denial or an expiry.
