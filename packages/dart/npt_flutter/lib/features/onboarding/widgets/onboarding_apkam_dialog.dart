@@ -79,9 +79,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// The enrollment being waited on, while one is.
   PendingEnrollment? _pending;
 
-  /// Completes once the wait on [_pending] has ended, however it ended.
-  Future<void>? _waitEnded;
-
   /// The Cancel confirmation's route while it is showing.
   Route<Object?>? _confirmation;
 
@@ -193,14 +190,14 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// Abandons the request being waited on once the user confirms it, or at
   /// once when a confirmed Cancel could not remove its keys.
   ///
-  /// The outcome is settled once both the cancel and the wait have ended. An
+  /// The outcome is settled once the cancel has returned, which
+  /// `PendingEnrollment.cancel` does only after the wait has ended. An
   /// approval written before the cancel stands, and opens the app's client
   /// while the dialog is open. Otherwise what is left of the request's
   /// keychain entry is dropped, and the dialog asks for a new OTP, saying the
   /// request was abandoned and should be denied.
   Future<void> _onCancel() async {
     final pending = _pending;
-    final waitEnded = _waitEnded;
     if (pending == null) return;
     final retrying = onboardingStatus == OnboardingStatus.cancelFailed;
     if (!retrying && !await _confirmAbandon(pending)) return;
@@ -226,7 +223,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       }
       return;
     }
-    await waitEnded;
     _pending = null;
     if (pending.approved) {
       if (mounted) await _openApproved();
@@ -328,8 +324,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       return;
     }
     _pending = pending;
-    final ended = Completer<void>();
-    _waitEnded = ended.future;
     setState(() {
       onboardingStatus = OnboardingStatus.pendingApproval;
     });
@@ -372,8 +366,6 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
         await onDenied();
       }
       return;
-    } finally {
-      ended.complete();
     }
     _pending = null;
     _closeConfirmation();
