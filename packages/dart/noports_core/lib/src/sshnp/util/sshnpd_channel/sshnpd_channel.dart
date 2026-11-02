@@ -8,6 +8,7 @@ import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/subscription_tracking.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -30,7 +31,11 @@ enum SshnpdAck {
 /// and the daemon. It is responsible for sending the request to the daemon and
 /// receiving the response from the daemon.
 abstract class SshnpdChannel
-    with AsyncInitialization, AtClientBindings, AtEventLogger {
+    with
+        AsyncInitialization,
+        AtClientBindings,
+        AtEventLogger,
+        SubscriptionTracking {
   @override
   final logger = AtSignLogger(' SshnpdChannel ');
   @override
@@ -95,7 +100,12 @@ abstract class SshnpdChannel
   Future<void> initialize() async {
     String regex = '$sessionId.$namespace${params.sshnpdAtSign}\$';
     logger.info('Starting monitor for notifications with regex: "$regex"');
-    subscribe(regex: regex, shouldDecrypt: true).listen(handleSshnpdResponses);
+    track(
+      subscribe(
+        regex: regex,
+        shouldDecrypt: true,
+      ).listen(handleSshnpdResponses),
+    );
 
     try {
       cachedPingResponse = jsonDecode(
@@ -324,23 +334,28 @@ abstract class SshnpdChannel
   Future<Map<String, dynamic>> ping() async {
     Completer<Map<String, dynamic>> completer = Completer();
 
-    subscribe(
-      regex:
-          'heartbeat'
-          '.${params.device}'
-          '.${DefaultArgs.namespace}',
-      shouldDecrypt: true,
-    ).listen((notification) {
-      logger.info(
-        'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}',
-      );
-      if (notification.from == params.sshnpdAtSign) {
-        if (!completer.isCompleted) {
-          logger.info('Completing the future');
-          completer.complete(jsonDecode(notification.value ?? '{}'));
+    late final StreamSubscription<AtNotification> subscription;
+    subscription = track(
+      subscribe(
+        regex:
+            'heartbeat'
+            '.${params.device}'
+            '.${DefaultArgs.namespace}',
+        shouldDecrypt: true,
+      ).listen((notification) {
+        logger.info(
+          'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}',
+        );
+        if (notification.from == params.sshnpdAtSign) {
+          if (!completer.isCompleted) {
+            logger.info('Completing the future');
+            completer.complete(jsonDecode(notification.value ?? '{}'));
+            // One answer is all a ping needs
+            unawaited(subscription.cancel());
+          }
         }
-      }
-    });
+      }),
+    );
     var pingKey = AtKey()
       ..key = "ping.${params.device}"
       ..sharedBy = params.clientAtSign

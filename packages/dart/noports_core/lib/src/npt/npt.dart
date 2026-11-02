@@ -178,6 +178,11 @@ class _NptImpl extends NptBase
   @override
   Future<void> close() async {
     _inlineConnector?.close();
+    // The session is over, so nothing more will arrive that its channels need
+    // to hear. Left attached, their listeners outlive the session - one set
+    // per attempt for a caller that keeps retrying.
+    await _sshnpdChannel.cancelSubscriptions();
+    await _srvdChannel.cancelSubscriptions();
     if (!_completer.isCompleted) {
       _completer.complete();
     }

@@ -110,6 +110,22 @@ void main() {
       ).called(1);
     }); // test Initialization
 
+    test('cancelSubscriptions detaches the session listener', () async {
+      whenInitialization();
+      await expectLater(stubbedSshnpdChannel.initialize(), completes);
+      expect(notificationStreamController.hasListener, isTrue);
+
+      await stubbedSshnpdChannel.cancelSubscriptions();
+      expect(
+        notificationStreamController.hasListener,
+        isFalse,
+        reason: 'a finished session must not stay attached to the AtClient',
+      );
+
+      // Npt.close may run more than once
+      await expectLater(stubbedSshnpdChannel.cancelSubscriptions(), completes);
+    });
+
     group('handlePingResponses', () {
       late SshnpdChannel c;
       pingTestParameterizedSetUp({required bool? daemonTwinKeys}) {

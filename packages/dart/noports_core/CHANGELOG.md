@@ -5,6 +5,10 @@
   they throw, so callers may always await `done` without having to call
   `close` themselves first. A caller that awaited `done` after a failed
   startup previously waited forever. See #2789.
+- fix: `Npt.close` cancels the notification subscriptions its daemon and relay
+  channels opened, which previously stayed attached to the `AtClient` for the
+  life of the process. A client that retried a session repeatedly accumulated
+  one set of listeners per attempt.
 - build: depends on the at_client_sdk release candidates: at_client
   3.15.0-rc6, at_auth 4.0.0-rc5, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc3 and at_onboarding_cli 2.0.0-rc6, plus at_commons 5.21.0 and
