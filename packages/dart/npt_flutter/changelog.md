@@ -11,6 +11,9 @@
   says the request failed and closes or returns to the PIN step.
 - CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
   activating and enrolling keep using the app's existing local store.
+- FIX: The enrollment dialog no longer waits forever on a request the manager
+  has revoked or removed: a revoked request returns to the OTP prompt and says
+  so, and the waiting screen has a Cancel that returns to the OTP prompt.
 
 ## 1.9.6+33
 

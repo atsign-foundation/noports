@@ -39,6 +39,26 @@ void main() {
     });
   });
 
+  group('isEnrollmentRevoked', () {
+    test('an enrollment a manager withdrew is revoked', () {
+      // at_auth's wording around the atServer's PKAM refusal.
+      final error = AtEnrollmentException(
+        'Enrollment e1 was refused for a reason this wait cannot resolve: '
+        'Failed connecting to @alice. '
+        'error:AT0027-enrollment_id: e1 is revoked',
+      );
+      expect(isEnrollmentRevoked(error), isTrue);
+    });
+
+    test('an expired enrollment is not revoked', () {
+      final error = AtEnrollmentException(
+        'Enrollment e1 has expired or does not exist: '
+        'error:AT0028-enrollment_id: e1 is expired or invalid',
+      );
+      expect(isEnrollmentRevoked(error), isFalse);
+    });
+  });
+
   group('describeOnboardingError', () {
     test('names the stale-keys conflict', () {
       // The exact throw when keys already exist locally.
