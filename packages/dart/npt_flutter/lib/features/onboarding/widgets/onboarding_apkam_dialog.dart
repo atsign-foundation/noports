@@ -21,6 +21,7 @@ enum OnboardingStatus {
   validatingOtp,
   pendingApproval,
   cancelling,
+  cancelFailed,
   success,
   denied,
 }
@@ -185,7 +186,8 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     });
   }
 
-  /// Abandons the request being waited on once the user confirms it.
+  /// Abandons the request being waited on once the user confirms it, or at
+  /// once when a confirmed Cancel could not remove its keys.
   ///
   /// The outcome is settled once both the cancel and the wait have ended. An
   /// approval written before the cancel stands, and opens the app's client
@@ -194,7 +196,9 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   /// request was abandoned and should be denied.
   Future<void> _onCancel() async {
     final pending = _pending;
-    if (pending == null || !await _confirmAbandon(pending)) return;
+    if (pending == null) return;
+    final retrying = onboardingStatus == OnboardingStatus.cancelFailed;
+    if (!retrying && !await _confirmAbandon(pending)) return;
     if (!mounted) return;
     setState(() {
       onboardingStatus = OnboardingStatus.cancelling;
@@ -212,7 +216,7 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       );
       if (mounted) {
         setState(() {
-          onboardingStatus = OnboardingStatus.pendingApproval;
+          onboardingStatus = OnboardingStatus.cancelFailed;
         });
       }
       return;
@@ -668,6 +672,29 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
               ),
               gapW8,
               const CircularProgressIndicator(),
+            ],
+          ),
+          OnboardingStatus.cancelFailed => Column(
+            key: const Key('cancelFailed'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                strings.abandonFailed(_pending?.enrollmentId ?? ''),
+                style: const TextStyle(color: Colors.red),
+              ),
+              gapH24,
+              Row(
+                children: [
+                  PopButton(context: context, title: strings.back),
+                  gapW8,
+                  PopButton(
+                    context: context,
+                    title: strings.cancel,
+                    onPressed: _onCancel,
+                  ),
+                ],
+              ),
             ],
           ),
           OnboardingStatus.success => Column(

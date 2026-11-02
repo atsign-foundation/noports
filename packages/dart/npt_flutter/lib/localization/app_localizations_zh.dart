@@ -9,6 +9,11 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
   String get abandonRequest => '放弃';
 
   @override
@@ -1084,6 +1089,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   AppLocalizationsZhHansCh() : super('zh_Hans_CH');
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
   String get abandonRequest => '放弃';
 
   @override
@@ -2157,6 +2167,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 /// The translations for Chinese, as used in Hong Kong, using the Han script (`zh_Hant_HK`).
 class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   AppLocalizationsZhHantHk() : super('zh_Hant_HK');
+
+  @override
+  String abandonFailed(Object enrollmentId) {
+    return '無法放棄註冊 $enrollmentId：其金鑰仍在鑰匙圈中。請選擇「取消」重試。';
+  }
 
   @override
   String get abandonRequest => '放棄';

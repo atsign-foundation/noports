@@ -1,4 +1,5 @@
 {
+  "abandonFailed": "Não foi possível abandonar a inscrição {enrollmentId}: suas chaves ainda estão no chaveiro. Escolha Cancelar para tentar novamente.",
   "abandonRequest": "Abandonar",
   "abandonRequestBody": "Isso abandona a inscrição {enrollmentId} de {atsign}. Para tentar novamente, é preciso um novo OTP de outra inscrição de {atsign}.",
   "abandonRequestTitle": "Abandonar esta solicitação?",

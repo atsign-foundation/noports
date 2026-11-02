@@ -113,6 +113,12 @@ abstract class AppLocalizations {
     ),
   ];
 
+  /// No description provided for @abandonFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not abandon enrollment {enrollmentId}: its keys are still in the keychain. Choose Cancel to try again.'**
+  String abandonFailed(Object enrollmentId);
+
   /// No description provided for @abandonRequest.
   ///
   /// In en, this message translates to:

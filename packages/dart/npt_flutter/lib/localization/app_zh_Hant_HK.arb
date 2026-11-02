@@ -1,4 +1,5 @@
 {
+  "abandonFailed": "無法放棄註冊 {enrollmentId}：其金鑰仍在鑰匙圈中。請選擇「取消」重試。",
   "abandonRequest": "放棄",
   "abandonRequestBody": "這將放棄 {atsign} 的註冊 {enrollmentId}。如需重試，需要從 {atsign} 的另一個註冊取得新的 OTP。",
   "abandonRequestTitle": "放棄此請求？",

@@ -68,6 +68,16 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     When the user confirms
     Then the wait is cancelled, e1's pending keys leave the keychain, and the OTP prompt says e1 was abandoned, that a new OTP from another enrollment is needed, and to deny e1 in the Authenticator; nothing is signed in
 
+  Scenario: A confirmed Cancel that cannot remove the keys says so, and Cancel retries
+    Given that confirmation, and a keychain that refuses the update
+    When the user confirms
+    Then the dialog says e1 could not be abandoned and its keys are still in the keychain, its wait has ended, and it offers Cancel again; choosing it retries without asking again, and once the keys go the OTP prompt says e1 was abandoned
+
+  Scenario: Leaving after a Cancel that could not remove the keys keeps the request
+    Given the dialog saying e1 could not be abandoned
+    When the user leaves
+    Then e1's pending keys stay, and the next time the dialog opens it waits on e1 again
+
   @race
   Scenario: Cancel is not offered again while one is in progress
     Given a confirmed Cancel whose removal of the keys has not finished

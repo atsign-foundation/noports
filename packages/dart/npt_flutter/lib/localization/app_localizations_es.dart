@@ -9,6 +9,11 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'No se pudo abandonar la inscripción $enrollmentId: sus claves siguen en el llavero. Elige Cancelar para intentarlo de nuevo.';
+  }
+
+  @override
   String get abandonRequest => 'Abandonar';
 
   @override

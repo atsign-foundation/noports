@@ -153,6 +153,80 @@ void main() {
       await _settle(tester);
     });
 
+    testWidgets('when a confirmed Cancel cannot remove the keys, then the'
+        ' dialog says so and keeps them, and Cancel then retries without'
+        ' asking again', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending()..cancelFailures = 1;
+      final keychain = _Keychain();
+      await _open(tester, pending, keychain);
+
+      await _confirmCancel(tester);
+
+      expect(
+        find.text(_strings.abandonFailed('e1')),
+        findsOneWidget,
+        reason: 'the dialog says the request could not be abandoned',
+      );
+      expect(
+        keychain.entries,
+        contains('@alice'),
+        reason: "the request's keys stay in the keychain",
+      );
+      expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+      expect(_cancelButton, findsOneWidget, reason: 'Cancel is offered again');
+
+      await tester.tap(_cancelButton);
+      await _settle(tester);
+
+      expect(
+        pending.cancels,
+        2,
+        reason: 'choosing Cancel again retries without asking again',
+      );
+      _expectOtpPrompt(tester);
+      expect(
+        find.text(_strings.requestAbandoned('e1')),
+        findsOneWidget,
+        reason: 'the OTP prompt says the request was abandoned',
+      );
+      expect(
+        keychain.entries,
+        isNot(contains('@alice')),
+        reason: 'the keys the request left in the keychain are dropped',
+      );
+    });
+
+    testWidgets('when the user leaves after a Cancel that could not remove the'
+        ' keys, then the keys stay and the dialog waits on the request again'
+        ' when it next opens', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending()..cancelFailures = 1;
+      final keychain = _Keychain();
+      final dialog = await _open(tester, pending, keychain);
+      await _confirmCancel(tester);
+      expect(
+        find.text(_strings.abandonFailed('e1')),
+        findsOneWidget,
+        reason: 'the dialog says the request could not be abandoned',
+      );
+
+      await tester.tap(_backButton);
+      await _settle(tester);
+
+      expect(dialog.closed, isTrue, reason: 'the dialog has closed');
+      expect(
+        keychain.entries,
+        contains('@alice'),
+        reason: "the request's keys stay in the keychain",
+      );
+      expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+
+      final resumed = _Pending();
+      await _open(tester, resumed, keychain);
+      expect(resumed.waits, 1, reason: 'the next dialog waits on the request');
+    });
+
     testWidgets('when the approval arrives while Cancel is being confirmed,'
         ' then the confirmation closes, nothing is cancelled and the approved'
         ' client is adopted', (tester) async {
@@ -715,6 +789,9 @@ class _Pending extends Fake implements PendingEnrollment {
   Future<void> waitEnds = Future.value();
   Future<void> keysDropped = Future.value();
 
+  /// How many cancels fail as a keychain that refuses the update makes them.
+  var cancelFailures = 0;
+
   @override
   bool approved = false;
 
@@ -756,6 +833,10 @@ class _Pending extends Fake implements PendingEnrollment {
       );
     }
     await keysDropped;
+    if (cancelFailures > 0) {
+      cancelFailures--;
+      throw StateError('the keychain refused the update');
+    }
   }
 
   AtEnrollmentCancelledException _cancelled() => AtEnrollmentCancelledException(

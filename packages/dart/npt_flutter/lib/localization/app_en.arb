@@ -1,4 +1,5 @@
 {
+   "abandonFailed": "Could not abandon enrollment {enrollmentId}: its keys are still in the keychain. Choose Cancel to try again.",
    "abandonRequest": "Abandon",
    "abandonRequestBody": "This abandons enrollment {enrollmentId} of {atsign}. Trying again needs a new OTP from another enrollment of {atsign}.",
    "abandonRequestTitle": "Abandon this request?",

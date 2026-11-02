@@ -1,4 +1,5 @@
 {
+  "abandonFailed": "无法放弃注册 {enrollmentId}：其密钥仍在钥匙串中。请选择“取消”重试。",
   "abandonRequest": "放弃",
   "abandonRequestBody": "这将放弃 {atsign} 的注册 {enrollmentId}。如需重试，需要从 {atsign} 的另一个注册获取新的 OTP。",
   "abandonRequestTitle": "放弃此请求？",

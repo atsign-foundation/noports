@@ -9,6 +9,11 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Could not abandon enrollment $enrollmentId: its keys are still in the keychain. Choose Cancel to try again.';
+  }
+
+  @override
   String get abandonRequest => 'Abandon';
 
   @override

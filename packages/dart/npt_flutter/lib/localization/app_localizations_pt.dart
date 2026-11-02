@@ -9,6 +9,11 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: as suas chaves continuam no porta-chaves. Escolha Cancelar para tentar novamente.';
+  }
+
+  @override
   String get abandonRequest => 'Abandonar';
 
   @override
@@ -1154,6 +1159,11 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: suas chaves ainda estão no chaveiro. Escolha Cancelar para tentar novamente.';
+  }
 
   @override
   String get abandonRequest => 'Abandonar';
