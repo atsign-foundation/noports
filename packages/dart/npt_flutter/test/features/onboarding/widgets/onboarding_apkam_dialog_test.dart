@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
@@ -52,6 +53,113 @@ void main() {
         reason: 'nothing is adopted',
       );
     });
+
+    testWidgets('when the atServer reports the request denied, then its keys'
+        ' leave the keychain and the dialog closes saying it was denied', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final dialog = await _open(tester, pending, keychain);
+
+      pending.refuse(
+        AtEnrollmentException('The enrollment: e1 is denied'),
+        discardingFrom: keychain,
+      );
+      await _settle(tester);
+
+      expect(
+        find.byKey(const Key('denied')),
+        findsOneWidget,
+        reason: 'the dialog says the request was denied',
+      );
+      expect(
+        keychain.entries,
+        isNot(contains('@alice')),
+        reason: 'the keys the request left in the keychain are dropped',
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await _settle(tester);
+      expect(
+        dialog.result?.message,
+        _strings.enrollRequestDenied,
+        reason: 'the dialog closes with the denial',
+      );
+    });
+
+    testWidgets('when the atServer reports the request expired, then its keys'
+        ' leave the keychain and the dialog asks for a new OTP, saying the'
+        ' request expired', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keychain = _Keychain();
+      final dialog = await _open(tester, pending, keychain);
+
+      pending.refuse(
+        AtEnrollmentException(
+          'Enrollment e1 has expired or does not exist: '
+          'error:AT0028-enrollment_id: e1 is expired or invalid',
+        ),
+        discardingFrom: keychain,
+      );
+      await _settle(tester);
+
+      expect(dialog.closed, isFalse, reason: 'the dialog stays open');
+      _expectOtpPrompt(tester);
+      expect(
+        find.text(_strings.requestExpired),
+        findsOneWidget,
+        reason: 'the OTP prompt says the request expired',
+      );
+      expect(
+        keychain.entries,
+        isNot(contains('@alice')),
+        reason: 'the keys the request left in the keychain are dropped',
+      );
+    });
+
+    for (final (why, error) in <(String, Exception)>[
+      ('the atServer could not be reached', AtTimeoutException('Timed out')),
+      (
+        'the atServer refused it for another reason',
+        AtEnrollmentException(
+          'Enrollment e1 was refused for a reason this wait cannot resolve: '
+          'error:AT0003-Invalid syntax',
+        ),
+      ),
+    ]) {
+      testWidgets('when the wait ends because $why, then the request\'s keys'
+          ' stay and the dialog closes with the error, not as denied', (
+        tester,
+      ) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final keychain = _Keychain();
+        final dialog = await _open(tester, pending, keychain);
+
+        pending.refuse(error);
+        await _settle(tester);
+
+        expect(
+          keychain.entries['@alice']?.pendingEnrollmentIds,
+          contains('e1'),
+          reason: "the request's pending keys stay in the keychain",
+        );
+        expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+        expect(dialog.closed, isTrue, reason: 'the dialog closes');
+        expect(
+          dialog.result?.message,
+          isNot(_strings.enrollRequestDenied),
+          reason: 'the request is not reported as denied',
+        );
+        expect(
+          dialog.result?.message,
+          describeOnboardingError(error, _strings),
+          reason: 'the dialog closes with what went wrong',
+        );
+      });
+    }
 
     testWidgets('when the user presses Cancel, then a confirmation names the'
         ' request and says what abandoning it means, and the wait goes on', (
@@ -850,7 +958,13 @@ class _Pending extends Fake implements PendingEnrollment {
 
   void approve(AtClient client) => _decision.complete(client);
 
-  void refuse(Object error) => _decision.completeError(error);
+  /// Ends the wait with [error], first removing the request's pending keys
+  /// from [discardingFrom], as `PendingEnrollment` does on a denial or an
+  /// expiry.
+  void refuse(Object error, {_Keychain? discardingFrom}) {
+    discardingFrom?.entries['@alice']?.discardEnrollment(enrollmentId);
+    _decision.completeError(error);
+  }
 }
 
 /// Resumes [pending], as if this device had submitted it before, submits
@@ -919,7 +1033,7 @@ class _Flows extends Fake implements AtsignFlows {
 /// removals made through it, [removalsOutsideWriteSection] the removals made
 /// outside [writing], and a [readError] is thrown by every read.
 class _Keychain extends Fake implements KeychainStorage {
-  final entries = <String, AtKeys>{'@alice': AtKeys()};
+  final entries = <String, AtKeys>{'@alice': _pendingKeys()};
   var writes = 0;
   var removalsOutsideWriteSection = 0;
   var _writeSections = 0;
@@ -959,6 +1073,35 @@ class _Keychain extends Fake implements KeychainStorage {
     entries.remove(atSign);
   }
 }
+
+/// What a request awaiting a decision leaves in the keychain: its keypair,
+/// filed as pending under enrollment e1.
+AtKeys _pendingKeys() => AtKeys.fromJson({
+  'version': 1,
+  'atsign': '@alice',
+  'keys': <Object?>[],
+  'enrollments': [
+    {
+      'enrollmentId': 'e1',
+      'appName': 'noports',
+      'deviceName': 'testdevice',
+      'keys': [
+        {
+          'keyId': 'auth:rsa2048:1',
+          'material': [
+            {
+              'role': 'privateAuthentication',
+              'algorithm': 'rsa2048',
+              'createdAt': '2026-01-01T00:00:00.000Z',
+              'status': 'pending',
+              'bytes': 'cHJpdmF0ZQ==',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
 
 /// Keys an approval of [enrollmentId] has completed, in the shape an rsa2048
 /// request is filed in: the APKAM keypair in the flat fields, and the

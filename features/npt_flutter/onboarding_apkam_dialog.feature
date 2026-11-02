@@ -107,3 +107,28 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     Given a confirmed Cancel of e1 still removing its keys, the dialog since left, and request e2 filed in the keychain for the atSign
     When e1's Cancel finishes
     Then e2's keys are left alone
+
+  Scenario: A revoked request asks for a new OTP
+    Given the dialog waiting for approval of e1
+    When the atServer reports e1 revoked (AT0027)
+    Then e1's keys leave the keychain, and the OTP prompt says the request was revoked; nothing is signed in
+
+  Scenario: A denied request is reported as denied
+    Given the dialog waiting for approval of e1
+    When the atServer reports e1 denied (AT0025)
+    Then e1's keys leave the keychain, and the dialog says the request was denied and closes with that error
+
+  Scenario: An expired request asks for a new OTP
+    Given the dialog waiting for approval of e1
+    When the atServer reports e1 expired (AT0028)
+    Then e1's keys leave the keychain, and the OTP prompt says the request expired
+
+  Scenario: A wait that ends without a decision keeps the request
+    Given the dialog waiting for approval of e1
+    When the wait ends because the atServer could not be reached, or refused e1 for a reason other than denial, expiry or revocation
+    Then e1's pending keys stay, the dialog closes with what went wrong and does not report a denial, and the next sign-in through the Authenticator waits on e1 again
+
+  Scenario: An approval written before the client fails to open keeps the approved keys
+    Given the approval of e1 written to the keychain
+    When the client then fails to open
+    Then the approved keys stay, and the dialog closes with the error, not as denied

@@ -307,12 +307,15 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
   }
 
   /// Waits for [pending] to be approved, then opens the app's client on the
-  /// keys the approval completed. On any other end (denial, expiry,
-  /// revocation, timeout, error) what the enrollment left in the keychain is
-  /// dropped, so the app doesn't keep resuming a dead enrollment, unless the
-  /// approval was written before the end, when the keys stay and the dialog
-  /// closes with the error; a cancelled wait is settled by [_onCancel], and a
-  /// wait stopped by leaving the dialog keeps the request.
+  /// keys the approval completed.
+  ///
+  /// A request that is over (denied or expired, when the wait has removed its
+  /// pending keys, or revoked) has what it left in the keychain dropped, so
+  /// the app doesn't keep resuming a dead enrollment. A wait that ends without
+  /// a decision, or after the approval was written, keeps the keys and closes
+  /// the dialog with the error, so the next sign-in waits on the request
+  /// again. A cancelled wait is settled by [_onCancel], and a wait stopped by
+  /// leaving the dialog keeps the request.
   Future<void> _waitForApprovalAndFinish(PendingEnrollment pending) async {
     if (!mounted) {
       await _stop(pending);
@@ -346,17 +349,18 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
       App.log('Error waiting for enrollment approval: $e'.loggable);
       App.log(st.toString().loggable);
       _pending = null;
-      if (pending.approved) {
+      final revoked = isEnrollmentRevoked(e);
+      if (pending.approved || !revoked && await _stillPending(pending)) {
         _closeWithError(e);
         return;
       }
       await _discard(pending);
       if (!mounted) return;
       final strings = AppLocalizations.of(context)!;
-      if (isEnrollmentExpired(e)) {
-        _askForNewOtp(strings.requestExpired);
-      } else if (isEnrollmentRevoked(e)) {
+      if (revoked) {
         _askForNewOtp(strings.errorEnrollmentRevoked);
+      } else if (isEnrollmentExpired(e)) {
+        _askForNewOtp(strings.requestExpired);
       } else {
         await onDenied();
       }
@@ -368,6 +372,24 @@ class OnboardingApkamDialogState extends State<OnboardingApkamDialog> {
     _closeConfirmation();
     AtClientMethods.adopt(client);
     await onApproved();
+  }
+
+  /// Whether the keychain still holds [pending] awaiting a decision. A
+  /// keychain that cannot be read counts as still holding it, so a request is
+  /// never given up on a failed read.
+  Future<bool> _stillPending(PendingEnrollment pending) async {
+    try {
+      final keys = await _keychain.getAtsign(atsign);
+      return keys?.pendingEnrollmentIds.contains(pending.enrollmentId) ?? false;
+    } on AtKeyException {
+      return false;
+    } catch (e) {
+      App.log(
+        'Could not read the keys of enrollment ${pending.enrollmentId}: $e'
+            .loggable,
+      );
+      return true;
+    }
   }
 
   /// Drops what [pending] left in the keychain: just this enrollment's
