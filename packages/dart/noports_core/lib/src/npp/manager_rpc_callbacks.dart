@@ -261,6 +261,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final Client client = Client.fromJson(valueAsMap);
             client.id ??= _generateId(nppCache.clients);
             rule.addAll(client.toJson());
+            nppCache.checkPutClient(client);
             if (nppOperationHooks?.prePutClient != null) {
               try {
                 await nppOperationHooks!.prePutClient!(client);
@@ -297,6 +298,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
             clientGroup.id ??= _generateId(nppCache.clientGroups);
             rule.addAll(clientGroup.toJson());
+            nppCache.checkPutClientGroup(clientGroup);
             if (nppOperationHooks?.prePutClientGroup != null) {
               try {
                 await nppOperationHooks!.prePutClientGroup!(clientGroup);
@@ -338,6 +340,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             clientGroupMember.id ??=
                 _generateId(nppCache.clientGroupMembers);
             rule.addAll(clientGroupMember.toJson());
+            nppCache.checkPutClientGroupMember(clientGroupMember);
             if (nppOperationHooks?.prePutClientGroupMember != null) {
               try {
                 await nppOperationHooks!
@@ -378,6 +381,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
             daemon.id ??= _generateId(nppCache.daemons);
             rule.addAll(daemon.toJson());
+            nppCache.checkPutDaemon(daemon);
             if (nppOperationHooks?.prePutDaemon != null) {
               try {
                 await nppOperationHooks!.prePutDaemon!(daemon);
@@ -414,6 +418,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final Service service = Service.fromJson(valueAsMap);
             service.id ??= _generateId(nppCache.services);
             rule.addAll(service.toJson());
+            nppCache.checkPutService(service);
             if (nppOperationHooks?.prePutService != null) {
               try {
                 await nppOperationHooks!.prePutService!(service);
@@ -451,6 +456,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
             serviceACL.id ??= _generateId(nppCache.serviceACLs);
             rule.addAll(serviceACL.toJson());
+            nppCache.checkPutServiceACL(serviceACL);
             if (nppOperationHooks?.prePutServiceACL != null) {
               try {
                 await nppOperationHooks!.prePutServiceACL!(serviceACL);
