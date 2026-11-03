@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+// ignore: implementation_imports
+import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';

@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+// ignore: implementation_imports
+import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
@@ -94,6 +96,7 @@ void main() {
     group('Constructor', () {
       test('verbose=false', () {
         whenConstructor(verbose: false);
+        final rootLevel = AtSignLogger.root_level;
 
         final sshnpCore = StubbedSshnp(
           atClient: mockAtClient,
@@ -107,11 +110,12 @@ void main() {
 
         /// Expect that the logger is configured correctly
         expect(sshnpCore.logger.logger.level, Level.SHOUT);
-        expect(AtSignLogger.root_level, 'info');
+        expect(AtSignLogger.root_level, rootLevel);
       }); // test verbose=false
 
       test('verbose=true', () {
         whenConstructor(verbose: true);
+        final rootLevel = AtSignLogger.root_level;
 
         final sshnpCore = StubbedSshnp(
           atClient: mockAtClient,
@@ -125,7 +129,7 @@ void main() {
 
         /// Expect that the logger is configured correctly
         expect(sshnpCore.logger.logger.level, Level.INFO);
-        expect(AtSignLogger.root_level, 'info');
+        expect(AtSignLogger.root_level, rootLevel);
       }); // test verbose=true
     }); // group Constructor
 
