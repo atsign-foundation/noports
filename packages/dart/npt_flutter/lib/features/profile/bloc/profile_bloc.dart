@@ -236,9 +236,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
         break;
       }
 
-      // A session which established and later dropped starts the backoff
-      // afresh; repeated startup failures back off, so that a daemon which is
-      // gone for good isn't hammered every few seconds indefinitely
       consecutiveFailures = failure == null ? 0 : consecutiveFailures + 1;
       emit(
         ProfileStarting(
@@ -293,7 +290,6 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       _activeNpt = npt;
 
       void reportProgress(String msg) {
-        // Don't drag the UI back to "connecting" once a stop is under way
         if (_stopRequested || emit.isDone) return;
         emit(ProfileStarting(uuid, profile: profile, status: msg));
       }
@@ -304,8 +300,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       SocketConnector sc = await npt.runInline();
 
       if (_stopRequested) {
-        // Stopped while connecting - this connector was never cached, so
-        // nothing else is going to close it
+        // NOTE: never cached, so nothing else would ever close it
         sc.close();
         return null;
       }
@@ -329,8 +324,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       return strings.errorDuringStartupWithDetails(err.toString());
     } finally {
       await npt?.close();
-      // Per attempt, not per loop: otherwise this attempt's progress messages
-      // would emit into the next attempt's state
+      // NOTE: per attempt, or this attempt's progress lands in the next's state
       await progressSub?.cancel();
       await errorSub?.cancel();
       _activeNpt = null;
@@ -374,25 +368,37 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
   }
 
+  /// Stops a started profile, or abandons one still connecting or waiting to
+  /// retry.
   Future<void> _onStop(
     ProfileStopEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    // ProfileStarting is stoppable too, so that a connection attempt which is
-    // failing to establish can always be abandoned
     if (state is! ProfileStarted && state is! ProfileStarting) return;
     var profile = (state as ProfileLoadedState).profile;
-    _stopRequested = true;
     emit(ProfileStopping(uuid, profile: profile));
+    await _abandonSession();
+    App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
+  }
 
-    // Cut short a keep-alive backoff that is under way
+  /// Makes [_onStart]'s keep-alive loop wind down: cuts short a backoff under
+  /// way, and closes a running session's [Npt], which releases its `done`. A
+  /// startup in flight can't be aborted, so the loop exits once it settles.
+  Future<void> _abandonSession() async {
+    _stopRequested = true;
     final wake = _retryWake;
     if (wake != null && !wake.isCompleted) wake.complete();
-
-    // Releases [_runSession]'s `await npt.done` for a running session. Mid
-    // startup it cannot abort the in-flight call, so the loop instead exits
-    // once that call settles.
     await _activeNpt?.close();
-    App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
+  }
+
+  /// [Bloc.close] waits for every running handler, so the keep-alive loop has
+  /// to be told to finish rather than left to notice [Emitter.isDone] when its
+  /// backoff happens to run out.
+  @override
+  Future<void> close() async {
+    // NOTE: a second close would hang - Bloc's own close isn't re-entrant
+    if (isClosed) return;
+    await _abandonSession();
+    return super.close();
   }
 }

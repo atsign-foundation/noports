@@ -17,6 +17,8 @@
 - FIX: Keep-alive backs off when a tunnel keeps failing to start, from 5
   seconds up to a minute between attempts, and stopping takes effect at once
   rather than after the wait.
+- FIX: A profile that is connecting, or waiting to retry, can be stopped from
+  its status indicator in the main window, not only from the tray.
 - FIX: Signing out stops every profile, including ones still connecting or
   waiting to retry, instead of leaving them retrying in the background.
 
