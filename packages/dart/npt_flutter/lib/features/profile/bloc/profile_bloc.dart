@@ -46,8 +46,13 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   /// tear a session down.
   Npt? _activeNpt;
 
-  /// Set by [_onStop] to break [_onStart]'s keep-alive loop.
+  /// Set by [_onStop] and [close] to break [_onStart]'s keep-alive loop.
   bool _stopRequested = false;
+
+  /// Set by [close] before it first awaits, so that a start added just before
+  /// [close] and handled after it can't clear [_stopRequested] and run a
+  /// session nothing would ever close.
+  bool _closing = false;
 
   /// Pending while the keep-alive loop waits to retry. [_onStop] completes it
   /// so that a stop doesn't have to sit out the rest of the backoff.
@@ -189,6 +194,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       return;
     }
     // ProfileLoaded and ProfileFailedSave are both ProfileLoadedState
+    if (_closing) return;
     var profile = (state as ProfileLoadedState).profile;
     _stopRequested = false;
     emit(ProfileStarting(uuid, profile: profile));
@@ -213,9 +219,8 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     var settings = currentSettingsState.settings;
 
     /// The whole keep-alive loop lives inside this one handler invocation so
-    /// that [emit] stays valid for the lifetime of the session. [emit.isDone]
-    /// covers the bloc being closed underneath us, e.g. the app quitting
-    /// part way through a retry.
+    /// that [emit] stays valid for the lifetime of the session. [close] ends
+    /// it through [_stopRequested]; [emit.isDone] only stops it emitting.
     var consecutiveFailures = 0;
     while (!emit.isDone) {
       var failure = await _runSession(
@@ -391,13 +396,13 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
     await _activeNpt?.close();
   }
 
-  /// [Bloc.close] waits for every running handler, so the keep-alive loop has
-  /// to be told to finish rather than left to notice [Emitter.isDone] when its
-  /// backoff happens to run out.
+  /// Ends [_onStart]'s keep-alive loop and closes a running session's [Npt].
+  /// [Bloc.close] cancels the handlers' emitters but leaves the loop itself
+  /// running: its retry timer stays pending and the session's [Npt] is never
+  /// closed.
   @override
   Future<void> close() async {
-    // NOTE: a second close would hang - Bloc's own close isn't re-entrant
-    if (isClosed) return;
+    _closing = true;
     await _abandonSession();
     return super.close();
   }

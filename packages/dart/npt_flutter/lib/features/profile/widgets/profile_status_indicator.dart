@@ -137,7 +137,6 @@ class StatusMessage extends StatelessWidget {
     );
     final Widget iconWidget = showSpinner
         ? onPressed != null
-            // The spinner rings the button, as on a cancellable download
             ? InkWell(
                 borderRadius: BorderRadius.circular(Sizes.p12),
                 onTap: onPressed,

@@ -757,8 +757,8 @@ void main() {
         );
 
         loopTest(
-          'when the bloc is closed during the backoff, then close completes '
-          'at once',
+          'when the bloc is closed during the backoff, then it stops waiting '
+          'to retry',
           (tester) async {
             final bloc = await pumpLoadedBloc(
               tester,
@@ -781,10 +781,10 @@ void main() {
             await pumpUntil(
               tester,
               () => closed,
-              reason:
-                  'Bloc.close waits for the keep-alive loop, so the loop '
-                  'must be told to finish rather than run out its backoff',
+              reason: 'close must complete',
             );
+            // The backoff's timer is what pins this: flutter_test fails the
+            // test if it is still pending at teardown
             expect(attempts, hasLength(1));
           },
         );
@@ -959,6 +959,81 @@ void main() {
               attempts.single.connector?.closed,
               isTrue,
               reason: 'a connector never cached has nobody else to close it',
+            );
+            await tester.pump(connectorGracePeriod * 2);
+          },
+        );
+
+        loopTest(
+          'when the bloc is closed while its session runs, then the session '
+          'is closed',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile.copyWith(keepAlive: true),
+              createNpt: FakeNpt.new,
+            );
+
+            bloc.add(const ProfileStartEvent());
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileStarted,
+              reason: 'the session must start',
+            );
+
+            var closed = false;
+            unawaited(bloc.close().then((_) => closed = true));
+            await pumpUntil(
+              tester,
+              () => closed,
+              reason: 'close must complete',
+            );
+            expect(
+              attempts.single.closeCalled,
+              isTrue,
+              reason: 'Bloc.close leaves the loop running, so close must '
+                  'close the session itself or nothing ever will',
+            );
+            await tester.pump(connectorGracePeriod * 2);
+          },
+        );
+
+        loopTest(
+          'when the bloc is closed just after a start is added, then no '
+          'session is left running',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile.copyWith(keepAlive: true),
+              createNpt: FakeNpt.new,
+            );
+            final everCached = <bool>[];
+            final runningSub = runningCubit.stream.listen(
+              (s) => everCached.add(s.socketConnectors[testUuid] != null),
+            );
+            addTearDown(runningSub.cancel);
+
+            bloc.add(const ProfileStartEvent());
+            var closed = false;
+            unawaited(bloc.close().then((_) => closed = true));
+            await pumpUntil(
+              tester,
+              () => closed,
+              reason: 'close must complete',
+            );
+            await pumpFor(tester, const Duration(milliseconds: 100));
+
+            expect(
+              everCached,
+              isNot(contains(true)),
+              reason: 'a start handled after close began must not cache a '
+                  'session',
+            );
+            expect(
+              attempts.where((npt) => !npt.closeCalled),
+              isEmpty,
+              reason: 'a session started after close began has nobody left '
+                  'to close it',
             );
             await tester.pump(connectorGracePeriod * 2);
           },
