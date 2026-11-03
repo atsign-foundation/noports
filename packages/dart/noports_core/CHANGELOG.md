@@ -9,6 +9,9 @@
   channels opened, which previously stayed attached to the `AtClient` for the
   life of the process. A client that retried a session repeatedly accumulated
   one set of listeners per attempt.
+- fix: an npt session whose daemon feature check, or relay signing key
+  publish, failed before the relay answered no longer raises an unhandled
+  error, which killed the npt binary.
 - build: depends on the at_client_sdk release candidates: at_client
   3.15.0-rc6, at_auth 4.0.0-rc5, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc3 and at_onboarding_cli 2.0.0-rc6, plus at_commons 5.21.0 and

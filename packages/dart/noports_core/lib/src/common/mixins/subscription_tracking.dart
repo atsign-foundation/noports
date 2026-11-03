@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
-/// Keeps hold of the notification subscriptions a channel opens so that they
-/// can all be cancelled when its session ends.
+/// Keeps hold of the notification subscriptions a channel registers with
+/// [track], so that they can all be cancelled when its session ends. Only the
+/// subscriptions a session opens are registered; one-shot paths such as
+/// listing devices aren't.
 ///
 /// Without this, every session leaves its listeners attached to the
 /// [AtClient]'s notification streams for the life of the process, each one

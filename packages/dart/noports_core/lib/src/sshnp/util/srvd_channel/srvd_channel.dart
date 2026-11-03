@@ -201,6 +201,9 @@ abstract class SrvdChannel<T>
   @override
   Future<void> initialize() async {
     Future publishPSKFuture = publishPublicSigningKey();
+    // NOTE: awaited only after the relay answers - see the same guard on the
+    // feature check in Npt.initialize. The await below still sees the error.
+    publishPSKFuture.ignore();
 
     await getHostAndPortFromSrvd();
 

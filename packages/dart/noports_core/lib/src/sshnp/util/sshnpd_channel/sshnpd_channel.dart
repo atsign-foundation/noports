@@ -346,11 +346,10 @@ abstract class SshnpdChannel
         logger.info(
           'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}',
         );
-        if (notification.from == params.sshnpdAtSign) {
+        if (notification.from.toAtsign() == params.sshnpdAtSign.toAtsign()) {
           if (!completer.isCompleted) {
             logger.info('Completing the future');
             completer.complete(jsonDecode(notification.value ?? '{}'));
-            // One answer is all a ping needs
             unawaited(subscription.cancel());
           }
         }

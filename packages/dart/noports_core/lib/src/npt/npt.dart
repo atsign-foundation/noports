@@ -177,14 +177,14 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
-    _inlineConnector?.close();
-    // The session is over, so nothing more will arrive that its channels need
-    // to hear. Left attached, their listeners outlive the session - one set
-    // per attempt for a caller that keeps retrying.
-    await _sshnpdChannel.cancelSubscriptions();
-    await _srvdChannel.cancelSubscriptions();
-    if (!_completer.isCompleted) {
-      _completer.complete();
+    try {
+      _inlineConnector?.close();
+      await _sshnpdChannel.cancelSubscriptions();
+      await _srvdChannel.cancelSubscriptions();
+    } finally {
+      if (!_completer.isCompleted) {
+        _completer.complete();
+      }
     }
   }
 
@@ -231,6 +231,11 @@ class _NptImpl extends NptBase
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
+    // NOTE: this is awaited only once the relay has answered. A failure before
+    // then - or the relay step throwing, so it is never awaited at all - would
+    // otherwise be an unhandled error, which kills the npt binary. The await
+    // below still sees the error.
+    featureCheckFuture.ignore();
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -418,8 +423,6 @@ class _NptImpl extends NptBase
 
       return localRvPort;
     } catch (_) {
-      // Startup failed, so the session will never end of its own accord -
-      // close so that anyone awaiting [done] is released.
       await close();
       rethrow;
     }
@@ -454,16 +457,12 @@ class _NptImpl extends NptBase
       unawaited(
         sc.done.then((_) async {
           logger.info('SocketConnector done');
-          // Via close() rather than the completer directly: the caller may
-          // already have closed us to tear the session down.
           await close();
         }),
       );
 
       return sc;
     } catch (_) {
-      // Startup failed, so the session will never end of its own accord -
-      // close so that anyone awaiting [done] is released.
       await close();
       rethrow;
     }
