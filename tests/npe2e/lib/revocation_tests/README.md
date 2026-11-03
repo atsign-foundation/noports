@@ -23,6 +23,8 @@ For each daemon version (`d:current` and `c:current` by default):
    A released client that doesn't sign its requests
    (`--unsigned-client-version`, default `d:v5.17.0`) is refused, and npt
    prints the daemon's reason. The current client, which signs, is accepted.
+   Each run's npt output goes to its own files, the unsigned run's tagged
+   `_unsigned`.
 
 And once:
 
@@ -30,6 +32,10 @@ And once:
    ESCR relay auth, to a daemon whose own check is off
    (`--client-key-check-secs 0`), so `srvd` must be what ends the session and
    logs `has been withdrawn to r.__e`.
+
+Every npt the pack starts listens on 127.0.0.1, and each check connects
+there, so a check reaches npt even when srvd holds the same port number on
+another address. `dart test` in `tests/npe2e` checks that, without an EE.
 
 ## Running locally
 
