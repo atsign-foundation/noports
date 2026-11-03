@@ -149,4 +149,46 @@ void main() {
       },
     );
   });
+
+  group('Npt startup leaves no error unhandled', () {
+    test(
+      'Given a daemon feature check that fails while the relay step is still '
+      'running, when the relay step throws, then runInline throws that and '
+      'nothing goes unhandled',
+      () async {
+        final unhandled = <Object>[];
+        final thrown = Completer<Object?>();
+        // The Npt is built inside the zone: a future's error never crosses
+        // error zones, so one made outside would escape the check.
+        unawaited(
+          runZonedGuarded(() async {
+            final npt = Npt.create(
+              atClient: _FailingAtClient()
+                ..fakeNotificationService = _FakeNotificationService(),
+              params: _params(),
+            );
+            try {
+              await npt.runInline();
+              thrown.complete(null);
+            } catch (e) {
+              thrown.complete(e);
+            }
+          }, (e, _) => unhandled.add(e)),
+        );
+
+        expect(await thrown.future, isNotNull);
+        // let the feature check's own failure land
+        await Future.delayed(Duration(milliseconds: 100));
+        expect(
+          unhandled,
+          isEmpty,
+          reason:
+              'the feature check is awaited only after the relay answers, so '
+              'once the relay step throws it is never awaited, and its failure '
+              'would be unhandled - which kills the npt binary - unless it is '
+              'ignored up front',
+        );
+      },
+    );
+  });
 }
