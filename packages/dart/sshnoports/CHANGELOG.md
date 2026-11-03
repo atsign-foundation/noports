@@ -43,6 +43,10 @@
 * feat: npt, npevents and np_admin, given an atKeys file that holds only an
   enrollment request, wait for its approval and then run, rather than
   failing; a denial or expiry ends them
+* feat: npt, npevents and np_admin, given an atKeys file whose enrollment was
+  denied, cancelled or expired, say so and stop at once
+* feat: npt, npevents and np_admin print warnings to stderr without `-v`,
+  such as a notification they could not decrypt
 * fix: after an enrollment request expires, the next at_activate or noports
   activate run submits a new request rather than resuming the expired one
 * build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
