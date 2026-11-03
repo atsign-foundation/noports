@@ -1,0 +1,40 @@
+[Unit]
+Description=NoPorts Tunnel (npt)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# .atKeys file will be found in the ~/.atsign/keys directory of the
+# user initiating the tunnel
+User=USERNAME
+Environment=HOME=/home/USERNAME
+
+# MANDATORY: Client address (Atsign)
+Environment=from_atsign="@example_client"
+
+# MANDATORY: Device address (Atsign)
+Environment=to_atsign="@example_device"
+
+# Device name
+Environment=device_name="default"
+
+# Remote port
+Environment=remote_port="1234"
+
+# Local port
+Environment=local_port="1234"
+
+# Additional args
+Environment=additional_args=""
+
+# Replace with the exact binary path and command-line flags
+ExecStart=/usr/bin/npt -f "$from_atsign" -t "$to_atsign" -d "$device_name" -p "$remote_port" -l "$local_port" $additional_args
+
+# Keep the tunnel alive across network drops or daemon restarts
+Restart=always
+RestartSec=5s
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
