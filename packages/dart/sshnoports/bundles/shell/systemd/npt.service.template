@@ -29,7 +29,7 @@ Environment=local_port="1234"
 Environment=additional_args=""
 
 # Replace with the exact binary path and command-line flags
-ExecStart=/usr/bin/npt -f "$from_atsign" -t "$to_atsign" -d "$device_name" -p "$remote_port" -l "local_port" "$additional_args"
+ExecStart=/usr/bin/npt -f "$from_atsign" -t "$to_atsign" -d "$device_name" -p "$remote_port" -l "$local_port" $additional_args
 
 # Keep the tunnel alive across network drops or daemon restarts
 Restart=always
