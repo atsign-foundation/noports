@@ -2,6 +2,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
+import 'package:mutex/mutex.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/version.dart' as core_version;
 
@@ -17,6 +18,11 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   /// Receives each policy event.
   final Future<void> Function(Map<String, dynamic> event) onEvent;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
+
+  /// Lets one put or delete run at a time, from choosing its id to sending its
+  /// event, so two can't get the same id and events follow the changes in
+  /// order. Reads aren't held by it.
+  final Mutex _changes = Mutex();
 
   ManagerRpcCallbacks({
     required this.atClient,
@@ -101,22 +107,24 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       );
     });
 
-    final AtRpcResp response;
-    try {
-      response = await _handleRequest(request, fromAtSign, rule);
-    } catch (e) {
-      await logChange('$e');
-      rethrow;
-    }
-    await logChange(
-        response.respType == AtRpcRespType.error
-            ? response.message ?? 'no message'
-            : null);
-    return response;
+    return _changes.protect(() async {
+      final AtRpcResp response;
+      try {
+        response = await _handleRequest(request, fromAtSign, rule);
+      } catch (e) {
+        await logChange('$e');
+        rethrow;
+      }
+      await logChange(
+          response.respType == AtRpcRespType.error
+              ? response.message ?? 'no message'
+              : null);
+      return response;
+    });
   }
 
   /// Carries out [request]. [rule] receives the rule a put or delete acts on;
-  /// it is per request, since manager RPCs aren't handled one at a time.
+  /// it is per request, since reads aren't held by [_changes].
   Future<AtRpcResp> _handleRequest(
     AtRpcReq request,
     String fromAtSign,

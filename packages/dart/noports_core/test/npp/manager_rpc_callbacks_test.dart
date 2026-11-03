@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npp.dart';
@@ -337,6 +339,51 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('Given a pre-put hook that waits', () {
+    test('when two clients are put at once, then they get different ids, both'
+        ' are saved, and each logs ruleChanged in order', () async {
+      final gate = Completer<void>();
+      final saved = <String, Map<String, dynamic>>{};
+      final c = callbacks(
+        hooks: NppOperationHooks(
+          prePutClient: (client) async {
+            await gate.future;
+            saved[client.id!] = client.toJson();
+          },
+        ),
+      );
+
+      final first = c.handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Alice', 'atSign': '@alice'},
+        }, reqId: 1),
+        policy,
+      );
+      final second = c.handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Bob', 'atSign': '@bob'},
+        }, reqId: 2),
+        policy,
+      );
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+      final responses = await Future.wait([first, second]);
+
+      expect(
+        responses.map((r) => r.respType),
+        everyElement(AtRpcRespType.success),
+      );
+      expect(saved.keys, unorderedEquals(['1', '2']));
+      expect(cache.clients.map((c) => c.id), unorderedEquals(['1', '2']));
+      expect(events.map((e) => e['event']), ['ruleChanged', 'ruleChanged']);
+      expect(events.map((e) => e['reqId']), [1, 2]);
     });
   });
 }
