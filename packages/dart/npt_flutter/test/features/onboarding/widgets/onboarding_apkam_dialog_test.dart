@@ -1007,11 +1007,11 @@ Future<void> _confirmCancel(WidgetTester tester) async {
 /// `PendingEnrollment` files it.
 ///
 /// [stop] and [cancel] end the wait as `PendingEnrollment.stop` and
-/// `PendingEnrollment.cancel` do, a cancel ending the wait once [waitEnds]
-/// completes, as `client()` does after stopping a client it opened, then
-/// removing the request's pending keys from [keychain] once [keysDropped]
-/// completes; each returns only once the wait in flight has ended, and a
-/// wait started after either ends at once. A wait refuses a request
+/// `PendingEnrollment.cancel` do, a cancel removing the request's pending
+/// keys from [keychain] once [keysDropped] completes, then ending the wait
+/// once [waitEnds] completes, as `client()` does after stopping a client it
+/// opened; each returns only once the wait in flight has ended, and a wait
+/// started after either ends at once. A wait refuses a request
 /// [keychain] holds no pending keys for, as `awaitApproval` does.
 class _Pending extends Fake implements PendingEnrollment {
   final _decision = Completer<AtClient>();
@@ -1072,13 +1072,6 @@ class _Pending extends Fake implements PendingEnrollment {
   @override
   Future<void> cancel() async {
     cancels++;
-    if (_waiting && !_decision.isCompleted) {
-      unawaited(
-        waitEnds.then((_) {
-          if (!_decision.isCompleted) _decision.completeError(_cancelled());
-        }),
-      );
-    }
     try {
       await keysDropped;
       if (cancelFailures > 0) {
@@ -1087,6 +1080,13 @@ class _Pending extends Fake implements PendingEnrollment {
       }
       await _removeKeys();
     } finally {
+      if (_waiting && !_decision.isCompleted) {
+        unawaited(
+          waitEnds.then((_) {
+            if (!_decision.isCompleted) _decision.completeError(_cancelled());
+          }),
+        );
+      }
       await _waitEnded();
     }
   }
