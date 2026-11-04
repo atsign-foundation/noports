@@ -50,13 +50,12 @@ packages:
     source: hosted
     version: "2.13.1"
   at_auth:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/at_auth"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_auth
+      sha256: cbbff946b361b553a77c038dc0be4456eeaf7babdce6a9fb9b789e172d3ad22a
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.0"
   at_base2e15:
     dependency: transitive
@@ -67,49 +66,44 @@ packages:
     source: hosted
     version: "1.0.0"
   at_chops:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/at_chops"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_chops
+      sha256: afe75e99e9ace79d1f90a67d48e6b682a934f96db76ab84c245dc0ca0b4fc3f4
+      url: "https://pub.dev"
+    source: hosted
     version: "3.7.1"
   at_client:
     dependency: "direct main"
     description:
-      path: "packages/at_client"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_client
+      sha256: "04ba05bc3eba40718b3d03999921751d8b833754b48cbfeed607656cb5460691"
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.0"
   at_client_cli:
     dependency: "direct main"
     description:
-      path: "packages/at_client_cli"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_client_cli
+      sha256: "3b0811920219c97018fb120de3f61808eba34ff3c4c35cb75335c10b5db7d3d1"
+      url: "https://pub.dev"
+    source: hosted
     version: "1.0.0"
   at_commons:
     dependency: "direct main"
     description:
-      path: "packages/at_commons"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_commons
+      sha256: "107f04c2b777d0763f4fe2ed88c7f61db5df99d58c322a0db2ee1315779500b0"
+      url: "https://pub.dev"
+    source: hosted
     version: "5.25.0"
   at_lookup:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/at_lookup"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_lookup
+      sha256: a72ba90ed219e964fbf987abe2e14c111bbc7e09f6c3e922b5774cace2adb509
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.0"
   at_persistence_secondary_server:
     dependency: transitive
@@ -130,11 +124,10 @@ packages:
   at_utils:
     dependency: "direct main"
     description:
-      path: "packages/at_utils"
-      ref: gkc-v4-followups
-      resolved-ref: d17d0f61166fd9aaa88262c925edc2394489fe77
-      url: "https://github.com/atsign-foundation/at_client_sdk.git"
-    source: git
+      name: at_utils
+      sha256: "0c1d288c7d0a59e9548f3ea551dbfab2bf365e528d9479dc3e5be8095eddcd7d"
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.0"
   better_cryptography:
     dependency: transitive
