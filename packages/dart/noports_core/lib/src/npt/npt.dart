@@ -183,14 +183,23 @@ class _NptImpl extends NptBase
   @override
   Future<void> close() async {
     _closed = true;
-    try {
-      _inlineConnector?.close();
-      await _sshnpdChannel.cancelSubscriptions();
-      await _srvdChannel.cancelSubscriptions();
-    } finally {
-      if (!_completer.isCompleted) {
-        _completer.complete();
+    (Object, StackTrace)? firstFailure;
+    Future<void> step(FutureOr<void> Function() teardown) async {
+      try {
+        await teardown();
+      } catch (e, st) {
+        firstFailure ??= (e, st);
       }
+    }
+
+    await step(() => _inlineConnector?.close());
+    await step(_sshnpdChannel.cancelSubscriptions);
+    await step(_srvdChannel.cancelSubscriptions);
+    if (!_completer.isCompleted) {
+      _completer.complete();
+    }
+    if (firstFailure case (final error, final stackTrace)) {
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
