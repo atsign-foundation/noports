@@ -122,6 +122,64 @@ void main() {
       );
     });
 
+    for (final (scenario, how, end)
+        in <(String, String, Future<void> Function(WidgetTester, _Pending))>[
+          (
+            'A revoked request asks for a new OTP',
+            'it is revoked',
+            (tester, pending) => pending.refuse(
+              AtEnrollmentException(
+                'Enrollment e1 was refused for a reason this wait cannot'
+                ' resolve: error:AT0027-enrollment_id: e1 is revoked',
+              ),
+            ),
+          ),
+          (
+            'An expired request asks for a new OTP',
+            'it expires',
+            (tester, pending) => pending.refuse(
+              AtEnrollmentException(
+                'Enrollment e1 has expired or does not exist: '
+                'error:AT0028-enrollment_id: e1 is expired or invalid',
+              ),
+              removesKeys: true,
+            ),
+          ),
+          (
+            'A confirmed Cancel abandons the request',
+            'confirms Cancel',
+            (tester, pending) => _confirmCancel(tester),
+          ),
+        ]) {
+      testWidgets('$scenario:'
+          ' when the user typed the OTP that sent the request and $how, then'
+          " the OTP prompt's field is empty", (tester) async {
+        await _pumpApp(tester);
+        final pending = _Pending();
+        final flows = _Flows(pending)..resumed = Future.value(null);
+        await _open(tester, pending, _Keychain(), flows: flows, waiting: false);
+        await tester.enterText(find.byType(EditableText), 'ABC123');
+        await _settle(tester);
+        expect(
+          tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+          'ABC123',
+          reason: 'the OTP field holds what the user typed',
+        );
+        await tester.tap(find.widgetWithText(FilledButton, _strings.submitOtp));
+        await _settle(tester);
+        expect(
+          find.byKey(const Key('activating')),
+          findsOneWidget,
+          reason: 'the dialog waits on the request the OTP sent',
+        );
+
+        await end(tester, pending);
+        await _settle(tester);
+
+        _expectOtpPrompt(tester);
+      });
+    }
+
     for (final (why, error) in <(String, Exception)>[
       ('the atServer could not be reached', AtTimeoutException('Timed out')),
       (

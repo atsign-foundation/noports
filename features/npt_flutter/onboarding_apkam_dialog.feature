@@ -115,9 +115,9 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     Then e2's keys are left alone
 
   Scenario: A revoked request asks for a new OTP
-    Given the dialog waiting for approval of e1
+    Given the dialog waiting for approval of e1, sent after the user entered an OTP
     When the atServer reports e1 revoked (AT0027)
-    Then e1's keys leave the keychain, and the OTP prompt says the request was revoked; nothing is signed in
+    Then e1's keys leave the keychain, and the OTP prompt, its field cleared, says the request was revoked; nothing is signed in
 
   Scenario: A denied request is reported as denied
     Given the dialog waiting for approval of e1
@@ -125,9 +125,9 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
     Then e1's keys leave the keychain, and the dialog says the request was denied and closes with that error
 
   Scenario: An expired request asks for a new OTP
-    Given the dialog waiting for approval of e1
+    Given the dialog waiting for approval of e1, sent after the user entered an OTP
     When the atServer reports e1 expired (AT0028)
-    Then e1's keys leave the keychain, and the OTP prompt says the request expired
+    Then e1's keys leave the keychain, and the OTP prompt, its field cleared, says the request expired
 
   Scenario: A wait that ends without a decision keeps the request
     Given the dialog waiting for approval of e1
