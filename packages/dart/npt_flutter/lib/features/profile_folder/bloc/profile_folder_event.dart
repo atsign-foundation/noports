@@ -16,13 +16,18 @@ final class ProfileFolderLoadEvent extends ProfileFolderEvent {
   }
 }
 
-/// Re-reads the folders after a sync, without going through a loading state.
+/// Re-reads the folders after a sync round, without going through a loading
+/// state. [caughtUp] is true once nothing is left to pull or push.
 final class ProfileFolderRefreshEvent extends ProfileFolderEvent {
-  const ProfileFolderRefreshEvent();
+  final bool caughtUp;
+  const ProfileFolderRefreshEvent({this.caughtUp = false});
+
+  @override
+  List<Object?> get props => [caughtUp];
 
   @override
   String toString() {
-    return 'ProfileFolderRefreshEvent';
+    return 'ProfileFolderRefreshEvent(caughtUp: $caughtUp)';
   }
 }
 

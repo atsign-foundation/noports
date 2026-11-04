@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
@@ -13,26 +15,36 @@ class ProfileFolderBloc
   /// False after a failed save, so the next save retries unchanged data.
   bool _persisted = true;
 
-  /// Bumped on load and sign out, so a superseded load doesn't emit.
+  /// Bumped on load and sign out, so an older session's callbacks drop.
   int _session = 0;
 
-  /// A refresh that raced a save is dropped instead of reverting it.
-  int _saving = 0;
-  int _saves = 0;
-
   ProfileFolderBloc(this._repo) : super(const ProfileFoldersInitial()) {
-    on<ProfileFolderLoadEvent>(_onLoad);
-    on<ProfileFolderRefreshEvent>(_onRefresh);
-    on<ProfileFolderCreateEvent>(_onCreate);
-    on<ProfileFolderRenameEvent>(_onRename);
-    on<ProfileFolderDeleteEvent>(_onDelete);
-    on<ProfileFolderMoveProfilesEvent>(_onMoveProfiles);
-    on<ProfileFolderRemoveProfilesEvent>(_onRemoveProfiles);
-    on<ProfileFolderPlaceProfilesEvent>(_onPlaceProfiles);
-    on<ProfileFolderReorderEvent>(_onReorderFolders);
-    on<ProfileFolderSetFavoriteEvent>(_onSetFavorite);
-    on<ProfileFolderSetCollapsedEvent>(_onSetCollapsed);
-    on<ProfileFolderSetSkippedByStartAllEvent>(_onSetSkippedByStartAll);
+    // One event at a time, so saves land in the order they were made.
+    on<ProfileFolderEvent>(
+      (ProfileFolderEvent event, Emitter<ProfileFolderState> emit) =>
+          switch (event) {
+            ProfileFolderLoadEvent() => _onLoad(event, emit),
+            ProfileFolderRefreshEvent() => _onRefresh(event, emit),
+            ProfileFolderCreateEvent() => _onCreate(event, emit),
+            ProfileFolderRenameEvent() => _onRename(event, emit),
+            ProfileFolderDeleteEvent() => _onDelete(event, emit),
+            ProfileFolderMoveProfilesEvent() => _onMoveProfiles(event, emit),
+            ProfileFolderRemoveProfilesEvent() => _onRemoveProfiles(
+              event,
+              emit,
+            ),
+            ProfileFolderPlaceProfilesEvent() => _onPlaceProfiles(event, emit),
+            ProfileFolderReorderEvent() => _onReorderFolders(event, emit),
+            ProfileFolderSetFavoriteEvent() => _onSetFavorite(event, emit),
+            ProfileFolderSetCollapsedEvent() => _onSetCollapsed(event, emit),
+            ProfileFolderSetSkippedByStartAllEvent() => _onSetSkippedByStartAll(
+              event,
+              emit,
+            ),
+          },
+      transformer: (Stream<ProfileFolderEvent> events, mapper) =>
+          events.asyncExpand(mapper),
+    );
   }
 
   void clearAll() {
@@ -48,63 +60,57 @@ class ProfileFolderBloc
     return super.close();
   }
 
+  Future<ProfileFolderData?> _read() async {
+    try {
+      return await _repo.getProfileFolders();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Shows the local copy at once. Edits wait until it has caught up with the
+  /// atServer, so an older copy is never saved over a newer one.
   Future<void> _onLoad(
     ProfileFolderLoadEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
     final int session = ++_session;
+    _repo.stopWatching();
     emit(const ProfileFoldersLoading());
-
-    ProfileFolderData? data;
-    bool synced = true;
-    try {
-      // A copy older than the atServer's must not be shown and saved over it.
-      synced = await _repo.waitForSync();
-      if (synced) {
-        if (session != _session) return;
-        data = await _repo.getProfileFolders();
-      }
-    } catch (_) {
-      data = null;
-    }
+    final ProfileFolderData? data = await _read();
     if (session != _session) return;
-
     if (data == null) {
       emit(const ProfileFoldersFailedLoad());
-      if (!synced) {
-        _repo.watchSync(() {
-          if (!isClosed && state is ProfileFoldersFailedLoad) {
-            add(const ProfileFolderLoadEvent());
-          }
-        }, caughtUpOnly: true);
-      }
       return;
     }
     _persisted = true;
-    emit(ProfileFoldersLoaded(data));
-    _repo.watchSync(() {
-      if (!isClosed) add(const ProfileFolderRefreshEvent());
-    });
+    emit(ProfileFoldersLoaded(data, synced: false));
+
+    void refresh(bool caughtUp) {
+      if (!isClosed && session == _session) {
+        add(ProfileFolderRefreshEvent(caughtUp: caughtUp));
+      }
+    }
+
+    _repo.watchSync(refresh);
+    unawaited(
+      _repo.waitForSync().then((bool caughtUp) {
+        if (caughtUp) refresh(true);
+      }),
+    );
   }
 
   Future<void> _onRefresh(
     ProfileFolderRefreshEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded || _saving > 0) return;
+    final ProfileFolderState current = state;
+    if (current is! ProfileFoldersLoaded) return;
     final int session = _session;
-    final int saves = _saves;
-
-    ProfileFolderData? data;
-    try {
-      data = await _repo.getProfileFolders();
-    } catch (_) {
-      data = null;
-    }
-    if (data == null || session != _session || saves != _saves) return;
-    if (state is! ProfileFoldersLoaded) return;
+    final ProfileFolderData? data = await _read();
+    if (data == null || session != _session) return;
     _persisted = true;
-    emit(ProfileFoldersLoaded(data));
+    emit(ProfileFoldersLoaded(data, synced: current.synced || event.caughtUp));
   }
 
   Future<void> _save(
@@ -116,14 +122,10 @@ class ProfileFolderBloc
       return;
     }
     emit(ProfileFoldersLoaded(data));
-    _saves++;
-    _saving++;
     try {
       _persisted = await _repo.putProfileFolders(data);
     } catch (_) {
       _persisted = false;
-    } finally {
-      _saving--;
     }
   }
 
@@ -131,7 +133,7 @@ class ProfileFolderBloc
     ProfileFolderCreateEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
     if (data.folderById(event.uuid) != null) return;
 
@@ -153,7 +155,7 @@ class ProfileFolderBloc
     ProfileFolderRenameEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
     if (data.folderById(event.folderId) == null) return;
 
@@ -171,7 +173,7 @@ class ProfileFolderBloc
     ProfileFolderDeleteEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
     final ProfileFolder? deleted = data.folderById(event.folderId);
     if (deleted == null) return;
@@ -195,7 +197,7 @@ class ProfileFolderBloc
     ProfileFolderMoveProfilesEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
     if (event.folderId != null && data.folderById(event.folderId!) == null) {
       return;
@@ -230,7 +232,7 @@ class ProfileFolderBloc
     ProfileFolderRemoveProfilesEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     await _save(data.withoutProfilesEverywhere(event.profileIds), emit);
@@ -240,7 +242,7 @@ class ProfileFolderBloc
     ProfileFolderPlaceProfilesEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     await _save(
@@ -257,7 +259,7 @@ class ProfileFolderBloc
     ProfileFolderReorderEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     await _save(data.withFoldersOrdered(event.folderIds), emit);
@@ -267,7 +269,7 @@ class ProfileFolderBloc
     ProfileFolderSetFavoriteEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     await _save(
@@ -288,7 +290,7 @@ class ProfileFolderBloc
     ProfileFolderSetCollapsedEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     if (event.folderId == null) {
@@ -313,7 +315,7 @@ class ProfileFolderBloc
     ProfileFolderSetSkippedByStartAllEvent event,
     Emitter<ProfileFolderState> emit,
   ) async {
-    if (state is! ProfileFoldersLoaded) return;
+    if (!state.editable) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
 
     await _save(

@@ -28,6 +28,9 @@ class ProfileFolderSectionHeader extends StatelessWidget {
   final int? reorderIndex;
   final bool dragEnabled;
 
+  /// False turns off everything that changes the folder.
+  final bool editable;
+
   /// Null disables the menu item.
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
@@ -41,6 +44,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
     this.folder,
     this.reorderIndex,
     this.dragEnabled = true,
+    this.editable = true,
     this.onMoveUp,
     this.onMoveDown,
     super.key,
@@ -102,12 +106,14 @@ class ProfileFolderSectionHeader extends StatelessWidget {
                     tooltip: folder!.favorite
                         ? strings.favoriteRemove
                         : strings.favoriteAdd,
-                    onPressed: () => context.read<ProfileFolderBloc>().add(
-                      ProfileFolderSetFavoriteEvent(
-                        folderId: folder!.uuid,
-                        favorite: !folder!.favorite,
-                      ),
-                    ),
+                    onPressed: editable
+                        ? () => context.read<ProfileFolderBloc>().add(
+                            ProfileFolderSetFavoriteEvent(
+                              folderId: folder!.uuid,
+                              favorite: !folder!.favorite,
+                            ),
+                          )
+                        : null,
                     icon: PhosphorIcon(
                       folder!.favorite
                           ? PhosphorIcons.star(PhosphorIconsStyle.fill)
@@ -125,6 +131,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
                 ? null
                 : _ProfileFolderMenuButton(
                     folder: folder!,
+                    editable: editable,
                     onMoveUp: onMoveUp,
                     onMoveDown: onMoveDown,
                   ),
@@ -202,10 +209,12 @@ class _StartStopButtons extends StatelessWidget {
 
 class _ProfileFolderMenuButton extends StatelessWidget {
   final ProfileFolder folder;
+  final bool editable;
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
   const _ProfileFolderMenuButton({
     required this.folder,
+    required this.editable,
     required this.onMoveUp,
     required this.onMoveDown,
   });
@@ -218,6 +227,7 @@ class _ProfileFolderMenuButton extends StatelessWidget {
       itemBuilder: (BuildContext _) {
         return <PopupMenuEntry<PopupMenuEntry>>[
           PopupMenuItem(
+            enabled: editable,
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.plusSquare()),
@@ -229,6 +239,7 @@ class _ProfileFolderMenuButton extends StatelessWidget {
                 ProfileFolderActions.addConnectionToFolder(folder.uuid),
           ),
           PopupMenuItem(
+            enabled: editable,
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.listChecks()),
@@ -244,6 +255,7 @@ class _ProfileFolderMenuButton extends StatelessWidget {
             onTap: () => ProfileFolderActions.chooseStartAll(context, folder),
           ),
           PopupMenuItem(
+            enabled: editable,
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.pencil()),
@@ -276,6 +288,7 @@ class _ProfileFolderMenuButton extends StatelessWidget {
             ),
           ),
           PopupMenuItem(
+            enabled: editable,
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.trash()),

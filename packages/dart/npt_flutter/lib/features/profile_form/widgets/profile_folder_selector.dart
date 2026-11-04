@@ -146,6 +146,8 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
               SizedBox(
                 width: double.infinity,
                 child: DropdownMenu<String>(
+                  // Changes wait until the folders have caught up.
+                  enabled: state.editable,
                   // Rebuilt on a rename: DropdownMenu reads its selection once.
                   key: ValueKey<String>(
                     'ProfileFolderSelector-$selection-${folder?.name}-'

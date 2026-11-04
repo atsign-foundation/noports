@@ -106,5 +106,13 @@ void main() {
         expect(await repository.putProfileFolders(testData), isFalse);
       });
     });
+
+    group('waitForSync', () {
+      test('is false when the sync service throws', () async {
+        when(mockAtClient.syncService).thenThrow(StateError('no client'));
+
+        expect(await repository.waitForSync(), isFalse);
+      });
+    });
   });
 }

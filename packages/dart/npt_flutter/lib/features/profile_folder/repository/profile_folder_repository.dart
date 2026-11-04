@@ -59,20 +59,18 @@ class ProfileFolderRepository {
       return false;
     } catch (e) {
       App.log('[ERROR] waitForSync: $e'.loggable);
+      return false;
     }
     return true;
   }
 
-  /// Calls [onSynced] after each sync round, or with [caughtUpOnly] only once
-  /// nothing is left to push.
-  void watchSync(void Function() onSynced, {bool caughtUpOnly = false}) {
+  /// Calls [onRound] after each sync round, with whether it left nothing to
+  /// pull or push.
+  void watchSync(void Function(bool caughtUp) onRound) {
     stopWatching();
     try {
       final SyncService syncService = _client.syncService;
-      final SyncProgressListener listener = _SyncRoundListener(
-        onSynced,
-        caughtUpOnly,
-      );
+      final SyncProgressListener listener = _SyncRoundListener(onRound);
       syncService.addProgressListener(listener);
       _watchedSync = syncService;
       _syncListener = listener;
@@ -101,24 +99,19 @@ class ProfileFolderRepository {
 }
 
 class _SyncRoundListener extends SyncProgressListener {
-  final void Function() onSynced;
-  final bool caughtUpOnly;
+  final void Function(bool caughtUp) onRound;
 
-  _SyncRoundListener(this.onSynced, this.caughtUpOnly);
+  _SyncRoundListener(this.onRound);
 
   @override
   void onSyncProgressEvent(SyncProgress syncProgress) {
     final SyncStatus? status = syncProgress.syncStatus;
-    if (caughtUpOnly) {
-      if (status == SyncStatus.success &&
-          (syncProgress.pendingPushCount ?? 0) == 0) {
-        onSynced();
-      }
-      return;
-    }
     // A failed round may still have pulled the folders, so every round counts.
     if (status == SyncStatus.success || status == SyncStatus.failure) {
-      onSynced();
+      onRound(
+        status == SyncStatus.success &&
+            (syncProgress.pendingPushCount ?? 0) == 0,
+      );
     }
   }
 }

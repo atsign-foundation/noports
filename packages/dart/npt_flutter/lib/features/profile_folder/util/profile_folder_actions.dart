@@ -45,7 +45,7 @@ class ProfileFolderActions {
   ) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
     final ProfileListState profiles = context.read<ProfileListBloc>().state;
-    if (bloc.state is! ProfileFoldersLoaded || profiles is! ProfileListLoaded) {
+    if (!bloc.state.editable || profiles is! ProfileListLoaded) {
       return;
     }
     final Set<String> loaded = profiles.profiles.toSet();
@@ -92,7 +92,7 @@ class ProfileFolderActions {
 
   static Future<void> createFolder(BuildContext context) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
-    if (bloc.state is! ProfileFoldersLoaded) return;
+    if (!bloc.state.editable) return;
     final AppLocalizations strings = AppLocalizations.of(context)!;
 
     final String? name = await showDialog<String>(
@@ -109,7 +109,7 @@ class ProfileFolderActions {
     ProfileFolder folder,
   ) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
-    if (bloc.state is! ProfileFoldersLoaded) return;
+    if (!bloc.state.editable) return;
     final AppLocalizations strings = AppLocalizations.of(context)!;
 
     final String? name = await showDialog<String>(
@@ -131,7 +131,7 @@ class ProfileFolderActions {
   ) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
     final ProfileFolderState state = bloc.state;
-    if (state is! ProfileFoldersLoaded) return false;
+    if (state is! ProfileFoldersLoaded || !state.editable) return false;
     final AppLocalizations strings = AppLocalizations.of(context)!;
     final List<String> ids = profileIds.toList();
     if (ids.isEmpty) return false;

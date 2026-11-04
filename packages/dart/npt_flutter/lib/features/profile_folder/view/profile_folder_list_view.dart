@@ -99,7 +99,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
         }
         final ProfileFolderLayout layout =
             _drag?.layout ?? _layoutFor(_pending ?? folderState.data);
-        return _buildReorderable(layout);
+        return _buildReorderable(layout, folderState.editable);
       },
     );
   }
@@ -135,7 +135,10 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
-  Widget _buildReorderable(ProfileFolderLayout layout) {
+  /// Until [editable], nothing can be dragged or changed.
+  Widget _buildReorderable(ProfileFolderLayout layout, bool editable) {
+    final bool reorderable = widget.reorderable && editable;
+    final bool movable = widget.movable && editable;
     final List<String> folderIds = layout.folderIds;
     final List<ProfileFolder> shownFolders = <ProfileFolder>[
       for (final ProfileFolderSection section in layout.sections)
@@ -168,7 +171,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
             folder: folder,
             collapsed: layout.collapsed.contains(section.id),
             // Folders stay open while searching and move only in manual order.
-            onToggleCollapsed: widget.searching
+            onToggleCollapsed: widget.searching || !editable
                 ? null
                 : () => context.read<ProfileFolderBloc>().add(
                     ProfileFolderSetCollapsedEvent(
@@ -176,16 +179,17 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
                       collapsed: !layout.collapsed.contains(section.id),
                     ),
                   ),
-            reorderIndex: folder != null && widget.reorderable ? index : null,
+            reorderIndex: folder != null && reorderable ? index : null,
             dragEnabled: dragEnabled,
+            editable: editable,
             onMoveUp:
-                widget.reorderable &&
+                reorderable &&
                     folderIndex > 0 &&
                     canPrecede(folder!, shownFolders[folderIndex - 1])
                 ? () => _moveFolder(folderIds, folderIndex, -1)
                 : null,
             onMoveDown:
-                widget.reorderable &&
+                reorderable &&
                     folderIndex >= 0 &&
                     folderIndex < folderIds.length - 1 &&
                     canPrecede(shownFolders[folderIndex + 1], folder!)
@@ -208,14 +212,14 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
           return ProfileListRow(
             key: entry.key,
             uuid: uuid,
-            reorderIndex: widget.reorderable || widget.movable ? index : null,
+            reorderIndex: reorderable || movable ? index : null,
             dimmed: dimRows,
             dragEnabled: dragEnabled,
           );
       }
     }
 
-    if (!widget.reorderable && !widget.movable) {
+    if (!reorderable && !movable) {
       // A plain list, so screen readers aren't offered moves that do nothing.
       return ListView.builder(
         itemCount: layout.entries.length,

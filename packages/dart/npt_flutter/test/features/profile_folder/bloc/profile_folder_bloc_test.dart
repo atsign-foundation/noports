@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/profile_folder/bloc/profile_folder_bloc.dart';
@@ -10,6 +12,13 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   bool throwOnPut = false;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
+  /// Completes when the test says the local copy has caught up.
+  Completer<bool> caughtUp = Completer<bool>();
+  void Function(bool caughtUp)? onRound;
+
+  /// Holds each put until the test completes it, when set.
+  List<Completer<void>>? heldPuts;
+
   @override
   Future<ProfileFolderData?> getProfileFolders() async {
     if (throwOnLoad) throw Exception('load failed');
@@ -19,9 +28,26 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   @override
   Future<bool> putProfileFolders(ProfileFolderData data) async {
     puts.add(data);
+    final List<Completer<void>>? held = heldPuts;
+    if (held != null) {
+      final Completer<void> release = Completer<void>();
+      held.add(release);
+      await release.future;
+    }
     if (throwOnPut) throw Exception('put failed');
     return true;
   }
+
+  @override
+  Future<bool> waitForSync({Duration timeout = const Duration(seconds: 30)}) =>
+      caughtUp.future;
+
+  @override
+  void watchSync(void Function(bool caughtUp) onRound) =>
+      this.onRound = onRound;
+
+  @override
+  void stopWatching() => onRound = null;
 }
 
 void main() {
@@ -71,7 +97,7 @@ void main() {
 
   group('ProfileFolderLoadEvent', () {
     blocTest<ProfileFolderBloc, ProfileFolderState>(
-      'emits loading then loaded with repository data',
+      'shows the local copy before sync has caught up',
       build: () {
         repo.loadResult = loadedData;
         return bloc;
@@ -79,7 +105,101 @@ void main() {
       act: (ProfileFolderBloc bloc) => bloc.add(const ProfileFolderLoadEvent()),
       expect: () => <ProfileFolderState>[
         const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+      ],
+      verify: (ProfileFolderBloc bloc) => expect(bloc.state.editable, isFalse),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'ignores edits until sync has caught up',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) => bloc
+        ..add(const ProfileFolderLoadEvent())
+        ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z')),
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+      ],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      're-reads and allows edits once sync has caught up',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await Future<void>.delayed(Duration.zero);
+        repo.loadResult = dataWithUnfiled;
+        repo.caughtUp.complete(true);
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(dataWithUnfiled),
+        ProfileFoldersLoaded(
+          dataWithUnfiled.copyWith(
+            folders: <ProfileFolder>[
+              folderA.copyWith(name: 'Z'),
+              folderB,
+            ],
+          ),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(1)),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'stays read-only after a sync timeout until a round catches up',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await Future<void>.delayed(Duration.zero);
+        repo.caughtUp.complete(false);
+        repo.onRound!(false);
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.editable, isFalse);
+        repo.onRound!(true);
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
         const ProfileFoldersLoaded(loadedData),
+      ],
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      "a sign-out drops the old session's sync callbacks",
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await Future<void>.delayed(Duration.zero);
+        final Completer<bool> oldSession = repo.caughtUp;
+        bloc.clearAll();
+        repo.caughtUp = Completer<bool>();
+        bloc.add(const ProfileFolderLoadEvent());
+        await Future<void>.delayed(Duration.zero);
+        oldSession.complete(true);
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersInitial(),
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
       ],
     );
 
@@ -106,6 +226,33 @@ void main() {
       ],
     );
   });
+
+  blocTest<ProfileFolderBloc, ProfileFolderState>(
+    'two quick changes are saved in the order they were made',
+    build: () {
+      repo.heldPuts = <Completer<void>>[];
+      return bloc;
+    },
+    seed: () => const ProfileFoldersLoaded(loadedData),
+    act: (ProfileFolderBloc bloc) async {
+      bloc
+        ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'First'))
+        ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Second'));
+      await Future<void>.delayed(Duration.zero);
+      // The second change waits for the first save to finish.
+      expect(repo.puts, hasLength(1));
+      repo.heldPuts!.first.complete();
+      await Future<void>.delayed(Duration.zero);
+      repo.heldPuts!.last.complete();
+    },
+    verify: (ProfileFolderBloc bloc) {
+      expect(
+        repo.puts.map((ProfileFolderData d) => d.folders.first.name),
+        <String>['First', 'Second'],
+      );
+      expect((bloc.state as ProfileFoldersLoaded).folders.first.name, 'Second');
+    },
+  );
 
   group('ProfileFolderCreateEvent', () {
     blocTest<ProfileFolderBloc, ProfileFolderState>(

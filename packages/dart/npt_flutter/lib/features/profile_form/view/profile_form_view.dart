@@ -18,7 +18,7 @@ class ProfileFormView extends StatelessWidget {
   ProfileFolderEvent? _folderEvent(BuildContext context) {
     final chosen = context.read<ProfileFormFolderCubit>().state;
     final folders = context.read<ProfileFolderBloc>().state;
-    if (folders is! ProfileFoldersLoaded) return null;
+    if (folders is! ProfileFoldersLoaded || !folders.editable) return null;
     final newName = chosen.newName;
     if (newName != null) {
       return ProfileFolderCreateEvent(

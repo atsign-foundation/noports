@@ -86,7 +86,7 @@ class ProfilePopupMenuButton extends StatelessWidget {
               }
             },
           ),
-          if (folderData != null)
+          if (folderState.editable)
             PopupMenuItem(
               child: Row(
                 children: [

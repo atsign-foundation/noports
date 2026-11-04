@@ -48,7 +48,7 @@ class ProfileFolderCreateButton extends StatelessWidget {
       builder: (BuildContext context, bool anySelected) {
         if (anySelected) return gap0;
         return BlocSelector<ProfileFolderBloc, ProfileFolderState, bool>(
-          selector: (ProfileFolderState state) => state is ProfileFoldersLoaded,
+          selector: (ProfileFolderState state) => state.editable,
           builder: (BuildContext context, bool foldersEnabled) {
             if (!foldersEnabled) return gap0;
             return ElevatedButton.icon(
@@ -81,7 +81,7 @@ class ProfileFolderMoveButton extends StatelessWidget {
       builder: (BuildContext context, Set<String> selected) {
         if (selected.isEmpty) return gap0;
         return BlocSelector<ProfileFolderBloc, ProfileFolderState, bool>(
-          selector: (ProfileFolderState state) => state is ProfileFoldersLoaded,
+          selector: (ProfileFolderState state) => state.editable,
           builder: (BuildContext context, bool foldersEnabled) {
             if (!foldersEnabled) return gap0;
             return ElevatedButton.icon(
