@@ -55,7 +55,8 @@ abstract interface class Npt {
   Future<SocketConnector> runInline({int? localRvPort});
 
   /// Ends this session, closing the tunnel [runInline] started, if any, and
-  /// completing [done].
+  /// completing [done]. A [runInline] still starting then closes the tunnel it
+  /// opens and throws, rather than return it.
   Future<void> close();
 
   /// Completes when the session has ended, or when it failed to start.
@@ -145,6 +146,10 @@ class _NptImpl extends NptBase
 
   SocketConnector? _inlineConnector;
 
+  /// Set when [close] starts, so a startup still in flight can't hand back a
+  /// tunnel afterwards.
+  bool _closed = false;
+
   @override
   Future get done => _completer.future;
 
@@ -177,6 +182,7 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
+    _closed = true;
     try {
       _inlineConnector?.close();
       await _sshnpdChannel.cancelSubscriptions();
@@ -453,6 +459,10 @@ class _NptImpl extends NptBase
             : null,
       );
 
+      if (_closed) {
+        sc.close();
+        throw SshnpError('Session $sessionId was closed while it was starting');
+      }
       _inlineConnector = sc;
       unawaited(
         sc.done.then((_) async {
