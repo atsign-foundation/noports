@@ -12,6 +12,12 @@
 - fix: an npt session whose daemon feature check, or relay signing key
   publish, failed before the relay answered no longer raises an unhandled
   error, which killed the npt binary.
+- fix: `runInline` no longer hands back an open tunnel after `Npt.close` was
+  called while it was starting; it closes the tunnel and throws.
+- fix: `Npt.close` cancels both its daemon and relay channels' subscriptions
+  even when cancelling one of them fails.
+- fix: an sshnp session whose daemon feature check fails no longer raises an
+  unhandled error.
 - build: depends on the at_client_sdk release candidates: at_client
   3.15.0-rc6, at_auth 4.0.0-rc5, at_lookup 3.7.0-rc3, at_cli_commons
   3.1.2-rc3 and at_onboarding_cli 2.0.0-rc6, plus at_commons 5.21.0 and
