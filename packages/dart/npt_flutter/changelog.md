@@ -26,6 +26,10 @@
 - FIX: Confirming the connected profiles prompt when switching, adding or
   signing out of an atSign stops keep-alive profiles, instead of them
   reconnecting a few seconds later.
+- FIX: Deleting a profile always stops its connection, including one started
+  from the tray while the delete was being confirmed.
+- FIX: The tray menu updates when a favourite profile's name or status
+  changes, instead of waiting for another change to refresh it.
 
 ## 1.9.6+33
 
