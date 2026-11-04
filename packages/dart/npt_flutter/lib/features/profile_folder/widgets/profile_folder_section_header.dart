@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/profile/util/profile_start_queue.dart';
+import 'package:npt_flutter/features/profile/cubit/profile_start_queue_cubit.dart';
 import 'package:npt_flutter/features/profile_folder/bloc/profile_folder_bloc.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/features/profile_folder/util/profile_folder_actions.dart';
@@ -153,9 +153,9 @@ class _StartStopButtons extends StatelessWidget {
     final List<String> startable = uuids
         .where((String uuid) => folder?.startsWithAll(uuid) ?? true)
         .toList();
-    return ValueListenableBuilder<List<String>>(
-      valueListenable: ProfileStartQueue.waiting,
-      builder: (BuildContext context, List<String> waiting, Widget? _) {
+    return BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
+      builder: (BuildContext context, ProfileStartQueueState queue) {
+        final List<String> waiting = queue.waiting;
         final bool anyWaiting = uuids.any(waiting.contains);
         return BlocBuilder<ProfilesRunningCubit, ProfilesRunningState>(
           buildWhen: (ProfilesRunningState a, ProfilesRunningState b) =>

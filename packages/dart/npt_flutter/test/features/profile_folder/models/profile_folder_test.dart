@@ -81,14 +81,37 @@ void main() {
       expect(parsed.folders, isEmpty);
     });
 
-    test('fromJson ignores the retired sortByType flag', () {
-      final Map<String, dynamic> legacy = <String, dynamic>{
-        ...data.toJson(),
-        'sortByType': true,
+    test('fields a newer version adds survive an edit and a save', () {
+      final Map<String, dynamic> stored = <String, dynamic>{
+        'folders': <dynamic>[
+          <String, dynamic>{
+            'uuid': 'g1',
+            'name': 'One',
+            'profileIds': <String>['a'],
+            'startAtLaunch': true,
+          },
+        ],
+        'unfiled': <String>['b'],
+        'layoutVersion': 2,
       };
-      final ProfileFolderData parsed = ProfileFolderData.fromJson(legacy);
-      expect(parsed, equals(data));
-      expect(parsed.toJson().containsKey('sortByType'), isFalse);
+      final ProfileFolderData edited = ProfileFolderData.fromJson(stored)
+          .placeProfiles(
+            profileIds: <String>['b'],
+            folderId: 'g1',
+            sectionOrder: <String>['b', 'a'],
+          );
+      expect(edited.toJson(), <String, dynamic>{
+        'layoutVersion': 2,
+        'folders': <dynamic>[
+          <String, dynamic>{
+            'startAtLaunch': true,
+            'uuid': 'g1',
+            'name': 'One',
+            'profileIds': <String>['b', 'a'],
+          },
+        ],
+        'unfiled': <String>[],
+      });
     });
 
     test('fromJson drops folders without a uuid and non-map entries', () {

@@ -56,7 +56,9 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
     if (state is! ProfileListLoaded) {
       return;
     }
-    ProfileStartQueue.remove(event.toDelete);
+    App.navState.currentContext?.read<ProfileStartQueueCubit>().remove(
+      event.toDelete,
+    );
     var profiles = (state as ProfileListLoaded).profiles;
 
     emit(

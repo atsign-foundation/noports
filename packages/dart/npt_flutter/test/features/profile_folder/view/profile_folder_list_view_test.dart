@@ -165,6 +165,9 @@ void main() {
         BlocProvider<ProfilesSelectedCubit>.value(value: mockSelectedCubit),
         BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
         BlocProvider<ProfilesRunningCubit>.value(value: runningCubit),
+        BlocProvider<ProfileStartQueueCubit>(
+          create: (_) => ProfileStartQueueCubit(mockCache),
+        ),
         BlocProvider<ProfileFolderBloc>.value(value: folderBloc),
         BlocProvider<ProfileListBloc>.value(value: mockListBloc),
       ],

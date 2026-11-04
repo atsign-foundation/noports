@@ -197,6 +197,9 @@ void main() {
         providers: [
           BlocProvider<ProfileListBloc>.value(value: mockProfileListBloc),
           BlocProvider<ProfileCacheCubit>.value(value: mockProfileCacheCubit),
+          BlocProvider<ProfileStartQueueCubit>(
+            create: (_) => ProfileStartQueueCubit(mockProfileCacheCubit),
+          ),
           BlocProvider<SyncCubit>.value(value: mockSyncCubit),
           BlocProvider<BackupKeyCubit>.value(value: mockBackupKeyCubit),
           BlocProvider<OnboardingCubit>.value(value: mockOnboardingCubit),

@@ -14,13 +14,13 @@ class ProfileStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    final Widget content = ValueListenableBuilder<List<String>>(
-      valueListenable: ProfileStartQueue.waiting,
-      builder: (BuildContext context, List<String> waiting, Widget? _) =>
+    final Widget content =
+        BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
+      builder: (BuildContext context, ProfileStartQueueState queue) =>
           BlocBuilder<ProfileBloc, ProfileState>(
         builder: (BuildContext context, ProfileState state) {
           log(state.runtimeType.toString());
-          if (waiting.contains(state.uuid) &&
+          if (queue.isWaiting(state.uuid) &&
               (state is ProfileLoaded ||
                   state is ProfileFailedSave ||
                   state is ProfileFailedStart)) {
@@ -30,7 +30,9 @@ class ProfileStatusIndicator extends StatelessWidget {
               color: Colors.grey,
               icon: PhosphorIcons.hourglass(),
               onPressed: () {
-                ProfileStartQueue.remove(<String>[state.uuid]);
+                context
+                    .read<ProfileStartQueueCubit>()
+                    .remove(<String>[state.uuid]);
                 context.read<ProfileBloc>().add(const ProfileStartEvent());
               },
             );

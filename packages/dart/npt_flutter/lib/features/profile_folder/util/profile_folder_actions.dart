@@ -25,11 +25,11 @@ class ProfileFolderActions {
   }
 
   static void startAll(BuildContext context, Iterable<String> uuids) {
-    ProfileStartQueue.add(context.read<ProfileCacheCubit>(), uuids);
+    context.read<ProfileStartQueueCubit>().add(uuids);
   }
 
   static void stopAll(BuildContext context, Iterable<String> uuids) {
-    ProfileStartQueue.remove(uuids);
+    context.read<ProfileStartQueueCubit>().remove(uuids);
     final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
     for (final String uuid in uuids) {
       final ProfileBloc bloc = cache.getProfileBloc(uuid);
@@ -44,6 +44,7 @@ class ProfileFolderActions {
     ProfileFolder folder,
   ) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
+    final ProfileStartQueueCubit queue = context.read<ProfileStartQueueCubit>();
     final ProfileListState profiles = context.read<ProfileListBloc>().state;
     if (!bloc.state.editable || profiles is! ProfileListLoaded) {
       return;
@@ -70,7 +71,7 @@ class ProfileFolderActions {
     );
     if (skipped == null) return;
     // Unchecked ones still waiting from an earlier Start all don't start.
-    ProfileStartQueue.remove(skipped.where(ProfileStartQueue.isWaiting));
+    queue.remove(skipped.where(queue.isWaiting));
     // Re-read here, not before the dialog, in case a sync changed it.
     final ProfileFolderState state = bloc.state;
     if (state is! ProfileFoldersLoaded) return;

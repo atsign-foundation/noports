@@ -130,6 +130,11 @@ void main() {
           body: MultiBlocProvider(
             providers: [
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+              BlocProvider<ProfileStartQueueCubit>(
+                create: (_) => ProfileStartQueueCubit(
+                  ProfileCacheCubit(ProfileRepository()),
+                ),
+              ),
               BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
               BlocProvider<ProfilesSelectedCubit>.value(
                 value: mockProfilesSelectedCubit,
@@ -388,6 +393,11 @@ void main() {
             body: MultiBlocProvider(
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<ProfileStartQueueCubit>(
+                  create: (_) => ProfileStartQueueCubit(
+                    ProfileCacheCubit(ProfileRepository()),
+                  ),
+                ),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
                 BlocProvider<ProfilesSelectedCubit>.value(
                   value: mockProfilesSelectedCubit,
@@ -489,6 +499,11 @@ void main() {
             body: MultiBlocProvider(
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<ProfileStartQueueCubit>(
+                  create: (_) => ProfileStartQueueCubit(
+                    ProfileCacheCubit(ProfileRepository()),
+                  ),
+                ),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
                 BlocProvider<ProfilesSelectedCubit>.value(
                   value: mockProfilesSelectedCubit,

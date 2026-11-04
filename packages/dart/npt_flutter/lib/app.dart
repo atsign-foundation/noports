@@ -101,6 +101,12 @@ class App extends StatelessWidget {
             create: (_) => ProfilesRunningCubit(),
           ),
 
+          /// - Start all's queue, which starts connections one at a time
+          BlocProvider<ProfileStartQueueCubit>(
+            create: (ctx) =>
+                ProfileStartQueueCubit(ctx.read<ProfileCacheCubit>()),
+          ),
+
           /// A cubit which manages the system tray entries
           BlocProvider<TrayCubit>(create: (_) => TrayCubit()),
 

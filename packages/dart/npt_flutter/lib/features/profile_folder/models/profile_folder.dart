@@ -1,5 +1,13 @@
 import 'package:npt_flutter/app.dart';
 
+Map<String, dynamic> _unknownFields(
+  Map<String, dynamic> json,
+  Set<String> known,
+) => <String, dynamic>{
+  for (final MapEntry<String, dynamic> e in json.entries)
+    if (!known.contains(e.key)) e.key: e.value,
+};
+
 final class ProfileFolder extends Loggable {
   final String uuid;
   final String name;
@@ -12,6 +20,9 @@ final class ProfileFolder extends Loggable {
   /// Stored as exclusions, so a connection added later starts by default.
   final List<String> skippedByStartAll;
 
+  /// Stored fields this version doesn't know, written back unchanged.
+  final Map<String, dynamic> unknown;
+
   const ProfileFolder({
     required this.uuid,
     required this.name,
@@ -19,6 +30,7 @@ final class ProfileFolder extends Loggable {
     this.favorite = false,
     this.collapsed = false,
     this.skippedByStartAll = const <String>[],
+    this.unknown = const <String, dynamic>{},
   });
 
   ProfileFolder copyWith({
@@ -35,6 +47,7 @@ final class ProfileFolder extends Loggable {
       favorite: favorite ?? this.favorite,
       collapsed: collapsed ?? this.collapsed,
       skippedByStartAll: skippedByStartAll ?? this.skippedByStartAll,
+      unknown: unknown,
     );
   }
 
@@ -69,6 +82,14 @@ final class ProfileFolder extends Loggable {
   static const String _favoriteKey = 'favorite';
   static const String _collapsedKey = 'collapsed';
   static const String _skippedByStartAllKey = 'skippedByStartAll';
+  static const Set<String> _keys = <String>{
+    _uuidKey,
+    _nameKey,
+    _profileIdsKey,
+    _favoriteKey,
+    _collapsedKey,
+    _skippedByStartAllKey,
+  };
 
   factory ProfileFolder.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawIds = json[_profileIdsKey] is List
@@ -91,10 +112,12 @@ final class ProfileFolder extends Loggable {
           .where(profileIds.contains)
           .toSet()
           .toList(),
+      unknown: _unknownFields(json, _keys),
     );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+    ...unknown,
     _uuidKey: uuid,
     _nameKey: name,
     _profileIdsKey: profileIds,
@@ -111,6 +134,7 @@ final class ProfileFolder extends Loggable {
     favorite,
     collapsed,
     skippedByStartAll,
+    unknown,
   ];
 
   @override
@@ -128,10 +152,14 @@ final class ProfileFolderData extends Loggable {
 
   final bool unfiledCollapsed;
 
+  /// Stored fields this version doesn't know, written back unchanged.
+  final Map<String, dynamic> unknown;
+
   const ProfileFolderData({
     this.folders = const <ProfileFolder>[],
     this.unfiled = const <String>[],
     this.unfiledCollapsed = false,
+    this.unknown = const <String, dynamic>{},
   });
 
   ProfileFolderData copyWith({
@@ -143,6 +171,7 @@ final class ProfileFolderData extends Loggable {
       folders: folders ?? this.folders,
       unfiled: unfiled ?? this.unfiled,
       unfiledCollapsed: unfiledCollapsed ?? this.unfiledCollapsed,
+      unknown: unknown,
     );
   }
 
@@ -354,8 +383,13 @@ final class ProfileFolderData extends Loggable {
   static const String _foldersKey = 'folders';
   static const String _unfiledKey = 'unfiled';
   static const String _unfiledCollapsedKey = 'unfiledCollapsed';
+  static const Set<String> _keys = <String>{
+    _foldersKey,
+    _unfiledKey,
+    _unfiledCollapsedKey,
+  };
 
-  /// Drops folders without a uuid and ignores the legacy `sortByType` field.
+  /// Drops folders without a uuid.
   factory ProfileFolderData.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawFolders = json[_foldersKey] is List
         ? json[_foldersKey] as List<dynamic>
@@ -392,10 +426,12 @@ final class ProfileFolderData extends Loggable {
       folders: folders,
       unfiled: rawUnfiled.whereType<String>().where(seenIds.add).toList(),
       unfiledCollapsed: json[_unfiledCollapsedKey] == true,
+      unknown: _unknownFields(json, _keys),
     );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+    ...unknown,
     _foldersKey: folders
         .map((ProfileFolder folder) => folder.toJson())
         .toList(),
@@ -404,7 +440,7 @@ final class ProfileFolderData extends Loggable {
   };
 
   @override
-  List<Object?> get props => [folders, unfiled, unfiledCollapsed];
+  List<Object?> get props => [folders, unfiled, unfiledCollapsed, unknown];
 
   @override
   String toString() {
