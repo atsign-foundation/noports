@@ -1109,6 +1109,12 @@ abstract class AppLocalizations {
   /// **'Please enter a folder name'**
   String get folderNameRequired;
 
+  /// No description provided for @folderNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name already exists'**
+  String get folderNameTaken;
+
   /// No description provided for @folderNew.
   ///
   /// In en, this message translates to:

@@ -567,6 +567,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderNameRequired => 'Please enter a folder name';
 
   @override
+  String get folderNameTaken => 'A folder with this name already exists';
+
+  @override
   String get folderNew => 'New folder';
 
   @override

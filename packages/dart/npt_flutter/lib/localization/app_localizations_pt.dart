@@ -575,6 +575,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get folderNameRequired => 'Informe um nome para a pasta';
 
   @override
+  String get folderNameTaken => 'Já existe uma pasta com este nome';
+
+  @override
   String get folderNew => 'Nova pasta';
 
   @override
@@ -1821,6 +1824,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get folderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get folderNameTaken => 'Já existe uma pasta com este nome';
 
   @override
   String get folderNew => 'Nova pasta';

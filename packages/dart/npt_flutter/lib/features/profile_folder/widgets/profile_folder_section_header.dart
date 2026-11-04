@@ -19,6 +19,9 @@ class ProfileFolderSectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<String> uuids;
+
+  /// How many the folder holds when [uuids] is only the part a search shows.
+  final int? total;
   final bool collapsed;
   final VoidCallback? onToggleCollapsed;
 
@@ -39,6 +42,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.uuids,
+    this.total,
     required this.collapsed,
     required this.onToggleCollapsed,
     this.folder,
@@ -55,8 +59,8 @@ class ProfileFolderSectionHeader extends StatelessWidget {
     final AppLocalizations strings = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFFAFAFA),
-        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+        color: AppColor.surfaceColor,
+        border: Border(bottom: BorderSide(color: AppColor.dividerColorAlt)),
       ),
       padding: const EdgeInsets.symmetric(
         vertical: Sizes.p2,
@@ -97,7 +101,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
               ],
             ),
           ),
-          _StartStopButtons(uuids: uuids, folder: folder),
+          _StartStopButtons(uuids: uuids, total: total, folder: folder),
           SizedBox(
             width: _slotWidth,
             child: folder == null
@@ -144,8 +148,13 @@ class ProfileFolderSectionHeader extends StatelessWidget {
 
 class _StartStopButtons extends StatelessWidget {
   final List<String> uuids;
+  final int? total;
   final ProfileFolder? folder;
-  const _StartStopButtons({required this.uuids, required this.folder});
+  const _StartStopButtons({
+    required this.uuids,
+    required this.total,
+    required this.folder,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -175,8 +184,11 @@ class _StartStopButtons extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 IconButton(
-                  tooltip: startable.length < uuids.length
-                      ? strings.folderStartSome(startable.length, uuids.length)
+                  tooltip: startable.length < (total ?? uuids.length)
+                      ? strings.folderStartSome(
+                          startable.length,
+                          total ?? uuids.length,
+                        )
                       : strings.folderStartAll,
                   onPressed: canStart
                       ? () => ProfileFolderActions.startAll(context, startable)

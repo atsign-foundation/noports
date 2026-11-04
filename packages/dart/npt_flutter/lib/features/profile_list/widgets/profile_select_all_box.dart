@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
@@ -11,11 +12,17 @@ class ProfileSelectAllBox extends StatelessWidget {
     final ProfileListFilterState filter = context
         .watch<ProfileListFilterCubit>()
         .state;
+    final ProfileFolderState folders = context.watch<ProfileFolderBloc>().state;
+    // Rows a search or a collapsed folder hides aren't selected.
+    bool shownRow(String uuid) =>
+        filter.matches(uuid) &&
+        (filter.searching ||
+            folders is! ProfileFoldersLoaded ||
+            !folders.data.isCollapsed(uuid));
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
-        // While searching, only the connections shown are selected.
         final List<String>? shown = list is ProfileListLoaded
-            ? list.profiles.where(filter.matches).toList()
+            ? list.profiles.where(shownRow).toList()
             : null;
         return BlocSelector<
           ProfilesSelectedCubit,
@@ -51,11 +58,7 @@ class ProfileSelectAllBox extends StatelessWidget {
                     context.read<ProfilesSelectedCubit>().deselectAll();
                   case true: // None checked transitions to true with tristate: true
                   case false: // Some checked transitions to false with tristate: true
-                    final ProfilesSelectedCubit selected = context
-                        .read<ProfilesSelectedCubit>();
-                    filter.searching
-                        ? selected.selectOnly(shown!)
-                        : selected.selectAll();
+                    context.read<ProfilesSelectedCubit>().selectOnly(shown!);
                 }
               },
             );

@@ -4,11 +4,17 @@ import 'package:npt_flutter/styles/app_color.dart';
 
 /// Prompts for a folder name. Pops with the trimmed name, or null on cancel.
 class ProfileFolderNameDialog extends StatefulWidget {
+  static const int maxLength = 64;
+
   final String title;
   final String? initialName;
+
+  /// Refused, ignoring case.
+  final Iterable<String> takenNames;
   const ProfileFolderNameDialog({
     required this.title,
     this.initialName,
+    this.takenNames = const <String>[],
     super.key,
   });
 
@@ -49,11 +55,15 @@ class _ProfileFolderNameDialogState extends State<ProfileFolderNameDialog> {
           key: const Key('ProfileFolderNameDialog-TextFormField'),
           controller: _controller,
           autofocus: true,
-          maxLength: 64,
+          maxLength: ProfileFolderNameDialog.maxLength,
           decoration: InputDecoration(hintText: strings.folderName),
           validator: (String? value) {
             if (value == null || value.trim().isEmpty) {
               return strings.folderNameRequired;
+            }
+            final String name = value.trim().toLowerCase();
+            if (widget.takenNames.any((String n) => n.toLowerCase() == name)) {
+              return strings.folderNameTaken;
             }
             return null;
           },

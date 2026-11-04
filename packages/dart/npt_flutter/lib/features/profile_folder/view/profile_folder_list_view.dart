@@ -147,6 +147,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     // Favorites first keeps a folder on its side of the favorites.
     bool canPrecede(ProfileFolder a, ProfileFolder b) =>
         (widget.compareFolders?.call(a, b) ?? 0) <= 0;
+    final Set<String> loaded = widget.profiles.toSet();
     final bool dimRows = _drag?.isFolder ?? false;
     // Item count must stay fixed during a drag or it gets cancelled, so the
     // empty unfiled header stays in the list and only shows on a drag.
@@ -168,6 +169,10 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
             title: section.title,
             icon: section.icon,
             uuids: section.uuids,
+            // A search shows some of a folder; Start all starts only those.
+            total: widget.searching && folder != null
+                ? folder.profileIds.where(loaded.contains).length
+                : null,
             folder: folder,
             collapsed: layout.collapsed.contains(section.id),
             // Folders stay open while searching and move only in manual order.

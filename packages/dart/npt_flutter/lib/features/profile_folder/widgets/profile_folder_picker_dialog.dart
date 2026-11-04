@@ -26,10 +26,16 @@ final class ProfileFolderPickExisting extends ProfileFolderPick {
 /// or null when dismissed.
 class ProfileFolderPickerDialog extends StatelessWidget {
   final List<ProfileFolder> folders;
+
+  /// Null is "No folder".
   final String? currentFolderId;
+
+  /// False when the connections are in different places: none is marked.
+  final bool hasCurrent;
   const ProfileFolderPickerDialog({
     required this.folders,
     this.currentFolderId,
+    this.hasCurrent = true,
     super.key,
   });
 
@@ -44,7 +50,7 @@ class ProfileFolderPickerDialog extends StatelessWidget {
             key: Key('ProfileFolderPickerDialog-${folder.uuid}'),
             icon: PhosphorIcons.folder(),
             label: folder.name,
-            selected: folder.uuid == currentFolderId,
+            selected: hasCurrent && folder.uuid == currentFolderId,
             onPressed: () => Navigator.of(
               context,
             ).pop(ProfileFolderPickExisting(folder.uuid)),
@@ -54,7 +60,7 @@ class ProfileFolderPickerDialog extends StatelessWidget {
           key: const Key('ProfileFolderPickerDialog-none'),
           icon: PhosphorIcons.folderDashed(),
           label: strings.folderNone,
-          selected: currentFolderId == null,
+          selected: hasCurrent && currentFolderId == null,
           onPressed: () =>
               Navigator.of(context).pop(const ProfileFolderPickNone()),
         ),

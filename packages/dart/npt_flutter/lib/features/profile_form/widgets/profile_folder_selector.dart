@@ -70,10 +70,15 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
   Future<void> _create() async {
     final AppLocalizations strings = AppLocalizations.of(context)!;
     final ProfileFormFolderCubit cubit = context.read<ProfileFormFolderCubit>();
+    final ProfileFolderState folders = context.read<ProfileFolderBloc>().state;
     final String? name = await showDialog<String>(
       context: context,
-      builder: (BuildContext _) =>
-          ProfileFolderNameDialog(title: strings.folderNew),
+      builder: (BuildContext _) => ProfileFolderNameDialog(
+        title: strings.folderNew,
+        takenNames: folders is ProfileFoldersLoaded
+            ? folders.folders.map((ProfileFolder f) => f.name)
+            : const <String>[],
+      ),
     );
     if (name != null && name.isNotEmpty) {
       cubit.create(name);
@@ -100,7 +105,10 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         )) {
       return matches;
     }
-    final String name = filter.trim();
+    final String trimmed = filter.trim();
+    final String name = trimmed.length > ProfileFolderNameDialog.maxLength
+        ? trimmed.substring(0, ProfileFolderNameDialog.maxLength)
+        : trimmed;
     return <DropdownMenuEntry<String>>[
       ...matches,
       DropdownMenuEntry<String>(

@@ -538,6 +538,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get folderNameRequired => '请输入文件夹名称';
 
   @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
   String get folderNew => '新建文件夹';
 
   @override
@@ -1707,6 +1710,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get folderNameRequired => '请输入文件夹名称';
 
   @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
   String get folderNew => '新建文件夹';
 
   @override
@@ -2874,6 +2880,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get folderNameRequired => '請輸入資料夾名稱';
+
+  @override
+  String get folderNameTaken => '已有同名資料夾';
 
   @override
   String get folderNew => '新增資料夾';

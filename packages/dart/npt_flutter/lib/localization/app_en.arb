@@ -165,6 +165,7 @@
    "folderMoveUp": "Move up",
    "folderName": "Folder name",
    "folderNameRequired": "Please enter a folder name",
+   "folderNameTaken": "A folder with this name already exists",
    "folderNew": "New folder",
    "folderNone": "No folder",
    "folderRename": "Rename",

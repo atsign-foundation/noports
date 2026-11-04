@@ -577,6 +577,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get folderNameRequired => 'Introduce un nombre de carpeta';
 
   @override
+  String get folderNameTaken => 'Ya existe una carpeta con este nombre';
+
+  @override
   String get folderNew => 'Nueva carpeta';
 
   @override

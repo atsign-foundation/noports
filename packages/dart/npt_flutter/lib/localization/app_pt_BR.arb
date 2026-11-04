@@ -165,6 +165,7 @@
   "folderMoveUp": "Mover para cima",
   "folderName": "Nome da pasta",
   "folderNameRequired": "Informe um nome para a pasta",
+  "folderNameTaken": "Já existe uma pasta com este nome",
   "folderNew": "Nova pasta",
   "folderNone": "Sem pasta",
   "folderRename": "Renomear",

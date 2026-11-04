@@ -165,6 +165,7 @@
   "folderMoveUp": "上移",
   "folderName": "文件夹名称",
   "folderNameRequired": "请输入文件夹名称",
+  "folderNameTaken": "已存在同名文件夹",
   "folderNew": "新建文件夹",
   "folderNone": "无文件夹",
   "folderRename": "重命名",

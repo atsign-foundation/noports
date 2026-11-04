@@ -93,13 +93,16 @@ class ProfileFolderActions {
 
   static Future<void> createFolder(BuildContext context) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
-    if (!bloc.state.editable) return;
+    final ProfileFolderState state = bloc.state;
+    if (state is! ProfileFoldersLoaded || !state.editable) return;
     final AppLocalizations strings = AppLocalizations.of(context)!;
 
     final String? name = await showDialog<String>(
       context: context,
-      builder: (BuildContext _) =>
-          ProfileFolderNameDialog(title: strings.folderNew),
+      builder: (BuildContext _) => ProfileFolderNameDialog(
+        title: strings.folderNew,
+        takenNames: state.folders.map((ProfileFolder f) => f.name),
+      ),
     );
     if (name == null || name.isEmpty) return;
     bloc.add(ProfileFolderCreateEvent(uuid: Uuid.generate(), name: name));
@@ -110,7 +113,8 @@ class ProfileFolderActions {
     ProfileFolder folder,
   ) async {
     final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
-    if (!bloc.state.editable) return;
+    final ProfileFolderState state = bloc.state;
+    if (state is! ProfileFoldersLoaded || !state.editable) return;
     final AppLocalizations strings = AppLocalizations.of(context)!;
 
     final String? name = await showDialog<String>(
@@ -118,6 +122,9 @@ class ProfileFolderActions {
       builder: (BuildContext _) => ProfileFolderNameDialog(
         title: strings.folderRenameTitle,
         initialName: folder.name,
+        takenNames: state.folders
+            .where((ProfileFolder f) => f.uuid != folder.uuid)
+            .map((ProfileFolder f) => f.name),
       ),
     );
     if (name == null || name.isEmpty || name == folder.name) return;
@@ -137,13 +144,15 @@ class ProfileFolderActions {
     final List<String> ids = profileIds.toList();
     if (ids.isEmpty) return false;
 
+    final Set<String?> current = <String?>{
+      for (final String id in ids) state.data.folderForProfile(id)?.uuid,
+    };
     final ProfileFolderPick? pick = await showDialog<ProfileFolderPick>(
       context: context,
       builder: (BuildContext _) => ProfileFolderPickerDialog(
         folders: state.folders,
-        currentFolderId: ids.length == 1
-            ? state.data.folderForProfile(ids.first)?.uuid
-            : null,
+        currentFolderId: current.length == 1 ? current.single : null,
+        hasCurrent: current.length == 1,
       ),
     );
     if (pick == null) return false;
@@ -166,8 +175,10 @@ class ProfileFolderActions {
         if (!context.mounted) return false;
         final String? name = await showDialog<String>(
           context: context,
-          builder: (BuildContext _) =>
-              ProfileFolderNameDialog(title: strings.folderNew),
+          builder: (BuildContext _) => ProfileFolderNameDialog(
+            title: strings.folderNew,
+            takenNames: state.folders.map((ProfileFolder f) => f.name),
+          ),
         );
         if (name == null || name.isEmpty) return false;
         bloc.add(

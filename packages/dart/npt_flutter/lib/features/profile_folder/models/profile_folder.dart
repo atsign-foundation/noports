@@ -182,6 +182,12 @@ final class ProfileFolderData extends Loggable {
     return null;
   }
 
+  /// Whether [profileId]'s section is collapsed, so its row isn't shown.
+  /// Without folders there are no sections to collapse.
+  bool isCollapsed(String profileId) =>
+      folders.isNotEmpty &&
+      (folderForProfile(profileId)?.collapsed ?? unfiledCollapsed);
+
   ProfileFolder? folderById(String folderId) {
     for (final ProfileFolder folder in folders) {
       if (folder.uuid == folderId) return folder;

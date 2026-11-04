@@ -40,7 +40,7 @@ final class ProfileListFilterState extends Loggable {
 
   /// A folder whose name matches shows all of its connections.
   bool folderMatches(ProfileFolder folder) =>
-      searching && folder.name.toLowerCase().contains(_needle);
+      searching && nameSortKey(folder.name).contains(_needle);
 
   bool get anyFolderMatches => folders.any(folderMatches);
 
@@ -52,13 +52,14 @@ final class ProfileListFilterState extends Loggable {
     final Profile? profile = profiles[uuid];
     if (profile == null) return false;
     final String needle = _needle;
-    return profile.displayName.toLowerCase().contains(needle) ||
-        '${profile.deviceName}${profile.sshnpdAtsign ?? ''}'
-            .toLowerCase()
-            .contains(needle);
+    return nameSortKey(profile.displayName).contains(needle) ||
+        nameSortKey(
+          '${profile.deviceName}${profile.sshnpdAtsign ?? ''}',
+        ).contains(needle);
   }
 
-  String get _needle => query.trim().toLowerCase();
+  /// Folded like the name sort, so "ecran" finds "Écran".
+  String get _needle => nameSortKey(query.trim());
 
   /// Null keeps the manual order.
   int Function(ProfileFolder a, ProfileFolder b)? get folderOrder {

@@ -165,6 +165,7 @@
   "folderMoveUp": "Subir",
   "folderName": "Nombre de la carpeta",
   "folderNameRequired": "Introduce un nombre de carpeta",
+  "folderNameTaken": "Ya existe una carpeta con este nombre",
   "folderNew": "Nueva carpeta",
   "folderNone": "Sin carpeta",
   "folderRename": "Renombrar",
