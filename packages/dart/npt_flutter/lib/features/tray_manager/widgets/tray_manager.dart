@@ -134,7 +134,7 @@ class _TrayManagerState extends State<TrayManager>
 
   @override
   void dispose() {
-    windowManager.addListener(this);
+    windowManager.removeListener(this);
     trayManager.removeListener(this);
     super.dispose();
   }

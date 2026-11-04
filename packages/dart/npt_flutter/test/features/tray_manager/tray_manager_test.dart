@@ -12,6 +12,7 @@ import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../favorite/bloc/favorite_bloc_test.mocks.dart';
 import '../profile/bloc/profile_bloc_test.mocks.dart';
@@ -179,6 +180,28 @@ void main() {
             'so the tray must not close it',
       );
       expect(cache.getProfileBloc(uuid), same(bloc));
+    });
+  });
+
+  group('Given the tray manager listening to window events', () {
+    testWidgets('when it is disposed, then it no longer listens to them', (
+      tester,
+    ) async {
+      await pumpTrayManager(tester);
+      final trayManagerState = tester.state(find.byType(TrayManager));
+      expect(
+        windowManager.listeners,
+        contains(trayManagerState),
+        reason: 'the test must start with the tray manager listening',
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      expect(
+        windowManager.listeners,
+        isNot(contains(trayManagerState)),
+        reason: 'a disposed tray manager must not listen to window events',
+      );
     });
   });
 }
