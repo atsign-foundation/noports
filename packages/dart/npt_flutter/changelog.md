@@ -21,13 +21,14 @@
   its status indicator in the main window, not only from the tray.
 - FIX: Signing out stops every profile, including ones still connecting or
   waiting to retry, instead of leaving them retrying in the background.
-- FIX: Deleting the selected profiles no longer deletes a keep-alive profile
-  that is waiting to retry, which then kept retrying in the background.
+- FIX: Deleting the selected profiles leaves running ones alone, including a
+  keep-alive profile waiting to retry and one started while the delete was
+  being confirmed.
 - FIX: Confirming the connected profiles prompt when switching, adding or
   signing out of an atSign stops keep-alive profiles, instead of them
   reconnecting a few seconds later.
-- FIX: Deleting a profile stops its connection, including one started from
-  the tray while the delete was being confirmed.
+- FIX: Deleting a profile that is still connected stops its connection,
+  instead of leaving it running in the background.
 - FIX: The tray menu updates when a favourite profile's name or status
   changes, instead of waiting for another change to refresh it.
 

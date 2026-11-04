@@ -169,4 +169,115 @@ void main() {
       }
     });
   });
+
+  group('Given a profile selected for bulk delete', () {
+    testWidgets('when it starts running before the delete is confirmed, then '
+        'it is not deleted', (tester) async {
+      final repository = MockProfileRepository();
+      when(
+        repository.getProfile(uuid, useCache: true),
+      ).thenAnswer((_) async => profile);
+      when(repository.deleteProfile(any)).thenAnswer((_) async => true);
+      final bloc = ProfileBloc(
+        repository,
+        uuid,
+        getAtClient: FakeAtClient.new,
+        createNpt: ({required atClient, required params}) =>
+            // NOTE: longer than the test, or the connector's own grace period
+            // ends the session
+            FakeNpt(connectorTimeout: const Duration(minutes: 10)),
+      );
+      final runningCubit = ProfilesRunningCubit();
+      final listBloc = ProfileListBloc(repository);
+      final selectedCubit = ProfilesSelectedCubit();
+      final favoriteBloc = FavoriteBloc(MockFavoriteRepository());
+      final cache = ProfileCacheCubit(repository, createBloc: (_, _) => bloc);
+      addTearDown(runningCubit.close);
+      addTearDown(listBloc.close);
+      addTearDown(selectedCubit.close);
+      addTearDown(favoriteBloc.close);
+      addTearDown(cache.close);
+
+      try {
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<LogsCubit>(create: (_) => LogsCubit()),
+              BlocProvider<EnableLoggingCubit>(
+                create: (_) => EnableLoggingCubit(),
+              ),
+              BlocProvider<SettingsBloc>.value(
+                value: FakeSettingsBloc(SettingsLoaded(settings: settings)),
+              ),
+              BlocProvider<ProfilesRunningCubit>.value(value: runningCubit),
+              BlocProvider<ProfileListBloc>.value(value: listBloc),
+              BlocProvider<ProfilesSelectedCubit>.value(value: selectedCubit),
+              BlocProvider<FavoriteBloc>.value(value: favoriteBloc),
+              BlocProvider<ProfileCacheCubit>.value(value: cache),
+            ],
+            child: MaterialApp(
+              navigatorKey: App.navState,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const Scaffold(body: ProfileSelectedDeleteButton()),
+            ),
+          ),
+        );
+
+        expect(cache.getProfileBloc(uuid), same(bloc));
+        bloc.add(const ProfileLoadEvent());
+        listBloc.add(const ProfileListUpdateEvent([uuid]));
+        await pumpUntil(
+          tester,
+          () =>
+              bloc.state is ProfileLoaded &&
+              listBloc.state is ProfileListLoaded,
+          reason: 'the profile and the list must load',
+        );
+
+        selectedCubit.select(uuid);
+        await pumpUntil(
+          tester,
+          () => find.text('Delete').evaluate().isNotEmpty,
+          reason: 'a selection must show the delete button',
+        );
+        await tester.tap(find.text('Delete'));
+        await pumpUntil(
+          tester,
+          () => find.widgetWithText(TextButton, 'Delete').evaluate().isNotEmpty,
+          reason: 'the delete button must ask for confirmation',
+        );
+
+        bloc.add(const ProfileStartEvent());
+        await pumpUntil(
+          tester,
+          () =>
+              bloc.state is ProfileStarted &&
+              runningCubit.state.socketConnectors[uuid] != null,
+          reason: 'the profile must be running before the delete is confirmed',
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+        await tester.pump();
+        await tester.pump();
+
+        expect(
+          (listBloc.state as ProfileListLoaded).profiles,
+          contains(uuid),
+          reason:
+              'running profiles are left out of a bulk delete, as the '
+              'confirmation says, including one that started while it was '
+              'open',
+        );
+        verifyNever(repository.deleteProfile(uuid));
+      } finally {
+        var closed = false;
+        unawaited(bloc.close().then((_) => closed = true));
+        for (var i = 0; i < 500 && !closed; i++) {
+          await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+      }
+    });
+  });
 }
