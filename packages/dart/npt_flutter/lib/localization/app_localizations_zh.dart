@@ -217,9 +217,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
 
   @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connections => '连接';
 
   @override
@@ -613,9 +610,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 启动超时';
-
-  @override
   String get ok => '确定';
 
   @override
@@ -817,11 +811,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -1270,9 +1259,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
 
   @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connections => '连接';
 
   @override
@@ -1666,9 +1652,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 启动超时';
-
-  @override
   String get ok => '确定';
 
   @override
@@ -1870,11 +1853,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -2323,9 +2301,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get connectionRetrying => '正在重試連線 (保持運作)...';
 
   @override
-  String get connectionTimedOut => '連線逾時，將重試...';
-
-  @override
   String get connections => '連線';
 
   @override
@@ -2719,9 +2694,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 啟動逾時';
-
-  @override
   String get ok => '確定';
 
   @override
@@ -2922,11 +2894,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新傳送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重試失敗：$errorMessage，將重試...';
-  }
 
   @override
   String get roleAddNew => '新增角色';

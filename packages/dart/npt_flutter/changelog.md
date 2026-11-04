@@ -9,6 +9,18 @@
 - FIX: The activation dialog no longer stays on its spinner when the registrar
   fails or doesn't answer: after an error, or 30 seconds without an answer, it
   says the request failed and closes or returns to the PIN step.
+- FIX: Tunnels reconnect automatically after the daemon's device reboots,
+  instead of leaving the profile stuck on "starting" until the app is
+  relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a
+  successful connection.
+- FIX: Keep-alive backs off when a tunnel keeps failing to start, from 5
+  seconds up to a minute between attempts, and stopping takes effect at once
+  rather than after the wait.
+- FIX: A profile that is connecting, or waiting to retry, can be stopped from
+  its status indicator in the main window, not only from the tray.
+- FIX: Signing out stops every profile, including ones still connecting or
+  waiting to retry, instead of leaving them retrying in the background.
 
 ## 1.9.6+33
 

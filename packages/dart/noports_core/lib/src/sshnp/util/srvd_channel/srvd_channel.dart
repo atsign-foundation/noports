@@ -6,6 +6,7 @@ import 'package:at_client/at_client_mixins.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/subscription_tracking.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/srv.dart';
@@ -26,7 +27,11 @@ enum SrvdAck {
 }
 
 abstract class SrvdChannel<T>
-    with AsyncInitialization, AtClientBindings, ApkamSigning {
+    with
+        AsyncInitialization,
+        AtClientBindings,
+        ApkamSigning,
+        SubscriptionTracking {
   @override
   final logger = AtSignLogger(' SrvdChannel ');
 
@@ -196,6 +201,9 @@ abstract class SrvdChannel<T>
   @override
   Future<void> initialize() async {
     Future publishPSKFuture = publishPublicSigningKey();
+    // NOTE: awaited only after the relay answers - see the same guard on the
+    // feature check in Npt.initialize. The await below still sees the error.
+    publishPSKFuture.ignore();
 
     await getHostAndPortFromSrvd();
 
@@ -353,61 +361,63 @@ abstract class SrvdChannel<T>
     Duration timeout = DefaultArgs.relayResponseTimeoutDuration,
   }) async {
     srvdAck = SrvdAck.notAcknowledged;
-    subscribe(
-      regex: '$sessionId.${Srvd.namespace}@',
-      shouldDecrypt: true,
-    ).listen((notification) async {
-      if (notification.from.toAtsign() != params.srvdAtSign.toAtsign()) {
-        logger.warning(
-          'Ignoring a response for session $sessionId'
-          ' from ${notification.from}, which is not ${params.srvdAtSign}',
-        );
-        return;
-      }
-      if (acked.isCompleted) {
-        logger.warning(
-          'Got additional relay response ${notification.value} - ignoring',
-        );
-        return;
-      }
+    track(
+      subscribe(
+        regex: '$sessionId.${Srvd.namespace}@',
+        shouldDecrypt: true,
+      ).listen((notification) async {
+        if (notification.from.toAtsign() != params.srvdAtSign.toAtsign()) {
+          logger.warning(
+            'Ignoring a response for session $sessionId'
+            ' from ${notification.from}, which is not ${params.srvdAtSign}',
+          );
+          return;
+        }
+        if (acked.isCompleted) {
+          logger.warning(
+            'Got additional relay response ${notification.value} - ignoring',
+          );
+          return;
+        }
 
-      if (notification.key.contains('nack.$sessionId')) {
-        logger.warning('Got NACK response from relay: ${notification.key}');
-        srvdNackMessage = notification.value.toString();
+        if (notification.key.contains('nack.$sessionId')) {
+          logger.warning('Got NACK response from relay: ${notification.key}');
+          srvdNackMessage = notification.value.toString();
 
-        srvdAck = SrvdAck.acknowledgedWithErrors;
+          srvdAck = SrvdAck.acknowledgedWithErrors;
+          acked.complete();
+
+          return;
+        }
+
+        String notifVal = notification.value.toString();
+        logger.info('Received from srvd: $notifVal');
+        if (notifVal.startsWith('{')) {
+          _relayResponse = RelayResponse.fromJson(jsonDecode(notifVal));
+        } else {
+          // legacy response format
+          List results = notifVal.split(',');
+          _relayResponse = RelayResponse(
+            address: results[0],
+            portA: int.parse(results[1]),
+            portB: int.parse(results[2]),
+            rvdNonce: results[3],
+            supportsEventLogging: false,
+          );
+        }
+
+        srvdAck = SrvdAck.acknowledged;
+        fetched = true;
         acked.complete();
 
-        return;
-      }
-
-      String notifVal = notification.value.toString();
-      logger.info('Received from srvd: $notifVal');
-      if (notifVal.startsWith('{')) {
-        _relayResponse = RelayResponse.fromJson(jsonDecode(notifVal));
-      } else {
-        // legacy response format
-        List results = notifVal.split(',');
-        _relayResponse = RelayResponse(
-          address: results[0],
-          portA: int.parse(results[1]),
-          portB: int.parse(results[2]),
-          rvdNonce: results[3],
-          supportsEventLogging: false,
+        logger.info(
+          'Received from srvd:'
+          ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
+          ' rvdNonce: $rvdNonce',
         );
-      }
-
-      srvdAck = SrvdAck.acknowledged;
-      fetched = true;
-      acked.complete();
-
-      logger.info(
-        'Received from srvd:'
-        ' rvdHost:clientPort:daemonPort $rvdHost:$clientPort:$daemonPort'
-        ' rvdNonce: $rvdNonce',
-      );
-      logger.info('Daemon will connect to: $rvdHost:$daemonPort');
-    });
+        logger.info('Daemon will connect to: $rvdHost:$daemonPort');
+      }),
+    );
     logger.info('Started listening for srvd response');
 
     late AtKey rvdRequestKey;

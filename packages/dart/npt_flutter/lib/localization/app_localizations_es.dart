@@ -231,10 +231,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reintentando la conexión (mantener activa)...';
 
   @override
-  String get connectionTimedOut =>
-      'Tiempo de espera de la conexión agotado, se reintentará...';
-
-  @override
   String get connections => 'Conexiones';
 
   @override
@@ -655,9 +651,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Tiempo de espera de inicio de Npt agotado';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -873,11 +866,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'El reintento falló: $errorMessage, se reintentará...';
-  }
 
   @override
   String get roleAddNew => 'Agregar Nuevo Rol';
