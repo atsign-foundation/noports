@@ -283,7 +283,7 @@ class NoPortsOnboardingUtil {
           message: describeOnboardingError(state.error, strings),
         );
       }
-      await _backUpToKeychain(atsign, atKeysIo);
+      await backUpToKeychain(atsign, atKeysIo, accepted: state.isOnline);
       return NoPortsOnboardingResult.success(atsign: atsign);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(
@@ -319,12 +319,47 @@ class NoPortsOnboardingUtil {
     );
   }
 
-  /// Copies the keys a file sign in opened on into the keychain, unless it
-  /// already holds the atsign.
-  Future<void> _backUpToKeychain(Atsign atsign, AtKeysIo source) async {
-    final held = await KeychainStorage().getAllAtsigns();
-    if (held.contains(atsign)) return;
-    await KeychainAtKeysIo().write(atsign, await source.read(atsign));
+  /// Copies the keys a file sign-in opened on into the keychain, and returns
+  /// the ids of the enrollment requests it dropped.
+  ///
+  /// An entry holding a credential for [atsign] is kept. One holding only
+  /// requests this device was waiting on is replaced once the atServer has
+  /// [accepted] the file's keys, and the app log names each request dropped,
+  /// to be denied in the Authenticator; until then it is kept. The entry is
+  /// read, judged and replaced under the keychain's write lock.
+  @visibleForTesting
+  static Future<List<String>> backUpToKeychain(
+    Atsign atsign,
+    AtKeysIo source, {
+    required bool accepted,
+    KeychainStorage? keychain,
+  }) async {
+    final storage = keychain ?? KeychainStorage();
+    final dropped = await storage.writing(() async {
+      AtKeys? held;
+      try {
+        held = await storage.getAtsign(atsign);
+      } on AtKeyException {
+        held = null;
+      }
+      if (held != null) {
+        if (held.holdsAuthenticationMaterial || !accepted) return <String>[];
+        await storage.removeAtsignFromKeychain(atsign);
+      }
+      await KeychainAtKeysIo(
+        keychainStorage: storage,
+      ).write(atsign, await source.read(atsign));
+      return held?.pendingEnrollmentIds.toList() ?? <String>[];
+    });
+    if (dropped.isNotEmpty) {
+      App.log(
+        'Signed in to $atsign with an atKeys file, and dropped the pending'
+                ' enrollment request(s) ${dropped.join(', ')} from the'
+                ' keychain: deny each under Requests in the Authenticator'
+            .loggable,
+      );
+    }
+    return dropped;
   }
 
   /// Returns true if the user completed the selection and wants to proceed with onboarding. Returns false if the user cancelled the selection.

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_error.dart';
+import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
 import 'package:npt_flutter/features/onboarding/widgets/onboarding_apkam_dialog.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/at_client_methods.dart';
@@ -1027,6 +1028,49 @@ void main() {
       );
     });
 
+    testWidgets("A Cancel settling after a file sign-in leaves the file's keys alone:"
+        " when e1's Cancel finishes after a sign-in from an atKeys file has"
+        " replaced the entry with its credential, then the file's keys are"
+        ' left alone', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keysDropped = Completer<void>();
+      pending.keysDropped = keysDropped.future;
+      final keychain = _Keychain();
+      await _open(tester, pending, keychain);
+
+      await _confirmCancel(tester);
+      Navigator.of(App.navState.currentContext!).pop();
+      await _settle(tester);
+      await NoPortsOnboardingUtil.backUpToKeychain(
+        '@alice'.toAtsign(),
+        InMemoryAtKeysIo.holding('@alice', _approvedKeys(enrollmentId: 'e0')),
+        accepted: true,
+        keychain: keychain,
+      );
+      final fileKeys = keychain.entries['@alice'];
+      final writes = keychain.writes;
+      expect(
+        fileKeys?.enrollmentToAuthenticateAs(),
+        'e0',
+        reason: "the sign-in put the file's keys in the keychain",
+      );
+      keysDropped.complete();
+      await _settle(tester);
+
+      expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
+      expect(
+        keychain.entries['@alice'],
+        same(fileKeys),
+        reason: "the file's keys are left alone",
+      );
+      expect(
+        keychain.writes,
+        writes,
+        reason: 'the Cancel writes nothing to the keychain',
+      );
+    });
+
     for (final (found, resumes) in <(String, bool)>[
       ('one', true),
       ('none', false),
@@ -1450,6 +1494,12 @@ class _Keychain extends Fake implements KeychainStorage {
     if (_writeSections == 0) removalsOutsideWriteSection++;
     writes++;
     entries.remove(atSign);
+  }
+
+  @override
+  Future<void> appendAtKeysToKeychain({required AtKeys keys}) async {
+    writes++;
+    entries[keys.atsign.toString()] = keys;
   }
 }
 

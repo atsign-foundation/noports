@@ -29,6 +29,11 @@
   denied in the Authenticator. A request the manager revokes returns to the
   OTP prompt and says so. A wait that ends because the atServer can't be
   reached keeps the request instead of reporting it denied.
+- FIX: Signing in with an atKeys file backs its keys up to the keychain even
+  when the keychain still holds an enrollment request this device was waiting
+  on, once the atServer has accepted the file's keys. The request's pending
+  keys are dropped, and the app log names it so it can be denied in the
+  Authenticator. Until now every later sign-in went back to the old request.
 - CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
   activating and enrolling keep using the app's existing local store.
 
