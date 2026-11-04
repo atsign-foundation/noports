@@ -98,7 +98,7 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
 
   @race
   Scenario: A confirmed Cancel after the approval was written lets the approval stand
-    Given the confirmation, and the approval of e1 written to the keychain just before cancel runs
+    Given the confirmation, and the approval of e1 written to the keychain before cancel removes e1's pending keys: just before cancel runs, or while it runs
     When the user confirms
     Then once the wait has ended, the dialog opens a client on the approved keys and signs in with it; the approved keys stay as written and no OTP is asked for
 

@@ -781,6 +781,52 @@ void main() {
       );
     });
 
+    testWidgets('A confirmed Cancel after the approval was written lets the approval stand:'
+        ' when the approval is written while cancel is removing the keys,'
+        ' then the approval stands and the approved client is the one the app'
+        ' uses', (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keysDropped = Completer<void>();
+      pending.keysDropped = keysDropped.future;
+      final keychain = _Keychain();
+      final flows = _Flows(pending);
+      final client = _Client();
+      flows.onOpen = () async => client;
+      final dialog = await _open(tester, pending, keychain, flows: flows);
+
+      await _confirmCancel(tester);
+      expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
+      keychain.entries['@alice'] = _approvedKeys();
+      pending.approved = true;
+      keysDropped.complete();
+      await _settle(tester);
+
+      expect(flows.opens, 1, reason: 'a client is opened on the approved keys');
+      expect(
+        keychain.writes,
+        0,
+        reason: 'the approved keys stay as the approval wrote them',
+      );
+      expect(
+        find.text(_strings.requestAbandoned('e1')),
+        findsNothing,
+        reason: 'the request is not reported as abandoned',
+      );
+      expect(
+        AtClientMethods.currentClientOrNull(),
+        same(client),
+        reason: 'the client opened on the approved keys is adopted',
+      );
+      await tester.pump(const Duration(seconds: 3));
+      await _settle(tester);
+      expect(
+        dialog.result?.status,
+        NoPortsOnboardingResultStatus.success,
+        reason: 'the dialog closes as approved',
+      );
+    });
+
     testWidgets('A confirmed Cancel abandons the request:'
         " when the keychain holds another enrollment's live keys for the"
         ' atSign, then no client is opened, the dialog asks for a new OTP,'
