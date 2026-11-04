@@ -533,6 +533,14 @@ void main() {
         0,
         reason: 'the entry is removed in the write section that read it',
       );
+      expect(keychain.reads, greaterThan(0), reason: 'the entry is read');
+      expect(
+        keychain.readsOutsideWriteSection,
+        0,
+        reason:
+            'every read the Cancel makes is inside the write section that'
+            ' removes the entry',
+      );
       expect(
         AtClientMethods.currentClientOrNull(),
         isNull,
@@ -922,6 +930,45 @@ void main() {
       expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
     });
 
+    testWidgets('A request filed while a Cancel settles is left alone:'
+        ' when a new request is filed for the atSign while the dialog reads'
+        ' the entry of a Cancel the user has since left, then the new'
+        " request's keys are left alone", (tester) async {
+      await _pumpApp(tester);
+      final pending = _Pending();
+      final keysDropped = Completer<void>();
+      pending.keysDropped = keysDropped.future;
+      final keychain = _Keychain();
+      final readHeld = Completer<void>();
+      pending.whenCancelled = () => keychain.holdNextRead = readHeld;
+      await _open(tester, pending, keychain);
+
+      await _confirmCancel(tester);
+      Navigator.of(App.navState.currentContext!).pop();
+      await _settle(tester);
+      keysDropped.complete();
+      await _settle(tester);
+      expect(
+        keychain.readHeld,
+        isTrue,
+        reason: 'the dialog is reading the entry the Cancel left',
+      );
+      final filing = keychain.writing(() async {
+        keychain.entries['@alice'] = AtKeys()..recordEnrollmentSnapshot('e2');
+      });
+      await _settle(tester);
+      readHeld.complete();
+      await _settle(tester);
+      await filing;
+
+      expect(pending.cancels, 1, reason: "Cancel cancels the request's wait");
+      expect(
+        keychain.entries['@alice']?.enrollmentIds,
+        contains('e2'),
+        reason: "the new request's keys are left alone",
+      );
+    });
+
     for (final (found, resumes) in <(String, bool)>[
       ('one', true),
       ('none', false),
@@ -1084,6 +1131,9 @@ class _Pending extends Fake implements PendingEnrollment {
   /// How many cancels fail as a keychain that refuses the update makes them.
   var cancelFailures = 0;
 
+  /// Called as a cancel that removed the keys returns.
+  void Function()? whenCancelled;
+
   @override
   bool approved = false;
 
@@ -1145,6 +1195,7 @@ class _Pending extends Fake implements PendingEnrollment {
       }
       await _waitEnded();
     }
+    whenCancelled?.call();
   }
 
   /// Completes once the wait in flight, if there is one, has ended.
@@ -1272,31 +1323,56 @@ class _Flows extends Fake implements AtsignFlows {
 
 /// A keychain holding an entry for @alice with nothing live in it, as a
 /// request awaiting a decision leaves it. [writes] counts the updates and
-/// removals made through it, [removalsOutsideWriteSection] the removals made
-/// outside [writing], [reads] counts the reads, and a [readError] is thrown
-/// by every read.
+/// removals made through it, [removalsOutsideWriteSection] the removals and
+/// [readsOutsideWriteSection] the reads made outside [writing], [reads]
+/// counts the reads, and a [readError] is thrown by every read.
+///
+/// [writing] runs one section at a time, and a section may call it again,
+/// as `KeychainStorage.writing` does.
 class _Keychain extends Fake implements KeychainStorage {
   final entries = <String, AtKeys>{'@alice': _pendingKeys()};
   var reads = 0;
   var writes = 0;
   var removalsOutsideWriteSection = 0;
+  var readsOutsideWriteSection = 0;
   var _writeSections = 0;
+  Future<void> _sectionEnded = Future.value();
   Object? readError;
+
+  /// When set, the next read takes the entry, then waits for this to
+  /// complete before returning it; [readHeld] says while it waits.
+  Completer<void>? holdNextRead;
+  var readHeld = false;
 
   @override
   Future<AtKeys?> getAtsign(String atSign) async {
     reads++;
+    if (_writeSections == 0) readsOutsideWriteSection++;
     if (readError case final error?) throw error;
-    return entries[atSign];
+    final entry = entries[atSign];
+    final hold = holdNextRead;
+    if (hold != null) {
+      holdNextRead = null;
+      readHeld = true;
+      await hold.future;
+      readHeld = false;
+    }
+    return entry;
   }
 
   @override
   Future<T> writing<T>(Future<T> Function() action) async {
+    if (Zone.current[_Keychain] == this) return action();
+    final previous = _sectionEnded;
+    final ended = Completer<void>();
+    _sectionEnded = ended.future;
+    await previous;
     _writeSections++;
     try {
-      return await action();
+      return await runZoned(action, zoneValues: {_Keychain: this});
     } finally {
       _writeSections--;
+      ended.complete();
     }
   }
 
