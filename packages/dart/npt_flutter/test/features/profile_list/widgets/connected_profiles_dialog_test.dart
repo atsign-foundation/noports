@@ -182,4 +182,81 @@ void main() {
       }
     });
   });
+
+  group('Given a profile listed as running whose bloc is already closed', () {
+    testWidgets('when Stop all is confirmed in the connected profiles dialog, '
+        'then the dialog closes and the profile is no longer listed', (
+      tester,
+    ) async {
+      final repository = MockProfileRepository();
+      final runningCubit = ProfilesRunningCubit();
+      final listBloc = ProfileListBloc(repository);
+      final cache = ProfileCacheCubit(repository);
+      addTearDown(listBloc.close);
+      addTearDown(cache.close);
+      addTearDown(runningCubit.close);
+      final connector = SocketConnector(timeout: const Duration(minutes: 10));
+      addTearDown(connector.close);
+
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<LogsCubit>(create: (_) => LogsCubit()),
+            BlocProvider<EnableLoggingCubit>(
+              create: (_) => EnableLoggingCubit(),
+            ),
+            BlocProvider<ProfilesRunningCubit>.value(value: runningCubit),
+            BlocProvider<ProfileListBloc>.value(value: listBloc),
+            BlocProvider<ProfileCacheCubit>.value(value: cache),
+          ],
+          child: MaterialApp(
+            navigatorKey: App.navState,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showDialog<bool>(
+                  context: context,
+                  builder: (_) => const ConnectedProfilesDialog(),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final bloc = cache.getProfileBloc(uuid);
+      unawaited(bloc.close());
+      runningCubit.cache(uuid, connector);
+      listBloc.add(const ProfileListUpdateEvent([uuid]));
+      await pumpUntil(
+        tester,
+        () => bloc.isClosed && listBloc.state is ProfileListLoaded,
+        reason: 'the bloc must be closed and the list loaded',
+      );
+
+      await tester.tap(find.text('open'));
+      await pumpUntil(
+        tester,
+        () => find.text('Confirm').evaluate().isNotEmpty,
+        reason: 'the dialog must offer to stop the listed profile',
+      );
+      await tester.tap(find.text('Confirm'));
+      await pumpFor(tester, const Duration(milliseconds: 100));
+
+      expect(
+        find.byType(ConnectedProfilesDialog),
+        findsNothing,
+        reason: 'Confirm must close the dialog',
+      );
+      expect(
+        runningCubit.state.socketConnectors.keys,
+        isNot(contains(uuid)),
+        reason:
+            'a listed profile with no bloc left to stop it must be unlisted',
+      );
+      expect(connector.closed, isTrue);
+    });
+  });
 }
