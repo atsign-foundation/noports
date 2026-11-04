@@ -28,6 +28,15 @@ class ProfileCacheCubit extends LoggingCubit<ProfileCacheState> {
     return bloc;
   }
 
+  /// Forgets [uuid]'s bloc and closes it, which stops anything it is running,
+  /// e.g. when the profile is deleted.
+  void remove(String uuid) {
+    final bloc = state.profileBlocs[uuid];
+    if (bloc == null) return;
+    emit(state.withRemoved(uuid));
+    unawaited(bloc.close());
+  }
+
   /// Closes every cached profile, which stops it, and forgets them all, e.g.
   /// on sign-out.
   ///

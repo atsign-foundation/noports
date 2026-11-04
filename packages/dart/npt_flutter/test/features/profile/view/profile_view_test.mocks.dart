@@ -29,10 +29,42 @@ import 'package:npt_flutter/features/settings/settings.dart' as _i6;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
+class _FakeDuration_0 extends _i1.SmartFake implements Duration {
+  _FakeDuration_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ProfileBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
+  @override
+  Duration get retryDelay =>
+      (super.noSuchMethod(
+            Invocation.getter(#retryDelay),
+            returnValue: _FakeDuration_0(this, Invocation.getter(#retryDelay)),
+            returnValueForMissingStub: _FakeDuration_0(
+              this,
+              Invocation.getter(#retryDelay),
+            ),
+          )
+          as Duration);
+
+  @override
+  Duration get maxRetryDelay =>
+      (super.noSuchMethod(
+            Invocation.getter(#maxRetryDelay),
+            returnValue: _FakeDuration_0(
+              this,
+              Invocation.getter(#maxRetryDelay),
+            ),
+            returnValueForMissingStub: _FakeDuration_0(
+              this,
+              Invocation.getter(#maxRetryDelay),
+            ),
+          )
+          as Duration);
+
   @override
   String get uuid =>
       (super.noSuchMethod(
@@ -79,6 +111,30 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
           as bool);
 
   @override
+  Duration retryDelayAfter(int? consecutiveFailures) =>
+      (super.noSuchMethod(
+            Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            returnValue: _FakeDuration_0(
+              this,
+              Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            ),
+            returnValueForMissingStub: _FakeDuration_0(
+              this,
+              Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            ),
+          )
+          as Duration);
+
+  @override
+  _i4.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   void onEvent(_i2.ProfileEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
@@ -112,15 +168,6 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
   );
-
-  @override
-  _i4.Future<void> close() =>
-      (super.noSuchMethod(
-            Invocation.method(#close, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
 
   @override
   void onChange(_i5.Change<_i2.ProfileState>? change) => super.noSuchMethod(

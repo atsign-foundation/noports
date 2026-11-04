@@ -80,10 +80,12 @@ void main() {
       final listBloc = ProfileListBloc(repository);
       final selectedCubit = ProfilesSelectedCubit();
       final favoriteBloc = FavoriteBloc(MockFavoriteRepository());
+      final cache = ProfileCacheCubit(repository, createBloc: (_, _) => bloc);
       addTearDown(runningCubit.close);
       addTearDown(listBloc.close);
       addTearDown(selectedCubit.close);
       addTearDown(favoriteBloc.close);
+      addTearDown(cache.close);
 
       try {
         await tester.pumpWidget(
@@ -100,6 +102,7 @@ void main() {
               BlocProvider<ProfileListBloc>.value(value: listBloc),
               BlocProvider<ProfilesSelectedCubit>.value(value: selectedCubit),
               BlocProvider<FavoriteBloc>.value(value: favoriteBloc),
+              BlocProvider<ProfileCacheCubit>.value(value: cache),
             ],
             child: MaterialApp(
               navigatorKey: App.navState,
