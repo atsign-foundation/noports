@@ -757,6 +757,49 @@ void main() {
         );
 
         loopTest(
+          'when it is waiting to retry, then it is still listed as running',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile.copyWith(keepAlive: true),
+              createNpt: failingNpt,
+              retryDelay: const Duration(minutes: 10),
+              maxRetryDelay: const Duration(minutes: 10),
+            );
+
+            bloc.add(const ProfileStartEvent());
+            await pumpUntil(
+              tester,
+              () => attempts.isNotEmpty && attempts.single.closeCalled,
+              reason: 'the first attempt must have failed',
+            );
+            await tester.pump(const Duration(milliseconds: 50));
+            expect(attempts, hasLength(1));
+            expect(
+              bloc.state,
+              isA<ProfileStarting>(),
+              reason: 'the loop must be parked in its backoff, a retry pending',
+            );
+
+            expect(
+              runningCubit.state.socketConnectors.keys,
+              contains(testUuid),
+              reason:
+                  'a profile whose keep-alive will retry is still running: '
+                  'the delete button and the switch-atSign check read this '
+                  'cubit to tell what is running',
+            );
+
+            bloc.add(const ProfileStopEvent());
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileLoaded,
+              reason: 'a stop must end the keep-alive loop',
+            );
+          },
+        );
+
+        loopTest(
           'when the bloc is closed during the backoff, then it stops waiting '
           'to retry',
           (tester) async {
